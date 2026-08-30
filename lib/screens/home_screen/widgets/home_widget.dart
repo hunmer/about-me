@@ -91,6 +91,12 @@ typedef CommonWidgetsProvider =
       Map<String, dynamic> data,
     );
 
+/// 日期数据检查器函数类型（日期驱动小组件用）
+///
+/// 返回指定日期是否已有可展示的数据；
+/// 主页日期视图中无数据的卡片不显示（避免空占位）
+typedef DateDataChecker = Future<bool> Function(DateTime date);
+
 /// 主页小组件定义
 ///
 /// 每个插件可以注册多个小组件，这些小组件会在"添加组件"对话框中显示
@@ -171,6 +177,18 @@ class HomeWidget {
   /// 函数接收处理后的数据，返回可用的公共小组件 ID 及其 props 配置
   final CommonWidgetsProvider? commonWidgetsProvider;
 
+  /// 是否为日期驱动的小组件（可选）
+  ///
+  /// 标记为 true 的小组件会展示在主页「日期视图」中，
+  /// 展示主页当前选中日期对应的数据（如待办日卡、日记日卡）
+  final bool isDateDriven;
+
+  /// 日期数据检查器（可选，配合 [isDateDriven] 使用）
+  ///
+  /// 日期视图据此判断该日期是否已有可展示的数据，无数据时不显示卡片。
+  /// 未提供时视为始终有数据
+  final DateDataChecker? hasDateData;
+
   const HomeWidget({
     required this.id,
     required this.pluginId,
@@ -190,6 +208,9 @@ class HomeWidget {
     this.dataSelector,
     // 公共小组件相关
     this.commonWidgetsProvider,
+    // 日期视图相关
+    this.isDateDriven = false,
+    this.hasDateData,
   });
 
   /// 构建小组件

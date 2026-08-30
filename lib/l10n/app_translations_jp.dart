@@ -189,4 +189,12 @@ const Map<String, String> appTranslationsJp = {
   'home_categoryLife': '生活',
   'home_loadFailed': '読み込み失敗',
   'home_quickCreateTitle': '新規作成',
+  'home_today': '今日',
+  'home_modeDateView': '日付ビューへ切り替え',
+  'home_modeFixedLayout': '固定レイアウトへ切り替え',
+  'home_dateViewEmpty': '日付カードはまだありません',
+  'home_dateViewNoData': 'この日の記録はまだありません',
+  'home_sortDefault': 'デフォルト',
+  'home_sortPriority': '優先度',
+  'home_sortTime': '時間',
 };

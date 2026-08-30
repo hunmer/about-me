@@ -46,9 +46,27 @@ home_widgets.dart(todo×diary) / 6 个 l10n 文件 / app_translations×3
 ### 注意
 - pubspec.yaml 的 flutter_quill 11.0.0→11.5.1 非本次改动（用户/IDE 并行修改），未动
 - 手动验证清单见 task_plan.md Phase 5.2（待跑 app 验证）
-- 第二阶段待做：主页日期横条 → HomeDateController().setDate()
+
+### 追加: Phase 6 日期横条 (2026-08-30)
+- 用户追问"切换日期没做？"后立即实施（原计划第二阶段提前）
+- 新建 `screens/home_screen/widgets/home_date_bar.dart`
+- 接入 home_screen_view 两个内容分支（多布局/单布局）
+- 链路: 横条 → HomeDateController.setDate → 待办/日记日卡自动刷新
+
+### 追加: Phase 7 模式开关 (2026-08-30)
+- 用户反馈：切日期没效果，因为主页是固定 grid；要求加「固定模式/日期数据模式」开关
+- HomeWidget.isDateDriven 标记；controller 模式状态+持久化(configs home_date_view)
+- 新建 widgets/date_view_grid.dart(自动排列所有日期卡片)
+- AppBar 切换按钮；日期条移到只属于日期视图；固定模式完全恢复原样
+- analyze 全量 0 error
+
+### 追加: Phase 8 只展示已有数据 + 排序 (2026-08-30)
+- 用户反馈：日期视图不要空占位卡；日期条下方加排序选项
+- HomeWidget.hasDateData 检查器；DateViewGrid 并行检查只渲染有数据的卡；
+  监听数据事件自动重查(新建待办/写日记后卡片即时出现)
+- HomeDateSortBar(默认/优先级/时间 chips)；待办卡应用排序
+- analyze 全量 0 error
 
 ### 下一步
-- 用户跑 app 按清单验证
-- 验证通过后可开始第二阶段（日期横条）
+- 用户跑 app 验证：无数据日期只显示提示；切排序待办列表顺序变化
 

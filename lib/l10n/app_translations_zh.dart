@@ -178,4 +178,12 @@ const Map<String, String> appTranslationsZh = {
   'home_categoryLife': '生活',
   'home_loadFailed': '加载失败',
   'home_quickCreateTitle': '新建',
+  'home_today': '今天',
+  'home_modeDateView': '切换到日期视图',
+  'home_modeFixedLayout': '切换到固定布局',
+  'home_dateViewEmpty': '暂无日期卡片',
+  'home_dateViewNoData': '这一天还没有记录',
+  'home_sortDefault': '默认',
+  'home_sortPriority': '优先级',
+  'home_sortTime': '时间',
 };

@@ -32,6 +32,14 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         Wide3Size(),
       ],
       category: 'home_categoryRecord'.tr,
+      isDateDriven: true,
+      hasDateData: (date) async {
+        try {
+          return await DiaryUtils.loadDiaryEntry(date) != null;
+        } catch (_) {
+          return false;
+        }
+      },
       builder: (context, config) => const _DiaryDayCardHomeWidget(),
     ),
   );

@@ -1,5 +1,17 @@
 import 'package:flutter/foundation.dart';
 
+/// 日期视图的排序方式
+enum DateViewSortOption {
+  /// 默认（数据原始顺序）
+  def,
+
+  /// 按优先级
+  priority,
+
+  /// 按时间
+  time,
+}
+
 /// 主页日期控制器（单例）- 持有主页当前选中的日期
 ///
 /// 按日期聚合的主页卡片（待办日卡、日记日卡等）通过监听本控制器，
@@ -18,8 +30,21 @@ class HomeDateController extends ChangeNotifier {
 
   late DateTime _date;
 
+  /// 日期视图排序方式
+  DateViewSortOption _sortOption = DateViewSortOption.def;
+
   /// 当前选中的日期（只含年月日，默认今天）
   DateTime get date => _date;
+
+  /// 日期视图排序方式（日期条下方的排序选项）
+  DateViewSortOption get sortOption => _sortOption;
+
+  /// 设置排序方式
+  void setSortOption(DateViewSortOption option) {
+    if (_sortOption == option) return;
+    _sortOption = option;
+    notifyListeners();
+  }
 
   /// 是否选中今天
   bool get isToday {

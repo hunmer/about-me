@@ -192,4 +192,12 @@ const Map<String, String> appTranslationsEn = {
   'home_categoryLife': 'Life',
   'home_loadFailed': 'Load Failed',
   'home_quickCreateTitle': 'Quick Create',
+  'home_today': 'Today',
+  'home_modeDateView': 'Switch to date view',
+  'home_modeFixedLayout': 'Switch to fixed layout',
+  'home_dateViewEmpty': 'No date cards yet',
+  'home_dateViewNoData': 'No records on this day',
+  'home_sortDefault': 'Default',
+  'home_sortPriority': 'Priority',
+  'home_sortTime': 'Time',
 };
