@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'home_screen_controller.dart';
+import 'managers/home_date_controller.dart';
 import 'managers/home_layout_manager.dart';
 import 'managers/home_widget_registry.dart';
 import 'models/home_folder_item.dart';
@@ -26,6 +27,7 @@ import 'widgets/background_settings_page.dart';
 import 'widgets/create_folder_dialog.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/layout_manager_dialog.dart';
+import 'widgets/quick_create_dialog.dart';
 import 'widgets/selector_widget_types.dart';
 import 'widgets/widget_settings_dialog.dart';
 import 'widgets/stack_direction_dialog.dart';
@@ -55,6 +57,11 @@ class HomeScreenView extends StatelessWidget {
         appBar: _buildAppBar(context),
         extendBodyBehindAppBar: controller.currentBackgroundPath != null,
         drawer: const AppDrawer(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton:
+            controller.isEditMode || controller.isBatchMode || controller.isLoading
+            ? null
+            : _buildQuickCreateButton(context),
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -105,6 +112,31 @@ class HomeScreenView extends StatelessWidget {
                 ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 构建底部中央快速新建按钮
+  ///
+  /// 点击弹出对话框选择要新建的数据类型（待办、日记等），
+  /// 编辑界面以主页当前选中日期为默认日期
+  Widget _buildQuickCreateButton(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => _showQuickCreateDialog(context),
+      tooltip: 'home_quickCreateTitle'.tr,
+      child: const Icon(Icons.add),
+    );
+  }
+
+  /// 弹出快速新建对话框
+  void _showQuickCreateDialog(BuildContext context) {
+    // 在对话框关闭后再执行创建，保证使用主页上下文打开编辑界面
+    showDialog(
+      context: context,
+      builder: (dialogContext) => QuickCreateDialog(
+        onSelected: (item) {
+          item.onCreate(context, HomeDateController().date);
+        },
       ),
     );
   }

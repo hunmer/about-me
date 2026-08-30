@@ -177,4 +177,5 @@ const Map<String, String> appTranslationsZh = {
   'home_categoryFinance': '财务',
   'home_categoryLife': '生活',
   'home_loadFailed': '加载失败',
+  'home_quickCreateTitle': '新建',
 };

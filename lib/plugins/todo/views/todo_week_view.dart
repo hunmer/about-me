@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:Memento/plugins/todo/models/task.dart';
+import 'package:Memento/plugins/todo/widgets/todo_day_card.dart';
 
 /// 周视图 - 展示从周一到周日的待办事项
 class TodoWeekView extends StatelessWidget {
@@ -105,205 +106,16 @@ class TodoWeekView extends StatelessWidget {
     required DateTime date,
     required List<Task> dayTasks,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    final dayName = dayNames[dayIndex];
-    final isToday = _isSameDay(date, DateTime.now());
-    final isPast = date.isBefore(DateTime.now());
-
     // 排除已完成的任务
     final activeTasks =
         dayTasks.where((t) => t.status != TaskStatus.done).toList();
 
-    // 根据任务状态设置卡片颜色
-    Color cardColor;
-
-    if (activeTasks.isEmpty) {
-      // 无任务
-      cardColor = Colors.grey;
-    } else if (isToday) {
-      // 今天有任务
-      cardColor = Colors.blue;
-    } else if (isPast) {
-      // 过期未完成
-      cardColor = Colors.orange;
-    } else {
-      // 未来
-      cardColor = Colors.green;
-    }
-
-    final headerBgColor = cardColor.withOpacity(0.1);
-    final headerBorderColor = cardColor.withOpacity(0.3);
-    final titleColor = isDark ? cardColor.withOpacity(0.8) : cardColor;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: isToday ? Border.all(color: headerBorderColor, width: 2) : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 卡片标题
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: headerBgColor,
-              border: Border(bottom: BorderSide(color: headerBorderColor)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dayName,
-                        style: TextStyle(
-                          color: titleColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${date.month}/${date.day}',
-                        style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (activeTasks.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${activeTasks.length}',
-                      style: TextStyle(
-                        color: titleColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                if (onAddTask != null)
-                  IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      size: 18,
-                      color: titleColor,
-                    ),
-                    onPressed: () => onAddTask!(date),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 16,
-                  ),
-              ],
-            ),
-          ),
-          // 任务列表
-          Expanded(
-            child:
-                activeTasks.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 32,
-                            color: Colors.green.withOpacity(0.3),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '无待办',
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).disabledColor.withOpacity(0.4),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: activeTasks.length,
-                      itemBuilder: (context, index) {
-                        final task = activeTasks[index];
-                        return InkWell(
-                          onTap: () => onTaskTap(task),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: Checkbox(
-                                    value: task.status == TaskStatus.done,
-                                    onChanged: (val) {
-                                      onTaskStatusChanged(
-                                        task,
-                                        val == true
-                                            ? TaskStatus.done
-                                            : TaskStatus.todo,
-                                      );
-                                    },
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    side: BorderSide(
-                                      color: Theme.of(context).dividerColor,
-                                      width: 1.5,
-                                    ),
-                                    activeColor: Theme.of(context).primaryColor,
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    task.title,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // 优先级指示器
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: task.priorityColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-          ),
-        ],
-      ),
+    return TodoDayCard(
+      date: date,
+      tasks: activeTasks,
+      onTaskTap: onTaskTap,
+      onTaskStatusChanged: onTaskStatusChanged,
+      onAddTask: onAddTask,
     );
   }
 

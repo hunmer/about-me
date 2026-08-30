@@ -135,6 +135,9 @@ const Map<String, String> todoTranslationsEn = {
   'todo_quickAddDesc': 'Tap to create a new task',
   'todo_listWidgetName': 'Todo List',
   'todo_listWidgetDesc': 'Display todo task list',
+  'todo_dayCardName': 'Todo Day Card',
+  'todo_dayCardDesc': 'Show todos of the selected date with inline check, create and detail',
+  'todo_quickCreateTask': 'New Todo',
 
   // Empty state messages
   'todo_emptyTaskList': 'No tasks yet\nTap + to add a new task',

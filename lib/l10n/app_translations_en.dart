@@ -191,4 +191,5 @@ const Map<String, String> appTranslationsEn = {
   'home_categoryFinance': 'Finance',
   'home_categoryLife': 'Life',
   'home_loadFailed': 'Load Failed',
+  'home_quickCreateTitle': 'Quick Create',
 };

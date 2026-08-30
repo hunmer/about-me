@@ -136,6 +136,9 @@ const Map<String, String> todoTranslationsJp = {
   'todo_quickAddDesc': 'タップして新しいタスクを作成',
   'todo_listWidgetName': 'タスクリスト',
   'todo_listWidgetDesc': 'タスクリストを表示',
+  'todo_dayCardName': 'タスク日カード',
+  'todo_dayCardDesc': '選択した日付のタスクを表示、チェック・作成・詳細が可能',
+  'todo_quickCreateTask': 'タスクを作成',
 
   // Empty state messages
   'todo_emptyTaskList': 'タスクがありません\n+をタップして新しいタスクを追加',

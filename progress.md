@@ -1,183 +1,54 @@
 # 进度日志
 
-## 会话: 2026-03-21 (Phase 6-7 完成)
+## 会话: 2026-08-30 (任务启动 + Phase 1-5 实施)
 
-### 完成的工作
+### 背景对齐 (grilling 两轮)
+- 用户澄清：迁移对象是**插件条目 UI**（一篇日记/一项待办），不是 buildCardView 统计卡
+- 决策：按日期聚合卡片 / 迁移现有组件保持能力不变 / 卡片不可切日期(home 层统一) /
+  先做 todo+diary / 旧卡保留并存 / 新增主页底部快速新建按钮
 
-#### Phase 6: 插件 Handler 集成 Hook 触发 ✅
-- 创建 `src/routes/pluginRoutes/hooks.ts` - `withHooks` 高阶函数
-- 创建 `addHooksToHandlers` 批量添加 hooks 工具
-- 更新 12 个专用 handler 文件:
-  - chat.ts, notes.ts, todo.ts, bill.ts
-  - diary.ts, goods.ts, activity.ts, checkin.ts
-  - tracker.ts, calendar.ts, contact.ts, day.ts
-- 更新 crud.ts 通用处理器
-- 所有 handler 现在触发 before/after 事件
+### 实施记录
+**Phase 1 基础设施**
+- 新建 `lib/screens/home_screen/managers/home_date_controller.dart`（单例 ChangeNotifier，默认今天）
+  - 设计变更：原计划 InheritedWidget，改为单例——文件夹弹窗等任意上下文可用、自动刷新
+- 新建 `lib/screens/home_screen/managers/quick_create_registry.dart`
+- 新建 `plugins/todo/home_widgets/register_quick_create.dart`（TaskForm, initialStartDate）
+- 新建 `plugins/diary/home_widgets/register_quick_create.dart`（DiaryEditorScreen）
+- 挂进各自 home_widgets.dart 的 register()
 
-#### Phase 7: 插件 JS 公用基类 ✅
-- 创建 `src/plugins/BasePlugin.js` 基类
-- 功能:
-  - 日志工具 (log, warn, error)
-  - 生命周期钩子 (onPluginLoad, onPluginUnload, onPluginEnable, onPluginDisable)
-  - 事件订阅简化方法 (onBefore, onAfter, subscribeAllBefore, subscribeAllAfter)
-  - 文件工具 (getDataPath, ensureDir, readJson, writeJson, appendLog)
-  - export() 方法导出插件模块
-- 创建示例插件 `data-sync-logger-v2` 展示基类用法
+**Phase 2 待办日卡**
+- 抽取 `plugins/todo/widgets/todo_day_card.dart`（忠实迁移 _buildDayCard，dayIndex→date.weekday）
+- `todo_week_view.dart` 改用 TodoDayCard（删 ~200 行重复 UI）
+- 新建 `plugins/todo/home_widgets/register_day_card.dart`（id: todo_day_card）
+  - 过滤：未完成 + startDate??dueDate 同天；刷新 merge(taskController, HomeDateController)
 
-### 文件清单
-```
-server-nodejs/
-├── src/
-│   ├── routes/pluginRoutes/
-│   │   ├── hooks.ts (新增)
-│   │   ├── crud.ts (已更新)
-│   │   └── handlers/*.ts (已更新 - 12 个文件)
-│   └── plugins/
-│       └── BasePlugin.js (新增)
-└── plugins/
-    └── data-sync-logger-v2/
-        ├── main.js
-        └── metadata.json
-```
+**Phase 3 日记日卡**
+- 抽取 `plugins/diary/widgets/diary_entry_card.dart`（颜色缺省按原逻辑从主题推导）
+- `diary_calendar_screen.dart` 搜索结果改用之
+- 新建 `plugins/diary/home_widgets/register_day_card.dart`（id: diary_day_card，默认 Wide2）
+  - 数据：DiaryUtils.loadDiaryEntry(date)（一天一篇）；监听 diary_* 事件 + 日期变化
 
-### 下一步
-- 运行测试验证 hook 触发
-- 插件开发文档
+**Phase 4 快速新建按钮**
+- 新建 `screens/home_screen/widgets/quick_create_dialog.dart`
+- home_screen_view.dart: Scaffold FAB centerFloat（编辑/批量/加载态隐藏）→ 对话框 → onCreate
 
----
-
-## 会话: 2026-03-21 (任务规划)
-
-### 新增任务
-- **Phase 8**: 插件 Handler 集成 Hook 触发
-- **Phase 9**: 插件 JS 公用基类
-
-### 研究发现
-- `eventEmitter.ts` 已实现完整的 before/after hook 系统
-- 插件可通过 `module.exports.handlers` 注册事件处理器
-- 当前 `handlers/*.ts` 中没有调用 hook 触发代码
-- 示例插件 `data-sync-logger` 已准备好接收事件
-
-### 下一步
-1. 创建 `withHooks` 高阶函数
-2. 为所有 handler 添加 hook 调用
-3. 设计 `BasePlugin` 基类
-
----
-
-## 会话: 2026-03-20
-
-### 完成的工作
-
-#### [2026-03-20] 完整迁移实施
-- **任务**: 将 Dart 后端迁移到 Node.js + TypeScript
-- **状态**: 已完成
-- **详情**:
-
-**Phase 1: 项目初始化** ✅
-- 创建了 `server-nodejs/` 目录结构
-- 配置了 `package.json`（依赖、脚本）
-- 配置了 `tsconfig.json`
-- 创建了 `.env.example` 环境变量模板
-- 配置了 `jest.config.js` 测试框架
-
-**Phase 2: 核心服务迁移** ✅
-- `src/services/encryptionService.ts` - AES-256-GCM 加密服务
-- `src/services/fileStorageService.ts` - 文件存储服务
-- `src/services/authService.ts` - JWT 认证 + API Key 服务
-- `src/services/pluginDataService.ts` - 插件数据服务
-- `src/services/webSocketManager.ts` - WebSocket 管理器
-- `src/services/fileWatcherService.ts` - 文件监听服务
-
-**Phase 3: 中间件迁移** ✅
-- `src/middleware/authMiddleware.ts` - JWT + API Key 认证
-- `src/middleware/apiEnabledMiddleware.ts` - API 启用检查
-
-**Phase 4: 路由迁移** ✅
-- `src/routes/authRoutes.ts` - 认证路由（全部端点）
-- `src/routes/syncRoutes.ts` - 同步路由（全部端点）
-- `src/routes/pluginRoutes/` - 19 个插件路由（通用工厂）
-
-**Phase 5: WebSocket 迁移** ✅
-- 集成到 `src/index.ts`
-- 支持认证、心跳、文件更新广播
-
-**Phase 6: 类型定义** ✅
-- `src/types/index.ts` - 完整类型定义
-- `src/config/serverConfig.ts` - 配置类型
-
-**Phase 7: 集成测试** ✅
-- `tests/api.test.ts` - 完整测试套件
-- 测试：健康检查、认证、同步、插件 API
-
-**其他**:
-- `README.md` - 完整使用文档
+**Phase 5 验证**
+- dart analyze lib 全量 **0 error**（152 存量 warning/info）
+- 修复过的错误：DiaryEditorScreen.initialContent 必填、quick_create_dialog 未定义 theme
 
 ### 文件清单
+新增: home_date_controller / quick_create_registry / quick_create_dialog /
+todo_day_card / register_day_card(todo) / register_quick_create(todo×diary) / diary_entry_card /
+register_day_card(diary)
+修改: todo_week_view / diary_calendar_screen / home_screen_view /
+home_widgets.dart(todo×diary) / 6 个 l10n 文件 / app_translations×3
 
-```
-server-nodejs/
-├── package.json
-├── tsconfig.json
-├── jest.config.js
-├── .env.example
-├── README.md
-├── src/
-│   ├── index.ts
-│   ├── config/
-│   │   └── serverConfig.ts
-│   ├── types/
-│   │   └── index.ts
-│   ├── services/
-│   │   ├── encryptionService.ts
-│   │   ├── fileStorageService.ts
-│   │   ├── authService.ts
-│   │   ├── pluginDataService.ts
-│   │   ├── webSocketManager.ts
-│   │   └── fileWatcherService.ts
-│   ├── middleware/
-│   │   ├── index.ts
-│   │   ├── authMiddleware.ts
-│   │   └── apiEnabledMiddleware.ts
-│   └── routes/
-│       ├── authRoutes.ts
-│       ├── syncRoutes.ts
-│       └── pluginRoutes/
-│           ├── index.ts
-│           └── factory.ts
-└── tests/
-    └── api.test.ts
-```
+### 注意
+- pubspec.yaml 的 flutter_quill 11.0.0→11.5.1 非本次改动（用户/IDE 并行修改），未动
+- 手动验证清单见 task_plan.md Phase 5.2（待跑 app 验证）
+- 第二阶段待做：主页日期横条 → HomeDateController().setDate()
 
 ### 下一步
+- 用户跑 app 按清单验证
+- 验证通过后可开始第二阶段（日期横条）
 
-1. 安装依赖: `cd server-nodejs && npm install`
-2. 配置环境: `cp .env.example .env`
-3. 启动服务: `npm run dev`
-4. 运行测试: `npm test`
-
-### 测试状态
-
-**2026-03-20**: 所有 24 个测试通过 ✅
-
-修复的问题:
-1. `serverConfig.ts` - 删除重复的 `enableCors` 属性
-2. `index.ts` - 修复 `req.params[0]` 类型问题
-3. `authService.ts` - 添加设备参数类型
-4. `types/index.ts` - 添加 `WSPing` 和 `WSAck` 类型
-5. `authRoutes.ts` - 修复 `getUserIdFromContext` → `getUserIdFromRequest`
-6. `authRoutes.ts` - 修复 Date 序列化问题 (`new Date(x).toISOString()`)
-7. `syncRoutes.ts` - 修复 `updatedAt` 可能为 undefined 的问题
-8. `fileStorageService.ts` - 修复 `updated_at` → `updatedAt` 字段名
-9. `fileStorageService.ts` - 修复 `getUserStorageStats` 递归目录遍历
-10. `fileStorageService.ts` - 跳过隐藏文件（以 `.` 开头）
-11. `pluginRoutes/factory.ts` - 修复导入路径和数组类型
-12. 测试 - 修正加密密钥长度（64字节 → 32字节）
-
----
-
-## 错误日志
-
-| 时间 | 错误 | 解决方案 |
-|------|------|----------|
-| - | (暂无) | - |

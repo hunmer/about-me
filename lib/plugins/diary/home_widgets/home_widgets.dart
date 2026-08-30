@@ -18,12 +18,17 @@ export 'register_icon_widget.dart';
 export 'register_overview_widget.dart';
 export 'register_weekly_widget.dart';
 export 'register_monthly_diary_list.dart';
+export 'register_day_card.dart';
+export 'register_quick_create.dart';
 
 import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_weekly_widget.dart';
 import 'register_monthly_diary_list.dart';
+import 'register_day_card.dart';
+import 'register_quick_create.dart';
 
 /// 注册所有日记插件的小组件
 void register() {
@@ -32,4 +37,8 @@ void register() {
   registerOverviewWidget(registry);
   registerWeeklyWidget(registry);
   registerMonthlyDiaryListWidget(registry);
+  registerDayCardWidget(registry);
+
+  // 注册快速创建项（主页底部 ＋ 按钮）
+  registerQuickCreate(QuickCreateRegistry());
 }

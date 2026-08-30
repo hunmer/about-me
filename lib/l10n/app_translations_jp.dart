@@ -188,4 +188,5 @@ const Map<String, String> appTranslationsJp = {
   'home_categoryFinance': 'ファイナンス',
   'home_categoryLife': '生活',
   'home_loadFailed': '読み込み失敗',
+  'home_quickCreateTitle': '新規作成',
 };

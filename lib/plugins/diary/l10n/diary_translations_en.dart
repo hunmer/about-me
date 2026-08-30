@@ -78,5 +78,9 @@ class DiaryTranslationsEn {
     'diary_minutes': 'minutes',
     'diary_tags': 'Tags',
     'diary_searchPlaceholder': 'Search diary content...',
+    'diary_dayCardName': 'Diary Day Card',
+    'diary_dayCardDesc': 'Show diary entries of the selected date, tap to view/edit',
+    'diary_quickCreateEntry': 'New Diary',
+    'diary_dayCardEmpty': 'No diary yet',
   };
 }

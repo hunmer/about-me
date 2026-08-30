@@ -13,6 +13,7 @@ import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
 import 'diary_editor_screen.dart';
 import 'package:Memento/plugins/diary/models/diary_entry.dart';
 import 'package:Memento/plugins/diary/utils/diary_utils.dart';
+import 'package:Memento/plugins/diary/widgets/diary_entry_card.dart';
 
 class DiaryCalendarScreen extends StatefulWidget {
   final StorageManager storage;
@@ -225,87 +226,11 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     Color primaryColor,
     bool isDark,
   ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: isDark ? 2 : 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _navigateToEntry(entry),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 日期和心情
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DateFormat('yyyy年MM月dd日').format(entry.date),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  if (entry.mood != null)
-                    Text(entry.mood!, style: const TextStyle(fontSize: 20)),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // 标题
-              if (entry.title.isNotEmpty) ...[
-                Text(
-                  entry.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-              ],
-
-              // 内容预览（使用QuillViewer，支持Markdown格式化显示）
-              SizedBox(
-                height: 80, // 限制高度，显示3-4行内容
-                child: QuillViewer(
-                  data: entry.content,
-                  selectable: false, // 只读模式
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 底部信息
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${entry.content.length} 字',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: textColor.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 12,
-                        color: textColor.withValues(alpha: 0.3),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return DiaryEntryCard(
+      entry: entry,
+      primaryColor: primaryColor,
+      textColor: textColor,
+      onTap: () => _navigateToEntry(entry),
     );
   }
 

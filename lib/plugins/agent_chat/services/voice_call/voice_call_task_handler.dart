@@ -1,9 +1,5 @@
-import 'dart:async';
-import 'dart:isolate';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:memento_foreground_service/memento_foreground_service.dart';
-import 'package:flutter/services.dart';
 
 /// 语音通话前台服务任务处理器
 ///
@@ -15,38 +11,40 @@ class VoiceCallTaskHandler extends TaskHandler {
   static List<String> notificationButtons = ['暂停', '结束'];
 
   @override
-  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     // 服务启动时的初始化
     debugPrint('🚀 语音通话前台服务已启动');
   }
 
   @override
-  Future<void> onRepeatEvent(DateTime timestamp, SendPort? sendPort) async {
+  void onRepeatEvent(DateTime timestamp) {
     // 定期任务（每秒执行一次）
     // 可以在这里更新通知内容
   }
 
   @override
-  Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
     // 服务销毁时的清理
     debugPrint('🗑️ 语音通话前台服务已销毁');
   }
 
   @override
-  void onButtonPressed(String id) {
+  void onNotificationButtonPressed(String id) {
     debugPrint('🔔 通知按钮被点击: $id');
 
     // 发送事件到主应用
     switch (id) {
-      case '0': // 暂停/继续按钮
-        if (notificationButtons.contains('暂停')) {
-          FlutterForegroundTask.sendDataToTask({'event': 'pause_call'});
-        } else {
-          FlutterForegroundTask.sendDataToTask({'event': 'resume_call'});
-        }
+      case 'pause': // 暂停按钮
+        FlutterForegroundTask.sendDataToMain({'event': 'pause_call'});
         break;
-      case '1': // 结束按钮
-        FlutterForegroundTask.sendDataToTask({'event': 'end_call'});
+      case 'resume': // 继续按钮
+        FlutterForegroundTask.sendDataToMain({'event': 'resume_call'});
+        break;
+      case 'skip': // 跳过按钮
+        FlutterForegroundTask.sendDataToMain({'event': 'skip_call'});
+        break;
+      case 'end': // 结束按钮
+        FlutterForegroundTask.sendDataToMain({'event': 'end_call'});
         break;
     }
   }
@@ -116,10 +114,21 @@ class VoiceCallTaskHandler extends TaskHandler {
     );
   }
 
+  /// 按钮标签到事件 id 的映射
+  static const Map<String, String> _buttonIdMap = {
+    '暂停': 'pause',
+    '继续': 'resume',
+    '跳过': 'skip',
+    '结束': 'end',
+  };
+
   /// 构建通知按钮
-  List<ServiceNotificationButton> _buildNotificationButtons() {
+  List<NotificationButton> _buildNotificationButtons() {
     return notificationButtons.map((label) {
-      return ServiceNotificationButton(key: label, label: label);
+      return NotificationButton(
+        id: _buttonIdMap[label] ?? label,
+        text: label,
+      );
     }).toList();
   }
 }

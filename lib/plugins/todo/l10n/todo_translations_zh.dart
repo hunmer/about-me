@@ -134,6 +134,9 @@ const Map<String, String> todoTranslationsZh = {
   'todo_quickAddDesc': '点击跳转到新建任务页面',
   'todo_listWidgetName': '待办列表',
   'todo_listWidgetDesc': '显示待办任务列表',
+  'todo_dayCardName': '待办日卡',
+  'todo_dayCardDesc': '显示所选日期的待办，可直接勾选、新建、查看详情',
+  'todo_quickCreateTask': '新建待办',
 
   // 空状态提示
   'todo_emptyTaskList': '暂无任务\n点击 + 添加新任务',

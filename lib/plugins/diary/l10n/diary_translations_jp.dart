@@ -78,5 +78,9 @@ class DiaryTranslationsJp {
     'diary_minutes': '分',
     'diary_tags': 'タグ',
     'diary_searchPlaceholder': '日記コンテンツを検索...',
+    'diary_dayCardName': '日記日カード',
+    'diary_dayCardDesc': '選択した日付の日記を表示、タップで閲覧・編集',
+    'diary_quickCreateEntry': '日記を書く',
+    'diary_dayCardEmpty': '日記はまだありません',
   };
 }
