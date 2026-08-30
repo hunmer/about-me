@@ -1,0 +1,840 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:Memento/core/services/toast_service.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
+import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:Memento/plugins/bill/models/bill_model.dart';
+import 'package:Memento/plugins/bill/models/bill.dart';
+import 'package:Memento/plugins/bill/bill_plugin.dart';
+import 'package:Memento/plugins/bill/widgets/month_selector.dart';
+import 'package:Memento/widgets/swipe_action/index.dart';
+import 'bill_edit_screen.dart';
+import 'account_list_screen.dart';
+import 'subscription_list_screen.dart';
+
+class BillListScreenSupercupertino extends StatefulWidget {
+  final BillPlugin billPlugin;
+  final String accountId;
+
+  const BillListScreenSupercupertino({
+    super.key,
+    required this.billPlugin,
+    required this.accountId,
+  });
+
+  @override
+  State<BillListScreenSupercupertino> createState() =>
+      _BillListScreenSupercupertinoState();
+}
+
+class _BillListScreenSupercupertinoState
+    extends State<BillListScreenSupercupertino> {
+  late final void Function() _billPluginListener;
+  late CalendarController _calendarController;
+
+  // Calendar State
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  // Data State
+  List<BillModel> _allMonthBills = []; // All bills for the focused month
+  Map<DateTime, _DailyStats> _dailyStats = {};
+
+  String _filterCategory =
+      'all'; // 'all', 'income', 'expense', or specific category name
+  String _searchQuery = '';
+
+  // 搜索过滤器状态
+  final Map<String, bool> _searchFilters = {
+    'category': true, // 是否搜索分类
+    'note': true, // 是否搜索笔记
+  };
+
+  // Colors
+  static const Color _incomeColor = Color(0xFF2ECC71);
+  static const Color _expenseColor = Color(0xFFE74C3C);
+  static const Color _primaryColor = Color(0xFF3498DB);
+
+  @override
+  void initState() {
+    super.initState();
+    // 确保默认选中今天
+    _selectedDay = DateTime.now();
+    _focusedDay = DateTime.now();
+    _calendarController = CalendarController();
+    _calendarController.displayDate = DateTime.now();
+    _calendarController.selectedDate = DateTime.now();
+
+    // 监听插件数据变化，自动刷新
+    _billPluginListener = () {
+      if (mounted) {
+        _loadMonthBills();
+      }
+    };
+    widget.billPlugin.addListener(_billPluginListener);
+
+    // 初始化时加载当月账单数据，确保日历能显示账单标记
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMonthBills();
+    });
+
+    // 初始化时设置路由上下文（包含选中的日期）
+    _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
+  }
+
+  @override
+  void dispose() {
+    _calendarController.dispose();
+    widget.billPlugin.removeListener(_billPluginListener);
+    super.dispose();
+  }
+
+  void _loadMonthBills() {
+    // 检查账户数据是否可用
+    if (widget.billPlugin.accounts.isEmpty) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          _loadMonthBills();
+        }
+      });
+      return;
+    }
+
+    try {
+      final currentAccount = widget.billPlugin.accounts.firstWhere(
+        (account) => account.id == widget.accountId,
+      );
+      // Calculate month start and end
+      final monthStart = DateTime(_focusedDay.year, _focusedDay.month, 1);
+      final monthEnd = DateTime(
+        _focusedDay.year,
+        _focusedDay.month + 1,
+        0,
+        23,
+        59,
+        59,
+      );
+
+      final filteredBills = currentAccount.bills.where(
+        (bill) =>
+            bill.date.isAfter(
+              monthStart.subtract(const Duration(seconds: 1)),
+            ) &&
+            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
+      );
+
+      final bills =
+          filteredBills
+              .map(
+                (bill) => BillModel(
+                  id: bill.id,
+                  title: bill.title,
+                  amount: bill.absoluteAmount,
+                  date: bill.date,
+                  icon: bill.icon,
+                  color: bill.iconColor,
+                  category: bill.tag ?? '未分类',
+                  note: bill.note,
+                  isExpense: bill.isExpense,
+                ),
+              )
+              .toList();
+
+      // Sort by date descending
+      bills.sort((a, b) => b.date.compareTo(a.date));
+
+      // Calculate daily stats
+      final stats = <DateTime, _DailyStats>{};
+      for (var bill in bills) {
+        final date = DateTime(bill.date.year, bill.date.month, bill.date.day);
+        if (!stats.containsKey(date)) {
+          stats[date] = _DailyStats();
+        }
+        if (bill.isExpense) {
+          stats[date]!.expense += bill.amount;
+        } else {
+          stats[date]!.income += bill.amount;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _allMonthBills = bills;
+          _dailyStats = stats;
+        });
+
+        // 强制刷新日历显示
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('加载账单失败: $e');
+    }
+  }
+
+  /// 更新路由上下文,使"询问当前上下文"功能能获取到当前月份或具体日期
+  ///
+  /// [date] 当前聚焦的日期（月份）
+  /// [selectedDay] 可选参数，用户选中的具体日期
+  void _updateRouteContext(DateTime date, {DateTime? selectedDay}) {
+    String dateStr;
+    String title;
+
+    if (selectedDay != null) {
+      // 如果有选中的具体日期，显示完整日期（YYYY-MM-DD）
+      dateStr =
+          '${selectedDay.year}-${selectedDay.month.toString().padLeft(2, '0')}-${selectedDay.day.toString().padLeft(2, '0')}';
+      title = '账单列表 - $dateStr';
+    } else {
+      // 否则只显示月份（YYYY-MM）
+      dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+      title = '账单列表 - $dateStr';
+    }
+
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/bill_list',
+      title: title,
+      params: {'date': dateStr},
+    );
+  }
+
+  Map<String, double> _getMonthStats(DateTime month) {
+    try {
+      final currentAccount = widget.billPlugin.accounts.firstWhere(
+        (account) => account.id == widget.accountId,
+      );
+
+      final monthStart = DateTime(month.year, month.month, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+      final bills = currentAccount.bills.where(
+        (bill) =>
+            bill.date.isAfter(
+              monthStart.subtract(const Duration(seconds: 1)),
+            ) &&
+            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
+      );
+
+      double income = 0;
+      double expense = 0;
+
+      for (var bill in bills) {
+        if (bill.isExpense) {
+          expense += bill.absoluteAmount;
+        } else {
+          income += bill.absoluteAmount;
+        }
+      }
+
+      return {
+        'income': income,
+        'expense': expense,
+        'balance': income - expense,
+      };
+    } catch (e) {
+      return {'income': 0, 'expense': 0, 'balance': 0};
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Widget _buildCalendarCell(DateTime day, bool isSelected) {
+    final date = DateTime(day.year, day.month, day.day);
+    final stats = _dailyStats[date];
+    final isToday = _isSameDay(DateTime.now(), day);
+    final isIncomePositive = (stats?.income ?? 0) > 0;
+    final isExpensePositive = (stats?.expense ?? 0) > 0;
+
+    return Container(
+      margin: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: isSelected ? _primaryColor.withOpacity(0.2) : null,
+        border: isToday ? Border.all(color: _primaryColor, width: 2) : null,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '${day.day}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? _primaryColor : null,
+            ),
+          ),
+          const SizedBox(height: 2),
+          // 始终显示收入位置（有数据显示badge，无数据显示空占位）
+          SizedBox(
+            height: 10,
+            child: isIncomePositive
+                ? _buildStatBadge(stats!.income, _incomeColor, Icons.arrow_downward)
+                : const SizedBox.shrink(),
+          ),
+          // 始终显示支出位置（有数据显示badge，无数据显示空占位）
+          SizedBox(
+            height: 10,
+            child: isExpensePositive
+                ? _buildStatBadge(stats!.expense, _expenseColor, Icons.arrow_upward)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBadge(double amount, Color color, IconData icon) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 8, color: color),
+          const SizedBox(width: 1),
+          Text(
+            amount.toInt().toString(),
+            style: TextStyle(
+              fontSize: 8,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<BillModel> get _selectedDayBills {
+    if (_selectedDay == null) return [];
+
+    final selectedDate = DateTime(
+      _selectedDay!.year,
+      _selectedDay!.month,
+      _selectedDay!.day,
+    );
+
+    return _allMonthBills.where((bill) {
+      final billDate = DateTime(bill.date.year, bill.date.month, bill.date.day);
+      return _isSameDay(billDate, selectedDate);
+    }).toList();
+  }
+
+  String _formatCurrency(double amount) {
+    return NumberFormat.currency(symbol: '¥', decimalDigits: 2).format(amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SuperCupertinoNavigationWrapper(
+      title: Text('bill_billList'.tr),
+      largeTitle: 'bill_billList'.tr,
+      enableSearchBar: true,
+      searchPlaceholder: 'bill_searchPlaceholder'.tr,
+      onSearchChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+        });
+      },
+      enableSearchFilter: true,
+      filterLabels: const {'category': '分类', 'note': '笔记'},
+      onSearchFilterChanged: (filters) {
+        setState(() {
+          _searchFilters.addAll(filters);
+        });
+      },
+      searchBody: _buildSearchBody(),
+      body: _buildMainBody(),
+      enableLargeTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.account_balance_wallet),
+          tooltip: 'bill_accountManagement'.tr,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) =>
+                        AccountListScreen(billPlugin: widget.billPlugin),
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.subscriptions),
+          tooltip: '订阅服务',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) =>
+                        SubscriptionListScreen(billPlugin: widget.billPlugin),
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: () {
+            NavigationHelper.openContainer<bool>(
+              context,
+              (BuildContext context) {
+                return BillEditScreen(
+                  billPlugin: widget.billPlugin,
+                  accountId: widget.accountId,
+                  initialDate: _selectedDay ?? DateTime.now(),
+                  onSaved: () {
+                    _loadMonthBills();
+                  },
+                );
+              },
+              closedColor: Colors.transparent,
+              closedElevation: 0.0,
+              closedShape: const RoundedRectangleBorder(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMainBody() {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Month Selector
+          MonthSelector(
+            selectedMonth: _focusedDay,
+            onMonthSelected: (month) {
+              setState(() {
+                _focusedDay = month;
+                _calendarController.displayDate = month;
+                _loadMonthBills();
+              });
+              // 更新路由上下文（切换月份时清除具体日期）
+              _updateRouteContext(month);
+            },
+            getMonthStats: _getMonthStats,
+            primaryColor: _primaryColor,
+          ),
+
+          // Calendar
+          SfCalendar(
+            controller: _calendarController,
+            view: CalendarView.month,
+            initialDisplayDate: _focusedDay,
+            minDate: DateTime(2020),
+            maxDate: DateTime(2030),
+            headerHeight: 0,
+            viewHeaderHeight: 40,
+            showNavigationArrow: false,
+            monthViewSettings: const MonthViewSettings(
+              showTrailingAndLeadingDates: true,
+              dayFormat: 'EEE',
+            ),
+            cellBorderColor: Colors.transparent,
+            selectionDecoration: const BoxDecoration(),
+            monthCellBuilder: (BuildContext context, MonthCellDetails details) {
+              final day = details.date;
+              final isSelected =
+                  _selectedDay != null && _isSameDay(day, _selectedDay!);
+              return _buildCalendarCell(day, isSelected);
+            },
+            onTap: (CalendarTapDetails details) {
+              if (details.date != null) {
+                setState(() {
+                  _selectedDay = details.date;
+                  _focusedDay = details.date!;
+                  _calendarController.selectedDate = details.date;
+                });
+                // 更新路由上下文到具体日期
+                _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
+              }
+            },
+            onViewChanged: (ViewChangedDetails details) {
+              if (details.visibleDates.isNotEmpty) {
+                final newFocusedDay =
+                    details.visibleDates[details.visibleDates.length ~/ 2];
+                _focusedDay = newFocusedDay;
+                _loadMonthBills();
+                // 更新路由上下文
+                _updateRouteContext(newFocusedDay);
+              }
+            },
+          ),
+
+          // Filter Chips
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                _buildFilterChip('all', '全部', Icons.list),
+                _buildFilterChip('income', '收入', Icons.arrow_downward),
+                _buildFilterChip('expense', '支出', Icons.arrow_upward),
+              ],
+            ),
+          ),
+
+          // Daily Bills List
+          if (_selectedDay != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, color: _primaryColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('yyyy年MM月dd日').format(_selectedDay!),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_selectedDayBills.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '这一天没有账单',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _selectedDayBills.length,
+                itemBuilder: (context, index) {
+                  final bill = _selectedDayBills[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: SwipeActionWrapper(
+                      key: ValueKey(bill.id),
+                      leadingActions: [
+                        SwipeActionPresets.edit(
+                          onTap: () {
+                            final billObject = Bill(
+                              id: bill.id,
+                              title: bill.title,
+                              amount:
+                                  bill.isExpense ? -bill.amount : bill.amount,
+                              accountId: widget.accountId,
+                              category: bill.category,
+                              date: bill.date,
+                              tag: bill.category,
+                              note: bill.note ?? '',
+                              createdAt: bill.date,
+                              icon: bill.icon,
+                              iconColor: bill.color,
+                            );
+                            NavigationHelper.openContainer<bool>(
+                              context,
+                              (BuildContext context) {
+                                return BillEditScreen(
+                                  billPlugin: widget.billPlugin,
+                                  accountId: widget.accountId,
+                                  bill: billObject,
+                                  onSaved: () {
+                                    _loadMonthBills();
+                                  },
+                                );
+                              },
+                              closedColor: Colors.transparent,
+                              closedElevation: 0.0,
+                              closedShape: const RoundedRectangleBorder(),
+                            );
+                          },
+                        ),
+                      ],
+                      trailingActions: [
+                        SwipeActionPresets.delete(
+                          onTap: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('bill_confirmDelete'.tr),
+                                  content: Text(
+                                    'bill_confirmDeleteThisBill'.tr,
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed:
+                                          () =>
+                                              Navigator.of(context).pop(false),
+                                      child: Text('bill_cancel'.tr),
+                                    ),
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.of(context).pop(true),
+                                      child: Text('bill_delete'.tr),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+
+                            if (confirmed == true) {
+                              try {
+                                final currentAccount = widget
+                                    .billPlugin
+                                    .accounts
+                                    .firstWhere(
+                                      (account) =>
+                                          account.id == widget.accountId,
+                                    );
+                                await widget.billPlugin.controller.deleteBill(
+                                  currentAccount.id,
+                                  bill.id,
+                                );
+                                _loadMonthBills();
+                              } catch (e) {
+                                Toast.error('删除失败: $e');
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: bill.color.withOpacity(0.2),
+                          child: Icon(bill.icon, color: bill.color),
+                        ),
+                        title: Text(bill.title),
+                        subtitle: Text(
+                          DateFormat('yyyy-MM-dd HH:mm').format(bill.date),
+                        ),
+                        trailing: Text(
+                          '${bill.isExpense ? '-' : '+'}${_formatCurrency(bill.amount)}',
+                          style: TextStyle(
+                            color:
+                                bill.isExpense ? _expenseColor : _incomeColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () {
+                          NavigationHelper.openContainer<bool>(
+                            context,
+                            (BuildContext context) {
+                              final billObject = Bill(
+                                id: bill.id,
+                                title: bill.title,
+                                amount:
+                                    bill.isExpense ? -bill.amount : bill.amount,
+                                accountId: widget.accountId,
+                                category: bill.category,
+                                date: bill.date,
+                                tag: bill.category,
+                                note: bill.note ?? '',
+                                createdAt: bill.date,
+                                icon: bill.icon,
+                                iconColor: bill.color,
+                              );
+                              return BillEditScreen(
+                                billPlugin: widget.billPlugin,
+                                accountId: widget.accountId,
+                                bill: billObject,
+                                onSaved: () {
+                                  _loadMonthBills();
+                                },
+                              );
+                            },
+                            closedColor: Colors.transparent,
+                            closedElevation: 0.0,
+                            closedShape: const RoundedRectangleBorder(),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ] else
+            Container(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '请选择一天查看账单',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBody() {
+    // 过滤账单
+    List<BillModel> filteredBills = _allMonthBills;
+
+    if (_searchQuery.isNotEmpty) {
+      filteredBills =
+          filteredBills.where((bill) {
+            final query = _searchQuery.toLowerCase();
+
+            // 按名称搜索
+            final matchTitle = bill.title.toLowerCase().contains(query);
+
+            // 按分类搜索（如果启用）
+            final matchCategory =
+                (_searchFilters['category'] ?? true) &&
+                bill.category.toLowerCase().contains(query);
+
+            // 按笔记搜索（如果启用）
+            final matchNote =
+                (_searchFilters['note'] ?? true) &&
+                (bill.note?.toLowerCase().contains(query) ?? false);
+
+            // 满足任一条件即匹配
+            return matchTitle || matchCategory || matchNote;
+          }).toList();
+    }
+
+    if (_searchQuery.isNotEmpty && filteredBills.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              '未找到匹配的账单',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredBills.length,
+      itemBuilder: (context, index) {
+        final bill = filteredBills[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: bill.color.withOpacity(0.2),
+              child: Icon(bill.icon, color: bill.color),
+            ),
+            title: Text(bill.title),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(DateFormat('yyyy-MM-dd HH:mm').format(bill.date)),
+                if (bill.note?.isNotEmpty == true)
+                  Text(
+                    bill.note!,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+              ],
+            ),
+            trailing: Text(
+              '${bill.isExpense ? '-' : '+'}${_formatCurrency(bill.amount)}',
+              style: TextStyle(
+                color: bill.isExpense ? _expenseColor : _incomeColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () {
+              NavigationHelper.openContainer<bool>(
+                context,
+                (BuildContext context) {
+                  final billObject = Bill(
+                    id: bill.id,
+                    title: bill.title,
+                    amount: bill.isExpense ? -bill.amount : bill.amount,
+                    accountId: widget.accountId,
+                    category: bill.category,
+                    date: bill.date,
+                    tag: bill.category,
+                    note: bill.note ?? '',
+                    createdAt: bill.date,
+                    icon: bill.icon,
+                    iconColor: bill.color,
+                  );
+                  return BillEditScreen(
+                    billPlugin: widget.billPlugin,
+                    accountId: widget.accountId,
+                    bill: billObject,
+                    onSaved: () {
+                      _loadMonthBills();
+                    },
+                  );
+                },
+                closedColor: Colors.transparent,
+                closedElevation: 0.0,
+                closedShape: const RoundedRectangleBorder(),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(String value, String label, IconData icon) {
+    final isSelected = _filterCategory == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _filterCategory = value;
+        });
+      },
+      backgroundColor: Colors.grey[100],
+      selectedColor: _primaryColor.withOpacity(0.2),
+      side: BorderSide(
+        color: isSelected ? _primaryColor : Colors.grey[300]!,
+        width: 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? _primaryColor : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+  }
+}
+
+class _DailyStats {
+  double income = 0;
+  double expense = 0;
+}

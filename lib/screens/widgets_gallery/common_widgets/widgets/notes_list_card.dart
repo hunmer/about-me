@@ -1,0 +1,378 @@
+import 'package:flutter/material.dart';
+import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+
+/// 笔记数据模型
+class NoteItem {
+  final String title;
+  final String time;
+  final String preview;
+  final String? imageUrl;
+
+  const NoteItem({
+    required this.title,
+    required this.time,
+    required this.preview,
+    this.imageUrl,
+  });
+
+  /// 从 JSON 创建
+  factory NoteItem.fromJson(Map<String, dynamic> json) {
+    return NoteItem(
+      title: json['title'] as String? ?? '',
+      time: json['time'] as String? ?? '',
+      preview: json['preview'] as String? ?? '',
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
+
+  /// 转换为 JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'time': time,
+      'preview': preview,
+      'imageUrl': imageUrl,
+    };
+  }
+}
+
+/// 笔记列表卡片小组件
+class NotesListCardWidget extends StatefulWidget {
+  final List<NoteItem> notes;
+
+  /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
+  final bool inline;
+
+  /// 小组件尺寸
+  final HomeWidgetSize size;
+
+  const NotesListCardWidget({
+    super.key,
+    required this.notes,
+    this.inline = false,
+    this.size = const MediumSize(),
+  });
+
+  /// 从 props 创建实例（用于公共小组件系统）
+  factory NotesListCardWidget.fromProps(
+    Map<String, dynamic> props,
+    HomeWidgetSize size,
+  ) {
+    final notesJson = props['notes'] as List<dynamic>?;
+
+    return NotesListCardWidget(
+      notes:
+          notesJson
+              ?.map((e) => NoteItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      inline: props['inline'] as bool? ?? false,
+      size: size,
+    );
+  }
+
+  @override
+  State<NotesListCardWidget> createState() => _NotesListCardWidgetState();
+}
+
+class _NotesListCardWidgetState extends State<NotesListCardWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - _animation.value)),
+            child: Container(
+              width: widget.inline ? double.maxFinite : null,
+              constraints: widget.size.getHeightConstraints(),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(context, isDark),
+                  _buildDivider(isDark),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(widget.notes.length, (index) {
+                          return _buildNoteItem(
+                            context,
+                            widget.notes[index],
+                            index,
+                            hasDivider: true,
+                            isDark: isDark,
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    return Container(
+      padding: widget.size.getPadding().copyWith(
+        top: widget.size.getPadding().top * 0.625,
+        bottom: widget.size.getPadding().bottom * 0.625,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFC107),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.folder_open,
+            color: Colors.white,
+            size: widget.size.getIconSize(),
+          ),
+          SizedBox(width: widget.size.getItemSpacing()),
+          Text(
+            'Notes',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: widget.size.getTitleFontSize() * 0.8,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider(bool isDark) {
+    return Container(
+      height: widget.size.getSmallSpacing(),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+            width: widget.size.getSmallSpacing(),
+          ),
+        ),
+      ),
+      child: CustomPaint(
+        painter: _DashedLinePainter(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+          strokeWidth: widget.size.getSmallSpacing(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteItem(
+    BuildContext context,
+    NoteItem note,
+    int index, {
+    required bool hasDivider,
+    required bool isDark,
+  }) {
+    // 计算每个元素的延迟动画
+    final itemAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(
+        index * 0.1,
+        0.5 + index * 0.1,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: itemAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: itemAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 10 * (1 - itemAnimation.value)),
+            child: Container(
+              padding: widget.size.getPadding().copyWith(
+                top: widget.size.getPadding().top * 0.5,
+                bottom: widget.size.getPadding().bottom * 0.5,
+              ),
+              decoration: BoxDecoration(
+                border:
+                    hasDivider
+                        ? Border(
+                          bottom: BorderSide(
+                            color:
+                                isDark
+                                    ? Colors.grey.shade800.withOpacity(0.5)
+                                    : Colors.grey.shade200,
+                            width: 1,
+                          ),
+                        )
+                        : null,
+              ),
+              child: InkWell(
+                onTap: () {
+                  // 点击处理
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            note.title,
+                            style: TextStyle(
+                              color:
+                                  isDark
+                                      ? Colors.grey.shade100
+                                      : Colors.grey.shade900,
+                              fontSize: widget.size.getSubtitleFontSize(),
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: widget.size.getItemSpacing() / 2),
+                          Text(
+                            '${note.time} ${note.preview}',
+                            style: TextStyle(
+                              color:
+                                  isDark
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade500,
+                              fontSize: widget.size.getLegendFontSize(),
+                              height: 1.4,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (note.imageUrl != null) ...[
+                      SizedBox(width: widget.size.getItemSpacing()),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          note.imageUrl!,
+                          width: widget.size.getThumbnailImageSize(),
+                          height: widget.size.getThumbnailImageSize(),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: widget.size.getThumbnailImageSize(),
+                              height: widget.size.getThumbnailImageSize(),
+                              decoration: BoxDecoration(
+                                color:
+                                    isDark
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.image,
+                                size: widget.size.getIconSize() - 4,
+                                color:
+                                    isDark
+                                        ? Colors.grey.shade600
+                                        : Colors.grey.shade400,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 虚线绘制器
+class _DashedLinePainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  _DashedLinePainter({required this.color, this.strokeWidth = 2});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = strokeWidth
+          ..style = PaintingStyle.stroke;
+
+    final dashWidth = 5.0;
+    final dashSpace = 5.0;
+    double startX = 0;
+
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, size.height / 2),
+        Offset(startX + dashWidth, size.height / 2),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}

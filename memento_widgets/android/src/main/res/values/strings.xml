@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Memento</string>
+
+    <!-- 快速小组件 -->
+    <string name="widget_chat_quick_description">快速发送消息到频道</string>
+    <string name="widget_agent_voice_description">快速发送语音到 AI 助手</string>
+
+    <!-- 插件小组件 -->
+
+    <!-- 待办事项小组件 -->
+    <string name="widget_todo_1x1_label">待办事项</string>
+    <string name="widget_todo_2x2_label">待办事项 (2x2)</string>
+    <string name="widget_todo_description">查看待办任务统计</string>
+
+    <!-- 待办四象限小组件 -->
+    <string name="widget_todo_quadrant_label">任务四象限</string>
+    <string name="widget_todo_quadrant_description">查看任务四象限视图，支持快速完成</string>
+
+    <!-- 计时器小组件 -->
+    <string name="widget_timer_1x1_label">计时器</string>
+    <string name="widget_timer_2x2_label">计时器 (2x2)</string>
+    <string name="widget_timer_description">查看计时任务</string>
+
+    <!-- 账单小组件 -->
+    <string name="widget_bill_1x1_label">账单</string>
+    <string name="widget_bill_2x2_label">账单 (2x2)</string>
+    <string name="widget_bill_description">查看收支统计</string>
+
+    <!-- 日历小组件 -->
+    <string name="widget_calendar_1x1_label">日历</string>
+    <string name="widget_calendar_2x2_label">日历 (2x2)</string>
+    <string name="widget_calendar_description">查看日历事件</string>
+
+    <!-- 活动记录小组件 -->
+    <string name="widget_activity_1x1_label">活动记录</string>
+    <string name="widget_activity_2x2_label">活动记录 (2x2)</string>
+    <string name="widget_activity_description">查看活动统计</string>
+
+    <!-- 目标追踪小组件 -->
+    <string name="widget_tracker_1x1_label">目标追踪</string>
+    <string name="widget_tracker_2x2_label">目标追踪 (2x2)</string>
+    <string name="widget_tracker_description">查看目标进度</string>
+
+    <!-- 习惯小组件 -->
+    <string name="widget_habits_1x1_label">习惯</string>
+    <string name="widget_habits_2x2_label">习惯 (2x2)</string>
+    <string name="widget_habits_description">查看习惯统计</string>
+
+    <!-- 日记小组件 -->
+    <string name="widget_diary_1x1_label">日记</string>
+    <string name="widget_diary_2x2_label">日记 (2x2)</string>
+    <string name="widget_diary_description">查看日记统计</string>
+
+    <!-- 签到小组件 -->
+    <string name="widget_checkin_1x1_label">签到</string>
+    <string name="widget_checkin_2x2_label">签到 (2x2)</string>
+    <string name="widget_checkin_description">查看签到统计</string>
+
+    <!-- 节点小组件 -->
+    <string name="widget_nodes_1x1_label">节点</string>
+    <string name="widget_nodes_2x2_label">节点 (2x2)</string>
+    <string name="widget_nodes_description">查看节点信息</string>
+
+    <!-- 数据库小组件 -->
+    <string name="widget_database_1x1_label">数据库</string>
+    <string name="widget_database_2x2_label">数据库 (2x2)</string>
+    <string name="widget_database_description">查看数据库统计</string>
+
+    <!-- 联系人小组件 -->
+    <string name="widget_contact_1x1_label">联系人</string>
+    <string name="widget_contact_2x2_label">联系人 (2x2)</string>
+    <string name="widget_contact_description">查看联系人信息</string>
+
+    <!-- 纪念日小组件 -->
+    <string name="widget_day_1x1_label">纪念日</string>
+    <string name="widget_day_2x2_label">纪念日 (2x2)</string>
+    <string name="widget_day_description">查看纪念日倒计时</string>
+
+    <!-- 物品小组件 -->
+    <string name="widget_goods_1x1_label">物品</string>
+    <string name="widget_goods_2x2_label">物品 (2x2)</string>
+    <string name="widget_goods_description">查看物品统计</string>
+
+    <!-- 笔记小组件 -->
+    <string name="widget_notes_1x1_label">笔记</string>
+    <string name="widget_notes_2x2_label">笔记 (2x2)</string>
+    <string name="widget_notes_description">查看笔记统计</string>
+
+    <!-- 商店小组件 -->
+    <string name="widget_store_1x1_label">商店</string>
+    <string name="widget_store_2x2_label">商店 (2x2)</string>
+    <string name="widget_store_description">查看商店信息</string>
+
+    <!-- OpenAI小组件 -->
+    <string name="widget_openai_1x1_label">AI助手</string>
+    <string name="widget_openai_2x2_label">AI助手 (2x2)</string>
+    <string name="widget_openai_description">查看AI助手统计</string>
+
+    <!-- AI对话小组件 -->
+    <string name="widget_agent_chat_1x1_label">AI对话</string>
+    <string name="widget_agent_chat_2x2_label">AI对话 (2x2)</string>
+    <string name="widget_agent_chat_description">查看AI对话统计</string>
+
+    <!-- 日记相册小组件 -->
+    <string name="widget_calendar_album_1x1_label">日记相册</string>
+    <string name="widget_calendar_album_2x2_label">日记相册 (2x2)</string>
+    <string name="widget_calendar_album_description">查看日记相册</string>
+
+    <!-- 聊天小组件 -->
+    <string name="widget_chat_1x1_label">聊天</string>
+    <string name="widget_chat_2x2_label">聊天 (2x2)</string>
+    <string name="widget_chat_description">查看聊天统计</string>
+
+    <!-- 签到项小组件 -->
+    <string name="widget_checkin_item_label">签到项</string>
+    <string name="widget_checkin_item_description">快速签到</string>
+
+    <!-- 打卡月份视图小组件 -->
+    <string name="widget_checkin_month_label">打卡月历</string>
+    <string name="widget_checkin_month_description">查看本月打卡日历</string>
+
+    <!-- 待办列表小组件 (自定义) -->
+    <string name="widget_todo_list_label">待办列表</string>
+    <string name="widget_todo_list_description">显示待办任务列表</string>
+
+    <!-- 打卡周视图小组件 -->
+    <string name="widget_checkin_weekly_label">打卡周视图</string>
+    <string name="widget_checkin_weekly_description">显示本周打卡项目和次数</string>
+
+    <!-- 日历月视图小组件 (自定义) -->
+    <string name="widget_calendar_month_label">日历月视图</string>
+    <string name="widget_calendar_month_description">显示本月日历事件</string>
+
+    <!-- 目标追踪进度增减小组件 (自定义) -->
+    <string name="widget_tracker_goal_label">目标进度</string>
+    <string name="widget_tracker_goal_description">快速增减目标进度</string>
+
+    <!-- 目标追踪进度增减小组件（进度条样式） -->
+    <string name="widget_tracker_goal_progress_label">目标进度（进度条）</string>
+    <string name="widget_tracker_goal_progress_description">显示目标进度条，快速增加进度</string>
+
+    <!-- 习惯计时器小组件 (自定义) -->
+    <string name="widget_habit_timer_label">习惯计时器</string>
+    <string name="widget_habit_timer_description">实时显示习惯计时状态，支持播放/暂停</string>
+
+    <!-- 快捷记账小组件 (自定义) -->
+    <string name="widget_bill_shortcuts_label">快捷记账</string>
+    <string name="widget_bill_shortcuts_description">快速记录常用账单</string>
+
+    <!-- 日历今日列表小组件 -->
+    <string name="widget_calendar_today_list_label">本周打卡列表</string>
+    <string name="widget_calendar_today_list_description">显示本周七天的打卡项目，点击打卡</string>
+
+    <!-- 活动周视图小组件 -->
+    <string name="activity_weekly_widget_description">活动周视图 - 显示本周活动热力图和标签列表</string>
+
+    <!-- 习惯周视图小组件 -->
+    <string name="habits_weekly_widget_description">习惯周视图 - 显示选中习惯的每日完成时长</string>
+
+    <!-- 本日活动详细视图小组件 -->
+    <string name="activity_daily_widget_description">本日活动详情 - 显示24小时时间轴和活动统计</string>
+
+    <!-- 每周相册小组件 -->
+    <string name="widget_calendar_album_weekly_label">每周相册</string>
+    <string name="widget_calendar_album_weekly_description">显示每周照片日记</string>
+</resources>

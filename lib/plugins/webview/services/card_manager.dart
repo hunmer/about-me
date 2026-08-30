@@ -1,0 +1,240 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as path;
+import 'package:Memento/core/storage/storage_manager.dart';
+import '../models/webview_card.dart';
+
+/// 卡片/书签管理服务
+class CardManager extends ChangeNotifier {
+  final StorageManager _storage;
+  static const String _storageKey = 'webview/cards.json';
+
+  List<WebViewCard> _cards = [];
+
+  CardManager(this._storage);
+
+  // Getters
+  List<WebViewCard> get cards => List.unmodifiable(_cards);
+  List<WebViewCard> get pinnedCards => _cards.where((c) => c.isPinned).toList();
+  List<WebViewCard> get urlCards => _cards.where((c) => c.type == CardType.url).toList();
+  List<WebViewCard> get localFileCards => _cards.where((c) => c.type == CardType.localFile).toList();
+  int get count => _cards.length;
+
+  /// 初始化
+  Future<void> initialize() async {
+    await _loadCards();
+  }
+
+  /// 加载卡片数据
+  Future<void> _loadCards() async {
+    try {
+      final data = await _storage.read(_storageKey);
+      if (data != null && data is List) {
+        _cards = data.map((item) => WebViewCard.fromJson(item as Map<String, dynamic>)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('加载卡片数据失败: $e');
+    }
+  }
+
+  /// 保存卡片数据
+  Future<void> _saveCards() async {
+    try {
+      await _storage.write(_storageKey, _cards.map((c) => c.toJson()).toList());
+    } catch (e) {
+      debugPrint('保存卡片数据失败: $e');
+    }
+  }
+
+  /// 添加卡片
+  Future<WebViewCard> addCard({
+    required String title,
+    required String url,
+    required CardType type,
+    String? description,
+    String? iconUrl,
+    int? iconCodePoint,
+    List<String>? tags,
+    String? sourcePath,
+  }) async {
+    final card = WebViewCard(
+      id: const Uuid().v4(),
+      title: title,
+      url: url,
+      type: type,
+      description: description,
+      iconUrl: iconUrl,
+      iconCodePoint: iconCodePoint,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      tags: tags ?? [],
+      sourcePath: sourcePath,
+    );
+
+    _cards.add(card);
+    await _saveCards();
+    notifyListeners();
+    return card;
+  }
+
+  /// 更新卡片
+  Future<void> updateCard(WebViewCard card) async {
+    final index = _cards.indexWhere((c) => c.id == card.id);
+    if (index == -1) return;
+
+    _cards[index] = card.copyWith(updatedAt: DateTime.now());
+    await _saveCards();
+    notifyListeners();
+  }
+
+  /// 删除卡片
+  Future<void> deleteCard(String cardId) async {
+    // 查找要删除的卡片
+    final card = getCardById(cardId);
+    if (card == null) return;
+
+    // 如果是本地文件类型，删除对应的目录
+    if (card.type == CardType.localFile) {
+      try {
+        final cardPath = await getCardPath(card);
+        if (cardPath.isNotEmpty) {
+          final dir = Directory(cardPath);
+          if (await dir.exists()) {
+            await dir.delete(recursive: true);
+            debugPrint('已删除卡片目录: $cardPath');
+          }
+        }
+      } catch (e) {
+        debugPrint('删除卡片目录失败: $e');
+        // 继续删除卡片数据，即使目录删除失败
+      }
+    }
+
+    // 从列表中删除卡片
+    _cards.removeWhere((c) => c.id == cardId);
+    await _saveCards();
+    notifyListeners();
+  }
+
+  /// 根据 ID 获取卡片
+  WebViewCard? getCardById(String id) {
+    try {
+      return _cards.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 根据 URL 获取卡片
+  WebViewCard? getCardByUrl(String url) {
+    try {
+      return _cards.firstWhere((c) => c.url == url);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 切换固定状态
+  Future<void> togglePinned(String cardId) async {
+    final index = _cards.indexWhere((c) => c.id == cardId);
+    if (index == -1) return;
+
+    _cards[index] = _cards[index].copyWith(
+      isPinned: !_cards[index].isPinned,
+      updatedAt: DateTime.now(),
+    );
+    await _saveCards();
+    notifyListeners();
+  }
+
+  /// 增加打开次数
+  Future<void> incrementOpenCount(String cardId) async {
+    final index = _cards.indexWhere((c) => c.id == cardId);
+    if (index == -1) return;
+
+    _cards[index] = _cards[index].copyWith(
+      openCount: _cards[index].openCount + 1,
+      updatedAt: DateTime.now(),
+    );
+    await _saveCards();
+    notifyListeners();
+  }
+
+  /// 搜索卡片
+  List<WebViewCard> searchCards(String query) {
+    if (query.isEmpty) return _cards;
+    final lowerQuery = query.toLowerCase();
+    return _cards.where((card) {
+      return card.title.toLowerCase().contains(lowerQuery) ||
+          card.url.toLowerCase().contains(lowerQuery) ||
+          (card.description?.toLowerCase().contains(lowerQuery) ?? false) ||
+          card.tags.any((tag) => tag.toLowerCase().contains(lowerQuery));
+    }).toList();
+  }
+
+  /// 按标签筛选
+  List<WebViewCard> filterByTag(String tag) {
+    return _cards.where((card) => card.tags.contains(tag)).toList();
+  }
+
+  /// 获取所有标签
+  List<String> getAllTags() {
+    final tags = <String>{};
+    for (var card in _cards) {
+      tags.addAll(card.tags);
+    }
+    return tags.toList()..sort();
+  }
+
+  /// 按打开次数排序
+  List<WebViewCard> getFrequentlyUsed({int limit = 10}) {
+    final sorted = List<WebViewCard>.from(_cards);
+    sorted.sort((a, b) => b.openCount.compareTo(a.openCount));
+    return sorted.take(limit).toList();
+  }
+
+  /// 按更新时间排序
+  List<WebViewCard> getRecentlyUpdated({int limit = 10}) {
+    final sorted = List<WebViewCard>.from(_cards);
+    sorted.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return sorted.take(limit).toList();
+  }
+
+  /// 重新排序卡片
+  Future<void> reorderCards(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final card = _cards.removeAt(oldIndex);
+    _cards.insert(newIndex, card);
+    await _saveCards();
+    notifyListeners();
+  }
+
+  /// 获取所有卡片（别名，与 cards 属性相同）
+  List<WebViewCard> getAllCards() {
+    return cards;
+  }
+
+  /// 获取卡片的本地文件路径
+  Future<String> getCardPath(WebViewCard card) async {
+    // 如果是本地文件类型，构建本地 HTTP 服务器路径
+    if (card.type == CardType.localFile) {
+      // 从 URL 中提取路径部分，例如：./password_manager/index.html
+      final uri = Uri.parse(card.url);
+      final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (pathSegments.isNotEmpty) {
+        final projectName = pathSegments.first;
+        // 获取 HTTP 服务器根目录（与 copyToHttpServer 保持一致）
+        final appDataDir = await _storage.getApplicationDataDirectory();
+        final pluginPath = _storage.getPluginStoragePath('webview');
+        final httpRoot = path.join(appDataDir.path, pluginPath, 'http_server');
+        // 构建完整路径：Documents/app_data/webview/http_server/projectName
+        return path.join(httpRoot, projectName);
+      }
+    }
+    return '';
+  }
+}

@@ -1,0 +1,840 @@
+import 'package:flutter/material.dart';
+import 'widget_grid_metrics.dart';
+
+/// 小组件尺寸类别枚举
+///
+/// 基于 min(width, height) 判断组件的基础尺寸级别：
+/// - mini: 1x1 等（最小边为 1）
+/// - small: 1x2, 2x1, 2x2, 2x3, 3x2 等（最小边为 1 但为长条型，或最小边为 2）
+/// - medium: 1x3, 3x1, 2x3, 3x2, 3x3, 3x4, 4x3 等（最小边为 2 但为长条型，或最小边为 3）
+/// - large: 1x4, 4x1, 2x4, 4x2, 3x4, 4x3, 4x4, 4x5, 5x4 等（最小边为 3 但为长条型，或最小边为 4）
+/// - xlarge: 更大
+enum SizeCategory {
+  /// 最小尺寸 - 最小边为 1（如 1x1, 1x2, 2x1）
+  mini,
+
+  /// 小尺寸 - 最小边为 2（如 2x2, 2x3, 3x2, 4x1）
+  small,
+
+  /// 中等尺寸 - 最小边为 3（如 3x3, 3x4, 4x3）
+  medium,
+
+  /// 大尺寸 - 最小边为 4（如 4x4, 4x5, 5x4）
+  large,
+
+  /// 超大尺寸 - 最小边 ≥5
+  xlarge,
+}
+
+/// 主页小组件尺寸配置基类
+abstract class HomeWidgetSize {
+  /// 宽度（占用的网格列数）
+  final int width;
+
+  /// 高度（占用的网格行数）
+  final int height;
+
+  /// 整体缩放偏移（百分比，默认为 1.0）
+  final double scale;
+
+  /// 内边距偏移（百分比）
+  final double padding;
+
+  /// 间距偏移（百分比）
+  final double spacing;
+
+  /// 字体大小偏移（百分比）
+  final double fontSize;
+
+  /// 图标大小偏移（百分比）
+  final double iconSize;
+
+  /// 线条粗细偏移（百分比）
+  final double strokeWidth;
+
+  /// 图标容器大小倍数（相对于图标大小）
+  final double iconContainerScale;
+
+  /// 圆形进度条粗细倍数（相对于基础 strokeWidth）
+  final double progressStrokeScale;
+
+  const HomeWidgetSize({
+    required this.width,
+    required this.height,
+    this.scale = 1.0,
+    this.padding = 1.0,
+    this.spacing = 1.0,
+    this.fontSize = 1.0,
+    this.iconSize = 1.0,
+    this.strokeWidth = 1.0,
+    this.iconContainerScale = 1.5,
+    this.progressStrokeScale = 0.4,
+  });
+
+  /// 相等性比较：基于 width 和 height
+  bool isEqualToSize(HomeWidgetSize other) {
+    return width == other.width && height == other.height;
+  }
+
+  /// 向后兼容的静态 getter，支持 const SmallSize() 等访问方式
+  static HomeWidgetSize get small => const SmallSize();
+  static HomeWidgetSize get medium => const MediumSize();
+  static HomeWidgetSize get large => const LargeSize();
+  static HomeWidgetSize get large3 => const Large3Size();
+  static HomeWidgetSize get wide => const WideSize();
+  static HomeWidgetSize get wide2 => const Wide2Size();
+  static HomeWidgetSize get wide3 => const Wide3Size();
+  static HomeWidgetSize get custom => const CustomSize(width: -1, height: -1);
+
+  /// 从宽高转换为尺寸实例
+  static HomeWidgetSize fromSize(int width, int height) {
+    return _allSizes.firstWhere(
+      (size) => size.width == width && size.height == height,
+      orElse: () => const LargeSize(),
+    );
+  }
+
+  /// 从 SizeCategory 创建对应的尺寸实例
+  ///
+  /// 用于根据像素尺寸动态创建有效的 HomeWidgetSize
+  /// - mini/small -> SmallSize (1x1, category=small)
+  /// - medium -> MediumSize (2x1, category=medium)
+  /// - large -> Wide2Size (4x2, category=large) 修改：返回 Wide2Size 使 category=large
+  /// - xlarge -> Wide2Size (4x2, category=xlarge)
+  static HomeWidgetSize fromCategory(SizeCategory category) {
+    switch (category) {
+      case SizeCategory.mini:
+      case SizeCategory.small:
+        return const SmallSize();
+      case SizeCategory.medium:
+        return const MediumSize();
+      case SizeCategory.large:
+        // 返回 Wide2Size 使 category=large，而不是 LargeSize(category=small)
+        return const Wide2Size();
+      case SizeCategory.xlarge:
+        return const Wide2Size();
+    }
+  }
+
+  /// 获取所有预设尺寸（不包括 CustomSize）
+  static List<HomeWidgetSize> get allSizes => _allSizes;
+
+  /// 获取所有支持的尺寸（包括 CustomSize）
+  static List<HomeWidgetSize> get allSupportedSizes => [..._allSizes, const CustomSize(width: -1, height: -1)];
+
+  /// 转换为 JSON
+  Map<String, dynamic> toJson() {
+    return {'width': width, 'height': height};
+  }
+
+  /// 从 JSON 加载
+  static HomeWidgetSize fromJson(Map<String, dynamic> json) {
+    final width = json['width'] as int;
+    final height = json['height'] as int;
+
+    for (final size in _allSizes) {
+      if (size.width == width && size.height == height) {
+        return size;
+      }
+    }
+    // 如果没有匹配的预设尺寸，返回 CustomSize
+    return CustomSize(width: width, height: height);
+  }
+
+  /// 判断当前尺寸是否至少与指定尺寸一样大
+  bool isAtLeast(HomeWidgetSize other) {
+    return width >= other.width && height >= other.height;
+  }
+
+  /// 判断当前尺寸是否大于指定尺寸
+  bool isLargerThan(HomeWidgetSize other) {
+    return width > other.width || height > other.height;
+  }
+
+  /// 判断当前尺寸是否等于指定尺寸
+  bool isEqualTo(HomeWidgetSize other) {
+    return width == other.width && height == other.height;
+  }
+
+  // ===== 语义化辅助方法 =====
+
+  /// 是否为宽型组件（宽度 > 高度）
+  ///
+  /// 用于判断是否使用水平布局
+  bool get isWide => width > height;
+
+  /// 是否为高型组件（高度 > 宽度）
+  ///
+  /// 用于判断是否使用垂直布局
+  bool get isTall => height > width;
+
+  /// 是否为正方形组件（宽度 == 高度）
+  ///
+  /// 如 1x1, 2x2, 3x3 等
+  bool get isSquare => width == height;
+
+  /// 获取尺寸类别
+  ///
+  /// 基于 min(width, height) 判断基础尺寸级别：
+  /// - mini: 最小边为 1（1x1 等）
+  /// - small: 最小边为 2（2x2, 2x3, 3x2, 4x2 等）
+  /// - medium: 最小边为 3（3x3, 3x4, 4x3 等）
+  /// - large: 最小边为 4（4x4, 4x5, 5x4 等）
+  /// - xlarge: 最小边 ≥5
+  ///
+  /// 注意：长条型组件（如 1x2, 2x1, 4x1）会向上提升一级 category，以适配更大的可用空间
+  SizeCategory get category {
+    // 特殊处理 4x1：虽然是 1x 最小边，但作为全宽组件应该使用 small
+    if (width == 4 && height == 1) return SizeCategory.small;
+
+    final minSide = width < height ? width : height;
+    final maxSide = width > height ? width : height;
+
+    // 对于长条型组件（长边是短边的 2 倍或更多），向上提升一级 category
+    // 这样可以让内容更充分地利用可用空间
+    bool isLongStrip = maxSide >= minSide * 2;
+
+    SizeCategory baseCategory;
+    switch (minSide) {
+      case 1:
+        baseCategory = SizeCategory.mini;
+        break;
+      case 2:
+        baseCategory = SizeCategory.small;
+        break;
+      case 3:
+        baseCategory = SizeCategory.medium;
+        break;
+      case 4:
+        baseCategory = SizeCategory.large;
+        break;
+      default:
+        baseCategory = SizeCategory.xlarge;
+    }
+
+    // 长条型组件向上提升一级（但不超过 large）
+    if (isLongStrip) {
+      return switch (baseCategory) {
+        SizeCategory.mini => SizeCategory.small,
+        SizeCategory.small => SizeCategory.medium,
+        SizeCategory.medium => SizeCategory.large,
+        SizeCategory.large => SizeCategory.large,  // 不超过 large
+        SizeCategory.xlarge => SizeCategory.xlarge,
+      };
+    }
+
+    return baseCategory;
+  }
+
+  /// 计算相对于网格总列数的宽度比例（0.0 - 1.0）
+  ///
+  /// 用于判断组件在当前网格配置下占据多少水平空间
+  /// 例如：在 4 列网格中，width=2 的组件占比 0.5
+  double getWidthRatio(int gridCrossAxisCount) {
+    return (width / gridCrossAxisCount).clamp(0.0, 1.0);
+  }
+
+  /// 计算相对于网格总行数的高度比例（0.0 - 1.0）
+  ///
+  /// [gridMainAxisCount] 网格的主轴（垂直）方向的总行数
+  double getHeightRatio(int gridMainAxisCount) {
+    if (gridMainAxisCount <= 0) return 1.0;
+    return (height / gridMainAxisCount).clamp(0.0, 1.0);
+  }
+
+  /// 判断是否占满整行
+  ///
+  /// 当组件宽度 >= 网格列数时返回 true
+  bool isFullWidth(int gridCrossAxisCount) {
+    return width >= gridCrossAxisCount;
+  }
+
+  /// 判断是否为"图标型"小组件
+  ///
+  /// 通常用于 1x1 的小型组件，只显示图标或简单信息
+  bool get isIconSized => width == 1 && height == 1;
+
+  /// 判断是否为"卡片型"小组件
+  ///
+  /// 通常用于 2x1 或更大的组件，可以显示更多内容
+  bool get isCardSized => width >= 2 || height >= 2;
+
+  /// 获取宽高比
+  ///
+  /// 用于判断内容应该水平排列还是垂直排列
+  double get aspectRatio => height == 0 ? 1.0 : width / height;
+
+  // ===== 基于 category 的尺寸方法 =====
+
+  /// 获取内边距
+  ///
+  /// 基于 [category] 自动调整
+  EdgeInsets getPadding() {
+    final basePadding = switch (category) {
+      SizeCategory.mini => 8.0,
+      SizeCategory.small => 12.0,
+      SizeCategory.medium => 14.0,
+      SizeCategory.large => 16.0,
+      SizeCategory.xlarge => 18.0,
+    };
+    return EdgeInsets.all(basePadding * padding);
+  }
+
+  /// 获取标题和列表之间的间距
+  double getTitleSpacing() {
+    final baseSpacing = switch (category) {
+      SizeCategory.mini => 12.0,
+      SizeCategory.small => 16.0,
+      SizeCategory.medium => 20.0,
+      SizeCategory.large => 24.0,
+      SizeCategory.xlarge => 28.0,
+    };
+    return baseSpacing * spacing;
+  }
+
+  /// 获取高度约束
+  BoxConstraints getHeightConstraints() {
+    final (minHeight, maxHeight) = switch (category) {
+      SizeCategory.mini => (80.0, 150.0),
+      SizeCategory.small => (150.0, 280.0),
+      SizeCategory.medium => (220.0, 380.0),
+      SizeCategory.large => (300.0, 500.0),
+      SizeCategory.xlarge => (400.0, 650.0),
+    };
+    return BoxConstraints(
+      minHeight: minHeight * scale,
+      maxHeight: maxHeight * scale,
+    );
+  }
+
+  /// 获取列表项之间的间距
+  double getItemSpacing() {
+    final baseSpacing = switch (category) {
+      SizeCategory.mini => 4.0,
+      SizeCategory.small => 6.0,
+      SizeCategory.medium => 8.0,
+      SizeCategory.large => 10.0,
+      SizeCategory.xlarge => 12.0,
+    };
+    return baseSpacing * spacing;
+  }
+
+  /// 获取图标大小
+  double getIconSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 16.0,
+      SizeCategory.small => 20.0,
+      SizeCategory.medium => 24.0,
+      SizeCategory.large => 28.0,
+      SizeCategory.xlarge => 32.0,
+    };
+    return baseSize * iconSize;
+  }
+
+  /// 获取大字体大小
+  double getLargeFontSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 24.0,
+      SizeCategory.small => 32.0,
+      SizeCategory.medium => 40.0,
+      SizeCategory.large => 48.0,
+      SizeCategory.xlarge => 56.0,
+    };
+    return baseSize * fontSize;
+  }
+
+  /// 获取标题字体大小
+  double getTitleFontSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 14.0,
+      SizeCategory.small => 16.0,
+      SizeCategory.medium => 20.0,
+      SizeCategory.large => 24.0,
+      SizeCategory.xlarge => 28.0,
+    };
+    return baseSize * fontSize;
+  }
+
+  /// 获取副标题字体大小
+  double getSubtitleFontSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 10.0,
+      SizeCategory.small => 12.0,
+      SizeCategory.medium => 14.0,
+      SizeCategory.large => 16.0,
+      SizeCategory.xlarge => 18.0,
+    };
+    return baseSize * fontSize;
+  }
+
+  /// 获取小间距（用于紧密元素之间）
+  double getSmallSpacing() {
+    final baseSpacing = switch (category) {
+      SizeCategory.mini => 2.0,
+      SizeCategory.small => 3.0,
+      SizeCategory.medium => 4.0,
+      SizeCategory.large => 5.0,
+      SizeCategory.xlarge => 6.0,
+    };
+    return baseSpacing * spacing;
+  }
+
+  /// 获取图例指示器宽度
+  double getLegendIndicatorWidth() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 12.0,
+      SizeCategory.small => 16.0,
+      SizeCategory.medium => 20.0,
+      SizeCategory.large => 24.0,
+      SizeCategory.xlarge => 28.0,
+    };
+    return baseSize * scale;
+  }
+
+  /// 获取图例指示器高度
+  double getLegendIndicatorHeight() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 6.0,
+      SizeCategory.small => 8.0,
+      SizeCategory.medium => 10.0,
+      SizeCategory.large => 12.0,
+      SizeCategory.xlarge => 14.0,
+    };
+    return baseSize * scale;
+  }
+
+  /// 获取图例字体大小
+  double getLegendFontSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 8.0,
+      SizeCategory.small => 10.0,
+      SizeCategory.medium => 12.0,
+      SizeCategory.large => 14.0,
+      SizeCategory.xlarge => 16.0,
+    };
+    return baseSize * fontSize;
+  }
+
+  /// 获取柱状图柱子宽度
+  double getBarWidth() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 8.0,
+      SizeCategory.small => 12.0,
+      SizeCategory.medium => 16.0,
+      SizeCategory.large => 20.0,
+      SizeCategory.xlarge => 24.0,
+    };
+    return baseSize * scale;
+  }
+
+  /// 获取柱子之间的间距
+  double getBarSpacing() {
+    final baseSpacing = switch (category) {
+      SizeCategory.mini => 0.3,
+      SizeCategory.small => 0.5,
+      SizeCategory.medium => 1.0,
+      SizeCategory.large => 1.5,
+      SizeCategory.xlarge => 2.0,
+    };
+    return baseSpacing * spacing;
+  }
+
+  /// 获取进度条线条粗细
+  double getStrokeWidth() {
+    final baseWidth = switch (category) {
+      SizeCategory.mini => 4.0,
+      SizeCategory.small => 6.0,
+      SizeCategory.medium => 8.0,
+      SizeCategory.large => 10.0,
+      SizeCategory.xlarge => 12.0,
+    };
+    return baseWidth * strokeWidth;
+  }
+
+  /// 获取条形图列表容器高度
+  double getRankedBarListHeight() {
+    final baseHeight = switch (category) {
+      SizeCategory.mini => 80.0,
+      SizeCategory.small => 150.0,
+      SizeCategory.medium => 220.0,
+      SizeCategory.large => 300.0,
+      SizeCategory.xlarge => 400.0,
+    };
+    return baseHeight * scale;
+  }
+
+  /// 获取单个条形图条目高度
+  double getRankedBarItemHeight() {
+    final baseHeight = switch (category) {
+      SizeCategory.mini => 24.0,
+      SizeCategory.small => 32.0,
+      SizeCategory.medium => 40.0,
+      SizeCategory.large => 48.0,
+      SizeCategory.xlarge => 56.0,
+    };
+    return baseHeight * scale;
+  }
+
+  /// 获取条形图最大宽度（基础值，会根据 value 动态调整）
+  double getRankedBarMaxWidth() {
+    final baseWidth = switch (category) {
+      SizeCategory.mini => 120.0,
+      SizeCategory.small => 200.0,
+      SizeCategory.medium => 280.0,
+      SizeCategory.large => 360.0,
+      SizeCategory.xlarge => 440.0,
+    };
+    return baseWidth * scale;
+  }
+
+  /// 获取热力图高度
+  double getHeatmapHeight() {
+    final baseHeight = switch (category) {
+      SizeCategory.mini => 40.0,
+      SizeCategory.small => 60.0,
+      SizeCategory.medium => 100.0,
+      SizeCategory.large => 140.0,
+      SizeCategory.xlarge => 180.0,
+    };
+    return baseHeight * scale;
+  }
+
+  /// 获取图表宽度（基于实际布局需求）
+  double getWidthForChart() {
+    final baseWidth = switch (category) {
+      SizeCategory.mini => 100.0,
+      SizeCategory.small => 180.0,
+      SizeCategory.medium => 260.0,
+      SizeCategory.large => 340.0,
+      SizeCategory.xlarge => 420.0,
+    };
+    return baseWidth * scale;
+  }
+
+  /// 获取图表高度
+  double getHeightForChart() {
+    final baseHeight = switch (category) {
+      SizeCategory.mini => 60.0,
+      SizeCategory.small => 100.0,
+      SizeCategory.medium => 150.0,
+      SizeCategory.large => 200.0,
+      SizeCategory.xlarge => 250.0,
+    };
+    return baseHeight * scale;
+  }
+
+  /// 获取特色图片/缩略图尺寸（用于卡片封面）
+  double getFeaturedImageSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 40.0,
+      SizeCategory.small => 60.0,
+      SizeCategory.medium => 80.0,
+      SizeCategory.large => 100.0,
+      SizeCategory.xlarge => 120.0,
+    };
+    return baseSize * scale;
+  }
+
+  /// 获取列表项缩略图尺寸
+  double getThumbnailImageSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 24.0,
+      SizeCategory.small => 36.0,
+      SizeCategory.medium => 48.0,
+      SizeCategory.large => 56.0,
+      SizeCategory.xlarge => 64.0,
+    };
+    return baseSize * scale;
+  }
+
+  /// 获取特色图片图标尺寸
+  double getFeaturedIconSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 20.0,
+      SizeCategory.small => 28.0,
+      SizeCategory.medium => 40.0,
+      SizeCategory.large => 48.0,
+      SizeCategory.xlarge => 56.0,
+    };
+    return baseSize * iconSize;
+  }
+
+  /// 获取列表项图标尺寸
+  double getThumbnailIconSize() {
+    final baseSize = switch (category) {
+      SizeCategory.mini => 14.0,
+      SizeCategory.small => 18.0,
+      SizeCategory.medium => 24.0,
+      SizeCategory.large => 28.0,
+      SizeCategory.xlarge => 32.0,
+    };
+    return baseSize * iconSize;
+  }
+
+  /// 获取文章列表区域高度
+  double getArticleListHeight() {
+    final baseHeight = switch (category) {
+      SizeCategory.mini => 120.0,
+      SizeCategory.small => 200.0,
+      SizeCategory.medium => 280.0,
+      SizeCategory.large => 360.0,
+      SizeCategory.xlarge => 450.0,
+    };
+    return baseHeight * scale;
+  }
+
+  // ===== 像素尺寸计算方法（响应式）=====
+
+  /// 根据网格信息计算实际像素宽度
+  ///
+  /// [metrics] 网格尺寸信息（从 WidgetGridScope 获取）
+  ///
+  /// 如果 metrics 为 null，返回估算值
+  double getPixelWidth(WidgetGridMetrics? metrics) {
+    if (metrics == null) {
+      return _getEstimatedPixelWidth();
+    }
+    return metrics.getPixelWidth(width);
+  }
+
+  /// 根据网格信息计算实际像素高度
+  ///
+  /// [metrics] 网格尺寸信息（从 WidgetGridScope 获取）
+  ///
+  /// 如果 metrics 为 null，返回估算值
+  double getPixelHeight(WidgetGridMetrics? metrics) {
+    if (metrics == null) {
+      return _getEstimatedPixelHeight();
+    }
+    return metrics.getPixelHeight(height);
+  }
+
+  /// 获取像素尺寸（Size 对象）
+  ///
+  /// [metrics] 网格尺寸信息（从 WidgetGridScope 获取）
+  ///
+  /// 返回包含宽度和高度的 Size 对象
+  Size getPixelSize(WidgetGridMetrics? metrics) {
+    return Size(getPixelWidth(metrics), getPixelHeight(metrics));
+  }
+
+  /// 估算的像素宽度（无网格信息时的回退值）
+  ///
+  /// 基于常见的 4 列网格，每格约 85 像素
+  double _getEstimatedPixelWidth() {
+    // 基于常见的 4 列网格，每格约 80-100 像素
+    const estimatedCellWidth = 85.0;
+    const estimatedSpacing = 8.0;
+    final totalSpacing = (width - 1) * estimatedSpacing;
+    return width * estimatedCellWidth + totalSpacing;
+  }
+
+  /// 估算的像素高度（无网格信息时的回退值）
+  ///
+  /// 基于常见的 4 列网格，每格约 85 像素
+  double _getEstimatedPixelHeight() {
+    const estimatedCellHeight = 85.0;
+    const estimatedSpacing = 8.0;
+    final totalSpacing = (height - 1) * estimatedSpacing;
+    return height * estimatedCellHeight + totalSpacing;
+  }
+
+  /// 获取参考像素尺寸（基于 category）
+  ///
+  /// 这些值参考 revenue_trend_card_example.dart 中的固定尺寸：
+  /// - mini/small: 150x150
+  /// - medium: 220x200
+  /// - large/xlarge: 300x280
+  Size getReferencePixelSize() {
+    switch (category) {
+      case SizeCategory.mini:
+      case SizeCategory.small:
+        return const Size(150, 150);
+      case SizeCategory.medium:
+        return const Size(220, 200);
+      case SizeCategory.large:
+      case SizeCategory.xlarge:
+        return const Size(300, 280);
+    }
+  }
+
+  /// 根据像素尺寸计算有效的尺寸类别
+  ///
+  /// 这允许小组件根据实际渲染的像素尺寸来调整布局，
+  /// 而不是仅依赖网格占比。
+  ///
+  /// 参考阈值（基于 min(width, height)）：
+  /// - < 120: mini
+  /// - < 180: small
+  /// - < 260: medium
+  /// - < 360: large
+  /// - >= 360: xlarge
+  static SizeCategory getCategoryFromPixelSize(double pixelWidth, double pixelHeight) {
+    final minSide = pixelWidth < pixelHeight ? pixelWidth : pixelHeight;
+
+    if (minSide < 120) {
+      return SizeCategory.mini;
+    } else if (minSide < 180) {
+      return SizeCategory.small;
+    } else if (minSide < 260) {
+      return SizeCategory.medium;
+    } else if (minSide < 360) {
+      return SizeCategory.large;
+    } else {
+      return SizeCategory.xlarge;
+    }
+  }
+
+  /// 获取基于像素尺寸的有效尺寸类别
+  ///
+  /// [metrics] 网格尺寸信息（从 WidgetGridScope 获取）
+  ///
+  /// 返回基于实际像素尺寸计算的 SizeCategory，
+  /// 如果 metrics 为 null，返回基于网格占比的 category
+  SizeCategory getEffectiveCategory(WidgetGridMetrics? metrics) {
+    if (metrics == null) {
+      return category;
+    }
+    final pixelSize = getPixelSize(metrics);
+    return HomeWidgetSize.getCategoryFromPixelSize(
+      pixelSize.width,
+      pixelSize.height,
+    );
+  }
+}
+
+/// 1x1 小图标组件
+class SmallSize extends HomeWidgetSize {
+  const SmallSize({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 1, height: 1);
+}
+
+/// 2x1 横向卡片
+class MediumSize extends HomeWidgetSize {
+  const MediumSize({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 2, height: 1);
+}
+
+/// 2x2 大卡片
+class LargeSize extends HomeWidgetSize {
+  const LargeSize({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 2, height: 2);
+}
+
+/// 2x3 高卡片（宽度2，高度3）
+class Large3Size extends HomeWidgetSize {
+  const Large3Size({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 2, height: 3);
+}
+
+/// 4x1 宽屏卡片（占满所有宽度）
+class WideSize extends HomeWidgetSize {
+  const WideSize({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 4, height: 1);
+}
+
+/// 4x2 全宽卡片（占满所有宽度，高度2）
+class Wide2Size extends HomeWidgetSize {
+  const Wide2Size({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 4, height: 2);
+}
+
+/// 4x3 全宽卡片（占满所有宽度，高度3）
+class Wide3Size extends HomeWidgetSize {
+  const Wide3Size({
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  }) : super(width: 4, height: 3);
+}
+
+/// 自定义尺寸（支持任意宽高）
+class CustomSize extends HomeWidgetSize {
+  const CustomSize({
+    required super.width,
+    required super.height,
+    super.scale,
+    super.padding,
+    super.spacing,
+    super.fontSize,
+    super.iconSize,
+    super.strokeWidth,
+    super.iconContainerScale,
+    super.progressStrokeScale,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CustomSize &&
+        other.width == width &&
+        other.height == height;
+  }
+
+  @override
+  int get hashCode => Object.hash(width, height);
+}
+
+/// 所有尺寸的默认实例列表
+final List<HomeWidgetSize> _allSizes = const [
+  SmallSize(),
+  MediumSize(),
+  LargeSize(),
+  Large3Size(),
+  WideSize(),
+  Wide2Size(),
+  Wide3Size(),
+];

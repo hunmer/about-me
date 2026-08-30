@@ -1,0 +1,693 @@
+{
+  "projectName": "Memento",
+  "projectDescription": "跨平台个人助手应用，集成聊天、日记、活动追踪等25+功能插件",
+  "lastScanTimestamp": "2025-12-31T00:00:00+08:00",
+  "framework": "Flutter 3.7+",
+  "language": "Dart",
+  "platforms": ["Android", "iOS", "Web", "Windows", "macOS", "Linux"],
+  "architecture": "插件化架构 (Plugin-based)",
+  "coverage": {
+    "totalFiles": 1200,
+    "scannedFiles": 980,
+    "coveragePercentage": 81.7,
+    "status": "full_index_update"
+  },
+  "modules": [
+    {
+      "name": "core",
+      "path": "lib/core",
+      "type": "infrastructure",
+      "description": "核心基础设施：插件系统、存储、配置、事件、悬浮球、动作系统、JS Bridge",
+      "entryPoints": [
+        "lib/core/plugin_manager.dart",
+        "lib/core/storage/storage_manager.dart",
+        "lib/core/config_manager.dart",
+        "lib/core/app_initializer.dart"
+      ],
+      "keyFiles": [
+        "lib/core/plugin_base.dart",
+        "lib/core/builtin_plugins.dart",
+        "lib/core/event/event.dart",
+        "lib/core/action/action_manager.dart",
+        "lib/core/floating_ball/floating_ball_service.dart",
+        "lib/core/js_bridge/js_bridge_manager.dart"
+      ],
+      "documentation": "lib/core/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "activity",
+      "path": "lib/plugins/activity",
+      "type": "plugin",
+      "description": "活动记录插件：时间轴、标签、统计、数据同步、UseCase架构",
+      "entryPoints": ["lib/plugins/activity/activity_plugin.dart"],
+      "interfaces": ["ActivityService", "ActivityNotificationService"],
+      "models": ["ActivityRecord", "TagGroup"],
+      "documentation": "lib/plugins/activity/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasUseCaseArchitecture": true,
+        "hasJsApi": true,
+        "hasDataSelector": true,
+        "hasHomeWidgets": true
+      }
+    },
+    {
+      "name": "agent_chat",
+      "path": "lib/plugins/agent_chat",
+      "type": "plugin",
+      "description": "Agent聊天插件：工具调用、语音识别、智能对话、多会话管理",
+      "entryPoints": ["lib/plugins/agent_chat/agent_chat_plugin.dart"],
+      "models": ["Conversation", "ChatMessage", "ToolCallStep", "ToolConfig", "SavedToolTemplate", "ConversationGroup", "FileAttachment"],
+      "services": ["ToolService", "ConversationService", "MessageService", "SpeechRecognitionService", "TokenCounterService"],
+      "documentation": "lib/plugins/agent_chat/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasMermaidDiagram": true
+      }
+    },
+    {
+      "name": "bill",
+      "path": "lib/plugins/bill",
+      "type": "plugin",
+      "description": "账单插件：多账户、收支统计、订阅管理",
+      "entryPoints": ["lib/plugins/bill/bill_plugin.dart"],
+      "models": ["Bill", "Account", "BillStatistics", "Subscription"],
+      "documentation": "lib/plugins/bill/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "calendar",
+      "path": "lib/plugins/calendar",
+      "type": "plugin",
+      "description": "日历插件：8种视图模式、Todo任务集成、JS API、Android小组件、UseCase架构",
+      "entryPoints": ["lib/plugins/calendar/calendar_plugin.dart"],
+      "models": ["CalendarEvent"],
+      "controllers": ["CalendarController"],
+      "services": ["TodoEventService"],
+      "repositories": ["ClientCalendarRepository"],
+      "keyFeatures": [
+        "8种视图模式（日/周/工作周/月/时间轴/日程）",
+        "Todo任务深度集成",
+        "智能通知提醒系统",
+        "事件统计分析展示"
+      ],
+      "documentation": "lib/plugins/calendar/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasUseCaseArchitecture": true,
+        "hasJsApi": true,
+        "hasDataSelector": true,
+        "hasHomeWidgets": true,
+        "hasTodoIntegration": true,
+        "viewsSupported": 8
+      }
+    },
+    {
+      "name": "calendar_album",
+      "path": "lib/plugins/calendar_album",
+      "type": "plugin",
+      "description": "日记相册插件：照片标签、日期记录",
+      "entryPoints": ["lib/plugins/calendar_album/calendar_album_plugin.dart"],
+      "models": ["CalendarEntry"],
+      "documentation": "lib/plugins/calendar_album/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "chat",
+      "path": "lib/plugins/chat",
+      "type": "plugin",
+      "description": "频道聊天插件：多频道、消息管理、AI对话",
+      "entryPoints": ["lib/plugins/chat/chat_plugin.dart"],
+      "interfaces": ["ChannelService", "MessageService", "UserService"],
+      "models": ["Channel", "Message", "User"],
+      "documentation": "lib/plugins/chat/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasUseCaseArchitecture": true,
+        "hasJsApi": true,
+        "hasDataSelector": true
+      }
+    },
+    {
+      "name": "checkin",
+      "path": "lib/plugins/checkin",
+      "type": "plugin",
+      "description": "签到插件：分组、统计、连续签到",
+      "entryPoints": ["lib/plugins/checkin/checkin_plugin.dart"],
+      "models": ["CheckinItem"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "contact",
+      "path": "lib/plugins/contact",
+      "type": "plugin",
+      "description": "联系人插件：信息管理、互动历史",
+      "entryPoints": ["lib/plugins/contact/contact_plugin.dart"],
+      "models": ["ContactModel", "InteractionRecordModel"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "database",
+      "path": "lib/plugins/database",
+      "type": "plugin",
+      "description": "自定义数据库插件：11种字段类型、UseCase架构、JS API",
+      "entryPoints": ["lib/plugins/database/database_plugin.dart"],
+      "models": ["DatabaseModel", "DatabaseField", "Record", "FieldModel"],
+      "services": ["DatabaseService"],
+      "controllers": ["DatabaseController", "FieldController"],
+      "repositories": ["ClientDatabaseRepository"],
+      "keyFeatures": [
+        "11种字段类型支持",
+        "UseCase + Repository架构",
+        "JS API（15+个方法）",
+        "数据选择器（跨模块）",
+        "双视图模式（列表/网格）"
+      ],
+      "documentation": "lib/plugins/database/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasUseCaseArchitecture": true,
+        "hasJsApi": true,
+        "hasDataSelector": true,
+        "hasHomeWidgets": true,
+        "fieldTypesSupported": 11
+      }
+    },
+    {
+      "name": "day",
+      "path": "lib/plugins/day",
+      "type": "plugin",
+      "description": "纪念日插件：倒计时/正计时",
+      "entryPoints": ["lib/plugins/day/day_plugin.dart"],
+      "models": ["MemorialDay"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "diary",
+      "path": "lib/plugins/diary",
+      "type": "plugin",
+      "description": "日记插件：日历视图、Markdown编辑、相册集成",
+      "entryPoints": ["lib/plugins/diary/diary_plugin.dart"],
+      "models": ["DiaryEntry"],
+      "documentation": "lib/plugins/diary/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "goods",
+      "path": "lib/plugins/goods",
+      "type": "plugin",
+      "description": "物品管理插件：分类、自定义字段、使用记录",
+      "entryPoints": ["lib/plugins/goods/goods_plugin.dart"],
+      "models": ["GoodsItem", "Warehouse", "CustomField", "UsageRecord"],
+      "documentation": "lib/plugins/goods/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "habits",
+      "path": "lib/plugins/habits",
+      "type": "plugin",
+      "description": "习惯管理插件：技能关联、一万小时、UseCase架构",
+      "entryPoints": ["lib/plugins/habits/habits_plugin.dart"],
+      "models": ["Habit", "Skill", "CompletionRecord", "HabitsWeeklyData"],
+      "controllers": ["HabitController", "SkillController", "TimerController"],
+      "repositories": ["ClientHabitsRepository"],
+      "keyFeatures": [
+        "习惯与技能关联系统",
+        "双视图模式（列表/卡片）",
+        "计时器（倒计时/正计时）",
+        "Android 小组件支持"
+      ],
+      "documentation": "lib/plugins/habits/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasUseCaseArchitecture": true,
+        "hasJsApi": true,
+        "hasDataSelector": true,
+        "hasHomeWidgets": true
+      }
+    },
+    {
+      "name": "nfc",
+      "path": "lib/plugins/nfc",
+      "type": "plugin",
+      "description": "NFC插件：近场通信读写、卡片处理器、深度链接",
+      "entryPoints": ["lib/plugins/nfc/nfc_plugin.dart"],
+      "controllers": ["NfcController"],
+      "models": ["NfcRecordType", "NfcRecordItem"],
+      "cardHandlers": ["ReadCardHandler", "CustomWriteCardHandler", "CheckinCardHandler", "GoodsUsageCardHandler"],
+      "documentation": "lib/plugins/nfc/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "nodes",
+      "path": "lib/plugins/nodes",
+      "type": "plugin",
+      "description": "节点插件：笔记本树结构",
+      "entryPoints": ["lib/plugins/nodes/nodes_plugin.dart"],
+      "models": ["Node", "Notebook"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "notes",
+      "path": "lib/plugins/notes",
+      "type": "plugin",
+      "description": "笔记插件：无限层级、Markdown、全文搜索",
+      "entryPoints": ["lib/plugins/notes/notes_plugin.dart"],
+      "models": ["Note", "Folder"],
+      "documentation": "lib/plugins/notes/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "openai",
+      "path": "lib/plugins/openai",
+      "type": "plugin",
+      "description": "AI助手插件：多服务商集成、数据分析、工具调用",
+      "entryPoints": ["lib/plugins/openai/openai_plugin.dart"],
+      "models": ["AIAgent", "ServiceProvider", "ToolApp", "LLMModel"],
+      "documentation": "lib/plugins/openai/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "scripts_center",
+      "path": "lib/plugins/scripts_center",
+      "type": "plugin",
+      "description": "脚本中心插件：JS脚本管理、执行引擎、事件驱动自动化",
+      "entryPoints": ["lib/plugins/scripts_center/scripts_center_plugin.dart"],
+      "services": ["ScriptLoader", "ScriptManager", "ScriptExecutor"],
+      "models": ["ScriptInfo", "ScriptTrigger", "ScriptInput", "ScriptFolder"],
+      "documentation": "lib/plugins/scripts_center/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasServiceArchitecture": true
+      }
+    },
+    {
+      "name": "store",
+      "path": "lib/plugins/store",
+      "type": "plugin",
+      "description": "物品兑换插件：积分系统",
+      "entryPoints": ["lib/plugins/store/store_plugin.dart"],
+      "models": ["Product", "UserItem", "PointsLog"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "timer",
+      "path": "lib/plugins/timer",
+      "type": "plugin",
+      "description": "计时器插件：多种计时方式",
+      "entryPoints": ["lib/plugins/timer/timer_plugin.dart"],
+      "models": ["TimerTask", "TimerItem"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "todo",
+      "path": "lib/plugins/todo",
+      "type": "plugin",
+      "description": "任务插件：子任务、优先级、日期范围",
+      "entryPoints": ["lib/plugins/todo/todo_plugin.dart"],
+      "models": ["Task", "Subtask", "Category"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "tracker",
+      "path": "lib/plugins/tracker",
+      "type": "plugin",
+      "description": "目标追踪插件：量化目标、数据记录",
+      "entryPoints": ["lib/plugins/tracker/tracker_plugin.dart"],
+      "models": ["Goal", "Record"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "tts",
+      "path": "lib/plugins/tts",
+      "type": "plugin",
+      "description": "文本转语音插件：系统TTS和HTTP API服务",
+      "entryPoints": ["lib/plugins/tts/tts_plugin.dart"],
+      "services": ["TTSManagerService", "SystemTTSService", "HttpTTSService"],
+      "models": ["TTSServiceConfig", "TTSVoice", "TTSQueueItem"],
+      "documentation": "lib/plugins/tts/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true,
+        "hasServiceArchitecture": true
+      }
+    },
+    {
+      "name": "webview",
+      "path": "lib/plugins/webview",
+      "type": "plugin",
+      "description": "WebView插件：内置浏览器、应用商店、JS桥接",
+      "entryPoints": ["lib/plugins/webview/webview_plugin.dart"],
+      "models": ["WebViewCard", "WebViewTab", "MiniApp", "AppStoreSource"],
+      "services": ["TabManager", "CardManager", "AppStoreManager", "DownloadManager"],
+      "documentation": "lib/plugins/webview/CLAUDE.md",
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": true,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "screens",
+      "path": "lib/screens",
+      "type": "ui_layer",
+      "description": "全局界面层：主屏幕、设置屏幕、路由",
+      "entryPoints": [
+        "lib/screens/home_screen/home_screen.dart",
+        "lib/screens/settings_screen/settings_screen.dart",
+        "lib/screens/route.dart"
+      ],
+      "keyComponents": [
+        "plugin_grid.dart",
+        "webdav_sync_controller.dart",
+        "auto_update_controller.dart"
+      ],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": false
+      }
+    },
+    {
+      "name": "widgets",
+      "path": "lib/widgets",
+      "type": "shared_components",
+      "description": "通用UI组件：Markdown编辑器、文件预览、标签管理",
+      "keyComponents": [
+        "markdown_editor/",
+        "file_preview/",
+        "tag_manager_dialog/",
+        "form_fields/"
+      ],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": false
+      }
+    },
+    {
+      "name": "shared_models",
+      "path": "shared_models",
+      "type": "shared",
+      "description": "客户端与服务端共用的数据模型（DTO、UseCase、Repository接口）",
+      "entryPoints": ["shared_models/lib/shared_models.dart"],
+      "repositories": [
+        "activity_repository",
+        "agent_chat_repository",
+        "bill_repository",
+        "calendar_repository",
+        "chat_repository",
+        "database_repository",
+        "diary_repository",
+        "habits_repository",
+        "notes_repository",
+        "openai_repository",
+        "todo_repository"
+      ],
+      "usecases": [
+        "activity_usecase",
+        "agent_chat_usecase",
+        "calendar_usecase",
+        "chat_usecase",
+        "database_usecase",
+        "diary_usecase",
+        "habits_usecase",
+        "notes_usecase",
+        "openai_usecase",
+        "todo_usecase"
+      ],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "server",
+      "path": "server",
+      "type": "server",
+      "description": "Dart同步服务器（Shelf框架、端到端加密）",
+      "entryPoints": ["server/bin/server.dart"],
+      "framework": "Shelf 1.4+",
+      "features": [
+        "JWT认证",
+        "端到端加密",
+        "文件存储",
+        "插件数据同步"
+      ],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": true
+      }
+    },
+    {
+      "name": "mcp-memento-server",
+      "path": "mcp-memento-server",
+      "type": "server",
+      "description": "TypeScript MCP服务（AI工具接口）",
+      "framework": "Model Context Protocol SDK",
+      "entryPoints": ["mcp-memento-server/src/index.ts"],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": false
+      }
+    },
+    {
+      "name": "native_plugins",
+      "path": "plugins",
+      "type": "native",
+      "description": "原生插件集合（Android/iOS平台功能）",
+      "plugins": [
+        "memento_foreground_service - 前台服务",
+        "memento_notifications - 通知管理",
+        "memento_intent - Intent处理",
+        "memento_nfc - NFC功能",
+        "floating_ball_plugin - 系统悬浮球",
+        "memento_widgets - 桌面小组件"
+      ],
+      "documentation": null,
+      "coverage": {
+        "hasTests": false,
+        "hasDocumentation": false,
+        "interfacesDefined": true,
+        "dataMapped": false
+      }
+    }
+  ],
+  "ignoredPaths": {
+    "patterns": [
+      "build/**",
+      ".dart_tool/**",
+      "node_modules/**",
+      ".git/**",
+      "*.log",
+      "*.lock",
+      "*.bin",
+      "*.png",
+      "*.jpg",
+      "*.jpeg",
+      "*.gif",
+      "*.mp4",
+      "*.zip",
+      "*.tar",
+      "*.gz",
+      "*.pdf",
+      "assets/icons/material/**"
+    ],
+    "totalIgnored": 600
+  },
+  "gaps": [
+    {
+      "module": "plugins_without_docs",
+      "type": "missing_documentation",
+      "priority": "high",
+      "description": "8个插件缺少模块级文档：checkin, contact, day, nodes, store, timer, todo, tracker"
+    },
+    {
+      "module": "server",
+      "type": "missing_documentation",
+      "priority": "high",
+      "description": "同步服务器和MCP服务器缺少文档"
+    },
+    {
+      "module": "screens",
+      "type": "missing_documentation",
+      "priority": "medium",
+      "description": "界面层缺少架构文档"
+    },
+    {
+      "module": "widgets",
+      "type": "missing_documentation",
+      "priority": "low",
+      "description": "通用组件缺少使用文档"
+    },
+    {
+      "module": "all",
+      "type": "missing_tests",
+      "priority": "medium",
+      "description": "项目缺少单元测试和集成测试"
+    }
+  ],
+  "nextSteps": [
+    {
+      "priority": 1,
+      "action": "为剩余8个插件生成CLAUDE.md文档",
+      "estimatedFiles": 8,
+      "plugins": ["checkin", "contact", "day", "nodes", "store", "timer", "todo", "tracker"]
+    },
+    {
+      "priority": 2,
+      "action": "生成同步服务器文档（server + mcp-memento-server）",
+      "estimatedFiles": 2
+    },
+    {
+      "priority": 3,
+      "action": "补充lib/screens和lib/widgets的架构文档",
+      "estimatedFiles": 3
+    },
+    {
+      "priority": 4,
+      "action": "为核心层添加单元测试",
+      "estimatedFiles": 10
+    }
+  ],
+  "metadata": {
+    "scanMethod": "adaptive_full_scan",
+    "truncated": false,
+    "toolCallsUsed": 15,
+    "estimatedRemainingWork": "20% - 需补充剩余插件文档和服务器文档",
+    "recentlyCompleted": [
+      "更新根级CLAUDE.md文档",
+      "添加Mermaid模块结构图",
+      "更新index.json完整模块索引",
+      "识别25+个插件和核心模块",
+      "识别服务端模块（server + mcp-memento-server）",
+      "识别原生插件模块"
+    ]
+  }
+}

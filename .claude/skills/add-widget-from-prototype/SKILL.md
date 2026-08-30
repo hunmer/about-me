@@ -1,0 +1,1004 @@
+---
+name: add-widget-from-prototype
+description: 从 code_snippet 原型文件创建可预览的 Dart 小组件。自动分析 HTML 设计、生成 Flutter 组件、注册路由并添加到组件展示列表。
+---
+
+# Add Widget from Prototype
+
+从 `code_snippet` 目录中的原型文件（HTML + 截图）创建 Flutter 小组件，自动完成组件生成、路由注册和列表入口添加。
+
+## Usage
+
+```bash
+# 基础用法
+/add-widget-from-prototype <prototype-path>
+
+# 示例：从 card_widgets/widget3 创建组件
+/add-widget-from-prototype code_snippet/card_widgets/widget3
+```
+
+## Arguments
+
+- `<prototype-path>`: 原型目录路径，相对于项目根目录
+  - 必须包含 `code.html` 文件
+  - 建议包含 `screen.png` 截图文件
+
+### 可选参数（交互式询问）
+
+- `--name <name>`: 组件名称（驼峰命名，如 `SegmentedProgressCard`）
+- `--route <route>`: 路由路径（如 `segmented_progress_card`）
+- `--title <title>`: 列表显示标题（中文）
+- `--subtitle <subtitle>`: 列表副标题
+- `--icon <icon>`: 列表图标（Material Icons 名称）
+
+## Workflow
+
+### 1. Analyze Prototype
+
+读取并分析原型文件：
+- 读取 `code.html` 获取 HTML 结构和样式
+- 读取 `screen.png` 获取视觉参考
+- 提取颜色、尺寸、布局、字体等设计信息
+
+### 2. Determine Component Name
+
+根据设计功能推断通用组件名称：
+- **避免**使用示例内容命名（如 `SpendingWidget`、`GroceriesWidget`）
+- **推荐**使用功能描述命名（如 `SegmentedProgressCard`、`CategoryDistributionChart`）
+
+常用命名模式：
+| 设计类型 | 推荐命名 |
+|---------|---------|
+| 分段进度条 | `SegmentedProgressCard` |
+| 环形/半圆仪表 | `GaugeWidget` / `HalfCircleGaugeWidget` |
+| 分类统计卡片 | `CategoryStatsCard` |
+| 时间线视图 | `TimelineView` / `DailyTimelineWidget` |
+| 列表卡片 | `ListCard` / `ItemListWidget` |
+| 数据网格 | `DataGridWidget` / `StatsGrid` |
+
+### 3. Generate Dart Component
+
+创建组件文件 `lib/screens/widgets_gallery/screens/[component_name]_example.dart`：
+
+**文件结构：**
+```dart
+import 'package:flutter/material.dart';
+
+/// [组件描述]示例
+class [ComponentName]Example extends StatelessWidget {
+  const [ComponentName]Example({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('[组件标题]')),
+      body: Container(
+        color: isDark ? Colors.black : const Color(0xFFF2F2F7),
+        child: const Center(
+          child: [ComponentName]Widget(
+            // 示例数据
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [组件描述]小组件
+class [ComponentName]Widget extends StatelessWidget {
+  // 组件参数
+  final [Type] [param1];
+  final [Type] [param2];
+
+  const [ComponentName]Widget({
+    super.key,
+    required this.[param1],
+    // ...
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 根据原型实现 UI
+  }
+}
+
+// 辅助类和函数
+class _[HelperName] extends StatelessWidget {
+  // ...
+}
+```
+
+### 4. Register Route
+
+在 `lib/screens/routing/routes/widget_gallery_routes.dart` 中：
+1. 添加组件导入
+2. 添加路由定义
+
+```dart
+// 文件顶部添加导入
+import 'package:Memento/screens/widgets_gallery/screens/[component_name]_example.dart';
+
+// 在 routes 列表中添加（在 half_circle_gauge_widget 后面）
+RouteDefinition(
+  path: '/widgets_gallery/[route_name]',
+  handler: (settings) => RouteHelpers.createRoute(const [ComponentName]Example(), settings: settings),
+  description: '[组件描述]',
+),
+```
+
+### 5. Add List Entry
+
+在 `lib/screens/widgets_gallery/screens/home_widgets_gallery_screen.dart` 中添加列表入口：
+
+```dart
+_buildListItem(
+  context,
+  icon: Icons.[icon_name],
+  title: '[中文标题]',
+  subtitle: '[ComponentName] - [副标题]',
+  route: '/widgets_gallery/[route_name]',
+),
+```
+
+## Design Analysis Guidelines
+
+### 颜色提取
+
+从 HTML 中提取颜色：
+- 背景色（浅色/深色模式）
+- 主色调
+- 文本颜色（标题、正文、次要文本）
+- 边框/分隔线颜色
+
+```dart
+// 从 HTML 提取颜色示例
+final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+final primaryColor = const Color(0xFF7B57E0);
+final textColor = isDark ? Colors.white : Colors.grey.shade900;
+```
+
+### 主题颜色适配要求
+
+**重要：组件必须适配 Flutter 主题颜色系统**
+
+当原型中的主色调与主题颜色接近时（如 Rose、Purple、Blue 等），应优先使用 `Theme.of(context).colorScheme` 中的颜色，而非硬编码颜色值。
+
+```dart
+// ✅ 推荐：使用主题颜色
+final primaryColor = Theme.of(context).colorScheme.primary;
+
+// ❌ 避免：硬编码颜色（除非与主题差异较大）
+final primaryColor = const Color(0xFFF43F5E);
+
+// 示例：根据情况选择颜色
+final primaryColor = isDark
+    ? const Color(0xFFFB7185)  // 深色模式使用原型颜色
+    : Theme.of(context).colorScheme.primary;  // 浅色模式使用主题色
+```
+
+**主题颜色映射参考：**
+
+| 原型颜色 | 主题颜色 | 使用场景 |
+|---------|---------|---------|
+| Rose (#F43F5E) | `colorScheme.error` 或 `colorScheme.primary` | 主色调 |
+| Purple (#7B57E0) | `colorScheme.primary` | 主色调 |
+| Blue (#3B82F6) | `colorScheme.primary` | 主色调 |
+| Green (#10B981) | `colorScheme.secondary` | 辅助色 |
+| Orange/Amber | `colorScheme.tertiary` | 第三色 |
+
+### 布局转换
+
+HTML/Tailwind → Flutter 转换：
+
+| HTML/Tailwind | Flutter |
+|--------------|---------|
+| `flex row` | `Row()` |
+| `flex col` | `Column()` |
+| `rounded-lg` | `BorderRadius.circular(8)` |
+| `p-4` | `EdgeInsets.all(16)` |
+| `gap-2` | `SizedBox(height/width: 8)` |
+| `w-full` | `Expanded()` 或 `double.infinity` |
+| `text-center` | `TextAlign.center` |
+
+### 响应式处理
+
+根据原型固定尺寸或使用响应式布局：
+
+```dart
+// 固定尺寸（桌面小组件风格）
+Container(
+  width: 280,
+  height: 280,
+  // ...
+)
+
+// 响应式尺寸
+LayoutBuilder(
+  builder: (context, constraints) {
+    return Container(
+      width: constraints.maxWidth,
+      // ...
+    );
+  },
+)
+```
+
+### 图表处理
+
+原型中包含图表时：
+- **优先使用 `fl_chart` 包**实现图表
+- 简单图表可用 `CustomPainter` 自定义绘制
+- 进度条/仪表盘可用自定义组件
+
+```dart
+// fl_chart 示例
+import 'package:fl_chart/fl_chart.dart';
+
+PieChart(
+  PieChartData(
+    sections: [
+      PieChartSectionData(value: 30, color: Colors.blue),
+      PieChartSectionData(value: 70, color: Colors.green),
+    ],
+  ),
+)
+```
+
+## Naming Best Practices
+
+### ✅ 推荐命名
+
+| 功能 | 组件名称 | 原因 |
+|-----|---------|-----|
+| 分段进度条 | `SegmentedProgressCard` | 描述布局结构 |
+| 分类统计 | `CategoryStatsCard` | 通用，可复用 |
+| 圆形仪表 | `CircularGaugeWidget` | 描述形状 |
+| 时间线 | `TimelineWidget` | 描述视图类型 |
+
+### ❌ 避免命名
+
+| 功能 | 避免命名 | 原因 |
+|-----|---------|-----|
+| 消费展示 | `SpendingWidget` | 过于具体 |
+| 购物统计 | `ShoppingWidget` | 限于购物场景 |
+| 任务列表 | `TodoListWidget` | 仅适用于 Todo |
+
+### 命名模式
+
+- **Card**: 卡片容器组件
+- **Widget**: 通用小组件
+- **Chart**: 图表类组件
+- **View**: 完整视图
+- **Item**: 列表项
+
+## Animation Guidelines
+
+### 动画效果要求
+
+创建的小组件必须包含动画效果以提升用户体验：
+
+#### 1. 组件入场动画
+
+**必需实现：**
+- 淡入效果（Opacity 从 0 到 1）
+- 位移效果（从下方上移约 20px）
+- 多个元素依次延迟出现（每个延迟约 150ms）
+
+**实现方式：**
+```dart
+class MyWidget extends StatefulWidget {
+  // ...
+}
+
+class _MyWidgetState extends State<MyWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - _animation.value)),
+            child: // 组件内容
+          ),
+        );
+      },
+    );
+  }
+}
+```
+
+#### 2. 进度条动画
+
+**适用场景：** 组件包含进度条、仪表盘等数据展示
+
+**实现方式：**
+- 使用 `CustomPainter` 绘制进度条
+- 将动画值传递给 painter：`progress * animation.value`
+- 进度条从 0 平滑增长到目标值
+
+```dart
+class _ProgressPainter extends CustomPainter {
+  final double progress;
+  final Color progressColor;
+  final Color backgroundColor;
+
+  _ProgressPainter({
+    required this.progress,
+    required this.progressColor,
+    required this.backgroundColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 绘制背景圆环
+    // 绘制进度圆弧（使用 progress 值）
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+```
+
+#### 3. 数字计数动画
+
+**必需实现：** 组件中的数值显示必须使用 `AnimatedFlipCounter`
+
+**⚠️ 防止布局抖动的固定尺寸约束（必须遵守）**
+
+`AnimatedFlipCounter` 在动画过程中会改变内容尺寸，必须添加固定尺寸约束防止布局抖动：
+
+```dart
+// ✅ 正确：完整的固定尺寸约束模式
+SizedBox(
+  height: 54,  // 1. 外层 Row 固定高度
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,  // 2. 使用 center 而非 baseline
+    children: [
+      SizedBox(
+        width: 160,  // 3. AnimatedFlipCounter 固定宽度和高度
+        height: 52,
+        child: AnimatedFlipCounter(
+          value: data.value * itemAnimation.value,
+          fractionDigits: data.value % 1 != 0 ? 2 : 0,
+          textStyle: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.w800,
+            height: 1.0,  // 4. 固定行高
+          ),
+        ),
+      ),
+      const SizedBox(width: 6),
+      SizedBox(
+        height: 22,  // 5. 单位 Text 固定高度
+        child: Text(
+          'unit',
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.0,  // 6. 固定行高
+          ),
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+**❌ 错误示例（会导致布局抖动）：**
+```dart
+// ❌ 错误 1: 使用 baseline 对齐
+Row(
+  crossAxisAlignment: CrossAxisAlignment.baseline,  // 会导致抖动
+  textBaseline: TextBaseline.alphabetic,
+  children: [
+    AnimatedFlipCounter(...),
+    Text('unit'),
+  ],
+)
+
+// ❌ 错误 2: 没有固定宽度
+Row(
+  children: [
+    SizedBox(
+      height: 52,  // 只有高度，没有宽度
+      child: AnimatedFlipCounter(...),
+    ),
+    Text('unit'),
+  ],
+)
+
+// ❌ 错误 3: Text 没有固定高度
+Row(
+  children: [
+    AnimatedFlipCounter(...),
+    Text('unit'),  // 没有包裹 SizedBox
+  ],
+)
+```
+
+**固定尺寸计算公式：**
+```dart
+// AnimatedFlipCounter 的宽度应足够容纳最大值
+final counterWidth = maxWidthDigitCount * fontSize * 0.6 + padding;
+
+// 示例计算：
+// fontSize: 48, 最大3位整数 + 1位小数 = 4个字符
+// width = 4 * 48 * 0.6 ≈ 115，取安全值 160
+
+// 外层 Row 高度 = max(counterHeight, unitHeight) + alignment
+final rowHeight = max(52, 22) = 54;
+```
+
+**完整实现模式：**
+```dart
+import 'package:animated_flip_counter/animated_flip_counter.dart';
+
+// 在 AnimatedBuilder 中使用
+SizedBox(
+  height: 54,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      SizedBox(
+        width: 160,  // 根据最大值计算
+        height: 52,
+        child: AnimatedFlipCounter(
+          value: data.value * itemAnimation.value,  // 从 0 增长到目标值
+          fractionDigits: data.value % 1 != 0 ? 2 : 0,  // 自动识别整数/小数
+          textStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 48,
+            fontWeight: FontWeight.w800,
+            height: 1.0,  // 固定行高防止文字变化影响布局
+          ),
+        ),
+      ),
+      const SizedBox(width: 6),
+      SizedBox(
+        height: 22,  // 单位固定高度
+        child: Text(
+          'unit',
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.0,  // 固定行高
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+```
+
+**检查清单：**
+- [ ] AnimatedFlipCounter 有固定 `width` 和 `height`
+- [ ] 外层 Row 有固定 `height`（使用 `SizedBox` 包裹）
+- [ ] 使用 `crossAxisAlignment: center` 而非 `baseline`
+- [ ] 所有 Text 组件都有固定高度 `SizedBox`
+- [ ] 所有 textStyle 都有 `height: 1.0`
+- [ ] 数值必须乘以动画值：`value * animation.value`
+
+#### 4. 多元素延迟动画
+
+**适用场景：** 组件包含多个列表项或卡片
+
+**实现方式：**
+```dart
+for (int i = 0; i < items.length; i++) ...[
+  if (i > 0) const SizedBox(height: 24),
+  _ItemWidget(
+    data: items[i],
+    animation: _animation,
+    index: i,  // 传递索引用于计算延迟
+  ),
+]
+
+// 在子组件中
+final itemAnimation = CurvedAnimation(
+  parent: animation,
+  curve: Interval(
+    index * 0.15,  // 延迟开始
+    0.6 + index * 0.15,  // 延迟结束
+    curve: Curves.easeOutCubic,
+  ),
+);
+```
+
+### 动画时序示例
+
+```
+时间轴 (0-1200ms), 3个元素:
+├── 0-180ms:      元素1 开始淡入+上滑
+├── 0-930ms:      元素1 进度条/数字增长
+├── 180-360ms:    元素2 开始淡入+上滑
+├── 180-1110ms:   元素2 进度条/数字增长
+├── 360-540ms:    元素3 开始淡入+上滑
+└── 360-1200ms:   元素3 进度条/数字增长
+```
+
+## Component Structure Template
+
+### 完整示例（含动画）
+
+```dart
+import 'package:flutter/material.dart';
+
+/// 分段进度条统计卡片示例
+class SegmentedProgressCardExample extends StatelessWidget {
+  const SegmentedProgressCardExample({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('分段进度条统计卡片')),
+      body: Container(
+        color: isDark ? Colors.black : const Color(0xFFF2F2F7),
+        child: const Center(
+          child: SegmentedProgressCardWidget(
+            segments: [
+              SegmentData(label: '类别A', value: 45, color: Color(0xFFE14462)),
+              SegmentData(label: '类别B', value: 30, color: Color(0xFF7B57E0)),
+            ],
+            total: 100,
+            unit: '单位',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分段数据模型
+class SegmentData {
+  final String label;
+  final double value;
+  final Color color;
+
+  const SegmentData({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+}
+
+/// 分段进度条统计小组件
+class SegmentedProgressCardWidget extends StatelessWidget {
+  final List<SegmentData> segments;
+  final double total;
+  final String unit;
+
+  const SegmentedProgressCardWidget({
+    super.key,
+    required this.segments,
+    required this.total,
+    this.unit = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+
+    return Container(
+      width: 280,
+      height: 280,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          // 组件内容
+        ],
+      ),
+    );
+  }
+}
+```
+
+## Execution Steps
+
+当用户请求从原型创建组件时：
+
+1. **验证原型路径**
+   - 检查 `code.html` 是否存在
+   - 尝试读取 `screen.png` 作为参考
+
+2. **分析原型设计**
+   - 解析 HTML 获取结构和样式
+   - 提取颜色、字体、尺寸
+   - 识别组件类型（卡片、图表、列表等）
+
+3. **推断组件名称**
+   - 根据设计功能确定通用名称
+   - 向用户确认或让用户指定
+
+4. **生成 Dart 代码**
+   - 创建 Example 展示页
+   - 创建实际 Widget 组件（必须使用 StatefulWidget）
+   - 添加数据模型（如需要）
+   - **实现动画效果**：
+     - 入场动画（淡入 + 上滑）
+     - 进度条动画（如有）
+     - 数字计数动画（AnimatedFlipCounter）
+
+5. **注册路由**
+   - 在 `widget_gallery_routes.dart` 添加导入
+   - 添加路由定义
+
+6. **添加列表入口**
+   - 在 `home_widgets_gallery_screen.dart` 添加入口
+
+7. **验证代码**
+   - 检查导入是否正确
+   - 确认语法无误
+
+## Checklist
+
+完成后验证：
+
+**文件创建：**
+- [ ] 组件文件已创建：`lib/screens/widgets_gallery/screens/[name]_example.dart`
+- [ ] 包含 Example 展示页和实际 Widget
+- [ ] 数据模型（如需要）已定义
+
+**路由注册：**
+- [ ] `widget_gallery_routes.dart` 已添加导入
+- [ ] 路由定义已添加到列表中
+
+**列表入口：**
+- [ ] `home_widgets_gallery_screen.dart` 已添加列表项
+- [ ] 图标、标题、副标题正确
+
+**代码质量：**
+- [ ] 组件名称通用、可复用
+- [ ] 支持深色/浅色主题
+- [ ] **适配主题颜色**：优先使用 `Theme.of(context).colorScheme` 而非硬编码颜色
+- [ ] 参数设计合理、可配置
+- [ ] 代码注释清晰（中文）
+
+**动画效果：**
+- [ ] 组件使用 StatefulWidget 并添加 AnimationController
+- [ ] 实现淡入 + 上滑入场动画
+- [ ] 多个元素依次延迟出现（Interval 延迟）
+- [ ] 进度条/仪表盘包含动画（CustomPainter + animation.value）
+- [ ] 数值显示使用 AnimatedFlipCounter（value * animation.value）
+- [ ] **AnimatedFlipCounter 有固定 width 和 height**
+- [ ] **外层 Row 有固定高度，使用 center 对齐**
+- [ ] **所有 Text 组件有固定高度和 height: 1.0**
+- [ ] 动画时长约 1200ms，使用 easeOutCubic 曲线
+- [ ] 动画资源正确释放（dispose 中调用 controller.dispose()）
+
+## Examples
+
+### 示例 1: 分段进度条卡片
+
+**原型路径:** `code_snippet/card_widgets/widget2`
+
+**推断组件名:** `SegmentedProgressCard` (而非 `SpendingCard`)
+
+**生成结果:**
+- 文件: `segmented_progress_card_example.dart`
+- 路由: `/widgets_gallery/segmented_progress_card`
+- 列表标题: "分段进度条卡片"
+
+### 示例 2: 半圆仪表盘
+
+**原型路径:** `code_snippet/gauge_widgets/widget1`
+
+**推断组件名:** `HalfCircleGaugeWidget`
+
+**生成结果:**
+- 文件: `half_circle_gauge_widget_example.dart`
+- 路由: `/widgets_gallery/half_circle_gauge_widget`
+- 列表标题: "半圆仪表盘"
+
+## Troubleshooting
+
+### 问题 1: 原型文件不存在
+
+**检查路径格式：**
+- 相对于项目根目录的路径
+- 不包含开头的 `/`
+- 使用正斜杠 `/` 分隔目录
+
+### 问题 2: 组件名称不通用
+
+**重新命名：**
+- 使用功能描述而非示例内容
+- 参考命名模式表
+- 询问用户期望的组件用途
+
+### 问题 3: 颜色/尺寸不准确
+
+**从 HTML 精确提取：**
+- 颜色使用 `0xFF` 格式
+- 尺寸使用原型中的数值
+- 考虑深色/浅色模式差异
+
+### 问题 4: 布局溢出错误（RenderFlex overflowed）
+
+**错误信息：**
+```
+A RenderFlex overflowed by X pixels on the bottom.
+The relevant error-causing widget was: Column
+```
+
+**原因：**
+在固定高度的容器中使用 `Spacer()` 或 Column 内容超出容器高度。
+
+**解决方案：**
+```dart
+// ❌ 错误：使用 Spacer 导致布局不可控
+Column(
+  children: [
+    HeaderWidget(),
+    Spacer(),
+    ContentWidget(),
+    FooterWidget(),
+  ],
+)
+
+// ✅ 正确：使用固定的 SizedBox
+Column(
+  mainAxisSize: MainAxisSize.min,  // 让 Column 只占用必需空间
+  children: [
+    HeaderWidget(),
+    const SizedBox(height: 20),  // 固定间距
+    ContentWidget(),
+    const SizedBox(height: 14),  // 固定间距
+    FooterWidget(),
+  ],
+)
+```
+
+**布局计算建议：**
+- 固定高度容器：仔细计算所有子组件高度总和
+- 使用 `mainAxisSize: MainAxisSize.min` 让 Column 自适应
+- 间距使用固定 `SizedBox` 而非 `Spacer()`
+
+### 问题 5: AnimatedFlipCounter 动画时布局抖动
+
+**现象：**
+AnimatedFlipCounter 导致布局在动画执行时上下抖动或整体跳动。
+
+**根本原因：**
+1. `AnimatedFlipCounter` 在动画过程中数字位数变化（如 0 → 547），导致宽度变化
+2. 使用 `CrossAxisAlignment.baseline` 对齐时，Flutter 会重新计算基线位置
+3. 没有固定尺寸约束，布局引擎在动画过程中不断重新计算
+
+**完整解决方案：**
+
+```dart
+// ❌ 错误 1: 使用 baseline 对齐（最常见错误）
+Row(
+  crossAxisAlignment: CrossAxisAlignment.baseline,  // ❌ 会导致抖动
+  textBaseline: TextBaseline.alphabetic,
+  children: [
+    AnimatedFlipCounter(value: value * animation.value),
+    Text('km'),
+  ],
+)
+
+// ❌ 错误 2: 只固定高度，没有固定宽度
+SizedBox(
+  height: 48,  // ❌ 只有高度，宽度仍会变化
+  child: Row(
+    children: [
+      AnimatedFlipCounter(value: value * animation.value),
+      Text('km'),
+    ],
+  ),
+)
+
+// ❌ 错误 3: Text 没有固定高度
+SizedBox(
+  height: 48,
+  child: Row(
+    children: [
+      SizedBox(
+        width: 170,
+        height: 48,
+        child: AnimatedFlipCounter(value: value * animation.value),
+      ),
+      Text('km'),  // ❌ 没有包裹 SizedBox，高度不固定
+    ],
+  ),
+)
+
+// ✅ 正确：完整固定尺寸约束模式
+SizedBox(
+  height: 54,  // 1. 外层固定高度（足够容纳最大元素）
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,  // 2. 使用 center 而非 baseline
+    children: [
+      SizedBox(
+        width: 160,   // 3. AnimatedFlipCounter 固定宽度（根据最大值计算）
+        height: 52,   // 4. AnimatedFlipCounter 固定高度
+        child: AnimatedFlipCounter(
+          value: value * animation.value,
+          textStyle: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.w800,
+            height: 1.0,  // 5. 固定行高（防止文字行高变化）
+          ),
+        ),
+      ),
+      const SizedBox(width: 6),
+      SizedBox(
+        height: 22,  // 6. 单位 Text 固定高度
+        child: Text(
+          'km',
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.0,  // 7. 固定行高
+          ),
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+**尺寸计算公式：**
+
+```dart
+// AnimatedFlipCounter 宽度计算
+// 预估最大位数 × 字体大小 × 字符宽度系数 + 安全余量
+final counterWidth = (maxIntegerDigits + maxFractionDigits + 1) * fontSize * 0.6 + 20;
+
+// 示例：
+// 最大值: 999.99 (3位整数 + 2位小数 + 1个小数点 = 6个字符)
+// fontSize: 48
+// width = 6 * 48 * 0.6 + 20 ≈ 193，取整到 200 或更大安全值
+
+// 外层 Row 高度计算
+final rowHeight = max(counterHeight, unitHeight) + verticalPadding;
+
+// 示例：
+// counterHeight: 52, unitHeight: 22
+// rowHeight = max(52, 22) = 54
+```
+
+**快速参考尺寸表：**
+
+| 字体大小 | 预估位数 | 推荐宽度 | Row高度 |
+|---------|---------|---------|--------|
+| 24px | 3-4位 | 80-100px | 32px |
+| 36px | 3-4位 | 120-140px | 42px |
+| 48px | 3-4位 | 160-180px | 54px |
+| 60px | 3-4位 | 200-220px | 66px |
+
+**检查清单：**
+- [ ] AnimatedFlipCounter 有固定 `width`（必须）
+- [ ] AnimatedFlipCounter 有固定 `height`（必须）
+- [ ] 外层 Row 有固定 `height`（使用 `SizedBox` 包裹）
+- [ ] 使用 `CrossAxisAlignment.center` 而非 `baseline`
+- [ ] 所有 Text 都有固定高度 `SizedBox`
+- [ ] 所有 textStyle 都有 `height: 1.0`
+- [ ] 数值乘以动画值：`value * animation.value`
+
+### 问题 6: 装饰点阵超出卡片边界
+
+**原因：**
+使用 Container 装饰时，点阵绘制超出了圆角范围。
+
+**解决方案：**
+```dart
+// ❌ 错误：点阵可能超出圆角边界
+Positioned(
+  top: 0,
+  right: 0,
+  child: Container(
+    decoration: BoxDecoration(
+      color: primaryColor.withOpacity(0.2),
+      borderRadius: BorderRadius.only(topRight: Radius.circular(26)),
+    ),
+    child: CustomPaint(painter: _DotPatternPainter(...)),
+  ),
+)
+
+// ✅ 正确：使用 ClipRRect 裁剪 + 将透明度应用到颜色
+Positioned(
+  top: 0,
+  right: 0,
+  child: ClipRRect(
+    borderRadius: BorderRadius.only(topRight: Radius.circular(26)),
+    child: ShaderMask(
+      shaderCallback: (bounds) => RadialGradient(...).createShader(bounds),
+      blendMode: BlendMode.dstIn,
+      child: CustomPaint(
+        size: const Size(128, 128),  // 明确指定尺寸
+        painter: _DotPatternPainter(
+          color: primaryColor.withOpacity(0.2),  // 透明度在颜色上
+        ),
+      ),
+    ),
+  ),
+)
+```
+
+### 问题 7: Interval 动画断言错误（end > 1.0）
+
+**错误信息：**
+```
+'package:flutter/src/animation/curves.dart': Failed assertion:
+line 180 pos 12: 'end <= 1.0': is not true.
+```
+
+**原因：**
+使用 `Interval` 实现多元素延迟动画时，最后一个元素的 end 值超过了 1.0。
+
+**解决方案：**
+```dart
+// ❌ 错误：step 太大导致 end 超出 1.0
+final step = 0.12;  // 对于 8 个元素，最大 end = 0.6 + 7 * 0.12 = 1.44
+
+// ✅ 正确：计算合适的 step 确保最大 end <= 1.0
+// 公式：step <= (1.0 - baseEnd) / (elementCount - 1)
+// 示例：8 个元素，baseEnd = 0.6
+// step <= (1.0 - 0.6) / 7 = 0.057
+final step = 0.05;  // 最大 end = 0.6 + 7 * 0.05 = 0.95
+
+final itemAnimation = CurvedAnimation(
+  parent: _animationController,
+  curve: Interval(
+    index * step,
+    0.6 + index * step,
+    curve: Curves.easeOutCubic,
+  ),
+);
+```
+
+**通用计算公式：**
+```dart
+// 确保所有 Interval 的 end 值不超过 1.0
+final elementCount = items.length;
+final baseEnd = 0.6;  // 第一个元素的结束位置
+final maxStep = (1.0 - baseEnd) / (elementCount - 1);
+final step = maxStep * 0.9;  // 留 10% 安全余量
+```
+
+## Notes
+
+- 使用中文注释与现有代码库保持一致
+- 组件参数设计要灵活、可配置
+- 保持与现有组件风格一致
+- 参考 `half_circle_gauge_widget_example.dart` 作为模板
+- 图表优先使用 `fl_chart` 包实现
+- **所有组件必须包含动画效果**：入场动画、进度条动画、数字计数动画
+- 使用 `animated_flip_counter` 包实现数字翻转效果（项目已包含此依赖）
+- 动画时长推荐 1200ms，曲线使用 `Curves.easeOutCubic`
+- 多元素动画使用 `Interval` 实现依次延迟效果（每个延迟约 15%）
+- **必须适配主题颜色**：优先使用 `Theme.of(context).colorScheme` 中的颜色，确保组件与 App 主题一致

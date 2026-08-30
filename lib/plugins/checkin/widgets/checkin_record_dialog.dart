@@ -1,0 +1,253 @@
+import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+
+class CheckinRecordDialog extends StatefulWidget {
+  final CheckinItem item;
+  final CheckinListController controller;
+  final VoidCallback onCheckinCompleted;
+  final DateTime? selectedDate;
+
+  const CheckinRecordDialog({
+    super.key,
+    required this.item,
+    required this.controller,
+    required this.onCheckinCompleted,
+    this.selectedDate,
+  });
+
+  @override
+  State<CheckinRecordDialog> createState() => _CheckinRecordDialogState();
+}
+
+class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _noteController;
+  late DateTime _selectedDate;
+  late DateTime _startTime;
+  late DateTime _endTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+    final now = DateTime.now();
+    _selectedDate = widget.selectedDate ?? now;
+    // 无论是否提供selectedDate，都使用当前时间作为默认时间
+    _startTime = now;
+    _endTime = now;
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        // 保持时分不变，只改变年月日
+        _startTime = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          _startTime.hour,
+          _startTime.minute,
+        );
+        _endTime = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          _endTime.hour,
+          _endTime.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(isStartTime ? _startTime : _endTime),
+    );
+
+    if (picked != null) {
+      setState(() {
+        final selectedDateTime = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          picked.hour,
+          picked.minute,
+        );
+        if (isStartTime) {
+          _startTime = selectedDateTime;
+          // 如果开始时间晚于结束时间，更新结束时间
+          if (_startTime.isAfter(_endTime)) {
+            _endTime = _startTime;
+          }
+        } else {
+          _endTime = selectedDateTime;
+          // 如果结束时间早于开始时间，更新开始时间
+          if (_endTime.isBefore(_startTime)) {
+            _startTime = _endTime;
+          }
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.selectedDate != null
+            ? 'checkin_addSpecificDateCheckin'.tr
+            : 'checkin_addCheckinRecord'.tr,
+      ),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 日期选择
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('app_save'.tr),
+                trailing: TextButton(
+                  onPressed: () => _selectDate(context),
+                  child: Text(
+                    '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
+                  ),
+                ),
+              ),
+              // 起始时间选择
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('app_startTime'.tr),
+                trailing: TextButton(
+                  onPressed: () => _selectTime(context, true),
+                  child: Text(
+                    '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+                  ),
+                ),
+              ),
+              // 终止时间选择
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('app_endTime'.tr),
+                trailing: TextButton(
+                  onPressed: () => _selectTime(context, false),
+                  child: Text(
+                    '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 备注输入框
+              TextFormField(
+                controller: _noteController,
+                decoration: InputDecoration(
+                  labelText: 'checkin_noteLabel'.tr,
+                  hintText: 'checkin_noteHint'.tr,
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              // 打卡时间显示
+              Text(
+                widget.selectedDate != null
+                    ? '${'checkin_checkinDateLabel'.tr}: ${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}'
+                    : '${'checkin_checkinTimeLabel'.tr}: ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('app_cancel'.tr),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              final now = DateTime.now();
+              // 标准化时间，保留到秒级别（忽略毫秒）
+              final normalizedStartTime = DateTime(
+                _startTime.year,
+                _startTime.month,
+                _startTime.day,
+                _startTime.hour,
+                _startTime.minute,
+                _startTime.second,
+              );
+              final normalizedEndTime = DateTime(
+                _endTime.year,
+                _endTime.month,
+                _endTime.day,
+                _endTime.hour,
+                _endTime.minute,
+                _endTime.second,
+              );
+              final normalizedCheckinTime = DateTime(
+                (widget.selectedDate ?? now).year,
+                (widget.selectedDate ?? now).month,
+                (widget.selectedDate ?? now).day,
+                (widget.selectedDate ?? now).hour,
+                (widget.selectedDate ?? now).minute,
+                (widget.selectedDate ?? now).second,
+              );
+
+              final record = CheckinRecord(
+                startTime: normalizedStartTime,
+                endTime: normalizedEndTime,
+                checkinTime: normalizedCheckinTime,
+                note:
+                    _noteController.text.trim().isNotEmpty
+                        ? _noteController.text.trim()
+                        : null,
+              );
+
+              try {
+                // 等待打卡记录保存完成
+                await widget.item.addCheckinRecord(record);
+
+                // 保存成功后才触发回调和关闭对话框
+                if (mounted) {
+                  widget.onCheckinCompleted();
+                  widget.controller.notifyEvent('completed', widget.item);
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                // 显示错误提示
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('打卡失败: $e')),
+                  );
+                }
+              }
+            }
+          },
+          child: Text('checkin_checkinButton'.tr),
+        ),
+      ],
+    );
+  }
+}

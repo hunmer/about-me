@@ -1,0 +1,105 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+import 'controllers/js_console_controller.dart';
+import 'widgets/code_editor.dart';
+import 'widgets/output_viewer.dart';
+import 'widgets/example_buttons.dart';
+import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
+class JSConsoleScreen extends StatefulWidget {
+  const JSConsoleScreen({super.key});
+
+  @override
+  State<JSConsoleScreen> createState() => _JSConsoleScreenState();
+}
+
+class _JSConsoleScreenState extends State<JSConsoleScreen> {
+  bool _uiHandlersRegistered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 在第一帧渲染后注册 UI 处理器
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_uiHandlersRegistered && mounted) {
+        JSBridgeManager.instance.registerUIHandlers(context);
+        _uiHandlersRegistered = true;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) {
+        final controller = JSConsoleController();
+        // 异步加载示例（不阻塞 UI）
+        controller.loadExamples();
+        return controller;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('screens_jsConsole'.tr),
+          actions: [
+            Consumer<JSConsoleController>(
+              builder: (context, controller, _) {
+                return IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: '清空输出',
+                  onPressed: controller.clearOutput,
+                );
+              },
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // 示例按钮
+            const ExampleButtons(),
+            const Divider(height: 1),
+
+            // 代码编辑器
+            const Expanded(
+              flex: 3,
+              child: CodeEditor(),
+            ),
+
+            const Divider(height: 1),
+
+            // 运行按钮
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Consumer<JSConsoleController>(
+                builder: (context, controller, _) {
+                  return ElevatedButton.icon(
+                    onPressed:
+                        controller.isRunning ? null : controller.runCode,
+                    icon: controller.isRunning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.play_arrow),
+                    label: Text(controller.isRunning ? '运行中...' : '运行代码'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            // 输出显示
+            const Expanded(
+              flex: 2,
+              child: OutputViewer(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

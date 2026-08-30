@@ -1,0 +1,358 @@
+import 'package:get/get.dart';
+import 'package:Memento/core/event/event_manager.dart';
+import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:flutter/material.dart';
+import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:Memento/plugins/goods/models/warehouse.dart';
+import 'package:Memento/plugins/goods/widgets/warehouse_form.dart';
+import 'package:Memento/plugins/goods/models/goods_item.dart';
+import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:Memento/plugins/goods/widgets/goods_item_card.dart';
+import 'package:Memento/plugins/goods/widgets/goods_item_list_tile.dart';
+import 'package:Memento/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
+import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+
+class WarehouseDetailScreen extends StatefulWidget {
+  final Warehouse warehouse;
+
+  const WarehouseDetailScreen({super.key, required this.warehouse});
+
+  @override
+  State<WarehouseDetailScreen> createState() => _WarehouseDetailScreenState();
+}
+
+class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
+  bool _isGridView = true;
+  late String _sortBy; // none, price, lastUsed
+  late Warehouse _warehouse;
+
+  @override
+  void initState() {
+    super.initState();
+    _warehouse = widget.warehouse;
+    // 从插件中获取该仓库的排序偏好
+    _sortBy = GoodsPlugin.instance.getSortPreference(_warehouse.id);
+
+    // 设置路由上下文
+    _updateRouteContext();
+
+    // 监听物品添加事件
+    EventManager.instance.subscribe('goods_item_added', (args) {
+      if (args is GoodsItemAddedEventArgs &&
+          args.warehouseId == _warehouse.id) {
+        _refreshWarehouse();
+      }
+    });
+
+    // 监听物品删除事件
+    EventManager.instance.subscribe('goods_item_deleted', (args) {
+      if (args is GoodsItemDeletedEventArgs &&
+          args.warehouseId == _warehouse.id) {
+        _refreshWarehouse();
+      }
+    });
+  }
+
+  /// 更新路由上下文,使"询问当前上下文"功能能获取到当前仓库信息
+  void _updateRouteContext() {
+    RouteHistoryManager.updateCurrentContext(
+      pageId: "/goods/warehouse_detail",
+      title: '物品 - 仓库: ${_warehouse.title}',
+      params: {
+        'warehouseId': _warehouse.id,
+        'warehouseName': _warehouse.title,
+      },
+    );
+  }
+
+  Future<void> _refreshWarehouse() async {
+    final updatedWarehouse = GoodsPlugin.instance.getWarehouse(_warehouse.id);
+    if (updatedWarehouse != null && mounted) {
+      setState(() {
+        _warehouse = updatedWarehouse;
+      });
+      // 更新路由上下文
+      _updateRouteContext();
+    }
+  }
+
+  void _showAddItemDialog() {
+    GoodsItemForm.show(
+      context: context,
+      onSubmit: (GoodsItem item) async {
+        await GoodsPlugin.instance.saveGoodsItem(_warehouse.id, item);
+        await _refreshWarehouse();
+      },
+    );
+  }
+
+  void _showMoreOptions() {
+    SmoothBottomSheet.show(
+      context: context,
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: Text('goods_editWarehouseTitle'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  // 实现仓库编辑功能
+                  NavigationHelper.push(context, WarehouseForm(
+                            warehouse: _warehouse,
+                            onSave: (warehouse) async {
+                              await GoodsPlugin.instance.saveWarehouse(
+                                warehouse,
+                              );
+                              if (context.mounted) {
+                                await _refreshWarehouse();
+                              }
+                            },
+                            onDelete: () async {
+                              await GoodsPlugin.instance.deleteWarehouse(
+                                _warehouse.id,
+                              );
+                              if (context.mounted) {
+                                // 连退两页：关闭表单页和详情页
+                                Navigator.pop(context); // 关闭表单
+                                Navigator.pop(context); // 关闭详情
+                              }
+                            },),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text('goods_clearWarehouseTitle'.tr),
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: Text(
+                            'goods_confirmClearWarehouse'.tr,
+                          ),
+                          content: Text(
+                            'goods_confirmClearWarehouseMessage'.tr,
+                          ),
+                          actions: [
+                            TextButton(
+                              child: Text('app_cancel'.tr),
+                              onPressed: () => Navigator.pop(context, false),
+                            ),
+                            TextButton(
+                              child: Text('app_ok'.tr),
+                              onPressed: () => Navigator.pop(context, true),
+                            ),
+                          ],
+                        ),
+                  );
+
+                  if (confirm == true && context.mounted) {
+                    await GoodsPlugin.instance.clearWarehouse(_warehouse.id);
+                    Navigator.pop(context);
+                    await _refreshWarehouse();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_forever, color: Colors.red),
+                title: Text(
+                  'goods_deleteWarehouseTitle'.tr,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: Text(
+                            'goods_confirmDelete'.tr,
+                          ),
+                          content: Text(
+                            'goods_confirmDeleteWarehouseMessage'.trParams({'name': _warehouse.title}),
+                          ),
+                          actions: [
+                            TextButton(
+                              child: Text('app_cancel'.tr),
+                              onPressed: () => Navigator.pop(context, false),
+                            ),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text('app_delete'.tr),
+                            ),
+                          ],
+                        ),
+                  );
+
+                  if (confirm == true && context.mounted) {
+                    await GoodsPlugin.instance.deleteWarehouse(_warehouse.id);
+                    // 关闭底部菜单
+                    Navigator.pop(context);
+                    // 返回上一页
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          ),
+    );
+  }
+
+  List<GoodsItem> _getSortedItems() {
+    final items = List<GoodsItem>.from(_warehouse.items);
+    switch (_sortBy) {
+      case 'price':
+        items.sort(
+          (a, b) => (b.purchasePrice ?? 0).compareTo(a.purchasePrice ?? 0),
+        );
+        break;
+      case 'lastUsed':
+        items.sort(
+          (a, b) => (b.lastUsedDate ?? DateTime(1970)).compareTo(
+            a.lastUsedDate ?? DateTime(1970),
+          ),
+        );
+        break;
+    }
+    return items;
+  }
+
+  void _showEditItemDialog(GoodsItem item) {
+    GoodsItemForm.show(
+      context: context,
+      initialData: item,
+      onSubmit: (item) async {
+        await GoodsPlugin.instance.saveGoodsItem(_warehouse.id, item);
+        await _refreshWarehouse();
+      },
+      onDelete: (item) async {
+        await GoodsPlugin.instance.deleteGoodsItem(
+          _warehouse.id,
+          item.id,
+        );
+        await _refreshWarehouse();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    // 取消事件订阅
+    EventManager.instance.unsubscribe('goods_item_added');
+    EventManager.instance.unsubscribe('goods_item_deleted');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _getSortedItems();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Text(_warehouse.title),
+            const SizedBox(width: 8),
+            Text(
+              '(${items.length})',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+        actions: [
+          // 视图切换按钮
+          IconButton(
+            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+            onPressed: () {
+              setState(() {
+                _isGridView = !_isGridView;
+              });
+            },
+          ),
+          // 排序按钮
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            onSelected: (value) async {
+              setState(() {
+                _sortBy = value;
+              });
+              // 保存排序偏好
+              await GoodsPlugin.instance.saveSortPreference(
+                _warehouse.id,
+                value,
+              );
+            },
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    value: 'none',
+                    child: Text('goods_sortByDefault'.tr),
+                  ),
+                  PopupMenuItem(
+                    value: 'price',
+                    child: Text('goods_sortByPrice'.tr),
+                  ),
+                  PopupMenuItem(
+                    value: 'lastUsed',
+                    child: Text(
+                      'goods_sortByLastUsedTime'.tr,
+                    ),
+                  ),
+                ],
+          ),
+          // 更多选项按钮
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: _showMoreOptions,
+          ),
+        ],
+      ),
+      body:
+          _isGridView
+              ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: List.generate(items.length, (index) {
+                        final item = items[index];
+                        final cardWidth = (constraints.maxWidth - 16) / 2; // 2列布局，减去一个spacing
+
+                        return SizedBox(
+                          width: cardWidth,
+                          child: GoodsItemCard(
+                            item: item,
+                            warehouseId: _warehouse.id,
+                            onTap: () => _showEditItemDialog(item),
+                          ),
+                        );
+                      }),
+                    );
+                  },
+                ),
+              )
+              : ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return GoodsItemListTile(
+                    item: item,
+                    warehouseId: _warehouse.id,
+                    onTap: () => _showEditItemDialog(item),
+                  );
+                },
+              ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddItemDialog,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}

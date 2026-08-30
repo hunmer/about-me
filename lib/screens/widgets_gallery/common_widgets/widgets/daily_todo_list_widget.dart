@@ -1,0 +1,593 @@
+import 'package:flutter/material.dart';
+import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+
+/// 待办任务数据模型
+class TodoTask {
+  final String title;
+  final bool isCompleted;
+
+  const TodoTask({required this.title, required this.isCompleted});
+
+  /// 从 JSON 创建
+  factory TodoTask.fromJson(Map<String, dynamic> json) {
+    return TodoTask(
+      title: json['title'] as String? ?? '',
+      isCompleted: json['isCompleted'] as bool? ?? false,
+    );
+  }
+
+  /// 转换为 JSON
+  Map<String, dynamic> toJson() {
+    return {'title': title, 'isCompleted': isCompleted};
+  }
+
+  TodoTask copyWith({String? title, bool? isCompleted}) {
+    return TodoTask(
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+}
+
+/// 提醒信息数据模型
+class TodoReminder {
+  final String text;
+  final String hashtag;
+  final String hashtagEmoji;
+
+  const TodoReminder({
+    required this.text,
+    required this.hashtag,
+    required this.hashtagEmoji,
+  });
+
+  /// 从 JSON 创建
+  factory TodoReminder.fromJson(Map<String, dynamic> json) {
+    return TodoReminder(
+      text: json['text'] as String? ?? '',
+      hashtag: json['hashtag'] as String? ?? '',
+      hashtagEmoji: json['hashtagEmoji'] as String? ?? '',
+    );
+  }
+
+  /// 转换为 JSON
+  Map<String, dynamic> toJson() {
+    return {'text': text, 'hashtag': hashtag, 'hashtagEmoji': hashtagEmoji};
+  }
+}
+
+/// 每日待办事项小组件
+class DailyTodoListWidget extends StatefulWidget {
+  final String date;
+  final String time;
+  final List<TodoTask> tasks;
+  final TodoReminder reminder;
+
+  /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
+  final bool inline;
+
+  /// 小组件尺寸
+  final HomeWidgetSize size;
+
+  const DailyTodoListWidget({
+    super.key,
+    required this.date,
+    required this.time,
+    required this.tasks,
+    required this.reminder,
+    this.inline = false,
+    this.size = const MediumSize(),
+  });
+
+  /// 从 props 创建实例（用于公共小组件系统）
+  factory DailyTodoListWidget.fromProps(
+    Map<String, dynamic> props,
+    HomeWidgetSize size,
+  ) {
+    final tasksList =
+        (props['tasks'] as List<dynamic>?)
+            ?.map((e) => TodoTask.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [];
+
+    final reminderJson = props['reminder'] as Map<String, dynamic>?;
+    final reminder =
+        reminderJson != null
+            ? TodoReminder.fromJson(reminderJson)
+            : const TodoReminder(text: '', hashtag: '', hashtagEmoji: '');
+
+    return DailyTodoListWidget(
+      date: props['date'] as String? ?? '',
+      time: props['time'] as String? ?? '',
+      tasks: tasksList,
+      reminder: reminder,
+      inline: props['inline'] as bool? ?? false,
+      size: size,
+    );
+  }
+
+  @override
+  State<DailyTodoListWidget> createState() => _DailyTodoListWidgetState();
+}
+
+class _DailyTodoListWidgetState extends State<DailyTodoListWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late List<TodoTask> _tasks;
+
+  @override
+  void initState() {
+    super.initState();
+    _tasks = List.from(widget.tasks);
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleTask(int index) {
+    setState(() {
+      _tasks[index] = _tasks[index].copyWith(
+        isCompleted: !_tasks[index].isCompleted,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
+            child: Container(
+              width: widget.inline ? double.maxFinite : 360,
+              height: widget.inline ? double.maxFinite : 600,
+              constraints: widget.size.getHeightConstraints(),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF18181B) : Colors.white,
+                borderRadius: BorderRadius.circular(
+                  widget.size is SmallSize ? 16 : 24,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+                border: Border.all(
+                  color:
+                      isDark
+                          ? const Color(0xFF27272A)
+                          : const Color(0xFFE4E4E7),
+                  width: widget.size.getSmallSpacing() * 0.25,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 顶部日期区域
+                  _HeaderSection(
+                    date: widget.date,
+                    time: widget.time,
+                    primaryColor: primaryColor,
+                    isDark: isDark,
+                    size: widget.size,
+                  ),
+                  // 任务列表
+                  _TasksSection(
+                    tasks: _tasks,
+                    onToggle: _toggleTask,
+                    animation: _fadeAnimation,
+                    isDark: isDark,
+                    size: widget.size,
+                  ),
+                  // 底部提醒
+                  _ReminderSection(
+                    reminder: widget.reminder,
+                    animation: _fadeAnimation,
+                    isDark: isDark,
+                    size: widget.size,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 顶部日期区域
+class _HeaderSection extends StatelessWidget {
+  final String date;
+  final String time;
+  final Color primaryColor;
+  final bool isDark;
+  final HomeWidgetSize size;
+
+  const _HeaderSection({
+    required this.date,
+    required this.time,
+    required this.primaryColor,
+    required this.isDark,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: size.getPadding(),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(0.9),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(size is SmallSize ? 16 : 24),
+          topRight: Radius.circular(size is SmallSize ? 16 : 24),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontSize: size.getTitleFontSize() * 0.8,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.black87 : Colors.black87,
+                    height: 1.2,
+                  ),
+                ),
+                SizedBox(height: size.getSmallSpacing() * 1.5),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: size.getSmallSpacing() * 2,
+                    vertical: size.getSmallSpacing() * 0.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(
+                      size.getSmallSpacing() * 1.5,
+                    ),
+                  ),
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      fontSize: size.getLegendFontSize(),
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.black87 : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 任务列表区域
+class _TasksSection extends StatelessWidget {
+  final List<TodoTask> tasks;
+  final Function(int) onToggle;
+  final Animation<double> animation;
+  final bool isDark;
+  final HomeWidgetSize size;
+
+  const _TasksSection({
+    required this.tasks,
+    required this.onToggle,
+    required this.animation,
+    required this.isDark,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: size.getPadding(),
+        decoration: BoxDecoration(
+          // 点阵网格背景
+          color: isDark ? const Color(0xFF18181B) : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(size is SmallSize ? 20 : 32),
+            topRight: Radius.circular(size is SmallSize ? 20 : 32),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tasks.length,
+                separatorBuilder:
+                    (context, index) => SizedBox(height: size.getItemSpacing()),
+                itemBuilder: (context, index) {
+                  return _TaskItem(
+                    task: tasks[index],
+                    onTap: () => onToggle(index),
+                    animation: animation,
+                    index: index,
+                    isDark: isDark,
+                    size: size,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 单个任务项
+class _TaskItem extends StatelessWidget {
+  final TodoTask task;
+  final VoidCallback onTap;
+  final Animation<double> animation;
+  final int index;
+  final bool isDark;
+  final HomeWidgetSize size;
+
+  const _TaskItem({
+    required this.task,
+    required this.onTap,
+    required this.animation,
+    required this.index,
+    required this.isDark,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final itemAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Interval(
+        0.2 + index * 0.1,
+        (0.6 + index * 0.1).clamp(0.0, 1.0),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: itemAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: itemAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 10 * (1 - itemAnimation.value)),
+            child: GestureDetector(
+              onTap: onTap,
+              child: Row(
+                children: [
+                  _Checkbox(
+                    isChecked: task.isCompleted,
+                    isDark: isDark,
+                    size: size,
+                  ),
+                  SizedBox(width: size.getItemSpacing()),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: TextStyle(
+                        fontSize: size.getSubtitleFontSize(),
+                        fontWeight: FontWeight.w400,
+                        color:
+                            task.isCompleted
+                                ? (isDark
+                                    ? const Color(0xFF71717A)
+                                    : const Color(0xFFA1A1AA))
+                                : (isDark
+                                    ? const Color(0xFFE4E4E7)
+                                    : const Color(0xFF27272A)),
+                        decoration:
+                            task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 复选框组件
+class _Checkbox extends StatelessWidget {
+  final bool isChecked;
+  final bool isDark;
+  final HomeWidgetSize size;
+
+  const _Checkbox({
+    required this.isChecked,
+    required this.isDark,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 根据尺寸调整复选框大小和边框
+    final checkboxSize = size.getThumbnailIconSize() * 0.8;
+    final iconSize = checkboxSize * 0.67;
+    final borderRadius = checkboxSize * 0.25;
+    final borderWidth = size.getSmallSpacing() * 0.5;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: checkboxSize,
+      height: checkboxSize,
+      decoration: BoxDecoration(
+        color:
+            isChecked
+                ? (isDark ? Colors.white : const Color(0xFF18181B))
+                : (isDark ? const Color(0xFF27272A) : Colors.white),
+        border: Border.all(
+          color:
+              isChecked
+                  ? (isDark ? Colors.white : const Color(0xFF18181B))
+                  : (isDark
+                      ? const Color(0xFF3F3F46)
+                      : const Color(0xFFD4D4D8)),
+          width: borderWidth.clamp(1.0, 3.0),
+        ),
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child:
+          isChecked
+              ? Icon(
+                Icons.check,
+                size: iconSize,
+                color: isDark ? const Color(0xFF18181B) : Colors.white,
+              )
+              : null,
+    );
+  }
+}
+
+/// 底部提醒区域
+class _ReminderSection extends StatelessWidget {
+  final TodoReminder reminder;
+  final Animation<double> animation;
+  final bool isDark;
+  final HomeWidgetSize size;
+
+  const _ReminderSection({
+    required this.reminder,
+    required this.animation,
+    required this.isDark,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final reminderAnimation = CurvedAnimation(
+      parent: animation,
+      curve: const Interval(0.7, 1.0, curve: Curves.easeOutCubic),
+    );
+
+    return AnimatedBuilder(
+      animation: reminderAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: reminderAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 10 * (1 - reminderAnimation.value)),
+            child: Container(
+              padding: size.getPadding(),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color:
+                        isDark
+                            ? const Color(0xFF27272A)
+                            : const Color(0xFFF4F4F5),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          reminder.text,
+                          style: TextStyle(
+                            fontSize: size.getSubtitleFontSize() + 1,
+                            fontWeight: FontWeight.w400,
+                            color:
+                                isDark
+                                    ? const Color(0xFFE4E4E7)
+                                    : const Color(0xFF27272A),
+                            height: 1.2,
+                          ),
+                        ),
+                        SizedBox(width: size.getSmallSpacing()),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: size.getSmallSpacing(),
+                            vertical: size.getSmallSpacing() * 0.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark
+                                    ? const Color(0xFF831843).withOpacity(0.4)
+                                    : const Color(0xFFFDF2F8),
+                            borderRadius: BorderRadius.circular(
+                              size.getSmallSpacing() * 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            reminder.hashtag,
+                            style: TextStyle(
+                              fontSize: size.getSubtitleFontSize() + 1,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isDark
+                                      ? const Color(0xFFF472B6)
+                                      : const Color(0xFFDB2777),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: size.getSmallSpacing()),
+                        Text(
+                          reminder.hashtagEmoji,
+                          style: TextStyle(
+                            fontSize: size.getSubtitleFontSize() + 1,
+                            fontWeight: FontWeight.w400,
+                            color:
+                                isDark
+                                    ? const Color(0xFFE4E4E7)
+                                    : const Color(0xFF27272A),
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

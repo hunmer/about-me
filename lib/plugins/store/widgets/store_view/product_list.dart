@@ -1,0 +1,196 @@
+import 'package:get/get.dart';
+import 'package:Memento/plugins/store/models/product.dart';
+import 'package:Memento/plugins/store/widgets/add_product_page.dart';
+import 'package:flutter/material.dart';
+import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:Memento/plugins/store/widgets/product_card.dart';
+import 'package:Memento/plugins/store/controllers/store_controller.dart';
+import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:Memento/core/services/toast_service.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+
+class ProductList extends StatefulWidget {
+  final StoreController controller;
+
+  const ProductList({super.key, required this.controller});
+
+  @override
+  State<ProductList> createState() => _ProductListState();
+}
+
+class _ProductListState extends State<ProductList> {
+  int _sortIndex = 0; // 0:默认, 1:库存, 2:价格, 3:兑换期限
+  String _searchQuery = ''; // 搜索查询关键词
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerUpdate);
+    super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  /// 搜索商品（根据名称和描述）
+  List<Product> _searchProducts(String query, List<Product> products) {
+    if (query.isEmpty) return products;
+
+    final lowercaseQuery = query.toLowerCase();
+    return products.where((product) {
+      return product.name.toLowerCase().contains(lowercaseQuery) ||
+             product.description.toLowerCase().contains(lowercaseQuery);
+    }).toList();
+  }
+
+  /// 处理搜索文本变化
+  void _handleSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 去重处理
+    final uniqueProducts = widget.controller.products
+        .fold<Map<String, Product>>({}, (map, product) {
+          if (!map.containsKey(product.id)) {
+            map[product.id] = product;
+          }
+          return map;
+        })
+        .values
+        .toList();
+
+    // 应用排序
+    final sortedProducts = _applySort(uniqueProducts);
+
+    // 应用搜索筛选
+    final filteredProducts = _searchProducts(_searchQuery, sortedProducts);
+
+    // 构建商品列表Widget
+    Widget buildProductGrid(List<Product> products) {
+      return products.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'store_noProducts'.tr
+                        : '未找到匹配的商品',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : MasonryGridView.count(
+              padding: const EdgeInsets.all(8),
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return GestureDetector(
+                  onTap: () {
+                    NavigationHelper.push(context, AddProductPage(
+                          controller: widget.controller,
+                          product: product,),
+                    ).then((_) {
+                      if (mounted) setState(() {});
+                    });
+                  },
+                  child: ProductCard(
+                    key: ValueKey(product.id),
+                    product: product,
+                    onLongPress: () {
+                      NavigationHelper.push(
+                        context,
+                        AddProductPage(
+                          controller: widget.controller,
+                          product: product,
+                        ),
+                      ).then((_) {
+                        if (mounted) setState(() {});
+                      });
+                    },
+                    onExchange: () async {
+                      if (await widget.controller.exchangeProduct(product)) {
+                        if (mounted) setState(() {});
+                        Toast.success(
+                          'store_redeemSuccess'.tr,
+                        );
+                      } else {
+                        Toast.error(
+                          'store_redeemFailed'.tr,
+                        );
+                      }
+                    },
+                  ),
+                );
+              },
+            );
+    }
+
+    return SuperCupertinoNavigationWrapper(
+      title: Icon(
+        Icons.shopping_bag,
+        color: Colors.purple,
+        size: 24,
+      ),
+      largeTitle: '商品列表',
+      body: buildProductGrid(filteredProducts),
+      searchBody: buildProductGrid(filteredProducts), // 搜索结果页面
+      enableLargeTitle: true,
+      enableSearchBar: true,
+      searchPlaceholder: 'store_searchProductPlaceholder'.tr,
+      onSearchChanged: _handleSearchChanged,
+      actions: [
+        PopupMenuButton<int>(
+          icon: const Icon(Icons.sort),
+          tooltip: 'store_sortMethod'.tr,
+          onSelected: (index) {
+            setState(() {
+              _sortIndex = index;
+            });
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: 0, child: Text('store_defaultSort'.tr)),
+            PopupMenuItem(value: 1, child: Text('store_sortByStock'.tr)),
+            PopupMenuItem(value: 2, child: Text('store_sortByPrice'.tr)),
+            PopupMenuItem(value: 3, child: Text('store_sortByExpiryDate'.tr)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<Product> _applySort(List<Product> products) {
+    switch (_sortIndex) {
+      case 1: // 库存
+        return products..sort((a, b) => a.stock.compareTo(b.stock));
+      case 2: // 价格
+        return products..sort((a, b) => b.price.compareTo(a.price));
+      case 3: // 兑换期限
+        return products..sort((a, b) => b.exchangeEnd.compareTo(a.exchangeEnd));
+      default: // 默认
+        return products;
+    }
+  }
+}

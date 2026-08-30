@@ -1,0 +1,315 @@
+import 'dart:io';
+import 'package:get/get.dart';
+import 'package:Memento/plugins/chat/models/user.dart';
+import 'package:Memento/plugins/goods/widgets/goods_item_form/index.dart';
+import 'package:flutter/material.dart';
+import 'package:Memento/plugins/chat/screens/channel_list/channel_list_screen.dart';
+import 'package:Memento/plugins/chat/screens/timeline/timeline_screen.dart';
+import 'package:Memento/plugins/chat/screens/profile_edit_dialog.dart';
+import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'chat_config_service.dart';
+
+/// 负责构建聊天插件的UI界面
+class UIService {
+  final ChatConfigService _configService;
+  final ChatPlugin _plugin;
+
+  UIService(ChatConfigService settingsService, ChatConfigService userService, this._plugin)
+      : _configService = settingsService;
+
+  Future<void> initialize() async {
+    // 初始化UI服务相关的内容
+  }
+
+  Widget buildCardView(BuildContext context) {
+    final theme = Theme.of(context);
+    final channels = _plugin.channelService.channels;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 顶部图标和标题
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _plugin.color.withAlpha(30),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(_plugin.icon, size: 24, color: _plugin.color),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'chat_name'.tr,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 统计信息卡片 - 两行显示
+          Column(
+            children: [
+              // 第一行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        'chat_channelCount'.tr,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '${channels.length}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const VerticalDivider(),
+                  Column(
+                    children: [
+                      Text(
+                        'chat_totalMessages'.tr,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '${_plugin.channelService.getTotalMessageCount()}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 第二行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        'chat_totalMessages'.tr,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '${_plugin.channelService.getTodayMessageCount()}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              _plugin.channelService.getTodayMessageCount() > 0
+                                  ? theme.colorScheme.primary
+                                  : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildMainView(BuildContext context) {
+
+    final theme = Theme.of(context);
+    final channels = _plugin.channelService.channels;
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: TabBarView(
+          children: [
+            // 频道列表标签页
+            ChannelListScreen(channels: channels, chatPlugin: _plugin),
+            // 时间线标签页
+            TimelineScreen(chatPlugin: _plugin),
+          ],
+        ),
+        bottomNavigationBar: TabBar(
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          tabs: [
+            Tab(
+              icon: const Icon(Icons.chat_bubble_outline),
+              text: 'chat_channelsTab'.tr,
+            ),
+            Tab(
+              icon: const Icon(Icons.timeline),
+              text: 'chat_timelineTab'.tr,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildUserProfileCard(BuildContext context, StateSetter setState) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'chat_profileTitle'.tr,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                // 用户头像
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  child: _buildUserAvatar(context),
+                ),
+                const SizedBox(width: 16),
+                // 用户名和ID
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _configService.currentUser.username,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'ID: ${_configService.currentUser.id}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                // 编辑按钮
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () async {
+                    final updatedUser = await showDialog<User>(
+                      context: context,
+                      builder:
+                          (context) => ProfileEditDialog(
+                            user: _configService.currentUser,
+                            chatPlugin: _plugin,
+                          ),
+                    );
+                    if (updatedUser != null) {
+                      setState(() {
+                        // 使用返回的更新后的用户对象刷新UI
+                        _configService.setCurrentUser(updatedUser);
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar(BuildContext context) {
+    final currentUser = _configService.currentUser;
+    if (currentUser.iconPath != null) {
+      return FutureBuilder<String>(
+        future: ImageUtils.getAbsolutePath(currentUser.iconPath!),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return ClipOval(
+              child: Image.file(
+                File(snapshot.data!),
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
+          return _buildDefaultAvatar(context);
+        },
+      );
+    }
+    return _buildDefaultAvatar(context);
+  }
+
+  Widget _buildDefaultAvatar(BuildContext context) {
+    return Center(
+      child: Text(
+        _configService.currentUser.username.isNotEmpty
+            ? _configService.currentUser.username[0].toUpperCase()
+            : '?',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+  Widget buildChatSettingsCard(BuildContext context, StateSetter setState) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'chat_chatSettings'.tr,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SwitchListTile(
+            title: Text('chat_showAvatarInChat'.tr),
+            value: _configService.showAvatarInChat,
+            onChanged: (bool value) {
+              setState(() {
+                _configService.setShowAvatarInChat(value);
+              });
+            },
+          ),
+          SwitchListTile(
+            title: Text('chat_playSoundOnSend'.tr),
+            value: _configService.playSoundOnSend,
+            onChanged: (bool value) {
+              setState(() {
+                _configService.setPlaySoundOnSend(value);
+              });
+            },
+          ),
+          SwitchListTile(
+            title: Text('chat_showAvatarInTimeline'.tr),
+            value: _configService.showAvatarInTimeline,
+            onChanged: (bool value) {
+              setState(() {
+                _configService.setShowAvatarInTimeline(value);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

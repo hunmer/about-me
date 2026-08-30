@@ -1,0 +1,503 @@
+import 'package:flutter/material.dart';
+import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
+import 'package:Memento/plugins/agent_chat/models/ai_message_status.dart';
+import 'package:Memento/plugins/agent_chat/managers/ai_message_status_manager.dart';
+import 'package:Memento/plugins/agent_chat/services/message_service.dart';
+import 'package:Memento/core/event/event_manager.dart';
+import 'package:Memento/core/event/event_args.dart';
+import 'markdown_content.dart';
+import 'tool_call_steps.dart';
+
+/// 链式消息容器组件
+///
+/// 用于整合和显示同一次链式调用的所有消息，支持 tab 切换
+class ChainMessageContainer extends StatefulWidget {
+  /// 会话ID
+  final String conversationId;
+
+  /// 链式执行ID
+  final String chainExecutionId;
+
+  /// 消息服务
+  final MessageService messageService;
+
+  /// 获取 Agent 名称的回调
+  final String? Function(String agentId)? getAgentName;
+
+  /// 重新执行步骤的回调
+  final Future<void> Function(String messageId, int stepIndex)? onRerunStep;
+
+  const ChainMessageContainer({
+    super.key,
+    required this.conversationId,
+    required this.chainExecutionId,
+    required this.messageService,
+    this.getAgentName,
+    this.onRerunStep,
+  });
+
+  @override
+  State<ChainMessageContainer> createState() => _ChainMessageContainerState();
+}
+
+class _ChainMessageContainerState extends State<ChainMessageContainer> {
+  /// 当前选中的 tab 索引
+  int _selectedTabIndex = 0;
+
+  /// 链式消息列表（不包含最终总结）
+  List<ChatMessage> _chainMessages = [];
+
+  /// 最终总结消息
+  ChatMessage? _finalSummaryMessage;
+
+  /// 上一次最终总结的生成状态
+  bool? _lastSummaryGeneratingState;
+
+  /// 消息ID到实时状态的映射
+  final Map<String, AIMessageStatusData> _statusMap = {};
+
+  /// 事件管理器
+  final EventManager _eventManager = EventManager.instance;
+
+  /// 订阅处理器引用（用于取消订阅）
+  Function(EventArgs)? _statusHandler;
+  Function(EventArgs)? _progressHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChainMessages();
+
+    // 订阅链式消息状态变化
+    _subscribeToChainMessages();
+
+    // 保持原有的监听器以兼容消息服务的变化
+    widget.messageService.addListener(_onMessageChanged);
+  }
+
+  @override
+  void dispose() {
+    // 取消事件订阅
+    if (_statusHandler != null) {
+      _eventManager.unsubscribe(
+        AIMessageStatusManager.eventStatusChanged,
+        _statusHandler!,
+      );
+    }
+    if (_progressHandler != null) {
+      _eventManager.unsubscribe(
+        AIMessageStatusManager.eventChainStepCompleted,
+        _progressHandler!,
+      );
+    }
+
+    // 移除监听器
+    widget.messageService.removeListener(_onMessageChanged);
+    super.dispose();
+  }
+
+  /// 订阅链式消息状态变化
+  void _subscribeToChainMessages() {
+    // 订阅链式执行的所有消息状态变化
+    _statusHandler = (EventArgs args) {
+      if (args is AIMessageStatusEventArgs &&
+          args.chainExecutionId == widget.chainExecutionId) {
+        _onChainMessageStatusChanged();
+      }
+    };
+    _eventManager.subscribe(
+      AIMessageStatusManager.eventStatusChanged,
+      _statusHandler!,
+    );
+
+    // 订阅链式执行进度变化
+    _progressHandler = (EventArgs args) {
+      if (args is Values && args.value1 == widget.chainExecutionId) {
+        _loadChainMessages();
+      }
+    };
+    _eventManager.subscribe(
+      AIMessageStatusManager.eventChainStepCompleted,
+      _progressHandler!,
+    );
+  }
+
+  /// 处理链式消息状态变化
+  void _onChainMessageStatusChanged() {
+    if (mounted) {
+      _loadChainMessages();
+    }
+  }
+
+  /// 监听消息变化（保留兼容性）
+  void _onMessageChanged() {
+    _loadChainMessages();
+  }
+
+  /// 加载链式消息
+  void _loadChainMessages() {
+    final allMessages = widget.messageService.getChainMessages(
+      widget.conversationId,
+      widget.chainExecutionId,
+    );
+
+    // 从状态管理器获取实时状态
+    final statusManager = widget.messageService.statusManager;
+    final chainStatuses = statusManager.getChainMessages(widget.chainExecutionId);
+
+    // 更新消息ID到状态的映射（清空后重新填充）
+    _statusMap.clear();
+    for (final status in chainStatuses) {
+      _statusMap[status.messageId] = status;
+    }
+
+    // 分离常规消息和最终总结消息
+    final regularMessages = <ChatMessage>[];
+    ChatMessage? summaryMsg;
+
+    for (var msg in allMessages) {
+      if (msg.isFinalSummary) {
+        summaryMsg = msg;
+      } else {
+        regularMessages.add(msg);
+      }
+    }
+
+    setState(() {
+      _chainMessages = regularMessages;
+
+      // 检测最终总结状态变化（使用状态管理器的实时状态）
+      final wasGenerating = _lastSummaryGeneratingState;
+      bool isNowGenerating = false;
+
+      if (summaryMsg != null) {
+        final status = _statusMap[summaryMsg.id];
+        isNowGenerating = status?.isActive ?? false;
+      }
+
+      _finalSummaryMessage = summaryMsg;
+      _lastSummaryGeneratingState = isNowGenerating;
+
+      // 如果是首次加载且有完成的最终结果，默认选中
+      if (wasGenerating == null &&
+          summaryMsg != null &&
+          !isNowGenerating) {
+        _selectedTabIndex = regularMessages.length; // 选中最终结果tab
+      }
+      // 如果最终总结刚刚完成生成，自动切换到该tab
+      else if (wasGenerating == true &&
+          !isNowGenerating &&
+          summaryMsg != null) {
+        _selectedTabIndex = regularMessages.length; // 选中最终结果tab
+      }
+      // 如果没有常规消息但有最终总结，优先显示最终总结
+      else if (regularMessages.isEmpty && summaryMsg != null) {
+        _selectedTabIndex = 0; // 选中最终结果tab (在单tab模式下会直接显示)
+      }
+      // 如果没有最终总结但有常规消息，且当前没有选中任何tab，选中最后一个消息
+      else if (summaryMsg == null &&
+          regularMessages.isNotEmpty &&
+          _selectedTabIndex == 0 &&
+          wasGenerating == null) {
+        _selectedTabIndex = regularMessages.length - 1; // 选中最后一个常规消息
+      }
+      // 计算总的tab数量（包括最终结果tab）
+      else {
+        final totalTabs = regularMessages.length + (summaryMsg != null ? 1 : 0);
+        // 确保选中的索引不超出范围
+        if (_selectedTabIndex >= totalTabs && totalTabs > 0) {
+          _selectedTabIndex = totalTabs - 1;
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_chainMessages.isEmpty && _finalSummaryMessage == null) {
+      return const SizedBox.shrink();
+    }
+
+    // 如果只有一个步骤且没有最终结果，直接显示内容，不显示tab栏
+    final shouldShowTabs =
+        _chainMessages.length > 1 || _finalSummaryMessage != null;
+
+    if (!shouldShowTabs) {
+      return _buildMessageContent(context, _chainMessages[0]);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Tab 栏
+        _buildTabBar(context),
+        const SizedBox(height: 12),
+
+        // 当前选中的消息内容
+        if (_selectedTabIndex < _chainMessages.length)
+          _buildMessageContent(context, _chainMessages[_selectedTabIndex])
+        else if (_selectedTabIndex == _chainMessages.length &&
+            _finalSummaryMessage != null)
+          _buildMessageContent(context, _finalSummaryMessage!),
+      ],
+    );
+  }
+
+  /// 构建 Tab 栏
+  Widget _buildTabBar(BuildContext context) {
+    final tabs = <Widget>[];
+
+    // 添加常规步骤的tabs
+    for (int index = 0; index < _chainMessages.length; index++) {
+      final message = _chainMessages[index];
+      final isSelected = index == _selectedTabIndex;
+      final agentName =
+          widget.getAgentName?.call(message.generatedByAgentId ?? '') ??
+          'Agent';
+      final stepIndex = message.chainStepIndex ?? index;
+
+      // 从状态管理器获取实时生成状态
+      final status = _statusMap[message.id];
+      final isGenerating = status?.isActive ?? false;
+      final tokenCount = status?.tokenCount ?? 0;
+
+      tabs.add(
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _buildTab(
+            context: context,
+            label: '步骤${stepIndex + 1}: $agentName',
+            isSelected: isSelected,
+            isGenerating: isGenerating,
+            hasError: message.content.contains('❌'),
+            tokenCount: isGenerating ? tokenCount : null, // 常规步骤不显示token
+            onTap: () {
+              setState(() {
+                _selectedTabIndex = index;
+              });
+            },
+          ),
+        ),
+      );
+    }
+
+    // 添加最终结果tab
+    if (_finalSummaryMessage != null) {
+      final summaryIndex = _chainMessages.length;
+      final isSelected = _selectedTabIndex == summaryIndex;
+
+      // 从状态管理器获取实时生成状态
+      final status = _statusMap[_finalSummaryMessage!.id];
+      final isGenerating = status?.isActive ?? false;
+      final tokenCount = status?.tokenCount ?? 0;
+
+      tabs.add(
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _buildTab(
+            context: context,
+            label: '最终结果',
+            isSelected: isSelected,
+            isGenerating: isGenerating,
+            hasError: _finalSummaryMessage!.content.contains('❌'),
+            tokenCount: isGenerating ? tokenCount : null,
+            onTap: () {
+              setState(() {
+                _selectedTabIndex = summaryIndex;
+              });
+            },
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: tabs),
+    );
+  }
+
+  /// 构建单个 Tab
+  Widget _buildTab({
+    required BuildContext context,
+    required String label,
+    required bool isSelected,
+    required bool isGenerating,
+    required bool hasError,
+    required VoidCallback onTap,
+    int? tokenCount, // token计数（仅最终结果tab生成时显示）
+  }) {
+    Color backgroundColor;
+    Color borderColor;
+    Color textColor;
+    Widget? statusWidget; // 使用Widget替代IconData，支持动画
+
+    if (hasError) {
+      backgroundColor =
+          isSelected
+              ? Theme.of(context).colorScheme.errorContainer
+              : Theme.of(context).colorScheme.errorContainer.withOpacity(0.3);
+      borderColor = Theme.of(context).colorScheme.error;
+      textColor = Theme.of(context).colorScheme.onErrorContainer;
+      statusWidget = Icon(Icons.error_outline, size: 16, color: textColor);
+    } else if (isGenerating) {
+      backgroundColor =
+          isSelected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3);
+      borderColor = Theme.of(context).colorScheme.primary;
+      textColor = Theme.of(context).colorScheme.onPrimaryContainer;
+      // 使用旋转动画的加载图标
+      statusWidget = SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(textColor),
+        ),
+      );
+    } else {
+      backgroundColor =
+          isSelected
+              ? Theme.of(context).colorScheme.tertiaryContainer
+              : Theme.of(
+                context,
+              ).colorScheme.tertiaryContainer.withOpacity(0.3);
+      borderColor = Theme.of(context).colorScheme.tertiary;
+      textColor = Theme.of(context).colorScheme.onTertiaryContainer;
+      statusWidget = Icon(
+        Icons.check_circle_outline,
+        size: 16,
+        color: textColor,
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (statusWidget != null) ...[
+              statusWidget,
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: textColor,
+              ),
+            ),
+            // 显示token计数（仅在生成中且有token时显示）
+            if (tokenCount != null && tokenCount > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '(~$tokenCount)',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: textColor.withOpacity(0.7),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建消息内容
+  Widget _buildMessageContent(BuildContext context, ChatMessage message) {
+    // 从状态管理器获取实时生成状态
+    final status = _statusMap[message.id];
+    final isGenerating = status?.isActive ?? false;
+    final currentContent = status?.currentContent ?? message.content;
+
+    // 检查是否有工具调用
+    final hasToolCall =
+        message.toolCall != null && message.toolCall!.steps.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 如果有工具调用
+        if (hasToolCall) ...[
+          // ⚠️ 优先显示 ToolCallSteps
+          ToolCallSteps(
+            steps: message.toolCall!.steps,
+            isGenerating: isGenerating,
+            onRerunStep:
+                widget.onRerunStep != null
+                    ? (stepIndex) => widget.onRerunStep!(message.id, stepIndex)
+                    : null,
+          ),
+        ]
+        // 总是显示消息内容（包括正在生成中的内容）
+        else if (currentContent.isNotEmpty)
+          MarkdownContent(content: _stripMarkdownCodeBlocks(currentContent))
+        // 如果正在生成但没有内容，显示加载指示器
+        else if (isGenerating)
+          Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '正在生成...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          )
+        else
+          Text(
+            '(空消息)',
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 移除 Markdown 代码块的开头和结尾标记（如 ```json 或 ```）
+  String _stripMarkdownCodeBlocks(String content) {
+    final trimmed = content.trim();
+
+    // 匹配开头的 ``` 后面可能跟语言标识（如 json、dart 等）
+    final startPattern = RegExp(r'^```\w*\n?');
+    final endPattern = RegExp(r'\n?```$');
+
+    String result = trimmed;
+
+    // 移除开头的标记
+    if (startPattern.hasMatch(result)) {
+      result = result.replaceFirst(startPattern, '');
+    }
+
+    // 移除结尾的标记
+    if (endPattern.hasMatch(result)) {
+      result = result.replaceFirst(endPattern, '');
+    }
+
+    return result.trim();
+  }
+}

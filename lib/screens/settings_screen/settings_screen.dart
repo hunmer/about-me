@@ -1,0 +1,840 @@
+import 'dart:async';
+import 'package:Memento/core/services/backup_service.dart';
+import 'package:Memento/core/theme_controller.dart';
+import 'package:Memento/core/services/speech_recognition_config_service.dart';
+
+import 'package:flutter/material.dart';
+import 'package:Memento/widgets/adaptive_switch.dart';
+import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import './controllers/settings_screen_controller.dart';
+import './widgets/webdav_settings_dialog.dart';
+import './widgets/api_forwarding_settings_dialog.dart';
+import './widgets/speech_recognition_settings_dialog.dart';
+import './controllers/webdav_controller.dart';
+import 'package:Memento/core/floating_ball/settings_screen.dart';
+import 'package:Memento/core/floating_ball/floating_ball_manager.dart';
+import 'package:Memento/screens/settings_screen/screens/data_management_screen.dart';
+import 'package:Memento/screens/settings_screen/screens/device_sync_screen.dart';
+import 'package:Memento/screens/about_screen/about_screen.dart';
+import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
+import 'package:Memento/screens/settings_screen/controllers/permission_controller.dart';
+import 'package:Memento/screens/settings_screen/widgets/permission_request_dialog.dart';
+import 'package:Memento/core/api_forwarding/api_forwarding_config.dart';
+import 'package:Memento/core/api_forwarding/api_forwarding_service.dart';
+import 'package:get/get.dart';
+import 'package:universal_platform/universal_platform.dart';
+import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:Memento/core/plugin_base.dart';
+import 'package:Memento/widgets/route_viewer_dialog.dart';
+import 'package:Memento/screens/route.dart';
+import 'package:Memento/plugins/reminder/screens/reminder_list_screen.dart';
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  late SettingsScreenController _controller;
+  late WebDAVController _webdavController;
+  bool _isWebDAVConnected = false;
+  bool _isServerSyncLoggedIn = false;
+  bool _isApiForwardingConnected = false;
+  bool _isSpeechRecognitionConfigured = false;
+
+  StreamSubscription? _apiForwardingSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SettingsScreenController();
+    _webdavController = WebDAVController();
+
+    _controller.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+
+    // 初始化语音识别配置服务
+    _initSpeechRecognitionConfig();
+    // 检查WebDAV配置
+    _checkWebDAVConfig();
+    // 检查服务器同步配置
+    _checkServerSyncConfig();
+    // 检查 API 转发连接状态
+    _checkApiForwardingStatus();
+    // 监听 API 转发状态变化
+    _listenToApiForwardingEvents();
+  }
+
+  // 初始化语音识别配置服务
+  Future<void> _initSpeechRecognitionConfig() async {
+    await SpeechRecognitionConfigService.instance.initialize();
+    if (mounted) {
+      setState(() {
+        _isSpeechRecognitionConfigured =
+            SpeechRecognitionConfigService.instance.isConfigured;
+      });
+    }
+  }
+
+  // 显示语音识别设置对话框
+  Future<void> _showSpeechRecognitionSettings() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const SpeechRecognitionSettingsDialog(),
+    );
+
+    if (result == true && mounted) {
+      setState(() {
+        _isSpeechRecognitionConfigured =
+            SpeechRecognitionConfigService.instance.isConfigured;
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 异步初始化控制器
+    _initializeAsync();
+  }
+
+  Future<void> _initializeAsync() async {
+    await _controller.initializeControllers(context);
+    _backupService = BackupService(_controller, context);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _apiForwardingSubscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // 检查WebDAV配置
+  Future<void> _checkWebDAVConfig() async {
+    final config = await _webdavController.getWebDAVConfig();
+    if (mounted) {
+      setState(() {
+        _isWebDAVConnected = config?['isConnected'] == true;
+      });
+    }
+  }
+
+  // 检查服务器同步配置
+  Future<void> _checkServerSyncConfig() async {
+    final config = await ServerSyncConfig.load();
+    if (mounted) {
+      setState(() {
+        _isServerSyncLoggedIn = config.isLoggedIn;
+      });
+    }
+  }
+
+  // 检查 API 转发连接状态
+  void _checkApiForwardingStatus() {
+    if (mounted) {
+      setState(() {
+        _isApiForwardingConnected = ApiForwardingService.instance.isConnected;
+      });
+    }
+  }
+
+  // 监听 API 转发事件
+  void _listenToApiForwardingEvents() {
+    _apiForwardingSubscription = ApiForwardingService.instance.eventStream
+        .listen((event) {
+          if (mounted) {
+            final type = event['type'] as String?;
+            if (type == 'connected' ||
+                type == 'disconnected' ||
+                type == 'stopped') {
+              setState(() {
+                _isApiForwardingConnected = type == 'connected';
+              });
+            }
+          }
+        });
+  }
+
+  late BackupService _backupService;
+
+  // 显示WebDAV设置对话框
+  Future<void> _showWebDAVSettings() async {
+    final config = await _webdavController.getWebDAVConfig();
+    if (!mounted) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => WebDAVSettingsDialog(
+            controller: _webdavController,
+            initialConfig: config,
+          ),
+    );
+
+    if (result == true) {
+      // 重新检查WebDAV状态
+      await _checkWebDAVConfig();
+    }
+  }
+
+  // 显示定位 API Key 设置对话框
+  Future<void> _showLocationApiKeyDialog() async {
+    final TextEditingController apiKeyController = TextEditingController(
+      text: _controller.locationApiKey,
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('screens_setLocationApiKey'.tr),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'screens_locationApiKeyHint'.tr,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: apiKeyController,
+                  decoration: InputDecoration(
+                    labelText: 'screens_apiKeyLabel'.tr,
+                    hintText: 'screens_apiKeyInputHint'.tr,
+                    border: const OutlineInputBorder(),
+                  ),
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'screens_locationApiKeyGuide'.tr,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('screens_cancel'.tr),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(apiKeyController.text);
+                },
+                child: Text('app_save'.tr),
+              ),
+            ],
+          ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await _controller.setLocationApiKey(result);
+      if (mounted) {
+        setState(() {});
+      }
+    }
+
+    apiKeyController.dispose();
+  }
+
+  Future<void> _showPluginManagementSheet() async {
+    await SmoothBottomSheet.show(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final double sheetHeight = MediaQuery.of(context).size.height * 0.75;
+        return SizedBox(
+          height: sheetHeight,
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final List<PluginBase> plugins = List<PluginBase>.from(
+                _controller.availablePlugins,
+              )..sort(
+                (a, b) => (a.getPluginName(context) ?? a.id).compareTo(
+                  b.getPluginName(context) ?? b.id,
+                ),
+              );
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'settings_screen_pluginManagementTip'.tr,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: plugins.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final plugin = plugins[index];
+                        final pluginName =
+                            plugin.getPluginName(context) ?? plugin.id;
+                        final isEnabled = _controller.isPluginEnabled(
+                          plugin.id,
+                        );
+                        return SwitchListTile(
+                          title: Text(pluginName),
+                          subtitle: Text(plugin.id),
+                          value: isEnabled,
+                          onChanged: (value) async {
+                            await _controller.setPluginEnabled(
+                              plugin.id,
+                              value,
+                            );
+                            setModalState(() {});
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool showPermissionEntry =
+        UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
+    if (!_controller.isInitialized() || _backupService == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        'settings_screen_settingsTitle'.tr,
+        style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
+      ),
+      largeTitle: 'settings_screen_settingsTitle'.tr,
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          // 界面设置
+          Text(
+            '界面设置',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text('settings_screen_languageTitle'.tr),
+            subtitle: Text('settings_screen_languageSubtitle'.tr),
+            onTap: () => _controller.toggleLanguage(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.brightness_4),
+            title: Text('settings_screen_darkModeTitle'.tr),
+            subtitle: Text('settings_screen_darkModeSubtitle'.tr),
+            trailing: AdaptiveSwitch(
+              value: ThemeController.isDarkTheme(context),
+              onChanged: (value) => _controller.setTheme(context, value),
+            ),
+          ),
+          const Divider(),
+
+          // 数据管理
+          Text(
+            '数据管理',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.upload),
+            title: Text('settings_screen_exportDataTitle'.tr),
+            subtitle: Text('settings_screen_exportDataSubtitle'.tr),
+            onTap: () {
+              if (mounted) {
+                _controller.exportData(context);
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.storage),
+            title: Text('settings_screen_dataManagementTitle'.tr),
+            subtitle: Text('settings_screen_dataManagementSubtitle'.tr),
+            onTap: () {
+              NavigationHelper.push(
+                context,
+                DataManagementScreen(),
+                routeName: '/settings/data_management',
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.download),
+            title: Text('settings_screen_importDataTitle'.tr),
+            subtitle: Text('settings_screen_importDataSubtitle'.tr),
+            onTap: _controller.importData,
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.backup),
+            title: Text('settings_screen_fullBackupTitle'.tr),
+            subtitle: Text('settings_screen_fullBackupSubtitle'.tr),
+            onTap: _controller.exportAllData,
+          ),
+          ListTile(
+            leading: const Icon(Icons.restore),
+            title: Text('settings_screen_fullRestoreTitle'.tr),
+            subtitle: Text('settings_screen_fullRestoreSubtitle'.tr),
+            onTap: _controller.importAllData,
+            trailing: const Icon(Icons.warning, color: Colors.orange),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.cloud),
+            title: Text('settings_screen_webDAVTitle'.tr),
+            subtitle: Text(
+              _isWebDAVConnected
+                  ? 'settings_screen_webDAVConnected'.tr
+                  : 'settings_screen_webDAVDisconnected'.tr,
+            ),
+            trailing:
+                _isWebDAVConnected
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : null,
+            onTap: () {
+              if (mounted) {
+                _showWebDAVSettings();
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.sync),
+            title: Text('settings_screen_serverSyncTitle'.tr),
+            subtitle: Text(
+              _isServerSyncLoggedIn
+                  ? 'settings_screen_serverSyncConnected'.tr
+                  : 'settings_screen_serverSyncDisconnected'.tr,
+            ),
+            trailing:
+                _isServerSyncLoggedIn
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : const Icon(Icons.chevron_right),
+            onTap: () {
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DeviceSyncScreen(),
+                  ),
+                ).then((_) => _checkServerSyncConfig());
+              }
+            },
+          ),
+          const Divider(),
+
+          // 应用设置
+          Text(
+            '应用设置',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<bool>(
+            future: FloatingBallManager().isEnabled(),
+            builder: (context, snapshot) {
+              final bool isEnabled = snapshot.data ?? true;
+              return ListTile(
+                leading: const Icon(Icons.touch_app),
+                title: Text('settings_screen_floatingBallTitle'.tr),
+                subtitle: Text(
+                  isEnabled
+                      ? 'settings_screen_floatingBallEnabled'.tr
+                      : 'settings_screen_floatingBallDisabled'.tr,
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  NavigationHelper.push(
+                    context,
+                    const FloatingBallSettingsScreen(),
+                    routeName: '/settings/floating_ball_settings',
+                  );
+                },
+              );
+            },
+          ),
+          if (UniversalPlatform.isAndroid)
+            ListTile(
+              leading: const Icon(Icons.touch_app),
+              title: Text('screens_floatingBallSettings'.tr),
+              subtitle: Text('screens_manageSystemFloatingBall'.tr),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.pushNamed(context, '/floating_ball');
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: Text('settings_screen_autoBackupTitle'.tr),
+            subtitle: Text('settings_screen_autoBackupSubtitle'.tr),
+            onTap: _backupService.showBackupScheduleDialog,
+          ),
+          ListTile(
+            leading: const Icon(Icons.alarm),
+            title: const Text('定时提醒'),
+            subtitle: const Text('管理定时提醒任务'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              NavigationHelper.push(
+                context,
+                const ReminderListScreen(),
+                routeName: '/settings/reminder',
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.extension),
+            title: Text('settings_screen_pluginManagementTitle'.tr),
+            subtitle: Text('settings_screen_pluginManagementSubtitle'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: _showPluginManagementSheet,
+          ),
+          ListTile(
+            leading: const Icon(Icons.play_circle),
+            title: Text('settings_screen_autoOpenLastPluginTitle'.tr),
+            subtitle: Text('settings_screen_autoOpenLastPluginSubtitle'.tr),
+            trailing: AdaptiveSwitch(
+              value: _controller.autoOpenLastPlugin,
+              onChanged:
+                  (value) => setState(() {
+                    _controller.autoOpenLastPlugin = value;
+                  }),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.location_on),
+            title: Text('screens_locationApiKey'.tr),
+            subtitle: Text(
+              _controller.locationApiKey.isEmpty
+                  ? 'screens_locationApiKeyNotSet'.tr
+                  : 'screens_locationApiKeyPartial'.trParams({
+                    'key': _controller.locationApiKey.substring(0, 8),
+                  }),
+            ),
+            trailing: const Icon(Icons.edit),
+            onTap: () => _showLocationApiKeyDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.mic),
+            title: const Text('语音识别设置'),
+            subtitle: Text(
+              _isSpeechRecognitionConfigured ? '已配置腾讯云语音识别' : '配置语音识别服务',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isSpeechRecognitionConfigured)
+                  const Icon(Icons.check_circle, color: Colors.green),
+                const Icon(Icons.arrow_forward_ios),
+              ],
+            ),
+            onTap: _showSpeechRecognitionSettings,
+          ),
+          const Divider(),
+
+          // 剪切板设置
+          Text(
+            '剪切板设置',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.content_paste),
+            title: const Text('自动读取剪切板'),
+            subtitle: const Text('启用后将自动识别剪切板中的数据'),
+            trailing: AdaptiveSwitch(
+              value: _controller.clipboardAutoRead,
+              onChanged:
+                  (value) => setState(() {
+                    _controller.clipboardAutoRead = value;
+                  }),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.content_paste_go),
+            title: const Text('读取并识别剪切板'),
+            subtitle: const Text('手动读取剪切板中的数据并识别处理'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () async {
+              final result = await _controller.readAndProcessClipboard();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result ? '剪切板识别成功' : '剪切板中没有可识别的数据'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+          if (showPermissionEntry)
+            ListTile(
+              leading: const Icon(Icons.privacy_tip),
+              title: Text('app_permissionsTitle'.tr),
+              subtitle: Text('app_permissionsManageDescription'.tr),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () async {
+                await showPermissionRequestDialog(
+                  context: context,
+                  controller: PermissionController(),
+                  barrierDismissible: true,
+                  showSkipButton: false,
+                );
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.system_update),
+            title: Text('settings_screen_autoCheckUpdateTitle'.tr),
+            subtitle: Text('settings_screen_autoCheckUpdateSubtitle'.tr),
+            trailing: AdaptiveSwitch(
+              value: _controller.autoCheckUpdate,
+              onChanged:
+                  (value) => setState(() {
+                    _controller.autoCheckUpdate = value;
+                  }),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.update),
+            title: Text('settings_screen_checkUpdateTitle'.tr),
+            subtitle: Text('settings_screen_checkUpdateSubtitle'.tr),
+            onTap: _controller.checkForUpdates,
+          ),
+          const Divider(),
+
+          // 开发者测试
+          Text(
+            '开发者测试',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.code),
+            title: Text('screens_jsConsole'.tr),
+            subtitle: Text('screens_testJavaScriptAPI'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/js_console');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_month),
+            title: const Text('MementoSfCalendar 测试'),
+            subtitle: const Text('Syncfusion 日历封装组件测试'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/widgets_gallery/memento_sf_calendar',
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cloud_sync),
+            title: const Text('转发数据服务'),
+            subtitle: Text(
+              _isApiForwardingConnected ? '已连接到转发服务器' : '配置 API 转发服务，支持前端访问',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isApiForwardingConnected)
+                  const Icon(Icons.check_circle, color: Colors.green),
+                const Icon(Icons.arrow_forward_ios),
+              ],
+            ),
+            onTap: () async {
+              final config = await ApiForwardingConfig.load();
+              if (!mounted) return;
+
+              final result = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) =>
+                        ApiForwardingSettingsDialog(initialConfig: config),
+              );
+
+              if (result == true) {
+                // 重新检查连接状态
+                setState(() {});
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications_active),
+            title: const Text('Toast 测试'),
+            subtitle: const Text('测试 Toast 显示、动画和自定义 Widget'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/toast_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.record_voice_over),
+            title: const Text('后台播报测试'),
+            subtitle: const Text('测试 TTS 后台定时播报功能'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.backgroundAnnouncementTest,
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_tree),
+            title: const Text('数据选择器测试'),
+            subtitle: const Text('测试插件数据选择器系统'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/data_selector_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.route),
+            title: const Text('路由查看器'),
+            subtitle: const Text('查看所有可用路由'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              RouteViewerDialog.show(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.swipe),
+            title: const Text('SwipeAction 测试'),
+            subtitle: const Text('测试滑动操作组件'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/swipe_action_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.widgets),
+            title: Text('screens_jsonDynamicWidgetTest'.tr),
+            subtitle: Text('screens_testAndPreviewDynamicUI'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/json_dynamic_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: Text('screens_notificationTest'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/notification_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.link),
+            title: Text('screens_intentTest'.tr),
+            subtitle: Text('screens_testDynamicIntentAndDeepLink'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/intent_test');
+            },
+          ),
+          if (UniversalPlatform.isIOS)
+            ListTile(
+              leading: const Icon(Icons.notifications_active),
+              title: const Text('Live Activities 测试'),
+              subtitle: const Text('测试实时活动通知'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.pushNamed(context, '/live_activities_test');
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.input),
+            title: const Text('表单字段组件测试'),
+            subtitle: const Text('测试 form_fields 组件库'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/form_fields_test');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.category),
+            title: const Text('通用组件示例'),
+            subtitle: const Text('查看 widgets 目录下的通用组件示例'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/widgets_gallery');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.description),
+            title: const Text('日志系统'),
+            subtitle: const Text('查看和管理应用日志'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.pushNamed(context, '/log');
+            },
+          ),
+          const Divider(),
+
+          // 关于
+          Text(
+            '关于',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: Text('app_aboutTitle'.tr),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              NavigationHelper.push(
+                context,
+                const AboutScreen(),
+                routeName: '/settings/about',
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,394 @@
+import 'package:flutter/foundation.dart';
+import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
+import 'package:Memento/plugins/agent_chat/models/ai_message_status.dart';
+import 'package:Memento/plugins/agent_chat/managers/ai_message_status_manager.dart';
+import 'token_counter_service.dart';
+import 'widget_service.dart';
+
+/// 消息服务
+///
+/// 管理聊天消息的CRUD操作
+class MessageService extends ChangeNotifier {
+  final StorageManager storage;
+
+  /// AI 消息状态管理器
+  final AIMessageStatusManager _statusManager = AIMessageStatusManager();
+
+  /// 会话ID -> 消息列表的缓存
+  final Map<String, List<ChatMessage>> _messageCache = {};
+
+  /// 每个会话独立的保存任务队列，避免并发写入破坏JSON结构
+  final Map<String, Future<void>> _messageSaveChains = {};
+
+  /// 当前正在查看的会话ID
+  String? _currentConversationId;
+
+  MessageService({required this.storage}) {
+    // 初始化状态管理器
+    _statusManager.initialize();
+  }
+
+  /// 获取状态管理器实例（供外部使用）
+  AIMessageStatusManager get statusManager => _statusManager;
+
+  /// 获取当前会话的消息列表
+  List<ChatMessage> get currentMessages {
+    if (_currentConversationId == null) return [];
+    return _messageCache[_currentConversationId] ?? [];
+  }
+
+  /// 设置当前会话
+  Future<void> setCurrentConversation(String conversationId) async {
+    _currentConversationId = conversationId;
+    if (!_messageCache.containsKey(conversationId)) {
+      await _loadMessages(conversationId);
+    }
+    notifyListeners();
+  }
+
+  /// 加载指定会话的消息
+  Future<void> _loadMessages(String conversationId) async {
+    try {
+      final data = await storage.read('agent_chat/messages/$conversationId.json');
+      if (data is List) {
+        final messages =
+            data
+                .map(
+                  (json) => ChatMessage.fromJson(json as Map<String, dynamic>),
+                )
+                .toList();
+        _messageCache[conversationId] = messages;
+      } else {
+        _messageCache[conversationId] = [];
+      }
+    } catch (e) {
+      _messageCache[conversationId] = [];
+    }
+  }
+
+  /// 保存指定会话的消息
+  Future<void> _saveMessages(String conversationId) {
+    final previousTask = _messageSaveChains[conversationId] ?? Future.value();
+
+    final saveTask = previousTask
+        .catchError((_, __) {})
+        .then((_) async {
+          try {
+            final messages = _messageCache[conversationId] ?? [];
+            final data = messages.map((m) => m.toJson()).toList();
+            await storage.write('agent_chat/messages/$conversationId.json', data);
+          } catch (e) {
+            debugPrint('❌ [MessageService] 保存消息失败: $e');
+          }
+        });
+
+    _messageSaveChains[conversationId] = saveTask;
+    saveTask.whenComplete(() {
+      // 仅在任务链指针仍指向当前任务时移除，避免新的任务被误删
+      if (identical(_messageSaveChains[conversationId], saveTask)) {
+        _messageSaveChains.remove(conversationId);
+      }
+    });
+
+    return saveTask;
+  }
+
+  // ========== 消息操作 ==========
+
+  /// 添加消息
+  Future<void> addMessage(ChatMessage message) async {
+    final conversationId = message.conversationId;
+
+    // 确保消息列表已加载
+    if (!_messageCache.containsKey(conversationId)) {
+      await _loadMessages(conversationId);
+    }
+
+    _messageCache[conversationId]!.add(message);
+    await _saveMessages(conversationId);
+    notifyListeners();
+
+    // 同步到状态管理器
+    if (!message.isUser) {
+      await _statusManager.createMessageStatus(
+        conversationId: conversationId,
+        messageId: message.id,
+        status: message.isGenerating
+            ? AIMessageStatus.generating
+            : AIMessageStatus.completed,
+        generatedByAgentId: message.generatedByAgentId,
+        chainExecutionId: message.chainExecutionId,
+        chainStepIndex: message.chainStepIndex,
+      );
+    }
+
+    // 更新桌面小组件
+    AgentChatWidgetService.updateWidget();
+  }
+
+  /// 更新消息
+  Future<void> updateMessage(ChatMessage message) async {
+    final conversationId = message.conversationId;
+    final messages = _messageCache[conversationId];
+
+    if (messages != null) {
+      final index = messages.indexWhere((m) => m.id == message.id);
+      if (index != -1) {
+        messages[index] = message;
+        await _saveMessages(conversationId);
+        notifyListeners();
+      }
+    }
+  }
+
+  /// 删除消息
+  Future<void> deleteMessage(String conversationId, String messageId) async {
+    final messages = _messageCache[conversationId];
+
+    if (messages != null) {
+      messages.removeWhere((m) => m.id == messageId);
+      await _saveMessages(conversationId);
+      notifyListeners();
+    }
+  }
+
+  /// 清空指定会话的所有消息
+  Future<void> clearAllMessages(String conversationId) async {
+    _messageCache[conversationId] = [];
+    await _saveMessages(conversationId);
+    notifyListeners();
+  }
+
+  /// 获取指定会话的消息列表
+  Future<List<ChatMessage>> getMessages(String conversationId) async {
+    if (!_messageCache.containsKey(conversationId)) {
+      await _loadMessages(conversationId);
+    }
+    return _messageCache[conversationId] ?? [];
+  }
+
+  /// 获取单条消息
+  ChatMessage? getMessage(String conversationId, String messageId) {
+    final messages = _messageCache[conversationId];
+    if (messages == null) return null;
+
+    try {
+      return messages.firstWhere((m) => m.id == messageId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 获取指定消息的子消息列表
+  List<ChatMessage> getChildMessages(String conversationId, String parentId) {
+    final messages = _messageCache[conversationId];
+    if (messages == null) return [];
+
+    return messages.where((m) => m.parentId == parentId).toList();
+  }
+
+  /// 获取所有顶级消息（没有父消息的消息）
+  List<ChatMessage> getTopLevelMessages(String conversationId) {
+    final messages = _messageCache[conversationId];
+    if (messages == null) return [];
+
+    return messages.where((m) => m.parentId == null).toList();
+  }
+
+  /// 获取同一链式执行的所有消息（按 chainStepIndex 排序）
+  List<ChatMessage> getChainMessages(
+    String conversationId,
+    String chainExecutionId,
+  ) {
+    final messages = _messageCache[conversationId];
+    if (messages == null) return [];
+
+    final chainMessages =
+        messages.where((m) => m.chainExecutionId == chainExecutionId).toList();
+
+    // 按步骤索引排序
+    chainMessages.sort((a, b) {
+      final aIndex = a.chainStepIndex ?? 0;
+      final bIndex = b.chainStepIndex ?? 0;
+      return aIndex.compareTo(bIndex);
+    });
+
+    return chainMessages;
+  }
+
+  /// 获取最后N条消息（用于上下文）
+  List<ChatMessage> getLastMessages(String conversationId, int count) {
+    final messages = _messageCache[conversationId] ?? [];
+    if (messages.isEmpty) return [];
+
+    final startIndex = messages.length - count;
+    if (startIndex <= 0) return messages;
+
+    return messages.sublist(startIndex);
+  }
+
+  /// 清空会话的所有消息
+  Future<void> clearMessages(String conversationId) async {
+    _messageCache[conversationId] = [];
+    await _saveMessages(conversationId);
+    notifyListeners();
+  }
+
+  // ========== 高级操作 ==========
+
+  /// 编辑消息
+  Future<void> editMessage(
+    String conversationId,
+    String messageId,
+    String newContent,
+  ) async {
+    final message = getMessage(conversationId, messageId);
+    if (message != null && message.isUser) {
+      // 只能编辑用户消息
+      final tokenCount = TokenCounterService.estimateTokenCount(newContent);
+      final updated = message
+          .markAsEdited(newContent)
+          .copyWith(tokenCount: tokenCount);
+      await updateMessage(updated);
+    }
+  }
+
+  /// 重新生成AI回复（删除指定用户消息后的所有AI回复）
+  Future<void> prepareRegenerate(
+    String conversationId,
+    String userMessageId,
+  ) async {
+    final messages = _messageCache[conversationId];
+    if (messages == null) return;
+
+    // 找到用户消息的索引
+    final userMsgIndex = messages.indexWhere((m) => m.id == userMessageId);
+    if (userMsgIndex == -1) return;
+
+    // 删除该消息之后的所有AI回复
+    final messagesToKeep = <ChatMessage>[];
+    for (var i = 0; i <= userMsgIndex; i++) {
+      messagesToKeep.add(messages[i]);
+    }
+
+    _messageCache[conversationId] = messagesToKeep;
+    await _saveMessages(conversationId);
+    notifyListeners();
+  }
+
+  /// 更新AI消息的生成状态（仅更新内存，不保存到磁盘）
+  Future<void> updateAIMessageContent(
+    String conversationId,
+    String messageId,
+    String content,
+    int tokenCount,
+  ) async {
+    final message = getMessage(conversationId, messageId);
+    if (message != null && !message.isUser) {
+      final messages = _messageCache[conversationId];
+      if (messages != null) {
+        final index = messages.indexWhere((m) => m.id == messageId);
+        if (index != -1) {
+          // 只更新内存，不保存到磁盘（避免频繁I/O）
+          messages[index] = message.copyWith(
+            content: content,
+            tokenCount: tokenCount,
+          );
+          notifyListeners();
+
+          // 同步到状态管理器
+          await _statusManager.updateMessageContent(
+            messageId: messageId,
+            content: content,
+            tokenCount: tokenCount,
+          );
+        }
+      }
+    }
+  }
+
+  /// 更新AI消息的思考过程内容（Claude thinking block）
+  Future<void> updateAIMessageThinking(
+    String conversationId,
+    String messageId,
+    String thinkingContent,
+  ) async {
+    debugPrint('🧠 [updateAIMessageThinking] 开始更新思考内容, 长度: ${thinkingContent.length}');
+    final message = getMessage(conversationId, messageId);
+    if (message != null && !message.isUser) {
+      final messages = _messageCache[conversationId];
+      if (messages != null) {
+        final index = messages.indexWhere((m) => m.id == messageId);
+        if (index != -1) {
+          // 只更新内存，不保存到磁盘（避免频繁I/O）
+          messages[index] = message.copyWith(
+            thinkingContent: thinkingContent,
+          );
+          debugPrint('🧠 [updateAIMessageThinking] 更新完成, 新的 thinkingContent 长度: ${messages[index].thinkingContent?.length ?? 0}');
+          notifyListeners();
+        } else {
+          debugPrint('⚠️ [updateAIMessageThinking] 未找到消息索引');
+        }
+      } else {
+        debugPrint('⚠️ [updateAIMessageThinking] 消息列表为空');
+      }
+    } else {
+      debugPrint('⚠️ [updateAIMessageThinking] 消息为 null 或是用户消息');
+    }
+  }
+
+  /// 完成AI消息生成
+  Future<void> completeAIMessage(
+    String conversationId,
+    String messageId,
+  ) async {
+    final message = getMessage(conversationId, messageId);
+    if (message != null && !message.isUser) {
+      final finalTokenCount = TokenCounterService.estimateTokenCount(
+        message.content,
+      );
+      final updated = message.completeGeneration(finalTokenCount);
+      await updateMessage(updated);
+
+      // 同步到状态管理器
+      await _statusManager.changeMessageStatus(
+        messageId: messageId,
+        newStatus: AIMessageStatus.completed,
+      );
+    }
+  }
+
+  /// 获取会话的总token数（所有消息）
+  int getTotalTokens(String conversationId) {
+    final messages = _messageCache[conversationId] ?? [];
+    return messages.fold<int>(0, (sum, msg) => sum + msg.tokenCount);
+  }
+
+  /// 获取上下文的token数（最后N条消息）
+  int getContextTokens(String conversationId, int messageCount) {
+    final messages = getLastMessages(conversationId, messageCount);
+    return messages.fold<int>(0, (sum, msg) => sum + msg.tokenCount);
+  }
+
+  /// 刷新当前会话的消息
+  Future<void> refresh() async {
+    if (_currentConversationId != null) {
+      await _loadMessages(_currentConversationId!);
+      notifyListeners();
+    }
+  }
+
+  /// 清理缓存（保留当前会话）
+  void clearCache({bool keepCurrent = true}) {
+    if (keepCurrent && _currentConversationId != null) {
+      final currentMessages = _messageCache[_currentConversationId];
+      _messageCache.clear();
+      if (currentMessages != null) {
+        _messageCache[_currentConversationId!] = currentMessages;
+      }
+    } else {
+      _messageCache.clear();
+    }
+  }
+}
