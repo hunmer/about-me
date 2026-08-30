@@ -2,6 +2,10 @@ class TrackerTranslationsZh {
   static const Map<String, String> keys = {
     // Goals
     'tracker_goalsTitle': '目标',
+    'tracker_dayCardName': '追踪日卡',
+    'tracker_dayCardDesc': '展示选中日期的目标记录',
+    'tracker_dayCardEmpty': '当天没有记录',
+    'tracker_noGoals': '请先创建目标',
     'tracker_recordsTitle': '记录',
     'tracker_createGoal': '创建目标',
     'tracker_editGoal': '编辑目标',

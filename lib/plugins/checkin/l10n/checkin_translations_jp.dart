@@ -2,6 +2,9 @@
 class CheckinTranslationsJp {
   static const Map<String, String> translations = {
     'checkin_name': 'チェックイン',
+    'checkin_dayCardName': 'チェックインカード',
+    'checkin_dayCardDesc': '選択した日付のチェックイン状態を表示',
+    'checkin_dayCardEmpty': 'この日はチェックイン項目がありません',
     'checkin_checkinPluginDescription': '日次チェックイン項目を管理',
     'checkin_todayCheckin': '今日',
     'checkin_totalCheckinCount': '合計',

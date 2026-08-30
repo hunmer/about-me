@@ -3,6 +3,10 @@ class HabitsTranslationsJp {
   static const Map<String, String> translations = {
     // Basic strings
     'habits_name': '習慣',
+    'habits_dayCardName': '習慣カード',
+    'habits_dayCardDesc': '選択した日付の習慣の達成状況を表示',
+    'habits_dayCardEmpty': '習慣がまだありません',
+    'habits_dayCardNotDone': '未達成',
     'habits_habitsList': '習慣リスト',
     'habits_newHabit': '新しい習慣',
     'habits_editHabit': '習慣を編集',

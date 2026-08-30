@@ -4,6 +4,10 @@
 final Map<String, String> notesTranslationsZh = {
   // 插件基本信息
   'notes_name': '笔记',
+  'notes_dayCardName': '笔记日卡',
+  'notes_dayCardDesc': '展示选中日期创建/修改的笔记',
+  'notes_dayCardEmpty': '当天没有笔记',
+  'notes_dayCardUntitled': '无标题',
   'notes_notesPluginDescription': 'Memento的简单笔记插件',
 
   // 统计信息

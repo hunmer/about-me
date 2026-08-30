@@ -3,6 +3,9 @@ class BillTranslationsJp {
   static const Map<String, String> translations = {
     // Basic fields
     'bill_name': '账单',
+    'bill_dayCardName': '帳簿カード',
+    'bill_dayCardDesc': '選択した日付の収支を表示',
+    'bill_dayCardEmpty': 'この日は帳簿がありません',
     'bill_billList': '账单列表',
     'bill_newBill': '新建账单',
     'bill_editBill': '编辑账单',

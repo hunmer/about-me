@@ -3,6 +3,9 @@ class ActivityTranslationsZh {
   static const Map<String, String> translations = {
     // 插件信息
     'activity_name': '活动',
+    'activity_dayCardName': '活动日卡',
+    'activity_dayCardDesc': '展示选中日期的活动记录',
+    'activity_dayCardEmpty': '当天没有活动记录',
     'activity_activityPluginDescription': '活动记录插件',
 
     // 小组件相关

@@ -3,6 +3,9 @@ class ActivityTranslationsJp {
   static const Map<String, String> translations = {
     // Plugin information
     'activity_name': 'アクティビティ',
+    'activity_dayCardName': 'アクティビティカード',
+    'activity_dayCardDesc': '選択した日付の活動を表示',
+    'activity_dayCardEmpty': 'この日は活動がありません',
     'activity_activityPluginDescription': 'アクティビティ追跡プラグイン',
 
     // Widget related

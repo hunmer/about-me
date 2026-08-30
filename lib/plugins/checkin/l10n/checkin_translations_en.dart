@@ -2,6 +2,9 @@
 class CheckinTranslationsEn {
   static const Map<String, String> translations = {
     'checkin_name': 'Check-in',
+    'checkin_dayCardName': 'Check-in day card',
+    'checkin_dayCardDesc': 'Show check-in status for the selected date',
+    'checkin_dayCardEmpty': 'No check-in items on this day',
     'checkin_checkinPluginDescription': 'Manage daily check-in items',
     'checkin_todayCheckin': 'Today',
     'checkin_totalCheckinCount': 'Total',

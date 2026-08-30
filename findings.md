@@ -53,3 +53,62 @@
 
 ## 7. l10n
 - 插件级: lib/plugins/{todo,diary}/l10n/；屏级: lib/screens/l10n/screens_translations_{zh,en,jp}.dart
+- 主页级 key（home_*）: lib/l10n/app_translations_{zh,en,jp}.dart
+
+## 8. 其余插件迁移摸底（2026-08-30，为 Phase 9-11 计划）
+
+### 有日期字段的模型（日期卡候选）
+| 插件 | 模型/字段 | 编辑表单 | 备注 |
+|------|----------|---------|------|
+| calendar | Event.startTime/endTime | pages/event_edit_page.dart | 最高价值 |
+| bill | Bill.date | screens/bill_edit_screen.dart | 已有 register_create_shortcut 可复用 |
+| activity | ActivityRecord.startTime/endTime | widgets/activity_form.dart + AppRoutes.activityEdit | |
+| tracker | Record.recordedAt | goal_edit_page.dart（记录表单需勘察） | 已有 dataRenderer 模式参考 |
+| checkin | CheckinItem.getDateRecords(date) | checkin_form_screen.dart | 按日取记录 API 现成；"新建"语义特殊 |
+| habits | CompletionRecord.date | widgets/habit_form.dart | 新建=习惯本身，与日期无关 |
+| day | MemorialDay.targetDate | widgets/edit_memorial_day_dialog.dart | hasDateData 语义可选当天/临近 |
+| notes | Note.createdAt（弱） | screens/note_edit_screen.dart | 当天创建的笔记 |
+| calendar_album | CalendarEntry | - | 可选，照片按日期 |
+| contact | interaction_record.date | - | 低价值可选 |
+| timer | startTime/createdAt（弱） | 无表单文件 | 可选 |
+| reminder | nextTriggerAt | - | 未接入 home_widgets 注册体系，需先补链路 |
+
+### 不适用日期卡
+chat、agent_chat、openai、nfc、tts、webview、scripts_center、store、nodes、database、goods
+
+### 迁移模式（todo/diary 已验证）
+6 步：抽条目UI → register_day_card(isDateDriven+hasDateData) → register_quick_create →
+挂 register() → l10n×3 → analyze + 把插件数据事件加进 date_view_grid.dart 监听列表
+
+## 9. Phase 9-11 批量迁移实测补充（2026-08-30，9 插件完成）
+
+### 数据归属口径（易踩坑）
+| 插件 | 正确口径 | 陷阱 |
+|------|---------|------|
+| calendar | getAllEvents() 按 startTime 年月日 | controller.events 只有本地事件 |
+| bill | account.bills 按 bill.date | getBills/getTodayFinance 按 createdAt |
+| activity | getActivitiesForDate(date) 异步按日分片 | 周缓存只有过去7天，未来日期查不到 |
+| tracker | controller.records 按 recordedAt | 无按日期 API；记录删除不发事件(仅 notifyListeners) |
+| checkin | frequency[weekday-1] 排班 + getDateRecords | CheckinListController.toggleCheckin 只认今天 |
+| habits | 每习惯 getHabitCompletionRecords 再过滤 | 无 ChangeNotifier，全靠事件刷新 |
+| day | targetDate 严格同日 | DayController 每实例独立加载，需 reloadData 保新鲜 |
+| notes | updatedAt 或 createdAt 同天 | NotesController 非 ChangeNotifier |
+| calendar_album | getEntriesForDate(date) 同步 | 缩略图需 ImageUtils.getAbsolutePath 异步解析 |
+
+### 事件刷新机制选型
+- controller 是 ChangeNotifier（calendar/bill/tracker）→ AnimatedBuilder(controller+HomeDateController)
+- 异步按日分片（activity/habits）→ stateful 加载+防过期守卫+EventListenerContainer
+- 非 Notizer 同步数据（checkin/notes/album）→ EventListenerContainer(setState)+日期监听
+- **循环广播陷阱**：day 的 hasDateData 会 reloadData→广播 memorial_day_cache_updated；
+  卡片和 date_view_grid 都不能监听该事件，否则无限刷新
+
+### 其他实测结论
+- QuickCreateDialog：先 pop 自身，再用主页 context 调 onCreate；
+  需自 pop 的表单（HabitForm 不自 pop）要用表单页 Builder context
+- 自 pop 的编辑器：EventEditPage/BillEditScreen/ActivityEditScreen/RecordDialog/
+  EditMemorialDayPage/NoteEditScreen/EntryEditorScreen；不自 pop：HabitForm
+- Goal.icon/Habit.icon 是 codePoint 字符串：IconData(int.parse(s), fontFamily:'MaterialIcons')
+  （会触发 non_const warning，与既有代码一致）
+- day 插件快速新建预填：EditMemorialDayPage 只收整对象 → 传 MemorialDay(title:'', targetDate:date)，
+  保存时 page 内重新生成 id
+

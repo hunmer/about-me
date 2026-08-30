@@ -3,6 +3,9 @@ class CalendarAlbumTranslationsZh {
   static const Map<String, String> translations = {
     // 基本信息
     'calendar_album_name': '日历相册',
+    'calendar_album_dayCardName': '相册日卡',
+    'calendar_album_dayCardDesc': '展示选中日期的照片与条目',
+    'calendar_album_dayCardEmpty': '当天没有照片',
     'calendar_album_entries_unit': '篇',
     'calendar_album_items_unit': '项',
 

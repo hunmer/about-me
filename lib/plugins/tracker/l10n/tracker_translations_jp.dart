@@ -3,6 +3,10 @@ class TrackerTranslationsJp {
   static const Map<String, String> keys = {
     // Goals
     'tracker_goalsTitle': '目標',
+    'tracker_dayCardName': 'トラッカーカード',
+    'tracker_dayCardDesc': '選択した日付の記録を表示',
+    'tracker_dayCardEmpty': 'この日は記録がありません',
+    'tracker_noGoals': '先に目標を作成してください',
     'tracker_recordsTitle': '記録',
     'tracker_createGoal': '目標を作成',
     'tracker_editGoal': '目標を編集',

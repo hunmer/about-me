@@ -3,6 +3,10 @@ class HabitsTranslationsEn {
   static const Map<String, String> translations = {
     // Basic strings
     'habits_name': 'Habits',
+    'habits_dayCardName': 'Habits day card',
+    'habits_dayCardDesc': 'Show habit completion for the selected date',
+    'habits_dayCardEmpty': 'No habits yet',
+    'habits_dayCardNotDone': 'Not done',
     'habits_habitsList': 'Habits List',
     'habits_newHabit': 'New Habit',
     'habits_editHabit': 'Edit Habit',

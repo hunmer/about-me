@@ -72,14 +72,57 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
   @override
   Widget build(BuildContext context) {
     // 日期变化或数据增删后重新检查可见卡片
+    //
+    // 各日期卡插件的数据事件（与各自卡片的刷新事件保持一致）。
+    // 注意：不要加入会在 hasDateData 检查过程中被广播的事件（如
+    // memorial_day_cache_updated，day 的检查会 reloadData 并广播它），避免循环刷新。
     return EventListenerContainer(
       events: const [
+        // todo / diary
         'task_added',
         'task_deleted',
         'task_completed',
         'diary_entry_created',
         'diary_entry_updated',
         'diary_entry_deleted',
+        // calendar
+        'calendar_event_added',
+        'calendar_event_updated',
+        'calendar_event_deleted',
+        'calendar_event_completed',
+        // bill
+        'bill_added',
+        'bill_deleted',
+        'account_added',
+        'account_deleted',
+        // activity
+        'activity_added',
+        'activity_updated',
+        'activity_deleted',
+        // tracker
+        'onRecordAdded',
+        'tracker_cache_updated',
+        // checkin
+        'checkin_completed',
+        'checkin_cancelled',
+        'checkin_reset',
+        'checkin_deleted',
+        // habits
+        'habit_completion_record_saved',
+        'habit_data_changed',
+        'habits_cache_updated',
+        // day（memorial_day_cache_updated 除外，见上）
+        'memorial_day_added',
+        'memorial_day_updated',
+        'memorial_day_deleted',
+        // notes
+        'note_added',
+        'note_updated',
+        'note_deleted',
+        // calendar_album
+        'calendar_entry_added',
+        'calendar_entry_updated',
+        'calendar_entry_deleted',
       ],
       onEvent: _checkVisibleWidgets,
       child: _DateControllerListener(

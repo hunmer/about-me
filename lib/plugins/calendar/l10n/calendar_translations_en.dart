@@ -1,6 +1,10 @@
 /// 日历插件英文翻译
 const Map<String, String> calendarTranslationsEn = {
   'calendar_name': 'Calendar',
+  'calendar_dayCardName': 'Calendar day card',
+  'calendar_dayCardDesc': 'Show events for the selected date',
+  'calendar_dayCardEmpty': 'No events on this day',
+  'calendar_allDay': 'All day',
   'calendar_calendar': 'Calendar',
   'calendar_eventCount': 'Total',
   'calendar_weekEvents': '7 days',

@@ -1,6 +1,9 @@
 /// Day plugin English translations
 final Map<String, String> dayTranslationsEn = {
   'day_name': 'Days',
+  'day_dayCardName': 'Memorial day card',
+  'day_dayCardDesc': 'Show memorial days falling on the selected date',
+  'day_dayCardEmpty': 'No memorial days on this day',
   'day_memorialDays': 'Memorial Days',
   'day_addMemorialDay': 'Add Memorial Day',
   'day_editMemorialDay': 'Edit Memorial Day',

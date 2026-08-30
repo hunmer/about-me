@@ -3,6 +3,9 @@ class CalendarAlbumTranslationsEn {
   static const Map<String, String> translations = {
     // Basic Info
     'calendar_album_name': 'Album',
+    'calendar_album_dayCardName': 'Album day card',
+    'calendar_album_dayCardDesc': 'Show photos and entries for the selected date',
+    'calendar_album_dayCardEmpty': 'No photos on this day',
     'calendar_album_entries_unit': 'entries',
     'calendar_album_items_unit': 'items',
 

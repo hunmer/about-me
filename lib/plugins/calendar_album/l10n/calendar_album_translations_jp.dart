@@ -3,6 +3,9 @@ class CalendarAlbumTranslationsJp {
   static const Map<String, String> translations = {
     // Basic Info
     'calendar_album_name': 'アルバム',
+    'calendar_album_dayCardName': 'アルバムカード',
+    'calendar_album_dayCardDesc': '選択した日付の写真とエントリを表示',
+    'calendar_album_dayCardEmpty': 'この日は写真がありません',
     'calendar_album_entries_unit': '件',
     'calendar_album_items_unit': '件',
 

@@ -9,7 +9,15 @@ class RecordDialog extends StatefulWidget {
   final Goal goal;
   final TrackerController controller;
 
-  const RecordDialog({super.key, required this.goal, required this.controller});
+  /// 初始记录时间（缺省为当前时刻），供快速新建预填日期
+  final DateTime? initialRecordedAt;
+
+  const RecordDialog({
+    super.key,
+    required this.goal,
+    required this.controller,
+    this.initialRecordedAt,
+  });
 
   @override
   State<RecordDialog> createState() => _RecordDialogState();
@@ -24,7 +32,7 @@ class _RecordDialogState extends State<RecordDialog> {
   @override
   void initState() {
     super.initState();
-    _recordedAt = DateTime.now();
+    _recordedAt = widget.initialRecordedAt ?? DateTime.now();
     _value = 1;
     _note = null;
   }
@@ -116,11 +124,12 @@ class _RecordDialogState extends State<RecordDialog> {
   }
 
   Future<void> _pickDateTime() async {
+    final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
-      initialDate: _recordedAt,
+      initialDate: _recordedAt.isAfter(now) ? now : _recordedAt,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+      lastDate: now,
     );
     if (date == null) return;
 

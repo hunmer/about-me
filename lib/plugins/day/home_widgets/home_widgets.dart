@@ -21,12 +21,17 @@ export 'register_icon_widget.dart';
 export 'register_overview_widget.dart';
 export 'register_memorial_selector_widget.dart';
 export 'register_date_range_list_widget.dart';
+export 'register_day_card.dart';
+export 'register_quick_create.dart';
 
 import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_memorial_selector_widget.dart';
 import 'register_date_range_list_widget.dart';
+import 'register_day_card.dart';
+import 'register_quick_create.dart';
 
 /// 注册所有纪念日插件的小组件
 void register() {
@@ -36,4 +41,8 @@ void register() {
   registerOverviewWidget(registry);
   registerMemorialSelectorWidget(registry);
   registerDateRangeListWidget(registry);
+  registerDayCardWidget(registry);
+
+  // 注册快速创建项（主页底部 ＋ 按钮）
+  registerQuickCreate(QuickCreateRegistry());
 }

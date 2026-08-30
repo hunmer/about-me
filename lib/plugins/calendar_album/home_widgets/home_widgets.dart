@@ -13,10 +13,13 @@ export 'providers.dart';
 export 'widgets.dart';
 
 import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_weekly_album_widget.dart';
 import 'register_photo_carousel_widget.dart';
+import 'register_day_card.dart';
+import 'register_quick_create.dart';
 
 /// 注册所有日历相册插件的小组件
 void register() {
@@ -25,4 +28,8 @@ void register() {
   registerOverviewWidget(registry);
   registerWeeklyAlbumWidget(registry);
   registerPhotoCarouselWidget(registry);
+  registerDayCardWidget(registry);
+
+  // 注册快速创建项（主页底部 ＋ 按钮）
+  registerQuickCreate(QuickCreateRegistry());
 }

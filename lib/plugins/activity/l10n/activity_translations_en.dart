@@ -3,6 +3,9 @@ class ActivityTranslationsEn {
   static const Map<String, String> translations = {
     // Plugin information
     'activity_name': 'Activity',
+    'activity_dayCardName': 'Activity day card',
+    'activity_dayCardDesc': 'Show activities for the selected date',
+    'activity_dayCardEmpty': 'No activities on this day',
     'activity_activityPluginDescription': 'Activity tracking plugin',
 
     // Widget related

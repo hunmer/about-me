@@ -3,6 +3,9 @@ class BillTranslationsZh {
   static const Map<String, String> translations = {
     // 基础字段
     'bill_name': '账单',
+    'bill_dayCardName': '账单日卡',
+    'bill_dayCardDesc': '展示选中日期的账单收支',
+    'bill_dayCardEmpty': '当天没有账单',
     'bill_billList': '账单列表',
     'bill_newBill': '新建账单',
     'bill_editBill': '编辑账单',

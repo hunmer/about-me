@@ -3,6 +3,10 @@ class HabitsTranslationsZh {
   static const Map<String, String> translations = {
     // 基础字符串
     'habits_name': '习惯',
+    'habits_dayCardName': '习惯日卡',
+    'habits_dayCardDesc': '展示选中日期的习惯完成情况',
+    'habits_dayCardEmpty': '还没有习惯',
+    'habits_dayCardNotDone': '未完成',
     'habits_habitsList': '习惯列表',
     'habits_newHabit': '新建习惯',
     'habits_editHabit': '编辑习惯',

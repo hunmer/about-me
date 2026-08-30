@@ -67,6 +67,67 @@ home_widgets.dart(todo×diary) / 6 个 l10n 文件 / app_translations×3
 - HomeDateSortBar(默认/优先级/时间 chips)；待办卡应用排序
 - analyze 全量 0 error
 
+### 追加: 其余插件批量迁移计划 (2026-08-30)
+- 用户要求：对其余插件同样添加（日期卡 + 快速新建）
+- 摸底 12 个候选插件的模型日期字段/编辑表单/条目UI，结论写入 findings.md §8
+- task_plan.md 新增 Phase 9(高价值5个: calendar/bill/activity/tracker/checkin)、
+  Phase 10(记录类4个: habits/day/notes/calendar_album)、Phase 11(排除项+特殊处理)
+- 固化 6 步通用迁移模式（todo/diary 已验证）
+
 ### 下一步
-- 用户跑 app 验证：无数据日期只显示提示；切排序待办列表顺序变化
+- 用户确认批次后按 Phase 9 顺序实施（calendar 先行）
+
+## 会话: 2026-08-30 (Phase 9-11 其余插件批量迁移)
+
+### 实施记录（9 插件，全部走 6 步通用模式）
+**公共**：新建 `screens/home_screen/widgets/day_card_header.dart`（日卡通用头部：
+周几+日期+计数徽标+摘要+＋按钮），9 张新日卡共用，视觉与待办日卡一致。
+
+**Phase 9 高价值 5 插件**
+- calendar：`widgets/event_day_card.dart` + register_day_card/quick_create；
+  getAllEvents 按 startTime 过滤；点击→showEventDetails；新建直接 push EventEditPage(initialDate:)
+- bill：`widgets/bill_day_card.dart` + 两个 register；**按 bill.date 过滤（getBills 是 createdAt，不可用）**；
+  编辑走 BillEditScreen(bill:)，新建走 initialDate:+首账户
+- activity：`widgets/activity_day_card.dart` + 两个 register；getActivitiesForDate 异步按日分片；
+  编辑=SmoothBottomSheet 85%（与时间线一致）；新建=ActivityEditScreen(selectedDate:)
+- tracker：`widgets/record_day_card.dart`（含 openRecordCreateFlow 目标选择流程）+ 两个 register；
+  **改 RecordDialog 加 initialRecordedAt 参数**（+未来日期防护）
+- checkin：`widgets/checkin_day_card.dart` + register_day_card（**不注册快速新建**——签到是动作）；
+  点击=日期感知的签到切换（toggleCheckin 只认今天，自实现并广播 checkin_* 事件）
+
+**Phase 10 记录类 4 插件**
+- habits：`widgets/habit_day_card.dart` + 两个 register；每习惯异步取记录过滤当日；
+  快速新建 HabitForm+Scaffold（onSave 内 Builder context 自行 pop，修复了误用主页 context 的 bug）
+- day：`widgets/memorial_day_edit_flow.dart`（共享 DayController + 编辑/新建流程）+ register_day_card
+  （紧凑行内联实现）+ register_quick_create；**不监听 memorial_day_cache_updated 防无限循环**
+  （reloadData 会广播它；date_view_grid 同样排除）
+- notes：`widgets/note_day_card.dart` + 两个 register；按 updatedAt/createdAt 同天过滤；编辑复刻
+  note_operations.editNote；新建落 root 文件夹
+- calendar_album：`widgets/album_day_card.dart` + 两个 register；getEntriesForDate 同步；
+  缩略图 thumbUrls??imageUrls??markdown提取，FutureBuilder+Image.file；新建 EntryEditorScreen(initialDate:)
+
+**Phase 11 收尾**
+- date_view_grid 事件列表 6→39 个（见 task_plan Phase 11；memorial_day_cache_updated 有意排除）
+- dart analyze lib 全量 **0 error**（154 warning/info = 基线152 + 2 个 IconData non_const，
+  与 bill/habits/tracker 既有代码同款）
+- 快速新建名称全部复用既有 l10n key（已验证 8 个 key 在 zh/en/jp 三语齐全）；
+  新增 key：各插件 dayCardName/Desc/Empty + calendar_allDay/tracker_noGoals/
+  habits_dayCardNotDone/notes_dayCardUntitled ×3 语
+
+### 文件清单
+新增 21: day_card_header + 9 个 widgets/*_day_card(+memorial_day_edit_flow, activity/event、
+bill/bill、tracker/record、checkin/checkin、habits/habit、notes/note、album/album) +
+8 个 register_day_card + 8 个 register_quick_create
+修改 20: 9 个 home_widgets.dart（挂注册）、date_view_grid（事件列表）、
+tracker/record_dialog（initialRecordedAt）、9 插件 ×3 l10n 文件
+（另修复 notes register_quick_create 一处 import 语法错误）
+
+### 关键坑记录
+- QuickCreateDialog 先 pop 自己再用主页 context 调 onCreate → 打开编辑器 OK，
+  但表单自 pop 时必须用表单页自己的 context（Builder）
+- DayController 每实例独立从存储加载 → 日卡持模块级共享实例 + reloadData 保新鲜
+- checkin 的 frequency 索引 = weekday-1（0=周一）；getDateRecords 按签到时间降序，first=最新
+
+### 下一步
+- 用户跑 app 验证（清单见 task_plan.md「手动验证清单」）
 

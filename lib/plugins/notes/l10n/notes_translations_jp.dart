@@ -2,6 +2,10 @@
 final Map<String, String> notesTranslationsJp = {
   // Plugin basic information
   'notes_name': 'ノート',
+  'notes_dayCardName': 'ノートカード',
+  'notes_dayCardDesc': '選択した日付に作成・編集したノートを表示',
+  'notes_dayCardEmpty': 'この日はノートがありません',
+  'notes_dayCardUntitled': '無題',
   'notes_notesPluginDescription': 'シンプルなメモ帳プラグイン',
 
   // Statistics

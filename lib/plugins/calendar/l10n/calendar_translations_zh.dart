@@ -1,6 +1,10 @@
 /// 日历插件中文翻译
 const Map<String, String> calendarTranslationsZh = {
   'calendar_name': '日历',
+  'calendar_dayCardName': '日历日卡',
+  'calendar_dayCardDesc': '展示选中日期的活动日程',
+  'calendar_dayCardEmpty': '当天没有活动',
+  'calendar_allDay': '全天',
   'calendar_calendar': '日历',
   'calendar_eventCount': '总活动数',
   'calendar_weekEvents': '7天内活动',

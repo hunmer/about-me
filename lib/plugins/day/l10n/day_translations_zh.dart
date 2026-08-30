@@ -2,6 +2,9 @@
 final Map<String, String> dayTranslationsZh = {
   'day_memorialDays': '纪念日',
   'day_name': '纪念日',
+  'day_dayCardName': '纪念日日卡',
+  'day_dayCardDesc': '展示选中日期到期的纪念日',
+  'day_dayCardEmpty': '当天没有纪念日',
   'day_addMemorialDay': '添加纪念日',
   'day_editMemorialDay': '编辑纪念日',
   'day_deleteMemorialDay': '删除纪念日',

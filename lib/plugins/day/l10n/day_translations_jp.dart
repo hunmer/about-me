@@ -1,6 +1,9 @@
 /// Day plugin Japanese translations
 final Map<String, String> dayTranslationsJp = {
   'day_name': '記念日',
+  'day_dayCardName': '記念日カード',
+  'day_dayCardDesc': '選択した日付の記念日を表示',
+  'day_dayCardEmpty': 'この日は記念日がありません',
   'day_memorialDays': '記念日',
   'day_addMemorialDay': '記念日を登録',
   'day_editMemorialDay': '記念日を編集',

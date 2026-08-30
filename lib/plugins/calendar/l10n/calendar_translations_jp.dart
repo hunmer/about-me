@@ -1,6 +1,10 @@
 /// Calendar plugin Japanese translations
 const Map<String, String> calendarTranslationsJp = {
   'calendar_name': '日历',
+  'calendar_dayCardName': 'カレンダーカード',
+  'calendar_dayCardDesc': '選択した日付の予定を表示',
+  'calendar_dayCardEmpty': 'この日は予定がありません',
+  'calendar_allDay': '終日',
   'calendar_calendar': '日历',
   'calendar_eventCount': '总数',
   'calendar_weekEvents': '7天内',

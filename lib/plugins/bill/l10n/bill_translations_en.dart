@@ -3,6 +3,9 @@ class BillTranslationsEn {
   static const Map<String, String> translations = {
     // Basic fields
     'bill_name': 'Bill',
+    'bill_dayCardName': 'Bill day card',
+    'bill_dayCardDesc': 'Show bills for the selected date',
+    'bill_dayCardEmpty': 'No bills on this day',
     'bill_billList': 'Bill List',
     'bill_newBill': 'New Bill',
     'bill_editBill': 'Edit Bill',

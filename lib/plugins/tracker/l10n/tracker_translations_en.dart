@@ -2,6 +2,10 @@ class TrackerTranslationsEn {
   static const Map<String, String> keys = {
     // Goals
     'tracker_goalsTitle': 'Goals',
+    'tracker_dayCardName': 'Tracker day card',
+    'tracker_dayCardDesc': 'Show goal records for the selected date',
+    'tracker_dayCardEmpty': 'No records on this day',
+    'tracker_noGoals': 'Create a goal first',
     'tracker_recordsTitle': 'Records',
     'tracker_createGoal': 'Create Goal',
     'tracker_editGoal': 'Edit Goal',

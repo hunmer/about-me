@@ -2,6 +2,9 @@
 class CheckinTranslationsZh {
   static const Map<String, String> translations = {
     'checkin_name': '打卡',
+    'checkin_dayCardName': '签到日卡',
+    'checkin_dayCardDesc': '展示选中日期的签到状态，点击切换',
+    'checkin_dayCardEmpty': '当天没有签到项',
     'checkin_checkinPluginDescription': '管理日常打卡项目',
     'checkin_todayCheckin': '今日打卡',
     'checkin_totalCheckinCount': '总打卡数',

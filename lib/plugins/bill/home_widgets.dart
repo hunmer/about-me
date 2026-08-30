@@ -20,13 +20,18 @@ export 'home_widgets/register_overview_widget.dart';
 export 'home_widgets/register_create_shortcut.dart';
 export 'home_widgets/register_bill_stats_widget.dart';
 export 'home_widgets/register_monthly_bill_widget.dart';
+export 'home_widgets/register_day_card.dart';
+export 'home_widgets/register_quick_create.dart';
 
 import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
 import 'home_widgets/register_icon_widget.dart';
 import 'home_widgets/register_overview_widget.dart';
 import 'home_widgets/register_create_shortcut.dart';
 import 'home_widgets/register_bill_stats_widget.dart';
 import 'home_widgets/register_monthly_bill_widget.dart';
+import 'home_widgets/register_day_card.dart';
+import 'home_widgets/register_quick_create.dart';
 
 /// 注册所有账单插件的小组件
 void register() {
@@ -40,4 +45,8 @@ void register() {
   registerIconWidget(registry);
   registerOverviewWidget(registry);
   registerCreateShortcutWidget(registry);
+  registerDayCardWidget(registry);
+
+  // 注册快速创建项（主页底部 ＋ 按钮）
+  registerQuickCreate(QuickCreateRegistry());
 }
