@@ -8,6 +8,7 @@ import 'package:Memento/core/app_initializer.dart';
 import 'package:Memento/core/services/log_service.dart';
 import 'package:Memento/core/services/fcm_service.dart';
 import 'package:Memento/firebase_options.dart';
+import 'package:procm_sdk_dart/procm_sdk_dart.dart';
 
 // GetX 统一翻译导入
 import 'package:Memento/l10n/unified_translations.dart';
@@ -46,16 +47,23 @@ void main() {
       // 0.2 注册 FCM 后台消息处理器（必须在 Firebase.initializeApp 之后）
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
+      // 0.3 初始化 procm 房间结构化日志：仅在环境变量 PROCM_WS_URL/PROCM_ROOM_ID
+      // 存在时连接房间并双写；缺失时退化为纯 console 输出，不影响现有行为
+      setupLoggerFromEnv().info(
+        'Memento 启动',
+        {'platform': defaultTargetPlatform.name},
+      );
+
       // 1. 捕获 Flutter Framework 错误（如 widget build 错误）
       FlutterError.onError = (FlutterErrorDetails details) {
         // 记录到日志服务
         final logService = LogService.instance;
         if (logService.isEnabled && logService.isInitialized) {
-          logService.error(
-            'FlutterError: ${details.exception}',
-            error: details.exception,
-            stackTrace: details.stack,
-          );
+        logService.error(
+          'FlutterError: ${details.exception}',
+          error: details.exception,
+          stackTrace: details.stack,
+        );
         }
 
         // 在调试模式下仍然显示错误界面
@@ -96,6 +104,11 @@ void main() {
           stackTrace: stack,
         );
       }
+
+      // 未捕获异常同步转发到 procm 房间（未初始化时为静默级别，无副作用）
+      getLogger().error('Uncaught Exception: $error', {
+        'stack': stack.toString(),
+      });
 
       // 在调试模式下打印到控制台（使用 print 而不是 debugPrint）
       if (kDebugMode) {

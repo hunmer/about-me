@@ -1,0 +1,42 @@
+{
+  "commands": {
+    "app": {
+      "script": "flutter",
+      "args": ["run", "-d", "macos"],
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "memento",
+        "PROCM_CLIENT_NAME": "memento-app"
+      },
+      "group": "memento",
+      "desc": "Run the Flutter app on macOS with procm room logging (phone/emulator targets need the host LAN IP instead of 127.0.0.1)"
+    },
+    "analyze": {
+      "script": "flutter",
+      "args": ["analyze"],
+      "group": "memento",
+      "desc": "Static analysis quality gate"
+    },
+    "server": {
+      "script": "npm",
+      "args": ["run", "dev"],
+      "cwd": "packages/server-nodejs",
+      "group": "memento",
+      "desc": "Sync server (REST + WS + admin panel) on port 8874, ts-node-dev hot reload"
+    },
+    "mcp-server": {
+      "script": "npm",
+      "args": ["run", "dev"],
+      "cwd": "packages/mcp-memento-server",
+      "group": "memento",
+      "desc": "Memento MCP server (60+ AI tools), tsx dev mode"
+    },
+    "forwarding": {
+      "script": "npm",
+      "args": ["run", "dev"],
+      "cwd": "packages/api_forwarding_server",
+      "group": "memento",
+      "desc": "WebSocket pairing/forwarding server on port 8654"
+    }
+  }
+}

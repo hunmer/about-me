@@ -131,6 +131,10 @@ dependencies:
   full_swipe_back_gesture: ^0.1.2
   scroll_to_index: ^3.0.1
   intelligence: ^0.2.0
+
+  # procm-mcp 房间客户端 SDK（结构化日志 / trace），本地路径依赖
+  procm_sdk_dart:
+    path: ../procm-mcp/packages/procm-sdk-dart
 dev_dependencies:
   flutter_test:
     sdk: flutter
