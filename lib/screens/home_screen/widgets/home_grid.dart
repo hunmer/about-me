@@ -1117,53 +1117,6 @@ class _HomeGridState extends State<HomeGrid> {
       ),
     );
   }
-
-  /// 显示快速创建布局对话框
-  Future<Map<String, String>?> _showQuickCreateLayoutDialog(
-    BuildContext context,
-  ) async {
-    final TextEditingController nameController = TextEditingController(
-      text: 'screens_quickLayout'.tr,
-    );
-
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('screens_quickCreateLayout'.tr),
-            content: TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'screens_layoutName'.tr,
-                hintText: 'screens_layoutNameHint'.tr,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('screens_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text.trim();
-                  if (name.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('screens_pleaseEnterLayoutName'.tr),
-                      ),
-                    );
-                    return;
-                  }
-                  Navigator.pop(context, {'name': name});
-                },
-                child: Text('screens_create'.tr),
-              ),
-            ],
-          ),
-    );
-
-    return result;
-  }
 }
 
 class _PluginCardState {

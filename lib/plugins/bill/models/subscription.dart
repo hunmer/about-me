@@ -30,12 +30,11 @@ class Subscription {
     this.icon = Icons.subscriptions,
     this.iconColor = Colors.blue,
     DateTime? createdAt,
-    DateTime? terminatedAt,
+    this.terminatedAt,
   })  : id = id ?? const Uuid().v4(),
         dailyAmount = totalAmount / days,
         category = category ?? '订阅',
-        createdAt = createdAt ?? DateTime.now(),
-        terminatedAt = terminatedAt;
+        createdAt = createdAt ?? DateTime.now();
 
   /// 计算剩余天数
   int get remainingDays {

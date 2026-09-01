@@ -220,7 +220,7 @@ class _ServerSyncSettingsSectionState extends State<ServerSyncSettingsSection> {
 
     try {
       final serverUrl = _serverController.text.trim();
-      final deviceId = (_config?.deviceId?.isNotEmpty ?? false)
+      final deviceId = (_config?.deviceId.isNotEmpty ?? false)
           ? _config!.deviceId
           : DateTime.now().millisecondsSinceEpoch.toString();
 

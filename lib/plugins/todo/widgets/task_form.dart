@@ -174,7 +174,6 @@ class _TaskFormState extends State<TaskForm> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final locale = Localizations.localeOf(context).toString();
 
     return Scaffold(

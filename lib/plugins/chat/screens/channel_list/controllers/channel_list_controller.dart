@@ -11,7 +11,6 @@ class ChannelListController extends ChangeNotifier {
   late SharedPreferences prefs;
   List<String> availableGroups = ["all", "ungrouped"]; // 可用的频道组列表
   String searchQuery = ""; // 搜索关键词
-  bool _isInitialized = false; // 标记是否初始化完成
 
   ChannelListController({required this.channels, required this.chatPlugin}) {
     _initialize();
@@ -26,10 +25,7 @@ class ChannelListController extends ChangeNotifier {
     // 2. 再更新可用分组和排序后的频道
     _updateAvailableGroups();
 
-    // 3. 标记初始化完成
-    _isInitialized = true;
-
-    // 4. 通知 UI 更新
+    // 3. 通知 UI 更新
     notifyListeners();
   }
 

@@ -50,8 +50,8 @@ class WatchConnectivityManager extends ChangeNotifier {
       _contextSubscription = _watchConnectivity.contextStream.listen(_handleContextUpdate);
 
       // 检查连接状态
-      _isPaired = await _watchConnectivity.isPaired ?? false;
-      _isReachable = await _watchConnectivity.isReachable ?? false;
+      _isPaired = await _watchConnectivity.isPaired;
+      _isReachable = await _watchConnectivity.isReachable;
 
       debugPrint('WatchConnectivity state - isPaired: $_isPaired, isReachable: $_isReachable');
 
@@ -107,6 +107,7 @@ class WatchConnectivityManager extends ChangeNotifier {
   }
 
   /// 释放资源
+  @override
   void dispose() {
     _messageSubscription?.cancel();
     _contextSubscription?.cancel();

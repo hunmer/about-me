@@ -21,7 +21,6 @@ const CommonWidgetId _defaultWidgetType = CommonWidgetId.contactCard;
 /// 默认显示 contactNotFoundCard 公共小组件，支持实时更新
 class _ContactPersonLiveWidget extends LiveSelectorWidget {
   const _ContactPersonLiveWidget({
-    super.key,
     required super.config,
     required super.widgetDefinition,
   });

@@ -20,7 +20,6 @@ const CommonWidgetId defaultWidgetType = CommonWidgetId.circularMetricsCard;
 /// 默认显示 circularMetricsCard 公共小组件，支持实时更新
 class _TimerListLiveWidget extends LiveSelectorWidget {
   const _TimerListLiveWidget({
-    super.key,
     required super.config,
     required super.widgetDefinition,
   });

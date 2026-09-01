@@ -2,7 +2,6 @@ part of 'chat_plugin.dart';
 
 // ==================== JS API 定义 ====================
 
-@override
 Map<String, Function> defineJSAPI() {
   return {
 

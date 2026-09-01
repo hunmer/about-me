@@ -93,36 +93,6 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
     }
   }
 
-  /// 根据尺寸获取图标容器大小
-  double _getIconContainerSize(HomeWidgetSize size) {
-    switch (size.category) {
-      case SizeCategory.mini:
-        return 40.0;
-      case SizeCategory.small:
-        return 60.0;
-      case SizeCategory.medium:
-        return 70.0;
-      case SizeCategory.large:
-      case SizeCategory.xlarge:
-        return 80.0;
-    }
-  }
-
-  /// 根据尺寸获取图标大小
-  double _getIconSize(HomeWidgetSize size) {
-    switch (size.category) {
-      case SizeCategory.mini:
-        return 20.0;
-      case SizeCategory.small:
-        return 30.0;
-      case SizeCategory.medium:
-        return 35.0;
-      case SizeCategory.large:
-      case SizeCategory.xlarge:
-        return 40.0;
-    }
-  }
-
   /// 根据尺寸获取字体大小
   double _getTitleFontSize(HomeWidgetSize size) {
     switch (size.category) {

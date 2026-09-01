@@ -116,7 +116,7 @@ class FloatingBallButtonEvent {
     );
   }
 
-  /// 递归转换 Map 为 Map<String, dynamic>
+  /// 递归转换 Map 为 `Map<String, dynamic>`
   static Map<String, dynamic> _deepConvertMap(Map map) {
     return map.map((key, value) {
       final stringKey = key.toString();

@@ -38,7 +38,7 @@ class StatisticsCalculator {
     required String labelField,
     required String valueField,
     String? iconField,
-    Map<String, dynamic>? extraDataField,
+    String? extraDataField,
   }) {
     final data = <RankingData>[];
 

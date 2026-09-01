@@ -8,6 +8,9 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
+  exclude:
+    - build/**
+    - '.dart_tool/**'
   errors:
     avoid_print: ignore
     constant_identifier_names: ignore

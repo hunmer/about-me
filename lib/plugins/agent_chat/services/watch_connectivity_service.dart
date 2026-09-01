@@ -37,8 +37,6 @@ class WatchConnectivityService {
   final ConversationService _conversationService;
   final MessageService _messageService;
 
-  bool _isInitialized = false;
-
   WatchConnectivityService._({
     required ConversationService conversationService,
     required MessageService messageService,
@@ -138,7 +136,6 @@ class WatchConnectivityService {
       }
     });
 
-    _isInitialized = true;
     print('[WatchConnectivityService] 初始化完成');
   }
 

@@ -21,7 +21,6 @@ const CommonWidgetId defaultWidgetType = CommonWidgetId.taskListCard;
 /// 默认显示 taskListCard 公共小组件，支持实时更新
 class _TodoListLiveWidget extends LiveSelectorWidget {
   const _TodoListLiveWidget({
-    super.key,
     required super.config,
     required super.widgetDefinition,
   });

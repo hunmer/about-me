@@ -22,7 +22,6 @@ const CommonWidgetId _defaultWidgetType = CommonWidgetId.recentContactCard;
 /// 不需要选择器，直接显示数据
 class _RecentContactLiveWidget extends LiveSelectorWidget {
   const _RecentContactLiveWidget({
-    super.key,
     required super.config,
     required super.widgetDefinition,
   });

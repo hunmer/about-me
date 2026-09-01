@@ -1,7 +1,6 @@
 /// 计时器插件主页小组件数据提供者
 library;
 
-import 'dart:ui' show Color;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:Memento/core/plugin_manager.dart';

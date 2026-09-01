@@ -9,7 +9,6 @@ import 'package:Memento/plugins/habits/controllers/timer_controller.dart';
 import 'package:Memento/plugins/habits/models/habit.dart';
 import 'package:flutter/material.dart';
 import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/plugins/base_plugin.dart';
 import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
 import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
 import 'package:Memento/plugins/habits/controllers/skill_controller.dart';

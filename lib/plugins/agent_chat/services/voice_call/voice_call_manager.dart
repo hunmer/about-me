@@ -58,12 +58,9 @@ class VoiceCallManager {
   // 状态
   VoiceCallState _state = VoiceCallState.idle;
   int _currentTurn = 0;
-  String? _lastRecognizedText;
-  String? _lastAIMessage;
   String? _pendingRecognizedText; // 待发送的识别文本（等待识别完成后发送）
   bool _isStoppingRecording = false; // 是否正在停止录音（防止重复处理）
   bool _autoSendCancelled = false; // 是否取消了自动发送
-  DateTime? _lastRecognitionTime; // 上次识别结果的时间
 
   // 订阅
   StreamSubscription<String>? _recognitionSubscription;
@@ -74,9 +71,6 @@ class VoiceCallManager {
   final _stateController = StreamController<VoiceCallState>.broadcast();
   final _recognizedTextController = StreamController<String>.broadcast(); // 识别文本流
   final _countdownController = StreamController<int>.broadcast(); // 倒计时流
-
-  // TTS控制
-  bool _isTTSPlaying = false;
 
   // 定时器
   Timer? _recordingTimeoutTimer;
@@ -146,7 +140,6 @@ class VoiceCallManager {
       if (_state == VoiceCallState.recording && !_isStoppingRecording) {
         // 保存最新的识别结果
         _pendingRecognizedText = text;
-        _lastRecognitionTime = DateTime.now();
         _autoSendCancelled = false; // 重置取消标志
 
         // 发送到UI显示
@@ -409,7 +402,6 @@ class VoiceCallManager {
   void _onRecognized(String text) {
     if (text.trim().isEmpty) return;
 
-    _lastRecognizedText = text;
     _setState(VoiceCallState.recognized);
     debugPrint('📝 识别完成，准备发送: $text');
 
@@ -436,8 +428,6 @@ class VoiceCallManager {
       debugPrint('⚠️ 当前正在播放TTS，忽略新的AI消息');
       return;
     }
-
-    _lastAIMessage = message;
 
     if (!isCallActive) return;
 
@@ -474,7 +464,6 @@ class VoiceCallManager {
   /// TTS播报
   Future<void> _speak(String text) async {
     try {
-      _isTTSPlaying = true;
       debugPrint('🔊 开始播报: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
 
       // 创建一个Completer来等待真正的完成
@@ -488,14 +477,12 @@ class VoiceCallManager {
         },
         onComplete: () {
           debugPrint('✅ TTS完成');
-          _isTTSPlaying = false;
           if (!completer.isCompleted) {
             completer.complete();
           }
         },
         onError: (error) {
           debugPrint('❌ TTS错误: $error');
-          _isTTSPlaying = false;
           if (!completer.isCompleted) {
             completer.completeError(error);
           }
@@ -506,7 +493,6 @@ class VoiceCallManager {
       await completer.future;
     } catch (e) {
       _setError('TTS播报失败: $e');
-      _isTTSPlaying = false;
     }
   }
 

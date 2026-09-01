@@ -168,7 +168,7 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
           final timeSinceLastAnnouncement =
               now.difference(_lastAnnouncementTime!).inMinutes;
           if (timeSinceLastAnnouncement < _unrecordedIntervalMinutes) {
-            debugPrint('[ActivityTTSAnnouncement] 距离上次播报仅 ${timeSinceLastAnnouncement} 分钟，跳过本次播报');
+            debugPrint('[ActivityTTSAnnouncement] 距离上次播报仅 $timeSinceLastAnnouncement 分钟，跳过本次播报');
             return;
           }
         }

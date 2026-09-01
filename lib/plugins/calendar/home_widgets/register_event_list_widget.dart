@@ -24,7 +24,6 @@ const Color _calendarColor = Color.fromARGB(255, 211, 91, 91);
 /// 默认显示 dailyEventsCard 公共小组件，支持实时更新
 class _CalendarEventListLiveWidget extends LiveSelectorWidget {
   const _CalendarEventListLiveWidget({
-    super.key,
     required super.config,
     required super.widgetDefinition,
   });

@@ -37,23 +37,15 @@ class ClipboardService {
   String? _lastProcessedContent;
 
   /// 是否启用剪贴板监听（自动读取）
-  bool _autoReadEnabled = false;
-
-  /// 获取自动读取状态
-  bool get autoReadEnabled => _autoReadEnabled;
-
-  /// 设置自动读取状态
-  set autoReadEnabled(bool value) {
-    _autoReadEnabled = value;
-  }
+  bool autoReadEnabled = false;
 
   /// 是否启用剪贴板监听（已废弃，保留以兼容旧代码）
   @Deprecated('Use autoReadEnabled instead')
-  bool get enabled => _autoReadEnabled;
+  bool get enabled => autoReadEnabled;
 
   @Deprecated('Use autoReadEnabled instead')
   set enabled(bool value) {
-    _autoReadEnabled = value;
+    autoReadEnabled = value;
   }
 
   /// 注册处理器
@@ -129,7 +121,7 @@ class ClipboardService {
   /// 处理剪贴板数据（调用注册的 handler）
   /// 返回 true 如果成功处理了数据
   Future<bool> processClipboard() async {
-    if (!_autoReadEnabled) {
+    if (!autoReadEnabled) {
       return false;
     }
 

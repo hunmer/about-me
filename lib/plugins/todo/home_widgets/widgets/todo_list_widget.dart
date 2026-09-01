@@ -89,7 +89,6 @@ class _TodoListWidgetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayTasks = showEventUpdates ? getTodoTasks(5) : tasks;
 
     return Material(
       color: Colors.transparent,
