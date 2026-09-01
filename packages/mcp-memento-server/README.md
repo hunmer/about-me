@@ -37,7 +37,7 @@ npx @hunmer/mcp-memento-server
 ### 方式二：从源码构建
 
 ```bash
-cd mcp-memento-server
+cd packages/mcp-memento-server
 npm install
 npm run build
 ```

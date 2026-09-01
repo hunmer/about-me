@@ -111,18 +111,18 @@ dependencies:
   flutter_floating_bottom_bar: ^1.3.0  # Floating bottom bar for bill plugin
   super_cupertino_navigation_bar: ^2.0.0  # Super Cupertino Navigation Bar
   floating_ball_plugin:
-    path: ./floating_ball_plugin
+    path: packages/floating_ball_plugin
   memento_widgets:
-    path: ./memento_widgets
+    path: packages/memento_widgets
   # 原生服务插件化
   memento_foreground_service:
-    path: ./plugins/memento_foreground_service
+    path: packages/memento_foreground_service
   memento_notifications:
-    path: ./plugins/memento_notifications
+    path: packages/memento_notifications
   memento_intent:
-    path: ./memento_intent
+    path: packages/memento_intent
   memento_nfc:
-    path: ./memento_nfc
+    path: packages/memento_nfc
   shared_models:
     path: ./shared_models
 

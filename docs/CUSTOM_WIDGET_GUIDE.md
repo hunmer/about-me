@@ -576,7 +576,7 @@ Plugin Data → syncCheckinItemWidget()
 
 ### 3. 注册 MyWidgetManager 映射
 
-**路径**: `memento_widgets/lib/memento_widgets.dart`
+**路径**: `packages/memento_widgets/lib/memento_widgets.dart`
 
 ```dart
 class MyWidgetManager {

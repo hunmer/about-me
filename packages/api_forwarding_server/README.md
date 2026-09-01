@@ -57,7 +57,7 @@
 
 **启动命令**：
 ```bash
-cd api_forwarding_server
+cd packages/api_forwarding_server
 npm install
 npm start    # 默认端口 8654
 ```
@@ -244,7 +244,7 @@ console.log('日记列表:', diaries);
 ### 第一步：启动服务器
 
 ```bash
-cd api_forwarding_server
+cd packages/api_forwarding_server
 npm install
 npm start
 ```
@@ -535,7 +535,7 @@ console.log(data); // undefined
 ### 查看服务器日志
 
 ```bash
-cd api_forwarding_server
+cd packages/api_forwarding_server
 npm start
 ```
 

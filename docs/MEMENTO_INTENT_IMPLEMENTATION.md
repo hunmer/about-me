@@ -110,7 +110,7 @@
 
 #### 7.1 pubspec.yaml 配置
 - 在 dependencies 中添加了 `memento_intent` 插件
-- 使用相对路径引用: `path: ./memento_intent`
+- 使用相对路径引用: `path: ./packages/memento_intent`
 
 ### 8. 文档完善 ✅
 

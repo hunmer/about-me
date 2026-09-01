@@ -76,18 +76,18 @@ nul
 png/
 import_changes.csv
 server/data/*
-mcp-memento-server/node_modules/*
-mcp-memento-server/dist/*
+packages/mcp-memento-server/node_modules/*
+packages/mcp-memento-server/dist/*
 node_modules/*
 packages/memento-mock/node_modules/*
 ios/build/ios/XCBuildData/*
 .DS_Store
 *-cwd
-server-nodejs/node_modules/
-server-nodejs/data/
-server-nodejs/dist/
-server-nodejs/admin/
+packages/server-nodejs/node_modules/
+packages/server-nodejs/data/
+packages/server-nodejs/dist/
+packages/server-nodejs/admin/
 
 # Service account credentials
-server-nodejs/service-account.json
+packages/server-nodejs/service-account.json
 ios/build/*

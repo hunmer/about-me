@@ -114,7 +114,10 @@ Memento/
 ├── server/                 # Dart 同步服务器
 │   ├── admin/              # Web 管理面板
 │   └── lib/                # 服务器代码
-├── mcp-memento-server/     # MCP Server (AI 集成)
+├── packages/               # 子包（原生插件、服务端、MCP）
+│   ├── mcp-memento-server/ # MCP Server (AI 集成)
+│   ├── server-nodejs/      # Node.js 服务端
+│   └── ...                 # 原生插件等
 ├── shared_models/          # 共享数据模型
 └── docs/                   # 文档
 ```
@@ -147,7 +150,7 @@ dart run bin/server.dart
 ### MCP Server (AI 集成)
 
 ```bash
-cd mcp-memento-server
+cd packages/mcp-memento-server
 npm install
 npm run build
 
@@ -161,7 +164,7 @@ MEMENTO_ENCRYPTION_KEY=your_encryption_key
 
 - [完整文档](https://hunmer.github.io/memento_docs/)
 - [服务器文档](server/CLAUDE.md)
-- [MCP Server 文档](mcp-memento-server/README.md)
+- [MCP Server 文档](packages/mcp-memento-server/README.md)
 - [核心功能文档](lib/core/CLAUDE.md)
 
 ## 📄 许可证

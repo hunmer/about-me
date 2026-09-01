@@ -163,7 +163,7 @@ lib/plugins/nfc/
    ```yaml
    dependencies:
      memento_nfc:
-       path: ./memento_nfc
+       path: ./packages/memento_nfc
    ```
 
 2. **在代码中使用**
@@ -291,14 +291,14 @@ Return type mismatch: expected 'java.util.HashMap<String, Any>'
 ## 项目文件清单
 
 ### memento_nfc插件文件
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/lib/memento_nfc.dart`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/lib/memento_nfc_platform_interface.dart`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/lib/memento_nfc_method_channel.dart`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/android/src/main/kotlin/com/example/memento_nfc/MementoNfcPlugin.kt`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/android/src/main/AndroidManifest.xml`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/ios/Classes/MementoNfcPlugin.swift`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/ios/memento_nfc.podspec`
-- `/Users/Zhuanz/Documents/Memento/memento_nfc/pubspec.yaml`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc.dart`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc_platform_interface.dart`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc_method_channel.dart`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/android/src/main/kotlin/com/example/memento_nfc/MementoNfcPlugin.kt`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/android/src/main/AndroidManifest.xml`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/ios/Classes/MementoNfcPlugin.swift`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/ios/memento_nfc.podspec`
+- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/pubspec.yaml`
 
 ### Memento应用修改文件
 - `/Users/Zhuanz/Documents/Memento/lib/plugins/nfc/nfc_plugin.dart`

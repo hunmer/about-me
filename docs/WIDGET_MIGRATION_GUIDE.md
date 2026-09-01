@@ -74,9 +74,9 @@ Memento 2.0 采用**插件化小组件架构**，所有 Android 小组件代码�
 |------|------|------|
 | **SystemWidgetService** | `lib/core/services/` | 主应用统一入口，提供简化的 API |
 | **PluginWidgetSyncHelper** | `lib/core/services/` | 各插件数据同步逻辑集中管理 |
-| **MyWidgetManager** | `memento_widgets/lib/` | Flutter 插件 API，封装 home_widget |
-| **PluginWidgetData** | `memento_widgets/lib/models/` | 小组件数据模型 |
-| **WidgetStatItem** | `memento_widgets/lib/models/` | 统计项数据模型 |
+| **MyWidgetManager** | `packages/memento_widgets/lib/` | Flutter 插件 API，封装 home_widget |
+| **PluginWidgetData** | `packages/memento_widgets/lib/models/` | 小组件数据模型 |
+| **WidgetStatItem** | `packages/memento_widgets/lib/models/` | 统计项数据模型 |
 | **BasePluginWidgetProvider** | `memento_widgets/android/` | Kotlin 小组件基类 |
 
 ### 1.3 数据流
@@ -176,7 +176,7 @@ await SystemWidgetService.instance.updateWidgetData('your_plugin_id', data);
 插件 ID 到 Provider 名称的映射在 `MyWidgetManager._getProviderName()` 中定义：
 
 ```dart
-// memento_widgets/lib/memento_widgets.dart
+// packages/memento_widgets/lib/memento_widgets.dart
 String? _getProviderName(String pluginId) {
   const providerMap = {
     'todo': 'TodoWidgetProvider',
@@ -244,7 +244,7 @@ class YourPluginWidget2x1Provider : BasePluginWidgetProvider() {
 
 #### 步骤 3: 添加插件 ID 映射
 
-在 `memento_widgets/lib/memento_widgets.dart` 的 `_getProviderName()` 中添加：
+在 `packages/memento_widgets/lib/memento_widgets.dart` 的 `_getProviderName()` 中添加：
 
 ```dart
 String? _getProviderName(String pluginId) {
@@ -1079,8 +1079,8 @@ class PluginWidgetSyncHelper {
 |---------|------|
 | `lib/core/services/system_widget_service.dart` | 主应用 API 入口 |
 | `lib/core/services/plugin_widget_sync_helper.dart` | 批量同步工具 |
-| `memento_widgets/lib/memento_widgets.dart` | 插件主 API |
-| `memento_widgets/lib/models/plugin_widget_data.dart` | 数据模型 |
+| `packages/memento_widgets/lib/memento_widgets.dart` | 插件主 API |
+| `packages/memento_widgets/lib/models/plugin_widget_data.dart` | 数据模型 |
 | `memento_widgets/android/src/main/kotlin/.../BasePluginWidgetProvider.kt` | Kotlin 基类 |
 | `memento_widgets/android/src/main/AndroidManifest.xml` | Receiver 注册 |
 

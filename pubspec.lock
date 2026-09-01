@@ -517,7 +517,7 @@ packages:
   floating_ball_plugin:
     dependency: "direct main"
     description:
-      path: floating_ball_plugin
+      path: "packages/floating_ball_plugin"
       relative: true
     source: path
     version: "0.0.1"
@@ -1265,35 +1265,35 @@ packages:
   memento_foreground_service:
     dependency: "direct main"
     description:
-      path: "plugins/memento_foreground_service"
+      path: "packages/memento_foreground_service"
       relative: true
     source: path
     version: "1.0.0"
   memento_intent:
     dependency: "direct main"
     description:
-      path: memento_intent
+      path: "packages/memento_intent"
       relative: true
     source: path
     version: "0.0.1"
   memento_nfc:
     dependency: "direct main"
     description:
-      path: memento_nfc
+      path: "packages/memento_nfc"
       relative: true
     source: path
     version: "0.0.1"
   memento_notifications:
     dependency: "direct main"
     description:
-      path: "plugins/memento_notifications"
+      path: "packages/memento_notifications"
       relative: true
     source: path
     version: "1.0.0"
   memento_widgets:
     dependency: "direct main"
     description:
-      path: memento_widgets
+      path: "packages/memento_widgets"
       relative: true
     source: path
     version: "0.0.1"

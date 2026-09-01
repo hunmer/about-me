@@ -344,7 +344,7 @@ void main() async {
 | `lib/core/services/plugin_widget_sync_helper.dart` | 批量同步工具 |
 | `lib/plugins/chat/services/widget_service.dart` | 快速小组件示例 |
 | `lib/plugins/agent_chat/services/widget_service.dart` | 常规小组件示例 |
-| `memento_widgets/lib/memento_widgets.dart` | 底层插件 API |
+| `packages/memento_widgets/lib/memento_widgets.dart` | 底层插件 API |
 | `memento_widgets/android/src/main/AndroidManifest.xml` | Provider 注册 |
 
 ---
@@ -360,7 +360,7 @@ ClassNotFoundException: github.hunmer.memento.TodoWidgetProvider
 ```
 
 **原因**:
-`memento_widgets/lib/memento_widgets.dart` 中的 `_androidProviders` 映射只包含示例小组件,缺少所有插件小组件的完整包名。
+`packages/memento_widgets/lib/memento_widgets.dart` 中的 `_androidProviders` 映射只包含示例小组件,缺少所有插件小组件的完整包名。
 
 **修复**:
 在 `_androidProviders` 中添加了所有 42 个小组件的完整包名映射:

@@ -197,7 +197,7 @@ print('已注册的 Schemes: $schemes');
 
 ## 更多资源
 
-- [插件 README](./memento_intent/README.md) - 详细的 API 文档
+- [插件 README](./packages/memento_intent/README.md) - 详细的 API 文档
 - [实现总结](./MEMENTO_INTENT_IMPLEMENTATION.md) - 技术实现详情
 - 示例代码：`memento_intent/example/lib/main.dart`
 

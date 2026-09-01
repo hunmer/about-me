@@ -124,7 +124,7 @@ memento_widgets/android/src/main/AndroidManifest.xml
 
 #### 小组件映射
 ```
-memento_widgets/lib/memento_widgets.dart
+packages/memento_widgets/lib/memento_widgets.dart
 └── 修改:
     • _androidProviders - 添加 TodoQuadrantWidgetProvider 映射
     • _getProviderNames() - 添加 todo_quadrant 插件映射

@@ -61,7 +61,7 @@ $env:PORT=8080; $env:DATA_DIR="C:\memento-data"; memento-server
 #### 1. 安装依赖
 
 ```bash
-cd server-nodejs
+cd packages/server-nodejs
 npm install
 ```
 

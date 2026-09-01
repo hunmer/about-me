@@ -202,7 +202,7 @@ dart bin/server.dart --port 8080
 ### 启动 MCP 服务器
 
 ```bash
-cd mcp-memento-server
+cd packages/mcp-memento-server
 npm install
 npm run build
 npm start
