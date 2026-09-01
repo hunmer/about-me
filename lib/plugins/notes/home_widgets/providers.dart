@@ -7,7 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import '../notes_plugin.dart';
 import '../models/note.dart';
 import '../models/folder.dart';

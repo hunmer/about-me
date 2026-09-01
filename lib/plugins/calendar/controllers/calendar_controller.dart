@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/calendar/services/system_calendar_manager.dart';
-import 'package:Memento/plugins/calendar/services/calendar_mapping_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/services/system_calendar_manager.dart';
+import 'package:aboutme/plugins/calendar/services/calendar_mapping_manager.dart';
 
 /// 日历总控制器，负责管理日历的所有状态和服务
 class CalendarController extends ChangeNotifier {
@@ -30,7 +30,7 @@ class CalendarController extends ChangeNotifier {
       // 先加载映射关系
       await mappingManager.loadMapping();
 
-      // 获取系统日历事件（包括 Memento 日历）
+      // 获取系统日历事件（包括 Aboutme 日历）
       _systemEvents = await systemManager.getSystemEvents();
 
       notifyListeners();
@@ -516,7 +516,7 @@ class CalendarController extends ChangeNotifier {
   }
 
   /// 清理系统日历中的孤立事件（没有对应映射关系的事件）
-  /// 注意：此方法会删除所有在 Memento 日历中但没有映射关系的事件
+  /// 注意：此方法会删除所有在 Aboutme 日历中但没有映射关系的事件
   Future<void> cleanupOrphanedSystemEvents() async {
     try {
       final systemCalendar = SystemCalendarManager.instance;

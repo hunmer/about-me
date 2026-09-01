@@ -27,7 +27,7 @@ flutter:
 
 ### 2. 小组件布局修改
 
-**分组项布局**: `memento_widgets/android/src/main/res/layout/widget_habit_group_item.xml`
+**分组项布局**: `aboutme_widgets/android/src/main/res/layout/widget_habit_group_item.xml`
 ```xml
 <!-- 原来的TextView (emoji) -->
 <TextView android:id="@+id/group_icon" ... />
@@ -36,7 +36,7 @@ flutter:
 <ImageView android:id="@+id/group_icon" ... />
 ```
 
-**习惯项布局**: `memento_widgets/android/src/main/res/layout/widget_habit_list_item.xml`
+**习惯项布局**: `aboutme_widgets/android/src/main/res/layout/widget_habit_list_item.xml`
 ```xml
 <!-- 原来的TextView (emoji) -->
 <TextView android:id="@+id/habit_icon" ... />
@@ -246,6 +246,6 @@ W/HabitGroupListFactory: Failed to load icon 'non_existent': ...
 
 - `scripts/copy_icons.py` - 图标复制脚本
 - `pubspec.yaml` - Flutter资源声明
-- `memento_widgets/android/src/main/res/layout/widget_habit_group_item.xml` - 分组布局
-- `memento_widgets/android/src/main/res/layout/widget_habit_list_item.xml` - 习惯布局
-- `memento_widgets/android/src/main/kotlin/.../HabitGroupListRemoteViewsFactory.kt` - 渲染逻辑
+- `aboutme_widgets/android/src/main/res/layout/widget_habit_group_item.xml` - 分组布局
+- `aboutme_widgets/android/src/main/res/layout/widget_habit_list_item.xml` - 习惯布局
+- `aboutme_widgets/android/src/main/kotlin/.../HabitGroupListRemoteViewsFactory.kt` - 渲染逻辑

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/scripts_center/models/script_info.dart';
-import 'package:Memento/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
 
 /// 脚本运行参数输入对话框
 ///

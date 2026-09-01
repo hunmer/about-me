@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/widgets/form_fields/form_builder_wrapper.dart';
-import 'package:Memento/widgets/form_fields/config.dart';
-import 'package:Memento/widgets/form_fields/types.dart';
-import 'package:Memento/plugins/store/models/product.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/widgets/form_fields/config.dart';
+import 'package:aboutme/widgets/form_fields/types.dart';
+import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 
 class AddProductPage extends StatefulWidget {
   final StoreController controller;

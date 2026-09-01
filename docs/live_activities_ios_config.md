@@ -32,7 +32,7 @@
 
 #### 步骤 2: 配置 Extension
 
-1. **Product Name**: 输入 `MementoWidget`（或其他名称）
+1. **Product Name**: 输入 `AboutmeWidget`（或其他名称）
 2. **Interface**: 选择 **Swift**（推荐）
 3. **Language**: 选择 **Swift**
 4. **Embed in Application**: 确保选择的是 **Runner**
@@ -52,11 +52,11 @@
 4. 在弹出窗口中搜索并选择 **App Groups**
 5. 点击 **Enter** 添加
 
-6. 重复上述步骤，为 **MementoWidget** 目标也添加 **App Groups** 能力
+6. 重复上述步骤，为 **AboutmeWidget** 目标也添加 **App Groups** 能力
 
 7. 在 App Groups 配置界面：
-   - 勾选 **group.github.hunmer.memento**（或根据你的 Bundle ID 调整）
-   - 确保 Runner 和 MementoWidget 都勾选同一个 App Group
+   - 勾选 **group.github.hunmer.aboutme**（或根据你的 Bundle ID 调整）
+   - 确保 Runner 和 AboutmeWidget 都勾选同一个 App Group
 
 #### 步骤 2: 添加 Push Notifications
 
@@ -71,8 +71,8 @@
 
 1. 确保所有目标的 **Team** 设置为你的开发团队
 2. 确保 **Bundle Identifier** 设置正确：
-   - Runner: `github.hunmer.memento`
-   - MementoWidget: `github.hunmer.memento.MementoWidget`
+   - Runner: `github.hunmer.aboutme`
+   - AboutmeWidget: `github.hunmer.aboutme.AboutmeWidget`
 3. 重新选择或更新 **Provisioning Profile**
 
 ### 5. 验证配置
@@ -80,8 +80,8 @@
 #### 检查列表
 
 - [ ] `ios/Runner/Info.plist` 包含 `NSSupportsLiveActivities` 设置为 `true`
-- [ ] `ios/MementoWidget/Info.plist` 包含 `NSSupportsLiveActivities` 设置为 `true`
-- [ ] Runner 和 MementoWidget 都配置了 App Groups
+- [ ] `ios/AboutmeWidget/Info.plist` 包含 `NSSupportsLiveActivities` 设置为 `true`
+- [ ] Runner 和 AboutmeWidget 都配置了 App Groups
 - [ ] Runner 配置了 Push Notifications
 - [ ] 所有目标的 Bundle ID 配置正确
 - [ ] 所有目标都配置了有效的证书和描述文件
@@ -113,16 +113,16 @@
 
 ### 已创建的文件
 
-1. **ios/MementoWidget/MementoWidgetLiveActivity.swift**
+1. **ios/AboutmeWidget/AboutmeWidgetLiveActivity.swift**
    - Widget Extension 的主文件
    - 包含 LiveActivitiesAppAttributes 定义
    - 包含 Live Activity 和 Dynamic Island 的 UI 定义
 
-2. **ios/MementoWidget/Info.plist**
+2. **ios/AboutmeWidget/Info.plist**
    - Widget Extension 的配置信息
    - 包含 NSSupportsLiveActivities 设置
 
-3. **ios/MementoWidget/MementoWidget.entitlements**
+3. **ios/AboutmeWidget/AboutmeWidget.entitlements**
    - 权限配置文件
    - 包含 Push Notifications 权限
 
@@ -135,8 +135,8 @@ final _liveActivitiesPlugin = LiveActivities();
 
 // 初始化插件
 await _liveActivitiesPlugin.init(
-  appGroupId: 'group.github.hunmer.memento',
-  urlScheme: 'memento',
+  appGroupId: 'group.github.hunmer.aboutme',
+  urlScheme: 'aboutme',
   requireNotificationPermission: true,
 );
 

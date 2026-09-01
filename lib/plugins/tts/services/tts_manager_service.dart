@@ -5,9 +5,9 @@ import 'tts_base_service.dart';
 import 'system_tts_service.dart';
 import 'http_tts_service.dart';
 import 'minimax_tts_service.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
-import 'package:Memento/plugins/tts/models/tts_queue_item.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/models/tts_queue_item.dart';
 
 /// TTS管理器服务 - 负责服务管理和队列管理
 class TTSManagerService extends ChangeNotifier {

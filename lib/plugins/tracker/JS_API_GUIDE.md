@@ -25,7 +25,7 @@
 
 **示例**:
 ```javascript
-const result = memento.tracker.testSync();
+const result = aboutme.tracker.testSync();
 console.log(result);
 ```
 
@@ -49,16 +49,16 @@ console.log(result);
 **示例**:
 ```javascript
 // 获取所有目标
-const allGoals = await memento.tracker.getGoals();
+const allGoals = await aboutme.tracker.getGoals();
 
 // 获取进行中的目标
-const activeGoals = await memento.tracker.getGoals('active');
+const activeGoals = await aboutme.tracker.getGoals('active');
 
 // 获取"学习"分组的目标
-const studyGoals = await memento.tracker.getGoals(null, '学习');
+const studyGoals = await aboutme.tracker.getGoals(null, '学习');
 
 // 获取"健康"分组中已完成的目标
-const completedHealthGoals = await memento.tracker.getGoals('completed', '健康');
+const completedHealthGoals = await aboutme.tracker.getGoals('completed', '健康');
 ```
 
 **返回数据格式**:
@@ -102,7 +102,7 @@ const completedHealthGoals = await memento.tracker.getGoals('completed', '健康
 
 **示例**:
 ```javascript
-const goal = await memento.tracker.getGoal('1736950800000');
+const goal = await aboutme.tracker.getGoal('1736950800000');
 const goalData = JSON.parse(goal);
 console.log(`目标名称: ${goalData.name}, 进度: ${goalData.currentValue}/${goalData.targetValue}`);
 ```
@@ -133,7 +133,7 @@ console.log(`目标名称: ${goalData.name}, 进度: ${goalData.currentValue}/${
 **示例**:
 ```javascript
 // 创建每日阅读目标
-const goal = await memento.tracker.createGoal(
+const goal = await aboutme.tracker.createGoal(
   '每日阅读',
   '分钟',
   30,
@@ -141,7 +141,7 @@ const goal = await memento.tracker.createGoal(
 );
 
 // 创建每周运动目标
-const weeklyGoal = await memento.tracker.createGoal(
+const weeklyGoal = await aboutme.tracker.createGoal(
   '每周运动',
   '小时',
   5,
@@ -166,7 +166,7 @@ const weeklyGoal = await memento.tracker.createGoal(
 **示例**:
 ```javascript
 // 更新目标名称和目标值
-const updated = await memento.tracker.updateGoal(
+const updated = await aboutme.tracker.updateGoal(
   '1736950800000',
   JSON.stringify({
     name: '每日深度阅读',
@@ -175,7 +175,7 @@ const updated = await memento.tracker.updateGoal(
 );
 
 // 更新提醒时间和分组
-const updated2 = await memento.tracker.updateGoal(
+const updated2 = await aboutme.tracker.updateGoal(
   '1736950800000',
   JSON.stringify({
     reminderTime: '20:00',
@@ -211,7 +211,7 @@ const updated2 = await memento.tracker.updateGoal(
 
 **示例**:
 ```javascript
-await memento.tracker.deleteGoal('1736950800000');
+await aboutme.tracker.deleteGoal('1736950800000');
 ```
 
 ---
@@ -233,14 +233,14 @@ await memento.tracker.deleteGoal('1736950800000');
 **示例**:
 ```javascript
 // 添加今日阅读记录
-const record = await memento.tracker.recordData(
+const record = await aboutme.tracker.recordData(
   '1736950800000',
   30,
   '阅读《代码整洁之道》'
 );
 
 // 添加指定时间的记录
-const pastRecord = await memento.tracker.recordData(
+const pastRecord = await aboutme.tracker.recordData(
   '1736950800000',
   45,
   '昨日补记',
@@ -279,10 +279,10 @@ const pastRecord = await memento.tracker.recordData(
 **示例**:
 ```javascript
 // 获取所有记录
-const allRecords = await memento.tracker.getRecords('1736950800000');
+const allRecords = await aboutme.tracker.getRecords('1736950800000');
 
 // 获取最近 10 条记录
-const recentRecords = await memento.tracker.getRecords('1736950800000', 10);
+const recentRecords = await aboutme.tracker.getRecords('1736950800000', 10);
 
 const records = JSON.parse(recentRecords);
 records.forEach(record => {
@@ -303,7 +303,7 @@ records.forEach(record => {
 
 **示例**:
 ```javascript
-await memento.tracker.deleteRecord('1736951000000');
+await aboutme.tracker.deleteRecord('1736951000000');
 ```
 
 **注意事项**:
@@ -324,7 +324,7 @@ await memento.tracker.deleteRecord('1736951000000');
 
 **示例**:
 ```javascript
-const progress = await memento.tracker.getProgress('1736950800000');
+const progress = await aboutme.tracker.getProgress('1736950800000');
 const progressData = JSON.parse(progress);
 
 console.log(`进度: ${progressData.percentage}%`);
@@ -358,7 +358,7 @@ console.log(`完成状态: ${progressData.isCompleted ? '已完成' : '进行中
 
 **全局统计**:
 ```javascript
-const stats = await memento.tracker.getStats();
+const stats = await aboutme.tracker.getStats();
 const statsData = JSON.parse(stats);
 
 console.log(`总目标数: ${statsData.totalGoals}`);
@@ -383,7 +383,7 @@ console.log(`分组列表: ${statsData.groups.join(', ')}`);
 
 **单个目标统计**:
 ```javascript
-const goalStats = await memento.tracker.getStats('1736950800000');
+const goalStats = await aboutme.tracker.getStats('1736950800000');
 const goalStatsData = JSON.parse(goalStats);
 
 console.log(`目标名称: ${goalStatsData.goalName}`);
@@ -413,7 +413,7 @@ console.log(`累计值: ${goalStatsData.totalValue}`);
 
 ```javascript
 // 1. 创建目标
-const goal = await memento.tracker.createGoal(
+const goal = await aboutme.tracker.createGoal(
   '每日阅读',
   '分钟',
   30,
@@ -425,15 +425,15 @@ const goalData = JSON.parse(goal);
 const goalId = goalData.id;
 
 // 2. 添加记录
-await memento.tracker.recordData(goalId, 15, '早上阅读技术文档');
-await memento.tracker.recordData(goalId, 20, '晚上阅读小说');
+await aboutme.tracker.recordData(goalId, 15, '早上阅读技术文档');
+await aboutme.tracker.recordData(goalId, 20, '晚上阅读小说');
 
 // 3. 查看进度
-const progress = await memento.tracker.getProgress(goalId);
+const progress = await aboutme.tracker.getProgress(goalId);
 console.log('当前进度:', JSON.parse(progress).percentage + '%');
 
 // 4. 查看统计
-const stats = await memento.tracker.getStats(goalId);
+const stats = await aboutme.tracker.getStats(goalId);
 const statsData = JSON.parse(stats);
 console.log(`总记录数: ${statsData.totalRecords}`);
 console.log(`累计阅读: ${statsData.totalValue} 分钟`);
@@ -445,7 +445,7 @@ console.log(`累计阅读: ${statsData.totalValue} 分钟`);
 
 ```javascript
 // 获取所有进行中的目标
-const activeGoals = await memento.tracker.getGoals('active');
+const activeGoals = await aboutme.tracker.getGoals('active');
 const goals = JSON.parse(activeGoals);
 
 // 遍历并更新每个目标
@@ -459,7 +459,7 @@ for (const goal of goals) {
 const todayValue = 10;
 for (const goal of goals) {
   if (goal.group === '健康') {
-    await memento.tracker.recordData(goal.id, todayValue, '今日完成');
+    await aboutme.tracker.recordData(goal.id, todayValue, '今日完成');
   }
 }
 ```
@@ -470,7 +470,7 @@ for (const goal of goals) {
 
 ```javascript
 // 获取所有目标的统计信息
-const globalStats = await memento.tracker.getStats();
+const globalStats = await aboutme.tracker.getStats();
 const stats = JSON.parse(globalStats);
 
 let report = `## 本周目标追踪报告\n\n`;
@@ -482,11 +482,11 @@ report += `- 整体进度: ${(stats.overallProgress * 100).toFixed(1)}%\n\n`;
 // 遍历每个分组
 for (const group of stats.groups) {
   report += `### ${group}\n\n`;
-  const groupGoals = await memento.tracker.getGoals(null, group);
+  const groupGoals = await aboutme.tracker.getGoals(null, group);
   const goals = JSON.parse(groupGoals);
 
   for (const goal of goals) {
-    const goalStats = await memento.tracker.getStats(goal.id);
+    const goalStats = await aboutme.tracker.getStats(goal.id);
     const data = JSON.parse(goalStats);
     report += `- **${goal.name}**: ${data.currentValue}/${data.targetValue} ${goal.unitType} `;
     report += `(${(data.progress * 100).toFixed(1)}%)\n`;
@@ -555,7 +555,7 @@ interface Record {
 
 ```javascript
 try {
-  const goal = await memento.tracker.getGoal('invalid_id');
+  const goal = await aboutme.tracker.getGoal('invalid_id');
 } catch (error) {
   console.error('获取目标失败:', error.message);
 }
@@ -600,5 +600,5 @@ Tracker 插件会广播以下事件：
 
 ---
 
-**文档维护者**: Memento 开发团队
+**文档维护者**: Aboutme 开发团队
 **最后更新**: 2025-01-15

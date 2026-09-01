@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'subtask.dart';
 
 enum TaskPriority { q1, q2, q3, q4 }

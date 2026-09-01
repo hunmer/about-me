@@ -1,4 +1,4 @@
-/// Memento Prompt 分析数据模式
+/// Aboutme Prompt 分析数据模式
 ///
 /// 用于控制 Prompt 方法返回的数据详细程度，以优化 token 消耗。
 ///

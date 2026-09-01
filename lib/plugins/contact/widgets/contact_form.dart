@@ -1,12 +1,12 @@
-import 'package:Memento/widgets/form_fields/config.dart';
-import 'package:Memento/widgets/form_fields/types.dart';
+import 'package:aboutme/widgets/form_fields/config.dart';
+import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
-import 'package:Memento/plugins/contact/models/custom_activity_event_model.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart';
-import 'package:Memento/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
+import 'package:aboutme/plugins/goods/models/custom_field.dart';
+import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 
 /// 联系人表单 - 使用 FormBuilderWrapper 重构版本
 ///

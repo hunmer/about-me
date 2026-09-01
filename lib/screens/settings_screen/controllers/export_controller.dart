@@ -1,14 +1,14 @@
 import 'dart:io';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/utils/zip.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/utils/zip.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:archive/archive_io.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/core/utils/file_utils.dart';
-import 'package:Memento/screens/settings_screen/widgets/plugin_selection_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/file_utils.dart';
+import 'package:aboutme/screens/settings_screen/widgets/plugin_selection_dialog.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class ExportController {
   BuildContext? _context;
@@ -41,7 +41,7 @@ class ExportController {
       }
 
       // 创建一个临时目录来存储要压缩的文件
-      final tempDir = await Directory.systemTemp.createTemp('memento_temp_');
+      final tempDir = await Directory.systemTemp.createTemp('aboutme_temp_');
 
       // 为每个选中的插件创建一个目录并复制数据
       for (final pluginId in selectedPlugins) {
@@ -60,7 +60,7 @@ class ExportController {
       }
 
       // 创建临时 ZIP 文件
-      final tempZipPath = '${tempDir.path}/memento_export.zip';
+      final tempZipPath = '${tempDir.path}/aboutme_export.zip';
       final zipFile = ZipFileEncoder();
       zipFile.create(tempZipPath);
 
@@ -86,7 +86,7 @@ class ExportController {
 
       zipFile.close();
 
-      final savePath = await exportZIP(tempZipPath, 'memento.zip');
+      final savePath = await exportZIP(tempZipPath, 'aboutme.zip');
       // 删除临时目录
       await tempDir.delete(recursive: true);
       if (savePath != null) {

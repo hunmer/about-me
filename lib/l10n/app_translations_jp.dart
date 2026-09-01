@@ -4,7 +4,7 @@
 /// Parameterized translations use @paramName format for GetX.
 const Map<String, String> appTranslationsJp = {
   // App basics
-  'app_appTitle': 'memento',
+  'app_appTitle': 'aboutme',
   'app_pluginManager': 'プラグイン管理',
   'app_home': 'ホーム',
   'app_settings': '設定',
@@ -173,13 +173,13 @@ const Map<String, String> appTranslationsJp = {
   // About
   'app_aboutTitle': 'アプリについて',
   'app_aboutDescription':
-      'Mementoは、大切なことを整理・記憶するための生産性向上アプリです。',
+      'Aboutmeは、大切なことを整理・記憶するための生産性向上アプリです。',
   'app_projectLinkTitle': 'プロジェクトリンク',
-  'app_projectLink': 'https://github.com/hunmer/memento',
+  'app_projectLink': 'https://github.com/hunmer/aboutme',
   'app_feedbackTitle': 'フィードバック・問題報告',
-  'app_feedbackLink': 'https://github.com/hunmer/Memento/issues',
+  'app_feedbackLink': 'https://github.com/hunmer/Aboutme/issues',
   'app_documentationTitle': 'ドキュメント',
-  'app_documentationLink': 'https://github.com/hunmer/Memento#readme',
+  'app_documentationLink': 'https://github.com/hunmer/Aboutme#readme',
 
   // Home Widget Categories
   'home_categoryRecord': '記録',

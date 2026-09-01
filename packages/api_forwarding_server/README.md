@@ -1,6 +1,6 @@
-# Memento API 转发服务器
+# Aboutme API 转发服务器
 
-一个 WebSocket 代理服务器，用于在 **Web 前端** 和 **Flutter 客户端** 之间转发 API 请求，实现前端通过 Memento 客户端访问插件功能。
+一个 WebSocket 代理服务器，用于在 **Web 前端** 和 **Flutter 客户端** 之间转发 API 请求，实现前端通过 Aboutme 客户端访问插件功能。
 
 ---
 
@@ -24,8 +24,8 @@
 │  (Frontend)     │         │  (8654 端口)     │         │   (Client)      │
 ├─────────────────┤         ├──────────────────┤         ├─────────────────┤
 │                 │         │                  │         │                 │
-│ • React/Vue     │◄──────►│                  │◄──────►│ • Memento App   │
-│ • memento-mock  │  WS     │  • 配对管理       │  WS     │ • 插件系统      │
+│ • React/Vue     │◄──────►│                  │◄──────►│ • Aboutme App   │
+│ • aboutme-mock  │  WS     │  • 配对管理       │  WS     │ • 插件系统      │
 │ • 浏览器        │         │  • 消息路由       │         │ • JSBridge API  │
 │                 │         │  • 心跳检测       │         │                 │
 └─────────────────┘         └──────────────────┘         └─────────────────┘
@@ -78,17 +78,17 @@ npm start    # 默认端口 8654
 **文件位置**：`lib/core/api_forwarding/`
 
 **职责**：
-- 提供 Memento 插件的 JSBridge API
+- 提供 Aboutme 插件的 JSBridge API
 - 处理来自前端的 API 请求
 - 返回真实的插件数据
 
 **配置方式**：
-1. 打开 Memento 应用
+1. 打开 Aboutme 应用
 2. 进入 **设置 > 开发者测试 > 转发数据服务**
 3. 填写配置：
    - 服务器地址：`ws://localhost:8654`
    - 配对密钥：`ABCD-1234-EFGH-5678`
-   - 设备名称：`Memento Client`
+   - 设备名称：`Aboutme Client`
    - ✅ 启动时自动连接（可选）
 4. 点击"连接"
 
@@ -111,18 +111,18 @@ npm start    # 默认端口 8654
 
 ### 3️⃣ Web 前端（调用层）
 
-**文件位置**：前端项目根目录的 `memento-config.ts` 和 `index.tsx`
+**文件位置**：前端项目根目录的 `aboutme-config.ts` 和 `index.tsx`
 
 **职责**：
 - 提供用户界面
-- 通过 `Memento.plugins.*.*` 调用 API
+- 通过 `Aboutme.plugins.*.*` 调用 API
 - 接收并显示返回的数据
 
 **配置方式**：
 
-1. **创建配置文件** (`memento-config.ts`)：
+1. **创建配置文件** (`aboutme-config.ts`)：
 ```typescript
-export const mementoConfig = {
+export const aboutmeConfig = {
   enabled: true,                      // 启用转发模式
   serverUrl: 'ws://localhost:8654',  // 服务器地址
   pairingKey: 'ABCD-1234-EFGH-5678', // 配对密钥（与客户端相同）
@@ -132,12 +132,12 @@ export const mementoConfig = {
 
 2. **初始化** (`index.tsx`)：
 ```typescript
-import('memento-mock').then((module) => {
+import('aboutme-mock').then((module) => {
   module.default({
-    enableForwarding: mementoConfig.enabled,
-    serverUrl: mementoConfig.serverUrl,
-    pairingKey: mementoConfig.pairingKey,
-    timeout: mementoConfig.timeout,
+    enableForwarding: aboutmeConfig.enabled,
+    serverUrl: aboutmeConfig.serverUrl,
+    pairingKey: aboutmeConfig.pairingKey,
+    timeout: aboutmeConfig.timeout,
   });
 });
 ```
@@ -145,21 +145,21 @@ import('memento-mock').then((module) => {
 **使用示例**：
 ```javascript
 // 获取账单账户
-let accounts = await Memento.plugins.bill.getAccounts({});
+let accounts = await Aboutme.plugins.bill.getAccounts({});
 console.log('账户列表:', accounts);
 
 // 获取 Todo 列表
-let todos = await Memento.plugins.todo.getItems({ count: 10 });
+let todos = await Aboutme.plugins.todo.getItems({ count: 10 });
 console.log('待办事项:', todos);
 
 // 获取日记条目
-let diaries = await Memento.plugins.diary.getEntries({ limit: 5 });
+let diaries = await Aboutme.plugins.diary.getEntries({ limit: 5 });
 console.log('日记列表:', diaries);
 ```
 
 **日志示例**：
 ```
-[Memento Mock] 启用转发模式
+[Aboutme Mock] 启用转发模式
 [WebSocket] 正在连接到 ws://localhost:8654...
 [WebSocket] 连接已建立，正在认证...
 [WebSocket] 认证成功，已匹配对端
@@ -176,7 +176,7 @@ console.log('日记列表:', diaries);
 
 ```
 1. 前端发起调用
-   └─> Memento.plugins.bill.getAccounts({})
+   └─> Aboutme.plugins.bill.getAccounts({})
        └─> WebSocketClient.callPlugin()
 
 2. 前端发送请求消息
@@ -256,7 +256,7 @@ npm start
 
 ### 第二步：启动 Flutter 客户端
 
-1. 打开 Memento 应用
+1. 打开 Aboutme 应用
 2. 进入 **设置 > 开发者测试 > 转发数据服务**
 3. 配置并点击"连接"
 
@@ -271,7 +271,7 @@ npm run dev
 
 浏览器控制台输出：
 ```
-[Memento Mock] 启动转发模式
+[Aboutme Mock] 启动转发模式
 [WebSocket] 认证成功，已匹配对端
 ```
 
@@ -283,15 +283,15 @@ Flutter 客户端状态变为：🟢 **已连接到前端**
 
 ```javascript
 // 测试 1: 获取账户列表
-let accounts = await Memento.plugins.bill.getAccounts({});
+let accounts = await Aboutme.plugins.bill.getAccounts({});
 console.log('账户:', accounts);
 
 // 测试 2: 获取待办事项
-let todos = await Memento.plugins.todo.getItems({ count: 5 });
+let todos = await Aboutme.plugins.todo.getItems({ count: 5 });
 console.log('待办:', todos);
 
 // 测试 3: 获取日记
-let diaries = await Memento.plugins.diary.getEntries({ limit: 3 });
+let diaries = await Aboutme.plugins.diary.getEntries({ limit: 3 });
 console.log('日记:', diaries);
 ```
 
@@ -323,7 +323,7 @@ PORT=3000 npm start
 |--------|------|------|
 | 服务器地址 | WebSocket 服务器地址 | `ws://localhost:8654` |
 | 配对密钥 | 用于匹配前端和客户端 | `ABCD-1234-EFGH-5678` |
-| 设备名称 | 客户端标识 | `Memento Client` |
+| 设备名称 | 客户端标识 | `Aboutme Client` |
 | 启动时自动连接 | 应用启动时自动连接服务器 | 开关 |
 
 **存储位置**：
@@ -332,10 +332,10 @@ PORT=3000 npm start
 
 ### Web 前端配置
 
-**配置文件** (`memento-config.ts`)：
+**配置文件** (`aboutme-config.ts`)：
 
 ```typescript
-export const mementoConfig = {
+export const aboutmeConfig = {
   // 是否启用转发模式
   enabled: true,
 
@@ -353,15 +353,15 @@ export const mementoConfig = {
 **初始化代码** (`index.tsx`)：
 
 ```typescript
-import { mementoConfig } from './memento-config';
+import { aboutmeConfig } from './aboutme-config';
 
-if (import.meta.env.DEV && typeof window.Memento === 'undefined') {
-  import('memento-mock').then((module) => {
+if (import.meta.env.DEV && typeof window.Aboutme === 'undefined') {
+  import('aboutme-mock').then((module) => {
     module.default({
-      enableForwarding: mementoConfig.enabled,
-      serverUrl: mementoConfig.serverUrl,
-      pairingKey: mementoConfig.pairingKey,
-      timeout: mementoConfig.timeout,
+      enableForwarding: aboutmeConfig.enabled,
+      serverUrl: aboutmeConfig.serverUrl,
+      pairingKey: aboutmeConfig.pairingKey,
+      timeout: aboutmeConfig.timeout,
     });
   });
 }
@@ -487,7 +487,7 @@ if (import.meta.env.DEV && typeof window.Memento === 'undefined') {
 
 **症状**：
 ```javascript
-let data = await Memento.plugins.bill.getAccounts({});
+let data = await Aboutme.plugins.bill.getAccounts({});
 console.log(data); // undefined
 ```
 
@@ -569,7 +569,7 @@ flutter run
 
 输出：
 ```
-[Memento Mock] 启用转发模式
+[Aboutme Mock] 启用转发模式
 [WebSocket] 正在连接到 ws://localhost:8654...
 [WebSocket] 认证成功，已匹配对端
 [WebSocket] 调用: bill.getAccounts
@@ -592,8 +592,8 @@ flutter run
 - `lib/screens/settings_screen/widgets/api_forwarding_settings_dialog.dart` - 设置对话框
 
 ### Web 前端
-- `memento-mock/src/websocket-client.ts` - WebSocket 客户端
-- `memento-mock/src/index.ts` - 初始化和 API 代理
+- `aboutme-mock/src/websocket-client.ts` - WebSocket 客户端
+- `aboutme-mock/src/index.ts` - 初始化和 API 代理
 
 ---
 

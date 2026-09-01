@@ -6,7 +6,7 @@
 
 ## 模块职责
 
-OpenAI 插件是 Memento 的 AI 核心，提供：
+OpenAI 插件是 Aboutme 的 AI 核心，提供：
 
 - **多服务商支持**：OpenAI、Anthropic、Google、本地模型等
 - **AI 助手管理**：创建多个具有不同人格/专长的 AI 助手

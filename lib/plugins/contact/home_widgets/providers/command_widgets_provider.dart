@@ -3,9 +3,9 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/contact/contact_plugin.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/contact/contact_plugin.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
 
 /// 提供公共小组件的数据
 class ContactCommandWidgetsProvider {

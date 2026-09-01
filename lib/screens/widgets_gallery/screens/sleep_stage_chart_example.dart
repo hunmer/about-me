@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/common/sleep_stage_chart_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/common/sleep_stage_chart_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 睡眠阶段图表示例
 class SleepStageChartExample extends StatelessWidget {

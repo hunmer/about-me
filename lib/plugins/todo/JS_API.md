@@ -19,16 +19,16 @@ Todo 插件现已支持通过 JavaScript 调用任务管理功能。所有 API �
 **示例：**
 ```javascript
 // 获取所有任务
-const allTasks = await Memento.plugins.todo.getTasks();
+const allTasks = await Aboutme.plugins.todo.getTasks();
 
 // 获取待办任务
-const todoTasks = await Memento.plugins.todo.getTasks('todo');
+const todoTasks = await Aboutme.plugins.todo.getTasks('todo');
 
 // 获取高优先级任务
-const highPriorityTasks = await Memento.plugins.todo.getTasks(null, 'high');
+const highPriorityTasks = await Aboutme.plugins.todo.getTasks(null, 'high');
 
 // 获取进行中的高优先级任务
-const inProgressHigh = await Memento.plugins.todo.getTasks('inProgress', 'high');
+const inProgressHigh = await Aboutme.plugins.todo.getTasks('inProgress', 'high');
 ```
 
 ---
@@ -42,7 +42,7 @@ const inProgressHigh = await Memento.plugins.todo.getTasks('inProgress', 'high')
 
 **示例：**
 ```javascript
-const task = await Memento.plugins.todo.getTask('550e8400-e29b-41d4-a716-446655440000');
+const task = await Aboutme.plugins.todo.getTask('550e8400-e29b-41d4-a716-446655440000');
 console.log(JSON.parse(task));
 ```
 
@@ -58,7 +58,7 @@ console.log(JSON.parse(task));
 
 **示例：**
 ```javascript
-const todayTasks = await Memento.plugins.todo.getTodayTasks();
+const todayTasks = await Aboutme.plugins.todo.getTodayTasks();
 const tasks = JSON.parse(todayTasks);
 console.log(`今日有 ${tasks.length} 个任务`);
 ```
@@ -75,7 +75,7 @@ console.log(`今日有 ${tasks.length} 个任务`);
 
 **示例：**
 ```javascript
-const overdueTasks = await Memento.plugins.todo.getOverdueTasks();
+const overdueTasks = await Aboutme.plugins.todo.getOverdueTasks();
 const tasks = JSON.parse(overdueTasks);
 if (tasks.length > 0) {
   console.log(`有 ${tasks.length} 个任务已过期！`);
@@ -101,10 +101,10 @@ if (tasks.length > 0) {
 **示例：**
 ```javascript
 // 创建简单任务
-const task1 = await Memento.plugins.todo.createTask('完成项目文档');
+const task1 = await Aboutme.plugins.todo.createTask('完成项目文档');
 
 // 创建完整任务
-const task2 = await Memento.plugins.todo.createTask(
+const task2 = await Aboutme.plugins.todo.createTask(
   '编写需求分析',
   '详细描述项目需求和功能点',
   '2025-01-15T09:00:00.000Z',
@@ -138,7 +138,7 @@ console.log(JSON.parse(task2));
 **示例：**
 ```javascript
 // 更新任务标题和优先级
-const updated = await Memento.plugins.todo.updateTask(
+const updated = await Aboutme.plugins.todo.updateTask(
   'task-id-here',
   JSON.stringify({
     title: '新标题',
@@ -148,7 +148,7 @@ const updated = await Memento.plugins.todo.updateTask(
 );
 
 // 更新任务状态
-const updated2 = await Memento.plugins.todo.updateTask(
+const updated2 = await Aboutme.plugins.todo.updateTask(
   'task-id-here',
   JSON.stringify({ status: 'inProgress' })
 );
@@ -165,7 +165,7 @@ const updated2 = await Memento.plugins.todo.updateTask(
 
 **示例：**
 ```javascript
-const result = await Memento.plugins.todo.deleteTask('task-id-here');
+const result = await Aboutme.plugins.todo.deleteTask('task-id-here');
 console.log(JSON.parse(result)); // {success: true, taskId: '...'}
 ```
 
@@ -182,7 +182,7 @@ console.log(JSON.parse(result)); // {success: true, taskId: '...'}
 
 **示例：**
 ```javascript
-const completed = await Memento.plugins.todo.completeTask('task-id-here');
+const completed = await Aboutme.plugins.todo.completeTask('task-id-here');
 const task = JSON.parse(completed);
 console.log(`任务 "${task.title}" 已完成！`);
 ```
@@ -232,8 +232,8 @@ console.log(`任务 "${task.title}" 已完成！`);
 ```javascript
 // 每天早上检查今日任务和过期任务
 async function dailyTaskReminder() {
-  const todayTasks = JSON.parse(await Memento.plugins.todo.getTodayTasks());
-  const overdueTasks = JSON.parse(await Memento.plugins.todo.getOverdueTasks());
+  const todayTasks = JSON.parse(await Aboutme.plugins.todo.getTodayTasks());
+  const overdueTasks = JSON.parse(await Aboutme.plugins.todo.getOverdueTasks());
 
   let message = `早上好！\n\n`;
 
@@ -264,7 +264,7 @@ async function createTasksFromText(text) {
   const tasks = [];
 
   for (const line of lines) {
-    const task = await Memento.plugins.todo.createTask(line.trim());
+    const task = await Aboutme.plugins.todo.createTask(line.trim());
     tasks.push(JSON.parse(task));
   }
 
@@ -285,7 +285,7 @@ await createTasksFromText(text);
 ```javascript
 // 统计任务完成情况
 async function getTaskStatistics() {
-  const allTasks = JSON.parse(await Memento.plugins.todo.getTasks());
+  const allTasks = JSON.parse(await Aboutme.plugins.todo.getTasks());
 
   const stats = {
     total: allTasks.length,
@@ -315,7 +315,7 @@ async function createWeeklyPlan() {
   ];
 
   for (const taskData of tasks) {
-    await Memento.plugins.todo.createTask(
+    await Aboutme.plugins.todo.createTask(
       taskData.title,
       '',
       nextMonday.toISOString(),
@@ -334,7 +334,7 @@ async function createWeeklyPlan() {
 所有 API 在失败时会返回包含 `error` 字段的 JSON 对象：
 
 ```javascript
-const result = await Memento.plugins.todo.getTask('invalid-id');
+const result = await Aboutme.plugins.todo.getTask('invalid-id');
 const data = JSON.parse(result);
 
 if (data.error) {
@@ -364,7 +364,7 @@ if (data.error) {
 // AI 可以通过对话创建任务
 用户: "帮我创建一个任务：明天下午3点开会"
 
-AI: await Memento.plugins.todo.createTask(
+AI: await Aboutme.plugins.todo.createTask(
   '下午3点开会',
   '',
   null,
@@ -376,7 +376,7 @@ AI: await Memento.plugins.todo.createTask(
 // AI 可以查询并汇报任务
 用户: "今天有什么任务？"
 
-AI: const tasks = JSON.parse(await Memento.plugins.todo.getTodayTasks());
+AI: const tasks = JSON.parse(await Aboutme.plugins.todo.getTodayTasks());
 // 然后格式化输出任务列表
 ```
 

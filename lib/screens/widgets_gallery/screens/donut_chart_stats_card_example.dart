@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/donut_chart_stats_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/donut_chart_stats_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 甜甜圈图统计卡片示例
 class DonutChartStatsCardExample extends StatelessWidget {

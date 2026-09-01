@@ -3,14 +3,14 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/plugins/tracker/screens/goal_detail_screen.dart';
-import 'package:Memento/plugins/tracker/widgets/record_day_card.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
+import 'package:aboutme/plugins/tracker/widgets/record_day_card.dart';
 
 bool _isSameDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;

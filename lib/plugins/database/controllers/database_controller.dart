@@ -1,8 +1,8 @@
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/plugins/database/models/database_model.dart';
-import 'package:Memento/plugins/database/models/record.dart';
-import 'package:Memento/plugins/database/services/database_service.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/database/models/database_model.dart';
+import 'package:aboutme/plugins/database/models/record.dart';
+import 'package:aboutme/plugins/database/services/database_service.dart';
 
 class DatabaseController {
   final DatabaseService service;

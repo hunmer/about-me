@@ -1,8 +1,8 @@
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 纪念日卡片组件
 ///

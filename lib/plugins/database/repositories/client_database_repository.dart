@@ -4,11 +4,11 @@
 library;
 
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/database/services/database_service.dart';
-import 'package:Memento/plugins/database/controllers/database_controller.dart';
-import 'package:Memento/plugins/database/models/database_model.dart';
-import 'package:Memento/plugins/database/models/database_field.dart';
-import 'package:Memento/plugins/database/models/record.dart';
+import 'package:aboutme/plugins/database/services/database_service.dart';
+import 'package:aboutme/plugins/database/controllers/database_controller.dart';
+import 'package:aboutme/plugins/database/models/database_model.dart';
+import 'package:aboutme/plugins/database/models/database_field.dart';
+import 'package:aboutme/plugins/database/models/record.dart';
 
 /// 客户端 Database Repository 实现
 class ClientDatabaseRepository extends IDatabaseRepository {

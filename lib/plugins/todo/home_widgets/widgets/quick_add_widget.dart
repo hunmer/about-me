@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 /// 1x1 快速添加任务小组件
 class QuickAddWidget extends StatelessWidget {

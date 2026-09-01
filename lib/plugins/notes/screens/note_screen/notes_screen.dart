@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/notes/controllers/notes_controller.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
 import 'notes_app_bar.dart';
 import 'notes_list_view.dart';
 import 'folder_selection_dialog.dart';

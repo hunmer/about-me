@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
 
 enum ViewMode {
   timeline,

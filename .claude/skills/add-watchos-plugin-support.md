@@ -79,7 +79,7 @@ private func handleGetPluginData(replyHandler: @escaping ([String: Any]) -> Void
 
 ### 3. watchOS - WCSessionManager
 
-**文件**: `ios/memento Watch App/WCSessionManager.swift`
+**文件**: `ios/aboutme Watch App/WCSessionManager.swift`
 
 添加数据模型：
 ```swift
@@ -124,7 +124,7 @@ func getPluginData() async throws -> [PluginData] {
 
 ### 4. watchOS - SwiftUI 视图
 
-**新建文件**: `ios/memento Watch App/PluginListView.swift`
+**新建文件**: `ios/aboutme Watch App/PluginListView.swift`
 
 ```swift
 import SwiftUI
@@ -182,7 +182,7 @@ class PluginListViewModel: ObservableObject {
 
 ### 5. watchOS - 添加卡片入口
 
-**文件**: `ios/memento Watch App/ContentView.swift`
+**文件**: `ios/aboutme Watch App/ContentView.swift`
 
 ```swift
 // 1. 添加枚举值

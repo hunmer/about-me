@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/models/folder_tree_node.dart';
-import 'package:Memento/plugins/notes/widgets/folder_selection_sheet.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/folder_tree_node.dart';
+import 'package:aboutme/plugins/notes/widgets/folder_selection_sheet.dart';
 import 'notes_screen_state.dart';
 import '../../../../../../core/services/toast_service.dart';
 

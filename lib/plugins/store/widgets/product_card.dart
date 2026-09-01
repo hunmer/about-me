@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/common/index.dart';
+import 'package:aboutme/widgets/common/index.dart';
 
 class ProductCard extends StatelessWidget {
   final dynamic product;

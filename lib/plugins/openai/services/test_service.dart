@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
 import 'dart:io';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 // 添加本地化导入
 import 'request_service.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class TestService {
   // 用于存储最后一次输入的文本的键

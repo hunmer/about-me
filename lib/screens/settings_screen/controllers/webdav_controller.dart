@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:mime/mime.dart';
 import 'dart:async';
-import 'package:Memento/screens/settings_screen/widgets/backup_progress_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/screens/settings_screen/widgets/backup_progress_dialog.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class WebDAVController {
   webdav.Client? _client;

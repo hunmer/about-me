@@ -97,7 +97,7 @@ IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 2. 右键点击项目根目录 → **New** → **Target...**
 3. 选择 **Widget Extension** → **Next**
 4. 配置：
-   - Product Name: `MementoWidget`
+   - Product Name: `AboutmeWidget`
    - Interface: **Swift**
    - Language: **Swift**
    - Embed in Application: **Runner**
@@ -110,11 +110,11 @@ IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 2. 切换到 **Signing & Capabilities** 标签
 3. 点击 **+ Capability**
 4. 搜索并选择 **App Groups**
-5. 配置 App Group ID: `group.github.hunmer.memento`
+5. 配置 App Group ID: `group.github.hunmer.aboutme`
 
-**MementoWidget 目标**：
-1. 重复上述步骤，为 **MementoWidget** 目标添加 **App Groups** 能力
-2. 使用相同的 App Group ID: `group.github.hunmer.memento`
+**AboutmeWidget 目标**：
+1. 重复上述步骤，为 **AboutmeWidget** 目标添加 **App Groups** 能力
+2. 使用相同的 App Group ID: `group.github.hunmer.aboutme`
 
 ### 3. 配置 Push Notifications
 
@@ -126,15 +126,15 @@ IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 
 1. 确保所有目标的 **Team** 设置为你的开发团队
 2. 确保 **Bundle Identifier** 配置正确：
-   - Runner: `github.hunmer.memento`
-   - MementoWidget: `github.hunmer.memento.MementoWidget`
+   - Runner: `github.hunmer.aboutme`
+   - AboutmeWidget: `github.hunmer.aboutme.AboutmeWidget`
 3. 选择或更新 **Provisioning Profile**
 
 ### 5. 验证配置
 
 - [ ] 检查 `ios/Runner/Info.plist` 包含 `NSSupportsLiveActivities = true`
-- [ ] 检查 `ios/MementoWidget/Info.plist` 包含 `NSSupportsLiveActivities = true`
-- [ ] 确认 Runner 和 MementoWidget 都配置了相同的 App Groups
+- [ ] 检查 `ios/AboutmeWidget/Info.plist` 包含 `NSSupportsLiveActivities = true`
+- [ ] 确认 Runner 和 AboutmeWidget 都配置了相同的 App Groups
 - [ ] 确认 Runner 配置了 Push Notifications
 - [ ] 确认所有目标都配置了有效的证书和描述文件
 

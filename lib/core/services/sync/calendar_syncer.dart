@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'plugin_widget_syncer.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 /// 日历插件同步器
 class CalendarSyncer extends PluginWidgetSyncer {

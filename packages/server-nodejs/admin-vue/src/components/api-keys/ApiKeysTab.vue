@@ -65,7 +65,7 @@ function handleCloseResult(): void {
       </template>
 
       <NAlert type="info" style="margin-bottom: 16px">
-        <strong>API Key</strong> 用于 MCP Server 等外部应用访问 Memento 数据。
+        <strong>API Key</strong> 用于 MCP Server 等外部应用访问 Aboutme 数据。
         <br />创建后请立即保存，密钥只显示一次。
       </NAlert>
 

@@ -9,7 +9,7 @@
 
 ## 模块职责
 
-脚本中心插件是 Memento 的核心扩展机制，提供 JavaScript 脚本管理、执行和事件触发功能。允许用户编写自定义脚本来自动化任务、扩展功能，实现与其他插件的深度集成。
+脚本中心插件是 Aboutme 的核心扩展机制，提供 JavaScript 脚本管理、执行和事件触发功能。允许用户编写自定义脚本来自动化任务、扩展功能，实现与其他插件的深度集成。
 
 ### 核心能力
 - **脚本管理**: 创建、编辑、删除、启用/禁用脚本
@@ -58,13 +58,13 @@ log(message, level?)                  // 记录日志
 emit(eventName, data)                 // 触发事件
 ```
 
-### 2. Memento 插件 API 访问
+### 2. Aboutme 插件 API 访问
 通过 JSBridge 自动注入，脚本可直接访问：
 ```javascript
 // 示例：访问其他插件的功能
-await Memento.chat.sendMessage(channelId, message);
-await Memento.diary.createEntry(title, content);
-await Memento.todo.addTask(task);
+await Aboutme.chat.sendMessage(channelId, message);
+await Aboutme.diary.createEntry(title, content);
+await Aboutme.todo.addTask(task);
 ```
 
 ### 3. 事件系统接口
@@ -231,10 +231,10 @@ scripts/
 ## 常见问题 (FAQ)
 
 ### Q: 如何访问其他插件的功能？
-A: 通过 JSBridge 自动注入的 Memento 对象：
+A: 通过 JSBridge 自动注入的 Aboutme 对象：
 ```javascript
-await Memento.chat.sendMessage(...)
-await Memento.diary.createEntry(...)
+await Aboutme.chat.sendMessage(...)
+await Aboutme.diary.createEntry(...)
 ```
 
 ### Q: 事件触发时如何获取数据？

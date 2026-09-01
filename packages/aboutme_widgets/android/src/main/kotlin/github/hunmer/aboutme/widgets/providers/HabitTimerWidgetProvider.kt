@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -8,9 +8,9 @@ import android.content.res.ColorStateList
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
-import github.hunmer.memento.widgets.services.HabitTimerForegroundService
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme.widgets.services.HabitTimerForegroundService
 import org.json.JSONObject
 
 /**
@@ -32,9 +32,9 @@ class HabitTimerWidgetProvider : BasePluginWidgetProvider() {
         private const val PREFS_NAME = "HomeWidgetPreferences"
 
         // Actions
-        const val ACTION_TOGGLE_TIMER = "github.hunmer.memento.widgets.HABIT_TIMER_TOGGLE"
-        const val ACTION_SWITCH_MODE = "github.hunmer.memento.widgets.HABIT_TIMER_SWITCH_MODE"
-        const val ACTION_COMPLETE_TIMER = "github.hunmer.memento.widgets.HABIT_TIMER_COMPLETE"
+        const val ACTION_TOGGLE_TIMER = "github.hunmer.aboutme.widgets.HABIT_TIMER_TOGGLE"
+        const val ACTION_SWITCH_MODE = "github.hunmer.aboutme.widgets.HABIT_TIMER_SWITCH_MODE"
+        const val ACTION_COMPLETE_TIMER = "github.hunmer.aboutme.widgets.HABIT_TIMER_COMPLETE"
 
         // Preference Keys
         const val PREF_KEY_HABIT_ID = "habit_timer_habit_id_"
@@ -142,8 +142,8 @@ class HabitTimerWidgetProvider : BasePluginWidgetProvider() {
 
         // 点击跳转到配置页面（使用deeplink）
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse("memento://widget/habit_timer/config?widgetId=$appWidgetId")
-            setPackage("github.hunmer.memento")
+            data = android.net.Uri.parse("aboutme://widget/habit_timer/config?widgetId=$appWidgetId")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -384,8 +384,8 @@ class HabitTimerWidgetProvider : BasePluginWidgetProvider() {
         habitId: String
     ) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse("memento://plugin/habits/timer?habitId=$habitId")
-            setPackage("github.hunmer.memento_widgets_example")
+            data = android.net.Uri.parse("aboutme://plugin/habits/timer?habitId=$habitId")
+            setPackage("github.hunmer.aboutme_widgets_example")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(

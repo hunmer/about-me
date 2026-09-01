@@ -1,4 +1,4 @@
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.app.Service
 import android.content.Intent
@@ -14,13 +14,13 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.os.Bundle
 import android.util.Log
-import github.hunmer.memento.R
+import github.hunmer.aboutme.R
 
 class ActivityForegroundService : Service() {
     private lateinit var methodChannel: MethodChannel
 
     companion object {
-        const val CHANNEL_NAME = "github.hunmer.memento/activity_service"
+        const val CHANNEL_NAME = "github.hunmer.aboutme/activity_service"
         lateinit var flutterEngine: FlutterEngine
         private const val CHANNEL_ID = "ActivityForegroundServiceChannel"
         private const val NOTIFICATION_ID = 2001

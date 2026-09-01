@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart' hide Row, SizedBox, ListTile;
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/material.dart' as flutter show Row, SizedBox, ListTile;
-import 'package:Memento/plugins/tracker/models/goal.dart';
-import 'package:Memento/plugins/tracker/controllers/tracker_controller.dart';
+import 'package:aboutme/plugins/tracker/models/goal.dart';
+import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'record_dialog.dart';
 import 'goal_edit_page.dart';
 

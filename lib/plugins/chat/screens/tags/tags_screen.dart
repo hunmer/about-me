@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/models/tag.dart';
-import 'package:Memento/plugins/chat/screens/tags/widgets/tag_card.dart';
-import 'package:Memento/plugins/chat/screens/tags/tag_messages_screen.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/tag.dart';
+import 'package:aboutme/plugins/chat/screens/tags/widgets/tag_card.dart';
+import 'package:aboutme/plugins/chat/screens/tags/tag_messages_screen.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 排序类型枚举
 enum SortType {

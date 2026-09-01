@@ -36,7 +36,7 @@ function handleLogout(): void {
   >
     <NSpace align="center" :size="16">
       <NText tag="h1" style="color: white; font-size: 1.25rem; font-weight: 600; margin: 0">
-        Memento Sync Server
+        Aboutme Sync Server
       </NText>
       <NTag
         :type="uiStore.serverStatus === 'online' ? 'success' : 'error'"

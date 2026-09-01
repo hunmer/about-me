@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
-import 'package:Memento/plugins/activity/models/activity_weekly_widget_config.dart';
-import 'package:Memento/plugins/activity/models/activity_weekly_widget_data.dart';
-import 'package:Memento/plugins/activity/services/activity_widget_service.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/models/activity_weekly_widget_config.dart';
+import 'package:aboutme/plugins/activity/models/activity_weekly_widget_data.dart';
+import 'package:aboutme/plugins/activity/services/activity_widget_service.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 周视图活动列表小组件配置界面
 ///
@@ -301,7 +301,7 @@ class _ActivityWeeklyConfigScreenState
         name: 'ActivityWeeklyWidgetProvider',
         iOSName: 'ActivityWeeklyWidget',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.ActivityWeeklyWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.ActivityWeeklyWidgetProvider',
       );
 
       debugPrint('ActivityWeeklyConfig: updateWidget result=$result');

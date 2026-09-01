@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
 /// Super Cupertino 导航包装示例 - 多条件过滤和搜索演示
 class SuperCupertinoNavigationExample extends StatefulWidget {

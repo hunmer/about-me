@@ -2,7 +2,7 @@
 
 ## 概述
 
-本文档说明了 Memento 项目中小组件路由的模块化架构设计。通过将路由逻辑根据插件拆分，使代码更加模块化、易于维护和扩展。
+本文档说明了 Aboutme 项目中小组件路由的模块化架构设计。通过将路由逻辑根据插件拆分，使代码更加模块化、易于维护和扩展。
 
 ## 架构设计
 
@@ -62,7 +62,7 @@ lib/
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:Memento/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/core/routing/plugin_route_handler.dart';
 
 /// [插件名称]路由处理器
 class MyPluginRouteHandler extends PluginRouteHandler {
@@ -100,7 +100,7 @@ class MyPluginRouteHandler extends PluginRouteHandler {
 
 ```dart
 // 1. 导入路由处理器
-import 'package:Memento/plugins/my_plugin/my_plugin_route_handler.dart';
+import 'package:aboutme/plugins/my_plugin/my_plugin_route_handler.dart';
 
 // 2. 添加到处理器列表
 class AppRoutes extends NavigatorObserver {

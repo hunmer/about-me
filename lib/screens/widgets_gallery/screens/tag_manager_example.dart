@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/tags_dialog/tags_dialog.dart';
+import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 
 /// 标签管理器示例
 class TagManagerExample extends StatefulWidget {

@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/store/widgets/store_view/product_list.dart';
-import 'package:Memento/plugins/store/widgets/store_view/user_items.dart';
-import 'package:Memento/plugins/store/widgets/store_view/points_history.dart';
-import 'package:Memento/plugins/store/widgets/add_product_page.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/product_list.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/user_items.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/points_history.dart';
+import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/store/store_plugin.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 /// Store 插件的底部栏组件
 /// 提供商品列表、用户物品和积分历史三个 Tab 的切换功能

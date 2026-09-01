@@ -1,19 +1,19 @@
-// MementoNfcPlugin.swift
+// AboutmeNfcPlugin.swift
 // 完全适配 Xcode 16 + iOS 18 CoreNFC 新 API（已真机验证）
 import Flutter
 import UIKit
 import CoreNFC
 
 @available(iOS 13.0, *)
-public class MementoNfcPlugin: NSObject, FlutterPlugin, NFCNDEFReaderSessionDelegate {
+public class AboutmeNfcPlugin: NSObject, FlutterPlugin, NFCNDEFReaderSessionDelegate {
     private var readerSession: NFCNDEFReaderSession?
     private var flutterResult: FlutterResult?
     private var pendingMessage: NFCNDEFMessage?
     private var isWriteMode = false
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "memento_nfc", binaryMessenger: registrar.messenger())
-        let instance = MementoNfcPlugin()
+        let channel = FlutterMethodChannel(name: "aboutme_nfc", binaryMessenger: registrar.messenger())
+        let instance = AboutmeNfcPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
@@ -202,7 +202,7 @@ public class MementoNfcPlugin: NSObject, FlutterPlugin, NFCNDEFReaderSessionDele
         case "EXTERNAL":
             // 外部类型记录 - data 格式: "domain:type|content"
             let parts = data.split(separator: "|", maxSplits: 1)
-            let typeSpec = parts.count > 1 ? String(parts[0]) : "memento:data"
+            let typeSpec = parts.count > 1 ? String(parts[0]) : "aboutme:data"
             let content = parts.count > 1 ? String(parts[1]) : data
 
             guard let contentData = content.data(using: .utf8),

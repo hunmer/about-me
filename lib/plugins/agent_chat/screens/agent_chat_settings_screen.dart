@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 /// Agent Chat 插件设置界面

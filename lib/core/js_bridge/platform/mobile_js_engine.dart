@@ -4,11 +4,11 @@ import 'dart:convert';
 import 'package:flutter_js/flutter_js.dart';
 import 'js_engine_interface.dart';
 import '../js_tool_registry.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_config.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_config_manager.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_service.dart';
-import 'package:Memento/core/app_initializer.dart'; // 用于访问 globalStorage
-import 'package:Memento/core/services/toast_service.dart'; // Toast 服务
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
+import 'package:aboutme/core/app_initializer.dart'; // 用于访问 globalStorage
+import 'package:aboutme/core/services/toast_service.dart'; // Toast 服务
 
 class MobileJSEngine implements JSEngine {
   late JavascriptRuntime _runtime;
@@ -398,38 +398,38 @@ class MobileJSEngine implements JSEngine {
       }
     });
 
-    // 扩展 memento 对象，添加工具注册功能
-    await _extendMementoWithToolRegistration();
+    // 扩展 aboutme 对象，添加工具注册功能
+    await _extendAboutmeWithToolRegistration();
   }
 
-  /// 扩展 memento 对象，添加工具注册和存储功能
-  Future<void> _extendMementoWithToolRegistration() async {
-    // 1. 创建 memento 对象和 tools 命名空间，同时支持大小写两种命名
+  /// 扩展 aboutme 对象，添加工具注册和存储功能
+  Future<void> _extendAboutmeWithToolRegistration() async {
+    // 1. 创建 aboutme 对象和 tools 命名空间，同时支持大小写两种命名
     await evaluateDirect('''
       (function() {
         // 创建小写命名空间
-        globalThis.memento = globalThis.memento || {};
-        globalThis.memento.tools = globalThis.memento.tools || {};
+        globalThis.aboutme = globalThis.aboutme || {};
+        globalThis.aboutme.tools = globalThis.aboutme.tools || {};
 
-        // 确保大写 Memento 存在
-        globalThis.Memento = globalThis.Memento || { version: '1.0.0', plugins: {}, system: {} };
+        // 确保大写 Aboutme 存在
+        globalThis.Aboutme = globalThis.Aboutme || { version: '1.0.0', plugins: {}, system: {} };
 
-        // 将 tools 命名空间同步到大写 Memento（共享同一个对象）
-        globalThis.Memento.tools = globalThis.memento.tools;
+        // 将 tools 命名空间同步到大写 Aboutme（共享同一个对象）
+        globalThis.Aboutme.tools = globalThis.aboutme.tools;
 
         // 兼容浏览器环境
         if (typeof window !== 'undefined') {
-          window.memento = globalThis.memento;
-          window.Memento = globalThis.Memento;
+          window.aboutme = globalThis.aboutme;
+          window.Aboutme = globalThis.Aboutme;
         }
       })();
     ''');
 
     // 2. 添加 registerTool 方法
     await evaluateDirect('''
-      globalThis.memento.registerTool = function(config) {
+      globalThis.aboutme.registerTool = function(config) {
         if (config && config.id) {
-          globalThis.memento.tools[config.id] = function(params) {
+          globalThis.aboutme.tools[config.id] = function(params) {
             try {
               var toolCode = config.code || '';
               var toolParams = params || {};
@@ -471,7 +471,7 @@ class MobileJSEngine implements JSEngine {
 
     // 3. 添加 listTools 方法
     await evaluateDirect('''
-      globalThis.memento.listTools = function() {
+      globalThis.aboutme.listTools = function() {
         if (typeof __DART_GET_TOOLS__ !== 'undefined') {
           try {
             var toolsJson = __DART_GET_TOOLS__();
@@ -486,7 +486,7 @@ class MobileJSEngine implements JSEngine {
 
     // 4. 添加 storage 命名空间（内存存储 + 文件存储能力）
     await evaluateDirect('''
-      globalThis.memento.storage = {
+      globalThis.aboutme.storage = {
         _data: {},
         read: function(key) { return this._data[key] || null; },
         write: function(key, value) { this._data[key] = value; return { success: true, key: key }; },
@@ -542,14 +542,14 @@ class MobileJSEngine implements JSEngine {
       };
     ''');
 
-    // 5. 同步别名到大写 Memento 命名空间
+    // 5. 同步别名到大写 Aboutme 命名空间
     await evaluateDirect('''
       (function() {
-        // 同步 registerTool、listTools、storage 到大写 Memento
-        if (globalThis.Memento) {
-          globalThis.Memento.registerTool = globalThis.memento.registerTool;
-          globalThis.Memento.listTools = globalThis.memento.listTools;
-          globalThis.Memento.storage = globalThis.memento.storage;
+        // 同步 registerTool、listTools、storage 到大写 Aboutme
+        if (globalThis.Aboutme) {
+          globalThis.Aboutme.registerTool = globalThis.aboutme.registerTool;
+          globalThis.Aboutme.listTools = globalThis.aboutme.listTools;
+          globalThis.Aboutme.storage = globalThis.aboutme.storage;
         }
       })();
     ''');

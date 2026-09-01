@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 自适应图片组件
 ///

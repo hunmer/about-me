@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';

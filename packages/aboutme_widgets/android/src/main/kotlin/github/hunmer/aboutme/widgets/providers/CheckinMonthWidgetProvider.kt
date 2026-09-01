@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -9,8 +9,8 @@ import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONObject
 import java.util.*
 
@@ -127,8 +127,8 @@ class CheckinMonthWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击事件：打开配置页面（复用签到项的配置界面）
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/checkin_item/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/checkin_item/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -357,12 +357,12 @@ class CheckinMonthWidgetProvider : BasePluginWidgetProvider() {
      * 仅为标题栏设置点击事件，打开打卡项详情
      */
     private fun setupClickIntentWithItemId(context: Context, views: RemoteViews, itemId: String) {
-        val uriString = "memento://widget/checkin_item?itemId=$itemId"
+        val uriString = "aboutme://widget/checkin_item?itemId=$itemId"
         Log.d(TAG, "setupClickIntentWithItemId: itemId=$itemId, uri=$uriString")
 
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = Uri.parse(uriString)
-        intent.setPackage("github.hunmer.memento")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -391,11 +391,11 @@ class CheckinMonthWidgetProvider : BasePluginWidgetProvider() {
     ) {
         // 格式化日期为 YYYY-MM-DD
         val dateString = String.format("%04d-%02d-%02d", year, month + 1, day)
-        val uriString = "memento://widget/checkin_item?itemId=$itemId&date=$dateString"
+        val uriString = "aboutme://widget/checkin_item?itemId=$itemId&date=$dateString"
 
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = Uri.parse(uriString)
-        intent.setPackage("github.hunmer.memento")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         // 使用唯一的 requestCode (itemId.hashCode + day) 确保每个日期都有独立的 PendingIntent

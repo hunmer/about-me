@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/rounded_property_card.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/rounded_property_card.dart';
 
 /// 圆角属性卡片示例
 class RoundedPropertyCardExample extends StatelessWidget {

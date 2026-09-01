@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/screens/note_edit_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/screens/note_edit_screen.dart';
 import 'notes_screen_state.dart';
 
 mixin NoteOperations on NotesMainViewState {

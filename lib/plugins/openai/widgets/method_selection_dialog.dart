@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/plugin_analysis_method.dart';
+import 'package:aboutme/plugins/openai/models/plugin_analysis_method.dart';
 
 class MethodSelectionDialog extends StatelessWidget {
   final Function(PluginAnalysisMethod) onMethodSelected;

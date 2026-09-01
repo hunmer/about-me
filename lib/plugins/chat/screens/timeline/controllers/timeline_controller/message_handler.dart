@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/screens/timeline/models/timeline_filter.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/models/timeline_filter.dart';
 import 'base_controller.dart';
 
 /// 消息处理相关功能的混入类

@@ -1,6 +1,6 @@
 # reminder 定时提醒插件
 
-Memento 的第 25 个内置插件（`id: reminder`，名称"定时提醒"），负责**本地定时提醒**：按每天/每周/每月（或手动）频率在指定时刻触发本地通知。结构极简（10 个文件）：`ReminderService` 负责 CRUD 与持久化（存储键 `reminders.json`），`ReminderScheduler` 周期轮询到期提醒并补触发错过的提醒，`ReminderNotificationService` 发送本地通知；UI 为列表页 + 表单页。未接入 shared_models（无 Repository/UseCase），也不提供 JS API。
+Aboutme 的第 25 个内置插件（`id: reminder`，名称"定时提醒"），负责**本地定时提醒**：按每天/每周/每月（或手动）频率在指定时刻触发本地通知。结构极简（10 个文件）：`ReminderService` 负责 CRUD 与持久化（存储键 `reminders.json`），`ReminderScheduler` 周期轮询到期提醒并补触发错过的提醒，`ReminderNotificationService` 发送本地通知；UI 为列表页 + 表单页。未接入 shared_models（无 Repository/UseCase），也不提供 JS API。
 
 ## 约定的规则
 

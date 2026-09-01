@@ -1,26 +1,26 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/utils/platform_utils.dart';
+import 'package:aboutme/utils/platform_utils.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart' as syncfusion;
-import 'package:Memento/widgets/memento_sf_calendar/memento_sf_calendar.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/plugins/base_plugin.dart';
+import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
 import './controllers/calendar_controller.dart' as app;
 import './models/event.dart';
 import './pages/event_edit_page.dart';
 import './pages/completed_events_page.dart';
 import './pages/event_list_page.dart';
 import './widgets/event_detail_card.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 // UseCase 架构导入
 import 'package:shared_models/usecases/calendar/calendar_usecase.dart';
@@ -303,7 +303,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
       await HomeWidget.updateWidget(
         name: 'CalendarMonthWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.CalendarMonthWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.CalendarMonthWidgetProvider',
       );
 
       debugPrint('日历小组件数据同步成功: ${monthEvents.length} 个事件');
@@ -861,7 +861,7 @@ class _CalendarMainViewState extends State<CalendarMainView> {
               Column(
                 children: [
                   Expanded(
-                    child: MementoSfCalendar(
+                    child: AboutmeSfCalendar(
                       view:
                           plugin.sfController.view ??
                           syncfusion.CalendarView.month,

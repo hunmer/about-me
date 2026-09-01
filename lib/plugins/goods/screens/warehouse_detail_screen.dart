@@ -1,16 +1,16 @@
 import 'package:get/get.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/goods/models/warehouse.dart';
-import 'package:Memento/plugins/goods/widgets/warehouse_form.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_card.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_list_tile.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/goods/models/warehouse.dart';
+import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_card.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_list_tile.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class WarehouseDetailScreen extends StatefulWidget {
   final Warehouse warehouse;

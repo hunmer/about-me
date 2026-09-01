@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 import '../models/subscription.dart';
 import '../bill_plugin.dart';
 

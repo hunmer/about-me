@@ -1,12 +1,12 @@
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:Memento/plugins/calendar_album/sample_data.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/sample_data.dart';
 import 'dart:convert';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 class CalendarController extends ChangeNotifier {
   // 发送事件通知

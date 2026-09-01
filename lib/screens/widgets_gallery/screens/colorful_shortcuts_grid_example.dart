@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/common_widgets.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/models/colorful_shortcuts_grid_data.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/models/colorful_shortcuts_grid_data.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 彩色快捷方式网格示例
 class ColorfulShortcutsGridExample extends StatelessWidget {

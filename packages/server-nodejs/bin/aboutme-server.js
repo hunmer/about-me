@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Memento Sync Server CLI 入口
- * 全局安装后可通过 `memento-server` 命令启动
+ * Aboutme Sync Server CLI 入口
+ * 全局安装后可通过 `aboutme-server` 命令启动
  */
 
 const { spawn } = require('child_process');

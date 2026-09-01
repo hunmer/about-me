@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/contact/models/interaction_record_model.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
-import 'package:Memento/plugins/contact/controllers/contact_controller.dart';
+import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
 import 'contact_selector.dart';
 
 class InteractionForm extends StatefulWidget {

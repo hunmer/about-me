@@ -3,10 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/widgets/habit_form.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
 
 /// 注册习惯的快速创建项（主页底部 ＋ 按钮）
 ///

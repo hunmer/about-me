@@ -9,7 +9,7 @@
 ### 1. 最简单的用法
 
 ```dart
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 // 显示简单的底部抽屉
 await SmoothBottomSheet.show(

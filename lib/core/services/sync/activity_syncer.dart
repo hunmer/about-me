@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
-import 'package:Memento/plugins/activity/models/activity_weekly_widget_config.dart';
-import 'package:Memento/plugins/activity/models/activity_daily_widget_config.dart';
-import 'package:Memento/plugins/activity/services/activity_widget_service.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/models/activity_weekly_widget_config.dart';
+import 'package:aboutme/plugins/activity/models/activity_daily_widget_config.dart';
+import 'package:aboutme/plugins/activity/services/activity_widget_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'plugin_widget_syncer.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 /// 活动记录插件同步器
 class ActivitySyncer extends PluginWidgetSyncer {
@@ -152,7 +152,7 @@ class ActivitySyncer extends PluginWidgetSyncer {
           name: 'ActivityWeeklyWidgetProvider',
           iOSName: 'ActivityWeeklyWidget',
           qualifiedAndroidName:
-              'github.hunmer.memento.widgets.providers.ActivityWeeklyWidgetProvider',
+              'github.hunmer.aboutme.widgets.providers.ActivityWeeklyWidgetProvider',
         );
 
         debugPrint('Updated activity weekly widget $widgetId data');
@@ -283,7 +283,7 @@ class ActivitySyncer extends PluginWidgetSyncer {
           name: 'ActivityDailyWidgetProvider',
           iOSName: 'ActivityDailyWidget',
           qualifiedAndroidName:
-              'github.hunmer.memento.widgets.providers.ActivityDailyWidgetProvider',
+              'github.hunmer.aboutme.widgets.providers.ActivityDailyWidgetProvider',
         );
 
         debugPrint('Updated activity daily widget $widgetId data');

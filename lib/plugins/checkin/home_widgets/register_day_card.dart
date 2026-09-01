@@ -6,16 +6,16 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/plugins/checkin/widgets/checkin_day_card.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/widgets/checkin_day_card.dart';
 
 /// 获取指定日期排班的签到项（与插件一致：frequency[weekday-1]，0=周一）
 List<CheckinItem> _scheduledItems(DateTime date) {

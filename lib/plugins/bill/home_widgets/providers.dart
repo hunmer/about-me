@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'utils.dart' show getCategoryColor;
 
 /// 账单统计类型

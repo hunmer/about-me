@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/routing/plugin_route_handler.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:uuid/uuid.dart';
 
 /// 目标追踪插件路由处理器
@@ -23,7 +23,7 @@ class TrackerRouteHandler extends PluginRouteHandler {
 
     // 处理目标追踪进度路由
     // 格式: /tracker/progress?goalId={goalId}&value={value}
-    // 或者深度链接格式: memento://tracker/progress?goalId={goalId}&value={value}
+    // 或者深度链接格式: aboutme://tracker/progress?goalId={goalId}&value={value}
     if (routeName.startsWith('/tracker/progress') ||
         routeName.startsWith('/tracker_progress')) {
       return _handleProgressRoute(routeName, settings.arguments);

@@ -3,7 +3,7 @@
 /// 定义计时器相关的所有事件类型和参数类
 library;
 
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 /// 计时器事件类型
 enum TimerEventType {

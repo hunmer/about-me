@@ -3,17 +3,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/diary/diary_plugin.dart';
-import 'package:Memento/plugins/diary/models/diary_entry.dart';
-import 'package:Memento/plugins/diary/utils/diary_utils.dart';
-import 'package:Memento/plugins/diary/widgets/diary_entry_card.dart';
-import 'package:Memento/plugins/diary/screens/diary_editor_screen.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/diary/diary_plugin.dart';
+import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_entry_card.dart';
+import 'package:aboutme/plugins/diary/screens/diary_editor_screen.dart';
 
 /// 注册日记日卡小组件（展示主页选中日期的日记）
 void registerDayCardWidget(HomeWidgetRegistry registry) {

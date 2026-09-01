@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/tracker/controllers/tracker_controller.dart';
+import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 
 class TrackerSummaryCard extends StatelessWidget {
   const TrackerSummaryCard({super.key});

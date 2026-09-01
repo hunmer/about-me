@@ -1,5 +1,5 @@
 import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
 
 /// 文件夹树节点，用于 animated_tree_view 展示
 class FolderTreeNode extends TreeNode<Folder> {

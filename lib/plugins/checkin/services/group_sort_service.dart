@@ -1,5 +1,5 @@
 
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:get/get.dart';
 
 enum GroupSortType {

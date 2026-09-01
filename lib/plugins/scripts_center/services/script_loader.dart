@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/scripts_center/models/script_info.dart';
-import 'package:Memento/plugins/scripts_center/models/script_folder.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
 
 /// 脚本加载器服务
 ///

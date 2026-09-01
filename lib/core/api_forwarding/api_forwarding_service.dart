@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'api_forwarding_config.dart';
 
 /// API 转发服务

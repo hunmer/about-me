@@ -1,15 +1,15 @@
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/screens/js_console/js_console_screen.dart';
-import 'package:Memento/screens/json_dynamic_test/json_dynamic_test_screen.dart';
-import 'package:Memento/screens/notification_test/notification_test_page.dart';
-import 'package:Memento/screens/floating_widget_screen/floating_widget_screen.dart';
-import 'package:Memento/screens/data_selector_test/data_selector_test_screen.dart';
-import 'package:Memento/screens/toast_test/toast_test_screen.dart';
-import 'package:Memento/screens/test_screens/swipe_action_test_screen.dart';
-import 'package:Memento/screens/settings_screen/screens/live_activities_test_screen.dart';
-import 'package:Memento/screens/form_fields_test/form_fields_test_screen.dart';
-import 'package:Memento/screens/log_screen/log_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/screens/js_console/js_console_screen.dart';
+import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart';
+import 'package:aboutme/screens/notification_test/notification_test_page.dart';
+import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
+import 'package:aboutme/screens/data_selector_test/data_selector_test_screen.dart';
+import 'package:aboutme/screens/toast_test/toast_test_screen.dart';
+import 'package:aboutme/screens/test_screens/swipe_action_test_screen.dart';
+import 'package:aboutme/screens/settings_screen/screens/live_activities_test_screen.dart';
+import 'package:aboutme/screens/form_fields_test/form_fields_test_screen.dart';
+import 'package:aboutme/screens/log_screen/log_screen.dart';
 
 /// 测试页面路由注册表
 class TestRoutes implements RouteRegistry {

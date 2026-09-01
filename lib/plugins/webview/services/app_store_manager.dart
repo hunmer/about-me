@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import '../models/app_store_models.dart';
 import '../services/card_manager.dart';
 
@@ -81,8 +81,8 @@ class AppStoreManager extends ChangeNotifier {
       id: const Uuid().v4(),
       name: '网络仓库',
       url:
-          'https://gitee.com/neysummer2000/memento/raw/master/online/apps/apps.json',
-      baseUrl: 'https://gitee.com/neysummer2000/memento/raw/master/online/apps',
+          'https://gitee.com/neysummer2000/aboutme/raw/master/online/apps/apps.json',
+      baseUrl: 'https://gitee.com/neysummer2000/aboutme/raw/master/online/apps',
       isDefault: true,
       createdAt: DateTime.now(),
     );

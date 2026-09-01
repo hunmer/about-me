@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:shared_models/shared_models.dart';
 
 enum CheckinCardStyle {

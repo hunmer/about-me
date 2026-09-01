@@ -1,8 +1,8 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:get/get.dart';
-import 'package:Memento/plugins/timer/models/timer_item.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/plugins/timer/models/timer_item.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:flutter/material.dart';
 
 class AddTimerItemDialog extends StatefulWidget {

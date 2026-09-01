@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class MementoForegroundServicePlugin: NSObject, FlutterPlugin {
+public class AboutmeForegroundServicePlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "memento_foreground_service", binaryMessenger: registrar.messenger())
-    let instance = MementoForegroundServicePlugin()
+    let channel = FlutterMethodChannel(name: "aboutme_foreground_service", binaryMessenger: registrar.messenger())
+    let instance = AboutmeForegroundServicePlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

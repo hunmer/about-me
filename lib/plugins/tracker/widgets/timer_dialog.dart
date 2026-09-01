@@ -1,15 +1,15 @@
 import 'package:get/get.dart';
 import 'dart:async';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/services/timer/events/timer_events.dart';
-import 'package:Memento/plugins/tracker/utils/tracker_notification_utils.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/services/timer/events/timer_events.dart';
+import 'package:aboutme/plugins/tracker/utils/tracker_notification_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
-import 'package:Memento/plugins/tracker/models/goal.dart';
-import 'package:Memento/plugins/tracker/models/record.dart';
-import 'package:Memento/plugins/tracker/controllers/tracker_controller.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/plugins/tracker/models/goal.dart';
+import 'package:aboutme/plugins/tracker/models/record.dart';
+import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 
 class TimerDialog extends StatefulWidget {
   final Goal goal;

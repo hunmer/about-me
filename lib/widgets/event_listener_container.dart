@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 /// 事件监听容器组件
 /// 传入事件名称列表并监听，触发时通知父组件更新UI

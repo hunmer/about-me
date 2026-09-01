@@ -160,9 +160,9 @@ Color getColorFromTag(String tag) {
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import '../activity_plugin.dart';
 import 'data.dart';
 import 'utils.dart';
@@ -196,8 +196,8 @@ Map<String, Map<String, dynamic>> provideCommonWidgets(
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import '../../screens/activity_edit_screen.dart';
 import '../../activity_plugin.dart';
 
@@ -221,10 +221,10 @@ class ActivityCreateShortcutWidget extends StatelessWidget {
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/generic_plugin_widget.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/generic_plugin_widget.dart';
 
 void registerIconWidget(HomeWidgetRegistry registry) {
   registry.register(
@@ -276,7 +276,7 @@ export 'register_common_widgets.dart';
 export 'register_weekly_chart.dart';
 export 'register_tag_weekly_chart.dart';
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_create_shortcut.dart';
@@ -303,10 +303,10 @@ void register(HomeWidgetRegistry registry) {
 
 ```dart
 // Before
-import 'package:Memento/plugins/{plugin}/home_widgets.dart';
+import 'package:aboutme/plugins/{plugin}/home_widgets.dart';
 
 // After
-import 'package:Memento/plugins/{plugin}/home_widgets/home_widgets.dart' as {Plugin}HomeWidgets;
+import 'package:aboutme/plugins/{plugin}/home_widgets/home_widgets.dart' as {Plugin}HomeWidgets;
 ```
 
 ### 11. Delete Original File

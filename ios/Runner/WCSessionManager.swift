@@ -1,6 +1,6 @@
 //
 //  WCSessionManager.swift
-//  Memento
+//  Aboutme
 //
 //  Created by Claude on 2026/3/12.
 //
@@ -64,7 +64,7 @@ enum WatchRequest: String {
 
 class WCSessionManager: NSObject, ObservableObject {
     static let shared = WCSessionManager()
-    private let logger = Logger(subsystem: "com.memento.ios", category: "WCSession")
+    private let logger = Logger(subsystem: "com.aboutme.ios", category: "WCSession")
 
     private var methodChannel: FlutterMethodChannel?
 
@@ -85,7 +85,7 @@ class WCSessionManager: NSObject, ObservableObject {
     // 设置 MethodChannel 用于与 Flutter 通信
     func setupMethodChannel(_ controller: FlutterViewController) {
         methodChannel = FlutterMethodChannel(
-            name: "github.hunmer.memento/watch_connectivity",
+            name: "github.hunmer.aboutme/watch_connectivity",
             binaryMessenger: controller.binaryMessenger
         )
 

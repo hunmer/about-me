@@ -1,21 +1,21 @@
 import 'dart:core';
 import 'dart:async';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'floating_ball_service.dart';
-import 'package:Memento/dialogs/plugin_list_dialog.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/widgets/route_history_dialog/route_history_dialog.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
-import 'package:Memento/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
+import 'package:aboutme/dialogs/plugin_list_dialog.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/route_history_dialog/route_history_dialog.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
+import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'models/floating_ball_gesture.dart';
-import 'package:Memento/widgets/route_viewer_dialog.dart';
+import 'package:aboutme/widgets/route_viewer_dialog.dart';
 
 /// 动作信息类，包含动作标题和回调函数
 class ActionInfo {

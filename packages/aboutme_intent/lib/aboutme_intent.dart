@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'memento_intent_platform_interface.dart';
+import 'aboutme_intent_platform_interface.dart';
 
 /// 共享媒体文件模型
 class SharedMediaFile {
@@ -62,15 +62,15 @@ typedef SharedTextHandler = void Function(String text);
 /// Intent 数据处理器回调
 typedef IntentDataHandler = void Function(IntentData data);
 
-/// MementoIntent 主类
-class MementoIntent {
-  static final MementoIntent _instance = MementoIntent._internal();
-  static MementoIntent get instance => _instance;
+/// AboutmeIntent 主类
+class AboutmeIntent {
+  static final AboutmeIntent _instance = AboutmeIntent._internal();
+  static AboutmeIntent get instance => _instance;
 
-  factory MementoIntent() => _instance;
-  MementoIntent._internal();
+  factory AboutmeIntent() => _instance;
+  AboutmeIntent._internal();
 
-  final MementoIntentPlatform _platform = MementoIntentPlatform.instance;
+  final AboutmeIntentPlatform _platform = AboutmeIntentPlatform.instance;
 
   // 回调函数
   DeepLinkHandler? onDeepLink;

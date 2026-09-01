@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 
 /// 示例文件信息
 class ExampleFile {

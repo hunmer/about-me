@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/common/emotion_tracker_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/common/emotion_tracker_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 心情追踪组件示例页面
 class MoodTrackerWidgetExample extends StatefulWidget {

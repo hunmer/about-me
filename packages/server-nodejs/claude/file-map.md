@@ -33,7 +33,7 @@
 |------|------|
 | `admin-vue/` | 管理面板源码（Vue3 + naive-ui + pinia + Vite），含自己的 package.json（[文档](../admin-vue/CLAUDE.md)） |
 | `admin/` | 面板静态产物（随 dist 发布） |
-| `bin/memento-server.js` | CLI 入口 |
+| `bin/aboutme-server.js` | CLI 入口 |
 | `plugins/` | 服务端插件（`data-sync-logger-v2` 示例 + `plugin-store.json` 商店清单） |
 | `tests/` | jest：api.test.ts、globalSetup/globalTeardown、test_data/ |
 | `data/` | 运行时数据目录（本地生成，勿提交） |

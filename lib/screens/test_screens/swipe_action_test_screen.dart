@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/widgets/swipe_action/index.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/widgets/swipe_action/index.dart';
 
 /// SwipeAction 测试示例页面
 ///

@@ -1,4 +1,4 @@
-# Memento Widgets
+# Aboutme Widgets
 
 一个基于 `home_widget` 包的 Flutter 插件,用于在 Android 桌面上显示小组件。
 
@@ -16,8 +16,8 @@
 
 ```yaml
 dependencies:
-  memento_widgets:
-    path: ../memento_widgets  # 或使用 pub.dev 发布后的版本
+  aboutme_widgets:
+    path: ../aboutme_widgets  # 或使用 pub.dev 发布后的版本
 ```
 
 然后运行:
@@ -33,7 +33,7 @@ flutter pub get
 在 `main.dart` 中初始化插件:
 
 ```dart
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

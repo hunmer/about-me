@@ -21,7 +21,7 @@ NFC 插件提供近场通信（NFC）标签的读写功能，支持：
 
 ### 核心文件
 - **`nfc_plugin.dart`** - 插件主入口，继承自 `PluginBase`
-- **`nfc_controller.dart`** - NFC 业务逻辑控制器，封装了 `memento_nfc` 包的调用
+- **`nfc_controller.dart`** - NFC 业务逻辑控制器，封装了 `aboutme_nfc` 包的调用
 
 ### 初始化流程
 ```dart
@@ -33,7 +33,7 @@ await _controller.checkNfcStatus();
 ```
 
 ### 依赖项
-- `memento_nfc` - 底层 NFC 功能包
+- `aboutme_nfc` - 底层 NFC 功能包
 - `plugin_data_selector` - 用于选择要写入 NFC 的数据项
 
 ---
@@ -77,16 +77,16 @@ enum NfcRecordType {
 ## 关键依赖与配置
 
 ### 深度链接协议
-插件使用 `memento://` 协议生成深度链接，支持的格式：
-- `memento://checkin/item?itemId=<id>&action=checkin` - 快速签到
-- `memento://goods/usage?itemId=<id>&action=add_usage` - 记录物品使用
-- `memento://habit/timer?habitId=<id>&action=start_timer` - 启动习惯计时
-- `memento://tracker/progress?goalId=<id>&action=update` - 更新追踪进度
+插件使用 `aboutme://` 协议生成深度链接，支持的格式：
+- `aboutme://checkin/item?itemId=<id>&action=checkin` - 快速签到
+- `aboutme://goods/usage?itemId=<id>&action=add_usage` - 记录物品使用
+- `aboutme://habit/timer?habitId=<id>&action=start_timer` - 启动习惯计时
+- `aboutme://tracker/progress?goalId=<id>&action=update` - 更新追踪进度
 
 ### AAR 记录
-所有快捷操作都会同时写入 AAR（Android Application Record）记录，确保扫描时自动启动 Memento 应用：
+所有快捷操作都会同时写入 AAR（Android Application Record）记录，确保扫描时自动启动 Aboutme 应用：
 ```
-'aar': 'github.hunmer.memento'
+'aar': 'github.hunmer.aboutme'
 ```
 
 ---
@@ -223,4 +223,4 @@ lib/plugins/nfc/
 
 **最后更新**: 2025-12-17T12:04:39+08:00
 **模块维护**: NFC 插件
-**依赖的底层包**: memento_nfc
+**依赖的底层包**: aboutme_nfc

@@ -1,10 +1,10 @@
-# Memento 小组件实现指南
+# Aboutme 小组件实现指南
 
-> 本文档说明如何为 Memento 插件添加 Android 桌面小组件支持
+> 本文档说明如何为 Aboutme 插件添加 Android 桌面小组件支持
 
 **版本**: 1.0
 **更新日期**: 2025-01-21
-**适用于**: Memento 插件系统
+**适用于**: Aboutme 插件系统
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### 小组件尺寸支持
 
-Memento 目前支持两种小组件尺寸：
+Aboutme 目前支持两种小组件尺寸：
 
 | 尺寸 | 网格 | 统计项数量 | 适用场景 |
 |------|------|-----------|---------|
@@ -64,7 +64,7 @@ lib/
 └── plugins/<plugin_id>/
     └── <plugin_id>_plugin.dart              # 插件主类（提供数据接口）
 
-android/app/src/main/kotlin/github/hunmer/memento/
+android/app/src/main/kotlin/github/hunmer/aboutme/
 ├── widget/
 │   ├── BasePluginWidgetProvider.kt          # 小组件基类
 │   └── providers/
@@ -89,14 +89,14 @@ android/app/src/main/kotlin/github/hunmer/memento/
 
 ### 步骤 1: 创建 Android WidgetProvider 类
 
-**位置**: `android/app/src/main/kotlin/github/hunmer/memento/widget/providers/<Plugin>WidgetProvider.kt`
+**位置**: `android/app/src/main/kotlin/github/hunmer/aboutme/widget/providers/<Plugin>WidgetProvider.kt`
 
 **示例代码**:
 
 ```kotlin
-package github.hunmer.memento.widget.providers
+package github.hunmer.aboutme.widget.providers
 
-import github.hunmer.memento.widget.BasePluginWidgetProvider
+import github.hunmer.aboutme.widget.BasePluginWidgetProvider
 
 /**
  * <插件名称>小组件 - 1x1 尺寸
@@ -339,12 +339,12 @@ Timer.periodic(Duration(minutes: 30), (_) {
 
 #### 1. 创建 WidgetProvider
 
-**文件**: `android/app/src/main/kotlin/github/hunmer/memento/widget/providers/NotesWidgetProvider.kt`
+**文件**: `android/app/src/main/kotlin/github/hunmer/aboutme/widget/providers/NotesWidgetProvider.kt`
 
 ```kotlin
-package github.hunmer.memento.widget.providers
+package github.hunmer.aboutme.widget.providers
 
-import github.hunmer.memento.widget.BasePluginWidgetProvider
+import github.hunmer.aboutme.widget.BasePluginWidgetProvider
 
 /**
  * 笔记小组件 - 1x1 尺寸
@@ -831,7 +831,7 @@ private fun loadWidgetData(context: Context): JSONObject? {
 private fun setupClickIntent(context: Context, views: RemoteViews) {
     val intent = Intent(context, MainActivity::class.java).apply {
         action = Intent.ACTION_VIEW
-        data = Uri.parse("memento://widget/$pluginId")  // 自动跳转
+        data = Uri.parse("aboutme://widget/$pluginId")  // 自动跳转
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
     // ...
@@ -996,5 +996,5 @@ stats: [
 
 ---
 
-**文档维护者**: Memento AI Development Team
+**文档维护者**: Aboutme AI Development Team
 **最后更新**: 2025-01-21

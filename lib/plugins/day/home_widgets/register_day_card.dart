@@ -6,14 +6,14 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/day_card_header.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/plugins/day/widgets/memorial_day_edit_flow.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_day_edit_flow.dart';
 
 bool _isSameDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;

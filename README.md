@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="assets/icon/icon.png" width="128" alt="Memento 图标">
+  <img src="assets/icon/icon.png" width="128" alt="Aboutme 图标">
 </p>
 
-<h1 align="center">Memento</h1>
+<h1 align="center">Aboutme</h1>
 
 <p align="center">
-Memento 是一个使用 Flutter 构建的跨平台个人助手应用，集成了聊天、日记和活动追踪功能。
+Aboutme 是一个使用 Flutter 构建的跨平台个人助手应用，集成了聊天、日记和活动追踪功能。
 </p>
 
 <p align="center">
-  <a href="https://hunmer.github.io/memento_docs/">📖 文档</a> •
-  <a href="https://github.com/hunmer/Memento/releases">📦 下载</a>
+  <a href="https://hunmer.github.io/aboutme_docs/">📖 文档</a> •
+  <a href="https://github.com/hunmer/Aboutme/releases">📦 下载</a>
 </p>
 
 ## 项目介绍
@@ -105,7 +105,7 @@ Material Design 3 设计语言
 ## 🏗️ 项目结构
 
 ```
-Memento/
+Aboutme/
 ├── lib/                    # Flutter 应用代码
 │   ├── core/               # 核心功能（插件系统、存储、事件）
 │   ├── plugins/            # 功能插件（25+）
@@ -115,7 +115,7 @@ Memento/
 │   ├── admin/              # Web 管理面板
 │   └── lib/                # 服务器代码
 ├── packages/               # 子包（原生插件、服务端、MCP）
-│   ├── mcp-memento-server/ # MCP Server (AI 集成)
+│   ├── mcp-aboutme-server/ # MCP Server (AI 集成)
 │   ├── server-nodejs/      # Node.js 服务端
 │   └── ...                 # 原生插件等
 ├── shared_models/          # 共享数据模型
@@ -129,8 +129,8 @@ Memento/
 1. 安装 [Flutter SDK](https://flutter.dev)
 2. 克隆项目并安装依赖
    ```bash
-   git clone https://github.com/hunmer/Memento.git
-   cd Memento
+   git clone https://github.com/hunmer/Aboutme.git
+   cd Aboutme
    flutter pub get
    ```
 3. 运行应用
@@ -150,21 +150,21 @@ dart run bin/server.dart
 ### MCP Server (AI 集成)
 
 ```bash
-cd packages/mcp-memento-server
+cd packages/mcp-aboutme-server
 npm install
 npm run build
 
 # 配置 .env
-MEMENTO_SERVER_URL=http://localhost:8080
-MEMENTO_API_KEY=mk_live_your_api_key
-MEMENTO_ENCRYPTION_KEY=your_encryption_key
+ABOUTME_SERVER_URL=http://localhost:8080
+ABOUTME_API_KEY=mk_live_your_api_key
+ABOUTME_ENCRYPTION_KEY=your_encryption_key
 ```
 
 ## 📖 更多文档
 
-- [完整文档](https://hunmer.github.io/memento_docs/)
+- [完整文档](https://hunmer.github.io/aboutme_docs/)
 - [服务器文档](server/CLAUDE.md)
-- [MCP Server 文档](packages/mcp-memento-server/README.md)
+- [MCP Server 文档](packages/mcp-aboutme-server/README.md)
 - [核心功能文档](lib/core/CLAUDE.md)
 
 ## 📄 许可证

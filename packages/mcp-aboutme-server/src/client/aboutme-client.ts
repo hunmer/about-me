@@ -1,13 +1,13 @@
 /**
- * Memento HTTP 客户端
+ * Aboutme HTTP 客户端
  */
 
-import type { MementoConfig, ApiResponse, PaginatedResponse } from '../types/index.js';
+import type { AboutmeConfig, ApiResponse, PaginatedResponse } from '../types/index.js';
 
-export class MementoClient {
-  private config: MementoConfig;
+export class AboutmeClient {
+  private config: AboutmeConfig;
 
-  constructor(config: MementoConfig) {
+  constructor(config: AboutmeConfig) {
     this.config = config;
   }
 

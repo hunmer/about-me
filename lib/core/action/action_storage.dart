@@ -4,7 +4,7 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:Memento/core/floating_ball/models/floating_ball_gesture.dart';
+import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 import 'package:flutter/material.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';

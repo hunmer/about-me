@@ -3,9 +3,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/action/models/action_instance.dart';
-import 'package:Memento/core/action/models/action_group.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/action/models/action_instance.dart';
+import 'package:aboutme/core/action/models/action_group.dart';
 import 'action_selector_dialog.dart';
 import 'package:get/get.dart';
 

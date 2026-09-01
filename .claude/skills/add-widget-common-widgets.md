@@ -46,7 +46,7 @@ description: 将指定源文件中的组件添加到公共小组件系统，支�
 在示例文件顶部添加必要的 import：
 
 ```dart
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 ```
 
 **修改示例：**
@@ -58,7 +58,7 @@ import 'package:flutter/material.dart';
 // After
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 ```
 
 ### 3. Add JSON Serialization for Data Models
@@ -315,7 +315,7 @@ class EarningsTrendCardExample extends StatelessWidget {
 ```dart
 // lib/screens/widgets_gallery/screens/earnings_trend_card_example.dart
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/earnings_trend_card.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/earnings_trend_card.dart';
 
 class EarningsTrendCardExample extends StatelessWidget {
   @override
@@ -400,7 +400,7 @@ component-name: MultiTrackerCardWidget
 ### Step 2: Add import
 
 ```dart
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 ```
 
 ### Step 3: Add to MultiTrackerData (if needed)
@@ -581,7 +581,7 @@ Widget _buildImage() {
 
 完成以下检查确保组件正确集成：
 
-- [ ] 添加了 `import 'package:Memento/screens/home_screen/models/home_widget_size.dart';`
+- [ ] 添加了 `import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';`
 - [ ] 为所有自定义数据模型添加了 `fromJson` 和 `toJson`
 - [ ] 添加了 `fromProps` 工厂方法
 - [ ] 所有硬编码值都已改为可配置参数

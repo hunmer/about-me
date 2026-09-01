@@ -10,7 +10,7 @@ import WidgetKit
 import SwiftUI
 
 // Create shared default with custom group
-let sharedDefault = UserDefaults(suiteName: "group.github.hunmer.memento")!
+let sharedDefault = UserDefaults(suiteName: "group.github.hunmer.aboutme")!
 
 struct LiveActivitiesAppAttributes: ActivityAttributes, Identifiable {
     public typealias LiveDeliveryData = ContentState // don't forget to add this line, otherwise, live activity will not display it.
@@ -97,7 +97,7 @@ struct MyAppWidgetLiveActivity: Widget {
             } minimal: {
                 Image(systemName: "app.badge")
             }
-            .widgetURL(URL(string: "memento://live-activity"))
+            .widgetURL(URL(string: "aboutme://live-activity"))
             .keylineTint(Color.blue)
         }
     }

@@ -44,7 +44,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '726933167202',
     projectId: 'test-3f050',
     storageBucket: 'test-3f050.firebasestorage.app',
-    iosBundleId: 'github.hunmer.memento',
+    iosBundleId: 'github.hunmer.aboutme',
   );
 
   /// iOS 配置 (从 GoogleService-Info.plist 获取)
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '726933167202',
     projectId: 'test-3f050',
     storageBucket: 'test-3f050.firebasestorage.app',
-    iosBundleId: 'github.hunmer.memento',
+    iosBundleId: 'github.hunmer.aboutme',
   );
 
   /// macOS 配置 (与 iOS 相同)

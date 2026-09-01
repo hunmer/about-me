@@ -6,7 +6,7 @@
 
 ## 模块职责
 
-计时器插件是 Memento 的核心时间追踪模块,提供:
+计时器插件是 Aboutme 的核心时间追踪模块,提供:
 
 - **计时任务管理**: 创建、编辑、删除计时器任务
 - **多种计时器类型**: 正计时、倒计时、番茄钟三种类型
@@ -124,7 +124,7 @@ int getTotalTimerCount() => _tasks.length;
 
 ### 平台通道
 
-**通道名称**: `github.hunmer.memento/timer_service`
+**通道名称**: `github.hunmer.aboutme/timer_service`
 
 **方法**:
 - `startTimerService`: 启动前台通知服务
@@ -618,7 +618,7 @@ static List<TimerTask> createDefaultTasks() {
 - 更新前台通知内容
 - 停止前台通知服务
 
-**平台通道**: `github.hunmer.memento/timer_service`
+**平台通道**: `github.hunmer.aboutme/timer_service`
 
 **核心方法**:
 

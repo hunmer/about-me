@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Memento/plugins/webview/services/download_manager.dart';
+import 'package:aboutme/plugins/webview/services/download_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -17,9 +17,9 @@ import 'webview_browser_screen.dart';
 import 'proxy_settings_screen.dart';
 import 'app_store/app_store_screen.dart';
 import '../../../core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 
 /// WebView 主界面 - 网址卡片列表
 class WebViewMainScreen extends StatefulWidget {

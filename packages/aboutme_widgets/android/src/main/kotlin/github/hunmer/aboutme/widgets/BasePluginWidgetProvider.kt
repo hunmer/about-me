@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets
+package github.hunmer.aboutme.widgets
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -14,7 +14,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.res.ResourcesCompat
-import github.hunmer.memento_widgets.R
+import github.hunmer.aboutme_widgets.R
 import org.json.JSONObject
 
 /**
@@ -257,8 +257,8 @@ abstract class BasePluginWidgetProvider : AppWidgetProvider() {
      */
     protected fun setupClickIntent(context: Context, views: RemoteViews) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/$pluginId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/$pluginId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(

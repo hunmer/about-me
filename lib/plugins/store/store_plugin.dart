@@ -1,23 +1,23 @@
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/store/widgets/store_bottom_bar.dart';
+import 'package:aboutme/plugins/store/widgets/store_bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
-import 'package:Memento/plugins/store/screens/store_settings_screen.dart';
-import 'package:Memento/plugins/store/events/point_award_event.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/plugins/store/screens/store_settings_screen.dart';
+import 'package:aboutme/plugins/store/events/point_award_event.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 // UseCase 架构相关导入
 import 'package:shared_models/usecases/store/store_usecase.dart';
-import 'package:Memento/plugins/store/repositories/client_store_repository.dart';
+import 'package:aboutme/plugins/store/repositories/client_store_repository.dart';
 
 // HTTP 服务器导入
-import 'package:Memento/plugins/webview/services/local_http_server.dart';
+import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 
 part 'store_js_api.dart';
 part 'store_data_selectors.dart';

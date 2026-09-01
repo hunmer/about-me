@@ -3,11 +3,11 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:shared_models/usecases/calendar_album/calendar_album_usecase.dart';
 import 'widgets/calendar_album_bottom_bar.dart';
 import 'controllers/calendar_controller.dart';
@@ -16,7 +16,7 @@ import 'repositories/client_calendar_album_repository.dart';
 import 'models/calendar_entry.dart';
 
 // HTTP 服务器导入
-import 'package:Memento/plugins/webview/services/local_http_server.dart';
+import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 
 /// 日历相册插件主视图
 class CalendarAlbumMainView extends StatelessWidget {

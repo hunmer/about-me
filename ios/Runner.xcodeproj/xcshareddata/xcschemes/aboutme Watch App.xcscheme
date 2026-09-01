@@ -18,8 +18,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4B8276222F607D5400DF8056"
-               BuildableName = "memento Watch App.app"
-               BlueprintName = "memento Watch App"
+               BuildableName = "aboutme Watch App.app"
+               BlueprintName = "aboutme Watch App"
                ReferencedContainer = "container:Runner.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -61,8 +61,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4B8276222F607D5400DF8056"
-            BuildableName = "memento Watch App.app"
-            BlueprintName = "memento Watch App"
+            BuildableName = "aboutme Watch App.app"
+            BlueprintName = "aboutme Watch App"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -78,8 +78,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4B8276222F607D5400DF8056"
-            BuildableName = "memento Watch App.app"
-            BlueprintName = "memento Watch App"
+            BuildableName = "aboutme Watch App.app"
+            BlueprintName = "aboutme Watch App"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

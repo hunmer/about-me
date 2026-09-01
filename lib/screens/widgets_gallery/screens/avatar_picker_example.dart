@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/avatar_picker.dart';
+import 'package:aboutme/widgets/picker/avatar_picker.dart';
 
 /// 头像选择器示例
 class AvatarPickerExample extends StatefulWidget {

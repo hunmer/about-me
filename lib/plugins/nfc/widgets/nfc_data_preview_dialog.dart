@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:get/get.dart';
 
 /// NFC 数据预览对话框

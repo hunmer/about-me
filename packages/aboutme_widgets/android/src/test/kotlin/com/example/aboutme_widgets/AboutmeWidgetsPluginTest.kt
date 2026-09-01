@@ -1,4 +1,4 @@
-package github.hunmer.memento_widgets
+package github.hunmer.aboutme_widgets
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -13,10 +13,10 @@ import kotlin.test.Test
  * you can run them directly from IDEs that support JUnit such as Android Studio.
  */
 
-internal class MementoWidgetsPluginTest {
+internal class AboutmeWidgetsPluginTest {
     @Test
     fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
-        val plugin = MementoWidgetsPlugin()
+        val plugin = AboutmeWidgetsPlugin()
 
         val call = MethodCall("getPlatformVersion", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)

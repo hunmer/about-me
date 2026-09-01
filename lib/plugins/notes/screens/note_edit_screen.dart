@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/notes_plugin.dart';
-import 'package:Memento/widgets/quill_editor.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/notes_plugin.dart';
+import 'package:aboutme/widgets/quill_editor.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;

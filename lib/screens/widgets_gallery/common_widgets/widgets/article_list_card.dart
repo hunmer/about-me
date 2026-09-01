@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../utils/image_helper.dart';
 
 const Color _defaultGoodsColor = Color.fromARGB(255, 207, 77, 116);

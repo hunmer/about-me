@@ -17,7 +17,7 @@ export 'register_item_selector.dart';
 export 'register_items_selector.dart';
 export 'register_day_card.dart';
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_item_selector.dart';

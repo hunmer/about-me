@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/plugins/scripts_center/services/script_manager.dart';
-import 'package:Memento/plugins/scripts_center/services/script_executor.dart';
-import 'package:Memento/plugins/scripts_center/models/script_info.dart';
-import 'package:Memento/plugins/scripts_center/widgets/script_card.dart';
-import 'package:Memento/plugins/scripts_center/widgets/script_run_dialog.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/widgets/script_card.dart';
+import 'package:aboutme/plugins/scripts_center/widgets/script_run_dialog.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'script_edit_screen.dart';
 import '../scripts_center_plugin.dart';
 

@@ -32,7 +32,7 @@ dependencies:
 
 ### 3. 配置 MainActivity
 
-已在 `android/app/src/main/kotlin/github/hunmer/memento/MainActivity.kt` 中添加 LiveActivityManager 初始化：
+已在 `android/app/src/main/kotlin/github/hunmer/aboutme/MainActivity.kt` 中添加 LiveActivityManager 初始化：
 
 ```kotlin
 override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -46,7 +46,7 @@ override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
 
 ### 4. 创建 CustomLiveActivityManager
 
-已创建 `android/app/src/main/kotlin/github/hunmer/memento/CustomLiveActivityManager.kt`：
+已创建 `android/app/src/main/kotlin/github/hunmer/aboutme/CustomLiveActivityManager.kt`：
 
 - 继承自 `LiveActivityManager`
 - 实现 `buildNotification()` 方法
@@ -87,7 +87,7 @@ final isSupported = await _liveActivitiesPlugin.areActivitiesEnabled();
 
 // 创建活动
 final activityId = await _liveActivitiesPlugin.createActivity({
-  'title': 'Memento 任务',
+  'title': 'Aboutme 任务',
   'subtitle': '正在处理中...',
   'progress': 0.5,
   'status': '进行中',

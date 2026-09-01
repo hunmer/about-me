@@ -6,15 +6,15 @@
 
 #### 1.1 Info.plist 配置
 - ✅ 在 `ios/Runner/Info.plist` 中添加了 `NSSupportsLiveActivities` 键值
-- ✅ 在 `ios/MementoWidget/Info.plist` 中添加了 `NSSupportsLiveActivities` 键值
+- ✅ 在 `ios/AboutmeWidget/Info.plist` 中添加了 `NSSupportsLiveActivities` 键值
 
 #### 1.2 Widget Extension 文件
-- ✅ 创建了 `ios/MementoWidget/MementoWidgetLiveActivity.swift`
+- ✅ 创建了 `ios/AboutmeWidget/AboutmeWidgetLiveActivity.swift`
   - 定义了 `LiveActivitiesAppAttributes` 结构体
   - 实现了 Dynamic Island 和锁屏界面布局
   - 支持进度显示、计时器、状态更新
-- ✅ 创建了 `ios/MementoWidget/Info.plist`（Widget Extension 配置）
-- ✅ 创建了 `ios/MementoWidget/MementoWidget.entitlements`（权限配置）
+- ✅ 创建了 `ios/AboutmeWidget/Info.plist`（Widget Extension 配置）
+- ✅ 创建了 `ios/AboutmeWidget/AboutmeWidget.entitlements`（权限配置）
 
 #### 1.3 配置说明文档
 - ✅ 创建了 `mds/live_activities_ios_config.md`
@@ -27,12 +27,12 @@
 ### 2. Android 平台配置
 
 #### 2.1 MainActivity.kt 集成
-- ✅ 修改了 `android/app/src/main/kotlin/github/hunmer/memento/MainActivity.kt`
+- ✅ 修改了 `android/app/src/main/kotlin/github/hunmer/aboutme/MainActivity.kt`
   - 添加了 `LiveActivityManagerHolder` 导入
   - 在 `configureFlutterEngine()` 中初始化了 `CustomLiveActivityManager`
 
 #### 2.2 CustomLiveActivityManager 实现
-- ✅ 创建了 `android/app/src/main/kotlin/github/hunmer/memento/CustomLiveActivityManager.kt`
+- ✅ 创建了 `android/app/src/main/kotlin/github/hunmer/aboutme/CustomLiveActivityManager.kt`
   - 继承自 `LiveActivityManager`
   - 实现了 `buildNotification()` 方法
   - 支持图片加载（64dp 尺寸）
@@ -93,15 +93,15 @@
 ios/Runner/Info.plist (已修改)
   └─ 添加了 NSSupportsLiveActivities 键
 
-ios/MementoWidget/ (新增目录)
-  ├─ MementoWidgetLiveActivity.swift (新增)
+ios/AboutmeWidget/ (新增目录)
+  ├─ AboutmeWidgetLiveActivity.swift (新增)
   ├─ Info.plist (新增)
-  └─ MementoWidget.entitlements (新增)
+  └─ AboutmeWidget.entitlements (新增)
 ```
 
 ### Android 文件
 ```
-android/app/src/main/kotlin/github/hunmer/memento/
+android/app/src/main/kotlin/github/hunmer/aboutme/
   ├─ MainActivity.kt (已修改)
   └─ CustomLiveActivityManager.kt (新增)
 
@@ -138,8 +138,8 @@ mds/
 
 2. **配置 App Groups**
    - 为 Runner 目标添加 App Groups 能力
-   - 为 MementoWidget 目标添加 App Groups 能力
-   - 使用相同的 App Group ID: `group.github.hunmer.memento`
+   - 为 AboutmeWidget 目标添加 App Groups 能力
+   - 使用相同的 App Group ID: `group.github.hunmer.aboutme`
 
 3. **配置 Push Notifications**
    - 为 Runner 目标添加 Push Notifications 能力
@@ -147,8 +147,8 @@ mds/
 4. **配置证书和描述文件**
    - 确保所有目标都配置了有效的证书和描述文件
    - Bundle Identifier 必须匹配：
-     - Runner: `github.hunmer.memento`
-     - MementoWidget: `github.hunmer.memento.MementoWidget`
+     - Runner: `github.hunmer.aboutme`
+     - AboutmeWidget: `github.hunmer.aboutme.AboutmeWidget`
 
 ### Android
 

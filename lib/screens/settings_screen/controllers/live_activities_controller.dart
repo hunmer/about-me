@@ -53,7 +53,7 @@ class LiveActivitiesController {
   /// [onUrlScheme] - URL Scheme回调
   Future<bool> init({
     required String appGroupId,
-    String urlScheme = 'memento',
+    String urlScheme = 'aboutme',
     bool requireNotificationPermission = true,
     Function(ActivityUpdate)? onActivityUpdate,
     Function(UrlSchemeData)? onUrlScheme,

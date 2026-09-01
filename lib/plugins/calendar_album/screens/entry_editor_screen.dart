@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'entry_editor/entry_editor_controller.dart';
 import 'entry_editor/entry_editor_ui.dart';
 

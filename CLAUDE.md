@@ -1,6 +1,6 @@
-# Memento
+# Aboutme
 
-Memento 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 25 个功能插件（聊天、日记、账单、习惯、AI 对话等），数据本地优先存储，支持 WebDAV 与自建服务器的端到端加密同步。
+Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 25 个功能插件（聊天、日记、账单、习惯、AI 对话等），数据本地优先存储，支持 WebDAV 与自建服务器的端到端加密同步。
 
 本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 6 个原生能力子包、3 个 Node.js/TypeScript 服务（同步服务器、MCP 服务器、API 转发服务器）、共享模型包（`shared_models/`）与 71 篇专题文档（`docs/`）。技术栈：Flutter/Dart ^3.7 + GetX + flutter_js，Node ≥ 18（Express、MCP SDK）。
 
@@ -10,7 +10,7 @@ Memento 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 - 新插件必须注册到 `lib/core/builtin_plugins.dart`；JS API 命名 `get{Entity}s` / `create{Entity}` / `update{Entity}` / `delete{Entity}`；推荐 UseCase 分层（接口放 `shared_models/`）。
 - Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛（无测试目录）。
 - `tree-shake-icons: false` 是硬性要求（动态 IconData）；Web 平台部分库走条件导入存根。
-- `build/`、`dist/`、`.dart_tool/`、`Memento.ipa` 为生成物，不要编辑；Agent 不主动执行 git 操作。
+- `build/`、`dist/`、`.dart_tool/`、`Aboutme.ipa` 为生成物，不要编辑；Agent 不主动执行 git 操作。
 - 完整命令（构建/测试/发布）与环境变量说明见 [开发约定](claude/conventions.md)。
 
 ## 文件索引
@@ -36,7 +36,7 @@ Memento 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 | `lib/` | Flutter 应用代码（core / plugins×25 / screens / widgets，1943 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
 | `packages/` | 9 个子包聚合索引（3 个 Node 服务 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
 | `packages/server-nodejs` | 同步服务器（REST + WS + 管理面板 + 服务端插件系统） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
-| `packages/mcp-memento-server` | MCP 服务器（AI 工具接口，60+ 工具） | [packages/mcp-memento-server/CLAUDE.md](packages/mcp-memento-server/CLAUDE.md) |
+| `packages/mcp-aboutme-server` | MCP 服务器（AI 工具接口，60+ 工具） | [packages/mcp-aboutme-server/CLAUDE.md](packages/mcp-aboutme-server/CLAUDE.md) |
 | `packages/api_forwarding_server` | WebSocket 配对转发服务器（端口 8654） | [packages/api_forwarding_server/CLAUDE.md](packages/api_forwarding_server/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
 | `scripts/` | 多平台构建与发布脚本 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
@@ -45,12 +45,12 @@ Memento 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 
 ```mermaid
 graph TD
-    Root["Memento 仓库"] --> Lib["lib/ 客户端"]
+    Root["Aboutme 仓库"] --> Lib["lib/ 客户端"]
     Root --> Pkg["packages/"]
     Root --> Shared["shared_models/"]
     Root --> Docs["docs/ · online/ · scripts/"]
     Pkg --> Srv["server-nodejs 同步服务器"]
-    Pkg --> MCP["mcp-memento-server"]
+    Pkg --> MCP["mcp-aboutme-server"]
     Pkg --> FWD["api_forwarding_server"]
     Pkg --> Native["6 个原生插件"]
     Lib --> Core["core 核心层"]
@@ -60,8 +60,8 @@ graph TD
 
 ## 扫描状态
 
-- 更新时间：2026-09-02（第二轮：补扫 reminder / memento_widgets / admin-vue / online）
-- 已扫描：根清单与配置、`lib/` 结构与启动链（main.dart、app_initializer、route.dart）、3 个 Node 子包源码结构、`shared_models/` 全部文件、`packages/memento_widgets`（Dart API + Provider 全景）、`server-nodejs/admin-vue`（源码与 `/api/v1` 端点全集）、`online/`（小程序/脚本/Agent 清单与 preload 机制）、`lib/plugins/reminder`（全部 10 文件）、`docs/` 与 CI、脚本清单。
+- 更新时间：2026-09-02（第二轮：补扫 reminder / aboutme_widgets / admin-vue / online）
+- 已扫描：根清单与配置、`lib/` 结构与启动链（main.dart、app_initializer、route.dart）、3 个 Node 子包源码结构、`shared_models/` 全部文件、`packages/aboutme_widgets`（Dart API + Provider 全景）、`server-nodejs/admin-vue`（源码与 `/api/v1` 端点全集）、`online/`（小程序/脚本/Agent 清单与 preload 机制）、`lib/plugins/reminder`（全部 10 文件）、`docs/` 与 CI、脚本清单。
 - 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制。
 - 未深扫（下次增量优先）：24 个插件内部实现（沿用旧版 CLAUDE.md）、其余 5 个原生插件的 android/ios 平台代码（intent/nfc/foreground_service/notifications/floating_ball）、`docs/` 正文、server-nodejs 各 handler 实现细节。
 - 详细覆盖度量与续跑建议见 [索引变更记录](claude/changelog.md)。

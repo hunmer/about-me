@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart' hide ListTile, Row, SizedBox;
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/material.dart'
     as flutter
     show ListTile, Row, Center, SizedBox;
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 
 class GoalDetailScreen extends StatelessWidget {
   final Goal? goal;

@@ -43,19 +43,19 @@
 ### 🚫 严格禁止的行为
 1. **禁止硬编码日期时间**：
    - ❌ 错误：`const date = "2025-01-15"` 或 `const content = "今天是2025年1月15日"`
-   - ✅ 正确：`const time = await Memento.system.getCurrentTime(); const date = \`${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}\``
+   - ✅ 正确：`const time = await Aboutme.system.getCurrentTime(); const date = \`${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}\``
 ```
 
 #### 在系统 API 部分：
 ```markdown
 ### 系统 API（在 JavaScript 代码中直接调用）
-- `await Memento.system.getCurrentTime()` - **必须使用此API获取当前时间**
+- `await Aboutme.system.getCurrentTime()` - **必须使用此API获取当前时间**
   返回 `{timestamp, datetime, year, month, day, hour, minute, second, weekday, weekdayName}`
 ```
 
 #### 在注意事项部分：
 ```markdown
-1. **🚫 绝对禁止硬编码日期时间**：任何涉及日期时间的代码，必须使用 `await Memento.system.getCurrentTime()` 获取当前时间
+1. **🚫 绝对禁止硬编码日期时间**：任何涉及日期时间的代码，必须使用 `await Aboutme.system.getCurrentTime()` 获取当前时间
    - 生成日记内容时，使用系统API获取的真实日期，不要使用你知识中的日期
    - 创建任务、账单等需要日期的操作，都必须先调用系统API
 ```
@@ -78,7 +78,7 @@
 2. **禁止使用占位符变量**：
    - ❌ 错误：`const channelId = "your_channel_id"` 或 `accountId: "请填入账户ID"`
    - ✅ 正确：先查询获取真实数据，然后使用实际的ID
-   - ✅ 示例：`const channels = await Memento.plugins.chat.getChannels(); const firstChannel = channels[0]; await Memento.plugins.chat.sendMessage({channelId: firstChannel.id, content: "消息内容"})`
+   - ✅ 示例：`const channels = await Aboutme.plugins.chat.getChannels(); const firstChannel = channels[0]; await Aboutme.plugins.chat.sendMessage({channelId: firstChannel.id, content: "消息内容"})`
 ```
 
 **处理策略**：
@@ -144,10 +144,10 @@ flutter test test/tool_service_prompt_test.dart
 
 **AI生成的代码**（正确）：
 ```javascript
-const time = await Memento.system.getCurrentTime();
+const time = await Aboutme.system.getCurrentTime();
 const date = `${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}`;
 const content = `今天是${time.year}年${time.month}月${time.day}日，星期${time.weekdayName}...`;
-const diary = await Memento.plugins.diary.createEntry({
+const diary = await Aboutme.plugins.diary.createEntry({
   date: date,
   content: content
 });
@@ -161,13 +161,13 @@ return `日记已创建：${date}`;
 
 **AI生成的代码**（正确）：
 ```javascript
-const channels = await Memento.plugins.chat.getChannels();
+const channels = await Aboutme.plugins.chat.getChannels();
 if (channels.length === 0) {
   setResult('错误：没有可用频道');
   return '错误：没有可用频道';
 }
 const firstChannel = channels[0];
-const message = await Memento.plugins.chat.sendMessage({
+const message = await Aboutme.plugins.chat.sendMessage({
   channelId: firstChannel.id,
   content: '测试'
 });
@@ -181,15 +181,15 @@ return `消息已发送到频道：${firstChannel.name}`;
 
 **AI生成的代码**（正确）：
 ```javascript
-const time = await Memento.system.getCurrentTime();
+const time = await Aboutme.system.getCurrentTime();
 const today = `${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}`;
-const accounts = await Memento.plugins.bill.getAccounts({});
+const accounts = await Aboutme.plugins.bill.getAccounts({});
 if (accounts.length === 0) {
   setResult('错误：没有可用账户，请先创建账户');
   return '错误：没有可用账户，请先创建账户';
 }
 const firstAccount = accounts[0];
-const bill = await Memento.plugins.bill.createBill({
+const bill = await Aboutme.plugins.bill.createBill({
   accountId: firstAccount.id,
   amount: -50,
   category: '餐饮',

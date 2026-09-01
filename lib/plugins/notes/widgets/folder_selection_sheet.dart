@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/folder_tree_node.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/folder_tree_node.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 文件夹选择底部抽屉
 class FolderSelectionSheet extends StatefulWidget {

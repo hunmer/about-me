@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -11,8 +11,8 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -42,8 +42,8 @@ class TodoQuadrantWidgetProvider : BasePluginWidgetProvider() {
         private const val DEFAULT_OPACITY = 0.95f
 
         // 广播 Action
-        const val ACTION_TASK_CLICK = "github.hunmer.memento.widgets.TODO_QUADRANT_TASK_CLICK"
-        const val ACTION_DATE_RANGE_CLICK = "github.hunmer.memento.widgets.TODO_QUADRANT_DATE_RANGE_CLICK"
+        const val ACTION_TASK_CLICK = "github.hunmer.aboutme.widgets.TODO_QUADRANT_TASK_CLICK"
+        const val ACTION_DATE_RANGE_CLICK = "github.hunmer.aboutme.widgets.TODO_QUADRANT_DATE_RANGE_CLICK"
 
         // 待同步的任务变更（应用启动时读取）
         const val PREF_KEY_PENDING_CHANGES = "todo_quadrant_pending_changes"
@@ -270,8 +270,8 @@ class TodoQuadrantWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击事件，跳转到配置页面
         val configIntent = Intent(Intent.ACTION_VIEW)
-        configIntent.data = Uri.parse("memento://widget/todo_quadrant/config?widgetId=$appWidgetId")
-        configIntent.setPackage("github.hunmer.memento")
+        configIntent.data = Uri.parse("aboutme://widget/todo_quadrant/config?widgetId=$appWidgetId")
+        configIntent.setPackage("github.hunmer.aboutme")
         configIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val configPendingIntent = PendingIntent.getActivity(
@@ -320,8 +320,8 @@ class TodoQuadrantWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置标题栏点击事件（打开应用）
         val openAppIntent = Intent(Intent.ACTION_VIEW)
-        openAppIntent.data = Uri.parse("memento://widget/todo")
-        openAppIntent.setPackage("github.hunmer.memento")
+        openAppIntent.data = Uri.parse("aboutme://widget/todo")
+        openAppIntent.setPackage("github.hunmer.aboutme")
         openAppIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val openAppPendingIntent = PendingIntent.getActivity(

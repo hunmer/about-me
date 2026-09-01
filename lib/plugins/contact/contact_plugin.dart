@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/base_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
 
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:shared_models/repositories/contact/contact_repository.dart';
 import 'controllers/contact_controller.dart';
 import 'models/contact_model.dart';
@@ -17,15 +17,15 @@ import 'models/interaction_record_model.dart';
 import 'widgets/contact_card.dart';
 import 'widgets/contact_form.dart';
 import 'widgets/filter_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 // UseCase 架构相关导入
 import 'package:shared_models/usecases/contact/contact_usecase.dart';
 import 'repositories/client_contact_repository.dart';
 
 // HTTP 服务器导入
-import 'package:Memento/plugins/webview/services/local_http_server.dart';
+import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 
 part 'contact_js_api.dart';
 part 'contact_data_selectors.dart';

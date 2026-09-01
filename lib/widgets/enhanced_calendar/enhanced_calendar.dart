@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 日历数据模型，包含背景图片路径
 class CalendarDayData {

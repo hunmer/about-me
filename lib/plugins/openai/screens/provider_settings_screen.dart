@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'provider_edit_screen.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class ProviderSettingsScreen extends StatefulWidget {
   const ProviderSettingsScreen({super.key});

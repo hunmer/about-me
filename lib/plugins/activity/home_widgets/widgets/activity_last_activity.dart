@@ -4,10 +4,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 import '../../models/activity_record.dart';
 import '../../screens/activity_edit_screen.dart';
 import '../../activity_plugin.dart';

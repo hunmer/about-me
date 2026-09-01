@@ -5,12 +5,12 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/floating_ball/models/floating_ball_gesture.dart';
+import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 import 'models/action_definition.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
 import 'action_executor.dart';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 
 /// 动作管理器单例
 class ActionManager {

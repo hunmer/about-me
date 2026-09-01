@@ -1,8 +1,8 @@
 import 'dart:math';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/plugins/activity/models/activity_weekly_widget_data.dart';
-import 'package:Memento/plugins/activity/models/activity_daily_widget_data.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/plugins/activity/models/activity_weekly_widget_data.dart';
+import 'package:aboutme/plugins/activity/models/activity_daily_widget_data.dart';
 
 /// 周视图小组件业务逻辑服务
 ///

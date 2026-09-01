@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/screens/habit_timer_selector_screen.dart';
-import 'package:Memento/plugins/habits/screens/habits_weekly_config_screen.dart';
-import 'package:Memento/plugins/habits/screens/habit_group_list_selector_screen.dart';
-import 'package:Memento/plugins/habits/widgets/timer_dialog.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/screens/habit_timer_selector_screen.dart';
+import 'package:aboutme/plugins/habits/screens/habits_weekly_config_screen.dart';
+import 'package:aboutme/plugins/habits/screens/habit_group_list_selector_screen.dart';
+import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
 
 /// Habits 插件路由注册表
 class HabitsRoutes implements RouteRegistry {

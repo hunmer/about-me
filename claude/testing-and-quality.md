@@ -8,7 +8,7 @@
 |------|----------|----------|------|
 | Flutter 应用（`lib/`） | ❌ 无（仓库无 `test/`、`integration_test/` 目录） | ❌ 无 | 质量依赖 `flutter analyze` 与人工验证 |
 | server-nodejs | ✅ jest | ✅ supertest 接口测试 | `tests/api.test.ts` + `globalSetup/globalTeardown`（`npm test`，`--runInBand` 串行执行） |
-| mcp-memento-server | ❌ 无 | ❌ 无 | 提供 `npm run inspector`（MCP Inspector）手动调试 |
+| mcp-aboutme-server | ❌ 无 | ❌ 无 | 提供 `npm run inspector`（MCP Inspector）手动调试 |
 | api_forwarding_server | ❌ 无 | ❌ 无 | — |
 
 ## 质量工具

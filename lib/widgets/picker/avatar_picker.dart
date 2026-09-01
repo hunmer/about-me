@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:math';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'image_picker_dialog.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 
 class AvatarPicker extends StatefulWidget {
   final double size;

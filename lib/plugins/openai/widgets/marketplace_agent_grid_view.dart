@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/services/agent_marketplace_service.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/services/agent_marketplace_service.dart';
 import 'marketplace_agent_card.dart';
 
 /// 商场 Agent 网格视图

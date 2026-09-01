@@ -1,10 +1,10 @@
 {
-  "name": "@hunmer/memento-server",
+  "name": "@hunmer/aboutme-server",
   "version": "1.0.3",
-  "description": "Memento 同步服务器 - Node.js + TypeScript 版本",
+  "description": "Aboutme 同步服务器 - Node.js + TypeScript 版本",
   "main": "dist/index.js",
   "bin": {
-    "memento-server": "dist/index.js"
+    "aboutme-server": "dist/index.js"
   },
   "files": [
     "dist"
@@ -20,7 +20,7 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "memento",
+    "aboutme",
     "sync",
     "server",
     "encryption"

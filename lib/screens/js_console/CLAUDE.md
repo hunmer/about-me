@@ -6,10 +6,10 @@
 
 ## 模块职责
 
-JS 控制台是 Memento 应用中的开发调试工具，提供交互式 JavaScript 运行环境，主要功能：
+JS 控制台是 Aboutme 应用中的开发调试工具，提供交互式 JavaScript 运行环境，主要功能：
 
 - **实时代码执行**：在移动端（QuickJS）和 Web 端（浏览器引擎）运行 JavaScript 代码
-- **API 测试**：快速测试 Memento.* 全局 API（chat、openai 等插件 API）
+- **API 测试**：快速测试 Aboutme.* 全局 API（chat、openai 等插件 API）
 - **代码示例库**：内置多种示例代码，支持从 JSON 文件动态加载
 - **异步操作支持**：自动包装用户代码以处理 Promise 和 async/await
 - **调试输出**：捕获 `console.log` 和 `console.error` 输出
@@ -56,7 +56,7 @@ graph TD
 
 ```javascript
 // 用户输入的代码
-var result = await Memento.chat.testSync();
+var result = await Aboutme.chat.testSync();
 return result;
 
 // ⬇️ 控制器自动包装为 ⬇️
@@ -70,7 +70,7 @@ await (async function() {
   try {
     // 2. 执行用户代码
     var result = await (async function() {
-      var result = await Memento.chat.testSync();
+      var result = await Aboutme.chat.testSync();
       return result;
     })();
 
@@ -97,7 +97,7 @@ await (async function() {
 ```javascript
 // 错误 1：未 await 的 async IIFE
 (async function() {
-  var result = await Memento.chat.testSync();
+  var result = await Aboutme.chat.testSync();
   setResult(result);  // ❌ ReferenceError: setResult is not defined
 })();  // ⬅️ 外层立即执行 finally，删除 setResult
 ```
@@ -105,7 +105,7 @@ await (async function() {
 ```javascript
 // 错误 2：定义函数但未 await 调用
 async function test() {
-  return await Memento.chat.testSync();
+  return await Aboutme.chat.testSync();
 }
 test();  // ❌ 外层无法捕获 Promise 结果
 ```
@@ -114,7 +114,7 @@ test();  // ❌ 外层无法捕获 Promise 结果
 
 ```javascript
 // 写法 1：直接顶层 await（最推荐）
-var result = await Memento.chat.testSync();
+var result = await Aboutme.chat.testSync();
 console.log('结果:', result);
 return result;  // 外层自动捕获
 ```
@@ -122,7 +122,7 @@ return result;  // 外层自动捕获
 ```javascript
 // 写法 2：定义函数并 await 调用
 async function run() {
-  return await Memento.chat.testSync();
+  return await Aboutme.chat.testSync();
 }
 return await run();
 ```
@@ -130,14 +130,14 @@ return await run();
 ```javascript
 // 写法 3：await IIFE
 return await (async function() {
-  var result = await Memento.chat.testSync();
+  var result = await Aboutme.chat.testSync();
   return result;
 })();
 ```
 
 ```javascript
 // 写法 4：使用 setResult（适合中途返回）
-var channels = await Memento.chat.getChannels();
+var channels = await Aboutme.chat.getChannels();
 console.log('频道数量:', channels.length);
 
 var processed = {
@@ -187,7 +187,7 @@ console.log('处理完成');  // 可以继续执行其他代码
   "examples": [
     {
       "title": "获取所有频道",
-      "code": "var channels = await Memento.chat.getChannels();\nconsole.log('频道列表:', channels);\nreturn channels;"
+      "code": "var channels = await Aboutme.chat.getChannels();\nconsole.log('频道列表:', channels);\nreturn channels;"
     }
   ]
 }
@@ -213,11 +213,11 @@ lib/screens/js_console/examples/openai_examples.json
   "examples": [
     {
       "title": "发送聊天请求",
-      "code": "var response = await Memento.openai.sendMessage('你好，世界');\nreturn response;"
+      "code": "var response = await Aboutme.openai.sendMessage('你好，世界');\nreturn response;"
     },
     {
       "title": "列出助手",
-      "code": "var assistants = await Memento.openai.listAssistants();\nreturn assistants;"
+      "code": "var assistants = await Aboutme.openai.listAssistants();\nreturn assistants;"
     }
   ]
 }
@@ -333,7 +333,7 @@ document.getElementById('foo');                   // ReferenceError
 
 **替代方案**：
 - 使用 Dart 侧 API（如定时器、UI 操作）
-- 通过 Memento.* API 调用 Flutter 功能
+- 通过 Aboutme.* API 调用 Flutter 功能
 
 ### Web (浏览器引擎)
 
@@ -360,7 +360,7 @@ const doubled = arr.map(n => n * 2);
 ### 1. 查看变量内容
 
 ```javascript
-var data = await Memento.chat.getChannels();
+var data = await Aboutme.chat.getChannels();
 console.log('类型:', typeof data);
 console.log('内容:', data);
 return data;  // 会格式化为 JSON 显示
@@ -370,7 +370,7 @@ return data;  // 会格式化为 JSON 显示
 
 ```javascript
 try {
-  var result = await Memento.chat.testSync();
+  var result = await Aboutme.chat.testSync();
   return result;
 } catch (error) {
   console.error('错误:', error.message);
@@ -382,11 +382,11 @@ try {
 
 ```javascript
 console.log('步骤 1: 获取频道');
-var channels = await Memento.chat.getChannels();
+var channels = await Aboutme.chat.getChannels();
 console.log('步骤 2: 频道数量:', channels.length);
 
 console.log('步骤 3: 发送消息');
-var message = await Memento.chat.sendMessage(
+var message = await Aboutme.chat.sendMessage(
   channels[0].id,
   'Test',
   'text'
@@ -400,7 +400,7 @@ return { channels, message };
 
 ```javascript
 // 场景：处理大量数据时提前返回部分结果
-var channels = await Memento.chat.getChannels();
+var channels = await Aboutme.chat.getChannels();
 
 if (channels.length === 0) {
   setResult({ error: '没有频道' });
@@ -408,7 +408,7 @@ if (channels.length === 0) {
 }
 
 // 继续处理...
-var messages = await Memento.chat.getMessages(channels[0].id, 10);
+var messages = await Aboutme.chat.getMessages(channels[0].id, 10);
 setResult({ channels, messages });
 ```
 
@@ -424,16 +424,16 @@ setResult({ channels, messages });
 ```javascript
 // ❌ 错误
 (async function() {
-  setResult(await Memento.chat.testSync());
+  setResult(await Aboutme.chat.testSync());
 })();
 
 // ✅ 正确
 return await (async function() {
-  return await Memento.chat.testSync();
+  return await Aboutme.chat.testSync();
 })();
 
 // ✅ 更好（推荐）
-var result = await Memento.chat.testSync();
+var result = await Aboutme.chat.testSync();
 return result;
 ```
 
@@ -441,8 +441,8 @@ return result;
 
 **方案 1：返回对象**
 ```javascript
-var channels = await Memento.chat.getChannels();
-var user = await Memento.chat.getCurrentUser();
+var channels = await Aboutme.chat.getChannels();
+var user = await Aboutme.chat.getCurrentUser();
 
 return {
   channels: channels,
@@ -453,8 +453,8 @@ return {
 
 **方案 2：返回数组**
 ```javascript
-var channels = await Memento.chat.getChannels();
-var user = await Memento.chat.getCurrentUser();
+var channels = await Aboutme.chat.getChannels();
+var user = await Aboutme.chat.getCurrentUser();
 
 return [channels, user];
 ```
@@ -472,7 +472,7 @@ await Promise.resolve();
 console.log('executed');
 
 // ✅ 或者通过 Dart 侧实现定时功能
-// 例如创建一个 Memento.utils.delay(ms) API
+// 例如创建一个 Aboutme.utils.delay(ms) API
 ```
 
 ### Q4: 如何测试新的插件 API？
@@ -481,7 +481,7 @@ console.log('executed');
 1. 确保插件已注册 JS API（参考 `lib/core/js_bridge/js_bridge_manager.dart`）
 2. 在控制台中直接调用：
    ```javascript
-   var result = await Memento.yourPlugin.yourMethod();
+   var result = await Aboutme.yourPlugin.yourMethod();
    console.log(result);
    return result;
    ```
@@ -491,16 +491,16 @@ console.log('executed');
 
 ```javascript
 // 列出所有已注册的插件命名空间
-console.log('可用插件:', Object.keys(Memento));
-return Object.keys(Memento);
+console.log('可用插件:', Object.keys(Aboutme));
+return Object.keys(Aboutme);
 
 // 输出示例：["version", "chat", "openai", ...]
 ```
 
 ```javascript
 // 查看特定插件的方法
-console.log('Chat API:', Object.keys(Memento.chat));
-return Object.keys(Memento.chat);
+console.log('Chat API:', Object.keys(Aboutme.chat));
+return Object.keys(Aboutme.chat);
 
 // 输出示例：["getChannels", "sendMessage", "getCurrentUser", ...]
 ```
@@ -516,11 +516,11 @@ return Object.keys(Memento.chat);
 console.log('=== 开始测试 ===');
 
 // 步骤 1：准备数据
-var channels = await Memento.chat.getChannels();
+var channels = await Aboutme.chat.getChannels();
 console.log('频道数量:', channels.length);
 
 // 步骤 2：执行操作
-var message = await Memento.chat.sendMessage(
+var message = await Aboutme.chat.sendMessage(
   channels[0].id,
   'Hello',
   'text'
@@ -540,7 +540,7 @@ return {
 ```javascript
 // ✅ 推荐：使用 try-catch
 try {
-  var result = await Memento.chat.testSync();
+  var result = await Aboutme.chat.testSync();
   return { success: true, data: result };
 } catch (error) {
   console.error('发生错误:', error);
@@ -557,7 +557,7 @@ console.log('操作:', 'getChannels');
 console.log('参数:', { limit: 10 });
 console.log('====================');
 
-var channels = await Memento.chat.getChannels();
+var channels = await Aboutme.chat.getChannels();
 
 console.log('结果:', {
   count: channels.length,
@@ -574,7 +574,7 @@ return channels;
 ```javascript
 // 定义辅助函数
 async function getFirstChannel() {
-  var channels = await Memento.chat.getChannels();
+  var channels = await Aboutme.chat.getChannels();
   if (channels.length === 0) {
     throw new Error('没有可用频道');
   }
@@ -583,7 +583,7 @@ async function getFirstChannel() {
 
 // 使用辅助函数
 var channel = await getFirstChannel();
-var messages = await Memento.chat.getMessages(channel.id, 5);
+var messages = await Aboutme.chat.getMessages(channel.id, 5);
 
 return { channel, messages };
 ```

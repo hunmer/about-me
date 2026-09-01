@@ -4,10 +4,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart'
+import 'package:aboutme/plugins/activity/models/activity_record.dart'
     as activity_models;
-import 'package:Memento/widgets/tags_dialog/models/models.dart' as tags_models;
-import 'package:Memento/plugins/activity/services/activity_service.dart';
+import 'package:aboutme/widgets/tags_dialog/models/models.dart' as tags_models;
+import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:shared_models/shared_models.dart';
 
 /// 客户端 Activity Repository 实现

@@ -1,10 +1,10 @@
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/goods/models/warehouse.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/goods/models/warehouse.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
 import 'package:intl/intl.dart';
 
 /// 物品详情页面

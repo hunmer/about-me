@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/core/services/fcm_service.dart';
-import 'package:Memento/core/services/device_registration_service.dart';
-import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
-import 'package:Memento/screens/settings_screen/widgets/server_sync_settings_section.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/fcm_service.dart';
+import 'package:aboutme/core/services/device_registration_service.dart';
+import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
+import 'package:aboutme/screens/settings_screen/widgets/server_sync_settings_section.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 设备同步设置页面
 ///

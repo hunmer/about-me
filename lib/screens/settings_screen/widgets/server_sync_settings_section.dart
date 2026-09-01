@@ -8,12 +8,12 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/services/sync_client_service.dart';
-import 'package:Memento/core/services/encryption_service.dart';
-import 'package:Memento/core/services/file_watch_sync_service.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/sync_client_service.dart';
+import 'package:aboutme/core/services/encryption_service.dart';
+import 'package:aboutme/core/services/file_watch_sync_service.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
 
 /// 服务器同步设置组件
 class ServerSyncSettingsSection extends StatefulWidget {

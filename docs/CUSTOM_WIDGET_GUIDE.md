@@ -1,6 +1,6 @@
 # 自定义小组件开发指南
 
-本文档基于 Memento 项目中"签到项小组件"(CheckinItemWidget)的开发经验总结，详细说明如何在 Memento 中实现一个**复杂的自定义小组件**。
+本文档基于 Aboutme 项目中"签到项小组件"(CheckinItemWidget)的开发经验总结，详细说明如何在 Aboutme 中实现一个**复杂的自定义小组件**。
 
 > **适用场景**: 需要用户选择配置的小组件（如选择特定的签到项、待办任务等），与标准的插件统计小组件不同。
 
@@ -113,7 +113,7 @@
 
 ### 1. 创建自定义 Provider
 
-**路径**: `memento_widgets/android/src/main/kotlin/github/hunmer/memento/widgets/providers/XxxWidgetProvider.kt`
+**路径**: `aboutme_widgets/android/src/main/kotlin/github/hunmer/aboutme/widgets/providers/XxxWidgetProvider.kt`
 
 **关键要点**:
 
@@ -168,8 +168,8 @@ class CheckinItemWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击跳转到配置界面
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/checkin_item/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/checkin_item/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -248,7 +248,7 @@ class CheckinItemWidgetProvider : BasePluginWidgetProvider() {
 
 ### 2. 创建布局文件
 
-**路径**: `memento_widgets/android/src/main/res/layout/widget_xxx.xml`
+**路径**: `aboutme_widgets/android/src/main/res/layout/widget_xxx.xml`
 
 **⚠️ 关键规则**:
 
@@ -295,7 +295,7 @@ android.view.InflateException: Binary XML file line #68: You must supply a layou
 
 ### 3. 创建预览图
 
-**路径**: `memento_widgets/android/src/main/res/drawable/widget_xxx_preview.xml`
+**路径**: `aboutme_widgets/android/src/main/res/drawable/widget_xxx_preview.xml`
 
 **⚠️ 禁止使用 `<bitmap>` 引用 vector drawable**:
 
@@ -344,7 +344,7 @@ android.view.InflateException: Binary XML file line #68: You must supply a layou
 
 ### 4. 小组件配置文件
 
-**路径**: `memento_widgets/android/src/main/res/xml/widget_xxx_info.xml`
+**路径**: `aboutme_widgets/android/src/main/res/xml/widget_xxx_info.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -364,11 +364,11 @@ android.view.InflateException: Binary XML file line #68: You must supply a layou
 
 ### 5. AndroidManifest.xml 注册
 
-**路径**: `memento_widgets/android/src/main/AndroidManifest.xml`
+**路径**: `aboutme_widgets/android/src/main/AndroidManifest.xml`
 
 ```xml
 <receiver
-    android:name="github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider"
+    android:name="github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider"
     android:exported="true">
     <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -381,7 +381,7 @@ android.view.InflateException: Binary XML file line #68: You must supply a layou
 
 ### 6. 字符串资源
 
-**路径**: `memento_widgets/android/src/main/res/values/strings.xml`
+**路径**: `aboutme_widgets/android/src/main/res/values/strings.xml`
 
 ```xml
 <string name="widget_checkin_item_label">签到项</string>
@@ -429,7 +429,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       await HomeWidget.updateWidget(
         name: 'CheckinItemWidgetProvider',
         iOSName: 'CheckinItemWidgetProvider',
-        qualifiedAndroidName: 'github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider',
+        qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider',
       );
 
       if (mounted) {
@@ -491,7 +491,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
    await HomeWidget.updateWidget(
      name: 'CheckinItemWidgetProvider',
      iOSName: 'CheckinItemWidgetProvider',
-     qualifiedAndroidName: 'github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider',
+     qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider',
    );
    ```
 
@@ -504,7 +504,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
 ```dart
 // 添加必要的导入
 import 'dart:convert';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 class PluginWidgetSyncHelper {
   Future<void> syncAllPlugins() async {
@@ -576,13 +576,13 @@ Plugin Data → syncCheckinItemWidget()
 
 ### 3. 注册 MyWidgetManager 映射
 
-**路径**: `packages/memento_widgets/lib/memento_widgets.dart`
+**路径**: `packages/aboutme_widgets/lib/aboutme_widgets.dart`
 
 ```dart
 class MyWidgetManager {
   static const Map<String, String> _androidProviders = {
     // ... 其他小组件
-    'CheckinItemWidgetProvider': 'github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider',
+    'CheckinItemWidgetProvider': 'github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider',
   };
 
   List<String> _getProviderNames(String pluginId) {
@@ -608,7 +608,7 @@ class MyWidgetManager {
 ### 1. 注册路由 (route.dart)
 
 ```dart
-import 'package:Memento/plugins/checkin/screens/checkin_item_selector_screen.dart';
+import 'package:aboutme/plugins/checkin/screens/checkin_item_selector_screen.dart';
 
 class Routes {
   static const String checkinItemSelector = '/checkin_item_selector';
@@ -706,7 +706,7 @@ await HomeWidget.saveWidgetData<String>('habits_weekly_data_$widgetId', value);
 
 ```bash
 # 查看 SharedPreferences 内容
-adb shell run-as github.hunmer.memento cat /data/data/github.hunmer.memento/shared_prefs/HomeWidgetPreferences.xml
+adb shell run-as github.hunmer.aboutme cat /data/data/github.hunmer.aboutme/shared_prefs/HomeWidgetPreferences.xml
 ```
 
 **常见错误示例**:
@@ -721,7 +721,7 @@ adb shell run-as github.hunmer.memento cat /data/data/github.hunmer.memento/shar
 
 **错误日志**:
 ```
-java.lang.ClassNotFoundException: github.hunmer.memento.CheckinItemWidgetProvider
+java.lang.ClassNotFoundException: github.hunmer.aboutme.CheckinItemWidgetProvider
 ```
 
 **原因**: 使用了 `androidName` 而不是 `qualifiedAndroidName`
@@ -738,7 +738,7 @@ await HomeWidget.updateWidget(
 await HomeWidget.updateWidget(
   name: 'CheckinItemWidgetProvider',
   iOSName: 'CheckinItemWidgetProvider',
-  qualifiedAndroidName: 'github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider',
+  qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider',
 );
 ```
 
@@ -789,10 +789,10 @@ adb logcat -d | grep -i widget | tail -50
 
 ```bash
 # 查看所有 SharedPreferences 文件
-adb shell run-as github.hunmer.memento ls /data/data/github.hunmer.memento/shared_prefs/
+adb shell run-as github.hunmer.aboutme ls /data/data/github.hunmer.aboutme/shared_prefs/
 
 # 查看 HomeWidgetPreferences 内容
-adb shell run-as github.hunmer.memento cat /data/data/github.hunmer.memento/shared_prefs/HomeWidgetPreferences.xml
+adb shell run-as github.hunmer.aboutme cat /data/data/github.hunmer.aboutme/shared_prefs/HomeWidgetPreferences.xml
 ```
 
 ### 3. 手动触发小组件更新
@@ -829,10 +829,10 @@ override fun updateAppWidget(...) {
 以签到项小组件为例:
 
 - **Android 端**:
-  - Provider: `memento_widgets/android/src/main/kotlin/github/hunmer/memento/widgets/providers/CheckinItemWidgetProvider.kt`
-  - 布局: `memento_widgets/android/src/main/res/layout/widget_checkin_item.xml`
-  - 配置: `memento_widgets/android/src/main/res/xml/widget_checkin_item_info.xml`
-  - 预览: `memento_widgets/android/src/main/res/drawable/widget_checkin_item_preview.xml`
+  - Provider: `aboutme_widgets/android/src/main/kotlin/github/hunmer/aboutme/widgets/providers/CheckinItemWidgetProvider.kt`
+  - 布局: `aboutme_widgets/android/src/main/res/layout/widget_checkin_item.xml`
+  - 配置: `aboutme_widgets/android/src/main/res/xml/widget_checkin_item_info.xml`
+  - 预览: `aboutme_widgets/android/src/main/res/drawable/widget_checkin_item_preview.xml`
 
 - **Flutter 端**:
   - 配置界面: `lib/plugins/checkin/screens/checkin_item_selector_screen.dart`
@@ -917,7 +917,7 @@ override fun updateAppWidget(...) {
 
 #### 1. 创建 RemoteViewsService
 
-**路径**: `memento_widgets/android/src/main/kotlin/.../TodoListWidgetService.kt`
+**路径**: `aboutme_widgets/android/src/main/kotlin/.../TodoListWidgetService.kt`
 
 ```kotlin
 class TodoListWidgetService : RemoteViewsService() {
@@ -929,7 +929,7 @@ class TodoListWidgetService : RemoteViewsService() {
 
 #### 2. 创建 RemoteViewsFactory
 
-**路径**: `memento_widgets/android/src/main/kotlin/.../TodoListRemoteViewsFactory.kt`
+**路径**: `aboutme_widgets/android/src/main/kotlin/.../TodoListRemoteViewsFactory.kt`
 
 ```kotlin
 class TodoListRemoteViewsFactory(
@@ -987,7 +987,7 @@ class TodoListRemoteViewsFactory(
 class TodoListWidgetProvider : BasePluginWidgetProvider() {
 
     companion object {
-        const val ACTION_TASK_CLICK = "github.hunmer.memento.widgets.TODO_LIST_TASK_CLICK"
+        const val ACTION_TASK_CLICK = "github.hunmer.aboutme.widgets.TODO_LIST_TASK_CLICK"
         const val PREF_KEY_PENDING_CHANGES = "todo_list_pending_changes"
     }
 
@@ -1047,8 +1047,8 @@ private fun handleTaskClick(context: Context, intent: Intent) {
         "open_detail" -> {
             // 打开应用的任务详情页
             val detailIntent = Intent(Intent.ACTION_VIEW)
-            detailIntent.data = Uri.parse("memento://widget/todo_list/detail?taskId=$taskId")
-            detailIntent.setPackage("github.hunmer.memento")
+            detailIntent.data = Uri.parse("aboutme://widget/todo_list/detail?taskId=$taskId")
+            detailIntent.setPackage("github.hunmer.aboutme")
             detailIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(detailIntent)
         }
@@ -1070,17 +1070,17 @@ private fun recordPendingChange(context: Context, taskId: String, completed: Boo
 ```xml
 <!-- 注册 RemoteViewsService -->
 <service
-    android:name="github.hunmer.memento.widgets.providers.TodoListWidgetService"
+    android:name="github.hunmer.aboutme.widgets.providers.TodoListWidgetService"
     android:exported="false"
     android:permission="android.permission.BIND_REMOTEVIEWS" />
 
 <!-- 注册 Provider，添加自定义 Action -->
 <receiver
-    android:name="github.hunmer.memento.widgets.providers.TodoListWidgetProvider"
+    android:name="github.hunmer.aboutme.widgets.providers.TodoListWidgetProvider"
     android:exported="true">
     <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-        <action android:name="github.hunmer.memento.widgets.TODO_LIST_TASK_CLICK" />
+        <action android:name="github.hunmer.aboutme.widgets.TODO_LIST_TASK_CLICK" />
     </intent-filter>
     <meta-data
         android:name="android.appwidget.provider"
@@ -1407,7 +1407,7 @@ override fun onUpdate(
 
 ```bash
 # 1. 查看 SharedPreferences 数据
-adb shell run-as github.hunmer.memento cat /data/data/github.hunmer.memento/shared_prefs/HomeWidgetPreferences.xml
+adb shell run-as github.hunmer.aboutme cat /data/data/github.hunmer.aboutme/shared_prefs/HomeWidgetPreferences.xml
 
 # 2. 查看 Logcat 日志
 adb logcat | grep -E "TodoListWidget|RemoteViewsFactory"
@@ -1480,11 +1480,11 @@ adb logcat | grep -E "TodoListWidget|RemoteViewsFactory"
 以待办列表小组件为例:
 
 - **Android 端**:
-  - Provider: `memento_widgets/android/src/main/kotlin/.../providers/TodoListWidgetProvider.kt`
-  - Service: `memento_widgets/android/src/main/kotlin/.../providers/TodoListWidgetService.kt`
-  - Factory: `memento_widgets/android/src/main/kotlin/.../providers/TodoListRemoteViewsFactory.kt`
-  - 主布局: `memento_widgets/android/src/main/res/layout/widget_todo_list.xml`
-  - 列表项布局: `memento_widgets/android/src/main/res/layout/widget_todo_list_item.xml`
+  - Provider: `aboutme_widgets/android/src/main/kotlin/.../providers/TodoListWidgetProvider.kt`
+  - Service: `aboutme_widgets/android/src/main/kotlin/.../providers/TodoListWidgetService.kt`
+  - Factory: `aboutme_widgets/android/src/main/kotlin/.../providers/TodoListRemoteViewsFactory.kt`
+  - 主布局: `aboutme_widgets/android/src/main/res/layout/widget_todo_list.xml`
+  - 列表项布局: `aboutme_widgets/android/src/main/res/layout/widget_todo_list_item.xml`
 
 - **Flutter 端**:
   - 配置界面: `lib/plugins/todo/screens/todo_list_selector_screen.dart`
@@ -1590,9 +1590,9 @@ class WidgetConfig {
 **路径**: `lib/plugins/xxx/screens/xxx_selector_screen.dart`
 
 ```dart
-import 'package:Memento/widgets/widget_config_editor/widget_config_editor.dart';
-import 'package:Memento/widgets/widget_config_editor/models/color_config.dart';
-import 'package:Memento/widgets/widget_config_editor/models/widget_config.dart';
+import 'package:aboutme/widgets/widget_config_editor/widget_config_editor.dart';
+import 'package:aboutme/widgets/widget_config_editor/models/color_config.dart';
+import 'package:aboutme/widgets/widget_config_editor/models/widget_config.dart';
 
 class _XxxSelectorScreenState extends State<XxxSelectorScreen> {
   late WidgetConfig _widgetConfig;
@@ -1734,7 +1734,7 @@ Future<void> _saveAndFinish() async {
     await HomeWidget.updateWidget(
       name: 'XxxWidgetProvider',
       iOSName: 'XxxWidgetProvider',
-      qualifiedAndroidName: 'github.hunmer.memento.widgets.providers.XxxWidgetProvider',
+      qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.XxxWidgetProvider',
     );
 
     if (mounted) Navigator.of(context).pop();
@@ -1903,7 +1903,7 @@ override fun updateAppWidget(
 
 **⚠️ 背景 Drawable 必须使用纯色，以便 `backgroundTintList` 生效**
 
-**路径**: `memento_widgets/android/src/main/res/drawable/widget_xxx_background.xml`
+**路径**: `aboutme_widgets/android/src/main/res/drawable/widget_xxx_background.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>

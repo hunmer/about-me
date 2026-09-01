@@ -14,7 +14,7 @@ const String _keyVerificationFileName = '.key_verification.json';
 const String _keyStorageFileName = '.encryption_key.json';
 
 /// 密钥验证文件内容
-const String _keyVerificationContent = 'MEMENTO_KEY_VERIFICATION_v1';
+const String _keyVerificationContent = 'ABOUTME_KEY_VERIFICATION_v1';
 
 /// 端到端加密服务 - 使用 AES-256-GCM
 ///

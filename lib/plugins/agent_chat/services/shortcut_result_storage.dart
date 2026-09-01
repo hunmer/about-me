@@ -11,7 +11,7 @@ class ShortcutResultStorage {
   static final ShortcutResultStorage instance = ShortcutResultStorage._();
   ShortcutResultStorage._();
 
-  static const String _appGroupIdentifier = 'group.github.hunmer.memento';
+  static const String _appGroupIdentifier = 'group.github.hunmer.aboutme';
   static const String _resultsDirectoryName = 'shortcut_results';
 
   Directory? _resultsDirectory;

@@ -1,6 +1,6 @@
 # shared_models 共享数据模型
 
-Memento 客户端与服务端共用的 Dart 包（v1.0.0，纯 Dart、无 Flutter 依赖）：定义 **20 个插件域的 Repository 抽象接口**与 **UseCase 业务层**、同步协议模型（`sync_request` / `sync_response`）、认证模型，以及分页/校验/Result 等通用工具。客户端经根 `pubspec.yaml` 的 path 依赖引入（`import 'package:shared_models/...'`）；序列化用 `json_annotation` + `json_serializable`（build_runner 生成）。
+Aboutme 客户端与服务端共用的 Dart 包（v1.0.0，纯 Dart、无 Flutter 依赖）：定义 **20 个插件域的 Repository 抽象接口**与 **UseCase 业务层**、同步协议模型（`sync_request` / `sync_response`）、认证模型，以及分页/校验/Result 等通用工具。客户端经根 `pubspec.yaml` 的 path 依赖引入（`import 'package:shared_models/...'`）；序列化用 `json_annotation` + `json_serializable`（build_runner 生成）。
 
 它是"UseCase 架构"的契约层：插件（JS API 适配）→ UseCase（本包）→ ClientRepository（客户端实现本包接口）→ Service/Controller。
 

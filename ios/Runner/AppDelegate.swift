@@ -86,7 +86,7 @@ import WatchConnectivity
   private func setupTimerServiceChannel() {
     let controller = window?.rootViewController as? FlutterViewController
     timerMethodChannel = FlutterMethodChannel(
-      name: "github.hunmer.memento/timer_service",
+      name: "github.hunmer.aboutme/timer_service",
       binaryMessenger: controller!.binaryMessenger
     )
 
@@ -113,7 +113,7 @@ import WatchConnectivity
   private func setupShortcutMethodChannel() {
     let controller = window?.rootViewController as? FlutterViewController
     AppDelegate.shortcutMethodChannel = FlutterMethodChannel(
-      name: "github.hunmer.memento/shortcut_plugin_call",
+      name: "github.hunmer.aboutme/shortcut_plugin_call",
       binaryMessenger: controller!.binaryMessenger
     )
 

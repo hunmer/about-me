@@ -119,7 +119,7 @@ class _[HelperName] extends StatelessWidget {
 
 ```dart
 // 文件顶部添加导入
-import 'package:Memento/screens/widgets_gallery/screens/[component_name]_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/[component_name]_example.dart';
 
 // 在 routes 列表中添加（在 half_circle_gauge_widget 后面）
 RouteDefinition(

@@ -7,7 +7,7 @@ import intelligence
 /// 参数通过 JSON 格式传递，执行结果返回给用户
 struct CallPluginMethodIntent: AppIntent {
     static var title: LocalizedStringResource = "调用插件方法"
-    static var description: IntentDescription = "调用 Memento 插件的方法（通过 JS Bridge）"
+    static var description: IntentDescription = "调用 Aboutme 插件的方法（通过 JS Bridge）"
     static var openAppWhenRun: Bool = true
 
     // 参数1: 插件 ID（必填）

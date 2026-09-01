@@ -1,34 +1,34 @@
 import 'dart:async';
-import 'package:Memento/core/services/backup_service.dart';
-import 'package:Memento/core/theme_controller.dart';
-import 'package:Memento/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/core/services/backup_service.dart';
+import 'package:aboutme/core/theme_controller.dart';
+import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import './controllers/settings_screen_controller.dart';
 import './widgets/webdav_settings_dialog.dart';
 import './widgets/api_forwarding_settings_dialog.dart';
 import './widgets/speech_recognition_settings_dialog.dart';
 import './controllers/webdav_controller.dart';
-import 'package:Memento/core/floating_ball/settings_screen.dart';
-import 'package:Memento/core/floating_ball/floating_ball_manager.dart';
-import 'package:Memento/screens/settings_screen/screens/data_management_screen.dart';
-import 'package:Memento/screens/settings_screen/screens/device_sync_screen.dart';
-import 'package:Memento/screens/about_screen/about_screen.dart';
-import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
-import 'package:Memento/screens/settings_screen/controllers/permission_controller.dart';
-import 'package:Memento/screens/settings_screen/widgets/permission_request_dialog.dart';
-import 'package:Memento/core/api_forwarding/api_forwarding_config.dart';
-import 'package:Memento/core/api_forwarding/api_forwarding_service.dart';
+import 'package:aboutme/core/floating_ball/settings_screen.dart';
+import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
+import 'package:aboutme/screens/settings_screen/screens/data_management_screen.dart';
+import 'package:aboutme/screens/settings_screen/screens/device_sync_screen.dart';
+import 'package:aboutme/screens/about_screen/about_screen.dart';
+import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
+import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
+import 'package:aboutme/screens/settings_screen/widgets/permission_request_dialog.dart';
+import 'package:aboutme/core/api_forwarding/api_forwarding_config.dart';
+import 'package:aboutme/core/api_forwarding/api_forwarding_service.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/widgets/route_viewer_dialog.dart';
-import 'package:Memento/screens/route.dart';
-import 'package:Memento/plugins/reminder/screens/reminder_list_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/widgets/route_viewer_dialog.dart';
+import 'package:aboutme/screens/route.dart';
+import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -657,13 +657,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_month),
-            title: const Text('MementoSfCalendar 测试'),
+            title: const Text('AboutmeSfCalendar 测试'),
             subtitle: const Text('Syncfusion 日历封装组件测试'),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
               Navigator.pushNamed(
                 context,
-                '/widgets_gallery/memento_sf_calendar',
+                '/widgets_gallery/aboutme_sf_calendar',
               );
             },
           ),

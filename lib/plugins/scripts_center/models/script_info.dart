@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'script_trigger.dart';
 import 'script_input.dart';
-import 'package:Memento/widgets/form_fields/types.dart';
-import 'package:Memento/widgets/form_fields/config.dart';
+import 'package:aboutme/widgets/form_fields/types.dart';
+import 'package:aboutme/widgets/form_fields/config.dart';
 
 /// 从JSON解析FormFieldConfig列表
 List<FormFieldConfig> _parseConfigFormFields(List<dynamic>? jsonList) {

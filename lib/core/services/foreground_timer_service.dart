@@ -14,7 +14,7 @@ import '../../screens/settings_screen/controllers/live_activities_controller.dar
 /// - 桌面端/Web: 静默忽略
 class ForegroundTimerService {
   static const MethodChannel _channel = MethodChannel(
-    'github.hunmer.memento/timer_service',
+    'github.hunmer.aboutme/timer_service',
   );
 
   // iOS Live Activities 活动ID映射
@@ -94,8 +94,8 @@ class ForegroundTimerService {
     // 确保控制器已初始化
     if (!controller.isInitialized) {
       await controller.init(
-        appGroupId: 'group.github.hunmer.memento',
-        urlScheme: 'memento',
+        appGroupId: 'group.github.hunmer.aboutme',
+        urlScheme: 'aboutme',
         requireNotificationPermission: true,
       );
     }

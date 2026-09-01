@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/utils/message_operations.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/utils/message_operations.dart';
 import 'controllers/timeline_controller.dart';
 import 'widgets/timeline_message_card.dart';
 

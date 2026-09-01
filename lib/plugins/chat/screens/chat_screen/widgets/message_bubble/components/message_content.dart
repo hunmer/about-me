@@ -1,16 +1,16 @@
 import 'dart:convert';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/quill_viewer/index.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/widgets/image_message_widget.dart';
-import 'package:Memento/widgets/file_preview/index.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
-import 'package:Memento/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
+import 'package:aboutme/widgets/file_preview/index.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
+import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'thinking_indicator.dart';
 
 class MessageContent extends StatelessWidget {

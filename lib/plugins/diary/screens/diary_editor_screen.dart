@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/widgets/memento_editor/memento_editor.dart';
-import 'package:Memento/plugins/diary/utils/diary_utils.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/widgets/aboutme_editor/aboutme_editor.dart';
+import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:get/get.dart';
 
 class DiaryEditorScreen extends StatefulWidget {
@@ -140,7 +140,7 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MementoEditor(
+    return AboutmeEditor(
       initialTitle: widget.initialTitle,
       initialContent: widget.initialContent,
       pageTitle: 'diary_name'.tr,

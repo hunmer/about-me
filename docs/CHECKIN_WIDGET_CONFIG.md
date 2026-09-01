@@ -39,7 +39,7 @@
 ### Android 端
 
 #### 1. `CheckinItemWidgetProvider.kt`
-**路径**: `memento_widgets/android/src/main/kotlin/github/hunmer/memento/widgets/providers/CheckinItemWidgetProvider.kt`
+**路径**: `aboutme_widgets/android/src/main/kotlin/github/hunmer/aboutme/widgets/providers/CheckinItemWidgetProvider.kt`
 
 **主要修改**:
 - 添加了 SharedPreferences 存储配置的逻辑
@@ -63,7 +63,7 @@ private fun setupCustomWidget(views: RemoteViews, data: JSONObject, checkinItemI
 ```
 
 #### 2. `widget_checkin_item.xml`
-**路径**: `memento_widgets/android/src/main/res/layout/widget_checkin_item.xml`
+**路径**: `aboutme_widgets/android/src/main/res/layout/widget_checkin_item.xml`
 
 **主要修改**:
 - 添加了 `widget_hint_text` TextView 用于显示"点击选择打卡项目"提示
@@ -140,7 +140,7 @@ Future<void> _syncCheckinItemToWidget(CheckinItem item)
 ## Deep Link 路由
 
 ### 配置路由
-- **格式**: `memento://widget/checkin_item/config?widgetId={appWidgetId}`
+- **格式**: `aboutme://widget/checkin_item/config?widgetId={appWidgetId}`
 - **触发时机**: 用户点击未配置的打卡小组件
 - **处理逻辑**:
   1. Android 端通过 PendingIntent 发送 Deep Link
@@ -150,7 +150,7 @@ Future<void> _syncCheckinItemToWidget(CheckinItem item)
 
 ### 示例
 ```
-原始 URI: memento://widget/checkin_item/config?widgetId=123
+原始 URI: aboutme://widget/checkin_item/config?widgetId=123
 处理后路由: /checkin_item_selector?widgetId=123
 ```
 
@@ -159,7 +159,7 @@ Future<void> _syncCheckinItemToWidget(CheckinItem item)
 ### 1. 添加小组件
 1. 确保应用中已创建至少一个打卡项目
 2. 长按桌面 → 添加小组件
-3. 选择 Memento 的打卡小组件（2x2）
+3. 选择 Aboutme 的打卡小组件（2x2）
 4. **预期结果**: 小组件显示"打卡"标题，但打卡数为空，提示"点击选择打卡项目"
 
 ### 2. 配置小组件
@@ -230,7 +230,7 @@ debugPrint('打卡项目数据已同步: ${item.name}');
 3. 检查 SharedPreferences:
 ```bash
 adb shell
-run-as github.hunmer.memento
+run-as github.hunmer.aboutme
 cat shared_prefs/checkin_item_widget_prefs.xml
 ```
 

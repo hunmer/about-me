@@ -9,7 +9,7 @@
 
 ## 模块职责
 
-目标追踪插件是 Memento 的核心目标管理模块，提供：
+目标追踪插件是 Aboutme 的核心目标管理模块，提供：
 
 - **目标管理系统**：创建、编辑、删除目标，支持多种时间周期
 - **进度追踪**：实时跟踪目标完成进度，支持自定义目标值和单位
@@ -134,7 +134,7 @@ Tracker 插件通过 JS Bridge 提供以下 JavaScript API：
 
 ```javascript
 // 获取所有目标（支持分页和筛选）
-memento.tracker.getGoals({
+aboutme.tracker.getGoals({
     status: 'active',    // 可选：'active'/'completed'
     group: '学习',       // 可选：分组名称
     offset: 0,          // 可选：分页偏移
@@ -142,12 +142,12 @@ memento.tracker.getGoals({
 });
 
 // 获取单个目标
-memento.tracker.getGoal({
+aboutme.tracker.getGoal({
     goalId: '1234567890'
 });
 
 // 创建目标
-memento.tracker.createGoal({
+aboutme.tracker.createGoal({
     name: '每日阅读',
     icon: '57455',
     unitType: '分钟',
@@ -160,7 +160,7 @@ memento.tracker.createGoal({
 });
 
 // 更新目标
-memento.tracker.updateGoal({
+aboutme.tracker.updateGoal({
     goalId: '1234567890',
     updateJson: {
         name: '每日阅读2小时',
@@ -169,7 +169,7 @@ memento.tracker.updateGoal({
 });
 
 // 删除目标
-memento.tracker.deleteGoal({
+aboutme.tracker.deleteGoal({
     goalId: '1234567890'
 });
 ```
@@ -178,7 +178,7 @@ memento.tracker.deleteGoal({
 
 ```javascript
 // 记录数据
-memento.tracker.recordData({
+aboutme.tracker.recordData({
     goalId: '1234567890',
     value: 30,
     note: '阅读技术文档',
@@ -187,14 +187,14 @@ memento.tracker.recordData({
 });
 
 // 获取记录列表（支持分页）
-memento.tracker.getRecords({
+aboutme.tracker.getRecords({
     goalId: '1234567890',
     offset: 0,
     count: 50
 });
 
 // 删除记录
-memento.tracker.deleteRecord({
+aboutme.tracker.deleteRecord({
     recordId: '1736950800123'
 });
 ```
@@ -203,15 +203,15 @@ memento.tracker.deleteRecord({
 
 ```javascript
 // 获取目标进度
-memento.tracker.getProgress({
+aboutme.tracker.getProgress({
     goalId: '1234567890'
 });
 // 返回：{ goalId, currentValue, targetValue, progress, percentage, isCompleted }
 
 // 获取统计信息
-memento.tracker.getStats();  // 全局统计
+aboutme.tracker.getStats();  // 全局统计
 // 或
-memento.tracker.getStats({
+aboutme.tracker.getStats({
     goalId: '1234567890'    // 单个目标统计
 });
 ```
@@ -281,7 +281,7 @@ static Future<void> showInstantNotification({
 
 - `provider`: 状态管理和依赖注入
 - `flutter_local_notifications`: 本地通知
-- `memento_notifications`: 通知封装库（AwesomeNotifications）
+- `aboutme_notifications`: 通知封装库（AwesomeNotifications）
 - `logging`: 日志记录
 - `get`: 状态管理（GetX）
 - `animations`: 动画效果
@@ -993,7 +993,7 @@ sequenceDiagram
     participant UseCase as TrackerUseCase
     participant Repo as ClientTrackerRepository
 
-    JS->>Bridge: memento.tracker.getGoals()
+    JS->>Bridge: aboutme.tracker.getGoals()
     Bridge->>Plugin: _jsGetGoals(params)
     Plugin->>UseCase: getGoals(params)
     UseCase->>Repo: getGoals()
@@ -1044,7 +1044,7 @@ sequenceDiagram
 - `get: ^11.0.0` - GetX 状态管理
 - `animations: ^2.0.0` - 动画效果
 - `shared_models: ^0.0.1` - 共享数据模型
-- `memento_notifications: ^0.0.1` - 通知封装
+- `aboutme_notifications: ^0.0.1` - 通知封装
 - `logging: ^1.2.0` - 日志记录
 
 ### 插件间依赖

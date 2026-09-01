@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/segmented_progress_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/segmented_progress_card.dart';
 
 /// 分段进度条统计卡片示例
 ///

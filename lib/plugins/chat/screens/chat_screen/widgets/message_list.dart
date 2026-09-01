@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/models/file_message.dart';
-import 'package:Memento/plugins/chat/utils/message_options_handler.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/file_message.dart';
+import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
 import 'message_bubble.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/date_separator.dart';
-import 'package:Memento/plugins/chat/utils/date_formatter.dart';
-import 'package:Memento/widgets/file_preview/index.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/date_separator.dart';
+import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
+import 'package:aboutme/widgets/file_preview/index.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 class MessageList extends StatefulWidget {

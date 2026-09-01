@@ -2,4 +2,4 @@
 library;
 
 /// 重新导出 HabitCard 相关内容
-export 'package:Memento/plugins/habits/home_widgets/widgets/habit_card_widget.dart';
+export 'package:aboutme/plugins/habits/home_widgets/widgets/habit_card_widget.dart';

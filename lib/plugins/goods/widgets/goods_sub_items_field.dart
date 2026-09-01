@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show File;
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_selector_dialog.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_selector_dialog.dart';
 
 /// 物品子物品列表字段组件
 ///

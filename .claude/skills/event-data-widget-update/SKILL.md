@@ -61,8 +61,8 @@ EventListenerContainer(
 ```dart
 // lib/plugins/<plugin>/controllers/<plugin>_controller.dart
 
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/plugins/<plugin>/models/<model>.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/plugins/<plugin>/models/<model>.dart';
 
 /// 缓存更新事件参数 - 携带最新的数据列表
 class <Plugin>CacheUpdatedEventArgs extends EventArgs {

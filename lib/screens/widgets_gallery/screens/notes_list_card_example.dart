@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/notes_list_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/notes_list_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 笔记列表卡片示例
 class NotesListCardExample extends StatelessWidget {

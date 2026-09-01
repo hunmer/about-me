@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -10,8 +10,8 @@ import android.app.PendingIntent
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.services.HabitsWeeklyWidgetService
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.services.HabitsWeeklyWidgetService
 
 /**
  * 习惯周视图小组件Provider
@@ -112,7 +112,7 @@ class HabitsWeeklyWidgetProvider : AppWidgetProvider() {
 
         // deeplink到配置页面
         val deepLinkIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://habits_weekly_config?widgetId=$widgetId")
+            data = Uri.parse("aboutme://habits_weekly_config?widgetId=$widgetId")
             setPackage(context.packageName)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
@@ -260,7 +260,7 @@ class HabitsWeeklyWidgetProvider : AppWidgetProvider() {
             prefs.edit().putString("habits_weekly_data_$widgetId", json.toString()).apply()
 
             // 通知Flutter重新计算数据
-            val refreshIntent = Intent("github.hunmer.memento.REFRESH_HABITS_WEEKLY_WIDGET").apply {
+            val refreshIntent = Intent("github.hunmer.aboutme.REFRESH_HABITS_WEEKLY_WIDGET").apply {
                 putExtra("widgetId", widgetId)
                 putExtra("weekOffset", newOffset)
             }
@@ -277,7 +277,7 @@ class HabitsWeeklyWidgetProvider : AppWidgetProvider() {
      */
     private fun openHabitTimer(context: Context, habitId: String) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://habits/timer?habitId=${Uri.encode(habitId)}")
+            data = Uri.parse("aboutme://habits/timer?habitId=${Uri.encode(habitId)}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             setPackage(context.packageName)
         }
@@ -295,9 +295,9 @@ class HabitsWeeklyWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "HabitsWeeklyWidget"
         private const val PREFS_NAME = "HomeWidgetPreferences"
-        private const val ACTION_PREV_WEEK = "github.hunmer.memento.widget.HABITS_PREV_WEEK"
-        private const val ACTION_NEXT_WEEK = "github.hunmer.memento.widget.HABITS_NEXT_WEEK"
-        private const val ACTION_ITEM_CLICK = "github.hunmer.memento.widget.HABITS_ITEM_CLICK"
+        private const val ACTION_PREV_WEEK = "github.hunmer.aboutme.widget.HABITS_PREV_WEEK"
+        private const val ACTION_NEXT_WEEK = "github.hunmer.aboutme.widget.HABITS_NEXT_WEEK"
+        private const val ACTION_ITEM_CLICK = "github.hunmer.aboutme.widget.HABITS_ITEM_CLICK"
 
         private const val DEFAULT_BACKGROUND_COLOR = 0xFFF5F5F5.toInt()
         private const val DEFAULT_ACCENT_COLOR = 0xFF607AFB.toInt()

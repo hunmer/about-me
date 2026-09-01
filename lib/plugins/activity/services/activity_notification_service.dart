@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/core/notification_controller.dart';
-import 'package:Memento/utils/platform_utils.dart';
+import 'package:aboutme/core/notification_controller.dart';
+import 'package:aboutme/utils/platform_utils.dart';
 import 'activity_service.dart';
 
 /// 活动通知服务 - 管理Android常驻通知栏
@@ -15,7 +15,7 @@ class ActivityNotificationService {
   bool _isEnabled = false;
   Timer? _updateTimer;
   static const MethodChannel _activityChannel = MethodChannel(
-    'com.memento.foreground_service/activity_notification',
+    'com.aboutme.foreground_service/activity_notification',
   );
 
   static const int _notificationId = 2001; // Android前台服务通知ID

@@ -1,7 +1,7 @@
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/screens/home_screen/home_screen.dart';
-import 'package:Memento/screens/settings_screen/settings_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/screens/home_screen/home_screen.dart';
+import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
 /// 核心屏幕路由注册表
 class CoreRoutes implements RouteRegistry {

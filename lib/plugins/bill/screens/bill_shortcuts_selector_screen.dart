@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
-import 'package:Memento/plugins/bill/models/bill_shortcut.dart';
-import 'package:Memento/plugins/bill/services/bill_shortcuts_widget_service.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/plugins/bill/models/bill_shortcut.dart';
+import 'package:aboutme/plugins/bill/services/bill_shortcuts_widget_service.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 快捷记账小组件配置页面
 ///

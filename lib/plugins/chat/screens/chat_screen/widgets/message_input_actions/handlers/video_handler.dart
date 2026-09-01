@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/plugins/chat/models/file_message.dart';
-import 'package:Memento/plugins/chat/services/file_service.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
+import 'package:aboutme/plugins/chat/models/file_message.dart';
+import 'package:aboutme/plugins/chat/services/file_service.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 Future<void> handleVideoSelection({

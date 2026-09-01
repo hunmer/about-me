@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/task_progress_list.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/task_progress_list.dart';
 
 /// 任务进度列表示例
 class TaskProgressListExample extends StatelessWidget {

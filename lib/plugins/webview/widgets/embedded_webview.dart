@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:Memento/plugins/webview/webview_plugin.dart';
+import 'package:aboutme/plugins/webview/webview_plugin.dart';
 
 /// 可复用的嵌入式 WebView 组件
 ///
@@ -59,14 +59,14 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
   InAppWebViewController? _controller;
   double _loadingProgress = 0;
 
-  /// 创建 Memento UserScript（在页面加载前注入）
-  UserScript _createMementoUserScript() {
+  /// 创建 Aboutme UserScript（在页面加载前注入）
+  UserScript _createAboutmeUserScript() {
     const script = '''
     (function() {
       // 1. 注入基础命名空间
-      if (typeof window.Memento !== 'undefined') return;
+      if (typeof window.Aboutme !== 'undefined') return;
 
-      window.Memento = {
+      window.Aboutme = {
         version: '1.0.0',
         plugins: {},
         system: {},
@@ -75,16 +75,16 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
         _readyCallbacks: []
       };
 
-      window.Memento.ready = function(callback) {
-        if (window.Memento._ready) {
-          try { callback(); } catch(e) { console.error('Memento ready callback error:', e); }
+      window.Aboutme.ready = function(callback) {
+        if (window.Aboutme._ready) {
+          try { callback(); } catch(e) { console.error('Aboutme ready callback error:', e); }
         } else {
-          window.Memento._readyCallbacks.push(callback);
+          window.Aboutme._readyCallbacks.push(callback);
         }
       };
 
       // 2. 注入插件代理
-      window.Memento.plugins = new Proxy({}, {
+      window.Aboutme.plugins = new Proxy({}, {
         get: function(target, pluginId) {
           if (pluginId === 'ui' || typeof pluginId === 'symbol') {
             return target[pluginId];
@@ -96,7 +96,7 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
                 if (typeof methodName === 'symbol') return undefined;
 
                 return function(params) {
-                  return window.flutter_inappwebview.callHandler('Memento_plugin_call', {
+                  return window.flutter_inappwebview.callHandler('Aboutme_plugin_call', {
                     pluginId: pluginId,
                     method: methodName,
                     params: params || {}
@@ -129,8 +129,8 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
       ];
 
       systemMethods.forEach(function(methodName) {
-        window.Memento.system[methodName] = function(params) {
-          return window.flutter_inappwebview.callHandler('Memento_system_call', {
+        window.Aboutme.system[methodName] = function(params) {
+          return window.flutter_inappwebview.callHandler('Aboutme_system_call', {
             method: methodName,
             params: params
           }).then(function(result) {
@@ -149,40 +149,40 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
       // 4. 注入 UI API 代理
       var uiApi = {
         toast: function(message, options) {
-          return window.flutter_inappwebview.callHandler('Memento_ui_toast', {
+          return window.flutter_inappwebview.callHandler('Aboutme_ui_toast', {
             message: message,
             options: options || {}
           });
         },
         alert: function(message, options) {
-          return window.flutter_inappwebview.callHandler('Memento_ui_alert', {
+          return window.flutter_inappwebview.callHandler('Aboutme_ui_alert', {
             message: message,
             options: options || {}
           });
         },
         dialog: function(options) {
-          return window.flutter_inappwebview.callHandler('Memento_ui_dialog', options || {});
+          return window.flutter_inappwebview.callHandler('Aboutme_ui_dialog', options || {});
         }
       };
 
-      window.Memento.plugins.ui = uiApi;
-      window.Memento.ui = uiApi;
+      window.Aboutme.plugins.ui = uiApi;
+      window.Aboutme.ui = uiApi;
 
       // 5. 注入 Storage API 代理
       var storageApi = {
         read: function(key) {
-          return window.flutter_inappwebview.callHandler('Memento_storage_read', {
+          return window.flutter_inappwebview.callHandler('Aboutme_storage_read', {
             key: key
           }).then(function(result) {
-            console.log('[Memento Storage] Read key:', key, 'result:', result);
+            console.log('[Aboutme Storage] Read key:', key, 'result:', result);
             if (typeof result === 'string') {
               try {
                 var parsed = JSON.parse(result);
                 if (parsed.error) {
-                  console.error('[Memento Storage] Read error:', parsed.error);
+                  console.error('[Aboutme Storage] Read error:', parsed.error);
                   throw new Error(parsed.error);
                 }
-                console.log('[Memento Storage] Parsed data:', parsed.data);
+                console.log('[Aboutme Storage] Parsed data:', parsed.data);
                 return parsed.data;
               } catch(e) {
                 if (e.message && !e.message.includes('JSON')) {
@@ -195,7 +195,7 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
           });
         },
         write: function(key, value) {
-          return window.flutter_inappwebview.callHandler('Memento_storage_write', {
+          return window.flutter_inappwebview.callHandler('Aboutme_storage_write', {
             key: key,
             value: value
           }).then(function(result) {
@@ -217,7 +217,7 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
           });
         },
         delete: function(key) {
-          return window.flutter_inappwebview.callHandler('Memento_storage_delete', {
+          return window.flutter_inappwebview.callHandler('Aboutme_storage_delete', {
             key: key
           }).then(function(result) {
             if (typeof result === 'string') {
@@ -239,18 +239,18 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
         }
       };
 
-      window.Memento.storage = storageApi;
+      window.Aboutme.storage = storageApi;
 
       // 标记准备完成并触发回调
-      window.Memento._ready = true;
-      if (window.Memento._readyCallbacks) {
-        window.Memento._readyCallbacks.forEach(function(cb) {
-          try { cb(); } catch(e) { console.error('Memento ready callback error:', e); }
+      window.Aboutme._ready = true;
+      if (window.Aboutme._readyCallbacks) {
+        window.Aboutme._readyCallbacks.forEach(function(cb) {
+          try { cb(); } catch(e) { console.error('Aboutme ready callback error:', e); }
         });
-        window.Memento._readyCallbacks = [];
+        window.Aboutme._readyCallbacks = [];
       }
 
-      console.log('[Memento] JS Bridge preloaded successfully');
+      console.log('[Aboutme] JS Bridge preloaded successfully');
     })();
     ''';
 
@@ -284,7 +284,7 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
       // 使用 UserScript 预加载 JS Bridge
       initialUserScripts: widget.enableJSBridge && webviewSettings.enableJSBridge
           ? UnmodifiableListView<UserScript>([
-              _createMementoUserScript(),
+              _createAboutmeUserScript(),
             ])
           : null,
       onWebViewCreated: (controller) {

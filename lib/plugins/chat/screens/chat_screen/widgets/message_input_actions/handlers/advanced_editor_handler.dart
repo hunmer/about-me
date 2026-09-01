@@ -1,6 +1,6 @@
-import 'package:Memento/widgets/quill_editor.dart';
+import 'package:aboutme/widgets/quill_editor.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 
 Future<void> handleAdvancedEditor({
   required BuildContext context,

@@ -1,5 +1,5 @@
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 
 /// Agent Chat 插件示例数据
 /// 当插件首次使用且没有数据时，自动加载这些示例数据

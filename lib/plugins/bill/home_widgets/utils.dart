@@ -1,11 +1,11 @@
 /// 账单插件主页小组件工具函数
 library;
 
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
 
 /// 从选择器数据数组中提取小组件需要的数据
 Map<String, dynamic> extractBillWidgetData(List<dynamic> dataArray) {

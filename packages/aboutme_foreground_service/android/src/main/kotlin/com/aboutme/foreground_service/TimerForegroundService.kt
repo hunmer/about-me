@@ -1,4 +1,4 @@
-package com.memento.foreground_service
+package com.aboutme.foreground_service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -116,11 +116,11 @@ class TimerForegroundService : Service() {
 
         val progressStyle = NotificationCompat.BigTextStyle()
             .bigText(buildSubTimersText(params.subTimers, params.currentSubTimerIndex))
-            .setBigContentTitle(params.taskName ?: "Memento Timer")
+            .setBigContentTitle(params.taskName ?: "Aboutme Timer")
             .setSummaryText("$currentName: $currentFormatted/$durationFormatted")
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(params.taskName ?: "Memento Timer")
+            .setContentTitle(params.taskName ?: "Aboutme Timer")
             .setContentText("$currentName: $currentFormatted/$durationFormatted")
             .setSmallIcon(getNotificationIcon())
             .setStyle(progressStyle)
@@ -156,7 +156,7 @@ class TimerForegroundService : Service() {
                 packageName,
                 android.content.pm.PackageManager.GET_META_DATA
             )
-            val iconResId = appInfo.metaData?.getInt("com.memento.foreground_service.NOTIFICATION_ICON", 0) ?: 0
+            val iconResId = appInfo.metaData?.getInt("com.aboutme.foreground_service.NOTIFICATION_ICON", 0) ?: 0
             if (iconResId != 0) return iconResId
         } catch (e: Exception) {
             Log.w(TAG, "Failed to get notification icon from meta-data", e)

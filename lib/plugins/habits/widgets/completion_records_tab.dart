@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
-import 'package:Memento/plugins/habits/widgets/common_record_list.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/plugins/habits/widgets/common_record_list.dart';
 
 class SkillRecordHistoryList extends StatefulWidget {
   final String habitId;

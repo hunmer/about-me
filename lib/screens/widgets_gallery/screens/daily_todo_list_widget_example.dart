@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/daily_todo_list_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/daily_todo_list_widget.dart';
 
 /// 每日待办事项卡片示例
 class DailyTodoListWidgetExample extends StatelessWidget {

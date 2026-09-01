@@ -1,4 +1,4 @@
-package com.memento.foreground_service
+package com.aboutme.foreground_service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -206,7 +206,7 @@ class ActivityForegroundService : Service() {
                 packageName,
                 android.content.pm.PackageManager.GET_META_DATA
             )
-            val iconResId = appInfo.metaData?.getInt("com.memento.foreground_service.NOTIFICATION_ICON", 0) ?: 0
+            val iconResId = appInfo.metaData?.getInt("com.aboutme.foreground_service.NOTIFICATION_ICON", 0) ?: 0
             if (iconResId != 0) return iconResId
         } catch (e: Exception) {
             Log.w(TAG, "Failed to get notification icon from meta-data", e)

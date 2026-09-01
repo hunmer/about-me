@@ -1,14 +1,14 @@
 import 'dart:io';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:archive/archive.dart';
-import 'package:Memento/core/utils/file_utils.dart';
-import 'package:Memento/screens/settings_screen/widgets/folder_selection_dialog.dart';
+import 'package:aboutme/core/utils/file_utils.dart';
+import 'package:aboutme/screens/settings_screen/widgets/folder_selection_dialog.dart';
 
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class ImportController {
   final BuildContext context;
@@ -43,7 +43,7 @@ class ImportController {
       }
 
       // 创建临时目录解压文件
-      final tempDir = await Directory.systemTemp.createTemp('memento_import_');
+      final tempDir = await Directory.systemTemp.createTemp('aboutme_import_');
 
       try {
         // 读取ZIP文件
@@ -102,7 +102,7 @@ class ImportController {
 
         // 备份当前数据
         final backupDir = await Directory.systemTemp.createTemp(
-          'memento_backup_',
+          'aboutme_backup_',
         );
         for (final pluginId in selectedPlugins) {
           final plugin = installedPlugins.firstWhere((p) => p.id == pluginId);

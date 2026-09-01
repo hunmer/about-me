@@ -53,13 +53,13 @@
 **输出目录**:
 ```
 build/releases/
-├── memento-v1.1.6-android-arm64-v8a.apk
-├── memento-v1.1.6-android-armeabi-v7a.apk
-├── memento-v1.1.6-android-x86_64.apk
-├── memento-v1.1.6-web.zip
-├── memento-v1.1.6-macos.dmg
-├── memento-v1.1.6-windows.zip
-└── memento-v1.1.6-linux.tar.gz
+├── aboutme-v1.1.6-android-arm64-v8a.apk
+├── aboutme-v1.1.6-android-armeabi-v7a.apk
+├── aboutme-v1.1.6-android-x86_64.apk
+├── aboutme-v1.1.6-web.zip
+├── aboutme-v1.1.6-macos.dmg
+├── aboutme-v1.1.6-windows.zip
+└── aboutme-v1.1.6-linux.tar.gz
 ```
 
 ---
@@ -131,7 +131,7 @@ build/releases/
     }
   },
   "release": {
-    "repository": "hunmer/Memento",
+    "repository": "hunmer/Aboutme",
     "draft": false,
     "prerelease": false
   }
@@ -191,7 +191,7 @@ flutter build apk --release --split-per-abi
 
 # 4. 重命名并移动到输出目录
 mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-   build/releases/memento-v1.1.6-android-arm64-v8a.apk
+   build/releases/aboutme-v1.1.6-android-arm64-v8a.apk
 ```
 
 **签名密钥说明**:
@@ -210,7 +210,7 @@ flutter build ios --release --no-codesign
 # 2. 创建 IPA（手动打包）
 mkdir -p Payload
 cp -r build/ios/iphoneos/Runner.app Payload/
-zip -r build/releases/memento-v1.1.6-ios.ipa Payload
+zip -r build/releases/aboutme-v1.1.6-ios.ipa Payload
 rm -rf Payload
 ```
 
@@ -229,11 +229,11 @@ flutter build macos --release
 
 # 2. 使用 create-dmg 打包 DMG
 create-dmg \
-    --volname "Memento" \
+    --volname "Aboutme" \
     --window-size 600 400 \
     --icon "Runner.app" 175 120 \
     --app-drop-link 425 120 \
-    build/releases/memento-v1.1.6-macos.dmg \
+    build/releases/aboutme-v1.1.6-macos.dmg \
     build/macos/Build/Products/Release/Runner.app
 ```
 
@@ -250,7 +250,7 @@ flutter build web --release
 
 # 2. 压缩为 ZIP
 cd build/web
-zip -r ../../build/releases/memento-v1.1.6-web.zip .
+zip -r ../../build/releases/aboutme-v1.1.6-web.zip .
 cd ../..
 ```
 
@@ -316,9 +316,9 @@ brew install create-dmg
 
 # 跳过 DMG 创建，直接使用 .app
 cp -r build/macos/Build/Products/Release/Runner.app \
-      build/releases/Memento.app
-zip -r build/releases/memento-v1.1.6-macos.zip \
-       build/releases/Memento.app
+      build/releases/Aboutme.app
+zip -r build/releases/aboutme-v1.1.6-macos.zip \
+       build/releases/Aboutme.app
 ```
 
 ---

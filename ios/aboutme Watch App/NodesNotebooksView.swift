@@ -1,6 +1,6 @@
 //
 //  NodesNotebooksView.swift
-//  memento Watch App
+//  aboutme Watch App
 //
 //  Created by Claude on 2026/3/14.
 //

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:flutter/foundation.dart';
-import 'package:Memento/screens/home_screen/models/home_item.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_item.dart';
-import 'package:Memento/screens/home_screen/models/home_folder_item.dart';
-import 'package:Memento/screens/home_screen/models/home_stack_item.dart';
-import 'package:Memento/screens/home_screen/models/layout_config.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_stack_item.dart';
+import 'package:aboutme/screens/home_screen/models/layout_config.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 主页布局管理器
 ///

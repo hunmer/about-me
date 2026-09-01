@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memento 简易测试</title>
+    <title>Aboutme 简易测试</title>
     <style>
         body {
             font-family: system-ui, sans-serif;
@@ -42,7 +42,7 @@
     </style>
 </head>
 <body>
-    <h1>Memento JS Bridge</h1>
+    <h1>Aboutme JS Bridge</h1>
 
     <div style="text-align: center;">
         <button onclick="testWebviewCards()">WebView 卡片</button>
@@ -72,7 +72,7 @@
 
         async function call(fn) {
             try {
-                if (!window.Memento) throw new Error('Memento Bridge 未注入');
+                if (!window.Aboutme) throw new Error('Aboutme Bridge 未注入');
                 return await fn();
             } catch (e) {
                 log('错误: ' + e.message, 'error');
@@ -83,7 +83,7 @@
         async function testWebviewCards() {
             log('获取 WebView 卡片...');
             try {
-                const r = await call(() => Memento.plugins.webview.getCards());
+                const r = await call(() => Aboutme.plugins.webview.getCards());
                 const data = typeof r === 'string' ? JSON.parse(r) : r;
                 log(`找到 ${data.length || 0} 张卡片`, 'success');
                 log(data);
@@ -93,7 +93,7 @@
         async function testWebviewTabs() {
             log('获取 WebView 标签页...');
             try {
-                const r = await call(() => Memento.plugins.webview.getTabs());
+                const r = await call(() => Aboutme.plugins.webview.getTabs());
                 const data = typeof r === 'string' ? JSON.parse(r) : r;
                 log(`找到 ${data.length || 0} 个标签页`, 'success');
                 log(data);
@@ -107,7 +107,7 @@
                 const today = new Date();
                 const startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
                 const endDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-                const r = await call(() => Memento.plugins.diary.getDiaries({
+                const r = await call(() => Aboutme.plugins.diary.getDiaries({
                     startDate: startDate,
                     endDate: endDate,
                     count: 5
@@ -121,7 +121,7 @@
         async function testNotes() {
             log('获取笔记...');
             try {
-                const r = await call(() => Memento.plugins.notes.getNotes({}));
+                const r = await call(() => Aboutme.plugins.notes.getNotes({}));
                 const data = typeof r === 'string' ? JSON.parse(r) : r;
                 log('笔记数据:', 'success');
                 log(data);
@@ -131,7 +131,7 @@
         async function testActivity() {
             log('获取活动记录...');
             try {
-                const r = await call(() => Memento.plugins.activity.getActivities({ limit: 5 }));
+                const r = await call(() => Aboutme.plugins.activity.getActivities({ limit: 5 }));
                 const data = typeof r === 'string' ? JSON.parse(r) : r;
                 log('活动数据:', 'success');
                 log(data);
@@ -141,7 +141,7 @@
         async function testToast() {
             log('显示 Toast...');
             try {
-                await call(() => Memento.ui.toast('Hello from WebView! 🎉'));
+                await call(() => Aboutme.ui.toast('Hello from WebView! 🎉'));
                 log('Toast 已显示', 'success');
             } catch (e) {}
         }
@@ -149,7 +149,7 @@
         async function testSystemTime() {
             log('获取系统时间...');
             try {
-                const r = await call(() => Memento.system.getCurrentTime());
+                const r = await call(() => Aboutme.system.getCurrentTime());
                 log('系统时间: ' + JSON.stringify(r), 'success');
             } catch (e) {}
         }
@@ -158,10 +158,10 @@
         window.onload = () => {
             log('测试页面已加载', 'info');
             setTimeout(() => {
-                if (window.Memento) {
-                    log('Memento Bridge 已连接', 'success');
+                if (window.Aboutme) {
+                    log('Aboutme Bridge 已连接', 'success');
                 } else {
-                    log('请在 Memento WebView 中打开此页面', 'error');
+                    log('请在 Aboutme WebView 中打开此页面', 'error');
                 }
             }, 500);
         };

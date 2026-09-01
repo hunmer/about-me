@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/models/agent_chain_node.dart';
-import 'package:Memento/plugins/agent_chat/data/sample_data.dart';
-import 'package:Memento/plugins/agent_chat/services/conversation_sync_service.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
+import 'package:aboutme/plugins/agent_chat/data/sample_data.dart';
+import 'package:aboutme/plugins/agent_chat/services/conversation_sync_service.dart';
 
 /// 会话服务
 ///

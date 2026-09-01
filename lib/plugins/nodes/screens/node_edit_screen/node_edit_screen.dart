@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'dart:convert';
-import 'package:Memento/plugins/nodes/controllers/nodes_controller.dart';
-import 'package:Memento/plugins/nodes/models/node.dart';
+import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
+import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'components/breadcrumbs.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 
 class NodeEditScreen extends StatefulWidget {
   final String notebookId;

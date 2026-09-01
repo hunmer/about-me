@@ -1,13 +1,13 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/store/models/user_item.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/store/widgets/user_item_card.dart';
-import 'package:Memento/plugins/store/widgets/user_item_detail_page.dart';
-import 'package:Memento/plugins/store/widgets/add_product_page.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/store/widgets/user_item_card.dart';
+import 'package:aboutme/plugins/store/widgets/user_item_detail_page.dart';
+import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class UserItems extends StatefulWidget {

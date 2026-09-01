@@ -1,4 +1,4 @@
-/// Memento 前台服务管理插件
+/// Aboutme 前台服务管理插件
 ///
 /// 封装 flutter_foreground_task，提供简洁统一的前台服务 API。
 /// 支持计时器服务、活动提醒服务等前台常驻服务。

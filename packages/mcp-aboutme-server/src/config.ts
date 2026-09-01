@@ -1,22 +1,22 @@
 /**
- * Memento MCP Server 配置管理
+ * Aboutme MCP Server 配置管理
  */
 
-import type { MementoConfig } from './types/index.js';
+import type { AboutmeConfig } from './types/index.js';
 
 /**
  * 从环境变量加载配置
  *
- * 使用 API Key 认证：设置 MEMENTO_API_KEY 和 MEMENTO_ENCRYPTION_KEY
+ * 使用 API Key 认证：设置 ABOUTME_API_KEY 和 ABOUTME_ENCRYPTION_KEY
  */
-export function loadConfig(): MementoConfig {
-  let serverUrl = process.env.MEMENTO_SERVER_URL;
-  const serverHost = process.env.MEMENTO_SERVER_HOST;
-  const serverPort = process.env.MEMENTO_SERVER_PORT;
+export function loadConfig(): AboutmeConfig {
+  let serverUrl = process.env.ABOUTME_SERVER_URL;
+  const serverHost = process.env.ABOUTME_SERVER_HOST;
+  const serverPort = process.env.ABOUTME_SERVER_PORT;
 
   // API Key 认证
-  const apiKey = process.env.MEMENTO_API_KEY;
-  const encryptionKey = process.env.MEMENTO_ENCRYPTION_KEY;
+  const apiKey = process.env.ABOUTME_API_KEY;
+  const encryptionKey = process.env.ABOUTME_ENCRYPTION_KEY;
 
   // 支持分开配置 host 和 port
   if (serverHost) {
@@ -35,16 +35,16 @@ export function loadConfig(): MementoConfig {
   }
 
   if (!serverUrl) {
-    throw new Error('环境变量 MEMENTO_SERVER_URL 或 MEMENTO_SERVER_HOST 未设置');
+    throw new Error('环境变量 ABOUTME_SERVER_URL 或 ABOUTME_SERVER_HOST 未设置');
   }
 
   // 检查 API Key 认证
   if (!apiKey) {
-    throw new Error('环境变量 MEMENTO_API_KEY 未设置');
+    throw new Error('环境变量 ABOUTME_API_KEY 未设置');
   }
 
   if (!encryptionKey) {
-    throw new Error('环境变量 MEMENTO_ENCRYPTION_KEY 未设置');
+    throw new Error('环境变量 ABOUTME_ENCRYPTION_KEY 未设置');
   }
 
   return {
@@ -57,7 +57,7 @@ export function loadConfig(): MementoConfig {
 /**
  * 验证配置
  */
-export function validateConfig(config: MementoConfig): void {
+export function validateConfig(config: AboutmeConfig): void {
   try {
     new URL(config.serverUrl);
   } catch {

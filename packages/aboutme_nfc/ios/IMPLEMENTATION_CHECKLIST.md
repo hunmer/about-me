@@ -39,7 +39,7 @@
 
 5. **EXTERNAL** - 外部类型记录
    - 格式：`domain:type|content`
-   - 示例：`memento:data|custom_data`
+   - 示例：`aboutme:data|custom_data`
 
 ## 🔧 配置要求
 

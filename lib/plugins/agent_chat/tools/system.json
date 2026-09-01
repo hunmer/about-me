@@ -9,11 +9,11 @@
     },
     "examples": [
       {
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nsetResult(timeInfo);",
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nsetResult(timeInfo);",
         "comment": "获取当前时间信息"
       },
       {
-        "code": "const time = await Memento.system.getCurrentTime();\nconst msg = `今天是${time.year}年${time.month}月${time.day}日，星期${time.weekdayName}`;\nsetResult(msg);",
+        "code": "const time = await Aboutme.system.getCurrentTime();\nconst msg = `今天是${time.year}年${time.month}月${time.day}日，星期${time.weekdayName}`;\nsetResult(msg);",
         "comment": "格式化显示当前日期"
       }
     ],
@@ -30,11 +30,11 @@
     },
     "examples": [
       {
-        "code": "const deviceInfo = await Memento.system.getDeviceInfo();\nsetResult(deviceInfo);",
+        "code": "const deviceInfo = await Aboutme.system.getDeviceInfo();\nsetResult(deviceInfo);",
         "comment": "获取完整设备信息"
       },
       {
-        "code": "const info = await Memento.system.getDeviceInfo();\nconst msg = `您正在使用 ${info.platform} 设备`;\nsetResult(msg);",
+        "code": "const info = await Aboutme.system.getDeviceInfo();\nconst msg = `您正在使用 ${info.platform} 设备`;\nsetResult(msg);",
         "comment": "获取平台类型"
       }
     ],
@@ -43,7 +43,7 @@
   },
   "system_getAppInfo": {
     "title": "获取应用信息",
-    "description": "获取 Memento 应用的版本信息和基本配置。",
+    "description": "获取 Aboutme 应用的版本信息和基本配置。",
     "parameters": [],
     "returns": {
       "type": "Promise<Object>",
@@ -51,11 +51,11 @@
     },
     "examples": [
       {
-        "code": "const appInfo = await Memento.system.getAppInfo();\nsetResult(appInfo);",
+        "code": "const appInfo = await Aboutme.system.getAppInfo();\nsetResult(appInfo);",
         "comment": "获取应用版本信息"
       },
       {
-        "code": "const app = await Memento.system.getAppInfo();\nconst msg = `${app.appName} v${app.version}`;\nsetResult(msg);",
+        "code": "const app = await Aboutme.system.getAppInfo();\nconst msg = `${app.appName} v${app.version}`;\nsetResult(msg);",
         "comment": "显示应用名称和版本"
       }
     ],
@@ -85,15 +85,15 @@
     },
     "examples": [
       {
-        "code": "const formatted = await Memento.system.formatDate(Date.now());\nsetResult(formatted);",
+        "code": "const formatted = await Aboutme.system.formatDate(Date.now());\nsetResult(formatted);",
         "comment": "使用默认格式"
       },
       {
-        "code": "const date = await Memento.system.formatDate(1731473170123, 'yyyy年MM月dd日 E');\nsetResult(date);",
+        "code": "const date = await Aboutme.system.formatDate(1731473170123, 'yyyy年MM月dd日 E');\nsetResult(date);",
         "comment": "自定义格式"
       },
       {
-        "code": "const time = await Memento.system.formatDate('2025-01-15T09:30:00.000Z', 'HH:mm');\nsetResult(time);",
+        "code": "const time = await Aboutme.system.formatDate('2025-01-15T09:30:00.000Z', 'HH:mm');\nsetResult(time);",
         "comment": "仅显示时间"
       }
     ],
@@ -110,7 +110,7 @@
     },
     "examples": [
       {
-        "code": "const timestamp = await Memento.system.getTimestamp();\nsetResult(timestamp.toString());",
+        "code": "const timestamp = await Aboutme.system.getTimestamp();\nsetResult(timestamp.toString());",
         "comment": "获取当前时间戳"
       }
     ],
@@ -134,15 +134,15 @@
     },
     "examples": [
       {
-        "code": "const location = await Memento.system.getLocation('auto');\nif (location && !location.error) {\n  const msg = `当前位置：${location.name}，地址：${location.address}`;\n  setResult(msg);\n} else {\n  setResult('获取位置失败');\n}\nreturn location;",
+        "code": "const location = await Aboutme.system.getLocation('auto');\nif (location && !location.error) {\n  const msg = `当前位置：${location.name}，地址：${location.address}`;\n  setResult(msg);\n} else {\n  setResult('获取位置失败');\n}\nreturn location;",
         "comment": "自动获取当前位置"
       },
       {
-        "code": "const location = await Memento.system.getLocation('manual');\nif (location) {\n  const msg = `选择的位置：${location.name}`;\n  setResult(msg);\n} else {\n  setResult('用户取消了选择');\n}\nreturn location;",
+        "code": "const location = await Aboutme.system.getLocation('manual');\nif (location) {\n  const msg = `选择的位置：${location.name}`;\n  setResult(msg);\n} else {\n  setResult('用户取消了选择');\n}\nreturn location;",
         "comment": "手动选择位置"
       },
       {
-        "code": "const location = await Memento.system.getLocation();\nif (location) {\n  setResult({ lat: location.latitude, lng: location.longitude });\n} else {\n  setResult(null);\n}\nreturn location;",
+        "code": "const location = await Aboutme.system.getLocation();\nif (location) {\n  setResult({ lat: location.latitude, lng: location.longitude });\n} else {\n  setResult(null);\n}\nreturn location;",
         "comment": "使用默认模式（manual）获取位置"
       }
     ],

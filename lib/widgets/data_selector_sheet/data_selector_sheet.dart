@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/index.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/index.dart';
 import 'components/selector_header.dart';
 import 'components/selector_breadcrumb.dart';
 import 'components/selector_search_bar.dart';

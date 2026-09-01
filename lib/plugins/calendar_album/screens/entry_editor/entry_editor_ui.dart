@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/picker/location_picker.dart';
+import 'package:aboutme/widgets/picker/location_picker.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/form_fields/chip_selector_field.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/form_fields/chip_selector_field.dart';
 import 'entry_editor_controller.dart';
 import 'entry_editor_image_handler.dart';
 import 'entry_editor_tag_handler.dart';

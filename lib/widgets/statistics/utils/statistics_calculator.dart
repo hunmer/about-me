@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/statistics/models/statistics_models.dart';
+import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
 
 /// 通用的统计计算工具类
 class StatisticsCalculator {

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import 'package:Memento/core/floating_ball/floating_widget_controller.dart';
-import 'package:Memento/core/action/action_manager.dart';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/floating_ball/floating_widget_controller.dart';
+import 'package:aboutme/core/action/action_manager.dart';
+import 'package:aboutme/core/app_initializer.dart';
 
 /// 恢复悬浮球状态
 Future<void> restoreFloatingBallState() async {

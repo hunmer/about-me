@@ -1,6 +1,6 @@
 //
 //  TrackerGoalsView.swift
-//  memento Watch App
+//  aboutme Watch App
 //
 //  目标追踪 watchOS 视图
 //

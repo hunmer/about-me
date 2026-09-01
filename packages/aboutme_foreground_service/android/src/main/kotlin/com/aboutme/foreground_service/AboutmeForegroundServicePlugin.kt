@@ -1,4 +1,4 @@
-package com.memento.foreground_service
+package com.aboutme.foreground_service
 
 import android.content.Context
 import android.content.Intent
@@ -13,15 +13,15 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 /**
- * Memento 前台服务插件
+ * Aboutme 前台服务插件
  *
  * 处理计时器服务和活动通知服务的 MethodChannel 调用。
  */
-class MementoForegroundServicePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class AboutmeForegroundServicePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     companion object {
-        private const val TAG = "MementoForegroundService"
-        private const val TIMER_CHANNEL = "com.memento.foreground_service/timer"
-        private const val ACTIVITY_CHANNEL = "com.memento.foreground_service/activity_notification"
+        private const val TAG = "AboutmeForegroundService"
+        private const val TIMER_CHANNEL = "com.aboutme.foreground_service/timer"
+        private const val ACTIVITY_CHANNEL = "com.aboutme.foreground_service/activity_notification"
 
         // 静态引用，供 Service 使用
         var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null

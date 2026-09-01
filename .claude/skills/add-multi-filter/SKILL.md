@@ -57,7 +57,7 @@ description: 为Flutter插件视图添加多条件过滤功能（MultiFilterBar�
 在文件顶部添加导入：
 
 ```dart
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 ```
 
 ### 3. Create Filter Items Method
@@ -343,10 +343,10 @@ class YourController extends ChangeNotifier {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:Memento/plugins/todo/models/task.dart';
-import 'package:Memento/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/plugins/todo/models/task.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
 
 class TodoListView extends StatefulWidget {
   const TodoListView({super.key});

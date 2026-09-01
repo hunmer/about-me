@@ -3,17 +3,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_detail_screen.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_editor_screen.dart';
-import 'package:Memento/plugins/calendar_album/widgets/album_day_card.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/widgets/album_day_card.dart';
 
 /// 获取指定日期的相册条目（存储按日分片，同步读取）
 List<CalendarEntry> _entriesForDate(DateTime date) {

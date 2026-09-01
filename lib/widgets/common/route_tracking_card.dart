@@ -1,4 +1,4 @@
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:flutter/material.dart';
 
 /// 路线点数据模型

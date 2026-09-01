@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "监听用户活动，触发事件后发送简要信息给 AI，返回鼓励的话并用 toast 展示",
   "icon": "favorite",
-  "author": "Memento Team",
+  "author": "Aboutme Team",
   "enabled": false,
   "type": "standalone",
   "inputs": [],

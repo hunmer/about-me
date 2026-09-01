@@ -4,12 +4,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intelligence/intelligence.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 
 /// iOS Shortcuts 动作处理服务
 class ShortcutsHandlerService {
@@ -18,7 +18,7 @@ class ShortcutsHandlerService {
 
   StreamSubscription<String>? _subscription;
   static const MethodChannel _shortcutChannel = MethodChannel(
-    'github.hunmer.memento/shortcut_plugin_call',
+    'github.hunmer.aboutme/shortcut_plugin_call',
   );
 
   /// 初始化监听器
@@ -408,7 +408,7 @@ class ShortcutsHandlerService {
 return await (async function() {
   try {
     // 调用插件方法
-    const result = await Memento.plugins.$pluginId.$methodName($paramsStr);
+    const result = await Aboutme.plugins.$pluginId.$methodName($paramsStr);
 
     // 返回结果
     return JSON.stringify({

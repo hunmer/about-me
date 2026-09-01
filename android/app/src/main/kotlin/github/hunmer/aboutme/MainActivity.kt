@@ -1,4 +1,4 @@
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.util.Log
 import android.content.Intent
@@ -8,17 +8,17 @@ import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import github.hunmer.memento.TimerForegroundService
-import github.hunmer.memento.ActivityForegroundService
-import github.hunmer.memento.CustomLiveActivityManager
+import github.hunmer.aboutme.TimerForegroundService
+import github.hunmer.aboutme.ActivityForegroundService
+import github.hunmer.aboutme.CustomLiveActivityManager
 
 import io.flutter.plugin.common.MethodChannel
 import com.example.live_activities.LiveActivityManagerHolder
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "github.hunmer.memento/timer_service"
-    private val WIDGET_CHANNEL = "github.hunmer.memento/widget"
-    private val ACTIVITY_CHANNEL = "github.hunmer.memento/activity_notification"
+    private val CHANNEL = "github.hunmer.aboutme/timer_service"
+    private val WIDGET_CHANNEL = "github.hunmer.aboutme/widget"
+    private val ACTIVITY_CHANNEL = "github.hunmer.aboutme/activity_notification"
     private val ENGINE_ID = "timer_engine"
 
     private var widgetMethodChannel: MethodChannel? = null

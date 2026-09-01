@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/task_list_stat_card.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/task_list_stat_card.dart';
 
 /// 任务统计列表卡片示例
 class TaskListStatCardExample extends StatelessWidget {

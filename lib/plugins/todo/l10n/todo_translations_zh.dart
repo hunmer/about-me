@@ -1,7 +1,7 @@
 const Map<String, String> todoTranslationsZh = {
   // 基本信息
   'todo_name': '待办事项',
-  'todo_todoPluginDescription': 'Memento的简单待办事项插件',
+  'todo_todoPluginDescription': 'Aboutme的简单待办事项插件',
 
   // 统计信息
   'todo_totalTasks': '总任务数',

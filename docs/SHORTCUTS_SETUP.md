@@ -11,7 +11,7 @@
 ### 步骤 1：打开 Xcode 项目
 
 ```bash
-cd /Users/Zhuanz/Documents/Memento
+cd /Users/Zhuanz/Documents/Aboutme
 open ios/Runner.xcworkspace
 ```
 
@@ -25,7 +25,7 @@ open ios/Runner.xcworkspace
 
 1. **在左侧导航栏中找到 `Runner` 文件夹**
 2. **右键点击 `Runner` 文件夹 → `Add Files to "Runner"...`**
-3. **导航到 `/Users/Zhuanz/Documents/Memento/ios/Runner/`**
+3. **导航到 `/Users/Zhuanz/Documents/Aboutme/ios/Runner/`**
 4. **选择以下 3 个文件**（按住 Cmd 键多选）：
    - ✅ `SendToAgentChatIntent.swift`
    - ✅ `ConversationEntity.swift`
@@ -98,7 +98,7 @@ flutter devices
 
 1. **打开系统的"快捷指令"应用**
 2. **点击右上角 "+" 创建新快捷指令**
-3. **搜索 "发送消息到AI聊天"** 或 "Memento"
+3. **搜索 "发送消息到AI聊天"** 或 "Aboutme"
 4. **添加该动作到快捷指令**
 5. **配置参数**：
    - 消息内容：输入测试文本
@@ -109,7 +109,7 @@ flutter devices
 #### 方法 B：通过 Siri（可选，需要添加 AppShortcuts.swift）
 
 对 Siri 说：
-- "发送消息到 Memento"
+- "发送消息到 Aboutme"
 - "给AI发消息"
 
 ---
@@ -118,7 +118,7 @@ flutter devices
 
 运行快捷指令后，应该看到：
 
-✅ Memento 应用自动打开
+✅ Aboutme 应用自动打开
 ✅ 跳转到 AI 聊天界面
 ✅ 显示你发送的消息
 ✅ 如果有图片，图片正确显示为附件

@@ -905,4 +905,4 @@ final updated = existing.copyWith(
 
 **文档版本**: 1.0
 **最后更新**: 2025-12-11
-**适用于**: Memento 项目 shared_models 架构
+**适用于**: Aboutme 项目 shared_models 架构

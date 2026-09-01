@@ -2,10 +2,10 @@
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/store/models/user_item.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
+import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 
 class UserItemDetailPage extends StatefulWidget {
   final StoreController controller;

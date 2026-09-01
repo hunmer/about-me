@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/plugins/scripts_center/models/script_store_models.dart';
-import 'package:Memento/plugins/scripts_center/services/script_loader.dart';
-import 'package:Memento/plugins/scripts_center/services/script_manager.dart';
-import 'package:Memento/plugins/scripts_center/services/script_store_manager.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_loader.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_store_manager.dart';
 
 /// 脚本下载管理器
 ///

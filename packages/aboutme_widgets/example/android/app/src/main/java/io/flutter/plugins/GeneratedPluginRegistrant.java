@@ -26,9 +26,9 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin integration_test, dev.flutter.plugins.integration_test.IntegrationTestPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new com.example.memento_widgets.MementoWidgetsPlugin());
+      flutterEngine.getPlugins().add(new com.example.aboutme_widgets.AboutmeWidgetsPlugin());
     } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin memento_widgets, com.example.memento_widgets.MementoWidgetsPlugin", e);
+      Log.e(TAG, "Error registering plugin aboutme_widgets, com.example.aboutme_widgets.AboutmeWidgetsPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());

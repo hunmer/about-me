@@ -5,7 +5,7 @@ import path from 'path';
  */
 function generateDefaultSecret(): string {
   console.log('警告: 未设置 JWT_SECRET 环境变量，使用固定默认密钥（仅限开发环境）');
-  return 'memento-dev-fixed-secret-key-do-not-use-in-production';
+  return 'aboutme-dev-fixed-secret-key-do-not-use-in-production';
 }
 
 /**

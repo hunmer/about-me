@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'activity_form/activity_form_widget.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/widgets/tags_dialog/models/models.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 
 /// 活动表单组件
 /// 用于创建和编辑活动记录

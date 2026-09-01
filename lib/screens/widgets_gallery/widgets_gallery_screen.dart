@@ -71,9 +71,9 @@ class WidgetsGalleryScreen extends StatelessWidget {
           _buildListItem(
             context,
             icon: Icons.edit_document,
-            title: 'Memento 编辑器',
-            subtitle: 'MementoEditor',
-            route: '/widgets_gallery/memento_editor',
+            title: 'Aboutme 编辑器',
+            subtitle: 'AboutmeEditor',
+            route: '/widgets_gallery/aboutme_editor',
           ),
 
           const Divider(),

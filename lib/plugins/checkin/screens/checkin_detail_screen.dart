@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
-import 'package:Memento/utils/audio_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:aboutme/utils/audio_service.dart';
 
 class CheckinDetailScreen extends StatelessWidget {
   final CheckinItem checkinItem;

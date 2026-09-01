@@ -1,9 +1,9 @@
-import 'package:Memento/plugins/store/store_plugin.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/form_fields/event_multi_select_field.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 /// Store 插件设置界面

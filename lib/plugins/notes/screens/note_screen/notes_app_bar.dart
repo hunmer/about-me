@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
 
 class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Folder? currentFolder;

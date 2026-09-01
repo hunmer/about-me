@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_call_step.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_service.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 const _uuid = Uuid();
 
 /// 工具模板执行对话框

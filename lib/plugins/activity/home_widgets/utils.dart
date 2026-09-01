@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selectable_item.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 import '../models/activity_record.dart';
 
 /// 根据平均活动时长获取状态描述

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/statistics/models/statistics_models.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'date_range_selector.dart';
 import 'chart_components.dart';
 

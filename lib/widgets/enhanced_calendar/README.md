@@ -18,7 +18,7 @@
 ### 基本用法
 
 ```dart
-import 'package:Memento/widgets/enhanced_calendar/index.dart';
+import 'package:aboutme/widgets/enhanced_calendar/index.dart';
 
 // 准备日期数据
 final dayData = <DateTime, CalendarDayData>{

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/calendar_strip_date_picker.dart';
+import 'package:aboutme/widgets/picker/calendar_strip_date_picker.dart';
 
 /// 日历条日期选择器示例
 class CalendarStripPickerExample extends StatefulWidget {

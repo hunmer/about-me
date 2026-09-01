@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/notes/controllers/notes_controller.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/screens/note_edit_screen.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/screens/note_edit_screen.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 // 创建新笔记
 Future<void> createNewNote(

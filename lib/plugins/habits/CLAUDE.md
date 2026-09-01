@@ -9,7 +9,7 @@
 
 ## 模块职责
 
-习惯追踪插件是 Memento 的核心功能模块之一，提供：
+习惯追踪插件是 Aboutme 的核心功能模块之一，提供：
 
 - **习惯管理**: 创建、编辑、删除习惯，支持图标、图片、标签、分组
 - **技能系统**: 将习惯关联到技能，实现目标导向的习惯培养（一万小时理念）
@@ -79,35 +79,35 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
 #### 习惯管理 API
 ```javascript
 // 获取习惯列表（支持分页）
-Memento.habits.getHabits({ offset: 0, count: 10 })
+Aboutme.habits.getHabits({ offset: 0, count: 10 })
 
 // 根据ID获取习惯
-Memento.habits.getHabitById({ habitId: "xxx" })
+Aboutme.habits.getHabitById({ habitId: "xxx" })
 
 // 创建习惯
-Memento.habits.createHabit({
+Aboutme.habits.createHabit({
   title: "晨跑",
   durationMinutes: 30,
   skillId: "skill-001"
 })
 
 // 更新习惯
-Memento.habits.updateHabit({
+Aboutme.habits.updateHabit({
   habitId: "xxx",
   title: "夜跑"
 })
 
 // 删除习惯
-Memento.habits.deleteHabit({ habitId: "xxx" })
+Aboutme.habits.deleteHabit({ habitId: "xxx" })
 ```
 
 #### 技能管理 API
 ```javascript
 // 获取技能列表（支持分页）
-Memento.habits.getSkills({ offset: 0, count: 10 })
+Aboutme.habits.getSkills({ offset: 0, count: 10 })
 
 // 创建技能
-Memento.habits.createSkill({
+Aboutme.habits.createSkill({
   title: "健康生活",
   targetMinutes: 10000
 })
@@ -116,47 +116,47 @@ Memento.habits.createSkill({
 #### 打卡记录 API
 ```javascript
 // 打卡（创建完成记录）
-Memento.habits.checkIn({
+Aboutme.habits.checkIn({
   habitId: "xxx",
   durationMinutes: 30,
   notes: "今天跑了5公里"
 })
 
 // 获取完成记录
-Memento.habits.getCompletionRecords({
+Aboutme.habits.getCompletionRecords({
   habitId: "xxx",
   offset: 0,
   count: 10
 })
 
 // 删除完成记录
-Memento.habits.deleteCompletionRecord({ recordId: "xxx" })
+Aboutme.habits.deleteCompletionRecord({ recordId: "xxx" })
 ```
 
 #### 统计 API
 ```javascript
 // 获取习惯统计
-Memento.habits.getStats({
+Aboutme.habits.getStats({
   habitId: "xxx"
 }) // 返回: { totalDurationMinutes, completionCount }
 
 // 获取今日习惯
-Memento.habits.getTodayHabits()
+Aboutme.habits.getTodayHabits()
 ```
 
 #### 计时器 API
 ```javascript
 // 启动计时器
-Memento.habits.startTimer({
+Aboutme.habits.startTimer({
   habitId: "xxx",
   initialSeconds: 1800
 })
 
 // 停止计时器
-Memento.habits.stopTimer({ habitId: "xxx" })
+Aboutme.habits.stopTimer({ habitId: "xxx" })
 
 // 获取计时器状态
-Memento.habits.getTimerStatus({ habitId: "xxx" })
+Aboutme.habits.getTimerStatus({ habitId: "xxx" })
 // 返回: { isRunning, elapsedSeconds, isCountdown }
 ```
 

@@ -8,7 +8,7 @@ final Map<String, String> notesTranslationsZh = {
   'notes_dayCardDesc': '展示选中日期创建/修改的笔记',
   'notes_dayCardEmpty': '当天没有笔记',
   'notes_dayCardUntitled': '无标题',
-  'notes_notesPluginDescription': 'Memento的简单笔记插件',
+  'notes_notesPluginDescription': 'Aboutme的简单笔记插件',
 
   // 统计信息
   'notes_totalNotes': '总笔记数',

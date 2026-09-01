@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:uuid/uuid.dart';
-import 'package:Memento/core/notification_controller.dart';
+import 'package:aboutme/core/notification_controller.dart';
 import '../../../../core/event/event_manager.dart';
 import '../../../../core/services/timer/models/timer_state.dart';
 

@@ -1,12 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memento_widgets/memento_widgets_method_channel.dart';
+import 'package:aboutme_widgets/aboutme_widgets_method_channel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelMementoWidgets platform = MethodChannelMementoWidgets();
-  const MethodChannel channel = MethodChannel('memento_widgets');
+  MethodChannelAboutmeWidgets platform = MethodChannelAboutmeWidgets();
+  const MethodChannel channel = MethodChannel('aboutme_widgets');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(

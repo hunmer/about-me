@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'models/route_context.dart';
 
 /// 路由解析器

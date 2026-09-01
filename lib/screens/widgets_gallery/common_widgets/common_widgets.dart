@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'widgets/circular_progress_card.dart';
 import 'widgets/card_dot_progress_display.dart';
 import 'widgets/half_gauge_card.dart';
@@ -19,10 +19,10 @@ import 'widgets/split_image_card.dart';
 import 'widgets/segmented_progress_card.dart';
 import 'widgets/profile_card_card.dart';
 import 'widgets/milestone_card.dart';
-import 'package:Memento/widgets/common/inbox_message_card.dart';
-import 'package:Memento/widgets/common/rounded_task_list_card.dart';
-import 'package:Memento/widgets/common/rounded_reminders_list_card.dart';
-import 'package:Memento/widgets/common/timer_card_widget.dart';
+import 'package:aboutme/widgets/common/inbox_message_card.dart';
+import 'package:aboutme/widgets/common/rounded_task_list_card.dart';
+import 'package:aboutme/widgets/common/rounded_reminders_list_card.dart';
+import 'package:aboutme/widgets/common/timer_card_widget.dart';
 import 'widgets/monthly_progress_with_dots_card.dart';
 import 'widgets/multi_metric_progress_card.dart';
 import 'widgets/circular_metrics_card.dart';
@@ -85,9 +85,9 @@ import 'widgets/trend_line_chart_card_wrapper.dart';
 import 'widgets/bar_chart_stats_card.dart';
 import 'widgets/expense_comparison_chart_card.dart';
 import 'widgets/weekly_diary_widget.dart';
-import 'package:Memento/widgets/common/dual_value_tracker_card.dart';
-import 'package:Memento/widgets/common/modern_rounded_balance_card.dart';
-import 'package:Memento/plugins/activity/home_widgets/widgets/activity_last_activity.dart';
+import 'package:aboutme/widgets/common/dual_value_tracker_card.dart';
+import 'package:aboutme/widgets/common/modern_rounded_balance_card.dart';
+import 'package:aboutme/plugins/activity/home_widgets/widgets/activity_last_activity.dart';
 import 'widgets/folder_notes_card.dart';
 import 'widgets/habit_heatmap_card.dart';
 import 'widgets/points_goal_card.dart';
@@ -98,8 +98,8 @@ import 'widgets/node_stats_card.dart';
 import 'widgets/todo_nodes_list.dart';
 import 'widgets/contact_card.dart';
 import 'widgets/recent_contact_card.dart';
-import 'package:Memento/widgets/common/habit_card.dart';
-import 'package:Memento/widgets/common/memorial_day_card.dart';
+import 'package:aboutme/widgets/common/habit_card.dart';
+import 'package:aboutme/widgets/common/memorial_day_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 按钮动作类型
-enum MementoButtonActionType {
+enum AboutmeButtonActionType {
   /// 默认动作
   defaultAction,
 
@@ -25,7 +25,7 @@ enum MementoButtonActionType {
 }
 
 /// 通知按钮
-class MementoNotificationButton {
+class AboutmeNotificationButton {
   /// 按钮唯一标识
   final String key;
 
@@ -33,7 +33,7 @@ class MementoNotificationButton {
   final String label;
 
   /// 按钮动作类型
-  final MementoButtonActionType actionType;
+  final AboutmeButtonActionType actionType;
 
   /// 按钮颜色
   final Color? color;
@@ -47,10 +47,10 @@ class MementoNotificationButton {
   /// 是否需要输入字段
   final bool requireInputText;
 
-  const MementoNotificationButton({
+  const AboutmeNotificationButton({
     required this.key,
     required this.label,
-    this.actionType = MementoButtonActionType.defaultAction,
+    this.actionType = AboutmeButtonActionType.defaultAction,
     this.color,
     this.enabled = true,
     this.autoDismissible = true,
@@ -59,7 +59,7 @@ class MementoNotificationButton {
 }
 
 /// 接收到的通知动作
-class MementoReceivedAction {
+class AboutmeReceivedAction {
   /// 通知 ID
   final int? id;
 
@@ -81,7 +81,7 @@ class MementoReceivedAction {
   /// 通知正文
   final String? body;
 
-  const MementoReceivedAction({
+  const AboutmeReceivedAction({
     this.id,
     this.buttonKeyPressed,
     this.buttonKeyInput,

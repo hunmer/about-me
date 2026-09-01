@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/plugins/activity/services/activity_service.dart';
-import 'package:Memento/plugins/activity/screens/activity_timeline_screen/controllers/activity_controller.dart';
-import 'package:Memento/widgets/memento_sf_calendar/memento_sf_calendar.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/plugins/activity/services/activity_service.dart';
+import 'package:aboutme/plugins/activity/screens/activity_timeline_screen/controllers/activity_controller.dart';
+import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
 
 /// 活动日历视图页面
 /// 显示活动在日历上的分布，点击活动可编辑
@@ -152,7 +152,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : MementoSfCalendar(
+              : AboutmeSfCalendar(
                 controller: _calendarController,
                 view: CalendarView.month,
                 allowedViews: const [

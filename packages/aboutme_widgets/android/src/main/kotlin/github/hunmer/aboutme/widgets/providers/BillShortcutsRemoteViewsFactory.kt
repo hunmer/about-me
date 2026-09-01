@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -6,8 +6,8 @@ import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONObject
 
 /**

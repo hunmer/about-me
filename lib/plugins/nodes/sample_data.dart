@@ -21,7 +21,7 @@ class NodesSampleData {
     // 创建根节点
     final projectANode = Node(
       id: 'node-project-a',
-      title: '项目A - Memento 应用开发',
+      title: '项目A - Aboutme 应用开发',
       createdAt: DateTime(2025, 1, 1, 9, 0),
       tags: ['重要', '开发'],
       status: NodeStatus.doing,
@@ -34,7 +34,7 @@ class NodesSampleData {
       ],
       notes: '开发一个跨平台的个人助手应用，支持多种功能插件',
       parentId: '',
-      pathValue: '项目A - Memento 应用开发',
+      pathValue: '项目A - Aboutme 应用开发',
       color: Colors.blue,
       isExpanded: true,
     );
@@ -52,7 +52,7 @@ class NodesSampleData {
       ],
       notes: '完成插件化架构设计，确定数据存储方案',
       parentId: 'node-project-a',
-      pathValue: '项目A - Memento 应用开发/核心架构设计',
+      pathValue: '项目A - Aboutme 应用开发/核心架构设计',
       color: Colors.green,
     );
 
@@ -70,7 +70,7 @@ class NodesSampleData {
       ],
       notes: '实现主界面、设置页面、各插件界面',
       parentId: 'node-project-a',
-      pathValue: '项目A - Memento 应用开发/UI 界面开发',
+      pathValue: '项目A - Aboutme 应用开发/UI 界面开发',
       color: Colors.orange,
       isExpanded: true,
     );
@@ -87,7 +87,7 @@ class NodesSampleData {
       ],
       notes: '设计并实现插件网格布局',
       parentId: 'node-task-2',
-      pathValue: '项目A - Memento 应用开发/UI 界面开发/主屏幕设计',
+      pathValue: '项目A - Aboutme 应用开发/UI 界面开发/主屏幕设计',
       color: Colors.green,
     );
 
@@ -103,7 +103,7 @@ class NodesSampleData {
       ],
       notes: '实现 WebDAV 同步、主题设置等功能',
       parentId: 'node-task-2',
-      pathValue: '项目A - Memento 应用开发/UI 界面开发/设置页面',
+      pathValue: '项目A - Aboutme 应用开发/UI 界面开发/设置页面',
       color: Colors.orange,
     );
 
@@ -123,7 +123,7 @@ class NodesSampleData {
       ],
       notes: '开发日记、记账、待办等核心功能插件',
       parentId: 'node-project-a',
-      pathValue: '项目A - Memento 应用开发/功能插件开发',
+      pathValue: '项目A - Aboutme 应用开发/功能插件开发',
       color: Colors.grey,
     );
 

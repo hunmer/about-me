@@ -1,10 +1,10 @@
 # Android 小组件开发指南
 
-本指南说明如何在 Memento 项目中为插件添加 Android 桌面小组件支持。
+本指南说明如何在 Aboutme 项目中为插件添加 Android 桌面小组件支持。
 
 ## 概述
 
-Memento 支持为各插件添加 Android 桌面小组件（1x1 和 2x2 尺寸），可实时展示插件统计数据。小组件通过 Flutter 的 `home_widget` 插件实现。
+Aboutme 支持为各插件添加 Android 桌面小组件（1x1 和 2x2 尺寸），可实时展示插件统计数据。小组件通过 Flutter 的 `home_widget` 插件实现。
 
 ## 实现步骤
 
@@ -23,7 +23,7 @@ dependencies {
 在 `android/app/src/main/kotlin/` 目录下创建小组件 Provider 类：
 
 ```kotlin
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -107,7 +107,7 @@ class PluginWidgetProvider : AppWidgetProvider() {
     android:updatePeriodMillis="0"
     android:previewImage="@drawable/widget_preview"
     android:initialLayout="@layout/plugin_widget_layout"
-    android:configure="com.example.memento.WidgetConfigureActivity"
+    android:configure="com.example.aboutme.WidgetConfigureActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
 ```

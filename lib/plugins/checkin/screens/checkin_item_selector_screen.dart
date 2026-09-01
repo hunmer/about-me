@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 打卡项目选择器界面（用于小组件配置）
 ///
@@ -557,7 +557,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
         name: 'CheckinItemWidgetProvider',
         iOSName: 'CheckinItemWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider',
       );
       debugPrint('CheckinItemWidgetProvider 更新完成');
 
@@ -565,7 +565,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
         name: 'CheckinMonthWidgetProvider',
         iOSName: 'CheckinMonthWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.CheckinMonthWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.CheckinMonthWidgetProvider',
       );
       debugPrint('CheckinMonthWidgetProvider 更新完成');
 

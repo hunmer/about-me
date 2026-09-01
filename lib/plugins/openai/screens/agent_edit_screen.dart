@@ -1,21 +1,21 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/clipboard_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/models/api_format.dart';
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
-import 'package:Memento/plugins/openai/models/prompt_preset.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/controllers/provider_controller.dart';
-import 'package:Memento/plugins/openai/services/test_service.dart';
-import 'package:Memento/plugins/openai/services/prompt_preset_service.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/api_format.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/services/test_service.dart';
+import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'model_search_screen.dart';
 
 // ServiceProvider 模型已包含 apiFormat 字段

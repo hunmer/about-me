@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
-import 'package:Memento/plugins/tracker/widgets/record_day_card.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/plugins/tracker/widgets/record_day_card.dart';
 
 /// 注册追踪的快速创建项（主页底部 ＋ 按钮）
 ///

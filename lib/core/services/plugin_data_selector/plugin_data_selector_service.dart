@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'models/index.dart';
-import 'package:Memento/widgets/data_selector_sheet/data_selector_sheet.dart';
+import 'package:aboutme/widgets/data_selector_sheet/data_selector_sheet.dart';
 
 /// 插件数据选择器服务
 ///

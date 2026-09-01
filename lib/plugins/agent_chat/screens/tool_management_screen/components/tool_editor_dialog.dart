@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_config.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 /// 工具编辑对话框
 class ToolEditorDialog extends StatefulWidget {
   final String pluginId;
@@ -638,7 +638,7 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
                               decoration: const InputDecoration(
                                 labelText: '示例代码',
                                 hintText:
-                                    'const result = await Memento.todo.getTasks();',
+                                    'const result = await Aboutme.todo.getTasks();',
                                 isDense: true,
                               ),
                               maxLines: 5,

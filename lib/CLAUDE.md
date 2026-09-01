@@ -1,6 +1,6 @@
 # lib/ 应用代码层
 
-`lib/` 是 Memento Flutter 客户端的全部代码（约 1943 个 Dart 文件），分四层：**core** 核心层（插件系统、存储、事件总线、JS Bridge 等，16 个子系统）、**plugins** 功能插件层（25 个内置插件，1056 个文件）、**screens** 界面层（主页、设置、控制台与路由注册，350 个文件）、**widgets** 通用组件层（编辑器、日历、表单等，180 个文件）。
+`lib/` 是 Aboutme Flutter 客户端的全部代码（约 1943 个 Dart 文件），分四层：**core** 核心层（插件系统、存储、事件总线、JS Bridge 等，16 个子系统）、**plugins** 功能插件层（25 个内置插件，1056 个文件）、**screens** 界面层（主页、设置、控制台与路由注册，350 个文件）、**widgets** 通用组件层（编辑器、日历、表单等，180 个文件）。
 
 插件通过 `BasePlugin` + `JSBridgePlugin` 接入核心层，经 `builtin_plugins.dart` 静态注册；路由统一汇总于 `screens/route.dart`。启动链与分层规范见下方详情文件。
 

@@ -1,4 +1,4 @@
-import 'package:Memento/core/app_initializer.dart' show globalConfigManager;
+import 'package:aboutme/core/app_initializer.dart' show globalConfigManager;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

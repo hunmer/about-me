@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/circle_icon_picker.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 
 /// 圆形图标选择器示例
 class CircleIconPickerExample extends StatefulWidget {

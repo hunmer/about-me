@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 
 /// 文件预览示例
 class FilePreviewExample extends StatelessWidget {

@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.quick
+package github.hunmer.aboutme.widgets.quick
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -9,7 +9,7 @@ import android.net.Uri
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
-import github.hunmer.memento_widgets.R
+import github.hunmer.aboutme_widgets.R
 
 /**
  * 频道快速发送小组件 Provider
@@ -104,8 +104,8 @@ class ChatQuickWidgetProvider : AppWidgetProvider() {
 
                         // 设置点击事件 - 直接跳转到聊天界面
                         val intent = Intent(Intent.ACTION_VIEW)
-                        intent.data = Uri.parse("memento://widget/chat?channelId=$channelId")
-                        intent.setPackage("github.hunmer.memento")
+                        intent.data = Uri.parse("aboutme://widget/chat?channelId=$channelId")
+                        intent.setPackage("github.hunmer.aboutme")
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
                         val pendingIntent = PendingIntent.getActivity(
@@ -124,8 +124,8 @@ class ChatQuickWidgetProvider : AppWidgetProvider() {
 
                 // 设置"选择频道"按钮点击事件 - 打开聊天主界面
                 val newChannelIntent = Intent(Intent.ACTION_VIEW)
-                newChannelIntent.data = Uri.parse("memento://widget/chat")
-                newChannelIntent.setPackage("github.hunmer.memento")
+                newChannelIntent.data = Uri.parse("aboutme://widget/chat")
+                newChannelIntent.setPackage("github.hunmer.aboutme")
                 newChannelIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
                 val newChannelPendingIntent = PendingIntent.getActivity(

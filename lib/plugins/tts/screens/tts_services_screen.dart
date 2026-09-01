@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
-import 'package:Memento/plugins/tts/widgets/service_editor_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/widgets/service_editor_dialog.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// TTS服务列表界面
 class TTSServicesScreen extends StatefulWidget {

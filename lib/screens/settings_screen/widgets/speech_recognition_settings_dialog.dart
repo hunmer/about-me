@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/services/speech_recognition_config_service.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_config.dart';
-import 'package:Memento/plugins/openai/screens/agent_edit_screen.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_config.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:uuid/uuid.dart';
 
 /// 语音识别设置对话框

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
 
 class DeleteChannelDialog extends StatelessWidget {
   final Channel channel;

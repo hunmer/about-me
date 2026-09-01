@@ -1,19 +1,19 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/bill/widgets/month_selector.dart';
+import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/widgets/quill_viewer/index.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/widgets/quill_viewer/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'diary_editor_screen.dart';
-import 'package:Memento/plugins/diary/models/diary_entry.dart';
-import 'package:Memento/plugins/diary/utils/diary_utils.dart';
-import 'package:Memento/plugins/diary/widgets/diary_entry_card.dart';
+import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_entry_card.dart';
 
 class DiaryCalendarScreen extends StatefulWidget {
   final StorageManager storage;

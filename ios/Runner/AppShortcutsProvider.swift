@@ -4,7 +4,7 @@ import AppIntents
 ///
 /// 为所有 Intent 提供统一的 Shortcut 定义，让 Siri 能够识别并推荐
 @available(iOS 16.0, *)
-struct MementoAppShortcuts: AppShortcutsProvider {
+struct AboutmeAppShortcuts: AppShortcutsProvider {
 
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

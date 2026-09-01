@@ -1,6 +1,6 @@
-# memento_nfc_example
+# aboutme_nfc_example
 
-Demonstrates how to use the memento_nfc plugin.
+Demonstrates how to use the aboutme_nfc plugin.
 
 ## Getting Started
 

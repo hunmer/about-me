@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/action/action_manager.dart';
-import 'package:Memento/core/action/widgets/action_selector_dialog.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/action/action_manager.dart';
+import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
 import 'floating_ball_manager.dart';
 import 'floating_ball_service.dart';
 import 'models/floating_ball_gesture.dart';

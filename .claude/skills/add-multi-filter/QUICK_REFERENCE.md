@@ -5,7 +5,7 @@
 ### 1. 添加导入
 
 ```dart
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 ```
 
 ### 2. 创建两个方法

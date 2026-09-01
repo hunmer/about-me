@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:intl/intl.dart';
 import 'screens/activity_timeline_screen/activity_timeline_screen.dart';
 import 'screens/activity_timeline_screen/controllers/activity_controller.dart';
@@ -27,7 +27,7 @@ import 'models/tts_announcement_settings.dart';
 import 'repositories/client_activity_repository.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
 
 part 'activity_js_api.dart';
 part 'activity_data_selectors.dart';

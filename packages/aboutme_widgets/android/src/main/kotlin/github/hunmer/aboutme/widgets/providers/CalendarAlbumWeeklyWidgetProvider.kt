@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -9,8 +9,8 @@ import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONObject
 
 class CalendarAlbumWeeklyWidgetProvider : BasePluginWidgetProvider() {
@@ -28,7 +28,7 @@ class CalendarAlbumWeeklyWidgetProvider : BasePluginWidgetProvider() {
         private const val DEFAULT_OPACITY = 0.95f
 
         // 点击事件的 action
-        private const val ACTION_DAY_CLICKED = "github.hunmer.memento.ACTION_CALENDAR_ALBUM_WEEKLY_DAY_CLICKED"
+        private const val ACTION_DAY_CLICKED = "github.hunmer.aboutme.ACTION_CALENDAR_ALBUM_WEEKLY_DAY_CLICKED"
         private const val EXTRA_DAY_INDEX = "day_index"
     }
 
@@ -123,8 +123,8 @@ class CalendarAlbumWeeklyWidgetProvider : BasePluginWidgetProvider() {
 
         // 点击整个小组件打开配置页面
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/calendar_album_weekly/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/calendar_album_weekly/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -144,7 +144,7 @@ class CalendarAlbumWeeklyWidgetProvider : BasePluginWidgetProvider() {
         val intent = Intent(ACTION_DAY_CLICKED)
         intent.putExtra(EXTRA_DAY_INDEX, dayIndex)
         intent.putExtra("widgetId", appWidgetId)
-        intent.setPackage("github.hunmer.memento")
+        intent.setPackage("github.hunmer.aboutme")
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,

@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/goods/screens/warehouse_list_screen.dart';
-import 'package:Memento/plugins/goods/screens/goods_list_screen.dart';
-import 'package:Memento/plugins/goods/widgets/warehouse_form.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_form/index.dart';
+import 'package:aboutme/plugins/goods/screens/warehouse_list_screen.dart';
+import 'package:aboutme/plugins/goods/screens/goods_list_screen.dart';
+import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
 /// Goods 插件的底部栏组件
 /// 提供仓库视图和物品视图的切换功能

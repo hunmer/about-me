@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/color_picker_section.dart';
+import 'package:aboutme/widgets/picker/color_picker_section.dart';
 
 /// 颜色选择器示例
 class ColorPickerExample extends StatefulWidget {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_item.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
-import 'package:Memento/screens/home_screen/widgets/common_widget_selector_page.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/screens/home_screen/widgets/common_widget_selector_page.dart';
 
 /// 添加小组件对话框 - 使用 SuperCupertinoNavigationWrapper 重构版本
 class AddWidgetDialog extends StatefulWidget {

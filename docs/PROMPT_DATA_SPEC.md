@@ -1,9 +1,9 @@
-# Memento Prompt 数据格式规范 v2.0
+# Aboutme Prompt 数据格式规范 v2.0
 
 > **版本**: 2.0
 > **发布日期**: 2025-01-15
 > **状态**: 正式版
-> **维护者**: Memento Team
+> **维护者**: Aboutme Team
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 概述
 
-本规范定义了 Memento 项目中所有插件的 **Prompt 数据返回格式**，旨在：
+本规范定义了 Aboutme 项目中所有插件的 **Prompt 数据返回格式**，旨在：
 - 统一不同插件的数据格式
 - 优化 AI Prompt 的 token 消耗
 - 提升 AI 对数据的理解能力
@@ -441,7 +441,7 @@ class XxxPromptReplacements {
 在插件的 `controls/prompt_controller.dart` 中注册：
 
 ```dart
-import 'package:memento/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import '../xxx_plugin.dart';
 import '../services/prompt_replacements.dart';
 

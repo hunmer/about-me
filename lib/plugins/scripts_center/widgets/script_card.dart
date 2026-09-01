@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 
 /// 脚本卡片组件
 ///

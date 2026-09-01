@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/base_plugin.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:get/get.dart';
 import './models/database_model.dart';
 import './services/database_service.dart';

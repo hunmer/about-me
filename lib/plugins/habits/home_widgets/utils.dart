@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
 
 /// 插件主题色
 const Color pluginColor = Colors.amber;

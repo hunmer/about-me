@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
 import 'chat_screen/widgets/message_bubble.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// Toast 服务使用示例
 class ToastUsageExample extends StatelessWidget {

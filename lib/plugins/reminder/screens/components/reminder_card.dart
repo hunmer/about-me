@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
 import '../../models/reminder.dart';
 
 /// 提醒卡片组件

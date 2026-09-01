@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../models/colorful_shortcuts_grid_data.dart';
 
 /// 彩色快捷方式网格小组件

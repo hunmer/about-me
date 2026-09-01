@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.services
+package github.hunmer.aboutme.widgets.services
 
 import android.appwidget.AppWidgetManager
 import android.content.Context

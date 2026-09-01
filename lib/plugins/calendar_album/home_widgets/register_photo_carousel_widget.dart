@@ -1,15 +1,15 @@
 /// 日历相册插件 - 图片轮播小组件注册
 library;
 
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 import 'data.dart';
 import 'utils.dart';
 import 'widgets/photo_carousel_widget.dart';

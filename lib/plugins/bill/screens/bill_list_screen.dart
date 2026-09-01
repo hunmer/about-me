@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:Memento/plugins/bill/models/bill_model.dart';
-import 'package:Memento/plugins/bill/models/bill.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/widgets/month_selector.dart';
+import 'package:aboutme/plugins/bill/models/bill_model.dart';
+import 'package:aboutme/plugins/bill/models/bill.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 import 'bill_edit_screen.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class BillListScreen extends StatefulWidget {
   final BillPlugin billPlugin;

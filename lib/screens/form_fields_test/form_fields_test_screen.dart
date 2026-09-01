@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:intl/intl.dart';
 
 /// 表单字段组件测试页面
@@ -383,7 +383,7 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
               name: 'avatar',
               type: FormFieldType.avatarPicker,
               extra: {
-                'username': 'Memento',
+                'username': 'Aboutme',
                 'size': 80.0,
                 'saveDirectory': 'avatars',
               },

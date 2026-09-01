@@ -112,11 +112,11 @@ echo "" >> "$RELEASE_NOTES"
 
 # 创建 GitHub Release
 echo -e "${YELLOW}Creating GitHub Release for $GITHUB_USER/$GITHUB_REPO...${NC}"
-if ! gh release create "v$VERSION" --repo "$GITHUB_USER/$GITHUB_REPO" --title "Memento v$VERSION" --notes-file $RELEASE_NOTES; then
+if ! gh release create "v$VERSION" --repo "$GITHUB_USER/$GITHUB_REPO" --title "Aboutme v$VERSION" --notes-file $RELEASE_NOTES; then
     echo -e "${RED}Error: Failed to create GitHub release.${NC}"
     echo -e "${YELLOW}Please check your GitHub CLI authentication and permissions.${NC}"
     echo -e "${YELLOW}Debug info: GITHUB_USER=$GITHUB_USER, GITHUB_REPO=$GITHUB_REPO${NC}"
-    echo -e "${YELLOW}Full command: gh release create \"v$VERSION\" --repo \"$GITHUB_USER/$GITHUB_REPO\" --title \"Memento v$VERSION\" --notes-file $RELEASE_NOTES${NC}"
+    echo -e "${YELLOW}Full command: gh release create \"v$VERSION\" --repo \"$GITHUB_USER/$GITHUB_REPO\" --title \"Aboutme v$VERSION\" --notes-file $RELEASE_NOTES${NC}"
     gh api repos/$GITHUB_USER/$GITHUB_REPO
     exit 1
 fi

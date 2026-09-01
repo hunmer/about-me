@@ -20,7 +20,7 @@
     },
     {
       "title": "Promise 示例",
-      "code": "// 模拟异步操作\nfunction delay(ms) {\n  return new Promise(function(resolve) {\n    // 注意：QuickJS 的 setTimeout 可能不稳定\n    // 实际项目中应使用 Memento API\n    resolve('Delayed ' + ms + 'ms');\n  });\n}\n\nconsole.log('开始...');\nvar result = await delay(100);\nconsole.log('结果:', result);\nreturn result;"
+      "code": "// 模拟异步操作\nfunction delay(ms) {\n  return new Promise(function(resolve) {\n    // 注意：QuickJS 的 setTimeout 可能不稳定\n    // 实际项目中应使用 Aboutme API\n    resolve('Delayed ' + ms + 'ms');\n  });\n}\n\nconsole.log('开始...');\nvar result = await delay(100);\nconsole.log('结果:', result);\nreturn result;"
     },
     {
       "title": "错误处理",
@@ -28,7 +28,7 @@
     },
     {
       "title": "❌ 常见错误示例",
-      "code": "// ❌ 错误！不要使用未 await 的 async IIFE\n// (async function() {\n//   var result = await Memento.chat.testSync();\n//   setResult(result);  // ❌ setResult 已被删除！\n// })();\n\n// ✅ 正确写法 1：直接顶层 await\nvar result = await Memento.chat.testSync();\nreturn result;\n\n// ✅ 正确写法 2：定义函数并 await 调用\n// async function run() {\n//   var result = await Memento.chat.testSync();\n//   return result;\n// }\n// return await run();\n\n// ✅ 正确写法 3：await IIFE\n// return await (async function() {\n//   var result = await Memento.chat.testSync();\n//   return result;\n// })();"
+      "code": "// ❌ 错误！不要使用未 await 的 async IIFE\n// (async function() {\n//   var result = await Aboutme.chat.testSync();\n//   setResult(result);  // ❌ setResult 已被删除！\n// })();\n\n// ✅ 正确写法 1：直接顶层 await\nvar result = await Aboutme.chat.testSync();\nreturn result;\n\n// ✅ 正确写法 2：定义函数并 await 调用\n// async function run() {\n//   var result = await Aboutme.chat.testSync();\n//   return result;\n// }\n// return await run();\n\n// ✅ 正确写法 3：await IIFE\n// return await (async function() {\n//   var result = await Aboutme.chat.testSync();\n//   return result;\n// })();"
     }
   ]
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 
 /// 标签消息列表页面
 /// 显示某个标签的所有关联消息

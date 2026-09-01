@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:path/path.dart' as path;
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/core/services/image_compression_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:get/get.dart';
 
 class ImagePickerDialog extends StatefulWidget {

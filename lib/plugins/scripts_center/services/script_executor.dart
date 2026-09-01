@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/plugins/scripts_center/models/script_execution_result.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_execution_result.dart';
 import 'script_manager.dart';
 
 /// 脚本执行器服务
 ///
 /// 使用 JSBridgeManager 提供的统一 JS 执行环境
-/// 脚本可以直接调用 Memento 的插件 API（如 Memento.chat.sendMessage() 等）
+/// 脚本可以直接调用 Aboutme 的插件 API（如 Aboutme.chat.sendMessage() 等）
 class ScriptExecutor {
   final ScriptManager scriptManager;
   final StorageManager storage;
@@ -82,7 +82,7 @@ class ScriptExecutor {
 
   /// 注入脚本中心特有的 API 到 JS 环境
   ///
-  /// 注意：Memento 的插件 API（如 Memento.chat.* 等）已由 JSBridgeManager 自动注册
+  /// 注意：Aboutme 的插件 API（如 Aboutme.chat.* 等）已由 JSBridgeManager 自动注册
   /// 这里只需要注入脚本中心特有的功能
   Future<void> _injectScriptCenterAPI() async {
     // 创建一个临时的"插件"来注册脚本中心特有的 API
@@ -100,23 +100,23 @@ class ScriptExecutor {
     // 使用 JSBridgeManager 的标准 API 注册机制
     await _jsBridge.registerPlugin(tempPlugin, apis);
 
-    // 额外暴露到 Memento.script_executor（便于脚本使用）
+    // 额外暴露到 Aboutme.script_executor（便于脚本使用）
     await _jsBridge.evaluate('''
       (function() {
-        if (typeof globalThis.Memento !== 'undefined' &&
-            typeof globalThis.Memento.plugins !== 'undefined' &&
-            typeof globalThis.Memento.plugins.script_executor !== 'undefined') {
-          // 将 API 直接暴露到 Memento.script_executor
-          globalThis.Memento.script_executor = globalThis.Memento.plugins.script_executor;
+        if (typeof globalThis.Aboutme !== 'undefined' &&
+            typeof globalThis.Aboutme.plugins !== 'undefined' &&
+            typeof globalThis.Aboutme.plugins.script_executor !== 'undefined') {
+          // 将 API 直接暴露到 Aboutme.script_executor
+          globalThis.Aboutme.script_executor = globalThis.Aboutme.plugins.script_executor;
 
           // 同时暴露全局函数（便于脚本使用）
-          globalThis.runScript = globalThis.Memento.plugins.script_executor.runScript;
-          globalThis.log = globalThis.Memento.plugins.script_executor.log;
-          globalThis.emit = globalThis.Memento.plugins.script_executor.emit;
+          globalThis.runScript = globalThis.Aboutme.plugins.script_executor.runScript;
+          globalThis.log = globalThis.Aboutme.plugins.script_executor.log;
+          globalThis.emit = globalThis.Aboutme.plugins.script_executor.emit;
 
           // 兼容浏览器环境
           if (typeof window !== 'undefined') {
-            window.Memento = globalThis.Memento;
+            window.Aboutme = globalThis.Aboutme;
             window.runScript = globalThis.runScript;
             window.log = globalThis.log;
             window.emit = globalThis.emit;

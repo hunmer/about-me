@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
 
 class TimerService {
   static const MethodChannel _channel = MethodChannel(
-    'github.hunmer.memento/timer_service',
+    'github.hunmer.aboutme/timer_service',
   );
 
   // 启动前台通知服务

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/widgets/picker/location_picker.dart';
+import 'package:aboutme/widgets/picker/location_picker.dart';
 
 /// 位置选择器示例
 class LocationPickerExample extends StatefulWidget {

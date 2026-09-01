@@ -781,8 +781,8 @@ class OpenAISampleData {
       PromptPreset(
         id: uuid.v4(),
         name: '插件数据分析',
-        description: '专门用于分析 Memento 插件数据的提示词模板，提供个性化洞察',
-        content: '''你是一位专业的数据分析师，专门分析 Memento 插件中的个人数据。
+        description: '专门用于分析 Aboutme 插件数据的提示词模板，提供个性化洞察',
+        content: '''你是一位专业的数据分析师，专门分析 Aboutme 插件中的个人数据。
 
 分析目标：
 - 挖掘数据背后的个人习惯和模式

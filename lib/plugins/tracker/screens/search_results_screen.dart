@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String searchQuery;

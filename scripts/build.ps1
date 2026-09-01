@@ -1,4 +1,4 @@
-# PowerShell Script for Building Memento App
+# PowerShell Script for Building Aboutme App
 # Windows version of scripts/build.sh
 
 # 解析命令行参数
@@ -98,8 +98,8 @@ if (Is-PlatformEnabled "android") {
     flutter build apk --release --no-tree-shake-icons
     
     if (Test-Path "build\app\outputs\flutter-apk\app-release.apk") {
-        Copy-Item "build\app\outputs\flutter-apk\app-release.apk" -Destination "$OutputDir\memento-$Version-android.apk"
-        Write-Host "Successfully built Android APK: $OutputDir\memento-$Version-android.apk" -ForegroundColor $Green
+        Copy-Item "build\app\outputs\flutter-apk\app-release.apk" -Destination "$OutputDir\aboutme-$Version-android.apk"
+        Write-Host "Successfully built Android APK: $OutputDir\aboutme-$Version-android.apk" -ForegroundColor $Green
     } else {
         Write-Host "Error: Android APK build failed or file not found" -ForegroundColor $Red
         exit 1
@@ -117,13 +117,13 @@ if (Is-PlatformEnabled "web") {
         # 检查是否安装了7-Zip
         if (Get-Command "7z" -ErrorAction SilentlyContinue) {
             Push-Location "build\web"
-            7z a -tzip "..\..\$OutputDir\memento-$Version-web.zip" *
+            7z a -tzip "..\..\$OutputDir\aboutme-$Version-web.zip" *
             Pop-Location
-            Write-Host "Successfully built Web: $OutputDir\memento-$Version-web.zip" -ForegroundColor $Green
+            Write-Host "Successfully built Web: $OutputDir\aboutme-$Version-web.zip" -ForegroundColor $Green
         } else {
             # 使用PowerShell内置的压缩功能
-            Compress-Archive -Path "build\web\*" -DestinationPath "$OutputDir\memento-$Version-web.zip" -Force
-            Write-Host "Successfully built Web: $OutputDir\memento-$Version-web.zip" -ForegroundColor $Green
+            Compress-Archive -Path "build\web\*" -DestinationPath "$OutputDir\aboutme-$Version-web.zip" -Force
+            Write-Host "Successfully built Web: $OutputDir\aboutme-$Version-web.zip" -ForegroundColor $Green
         }
     } else {
         Write-Host "Error: Web build failed or directory not found" -ForegroundColor $Red
@@ -142,13 +142,13 @@ if (Is-PlatformEnabled "windows") {
         # 检查是否安装了7-Zip
         if (Get-Command "7z" -ErrorAction SilentlyContinue) {
             Push-Location "build\windows\x64\runner\Release"
-            7z a -tzip "..\..\..\..\..\$OutputDir\memento-$Version-windows.zip" *
+            7z a -tzip "..\..\..\..\..\$OutputDir\aboutme-$Version-windows.zip" *
             Pop-Location
-            Write-Host "Successfully built Windows package: $OutputDir\memento-$Version-windows.zip" -ForegroundColor $Green
+            Write-Host "Successfully built Windows package: $OutputDir\aboutme-$Version-windows.zip" -ForegroundColor $Green
         } else {
             # 使用PowerShell内置的压缩功能
-            Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "$OutputDir\memento-$Version-windows.zip" -Force
-            Write-Host "Successfully built Windows package: $OutputDir\memento-$Version-windows.zip" -ForegroundColor $Green
+            Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "$OutputDir\aboutme-$Version-windows.zip" -Force
+            Write-Host "Successfully built Windows package: $OutputDir\aboutme-$Version-windows.zip" -ForegroundColor $Green
         }
     } else {
         Write-Host "Error: Windows build failed or directory not found" -ForegroundColor $Red

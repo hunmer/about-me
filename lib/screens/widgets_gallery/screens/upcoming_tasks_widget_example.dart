@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/upcoming_tasks_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/upcoming_tasks_widget.dart';
 
 /// 即将到来的任务小组件示例
 class UpcomingTasksWidgetExample extends StatelessWidget {

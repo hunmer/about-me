@@ -1,12 +1,12 @@
-import 'package:Memento/plugins/agent_chat/data/sample_data.dart';
+import 'package:aboutme/plugins/agent_chat/data/sample_data.dart';
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/plugins/agent_chat/services/conversation_service.dart';
-import 'package:Memento/plugins/agent_chat/services/message_service.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 
 /// 会话控制器
 ///

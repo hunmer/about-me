@@ -3,16 +3,16 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/generic_plugin_widget.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/screens/bill_edit_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/generic_plugin_widget.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/screens/bill_edit_screen.dart';
 import 'utils.dart';
 
 /// 构建 2x2 详细卡片组件（概览组件）

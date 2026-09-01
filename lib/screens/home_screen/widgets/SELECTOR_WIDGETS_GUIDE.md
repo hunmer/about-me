@@ -225,10 +225,10 @@ StatefulBuilder(
 #### 1. 修改导入
 ```dart
 // 旧
-import 'package:Memento/screens/home_screen/widgets/base/base_selector_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/base/base_selector_widget.dart';
 
 // 新
-import 'package:Memento/screens/home_screen/widgets/base/live_selector_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/base/live_selector_widget.dart';
 ```
 
 #### 2. 修改继承的基类

@@ -6,7 +6,7 @@ import Foundation
 class ShortcutResultStorage {
     static let shared = ShortcutResultStorage()
 
-    private let appGroupIdentifier = "group.github.hunmer.memento"
+    private let appGroupIdentifier = "group.github.hunmer.aboutme"
     private let resultsDirectoryName = "shortcut_results"
 
     private init() {

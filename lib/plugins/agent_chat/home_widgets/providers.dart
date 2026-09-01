@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import '../agent_chat_plugin.dart';
 import '../controllers/conversation_controller.dart';
 import 'data.dart';

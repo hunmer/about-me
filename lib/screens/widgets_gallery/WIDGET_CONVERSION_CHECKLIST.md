@@ -142,7 +142,7 @@
 
 例如：
 ```
-/add-widget-common-widgets D:\Memento\lib\screens\widgets_gallery\screens\earnings_trend_card 收益趋势卡片
+/add-widget-common-widgets D:\Aboutme\lib\screens\widgets_gallery\screens\earnings_trend_card 收益趋势卡片
 ```
 
 对于需要重命名的组件，agent 会自动处理文件和类名的重命名。

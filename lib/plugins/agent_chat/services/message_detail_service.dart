@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 消息详细信息服务
 ///

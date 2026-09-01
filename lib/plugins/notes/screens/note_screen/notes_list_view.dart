@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/notes/controllers/notes_controller.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
 import 'folder_list_tile.dart';
 import 'note_list_tile.dart';
 

@@ -1,8 +1,8 @@
 import 'dart:core';
 
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/activity/services/activity_service.dart';
-import 'package:Memento/widgets/tags_dialog/tags_dialog.dart';
+import 'package:aboutme/plugins/activity/services/activity_service.dart';
+import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 
 class TagController {
   final ActivityService activityService;

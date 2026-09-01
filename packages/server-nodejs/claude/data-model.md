@@ -16,7 +16,7 @@
 ## 同步与加密模型
 
 - 协议模型复用 `shared_models/`：`sync_request.dart` / `sync_response.dart`（客户端侧）与 `syncRoutes` 对应。
-- 端到端加密：客户端 `encrypt`（AES-256-GCM）加密 → 服务端 `encryptionService` 只做转发/存储密文；`MEMENTO_ENCRYPTION_KEY` 由客户端与 MCP 侧各自持有。
+- 端到端加密：客户端 `encrypt`（AES-256-GCM）加密 → 服务端 `encryptionService` 只做转发/存储密文；`ABOUTME_ENCRYPTION_KEY` 由客户端与 MCP 侧各自持有。
 - 双向同步实现说明：根目录 `docs/bidirectional_sync_implementation.md`。
 
 ## 事件与钩子

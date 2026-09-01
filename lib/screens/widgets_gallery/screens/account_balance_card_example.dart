@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/models/account_balance_card_data.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/account_balance_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/models/account_balance_card_data.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/account_balance_card.dart';
 
 /// 账户余额卡片示例
 class AccountBalanceCardExample extends StatelessWidget {

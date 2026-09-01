@@ -6,7 +6,7 @@
 
 ```mermaid
 graph LR
-    F[Web 前端<br/>React/Vue · memento-mock] <-->|WS| S[本服务器<br/>8654 · 配对/路由/心跳]
+    F[Web 前端<br/>React/Vue · aboutme-mock] <-->|WS| S[本服务器<br/>8654 · 配对/路由/心跳]
     S <-->|WS| C[Flutter 客户端<br/>JSBridge + 插件系统]
 ```
 
@@ -24,4 +24,4 @@ graph LR
 ## 设计取舍
 
 - **无状态、无存储、无鉴权体系**：信任模型建立在"双方持有相同配对密钥"之上，适合个人自部署；公网部署需自行加反代鉴权。
-- 只做转发不做业务：所有插件逻辑留在客户端，服务器不接触 Memento 数据模型。
+- 只做转发不做业务：所有插件逻辑留在客户端，服务器不接触 Aboutme 数据模型。

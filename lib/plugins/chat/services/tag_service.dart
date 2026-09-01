@@ -1,6 +1,6 @@
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/models/tag.dart';
-import 'package:Memento/plugins/chat/services/chat_data_service.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/tag.dart';
+import 'package:aboutme/plugins/chat/services/chat_data_service.dart';
 
 /// 标签服务
 /// 负责从消息中提取标签、统计标签信息等功能

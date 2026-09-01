@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
-import 'package:Memento/plugins/tts/models/tts_voice.dart';
-import 'package:Memento/plugins/tts/services/system_tts_service.dart';
-import 'package:Memento/plugins/tts/services/minimax_tts_service.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/models/tts_voice.dart';
+import 'package:aboutme/plugins/tts/services/system_tts_service.dart';
+import 'package:aboutme/plugins/tts/services/minimax_tts_service.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// TTS服务编辑对话框（支持新建和编辑）
 class ServiceEditorDialog extends StatefulWidget {

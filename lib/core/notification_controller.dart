@@ -1,44 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:memento_notifications/memento_notifications.dart';
+import 'package:aboutme_notifications/aboutme_notifications.dart';
 
 import 'event/event.dart';
 
-/// 通知控制器 - 使用 memento_notifications 插件
+/// 通知控制器 - 使用 aboutme_notifications 插件
 ///
-/// 这是对 memento_notifications 插件的薄封装层，
+/// 这是对 aboutme_notifications 插件的薄封装层，
 /// 保持与原有 API 的兼容性，同时添加业务特定的事件处理。
 class NotificationController {
   /// 初始化通知服务
   static Future<void> initialize() async {
-    await MementoNotifications.instance.initialize(
+    await AboutmeNotifications.instance.initialize(
       channels: [
-        const MementoNotificationChannel(
+        const AboutmeNotificationChannel(
           key: 'basic_channel',
           name: 'Basic Notifications',
           description: 'Notification channel for basic tests',
           groupKey: 'basic_channel_group',
           defaultColor: Color(0xFF9D50DD),
           ledColor: Colors.white,
-          importance: MementoNotificationImportance.high,
+          importance: AboutmeNotificationImportance.high,
         ),
-        const MementoNotificationChannel(
+        const AboutmeNotificationChannel(
           key: 'custom_channel',
           name: 'Custom Notifications',
           description: 'Notification channel for custom notifications',
           groupKey: 'custom_channel_group',
           defaultColor: Color(0xFF2196F3),
           ledColor: Colors.blue,
-          importance: MementoNotificationImportance.max,
+          importance: AboutmeNotificationImportance.max,
           playSound: true,
           enableVibration: true,
         ),
       ],
       channelGroups: const [
-        MementoNotificationChannelGroup(
+        AboutmeNotificationChannelGroup(
           key: 'basic_channel_group',
           name: 'Basic Group',
         ),
-        MementoNotificationChannelGroup(
+        AboutmeNotificationChannelGroup(
           key: 'custom_channel_group',
           name: 'Custom Group',
         ),
@@ -47,8 +47,8 @@ class NotificationController {
     );
 
     // 设置事件监听器
-    MementoNotifications.instance.setListeners(
-      MementoNotificationListeners(
+    AboutmeNotifications.instance.setListeners(
+      AboutmeNotificationListeners(
         onCreated: _onNotificationCreatedMethod,
         onDisplayed: _onNotificationDisplayedMethod,
         onDismissed: _onDismissActionReceivedMethod,
@@ -59,17 +59,17 @@ class NotificationController {
 
   /// 请求通知权限
   static Future<bool> requestPermission() async {
-    return await MementoNotifications.instance.requestPermission();
+    return await AboutmeNotifications.instance.requestPermission();
   }
 
   /// 检查通知权限
   static Future<bool> checkPermission() async {
-    return await MementoNotifications.instance.checkPermission();
+    return await AboutmeNotifications.instance.checkPermission();
   }
 
   /// 当通知被创建时调用
   static Future<void> _onNotificationCreatedMethod(
-    MementoReceivedNotification receivedNotification,
+    AboutmeReceivedNotification receivedNotification,
   ) async {
     debugPrint(
       '通知已创建: ID=${receivedNotification.id}, Title=${receivedNotification.title}',
@@ -78,7 +78,7 @@ class NotificationController {
 
   /// 当通知被显示时调用
   static Future<void> _onNotificationDisplayedMethod(
-    MementoReceivedNotification receivedNotification,
+    AboutmeReceivedNotification receivedNotification,
   ) async {
     debugPrint(
       '通知已显示: ID=${receivedNotification.id}, Title=${receivedNotification.title}',
@@ -87,7 +87,7 @@ class NotificationController {
 
   /// 当通知被关闭时调用
   static Future<void> _onDismissActionReceivedMethod(
-    MementoReceivedAction receivedAction,
+    AboutmeReceivedAction receivedAction,
   ) async {
     debugPrint(
       '通知已关闭: ID=${receivedAction.id}',
@@ -96,7 +96,7 @@ class NotificationController {
 
   /// 当用户点击通知或通知按钮时调用
   static Future<void> _onActionReceivedMethod(
-    MementoReceivedAction receivedAction,
+    AboutmeReceivedAction receivedAction,
   ) async {
     debugPrint(
       '通知动作接收: ID=${receivedAction.id}, ButtonKey=${receivedAction.buttonKeyPressed}',
@@ -127,12 +127,12 @@ class NotificationController {
     required String title,
     required String body,
   }) async {
-    await MementoNotifications.instance.showNotification(
+    await AboutmeNotifications.instance.showNotification(
       id: id,
       title: title,
       body: body,
       channelKey: 'basic_channel',
-      layout: MementoNotificationLayout.basic,
+      layout: AboutmeNotificationLayout.basic,
     );
   }
 
@@ -143,10 +143,10 @@ class NotificationController {
     required String body,
     String? bigPicture,
     String? largeIcon,
-    MementoNotificationLayout layout = MementoNotificationLayout.basic,
-    List<MementoNotificationButton>? actionButtons,
+    AboutmeNotificationLayout layout = AboutmeNotificationLayout.basic,
+    List<AboutmeNotificationButton>? actionButtons,
   }) async {
-    await MementoNotifications.instance.showNotification(
+    await AboutmeNotifications.instance.showNotification(
       id: id,
       title: title,
       body: body,
@@ -165,30 +165,30 @@ class NotificationController {
     required String body,
     required String bigPicture,
   }) async {
-    await MementoNotifications.instance.showNotification(
+    await AboutmeNotifications.instance.showNotification(
       id: id,
       title: title,
       body: body,
       channelKey: 'custom_channel',
-      layout: MementoNotificationLayout.bigPicture,
+      layout: AboutmeNotificationLayout.bigPicture,
       bigPicture: bigPicture,
       buttons: const [
-        MementoNotificationButton(
+        AboutmeNotificationButton(
           key: 'YES',
           label: 'Yes',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
           color: Colors.green,
         ),
-        MementoNotificationButton(
+        AboutmeNotificationButton(
           key: 'NO',
           label: 'No',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
           color: Colors.red,
         ),
-        MementoNotificationButton(
+        AboutmeNotificationButton(
           key: 'MORE',
           label: 'More Options',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
         ),
       ],
     );
@@ -196,22 +196,22 @@ class NotificationController {
 
   /// 取消指定 ID 的通知
   static Future<void> cancelNotification(int id) async {
-    await MementoNotifications.instance.cancel(id);
+    await AboutmeNotifications.instance.cancel(id);
   }
 
   /// 取消所有通知
   static Future<void> cancelAllNotifications() async {
-    await MementoNotifications.instance.cancelAll();
+    await AboutmeNotifications.instance.cancelAll();
   }
 
   /// 获取活动通知列表
-  static Future<List<MementoScheduledNotification>> getActiveNotifications() async {
-    return await MementoNotifications.instance.getScheduledNotifications();
+  static Future<List<AboutmeScheduledNotification>> getActiveNotifications() async {
+    return await AboutmeNotifications.instance.getScheduledNotifications();
   }
 
   /// 处理活动通知的动作
   static Future<void> _handleActivityNotificationAction(
-    MementoReceivedAction receivedAction,
+    AboutmeReceivedAction receivedAction,
   ) async {
     debugPrint(
       '活动通知动作接收: ID=${receivedAction.id}, ButtonKey=${receivedAction.buttonKeyPressed}',

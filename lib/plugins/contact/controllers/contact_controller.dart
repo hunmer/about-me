@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
-import 'package:Memento/plugins/contact/models/interaction_record_model.dart';
-import 'package:Memento/plugins/contact/models/filter_sort_config.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
+import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/plugins/contact/sample_data.dart';
+import 'package:aboutme/plugins/contact/sample_data.dart';
 
 class ContactController {
   final BasePlugin plugin;

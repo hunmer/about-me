@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/agent_chat/models/voice_call_config.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;

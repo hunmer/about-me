@@ -1,9 +1,9 @@
-import 'package:Memento/plugins/notes/notes_plugin.dart';
+import 'package:aboutme/plugins/notes/notes_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/screens/notes_screen.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/screens/notes_screen.dart';
 
 class NotesMainViewState extends State<NotesMainView> {
   late final EventManager _eventManager;

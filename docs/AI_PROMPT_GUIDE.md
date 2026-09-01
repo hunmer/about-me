@@ -1,4 +1,4 @@
-# Memento AI Prompt 使用手册
+# Aboutme AI Prompt 使用手册
 
 > **版本**: 2.0
 > **最后更新**: 2025-01-15
@@ -21,7 +21,7 @@
 
 ## 概述
 
-Memento 提供了一套强大的 **Prompt 替换方法**，允许你在 AI 助手的系统提示词中直接调用插件数据进行分析。这些方法遵循统一的数据格式规范，支持三种数据模式（summary/compact/full），可以有效优化 token 消耗。
+Aboutme 提供了一套强大的 **Prompt 替换方法**，允许你在 AI 助手的系统提示词中直接调用插件数据进行分析。这些方法遵循统一的数据格式规范，支持三种数据模式（summary/compact/full），可以有效优化 token 消耗。
 
 ### 核心特性
 
@@ -661,6 +661,6 @@ Memento 提供了一套强大的 **Prompt 替换方法**，允许你在 AI 助�
 
 ---
 
-**文档维护者**: Memento Team
+**文档维护者**: Aboutme Team
 **反馈渠道**: GitHub Issues
 **最后更新**: 2025-01-15

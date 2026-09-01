@@ -4,8 +4,8 @@
 library;
 
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/diary/models/diary_entry.dart';
-import 'package:Memento/plugins/diary/utils/diary_utils.dart';
+import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 
 /// 客户端 Diary Repository 实现
 class ClientDiaryRepository extends IDiaryRepository {

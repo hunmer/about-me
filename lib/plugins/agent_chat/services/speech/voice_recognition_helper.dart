@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/screens/chat_screen/components/voice_input_dialog.dart';
-import 'package:Memento/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/voice_input_dialog.dart';
+import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 import 'speech_recognition_config.dart';
 import 'tencent_asr_service.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 语音识别辅助类
 ///

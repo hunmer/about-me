@@ -2,7 +2,7 @@
 
 ## 概述
 
-通过 **CallPluginMethodIntent**,你可以在 Siri Shortcuts 中调用 Memento 任意插件的 JavaScript API,无需为每个功能编写专用的 AppIntent。
+通过 **CallPluginMethodIntent**,你可以在 Siri Shortcuts 中调用 Aboutme 任意插件的 JavaScript API,无需为每个功能编写专用的 AppIntent。
 
 ## 架构说明
 
@@ -67,7 +67,7 @@ flutter build ios
 ```
 
 **效果:**
-调用 `Memento.plugins.todo.createTodo({...})`,创建一条新的待办事项。
+调用 `Aboutme.plugins.todo.createTodo({...})`,创建一条新的待办事项。
 
 ---
 
@@ -207,7 +207,7 @@ flutter build ios
 
 ### 方法 2: 在 App 的"工具管理"界面查看
 
-1. 打开 Memento App
+1. 打开 Aboutme App
 2. 进入 **Agent Chat** 插件
 3. 点击右上角 **工具管理**
 4. 浏览所有可用的插件和方法

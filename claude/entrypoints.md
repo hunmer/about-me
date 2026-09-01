@@ -18,15 +18,15 @@
 ## 核心初始化：`lib/core/app_initializer.dart`
 
 - `AppStartupState` 状态机：`coreReady`（存储+配置）→ `pluginsReady`（插件注册）→ `fullyReady`，驱动启动页进度。
-- `initializeApp()` 初始化链：StorageManager → ConfigManager → PluginManager（经 `BuiltinPlugins.createAll()` 装载 25 个插件）→ JS Bridge → 前台服务 / 通知（memento_notifications）→ 快捷方式、悬浮球、API 转发客户端、FCM、数据迁移控制器等。
+- `initializeApp()` 初始化链：StorageManager → ConfigManager → PluginManager（经 `BuiltinPlugins.createAll()` 装载 25 个插件）→ JS Bridge → 前台服务 / 通知（aboutme_notifications）→ 快捷方式、悬浮球、API 转发客户端、FCM、数据迁移控制器等。
 - 应用回到前台时（`didChangeAppLifecycleState`）：同步小组件待处理变更、处理剪贴板。
 
 ## Node.js 服务端入口
 
 | 服务 | 入口 | 启动 |
 |------|------|------|
-| 同步服务器 | `packages/server-nodejs/src/index.ts`（CLI 入口 `bin/memento-server.js`，npm 包名 `@hunmer/memento-server`） | `npm run dev` / `npm start`（默认端口 8874） |
-| MCP 服务器 | `packages/mcp-memento-server/src/index.ts`（stdio 传输） | `npm run build && npm start` |
+| 同步服务器 | `packages/server-nodejs/src/index.ts`（CLI 入口 `bin/aboutme-server.js`，npm 包名 `@hunmer/aboutme-server`） | `npm run dev` / `npm start`（默认端口 8874） |
+| MCP 服务器 | `packages/mcp-aboutme-server/src/index.ts`（stdio 传输） | `npm run build && npm start` |
 | API 转发服务器 | `packages/api_forwarding_server/src/index.ts`（WebSocket，端口 8654） | `npm run dev` |
 
 `server-nodejs` 的 `main()` 顺序：读取配置（`src/config/serverConfig.ts`）→ 初始化 `FileStorageService`（data 目录）→ AuthService / PluginDataService / PluginService / WebSocketManager / FileWatcherService → 挂载 `authRoutes`、`syncRoutes`、`pluginRoutes`、`pluginSystemRoutes` → 静态托管管理面板 `admin/`。

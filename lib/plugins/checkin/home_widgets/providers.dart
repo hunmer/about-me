@@ -1,7 +1,7 @@
 /// 打卡插件主页小组件数据提供者
 library;
 
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import '../checkin_plugin.dart';
 import '../models/checkin_item.dart';
 import 'utils.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/smooth_line_chart_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/smooth_line_chart_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 平滑曲线图表卡片示例（汽车统计风格）
 class SmoothLineChartCardExample extends StatelessWidget {

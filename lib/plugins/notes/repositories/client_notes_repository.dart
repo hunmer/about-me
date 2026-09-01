@@ -4,9 +4,9 @@
 library;
 
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/notes/controllers/notes_controller.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
 
 /// 客户端 Notes Repository 实现
 class ClientNotesRepository implements INotesRepository {

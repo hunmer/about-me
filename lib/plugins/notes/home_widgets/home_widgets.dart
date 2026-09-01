@@ -3,8 +3,8 @@
 /// 此文件负责注册所有笔记插件的主页小组件
 library;
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
 
 import 'register_icon_widget.dart' show registerIconWidget;
 import 'register_overview_widget.dart' show registerOverviewWidget;

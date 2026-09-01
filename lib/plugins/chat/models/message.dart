@@ -1,8 +1,8 @@
-import 'package:Memento/models/file_path_converter.dart';
+import 'package:aboutme/models/file_path_converter.dart';
 import 'package:flutter/material.dart';
 import 'user.dart';
-import 'package:Memento/utils/color_extension.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/utils/color_extension.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 enum MessageType { received, sent, file, image, video, audio }
 
 class Message {

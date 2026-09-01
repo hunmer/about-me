@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
 import 'dart:async';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/timer/views/add_timer_task_dialog.dart';
-import 'package:Memento/plugins/timer/views/timer_task_details_page.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/timer/views/add_timer_task_dialog.dart';
+import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/swipe_action/index.dart';
-import 'package:Memento/plugins/timer/timer_plugin.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/swipe_action/index.dart';
+import 'package:aboutme/plugins/timer/timer_plugin.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:collection/collection.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/widgets/common/timer_card_widget.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/common/timer_card_widget.dart';
 
 class TimerMainView extends StatefulWidget {
   const TimerMainView({super.key});

@@ -35,7 +35,7 @@
 ### 基本使用
 
 ```dart
-import 'package:Memento/widgets/statistics/statistics.dart';
+import 'package:aboutme/widgets/statistics/statistics.dart';
 
 class MyStatisticsScreen extends StatelessWidget {
   final MyDataService dataService;

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/gestures.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_config.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_config_manager.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'components/plugin_section.dart';
 import 'components/tool_editor_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 工具管理界面
 class ToolManagementScreen extends StatefulWidget {

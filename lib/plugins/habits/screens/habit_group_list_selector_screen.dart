@@ -2,11 +2,11 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
 
 /// 习惯分组列表小组件配置界面
 ///
@@ -525,7 +525,7 @@ class _HabitGroupListSelectorScreenState
         name: 'HabitGroupListWidgetProvider',
         iOSName: 'HabitGroupListWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.HabitGroupListWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.HabitGroupListWidgetProvider',
       );
       debugPrint('HabitGroupListWidgetProvider 更新完成');
 

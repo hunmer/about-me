@@ -1,4 +1,4 @@
-# Memento Intent Plugin
+# Aboutme Intent Plugin
 
 一个 Flutter 原生插件，用于处理 Android 和 iOS 平台上的 Intent、深度链接和分享内容。
 
@@ -26,8 +26,8 @@
 
 ```yaml
 dependencies:
-  memento_intent:
-    path: ./memento_intent
+  aboutme_intent:
+    path: ./aboutme_intent
 ```
 
 ### 2. 初始化插件
@@ -35,13 +35,13 @@ dependencies:
 在应用启动时初始化插件：
 
 ```dart
-import 'package:memento_intent/memento_intent.dart';
+import 'package:aboutme_intent/aboutme_intent.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化 Intent 插件
-  await MementoIntent.instance.init();
+  await AboutmeIntent.instance.init();
 
   runApp(MyApp());
 }
@@ -56,7 +56,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final MementoIntent _intent = MementoIntent.instance;
+  final AboutmeIntent _intent = AboutmeIntent.instance;
 
   @override
   void initState() {
@@ -98,7 +98,7 @@ class _MyAppState extends State<MyApp> {
 
 ```dart
 // 注册一个深度链接 Scheme
-final success = await MementoIntent.instance.registerDynamicScheme(
+final success = await AboutmeIntent.instance.registerDynamicScheme(
   scheme: 'myapp',
   host: 'example.com',
   pathPrefix: '/app',
@@ -114,7 +114,7 @@ if (success) {
 ### 5. 注销 Scheme
 
 ```dart
-final success = await MementoIntent.instance.unregisterDynamicScheme();
+final success = await AboutmeIntent.instance.unregisterDynamicScheme();
 if (success) {
   print('Scheme 注销成功!');
 }
@@ -124,7 +124,7 @@ if (success) {
 
 ### 类
 
-#### MementoIntent
+#### AboutmeIntent
 主要的插件类，使用单例模式。
 
 ##### 属性
@@ -158,7 +158,7 @@ Intent 数据模型。
 
 ## 测试页面
 
-在 Memento 应用中，已经集成了一个 Intent 测试页面，位于：
+在 Aboutme 应用中，已经集成了一个 Intent 测试页面，位于：
 `lib/screens/intent_test_screen/intent_test_screen.dart`
 
 访问方式：
@@ -220,7 +220,7 @@ Intent 数据模型。
 
 ```swift
 override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-    // MementoIntent 插件会自动处理 URL
+    // AboutmeIntent 插件会自动处理 URL
     return super.application(app, open: url, options: options)
 }
 ```
@@ -230,25 +230,25 @@ override func application(_ app: UIApplication, open url: URL, options: [UIAppli
 ### 场景 1：活动页深度链接
 ```dart
 // 活动开始时注册临时 Scheme
-await MementoIntent.instance.registerDynamicScheme(
+await AboutmeIntent.instance.registerDynamicScheme(
   scheme: 'double11',
   host: 'gift.myapp.com',
   pathPrefix: '/2025',
 );
 
 // 活动结束后注销
-await MementoIntent.instance.unregisterDynamicScheme();
+await AboutmeIntent.instance.unregisterDynamicScheme();
 ```
 
 ### 场景 2：多租户应用
 ```dart
 // 为不同客户注册不同的 Scheme
-await MementoIntent.instance.registerDynamicScheme(
+await AboutmeIntent.instance.registerDynamicScheme(
   scheme: 'customerA',
   host: 'app.customer-a.com',
 );
 
-await MementoIntent.instance.registerDynamicScheme(
+await AboutmeIntent.instance.registerDynamicScheme(
   scheme: 'customerB',
   host: 'app.customer-b.com',
 );
@@ -257,7 +257,7 @@ await MementoIntent.instance.registerDynamicScheme(
 ### 场景 3：企业集成
 ```dart
 // 为企业微信/钉钉等企业应用注册专属 Scheme
-await MementoIntent.instance.registerDynamicScheme(
+await AboutmeIntent.instance.registerDynamicScheme(
   scheme: 'wework',
   host: 'app.weixin.qq.com',
 );

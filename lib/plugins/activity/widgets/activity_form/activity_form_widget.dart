@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/widgets/tags_dialog/models/models.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 import 'activity_form_state.dart';
 
 class ActivityFormWidget extends StatefulWidget {

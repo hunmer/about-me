@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/goods/models/custom_field.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 自定义字段组件
 ///

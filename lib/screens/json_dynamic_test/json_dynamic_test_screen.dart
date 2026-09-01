@@ -1,11 +1,11 @@
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:json_dynamic_widget/json_dynamic_widget.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 /// JSON 动态 UI 测试页面
 /// 用于快速测试和预览 json_dynamic_widget 配置
 class JsonDynamicTestScreen extends StatefulWidget {

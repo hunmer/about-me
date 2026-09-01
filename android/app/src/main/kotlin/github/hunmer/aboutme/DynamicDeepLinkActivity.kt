@@ -1,4 +1,4 @@
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.app.Activity
 import android.content.Intent

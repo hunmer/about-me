@@ -3,11 +3,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 import '../events/store_cache_updated_event_args.dart';
 
 /// 用户物品选择器小组件

@@ -1,6 +1,6 @@
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/todo/views/todo_bottombar_view.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/todo/views/todo_bottombar_view.dart';
 
 /// Todo 插件路由注册表
 class TodoRoutes implements RouteRegistry {

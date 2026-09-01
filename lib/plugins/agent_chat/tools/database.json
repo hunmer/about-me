@@ -23,19 +23,19 @@
     "examples": [
       {
         "title": "获取所有数据库（无分页）",
-        "code": "const databases = await Memento.plugins.database.getDatabases();\nsetResult(JSON.stringify(databases, null, 2));"
+        "code": "const databases = await Aboutme.plugins.database.getDatabases();\nsetResult(JSON.stringify(databases, null, 2));"
       },
       {
         "title": "分页获取数据库（前20个）",
-        "code": "const result = await Memento.plugins.database.getDatabases({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个数据库，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.database.getDatabases({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个数据库，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "分页获取数据库（第二页）",
-        "code": "const result = await Memento.plugins.database.getDatabases({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.database.getDatabases({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
       },
       {
         "title": "遍历所有数据库（分页加载）",
-        "code": "let allDatabases = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Memento.plugins.database.getDatabases({offset, count});\n  allDatabases = allDatabases.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allDatabases.length} 个数据库`);"
+        "code": "let allDatabases = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.getDatabases({offset, count});\n  allDatabases = allDatabases.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allDatabases.length} 个数据库`);"
       }
     ],
     "notes": "返回的数据库对象不包含 items 字段，如需获取记录请使用 getRecords。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -56,11 +56,11 @@
     "examples": [
       {
         "title": "创建简单数据库",
-        "code": "const db = await Memento.plugins.database.createDatabase({name: '我的数据库', description: '用于记录信息'});\nsetResult(`数据库已创建: ${db.name}`);"
+        "code": "const db = await Aboutme.plugins.database.createDatabase({name: '我的数据库', description: '用于记录信息'});\nsetResult(`数据库已创建: ${db.name}`);"
       },
       {
         "title": "创建带字段的数据库",
-        "code": "const fields = JSON.stringify([{name: '标题', type: 'Text'}, {name: '日期', type: 'Date'}]);\nconst db = await Memento.plugins.database.createDatabase({name: '任务库', description: '任务管理', fieldsJson: fields});\nsetResult(`数据库${db.id}已创建`);"
+        "code": "const fields = JSON.stringify([{name: '标题', type: 'Text'}, {name: '日期', type: 'Date'}]);\nconst db = await Aboutme.plugins.database.createDatabase({name: '任务库', description: '任务管理', fieldsJson: fields});\nsetResult(`数据库${db.id}已创建`);"
       }
     ],
     "notes": "字段类型支持: Text, Long Text, Integer, Checkbox, Dropdown, Date, Time, Date/Time, Image, URL, Rating, Password",
@@ -82,7 +82,7 @@
     "examples": [
       {
         "title": "更新数据库名称",
-        "code": "const updated = await Memento.plugins.database.updateDatabase({databaseId: 'db123', name: '新名称'});\nsetResult(`数据库已更新: ${updated.name}`);"
+        "code": "const updated = await Aboutme.plugins.database.updateDatabase({databaseId: 'db123', name: '新名称'});\nsetResult(`数据库已更新: ${updated.name}`);"
       }
     ],
     "notes": "仅更新提供的字段，未提供的字段保持不变",
@@ -101,7 +101,7 @@
     "examples": [
       {
         "title": "删除数据库",
-        "code": "const result = await Memento.plugins.database.deleteDatabase({databaseId: 'db123'});\nsetResult(result.success ? '删除成功' : (result.error || '删除失败'));"
+        "code": "const result = await Aboutme.plugins.database.deleteDatabase({databaseId: 'db123'});\nsetResult(result.success ? '删除成功' : (result.error || '删除失败'));"
       }
     ],
     "notes": "删除操作不可逆，会同时删除该数据库下的所有记录",
@@ -133,23 +133,23 @@
     "examples": [
       {
         "title": "获取所有记录（无分页）",
-        "code": "const records = await Memento.plugins.database.getRecords({databaseId: 'db123'});\nsetResult(`共有 ${records.length} 条记录`);"
+        "code": "const records = await Aboutme.plugins.database.getRecords({databaseId: 'db123'});\nsetResult(`共有 ${records.length} 条记录`);"
       },
       {
         "title": "获取最新10条记录",
-        "code": "const latest = await Memento.plugins.database.getRecords({databaseId: 'db123', limit: 10});\nsetResult(JSON.stringify(latest, null, 2));"
+        "code": "const latest = await Aboutme.plugins.database.getRecords({databaseId: 'db123', limit: 10});\nsetResult(JSON.stringify(latest, null, 2));"
       },
       {
         "title": "分页获取记录（前20条）",
-        "code": "const result = await Memento.plugins.database.getRecords({databaseId: 'db123', offset: 0, count: 20});\nsetResult(`共 ${result.total} 条记录，当前返回 ${result.data.length} 条`);"
+        "code": "const result = await Aboutme.plugins.database.getRecords({databaseId: 'db123', offset: 0, count: 20});\nsetResult(`共 ${result.total} 条记录，当前返回 ${result.data.length} 条`);"
       },
       {
         "title": "分页获取记录（第二页）",
-        "code": "const result = await Memento.plugins.database.getRecords({databaseId: 'db123', offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.database.getRecords({databaseId: 'db123', offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
       },
       {
         "title": "遍历所有记录（分页加载）",
-        "code": "let allRecords = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Memento.plugins.database.getRecords({databaseId: 'db123', offset, count});\n  allRecords = allRecords.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allRecords.length} 条记录`);"
+        "code": "let allRecords = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.getRecords({databaseId: 'db123', offset, count});\n  allRecords = allRecords.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allRecords.length} 条记录`);"
       }
     ],
     "notes": "字段数据存储在 fields 对象中，键为字段名，值为字段值。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -170,15 +170,15 @@
     "examples": [
       {
         "title": "创建记录",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({标题: '新任务', 日期: today, 完成: false});\nconst record = await Memento.plugins.database.createRecord({databaseId: 'db123', fieldsJson: fields});\nsetResult(`记录已创建: ${record.id}`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({标题: '新任务', 日期: today, 完成: false});\nconst record = await Aboutme.plugins.database.createRecord({databaseId: 'db123', fieldsJson: fields});\nsetResult(`记录已创建: ${record.id}`);"
       },
       {
         "title": "使用自定义ID创建记录",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({\n  标题: '项目任务',\n  日期: today,\n  完成: false,\n  优先级: '高',\n  负责人: '张三'\n});\nconst record = await Memento.plugins.database.createRecord({\n  databaseId: 'db123',\n  fieldsJson: fields,\n  id: 'rec456'\n});\nsetResult(`记录已创建，自定义ID: ${record.id}`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({\n  标题: '项目任务',\n  日期: today,\n  完成: false,\n  优先级: '高',\n  负责人: '张三'\n});\nconst record = await Aboutme.plugins.database.createRecord({\n  databaseId: 'db123',\n  fieldsJson: fields,\n  id: 'rec456'\n});\nsetResult(`记录已创建，自定义ID: ${record.id}`);"
       },
       {
         "title": "在fieldsJson中包含自定义ID",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({\n  id: 'rec789',\n  标题: '会议记录',\n  日期: today,\n  参与人数: 5,\n  会议类型: '项目评审'\n});\nconst record = await Memento.plugins.database.createRecord({databaseId: 'db123', fieldsJson: fields});\nsetResult(`记录已创建，ID来自fields: ${record.id}`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst fields = JSON.stringify({\n  id: 'rec789',\n  标题: '会议记录',\n  日期: today,\n  参与人数: 5,\n  会议类型: '项目评审'\n});\nconst record = await Aboutme.plugins.database.createRecord({databaseId: 'db123', fieldsJson: fields});\nsetResult(`记录已创建，ID来自fields: ${record.id}`);"
       }
     ],
     "notes": "必需参数: databaseId(数据库ID)、fieldsJson(字段数据JSON字符串);可选参数: id(自定义记录ID);支持两种自定义ID方式:1)通过id参数传入，2)在fieldsJson中包含id字段;如果不提供id会自动生成UUID;ID不能与现有记录重复;字段名必须与数据库定义的字段名匹配，字段值类型需符合字段类型定义",
@@ -199,7 +199,7 @@
     "examples": [
       {
         "title": "更新记录",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst updates = JSON.stringify({完成: true, 完成日期: today});\nconst record = await Memento.plugins.database.updateRecord({databaseId: 'db123', recordId: 'rec456', fieldsJson: updates});\nsetResult('记录已更新');"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst updates = JSON.stringify({完成: true, 完成日期: today});\nconst record = await Aboutme.plugins.database.updateRecord({databaseId: 'db123', recordId: 'rec456', fieldsJson: updates});\nsetResult('记录已更新');"
       }
     ],
     "notes": "仅更新提供的字段，其他字段保持不变",
@@ -219,7 +219,7 @@
     "examples": [
       {
         "title": "删除记录",
-        "code": "const result = await Memento.plugins.database.deleteRecord({databaseId: 'db123', recordId: 'rec456'});\nsetResult(result.success ? '删除成功' : (result.error || '删除失败'));"
+        "code": "const result = await Aboutme.plugins.database.deleteRecord({databaseId: 'db123', recordId: 'rec456'});\nsetResult(result.success ? '删除成功' : (result.error || '删除失败'));"
       }
     ],
     "notes": "删除操作不可逆",
@@ -251,19 +251,19 @@
     "examples": [
       {
         "title": "无条件查询（获取所有）",
-        "code": "const all = await Memento.plugins.database.query({databaseId: 'db123'});\nsetResult(`共 ${all.length} 条记录`);"
+        "code": "const all = await Aboutme.plugins.database.query({databaseId: 'db123'});\nsetResult(`共 ${all.length} 条记录`);"
       },
       {
         "title": "条件查询",
-        "code": "const filters = JSON.stringify({完成: false, 优先级: '高'});\nconst urgent = await Memento.plugins.database.query({databaseId: 'db123', filtersJson: filters});\nsetResult(`未完成的高优先级任务: ${urgent.length} 条`);"
+        "code": "const filters = JSON.stringify({完成: false, 优先级: '高'});\nconst urgent = await Aboutme.plugins.database.query({databaseId: 'db123', filtersJson: filters});\nsetResult(`未完成的高优先级任务: ${urgent.length} 条`);"
       },
       {
         "title": "条件查询+分页（前20条）",
-        "code": "const filters = JSON.stringify({状态: '进行中'});\nconst result = await Memento.plugins.database.query({databaseId: 'db123', filtersJson: filters, offset: 0, count: 20});\nsetResult(`共找到 ${result.total} 条，当前返回 ${result.data.length} 条`);"
+        "code": "const filters = JSON.stringify({状态: '进行中'});\nconst result = await Aboutme.plugins.database.query({databaseId: 'db123', filtersJson: filters, offset: 0, count: 20});\nsetResult(`共找到 ${result.total} 条，当前返回 ${result.data.length} 条`);"
       },
       {
         "title": "遍历查询结果（分页加载）",
-        "code": "const filters = JSON.stringify({类型: '项目'});\nlet allResults = [];\nlet offset = 0;\nconst count = 30;\n\nwhile (true) {\n  const result = await Memento.plugins.database.query({databaseId: 'db123', filtersJson: filters, offset, count});\n  allResults = allResults.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allResults.length} 条符合条件的记录`);"
+        "code": "const filters = JSON.stringify({类型: '项目'});\nlet allResults = [];\nlet offset = 0;\nconst count = 30;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.query({databaseId: 'db123', filtersJson: filters, offset, count});\n  allResults = allResults.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allResults.length} 条符合条件的记录`);"
       }
     ],
     "notes": "过滤条件为精确匹配（字段值必须完全相等），如不提供条件则返回所有记录。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -283,11 +283,11 @@
     "examples": [
       {
         "title": "获取数据库总数",
-        "code": "const count = await Memento.plugins.database.getCount({type: 'databases'});\nsetResult(`系统中有 ${count} 个数据库`);"
+        "code": "const count = await Aboutme.plugins.database.getCount({type: 'databases'});\nsetResult(`系统中有 ${count} 个数据库`);"
       },
       {
         "title": "获取记录数",
-        "code": "const count = await Memento.plugins.database.getCount({type: 'records', databaseId: 'db123'});\nsetResult(`该数据库有 ${count} 条记录`);"
+        "code": "const count = await Aboutme.plugins.database.getCount({type: 'records', databaseId: 'db123'});\nsetResult(`该数据库有 ${count} 条记录`);"
       }
     ],
     "notes": "type 参数只接受 'databases' 或 'records' 两个值",
@@ -320,19 +320,19 @@
     "examples": [
       {
         "title": "根据 ID 查找数据库",
-        "code": "const db = await Memento.plugins.database.findDatabaseBy({field: 'id', value: 'db123'});\nif (db) {\n  setResult(`找到数据库: ${db.name}`);\n} else {\n  setResult('未找到该数据库');\n}"
+        "code": "const db = await Aboutme.plugins.database.findDatabaseBy({field: 'id', value: 'db123'});\nif (db) {\n  setResult(`找到数据库: ${db.name}`);\n} else {\n  setResult('未找到该数据库');\n}"
       },
       {
         "title": "查找所有包含特定描述的数据库",
-        "code": "const databases = await Memento.plugins.database.findDatabaseBy({field: 'description', value: '任务管理', findAll: true});\nsetResult(`找到 ${databases.length} 个数据库`);"
+        "code": "const databases = await Aboutme.plugins.database.findDatabaseBy({field: 'description', value: '任务管理', findAll: true});\nsetResult(`找到 ${databases.length} 个数据库`);"
       },
       {
         "title": "分页查找所有匹配的数据库（前10个）",
-        "code": "const result = await Memento.plugins.database.findDatabaseBy({field: 'description', value: '项目', findAll: true, offset: 0, count: 10});\nsetResult(`共找到 ${result.total} 个，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.database.findDatabaseBy({field: 'description', value: '项目', findAll: true, offset: 0, count: 10});\nsetResult(`共找到 ${result.total} 个，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "遍历所有匹配的数据库（分页加载）",
-        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 20;\n\nwhile (true) {\n  const result = await Memento.plugins.database.findDatabaseBy({field: 'description', value: '管理', findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 个匹配的数据库`);"
+        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 20;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.findDatabaseBy({field: 'description', value: '管理', findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 个匹配的数据库`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历数据库列表；支持任意字段匹配。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -351,7 +351,7 @@
     "examples": [
       {
         "title": "查找指定ID的数据库",
-        "code": "const db = await Memento.plugins.database.findDatabaseById({id: 'db123'});\nif (db) {\n  setResult(`数据库名称: ${db.name}, 字段数: ${db.fields.length}`);\n} else {\n  setResult('数据库不存在');\n}"
+        "code": "const db = await Aboutme.plugins.database.findDatabaseById({id: 'db123'});\nif (db) {\n  setResult(`数据库名称: ${db.name}, 字段数: ${db.fields.length}`);\n} else {\n  setResult('数据库不存在');\n}"
       }
     ],
     "notes": "等价于 findDatabaseBy({field: 'id', value: id})",
@@ -384,19 +384,19 @@
     "examples": [
       {
         "title": "精确匹配数据库名称",
-        "code": "const db = await Memento.plugins.database.findDatabaseByName({name: '任务管理'});\nsetResult(db ? `数据库ID: ${db.id}` : '未找到');"
+        "code": "const db = await Aboutme.plugins.database.findDatabaseByName({name: '任务管理'});\nsetResult(db ? `数据库ID: ${db.id}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的数据库",
-        "code": "const databases = await Memento.plugins.database.findDatabaseByName({name: '管理', fuzzy: true, findAll: true});\nsetResult(`找到 ${databases.length} 个包含\"管理\"的数据库`);"
+        "code": "const databases = await Aboutme.plugins.database.findDatabaseByName({name: '管理', fuzzy: true, findAll: true});\nsetResult(`找到 ${databases.length} 个包含\"管理\"的数据库`);"
       },
       {
         "title": "模糊匹配+分页（前15个）",
-        "code": "const result = await Memento.plugins.database.findDatabaseByName({name: '项目', fuzzy: true, findAll: true, offset: 0, count: 15});\nsetResult(`共找到 ${result.total} 个，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.database.findDatabaseByName({name: '项目', fuzzy: true, findAll: true, offset: 0, count: 15});\nsetResult(`共找到 ${result.total} 个，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "遍历所有匹配的数据库（分页加载）",
-        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 25;\n\nwhile (true) {\n  const result = await Memento.plugins.database.findDatabaseByName({name: '系统', fuzzy: true, findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 个匹配的数据库`);"
+        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 25;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.findDatabaseByName({name: '系统', fuzzy: true, findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 个匹配的数据库`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -430,19 +430,19 @@
     "examples": [
       {
         "title": "根据记录ID查找",
-        "code": "const record = await Memento.plugins.database.findRecordBy({databaseId: 'db123', field: 'id', value: 'rec456'});\nif (record) {\n  setResult(`找到记录: ${JSON.stringify(record.fields)}`);\n} else {\n  setResult('未找到该记录');\n}"
+        "code": "const record = await Aboutme.plugins.database.findRecordBy({databaseId: 'db123', field: 'id', value: 'rec456'});\nif (record) {\n  setResult(`找到记录: ${JSON.stringify(record.fields)}`);\n} else {\n  setResult('未找到该记录');\n}"
       },
       {
         "title": "查找所有标题为特定值的记录",
-        "code": "const records = await Memento.plugins.database.findRecordBy({databaseId: 'db123', field: '标题', value: '项目任务', findAll: true});\nsetResult(`找到 ${records.length} 条标题为\"项目任务\"的记录`);"
+        "code": "const records = await Aboutme.plugins.database.findRecordBy({databaseId: 'db123', field: '标题', value: '项目任务', findAll: true});\nsetResult(`找到 ${records.length} 条标题为\"项目任务\"的记录`);"
       },
       {
         "title": "分页查找所有匹配的记录（前20条）",
-        "code": "const result = await Memento.plugins.database.findRecordBy({databaseId: 'db123', field: '状态', value: '进行中', findAll: true, offset: 0, count: 20});\nsetResult(`共找到 ${result.total} 条，当前返回 ${result.data.length} 条`);"
+        "code": "const result = await Aboutme.plugins.database.findRecordBy({databaseId: 'db123', field: '状态', value: '进行中', findAll: true, offset: 0, count: 20});\nsetResult(`共找到 ${result.total} 条，当前返回 ${result.data.length} 条`);"
       },
       {
         "title": "遍历所有匹配的记录（分页加载）",
-        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 30;\n\nwhile (true) {\n  const result = await Memento.plugins.database.findRecordBy({databaseId: 'db123', field: '类型', value: '任务', findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 条匹配的记录`);"
+        "code": "let allMatched = [];\nlet offset = 0;\nconst count = 30;\n\nwhile (true) {\n  const result = await Aboutme.plugins.database.findRecordBy({databaseId: 'db123', field: '类型', value: '任务', findAll: true, offset, count});\n  allMatched = allMatched.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allMatched.length} 条匹配的记录`);"
       }
     ],
     "notes": "支持查找记录的内置字段（id、tableId）和自定义字段（存储在 fields 对象中）。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。",
@@ -462,7 +462,7 @@
     "examples": [
       {
         "title": "查找指定ID的记录",
-        "code": "const record = await Memento.plugins.database.findRecordById({databaseId: 'db123', id: 'rec456'});\nif (record) {\n  setResult(`记录字段: ${JSON.stringify(record.fields, null, 2)}`);\n} else {\n  setResult('记录不存在');\n}"
+        "code": "const record = await Aboutme.plugins.database.findRecordById({databaseId: 'db123', id: 'rec456'});\nif (record) {\n  setResult(`记录字段: ${JSON.stringify(record.fields, null, 2)}`);\n} else {\n  setResult('记录不存在');\n}"
       }
     ],
     "notes": "等价于 findRecordBy({databaseId, field: 'id', value: id})",

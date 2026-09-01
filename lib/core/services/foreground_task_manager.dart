@@ -1,8 +1,8 @@
-import 'package:memento_foreground_service/memento_foreground_service.dart';
+import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 
-/// 前台任务管理器 - 使用 memento_foreground_service 插件
+/// 前台任务管理器 - 使用 aboutme_foreground_service 插件
 ///
-/// 这是对 memento_foreground_service 插件的薄封装层，
+/// 这是对 aboutme_foreground_service 插件的薄封装层，
 /// 保持与原有 API 的兼容性。
 class ForegroundTaskManager {
   static final ForegroundTaskManager _instance =
@@ -15,7 +15,7 @@ class ForegroundTaskManager {
   }
 
   Future<void> _initialize() async {
-    await MementoForegroundService.instance.initialize();
+    await AboutmeForegroundService.instance.initialize();
   }
 
   /// 启动前台服务
@@ -28,11 +28,11 @@ class ForegroundTaskManager {
     required Function() callback,
     String? notificationInitialRoute,
   }) async {
-    return await MementoForegroundService.instance.startService(
+    return await AboutmeForegroundService.instance.startService(
       serviceId: serviceId,
       notificationTitle: notificationTitle,
       notificationText: notificationText,
-      notificationIcon: notificationIcon ?? 'github.hunmer.memento.service.APP_ICON',
+      notificationIcon: notificationIcon ?? 'github.hunmer.aboutme.service.APP_ICON',
       notificationButtons: notificationButtons,
       notificationInitialRoute: notificationInitialRoute,
       callback: callback,
@@ -41,21 +41,21 @@ class ForegroundTaskManager {
 
   /// 停止前台服务
   Future<ServiceResult> stopService() {
-    return MementoForegroundService.instance.stopService();
+    return AboutmeForegroundService.instance.stopService();
   }
 
   /// 检查服务是否正在运行
   Future<bool> isServiceRunning() {
-    return MementoForegroundService.instance.isRunning;
+    return AboutmeForegroundService.instance.isRunning;
   }
 
   /// 添加数据回调
   void addDataCallback(Function(Object) callback) {
-    MementoForegroundService.instance.addDataCallback(callback);
+    AboutmeForegroundService.instance.addDataCallback(callback);
   }
 
   /// 移除数据回调
   void removeDataCallback(Function(Object) callback) {
-    MementoForegroundService.instance.removeDataCallback(callback);
+    AboutmeForegroundService.instance.removeDataCallback(callback);
   }
 }

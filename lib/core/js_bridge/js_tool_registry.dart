@@ -1,4 +1,4 @@
-import 'package:Memento/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 
 /// JavaScript 工具配置模型
 class JSToolConfig {

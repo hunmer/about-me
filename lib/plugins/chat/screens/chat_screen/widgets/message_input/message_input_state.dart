@@ -1,9 +1,9 @@
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/core/event/event.dart' as memento_event;
-import 'package:Memento/plugins/chat/models/message.dart';
+import 'package:aboutme/core/event/event.dart' as aboutme_event;
+import 'package:aboutme/plugins/chat/models/message.dart';
 
 class MessageInputState {
   final TextEditingController controller;
@@ -120,9 +120,9 @@ class MessageInputState {
         }
 
         // 广播消息事件
-        memento_event.EventManager.instance.broadcast(
+        aboutme_event.EventManager.instance.broadcast(
           'chat_message_sent',
-          memento_event.Value<Message>(message),
+          aboutme_event.Value<Message>(message),
         );
       }
     }

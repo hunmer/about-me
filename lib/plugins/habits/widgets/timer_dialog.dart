@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
 import 'dart:async';
 
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 
 class TimerDialog extends StatefulWidget {
   final Habit habit;

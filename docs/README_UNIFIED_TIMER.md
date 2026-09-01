@@ -2,7 +2,7 @@
 
 ## 📋 项目概述
 
-本项目成功将Memento应用中的4个插件（todo、tracker、timer、habits）的计时器功能统一到一个控制器中，并实现了移动设备通知栏的多计时器同步显示功能。
+本项目成功将Aboutme应用中的4个插件（todo、tracker、timer、habits）的计时器功能统一到一个控制器中，并实现了移动设备通知栏的多计时器同步显示功能。
 
 ---
 
@@ -69,8 +69,8 @@
 
 #### 1. 添加依赖
 ```dart
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
 ```
 
 #### 2. 调用统一控制器
@@ -170,7 +170,7 @@ lib/plugins/
     └── widgets/
         └── timer_dialog.dart         ✏️ 修改 - 简化集成
 
-android/app/src/main/kotlin/github/hunmer/memento/
+android/app/src/main/kotlin/github/hunmer/aboutme/
 └── TimerForegroundService.kt         ✏️ 修改 - 支持多通知栏实例
 ```
 
@@ -367,7 +367,7 @@ A: 使用DateTime.now()计算，高精度时间差
 
 ## 📄 许可证
 
-本项目继承Memento项目许可证。
+本项目继承Aboutme项目许可证。
 
 ---
 

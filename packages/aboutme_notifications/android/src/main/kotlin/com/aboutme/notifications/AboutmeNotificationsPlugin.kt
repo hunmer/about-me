@@ -1,4 +1,4 @@
-package com.memento.notifications
+package com.aboutme.notifications
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -7,16 +7,16 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 /**
- * Memento 通知管理插件
+ * Aboutme 通知管理插件
  *
  * 该插件主要作为 awesome_notifications 的封装层。
  * 大部分通知功能由 awesome_notifications 直接处理。
  */
-class MementoNotificationsPlugin : FlutterPlugin, MethodCallHandler {
+class AboutmeNotificationsPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(binding.binaryMessenger, "com.memento.notifications/main")
+        channel = MethodChannel(binding.binaryMessenger, "com.aboutme.notifications/main")
         channel.setMethodCallHandler(this)
     }
 

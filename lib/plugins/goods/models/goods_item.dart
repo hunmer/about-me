@@ -1,4 +1,4 @@
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'usage_record.dart';
 import 'custom_field.dart';

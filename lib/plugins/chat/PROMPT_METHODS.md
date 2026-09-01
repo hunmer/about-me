@@ -289,5 +289,5 @@
 ## 版本信息
 
 - **创建日期**: 2025-11-15
-- **遵循规范**: Memento Prompt 数据格式规范 v2.0
+- **遵循规范**: Aboutme Prompt 数据格式规范 v2.0
 - **依赖插件**: Chat Plugin v1.0, OpenAI Plugin v1.0

@@ -1,7 +1,7 @@
-import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
 class CheckinRecordDialog extends StatefulWidget {
   final CheckinItem item;

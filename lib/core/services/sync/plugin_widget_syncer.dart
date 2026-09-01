@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/system_widget_service.dart';
+import 'package:aboutme/core/services/system_widget_service.dart';
 
 /// 插件小组件同步器基类
 ///

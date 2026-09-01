@@ -12,7 +12,7 @@ from typing import List, Tuple, Optional
 
 
 class DartImportConverter:
-    def __init__(self, package_name: str = "Memento"):
+    def __init__(self, package_name: str = "Aboutme"):
         self.package_name = package_name
         self.changes = []
 
@@ -198,7 +198,7 @@ Options:
   --help, -h          Show this help message
   --apply             Apply changes (default is preview only)
   --export-csv        Export all changes to CSV file
-  --package-name NAME Specify package name (default: Memento)
+  --package-name NAME Specify package name (default: Aboutme)
 
 Examples:
   python convert_imports_v2.py                    # Preview mode
@@ -211,7 +211,7 @@ Examples:
 def main():
     dry_run = True
     export_csv = False
-    package_name = "Memento"
+    package_name = "Aboutme"
 
     args = sys.argv[1:]
     if '--help' in args or '-h' in args:

@@ -3,10 +3,10 @@ library;
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 import '../../tracker_plugin.dart';
 
 /// 渲染目标数据

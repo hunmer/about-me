@@ -1,11 +1,11 @@
-import 'package:Memento/plugins/activity/widgets/activity_form/activity_form_widget.dart';
+import 'package:aboutme/plugins/activity/widgets/activity_form/activity_form_widget.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/activity/services/activity_service.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
-import 'package:Memento/widgets/tags_dialog/models/models.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/activity/services/activity_service.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 // ignore: unused_import
 import 'package:collection/collection.dart';
 import 'activity_form_utils.dart';

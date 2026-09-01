@@ -1,9 +1,9 @@
-import 'package:Memento/screens/home_screen/models/home_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/models/layout_config.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/models/layout_config.dart';
 import '../../../../core/services/toast_service.dart';
 
 /// 布局管理对话框

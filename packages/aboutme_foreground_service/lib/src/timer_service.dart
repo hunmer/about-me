@@ -9,16 +9,16 @@ import 'foreground_service_config.dart';
 ///
 /// 提供计时器任务的前台服务管理，包括启动、更新和停止计时器。
 /// 支持子任务进度显示。
-class MementoTimerService {
-  static final MementoTimerService _instance = MementoTimerService._internal();
+class AboutmeTimerService {
+  static final AboutmeTimerService _instance = AboutmeTimerService._internal();
 
   /// 单例实例
-  static MementoTimerService get instance => _instance;
+  static AboutmeTimerService get instance => _instance;
 
-  MementoTimerService._internal();
+  AboutmeTimerService._internal();
 
   /// MethodChannel 名称
-  static const String _channelName = 'com.memento.foreground_service/timer';
+  static const String _channelName = 'com.aboutme.foreground_service/timer';
 
   /// MethodChannel 实例
   static const MethodChannel _channel = MethodChannel(_channelName);
@@ -36,7 +36,7 @@ class MementoTimerService {
     int currentSubTimerIndex = 0,
   }) async {
     if (!Platform.isAndroid) {
-      debugPrint('[MementoTimerService] 仅支持 Android 平台');
+      debugPrint('[AboutmeTimerService] 仅支持 Android 平台');
       return;
     }
 
@@ -47,9 +47,9 @@ class MementoTimerService {
         'subTimers': subTimers?.map((t) => t.toMap()).toList(),
         'currentSubTimerIndex': currentSubTimerIndex,
       });
-      debugPrint('[MementoTimerService] 计时器服务已启动: $taskName');
+      debugPrint('[AboutmeTimerService] 计时器服务已启动: $taskName');
     } catch (e) {
-      debugPrint('[MementoTimerService] 启动计时器服务失败: $e');
+      debugPrint('[AboutmeTimerService] 启动计时器服务失败: $e');
       rethrow;
     }
   }
@@ -76,7 +76,7 @@ class MementoTimerService {
         'currentSubTimerIndex': currentSubTimerIndex,
       });
     } catch (e) {
-      debugPrint('[MementoTimerService] 更新计时器服务失败: $e');
+      debugPrint('[AboutmeTimerService] 更新计时器服务失败: $e');
       rethrow;
     }
   }
@@ -91,9 +91,9 @@ class MementoTimerService {
       await _channel.invokeMethod('stopTimerService', {
         'taskId': taskId,
       });
-      debugPrint('[MementoTimerService] 计时器服务已停止');
+      debugPrint('[AboutmeTimerService] 计时器服务已停止');
     } catch (e) {
-      debugPrint('[MementoTimerService] 停止计时器服务失败: $e');
+      debugPrint('[AboutmeTimerService] 停止计时器服务失败: $e');
       rethrow;
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/widgets/day_card_header.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
+import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
 
 /// 笔记单日卡片 - 展示某一天创建/修改的笔记
 ///

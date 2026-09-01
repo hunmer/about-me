@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 
 /// TTS设置对话框
 ///

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:Memento/plugins/database/models/database_field.dart';
+import 'package:aboutme/plugins/database/models/database_field.dart';
 
 class FieldController {
   static const Map<String, IconData> fieldTypes = {

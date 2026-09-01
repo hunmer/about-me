@@ -6,9 +6,9 @@ library;
 import 'package:shared_models/repositories/calendar_album/calendar_album_repository.dart';
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:Memento/plugins/calendar_album/controllers/tag_controller.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 
 /// 客户端 Calendar Album Repository 实现
 class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {

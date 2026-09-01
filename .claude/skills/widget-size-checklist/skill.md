@@ -225,7 +225,7 @@ CustomPaint(
 - [ ] **Wide/Wide2 尺寸宽度应填满屏幕**，使用 `MediaQuery.of(context).size.width - 32`
 
 ```dart
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 // 小尺寸
 MyWidget(data: data, size: const SmallSize()),

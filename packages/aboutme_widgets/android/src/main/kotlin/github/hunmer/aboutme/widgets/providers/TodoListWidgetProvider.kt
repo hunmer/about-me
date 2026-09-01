@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -10,8 +10,8 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -42,7 +42,7 @@ class TodoListWidgetProvider : BasePluginWidgetProvider() {
         private const val DEFAULT_OPACITY = 1.0f
 
         // 广播 Action
-        const val ACTION_TASK_CLICK = "github.hunmer.memento.widgets.TODO_LIST_TASK_CLICK"
+        const val ACTION_TASK_CLICK = "github.hunmer.aboutme.widgets.TODO_LIST_TASK_CLICK"
 
         // 待同步的任务变更（应用启动时读取）
         const val PREF_KEY_PENDING_CHANGES = "todo_list_pending_changes"
@@ -134,8 +134,8 @@ class TodoListWidgetProvider : BasePluginWidgetProvider() {
                 // 打开任务详情页
                 Log.d(TAG, "Open task detail: taskId=$taskId")
                 val detailIntent = Intent(Intent.ACTION_VIEW)
-                detailIntent.data = Uri.parse("memento://widget/todo_list/detail?taskId=$taskId")
-                detailIntent.setPackage("github.hunmer.memento")
+                detailIntent.data = Uri.parse("aboutme://widget/todo_list/detail?taskId=$taskId")
+                detailIntent.setPackage("github.hunmer.aboutme")
                 detailIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 context.startActivity(detailIntent)
             }
@@ -249,8 +249,8 @@ class TodoListWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击事件：打开配置页面
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/todo_list/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/todo_list/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -466,8 +466,8 @@ class TodoListWidgetProvider : BasePluginWidgetProvider() {
      */
     private fun setupHeaderClickIntent(context: Context, views: RemoteViews) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/todo")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/todo")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -485,8 +485,8 @@ class TodoListWidgetProvider : BasePluginWidgetProvider() {
      */
     private fun setupAddButtonClickIntent(context: Context, views: RemoteViews) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/todo/add")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/todo/add")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(

@@ -38,27 +38,27 @@
     },
     "examples": [
       {
-        "code": "// 获取所有目标\nconst allGoals = await Memento.plugins.tracker.getGoals({});\nsetResult(allGoals);",
+        "code": "// 获取所有目标\nconst allGoals = await Aboutme.plugins.tracker.getGoals({});\nsetResult(allGoals);",
         "comment": "获取所有目标"
       },
       {
-        "code": "// 获取进行中的目标\nconst activeGoals = await Memento.plugins.tracker.getGoals({ status: 'active' });\nsetResult(activeGoals);",
+        "code": "// 获取进行中的目标\nconst activeGoals = await Aboutme.plugins.tracker.getGoals({ status: 'active' });\nsetResult(activeGoals);",
         "comment": "筛选活跃目标"
       },
       {
-        "code": "// 获取'学习'分组的目标\nconst studyGoals = await Memento.plugins.tracker.getGoals({ group: '学习' });\nsetResult(studyGoals);",
+        "code": "// 获取'学习'分组的目标\nconst studyGoals = await Aboutme.plugins.tracker.getGoals({ group: '学习' });\nsetResult(studyGoals);",
         "comment": "按分组筛选"
       },
       {
-        "code": "// 获取'健康'分组中已完成的目标\nconst completedHealthGoals = await Memento.plugins.tracker.getGoals({ status: 'completed', group: '健康' });\nsetResult(completedHealthGoals);",
+        "code": "// 获取'健康'分组中已完成的目标\nconst completedHealthGoals = await Aboutme.plugins.tracker.getGoals({ status: 'completed', group: '健康' });\nsetResult(completedHealthGoals);",
         "comment": "组合筛选"
       },
       {
-        "code": "// 分页获取目标（前20个）\nconst result = await Memento.plugins.tracker.getGoals({ offset: 0, count: 20 });\nsetResult(`共 ${result.total} 个目标，当前返回 ${result.data.length} 个`);",
+        "code": "// 分页获取目标（前20个）\nconst result = await Aboutme.plugins.tracker.getGoals({ offset: 0, count: 20 });\nsetResult(`共 ${result.total} 个目标，当前返回 ${result.data.length} 个`);",
         "comment": "分页获取目标"
       },
       {
-        "code": "// 分页获取学习分组的目标\nconst result = await Memento.plugins.tracker.getGoals({ group: '学习', offset: 0, count: 10 });\nsetResult(`学习分组共 ${result.total} 个目标，当前显示 ${result.data.length} 个，还有更多: ${result.hasMore}`);",
+        "code": "// 分页获取学习分组的目标\nconst result = await Aboutme.plugins.tracker.getGoals({ group: '学习', offset: 0, count: 10 });\nsetResult(`学习分组共 ${result.total} 个目标，当前显示 ${result.data.length} 个，还有更多: ${result.hasMore}`);",
         "comment": "分页获取特定分组的目标"
       }
     ],
@@ -89,7 +89,7 @@
     },
     "examples": [
       {
-        "code": "const goal = await Memento.plugins.tracker.getGoal({ goalId: 'goal123' });\nconst result = `目标名称: ${goal.name}, 进度: ${goal.currentValue}/${goal.targetValue}`;\nsetResult(result);",
+        "code": "const goal = await Aboutme.plugins.tracker.getGoal({ goalId: 'goal123' });\nconst result = `目标名称: ${goal.name}, 进度: ${goal.currentValue}/${goal.targetValue}`;\nsetResult(result);",
         "comment": "获取目标信息"
       }
     ],
@@ -150,11 +150,11 @@
     },
     "examples": [
       {
-        "code": "// 创建每日阅读目标(自动生成ID)\nconst goal = await Memento.plugins.tracker.createGoal({\n  name: '每日阅读',\n  unitType: '分钟',\n  targetValue: 30,\n  group: '学习'\n});\nsetResult(goal);",
+        "code": "// 创建每日阅读目标(自动生成ID)\nconst goal = await Aboutme.plugins.tracker.createGoal({\n  name: '每日阅读',\n  unitType: '分钟',\n  targetValue: 30,\n  group: '学习'\n});\nsetResult(goal);",
         "comment": "创建每日目标(自动ID)"
       },
       {
-        "code": "// 创建每周运动目标(自定义ID)\nconst weeklyGoal = await Memento.plugins.tracker.createGoal({\n  id: 'goal123',\n  name: '每周运动',\n  unitType: '小时',\n  targetValue: 5,\n  group: '健康',\n  dateType: 'weekly'\n});\nsetResult(weeklyGoal);",
+        "code": "// 创建每周运动目标(自定义ID)\nconst weeklyGoal = await Aboutme.plugins.tracker.createGoal({\n  id: 'goal123',\n  name: '每周运动',\n  unitType: '小时',\n  targetValue: 5,\n  group: '健康',\n  dateType: 'weekly'\n});\nsetResult(weeklyGoal);",
         "comment": "创建每周目标(自定义ID)"
       }
     ],
@@ -190,11 +190,11 @@
     },
     "examples": [
       {
-        "code": "// 更新目标名称和目标值\nconst updated = await Memento.plugins.tracker.updateGoal({\n  goalId: 'goal123',\n  updateJson: {\n    name: '每日深度阅读',\n    targetValue: 60\n  }\n});\nsetResult(updated);",
+        "code": "// 更新目标名称和目标值\nconst updated = await Aboutme.plugins.tracker.updateGoal({\n  goalId: 'goal123',\n  updateJson: {\n    name: '每日深度阅读',\n    targetValue: 60\n  }\n});\nsetResult(updated);",
         "comment": "更新基本信息"
       },
       {
-        "code": "// 更新提醒时间和分组\nconst updated2 = await Memento.plugins.tracker.updateGoal({\n  goalId: 'goal123',\n  updateJson: {\n    reminderTime: '20:00',\n    group: '个人成长'\n  }\n});\nsetResult(updated2);",
+        "code": "// 更新提醒时间和分组\nconst updated2 = await Aboutme.plugins.tracker.updateGoal({\n  goalId: 'goal123',\n  updateJson: {\n    reminderTime: '20:00',\n    group: '个人成长'\n  }\n});\nsetResult(updated2);",
         "comment": "更新提醒设置"
       }
     ],
@@ -225,7 +225,7 @@
     },
     "examples": [
       {
-        "code": "const result = await Memento.plugins.tracker.deleteGoal({ goalId: 'goal123' });\nif (result.success) {\n  setResult(`成功删除目标: ${result.goalId}`);\n} else {\n  setResult(`删除失败: ${result.error}`);\n}",
+        "code": "const result = await Aboutme.plugins.tracker.deleteGoal({ goalId: 'goal123' });\nif (result.success) {\n  setResult(`成功删除目标: ${result.goalId}`);\n} else {\n  setResult(`删除失败: ${result.error}`);\n}",
         "comment": "删除目标并处理结果"
       }
     ],
@@ -276,15 +276,15 @@
     },
     "examples": [
       {
-        "code": "// 添加今日阅读记录(自动生成ID)\nconst record = await Memento.plugins.tracker.recordData({\n  goalId: 'goal123',\n  value: 30,\n  note: '阅读《代码整洁之道》'\n});\nsetResult(record);",
+        "code": "// 添加今日阅读记录(自动生成ID)\nconst record = await Aboutme.plugins.tracker.recordData({\n  goalId: 'goal123',\n  value: 30,\n  note: '阅读《代码整洁之道》'\n});\nsetResult(record);",
         "comment": "添加当前记录(自动ID)"
       },
       {
-        "code": "// 添加昨日的记录\nconst yesterday = await Memento.system.getCustomDate({subtract: {days: 1}, relativePosition: 'startOfDay', format: 'iso'});\nconst pastTime = yesterday.replace(/T.*/, 'T20:00:00.000Z');\nconst pastRecord = await Memento.plugins.tracker.recordData({\n  goalId: 'goal123',\n  value: 45,\n  note: '昨日补记',\n  dateTime: pastTime\n});\nsetResult(pastRecord);",
+        "code": "// 添加昨日的记录\nconst yesterday = await Aboutme.system.getCustomDate({subtract: {days: 1}, relativePosition: 'startOfDay', format: 'iso'});\nconst pastTime = yesterday.replace(/T.*/, 'T20:00:00.000Z');\nconst pastRecord = await Aboutme.plugins.tracker.recordData({\n  goalId: 'goal123',\n  value: 45,\n  note: '昨日补记',\n  dateTime: pastTime\n});\nsetResult(pastRecord);",
         "comment": "补记历史数据(自动ID)"
       },
       {
-        "code": "// 使用自定义ID添加记录\nconst customRecord = await Memento.plugins.tracker.recordData({\n  id: 'record123',\n  goalId: 'goal123',\n  value: 25,\n  note: '晨读'\n});\nsetResult(customRecord);",
+        "code": "// 使用自定义ID添加记录\nconst customRecord = await Aboutme.plugins.tracker.recordData({\n  id: 'record123',\n  goalId: 'goal123',\n  value: 25,\n  note: '晨读'\n});\nsetResult(customRecord);",
         "comment": "使用自定义ID"
       }
     ],
@@ -330,19 +330,19 @@
     },
     "examples": [
       {
-        "code": "// 获取所有记录\nconst allRecords = await Memento.plugins.tracker.getRecords({ goalId: 'goal123' });\nsetResult(allRecords);",
+        "code": "// 获取所有记录\nconst allRecords = await Aboutme.plugins.tracker.getRecords({ goalId: 'goal123' });\nsetResult(allRecords);",
         "comment": "获取全部记录"
       },
       {
-        "code": "// 获取最近 10 条记录（使用 limit）\nconst recentRecords = await Memento.plugins.tracker.getRecords({ goalId: 'goal123', limit: 10 });\nconst result = recentRecords.map(record => `${record.recordedAt}: ${record.value} ${record.note || ''}`).join('\\n');\nsetResult(result);",
+        "code": "// 获取最近 10 条记录（使用 limit）\nconst recentRecords = await Aboutme.plugins.tracker.getRecords({ goalId: 'goal123', limit: 10 });\nconst result = recentRecords.map(record => `${record.recordedAt}: ${record.value} ${record.note || ''}`).join('\\n');\nsetResult(result);",
         "comment": "使用 limit 获取最新记录"
       },
       {
-        "code": "// 分页获取记录（前20条）\nconst result = await Memento.plugins.tracker.getRecords({ goalId: 'goal123', offset: 0, count: 20 });\nsetResult(`共 ${result.total} 条记录，当前返回 ${result.data.length} 条`);",
+        "code": "// 分页获取记录（前20条）\nconst result = await Aboutme.plugins.tracker.getRecords({ goalId: 'goal123', offset: 0, count: 20 });\nsetResult(`共 ${result.total} 条记录，当前返回 ${result.data.length} 条`);",
         "comment": "分页获取记录"
       },
       {
-        "code": "// 分页获取记录（第二页）\nconst result = await Memento.plugins.tracker.getRecords({ goalId: 'goal123', offset: 20, count: 20 });\nsetResult(`还有更多记录: ${result.hasMore}，当前返回 ${result.count} 条`);",
+        "code": "// 分页获取记录（第二页）\nconst result = await Aboutme.plugins.tracker.getRecords({ goalId: 'goal123', offset: 20, count: 20 });\nsetResult(`还有更多记录: ${result.hasMore}，当前返回 ${result.count} 条`);",
         "comment": "获取下一页记录"
       }
     ],
@@ -373,7 +373,7 @@
     },
     "examples": [
       {
-        "code": "const result = await Memento.plugins.tracker.deleteRecord({ recordId: 'record123' });\nif (result.success) {\n  setResult(`成功删除记录: ${result.recordId}`);\n} else {\n  setResult(`删除失败: ${result.error}`);\n}",
+        "code": "const result = await Aboutme.plugins.tracker.deleteRecord({ recordId: 'record123' });\nif (result.success) {\n  setResult(`成功删除记录: ${result.recordId}`);\n} else {\n  setResult(`删除失败: ${result.error}`);\n}",
         "comment": "删除记录并处理结果"
       }
     ],
@@ -404,7 +404,7 @@
     },
     "examples": [
       {
-        "code": "const progress = await Memento.plugins.tracker.getProgress({ goalId: 'goal123' });\nconst result = `进度: ${progress.percentage}%\\n完成状态: ${progress.isCompleted ? '已完成' : '进行中'}`;\nsetResult(result);",
+        "code": "const progress = await Aboutme.plugins.tracker.getProgress({ goalId: 'goal123' });\nconst result = `进度: ${progress.percentage}%\\n完成状态: ${progress.isCompleted ? '已完成' : '进行中'}`;\nsetResult(result);",
         "comment": "查询目标进度"
       }
     ],
@@ -435,11 +435,11 @@
     },
     "examples": [
       {
-        "code": "// 获取全局统计\nconst stats = await Memento.plugins.tracker.getStats({});\nconst result = `总目标数: ${stats.totalGoals}\\n今日完成: ${stats.todayCompleted}\\n本月完成: ${stats.monthCompleted}\\n整体进度: ${(stats.overallProgress * 100).toFixed(1)}%\\n分组列表: ${stats.groups.join(', ')}`;\nsetResult(result);",
+        "code": "// 获取全局统计\nconst stats = await Aboutme.plugins.tracker.getStats({});\nconst result = `总目标数: ${stats.totalGoals}\\n今日完成: ${stats.todayCompleted}\\n本月完成: ${stats.monthCompleted}\\n整体进度: ${(stats.overallProgress * 100).toFixed(1)}%\\n分组列表: ${stats.groups.join(', ')}`;\nsetResult(result);",
         "comment": "全局统计"
       },
       {
-        "code": "// 获取单个目标统计\nconst goalStats = await Memento.plugins.tracker.getStats({ goalId: 'goal123' });\nconst result = `目标名称: ${goalStats.goalName}\\n总记录数: ${goalStats.totalRecords}\\n累计值: ${goalStats.totalValue}`;\nsetResult(result);",
+        "code": "// 获取单个目标统计\nconst goalStats = await Aboutme.plugins.tracker.getStats({ goalId: 'goal123' });\nconst result = `目标名称: ${goalStats.goalName}\\n总记录数: ${goalStats.totalRecords}\\n累计值: ${goalStats.totalValue}`;\nsetResult(result);",
         "comment": "单目标统计"
       }
     ],
@@ -461,11 +461,11 @@
     "examples": [
       {
         "title": "根据 ID 查找目标",
-        "code": "const goal = await Memento.plugins.tracker.findGoalBy({field: 'id', value: 'goal123'});\nif (goal) {\n  setResult(`找到目标: ${goal.name}，进度: ${goal.currentValue}/${goal.targetValue}`);\n} else {\n  setResult('未找到该目标');\n}"
+        "code": "const goal = await Aboutme.plugins.tracker.findGoalBy({field: 'id', value: 'goal123'});\nif (goal) {\n  setResult(`找到目标: ${goal.name}，进度: ${goal.currentValue}/${goal.targetValue}`);\n} else {\n  setResult('未找到该目标');\n}"
       },
       {
         "title": "查找所有学习分组的目标",
-        "code": "const goals = await Memento.plugins.tracker.findGoalBy({field: 'group', value: '学习', findAll: true});\nsetResult(`学习分组有 ${goals.length} 个目标`);"
+        "code": "const goals = await Aboutme.plugins.tracker.findGoalBy({field: 'group', value: '学习', findAll: true});\nsetResult(`学习分组有 ${goals.length} 个目标`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历目标列表；支持任意字段匹配",
@@ -484,7 +484,7 @@
     "examples": [
       {
         "title": "查找指定ID的目标",
-        "code": "const goal = await Memento.plugins.tracker.findGoalById({id: 'goal123'});\nif (goal) {\n  setResult(`目标名称: ${goal.name}, 单位: ${goal.unitType}, 进度: ${goal.currentValue}/${goal.targetValue}`);\n} else {\n  setResult('目标不存在');\n}"
+        "code": "const goal = await Aboutme.plugins.tracker.findGoalById({id: 'goal123'});\nif (goal) {\n  setResult(`目标名称: ${goal.name}, 单位: ${goal.unitType}, 进度: ${goal.currentValue}/${goal.targetValue}`);\n} else {\n  setResult('目标不存在');\n}"
       }
     ],
     "notes": "等价于 getGoal 或 findGoalBy({field: 'id', value: id})",
@@ -505,11 +505,11 @@
     "examples": [
       {
         "title": "精确匹配目标名称",
-        "code": "const goal = await Memento.plugins.tracker.findGoalByName({name: '每日阅读'});\nsetResult(goal ? `目标ID: ${goal.id}` : '未找到');"
+        "code": "const goal = await Aboutme.plugins.tracker.findGoalByName({name: '每日阅读'});\nsetResult(goal ? `目标ID: ${goal.id}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的目标",
-        "code": "const goals = await Memento.plugins.tracker.findGoalByName({name: '阅读', fuzzy: true, findAll: true});\nconst totalProgress = goals.reduce((sum, g) => sum + (g.currentValue || 0), 0);\nsetResult(`找到 ${goals.length} 个阅读相关目标，总进度: ${totalProgress}`);"
+        "code": "const goals = await Aboutme.plugins.tracker.findGoalByName({name: '阅读', fuzzy: true, findAll: true});\nconst totalProgress = goals.reduce((sum, g) => sum + (g.currentValue || 0), 0);\nsetResult(`找到 ${goals.length} 个阅读相关目标，总进度: ${totalProgress}`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes",
@@ -529,11 +529,11 @@
     "examples": [
       {
         "title": "查找学习分组的所有目标",
-        "code": "const goals = await Memento.plugins.tracker.findGoalsByGroup({group: '学习'});\nsetResult(`学习分组有 ${goals.length} 个目标`);"
+        "code": "const goals = await Aboutme.plugins.tracker.findGoalsByGroup({group: '学习'});\nsetResult(`学习分组有 ${goals.length} 个目标`);"
       },
       {
         "title": "查找健康分组的活跃目标",
-        "code": "const goals = await Memento.plugins.tracker.findGoalsByGroup({group: '健康', status: 'active'});\nconst avgProgress = goals.reduce((sum, g) => sum + (g.currentValue / g.targetValue), 0) / goals.length;\nsetResult(`健康分组有 ${goals.length} 个活跃目标，平均进度: ${(avgProgress * 100).toFixed(1)}%`);"
+        "code": "const goals = await Aboutme.plugins.tracker.findGoalsByGroup({group: '健康', status: 'active'});\nconst avgProgress = goals.reduce((sum, g) => sum + (g.currentValue / g.targetValue), 0) / goals.length;\nsetResult(`健康分组有 ${goals.length} 个活跃目标，平均进度: ${(avgProgress * 100).toFixed(1)}%`);"
       }
     ],
     "notes": "等价于 getGoals({group}) 但更语义化；支持额外的状态过滤",
@@ -555,11 +555,11 @@
     "examples": [
       {
         "title": "根据 ID 查找记录",
-        "code": "const record = await Memento.plugins.tracker.findRecordBy({field: 'id', value: 'record123'});\nif (record) {\n  setResult(`记录值: ${record.value}, 备注: ${record.note || '无'}`);\n} else {\n  setResult('未找到该记录');\n}"
+        "code": "const record = await Aboutme.plugins.tracker.findRecordBy({field: 'id', value: 'record123'});\nif (record) {\n  setResult(`记录值: ${record.value}, 备注: ${record.note || '无'}`);\n} else {\n  setResult('未找到该记录');\n}"
       },
       {
         "title": "查找特定目标的所有大于30的记录",
-        "code": "const allRecords = await Memento.plugins.tracker.getRecords({goalId: 'goal123'});\nconst largeRecords = allRecords.filter(r => r.value > 30);\nsetResult(`找到 ${largeRecords.length} 条大于30的记录`);"
+        "code": "const allRecords = await Aboutme.plugins.tracker.getRecords({goalId: 'goal123'});\nconst largeRecords = allRecords.filter(r => r.value > 30);\nsetResult(`找到 ${largeRecords.length} 条大于30的记录`);"
       }
     ],
     "notes": "简化查找逻辑；goalId 可选，不传则在所有目标的记录中查找",
@@ -579,7 +579,7 @@
     "examples": [
       {
         "title": "查找指定ID的记录",
-        "code": "const record = await Memento.plugins.tracker.findRecordById({id: 'record123'});\nif (record) {\n  setResult(`记录值: ${record.value}, 时间: ${record.recordedAt}, 备注: ${record.note || '无'}`);\n} else {\n  setResult('记录不存在');\n}"
+        "code": "const record = await Aboutme.plugins.tracker.findRecordById({id: 'record123'});\nif (record) {\n  setResult(`记录值: ${record.value}, 时间: ${record.recordedAt}, 备注: ${record.note || '无'}`);\n} else {\n  setResult('记录不存在');\n}"
       }
     ],
     "notes": "等价于 findRecordBy({field: 'id', value: id, goalId})",

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/widgets/day_card_header.dart';
-import 'package:Memento/plugins/bill/models/bill.dart';
+import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/plugins/bill/models/bill.dart';
 
 /// 账单单日卡片 - 展示某一天的账单列表
 ///

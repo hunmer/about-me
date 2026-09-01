@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/agent_chat/models/agent_chain_node.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
 
 /// 路由 Agent 配置
 class RouteAgentConfig {

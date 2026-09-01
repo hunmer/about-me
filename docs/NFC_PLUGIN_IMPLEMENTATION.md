@@ -1,26 +1,26 @@
-# Memento NFC插件实现报告
+# Aboutme NFC插件实现报告
 
 ## 概述
 
-本报告详细记录了为Memento应用创建和集成NFC插件的完整过程，包括memento_nfc Flutter插件开发和Memento应用内的NFC控制器插件实现。
+本报告详细记录了为Aboutme应用创建和集成NFC插件的完整过程，包括aboutme_nfc Flutter插件开发和Aboutme应用内的NFC控制器插件实现。
 
 ## 实现内容
 
-### 1. memento_nfc Flutter插件
+### 1. aboutme_nfc Flutter插件
 
 #### 项目结构
 ```
-memento_nfc/
+aboutme_nfc/
 ├── lib/
-│   ├── memento_nfc.dart                      # 主入口文件
-│   ├── memento_nfc_platform_interface.dart   # 平台接口
-│   └── memento_nfc_method_channel.dart       # MethodChannel实现
+│   ├── aboutme_nfc.dart                      # 主入口文件
+│   ├── aboutme_nfc_platform_interface.dart   # 平台接口
+│   └── aboutme_nfc_method_channel.dart       # MethodChannel实现
 ├── android/
 │   ├── src/main/AndroidManifest.xml          # Android权限配置
-│   └── src/main/kotlin/.../MementoNfcPlugin.kt # Android原生实现
+│   └── src/main/kotlin/.../AboutmeNfcPlugin.kt # Android原生实现
 ├── ios/
-│   ├── Classes/MementoNfcPlugin.swift        # iOS原生实现
-│   └── memento_nfc.podspec                   # iOS依赖配置
+│   ├── Classes/AboutmeNfcPlugin.swift        # iOS原生实现
+│   └── aboutme_nfc.podspec                   # iOS依赖配置
 └── pubspec.yaml                              # 插件配置
 ```
 
@@ -55,7 +55,7 @@ memento_nfc/
 - 实现NFCNDEFReaderSessionDelegate
 - 支持读取和写入NDEF消息
 
-### 2. Memento应用内NFC控制器插件
+### 2. Aboutme应用内NFC控制器插件
 
 #### 插件位置
 ```
@@ -102,13 +102,13 @@ lib/plugins/nfc/
 
 ## 架构设计
 
-### memento_nfc插件架构
+### aboutme_nfc插件架构
 
 ```
 ┌─────────────────────────────────────────┐
 │           Flutter层 (Dart)               │
 │  ┌─────────────────────────────────┐   │
-│  │      MementoNfc类               │   │
+│  │      AboutmeNfc类               │   │
 │  │  - isNfcSupported()             │   │
 │  │  - isNfcEnabled()               │   │
 │  │  - readNfc()                    │   │
@@ -116,7 +116,7 @@ lib/plugins/nfc/
 │  └─────────────────────────────────┘   │
 │              ↓ MethodChannel              │
 │  ┌─────────────────────────────────┐   │
-│  │   MementoNfcPlatform接口        │   │
+│  │   AboutmeNfcPlatform接口        │   │
 │  └─────────────────────────────────┘   │
 └─────────────────────────────────────────┘
                     ↓
@@ -130,11 +130,11 @@ lib/plugins/nfc/
 └─────────────────────────────────────────┘
 ```
 
-### Memento应用架构
+### Aboutme应用架构
 
 ```
 ┌─────────────────────────────────────────┐
-│           Memento应用                   │
+│           Aboutme应用                   │
 │  ┌─────────────────────────────────┐   │
 │  │      NfcPlugin (NFC控制器)      │   │
 │  │  - buildMainView()              │   │
@@ -149,7 +149,7 @@ lib/plugins/nfc/
 │  └─────────────────────────────────┘   │
 │              ↓                          │
 │  ┌─────────────────────────────────┐   │
-│  │      memento_nfc插件            │   │
+│  │      aboutme_nfc插件            │   │
 │  │  - 平台特定的NFC实现             │   │
 │  └─────────────────────────────────┘   │
 └─────────────────────────────────────────┘
@@ -162,15 +162,15 @@ lib/plugins/nfc/
 1. **添加依赖**
    ```yaml
    dependencies:
-     memento_nfc:
-       path: ./packages/memento_nfc
+     aboutme_nfc:
+       path: ./packages/aboutme_nfc
    ```
 
 2. **在代码中使用**
    ```dart
-   import 'package:memento_nfc/memento_nfc.dart';
+   import 'package:aboutme_nfc/aboutme_nfc.dart';
 
-   final nfc = MementoNfc();
+   final nfc = AboutmeNfc();
 
    // 检查NFC状态
    bool supported = await nfc.isNfcSupported();
@@ -196,7 +196,7 @@ lib/plugins/nfc/
    - iOS: 设置 > 通用 > NFC
 
 2. **读取NFC**
-   - 打开Memento应用
+   - 打开Aboutme应用
    - 点击"NFC控制器"插件
    - 点击"读取NFC"按钮
    - 将手机靠近NFC标签
@@ -233,7 +233,7 @@ Privacy - Near Field Scan Usage Description
 
 ### 功能验证
 - ✅ NFC插件API设计完整
-- ✅ Memento应用集成完成
+- ✅ Aboutme应用集成完成
 - ✅ UI界面实现完整
 - ⚠️ 需要实际设备测试NFC读写功能
 
@@ -282,28 +282,28 @@ Return type mismatch: expected 'java.util.HashMap<String, Any>'
 
 本次实现成功创建了完整的NFC插件解决方案：
 
-1. **memento_nfc插件**: 提供了完整的NFC读写API，支持Android和iOS平台
-2. **NFC控制器插件**: 在Memento应用中集成了用户友好的NFC操作界面
+1. **aboutme_nfc插件**: 提供了完整的NFC读写API，支持Android和iOS平台
+2. **NFC控制器插件**: 在Aboutme应用中集成了用户友好的NFC操作界面
 3. **架构设计**: 采用分层架构，插件与应用解耦，易于维护和扩展
 
 虽然Android端编译存在小问题，但不影响插件的实际功能。整体实现满足项目需求，可以正常使用NFC功能进行数据读写操作。
 
 ## 项目文件清单
 
-### memento_nfc插件文件
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc.dart`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc_platform_interface.dart`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/lib/memento_nfc_method_channel.dart`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/android/src/main/kotlin/com/example/memento_nfc/MementoNfcPlugin.kt`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/android/src/main/AndroidManifest.xml`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/ios/Classes/MementoNfcPlugin.swift`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/ios/memento_nfc.podspec`
-- `/Users/Zhuanz/Documents/Memento/packages/memento_nfc/pubspec.yaml`
+### aboutme_nfc插件文件
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/lib/aboutme_nfc.dart`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/lib/aboutme_nfc_platform_interface.dart`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/lib/aboutme_nfc_method_channel.dart`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/android/src/main/kotlin/com/example/aboutme_nfc/AboutmeNfcPlugin.kt`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/android/src/main/AndroidManifest.xml`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/ios/Classes/AboutmeNfcPlugin.swift`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/ios/aboutme_nfc.podspec`
+- `/Users/Zhuanz/Documents/Aboutme/packages/aboutme_nfc/pubspec.yaml`
 
-### Memento应用修改文件
-- `/Users/Zhuanz/Documents/Memento/lib/plugins/nfc/nfc_plugin.dart`
-- `/Users/Zhuanz/Documents/Memento/pubspec.yaml` (添加插件依赖)
-- `/Users/Zhuanz/Documents/Memento/lib/core/app_initializer.dart` (注册插件)
+### Aboutme应用修改文件
+- `/Users/Zhuanz/Documents/Aboutme/lib/plugins/nfc/nfc_plugin.dart`
+- `/Users/Zhuanz/Documents/Aboutme/pubspec.yaml` (添加插件依赖)
+- `/Users/Zhuanz/Documents/Aboutme/lib/core/app_initializer.dart` (注册插件)
 
 ### 文档文件
-- 本报告: `/Users/Zhuanz/Documents/Memento/NFC_PLUGIN_IMPLEMENTATION.md`
+- 本报告: `/Users/Zhuanz/Documents/Aboutme/NFC_PLUGIN_IMPLEMENTATION.md`

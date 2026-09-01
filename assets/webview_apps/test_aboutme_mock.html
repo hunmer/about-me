@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memento JavaScript Bridge Mock - 测试页面</title>
+  <title>Aboutme JavaScript Bridge Mock - 测试页面</title>
   <style>
     * {
       box-sizing: border-box;
@@ -148,7 +148,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🚀 Memento JavaScript Bridge Mock 测试</h1>
+    <h1>🚀 Aboutme JavaScript Bridge Mock 测试</h1>
 
     <div>
       <span class="status-indicator" id="statusIndicator"></span>
@@ -156,18 +156,18 @@
     </div>
 
     <h2>📋 使用说明</h2>
-    <p>这是一个独立的测试页面，用于开发和测试 Memento 的 JavaScript API。你可以在控制台中直接调用这些方法：</p>
+    <p>这是一个独立的测试页面，用于开发和测试 Aboutme 的 JavaScript API。你可以在控制台中直接调用这些方法：</p>
 
     <div class="code-block">
 // 基本用法示例<br>
-Memento.ready(() => {<br>
-&nbsp;&nbsp;console.log('Memento is ready!');<br>
+Aboutme.ready(() => {<br>
+&nbsp;&nbsp;console.log('Aboutme is ready!');<br>
 });<br>
 <br>
-Memento.system.getCurrentTime().then(time => console.log(time));<br>
-Memento.ui.toast('Hello from Memento!');<br>
-Memento.storage.write('test', { message: 'Hello' });<br>
-Memento.storage.read('test').then(data => console.log(data));
+Aboutme.system.getCurrentTime().then(time => console.log(time));<br>
+Aboutme.ui.toast('Hello from Aboutme!');<br>
+Aboutme.storage.write('test', { message: 'Hello' });<br>
+Aboutme.storage.read('test').then(data => console.log(data));
     </div>
 
     <h2>🧪 API 测试</h2>
@@ -214,8 +214,8 @@ Memento.storage.read('test').then(data => console.log(data));
     </div>
   </div>
 
-  <!-- 加载 Memento Mock -->
-  <script src="memento_mock.js"></script>
+  <!-- 加载 Aboutme Mock -->
+  <script src="aboutme_mock.js"></script>
 
   <script>
     // 日志记录函数
@@ -244,18 +244,18 @@ Memento.storage.read('test').then(data => console.log(data));
       const indicator = document.getElementById('statusIndicator');
       const text = document.getElementById('statusText');
 
-      if (window.Memento && window.Memento._ready) {
+      if (window.Aboutme && window.Aboutme._ready) {
         indicator.className = 'status-indicator status-ready';
-        text.textContent = 'Memento 已准备就绪 ✓';
+        text.textContent = 'Aboutme 已准备就绪 ✓';
       } else {
         indicator.className = 'status-indicator status-not-ready';
-        text.textContent = 'Memento 尚未准备';
+        text.textContent = 'Aboutme 尚未准备';
       }
     }
 
-    // 监听 Memento 准备完成
-    Memento.ready(() => {
-      addLog('Memento JS Bridge 已初始化完成！', 'success');
+    // 监听 Aboutme 准备完成
+    Aboutme.ready(() => {
+      addLog('Aboutme JS Bridge 已初始化完成！', 'success');
       updateStatus();
       showStorageState();
     });
@@ -283,25 +283,25 @@ Memento.storage.read('test').then(data => console.log(data));
     // 测试函数
     async function testGetCurrentTime() {
       addLog('测试系统 API: getCurrentTime');
-      const time = await Memento.system.getCurrentTime();
+      const time = await Aboutme.system.getCurrentTime();
       addLog(`当前时间: ${time}`, 'success');
     }
 
     async function testGetDeviceInfo() {
       addLog('测试系统 API: getDeviceInfo');
-      const info = await Memento.system.getDeviceInfo();
+      const info = await Aboutme.system.getDeviceInfo();
       addLog(`设备信息: ${JSON.stringify(info, null, 2)}`, 'success');
     }
 
     async function testGetAppInfo() {
       addLog('测试系统 API: getAppInfo');
-      const info = await Memento.system.getAppInfo();
+      const info = await Aboutme.system.getAppInfo();
       addLog(`应用信息: ${JSON.stringify(info, null, 2)}`, 'success');
     }
 
     async function testFormatDate() {
       addLog('测试系统 API: formatDate');
-      const formatted = await Memento.system.formatDate({
+      const formatted = await Aboutme.system.formatDate({
         date: new Date().toISOString(),
         format: 'YYYY年MM月DD日 HH:mm:ss'
       });
@@ -310,23 +310,23 @@ Memento.storage.read('test').then(data => console.log(data));
 
     async function testGetTimestamp() {
       addLog('测试系统 API: getTimestamp');
-      const timestamp = await Memento.system.getTimestamp();
+      const timestamp = await Aboutme.system.getTimestamp();
       addLog(`时间戳: ${timestamp}`, 'success');
     }
 
     function testToast() {
       addLog('测试 UI API: toast');
-      Memento.ui.toast('这是一个测试 Toast 消息！', { duration: 2000 });
+      Aboutme.ui.toast('这是一个测试 Toast 消息！', { duration: 2000 });
     }
 
     function testAlert() {
       addLog('测试 UI API: alert');
-      Memento.ui.alert('这是一个测试 Alert 消息！');
+      Aboutme.ui.alert('这是一个测试 Alert 消息！');
     }
 
     async function testDialog() {
       addLog('测试 UI API: dialog');
-      const result = await Memento.ui.dialog({
+      const result = await Aboutme.ui.dialog({
         title: '测试对话框',
         message: '这是一个测试对话框，确认或取消？',
         showCancel: true
@@ -345,38 +345,38 @@ Memento.storage.read('test').then(data => console.log(data));
           array: [1, 2, 3]
         }
       };
-      await Memento.storage.write('test_user', testData);
-      await Memento.storage.write('test_number', 42);
-      await Memento.storage.write('test_string', 'Hello Memento!');
+      await Aboutme.storage.write('test_user', testData);
+      await Aboutme.storage.write('test_number', 42);
+      await Aboutme.storage.write('test_string', 'Hello Aboutme!');
       addLog('数据写入成功', 'success');
       showStorageState();
     }
 
     async function testReadData() {
       addLog('测试存储 API: read');
-      const data1 = await Memento.storage.read('test_user');
-      const data2 = await Memento.storage.read('test_number');
-      const data3 = await Memento.storage.read('test_string');
+      const data1 = await Aboutme.storage.read('test_user');
+      const data2 = await Aboutme.storage.read('test_number');
+      const data3 = await Aboutme.storage.read('test_string');
       addLog(`读取数据: ${JSON.stringify({ user: data1, number: data2, string: data3 })}`, 'success');
     }
 
     async function testDeleteData() {
       addLog('测试存储 API: delete');
-      await Memento.storage.delete('test_user');
+      await Aboutme.storage.delete('test_user');
       addLog('数据删除成功', 'success');
       showStorageState();
     }
 
     async function testClearStorage() {
       addLog('测试存储 API: clear');
-      await Memento.storage.clear();
+      await Aboutme.storage.clear();
       addLog('存储清空成功', 'success');
       showStorageState();
     }
 
     async function testPluginCall() {
       addLog('测试插件 API: plugins.diary.createEntry');
-      const result = await Memento.plugins.diary.createEntry({
+      const result = await Aboutme.plugins.diary.createEntry({
         title: '测试日记',
         content: '这是一篇测试日记',
         tags: ['测试', 'Mock']
@@ -386,7 +386,7 @@ Memento.storage.read('test').then(data => console.log(data));
 
     async function testCustomPlugin() {
       addLog('测试自定义插件调用');
-      const result = await Memento.plugins.customPlugin.customMethod({
+      const result = await Aboutme.plugins.customPlugin.customMethod({
         data: 'custom data'
       });
       addLog(`自定义插件结果: ${JSON.stringify(result)}`, 'success');
@@ -394,7 +394,7 @@ Memento.storage.read('test').then(data => console.log(data));
 
     function showStorageState() {
       const storageView = document.getElementById('storageView');
-      const state = Memento.utils.getStorageState();
+      const state = Aboutme.utils.getStorageState();
       const keys = Object.keys(state);
 
       if (keys.length === 0) {

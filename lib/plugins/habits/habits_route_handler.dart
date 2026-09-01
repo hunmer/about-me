@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/routing/plugin_route_handler.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/widgets/timer_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 
 /// 习惯插件路由处理器
 class HabitsRouteHandler extends PluginRouteHandler {
@@ -16,7 +16,7 @@ class HabitsRouteHandler extends PluginRouteHandler {
 
     // 处理习惯计时器路由
     // 格式: /habit/timer?habitId={habitId}&action=start_timer
-    // 或者深度链接格式: memento://habit/timer?habitId={habitId}&action=start_timer
+    // 或者深度链接格式: aboutme://habit/timer?habitId={habitId}&action=start_timer
     if (routeName.startsWith('/habit/timer') ||
         routeName.startsWith('/habit_timer')) {
       return _handleTimerRoute(routeName, settings.arguments);

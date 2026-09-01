@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/screens/timeline/models/timeline_filter.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/models/timeline_filter.dart';
 
 /// 高级过滤器对话框
 class FilterDialog extends StatefulWidget {

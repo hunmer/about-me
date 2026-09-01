@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
-import 'package:Memento/plugins/agent_chat/models/ai_message_status.dart';
-import 'package:Memento/plugins/agent_chat/managers/ai_message_status_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/ai_message_status.dart';
+import 'package:aboutme/plugins/agent_chat/managers/ai_message_status_manager.dart';
 import 'token_counter_service.dart';
 import 'widget_service.dart';
 

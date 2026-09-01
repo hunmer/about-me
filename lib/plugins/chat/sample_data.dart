@@ -85,7 +85,7 @@ Map<String, List<Map<String, dynamic>>> getSampleMessagesData() {
       {
         "id": "msg_default_001",
         "content":
-            "🎉 欢迎使用 **Memento Chat**!\n\n这是您的默认频道。在这里您可以：\n- 💬 记录日常想法\n- 🤝 与AI助手对话\n- 📝 管理多个频道\n- 🏷️ 使用Markdown格式\n\n试试输入 **/help** 查看更多命令！",
+            "🎉 欢迎使用 **Aboutme Chat**!\n\n这是您的默认频道。在这里您可以：\n- 💬 记录日常想法\n- 🤝 与AI助手对话\n- 📝 管理多个频道\n- 🏷️ 使用Markdown格式\n\n试试输入 **/help** 查看更多命令！",
         "type": "sent",
         "date": now.subtract(const Duration(days: 30)).toIso8601String(),
         "user": {"id": "system", "username": "系统"},
@@ -98,7 +98,7 @@ Map<String, List<Map<String, dynamic>>> getSampleMessagesData() {
       {
         "id": "msg_default_002",
         "content":
-            "### 📚 Markdown 支持展示\n\n您可以使用以下格式：\n\n1. **粗体文本**\n2. *斜体文本*\n3. ~~删除线~~\n4. `行内代码`\n\n```dart\n// 代码块示例\nvoid main() {\n  print('Hello, Memento!');\n}\n```\n\n> 💡 提示：所有消息都支持 Markdown 格式！",
+            "### 📚 Markdown 支持展示\n\n您可以使用以下格式：\n\n1. **粗体文本**\n2. *斜体文本*\n3. ~~删除线~~\n4. `行内代码`\n\n```dart\n// 代码块示例\nvoid main() {\n  print('Hello, Aboutme!');\n}\n```\n\n> 💡 提示：所有消息都支持 Markdown 格式！",
         "type": "sent",
         "date":
             now.subtract(const Duration(days: 29, hours: 3)).toIso8601String(),

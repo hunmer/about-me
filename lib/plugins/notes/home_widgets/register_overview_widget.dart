@@ -3,12 +3,12 @@ library;
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/generic_plugin_widget.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/generic_plugin_widget.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import '../notes_plugin.dart';
 import 'utils.dart' show notesColor;
 

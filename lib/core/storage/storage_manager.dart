@@ -119,11 +119,11 @@ class StorageManager {
   String getPluginStoragePath(String id) => getPluginPath(id);
 
   /// 获取应用文档目录
-  /// 如果是浏览器环境返回'memento_app'，其他环境返回正常的应用文档目录
+  /// 如果是浏览器环境返回'aboutme_app'，其他环境返回正常的应用文档目录
   static Future<Directory> getApplicationDocumentsDirectory() async {
     if (kIsWeb) {
       // 在web环境中创建虚拟目录对象
-      return Directory('memento_app');
+      return Directory('aboutme_app');
     }
     return await path_provider.getApplicationDocumentsDirectory();
   }
@@ -133,7 +133,7 @@ class StorageManager {
   Future<Directory> getApplicationDataDirectory() async {
     if (kIsWeb) {
       // Web 平台返回虚拟目录
-      return Directory('memento_app');
+      return Directory('aboutme_app');
     }
     final appDir = await getApplicationDocumentsDirectory();
     return Directory(path.join(appDir.path, 'app_data'));

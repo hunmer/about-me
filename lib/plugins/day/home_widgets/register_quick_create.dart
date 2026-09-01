@@ -3,9 +3,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/plugins/day/widgets/memorial_day_edit_flow.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_day_edit_flow.dart';
 
 /// 注册纪念日的快速创建项（主页底部 ＋ 按钮，目标日期预填选中日期）
 void registerQuickCreate(QuickCreateRegistry registry) {

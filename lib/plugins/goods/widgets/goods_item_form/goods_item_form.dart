@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'controllers/form_controller.dart';
 import 'widgets/basic_info_tab.dart';
 

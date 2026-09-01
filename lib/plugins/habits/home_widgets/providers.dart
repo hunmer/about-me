@@ -2,14 +2,14 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/utils/color_extensions.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/utils/color_extensions.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
 import 'widget_config.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/habit_heatmap_card.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/habit_heatmap_card.dart';
 
 /// 获取可用的统计项
 List<StatItemData> getAvailableStats(BuildContext context) {

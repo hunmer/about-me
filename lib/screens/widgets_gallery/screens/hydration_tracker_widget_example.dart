@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/common/index.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/common/index.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 饮水追踪器示例
 class HydrationTrackerWidgetExample extends StatelessWidget {

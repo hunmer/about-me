@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/screens/bill_edit_screen.dart';
-import 'package:Memento/plugins/bill/screens/bill_shortcuts_selector_screen.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/screens/bill_edit_screen.dart';
+import 'package:aboutme/plugins/bill/screens/bill_shortcuts_selector_screen.dart';
 
 /// Bill 插件路由注册表
 class BillRoutes implements RouteRegistry {

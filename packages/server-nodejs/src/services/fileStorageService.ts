@@ -657,7 +657,7 @@ export class FileStorageService {
       .replace(/:/g, '-')
       .replace(/\./g, '-');
     const exportDir = this.getExportDir();
-    const exportFileName = `memento_export_${timestamp}.zip`;
+    const exportFileName = `aboutme_export_${timestamp}.zip`;
     const exportFilePath = path.join(exportDir, exportFileName);
 
     // 确保导出目录存在

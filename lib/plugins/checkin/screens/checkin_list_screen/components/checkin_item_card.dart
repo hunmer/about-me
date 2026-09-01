@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/plugins/checkin/screens/checkin_record_screen.dart';
-import 'package:Memento/plugins/checkin/widgets/checkin_record_dialog.dart';
-import 'package:Memento/widgets/common/checkin_item_card.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/screens/checkin_record_screen.dart';
+import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
+import 'package:aboutme/widgets/common/checkin_item_card.dart';
 
 /// 打卡项目卡片组件（插件包装器）
 ///

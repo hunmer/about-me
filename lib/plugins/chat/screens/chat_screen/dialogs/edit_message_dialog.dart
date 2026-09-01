@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
 
 class EditMessageDialog extends StatelessWidget {
   final Message message;

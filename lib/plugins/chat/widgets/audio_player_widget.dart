@@ -1,4 +1,4 @@
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 

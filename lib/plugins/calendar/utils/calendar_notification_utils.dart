@@ -1,6 +1,6 @@
-import 'package:Memento/core/notification_controller.dart';
+import 'package:aboutme/core/notification_controller.dart';
 import 'package:logging/logging.dart';
-import 'package:memento_notifications/memento_notifications.dart';
+import 'package:aboutme_notifications/aboutme_notifications.dart';
 import 'package:flutter/material.dart';
 
 class CalendarNotificationUtils {
@@ -108,7 +108,7 @@ class CalendarNotificationUtils {
       id: DateTime.now().millisecondsSinceEpoch,
       title: title,
       body: body,
-      layout: MementoNotificationLayout.basic,
+      layout: AboutmeNotificationLayout.basic,
     );
   }
 }

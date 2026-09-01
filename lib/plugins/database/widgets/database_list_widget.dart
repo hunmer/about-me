@@ -1,18 +1,18 @@
 import 'dart:io' show File;
 
 import 'package:get/get.dart';
-import 'package:Memento/plugins/database/controllers/database_controller.dart';
-import 'package:Memento/plugins/database/widgets/database_detail_widget.dart';
-import 'package:Memento/plugins/database/widgets/database_edit_widget.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/plugins/database/controllers/database_controller.dart';
+import 'package:aboutme/plugins/database/widgets/database_detail_widget.dart';
+import 'package:aboutme/plugins/database/widgets/database_edit_widget.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/database/models/database_model.dart';
-import 'package:Memento/plugins/database/services/database_service.dart';
+import 'package:aboutme/plugins/database/models/database_model.dart';
+import 'package:aboutme/plugins/database/services/database_service.dart';
 
 class DatabaseListWidget extends StatefulWidget {
   final DatabaseService service;

@@ -2,13 +2,13 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/habits_weekly_widget_config.dart';
-import 'package:Memento/plugins/habits/models/habits_weekly_widget_data.dart';
-import 'package:Memento/plugins/habits/services/habits_widget_service.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/habits_weekly_widget_config.dart';
+import 'package:aboutme/plugins/habits/models/habits_weekly_widget_data.dart';
+import 'package:aboutme/plugins/habits/services/habits_widget_service.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
 
 /// 习惯周视图小组件配置界面
 ///
@@ -628,7 +628,7 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
         name: 'HabitsWeeklyWidgetProvider',
         iOSName: 'HabitsWeeklyWidget',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.HabitsWeeklyWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.HabitsWeeklyWidgetProvider',
       );
 
       debugPrint('小组件更新请求已发送');

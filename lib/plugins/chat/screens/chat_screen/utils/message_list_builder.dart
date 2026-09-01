@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:path/path.dart' as path;
 
 class MessageListBuilder {

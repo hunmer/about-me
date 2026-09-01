@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:Memento/core/floating_ball/adapters/floating_ball_platform_adapter.dart';
-import 'package:Memento/core/floating_ball/models/floating_ball_gesture.dart';
-import 'package:Memento/core/floating_ball/floating_ball_manager.dart';
-import 'package:Memento/core/floating_ball/floating_ball_service.dart';
+import 'package:aboutme/core/floating_ball/adapters/floating_ball_platform_adapter.dart';
+import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
+import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
+import 'package:aboutme/core/floating_ball/floating_ball_service.dart';
 
 /// 可复用的悬浮球组件
 class SharedFloatingBallWidget extends StatefulWidget {

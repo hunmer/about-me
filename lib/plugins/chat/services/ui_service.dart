@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/plugins/goods/widgets/goods_item_form/index.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/screens/channel_list/channel_list_screen.dart';
-import 'package:Memento/plugins/chat/screens/timeline/timeline_screen.dart';
-import 'package:Memento/plugins/chat/screens/profile_edit_dialog.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
+import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'chat_config_service.dart';
 
 /// 负责构建聊天插件的UI界面

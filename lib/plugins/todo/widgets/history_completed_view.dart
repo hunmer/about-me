@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/todo/views/todo_item_detail.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/todo/views/todo_item_detail.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/plugins/todo/models/task.dart';
-import 'package:Memento/plugins/todo/controllers/task_controller.dart';
+import 'package:aboutme/plugins/todo/models/task.dart';
+import 'package:aboutme/plugins/todo/controllers/task_controller.dart';
 
 class HistoryCompletedView extends StatefulWidget {
   final List<Task> completedTasks;

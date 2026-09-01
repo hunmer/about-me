@@ -1,6 +1,6 @@
-import 'package:Memento/core/services/system_widget_service.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/core/services/system_widget_service.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:logging/logging.dart';
 
 /// AI 对话小组件服务

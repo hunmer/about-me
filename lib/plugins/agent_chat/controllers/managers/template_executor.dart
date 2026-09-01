@@ -1,11 +1,11 @@
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/foundation.dart';
 import 'package:openai_dart/openai_dart.dart';
 import '../../models/saved_tool_template.dart';
 import '../../models/tool_call_step.dart';
 import '../../models/chat_message.dart';
 import '../../services/tool_service.dart';
-import 'package:Memento/plugins/openai/services/request_service.dart';
+import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'shared/manager_context.dart';
 
 /// 工具模板执行管理器
@@ -546,7 +546,7 @@ $toolDetailPrompt
 - 代码必须实现用户的需求，不是原模板的功能
 - 参考原模板的代码结构和风格
 - 使用上方工具 API 文档中的方法
-- 禁止硬编码日期时间，使用 Memento.system.getCustomDate()
+- 禁止硬编码日期时间，使用 Aboutme.system.getCustomDate()
 - 禁止使用占位符，先查询获取真实数据
 ''';
 

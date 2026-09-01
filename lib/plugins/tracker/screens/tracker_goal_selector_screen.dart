@@ -2,9 +2,9 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 目标选择器界面(用于小组件配置)
 ///
@@ -515,7 +515,7 @@ class _TrackerGoalSelectorScreenState
         name: 'TrackerGoalWidgetProvider',
         iOSName: 'TrackerGoalWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.TrackerGoalWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.TrackerGoalWidgetProvider',
       );
 
       if (mounted) {

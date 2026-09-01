@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'group_card.dart';
 
 class GroupListView extends StatelessWidget {

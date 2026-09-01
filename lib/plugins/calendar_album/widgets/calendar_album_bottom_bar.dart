@@ -1,16 +1,16 @@
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/calendar_album/controllers/tag_controller.dart';
-import 'package:Memento/plugins/calendar_album/screens/calendar_screen.dart';
-import 'package:Memento/plugins/calendar_album/screens/tag_screen.dart';
-import 'package:Memento/plugins/calendar_album/screens/album_screen.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_editor_screen.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/screens/calendar_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/tag_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/album_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 
 /// CalendarAlbum 插件的底部栏组件
 /// 提供日历视图、标签视图和相册视图三个 Tab 的切换功能

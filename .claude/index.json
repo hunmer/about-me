@@ -1,5 +1,5 @@
 {
-  "projectName": "Memento",
+  "projectName": "Aboutme",
   "projectDescription": "跨平台个人助手应用，集成聊天、日记、活动追踪等25+功能插件",
   "lastScanTimestamp": "2025-12-31T00:00:00+08:00",
   "framework": "Flutter 3.7+",
@@ -563,12 +563,12 @@
       }
     },
     {
-      "name": "mcp-memento-server",
-      "path": "mcp-memento-server",
+      "name": "mcp-aboutme-server",
+      "path": "mcp-aboutme-server",
       "type": "server",
       "description": "TypeScript MCP服务（AI工具接口）",
       "framework": "Model Context Protocol SDK",
-      "entryPoints": ["mcp-memento-server/src/index.ts"],
+      "entryPoints": ["mcp-aboutme-server/src/index.ts"],
       "documentation": null,
       "coverage": {
         "hasTests": false,
@@ -583,12 +583,12 @@
       "type": "native",
       "description": "原生插件集合（Android/iOS平台功能）",
       "plugins": [
-        "memento_foreground_service - 前台服务",
-        "memento_notifications - 通知管理",
-        "memento_intent - Intent处理",
-        "memento_nfc - NFC功能",
+        "aboutme_foreground_service - 前台服务",
+        "aboutme_notifications - 通知管理",
+        "aboutme_intent - Intent处理",
+        "aboutme_nfc - NFC功能",
         "floating_ball_plugin - 系统悬浮球",
-        "memento_widgets - 桌面小组件"
+        "aboutme_widgets - 桌面小组件"
       ],
       "documentation": null,
       "coverage": {
@@ -662,7 +662,7 @@
     },
     {
       "priority": 2,
-      "action": "生成同步服务器文档（server + mcp-memento-server）",
+      "action": "生成同步服务器文档（server + mcp-aboutme-server）",
       "estimatedFiles": 2
     },
     {
@@ -686,7 +686,7 @@
       "添加Mermaid模块结构图",
       "更新index.json完整模块索引",
       "识别25+个插件和核心模块",
-      "识别服务端模块（server + mcp-memento-server）",
+      "识别服务端模块（server + mcp-aboutme-server）",
       "识别原生插件模块"
     ]
   }

@@ -116,9 +116,9 @@ final Map<String, String> screensTranslationsEn = {
   'screens_quickRegisterIntent': 'Quick Register Intent',
   'screens_selectPresetIntentType':
       'Select a preset Intent type for quick registration',
-  'screens_mementoTest': 'Memento Test (memento:///test)',
-  'screens_mementoComplete':
-      'Memento Complete (memento://app.example.com/open)',
+  'screens_aboutmeTest': 'Aboutme Test (aboutme:///test)',
+  'screens_aboutmeComplete':
+      'Aboutme Complete (aboutme://app.example.com/open)',
   'screens_customApp': 'Custom App (myapp://custom.host)',
   'screens_intentTest': 'Intent Test',
   'screens_quickRegister': 'Quick Register',

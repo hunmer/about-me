@@ -1,9 +1,9 @@
-import 'package:memento_nfc/memento_nfc.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme_nfc/aboutme_nfc.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// NFC 控制器 - 处理所有 NFC 相关的业务逻辑
 class NfcController {
-  final MementoNfc _nfc = MementoNfc();
+  final AboutmeNfc _nfc = AboutmeNfc();
 
   bool _isNfcSupported = false;
   bool _isNfcEnabled = false;

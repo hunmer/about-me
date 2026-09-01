@@ -15,7 +15,7 @@ export 'register_icon_widget.dart';
 export 'register_overview_widget.dart';
 export 'register_channel_selector.dart';
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_channel_selector.dart';

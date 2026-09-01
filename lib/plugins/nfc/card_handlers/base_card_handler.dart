@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/nfc/widgets/nfc_data_preview_dialog.dart';
+import 'package:aboutme/plugins/nfc/widgets/nfc_data_preview_dialog.dart';
 
 /// NFC 卡片处理器基类
 abstract class BaseCardHandler {

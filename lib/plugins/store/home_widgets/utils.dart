@@ -1,7 +1,7 @@
 /// 积分商店插件主页小组件工具函数
 library;
 
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 获取商品的图片绝对路径
 Future<String?> getProductImagePath(String? imagePath) async {

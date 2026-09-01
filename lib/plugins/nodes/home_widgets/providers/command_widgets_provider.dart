@@ -1,10 +1,10 @@
 /// 节点笔记本插件 - 公共小组件数据提供者
 library;
 
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/nodes/models/node.dart' as node_models;
-import 'package:Memento/plugins/nodes/models/notebook.dart';
-import 'package:Memento/plugins/nodes/nodes_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/nodes/models/node.dart' as node_models;
+import 'package:aboutme/plugins/nodes/models/notebook.dart';
+import 'package:aboutme/plugins/nodes/nodes_plugin.dart';
 
 /// 提供公共小组件的数据
 class NodesCommandWidgetsProvider {

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'controllers/channel_list_controller.dart';
 import 'widgets/channel_tile.dart';
 import 'widgets/empty_channel_view.dart';

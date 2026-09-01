@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
-import 'package:Memento/core/services/timer/events/timer_events.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/services/timer/events/timer_events.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'models/timer_task.dart';
 import 'models/timer_item.dart';
 import 'views/timer_main_view.dart';

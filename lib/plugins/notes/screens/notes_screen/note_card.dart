@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/widgets/quill_viewer/quill_viewer.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class NoteCard extends StatelessWidget {
   final Note note;

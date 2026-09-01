@@ -6,9 +6,9 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 
 // 导入用于自动配置的类型
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/webview/webview_plugin.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/webview/webview_plugin.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 本地 HTTP 服务器
 /// 用于在 Windows 等平台上提供本地文件访问，绕过 file:// 协议的安全限制

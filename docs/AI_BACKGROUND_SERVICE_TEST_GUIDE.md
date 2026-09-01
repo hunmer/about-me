@@ -62,7 +62,7 @@
 
 3. **授予必要权限**
    - 首次运行会自动请求通知权限
-   - 手动检查：设置 > 应用 > Memento > 权限 > 通知（允许）
+   - 手动检查：设置 > 应用 > Aboutme > 权限 > 通知（允许）
 
 ---
 
@@ -71,7 +71,7 @@
 **目标**: 验证切换APP后AI继续生成
 
 **步骤**:
-1. 打开 Memento 应用
+1. 打开 Aboutme 应用
 2. 进入聊天插件（agent_chat）
 3. 输入一个需要较长时间回复的问题（例如："请用500字介绍Flutter框架"）
 4. 点击发送
@@ -178,8 +178,8 @@ adb shell dumpsys deviceidle whitelist
 ```
 
 手动操作:
-- 设置 > 应用 > Memento > 权限 > 通知（开启）
-- 设置 > 电池 > 电池优化 > Memento（不优化）
+- 设置 > 应用 > Aboutme > 权限 > 通知（开启）
+- 设置 > 电池 > 电池优化 > Aboutme（不优化）
 
 ---
 
@@ -259,7 +259,7 @@ adb logcat | grep -E "🚀|✅|❌|📨|🤖"
 adb shell input keyevent KEYCODE_HOME
 
 # 模拟通知点击
-adb shell am start -n github.hunmer.memento/.MainActivity --es route "/chat"
+adb shell am start -n github.hunmer.aboutme/.MainActivity --es route "/chat"
 ```
 
 ### 2. 检查前台服务状态
@@ -287,10 +287,10 @@ adb logcat | grep NotificationManager
 ### 监控命令
 ```bash
 # 监控内存使用
-adb shell dumpsys meminfo github.hunmer.memento
+adb shell dumpsys meminfo github.hunmer.aboutme
 
 # 监控CPU使用
-adb shell top | grep memento
+adb shell top | grep aboutme
 ```
 
 ---

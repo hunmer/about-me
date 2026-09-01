@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/models/bill_model.dart';
-import 'package:Memento/plugins/bill/widgets/month_selector.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/models/bill_model.dart';
+import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 
 class BillStatsScreenSupercupertino extends StatefulWidget {
   final BillPlugin billPlugin;

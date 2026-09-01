@@ -1,13 +1,13 @@
-import 'package:Memento/screens/home_screen/models/home_widget_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/screens/home_screen/models/home_folder_item.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/models/home_item.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/models/home_item.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'home_grid.dart';
 import 'add_widget_dialog.dart';
 

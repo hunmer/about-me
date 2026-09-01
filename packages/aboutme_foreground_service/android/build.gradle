@@ -1,4 +1,4 @@
-group = "com.memento.foreground_service"
+group = "com.aboutme.foreground_service"
 version = "1.0.0"
 
 buildscript {
@@ -25,7 +25,7 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 android {
-    namespace = "com.memento.foreground_service"
+    namespace = "com.aboutme.foreground_service"
 
     compileSdk = 34
 

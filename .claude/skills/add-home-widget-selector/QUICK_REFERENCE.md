@@ -38,8 +38,8 @@ void _registerDataSelectors() {
 ### 2. 创建 home_widgets.dart
 
 ```dart
-import 'package:Memento/screens/home_screen/widgets/generic_selector_widget.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/widgets/generic_selector_widget.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 class PluginNameHomeWidgets {
   static void register(HomeWidgetRegistry registry) {

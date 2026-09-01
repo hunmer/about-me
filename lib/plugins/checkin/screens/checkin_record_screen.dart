@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/plugins/checkin/controllers/checkin_list_controller.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 class CheckinRecordScreen extends StatefulWidget {
   final CheckinItem checkinItem;

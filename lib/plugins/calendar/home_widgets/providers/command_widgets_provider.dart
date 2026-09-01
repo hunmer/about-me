@@ -4,9 +4,9 @@ library;
 import 'dart:ui' show Color;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
 
 /// 提供公共小组件的数据
 class CalendarCommandWidgetsProvider {

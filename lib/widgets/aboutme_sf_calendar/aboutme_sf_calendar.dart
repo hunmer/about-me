@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-/// Memento 自定义 SfCalendar 封装组件
+/// Aboutme 自定义 SfCalendar 封装组件
 ///
 /// 对 Syncfusion SfCalendar 进行二次封装，提供丰富的自定义选项，
 /// 同时保持简洁的 API，适用于日历插件和其他需要日历功能的场景。
-class MementoSfCalendar extends StatelessWidget {
+class AboutmeSfCalendar extends StatelessWidget {
   // ============ 视图相关 ============
 
   /// 日历视图模式
@@ -201,7 +201,7 @@ class MementoSfCalendar extends StatelessWidget {
   /// 按需加载回调
   final LoadMoreWidgetBuilder? loadMoreWidgetBuilder;
 
-  const MementoSfCalendar({
+  const AboutmeSfCalendar({
     super.key,
     this.view = CalendarView.month,
     this.controller,

@@ -6,7 +6,7 @@
 /// ## 使用示例
 ///
 /// ```dart
-/// import 'package:Memento/widgets/widget_config_editor/index.dart';
+/// import 'package:aboutme/widgets/widget_config_editor/index.dart';
 ///
 /// WidgetConfigEditor(
 ///   widgetSize: WidgetSize.large,

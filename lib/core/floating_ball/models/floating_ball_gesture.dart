@@ -1,8 +1,8 @@
 /// 悬浮球手势类型
 library;
 
-import 'package:Memento/core/action/models/action_group.dart';
-import 'package:Memento/core/action/models/action_instance.dart';
+import 'package:aboutme/core/action/models/action_group.dart';
+import 'package:aboutme/core/action/models/action_instance.dart';
 
 enum FloatingBallGesture {
   tap,

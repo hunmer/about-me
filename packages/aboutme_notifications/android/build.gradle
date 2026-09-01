@@ -1,4 +1,4 @@
-group = "com.memento.notifications"
+group = "com.aboutme.notifications"
 version = "1.0.0"
 
 buildscript {
@@ -25,7 +25,7 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 android {
-    namespace = "com.memento.notifications"
+    namespace = "com.aboutme.notifications"
 
     compileSdk = 34
 

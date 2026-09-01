@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/firebase_options.dart';
+import 'package:aboutme/firebase_options.dart';
 
 /// 后台消息处理器（必须是顶级函数）
 @pragma('vm:entry-point')

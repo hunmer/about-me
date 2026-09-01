@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
 
 /// 插件基类，所有插件都应该继承这个类
 abstract class BasePlugin extends PluginBase {

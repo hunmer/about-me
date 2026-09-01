@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 
 /// 主页日期横条
 ///

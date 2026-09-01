@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../custom_dialog.dart';
-import 'package:Memento/constants/app_icons.dart';
+import 'package:aboutme/constants/app_icons.dart';
 
 class IconPickerDialog extends StatefulWidget {
   final IconData currentIcon;

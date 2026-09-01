@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selectable_item.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_definition.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_definition.dart';
 
 /// 日历选择视图
 ///

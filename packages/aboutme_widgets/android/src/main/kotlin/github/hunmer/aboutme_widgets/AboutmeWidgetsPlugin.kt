@@ -1,4 +1,4 @@
-package github.hunmer.memento_widgets
+package github.hunmer.aboutme_widgets
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,8 +13,8 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
-/** MementoWidgetsPlugin */
-class MementoWidgetsPlugin :
+/** AboutmeWidgetsPlugin */
+class AboutmeWidgetsPlugin :
     FlutterPlugin,
     MethodCallHandler {
     // The MethodChannel that will the communication between Flutter and native Android
@@ -30,13 +30,13 @@ class MementoWidgetsPlugin :
     private var applicationContext: Context? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "memento_widgets")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "aboutme_widgets")
         channel.setMethodCallHandler(this)
 
         // 创建专门的广播 MethodChannel
         broadcastChannel = MethodChannel(
             flutterPluginBinding.binaryMessenger,
-            "github.hunmer.memento/widget_broadcast"
+            "github.hunmer.aboutme/widget_broadcast"
         )
         broadcastChannel!!.setMethodCallHandler(this)
 
@@ -116,12 +116,12 @@ class MementoWidgetsPlugin :
                 } else {
                     context.registerReceiver(widgetBroadcastReceiver, filter)
                 }
-                android.util.Log.d("MementoWidgets", "BroadcastReceiver registered for actions: $actions")
+                android.util.Log.d("AboutmeWidgets", "BroadcastReceiver registered for actions: $actions")
             } else {
-                android.util.Log.w("MementoWidgets", "Application context not available, broadcast receiver not registered")
+                android.util.Log.w("AboutmeWidgets", "Application context not available, broadcast receiver not registered")
             }
         } catch (e: Exception) {
-            android.util.Log.e("MementoWidgets", "Failed to register BroadcastReceiver", e)
+            android.util.Log.e("AboutmeWidgets", "Failed to register BroadcastReceiver", e)
         }
     }
 
@@ -131,9 +131,9 @@ class MementoWidgetsPlugin :
             try {
                 val context = applicationContext
                 context?.unregisterReceiver(receiver)
-                android.util.Log.d("MementoWidgets", "BroadcastReceiver unregistered")
+                android.util.Log.d("AboutmeWidgets", "BroadcastReceiver unregistered")
             } catch (e: Exception) {
-                android.util.Log.e("MementoWidgets", "Failed to unregister BroadcastReceiver", e)
+                android.util.Log.e("AboutmeWidgets", "Failed to unregister BroadcastReceiver", e)
             }
         }
         widgetBroadcastReceiver = null

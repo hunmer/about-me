@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/quill_viewer/index.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/quill_viewer/index.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'entry_detail_image_viewer.dart';
 
 class EntryDetailContent extends StatelessWidget {

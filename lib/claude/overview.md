@@ -9,7 +9,7 @@
 | 核心层 | `core/` | 16 子目录 / 148 文件 | 平台无关的基础设施：插件系统、存储抽象、配置、事件总线、JS Bridge、悬浮球、动作系统、路由基础设施、各类服务 |
 | 插件层 | `plugins/` | 25 插件 / 1056 文件 | 业务功能单元，每个插件自持 UI、Service、Controller，可向 JS Bridge/路由/数据选择器注册能力 |
 | 界面层 | `screens/` | 17 子目录 / 350 文件 | 应用级页面（主页、设置、关于、日志、测试页）与**全部路由注册表**（`routing/routes/`） |
-| 组件层 | `widgets/` | 17 子目录 / 180 文件 | 跨插件复用的通用组件：memento_editor（Quill 编辑器）、enhanced_calendar、form_fields、file_preview、data_selector_sheet 等 |
+| 组件层 | `widgets/` | 17 子目录 / 180 文件 | 跨插件复用的通用组件：aboutme_editor（Quill 编辑器）、enhanced_calendar、form_fields、file_preview、data_selector_sheet 等 |
 
 另有个位数文件的顶层目录：`services/`（image_service）、`models/`（file_path_converter）、`utils/`（9 个工具）、`dialogs/`、`constants/`、`l10n/`。
 

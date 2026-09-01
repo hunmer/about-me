@@ -3,10 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/plugins/todo/todo_plugin.dart';
-import 'package:Memento/plugins/todo/models/task.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/plugins/todo/models/task.dart';
 
 /// 获取可用的统计项
 List<StatItemData> getAvailableStats(BuildContext context) {

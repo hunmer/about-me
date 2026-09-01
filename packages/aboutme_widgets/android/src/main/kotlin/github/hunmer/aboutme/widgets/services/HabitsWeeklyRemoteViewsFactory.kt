@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.services
+package github.hunmer.aboutme.widgets.services
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -8,7 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import org.json.JSONObject
-import github.hunmer.memento_widgets.R
+import github.hunmer.aboutme_widgets.R
 import android.graphics.drawable.ColorDrawable
 
 /**

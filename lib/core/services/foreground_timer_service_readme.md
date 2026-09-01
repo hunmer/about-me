@@ -40,7 +40,7 @@
 ### 1. 基本用法
 
 ```dart
-import 'package:memento/core/services/foreground_timer_service.dart';
+import 'package:aboutme/core/services/foreground_timer_service.dart';
 
 // 启动前台服务
 await ForegroundTimerService.startService(
@@ -273,7 +273,7 @@ class MultiTimerManager {
 ### 必需配置
 
 1. **App Group ID**
-   - 在 Xcode 中创建: `group.github.hunmer.memento`
+   - 在 Xcode 中创建: `group.github.hunmer.aboutme`
    - Runner 和 Widget Extension 都需要添加
 
 2. **Widget Extension**
@@ -313,15 +313,15 @@ await ForegroundTimerService.updateService(...);
 如果需要手动初始化（例如在应用启动时）：
 
 ```dart
-import 'package:memento/screens/settings_screen/controllers/live_activities_controller.dart';
+import 'package:aboutme/screens/settings_screen/controllers/live_activities_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 手动初始化
   await LiveActivitiesController.instance.init(
-    appGroupId: 'group.github.hunmer.memento',
-    urlScheme: 'memento',
+    appGroupId: 'group.github.hunmer.aboutme',
+    urlScheme: 'aboutme',
   );
 
   runApp(MyApp());

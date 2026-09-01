@@ -18,10 +18,10 @@
 @import integration_test;
 #endif
 
-#if __has_include(<memento_widgets/MementoWidgetsPlugin.h>)
-#import <memento_widgets/MementoWidgetsPlugin.h>
+#if __has_include(<aboutme_widgets/AboutmeWidgetsPlugin.h>)
+#import <aboutme_widgets/AboutmeWidgetsPlugin.h>
 #else
-@import memento_widgets;
+@import aboutme_widgets;
 #endif
 
 #if __has_include(<path_provider_foundation/PathProviderPlugin.h>)
@@ -35,7 +35,7 @@
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
   [HomeWidgetPlugin registerWithRegistrar:[registry registrarForPlugin:@"HomeWidgetPlugin"]];
   [IntegrationTestPlugin registerWithRegistrar:[registry registrarForPlugin:@"IntegrationTestPlugin"]];
-  [MementoWidgetsPlugin registerWithRegistrar:[registry registrarForPlugin:@"MementoWidgetsPlugin"]];
+  [AboutmeWidgetsPlugin registerWithRegistrar:[registry registrarForPlugin:@"AboutmeWidgetsPlugin"]];
   [PathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"PathProviderPlugin"]];
 }
 

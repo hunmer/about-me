@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../models/tool_call_step.dart';
 import '../../services/tool_service.dart';
 import '../../services/token_counter_service.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'shared/manager_context.dart';
 
 /// 工具调用执行管理器

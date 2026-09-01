@@ -1,7 +1,7 @@
 /**
- * Memento API 转发服务器入口
+ * Aboutme API 转发服务器入口
  *
- * 用于在 memento-mock 前端和 Memento 客户端之间转发 API 请求
+ * 用于在 aboutme-mock 前端和 Aboutme 客户端之间转发 API 请求
  */
 
 import { WebSocketServer } from './server';

@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -10,8 +10,8 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
-import github.hunmer.memento_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
 import org.json.JSONObject
 
 /**
@@ -40,8 +40,8 @@ open class TrackerGoalWidgetProvider : BasePluginWidgetProvider() {
         private const val DEFAULT_OPACITY = 0.95f
 
         // Action 常量
-        private const val ACTION_INCREMENT = "github.hunmer.memento.widgets.TRACKER_GOAL_INCREMENT"
-        private const val ACTION_DECREMENT = "github.hunmer.memento.widgets.TRACKER_GOAL_DECREMENT"
+        private const val ACTION_INCREMENT = "github.hunmer.aboutme.widgets.TRACKER_GOAL_INCREMENT"
+        private const val ACTION_DECREMENT = "github.hunmer.aboutme.widgets.TRACKER_GOAL_DECREMENT"
         private const val EXTRA_WIDGET_ID = "appWidgetId"
 
         // 待同步的目标变更（应用启动时读取）
@@ -138,8 +138,8 @@ open class TrackerGoalWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击跳转到配置界面
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/tracker_goal/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/tracker_goal/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -329,8 +329,8 @@ open class TrackerGoalWidgetProvider : BasePluginWidgetProvider() {
      */
     private fun setupMainClick(views: RemoteViews, context: Context, goalId: String) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://plugin/tracker/goal/$goalId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://plugin/tracker/goal/$goalId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(

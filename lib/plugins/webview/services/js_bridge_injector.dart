@@ -4,18 +4,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/js_bridge/batch_request_executor.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/webview/webview_plugin.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/js_bridge/batch_request_executor.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/webview/webview_plugin.dart';
 
 /// JS Bridge Handlers 注册服务
 ///
 /// 通过 flutter_inappwebview 的 JavaScript Handlers 使网页能够调用：
-/// - Memento.plugins.<pluginId>.<method>()
-/// - Memento.system.*
-/// - Memento.plugins.ui.*
-/// - Memento.storage.*
+/// - Aboutme.plugins.<pluginId>.<method>()
+/// - Aboutme.system.*
+/// - Aboutme.plugins.ui.*
+/// - Aboutme.storage.*
 class JSBridgeInjector {
   final InAppWebViewController controller;
   final bool enabled;
@@ -70,16 +70,16 @@ class JSBridgeInjector {
   void _registerCoreHandlers() {
     // Bridge 就绪信号 handler（供网页检测 bridge 是否可用）
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_ready',
+      handlerName: 'Aboutme_ready',
       callback: (args) {
-        debugPrint('[JSBridge] Memento_ready called');
+        debugPrint('[JSBridge] Aboutme_ready called');
         return true;
       },
     );
 
     // 插件调用 handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_plugin_call',
+      handlerName: 'Aboutme_plugin_call',
       callback: (args) async {
         if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
 
@@ -134,7 +134,7 @@ class JSBridgeInjector {
 
           // 降级到原始的 JS 引擎方式
           final paramsJson = jsonEncode(methodParams);
-          final code = 'return Memento_${pluginId}_$method($paramsJson)';
+          final code = 'return Aboutme_${pluginId}_$method($paramsJson)';
 
           final result = await JSBridgeManager.instance.evaluate(code);
           if (result.success) {
@@ -150,7 +150,7 @@ class JSBridgeInjector {
 
     // 系统 API handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_system_call',
+      handlerName: 'Aboutme_system_call',
       callback: (args) async {
         if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
 
@@ -176,7 +176,7 @@ class JSBridgeInjector {
           final paramsArg =
               methodParams != null ? jsonEncode(methodParams) : '';
           // 构建 JS Bridge 调用代码（必须有 return 语句才能获取返回值）
-          final code = 'return Memento_system_$method($paramsArg)';
+          final code = 'return Aboutme_system_$method($paramsArg)';
 
           final result = await JSBridgeManager.instance.evaluate(code);
           if (result.success) {
@@ -192,7 +192,7 @@ class JSBridgeInjector {
 
     // UI Toast handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_ui_toast',
+      handlerName: 'Aboutme_ui_toast',
       callback: (args) {
         if (args.isEmpty || _context == null) return;
 
@@ -220,7 +220,7 @@ class JSBridgeInjector {
 
     // UI Alert handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_ui_alert',
+      handlerName: 'Aboutme_ui_alert',
       callback: (args) async {
         if (args.isEmpty || _context == null) return false;
 
@@ -263,7 +263,7 @@ class JSBridgeInjector {
 
     // UI Dialog handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_ui_dialog',
+      handlerName: 'Aboutme_ui_dialog',
       callback: (args) async {
         if (args.isEmpty || _context == null) return null;
 
@@ -308,7 +308,7 @@ class JSBridgeInjector {
 
     // Storage read handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_storage_read',
+      handlerName: 'Aboutme_storage_read',
       callback: (args) async {
         if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
 
@@ -365,7 +365,7 @@ class JSBridgeInjector {
 
     // Storage write handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_storage_write',
+      handlerName: 'Aboutme_storage_write',
       callback: (args) async {
         if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
 
@@ -413,7 +413,7 @@ class JSBridgeInjector {
 
     // Storage delete handler
     controller.addJavaScriptHandler(
-      handlerName: 'Memento_storage_delete',
+      handlerName: 'Aboutme_storage_delete',
       callback: (args) async {
         if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
 

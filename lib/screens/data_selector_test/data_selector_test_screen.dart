@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 /// 插件数据选择器测试页面
 class DataSelectorTestScreen extends StatefulWidget {

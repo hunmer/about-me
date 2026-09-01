@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 class AgentController extends ChangeNotifier {
   static final AgentController _instance = AgentController._internal();

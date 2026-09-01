@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/notification_controller.dart';
-import 'package:memento_notifications/memento_notifications.dart';
+import 'package:aboutme/core/notification_controller.dart';
+import 'package:aboutme_notifications/aboutme_notifications.dart';
 /// 通知测试页面 - 用于测试 awesome_notifications 功能
 class NotificationTestPage extends StatefulWidget {
   const NotificationTestPage({super.key});
@@ -66,24 +66,24 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       id: id,
       title: '自定义通知',
       body: '这是一个带按钮的自定义通知! (ID: $id)',
-      layout: MementoNotificationLayout.basic,
+      layout: AboutmeNotificationLayout.basic,
       actionButtons: [
-        const MementoNotificationButton(
+        const AboutmeNotificationButton(
           key: 'YES',
           label: 'Yes',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
           color: Colors.green,
         ),
-        const MementoNotificationButton(
+        const AboutmeNotificationButton(
           key: 'NO',
           label: 'No',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
           color: Colors.red,
         ),
-        const MementoNotificationButton(
+        const AboutmeNotificationButton(
           key: 'MORE',
           label: 'More',
-          actionType: MementoButtonActionType.defaultAction,
+          actionType: AboutmeButtonActionType.defaultAction,
         ),
       ],
     );
@@ -109,7 +109,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       id: id,
       title: '进度通知',
       body: '下载进度: 50%',
-      layout: MementoNotificationLayout.progressBar,
+      layout: AboutmeNotificationLayout.progressBar,
     );
     _addLog('已发送进度条通知 (ID: $id)');
   }

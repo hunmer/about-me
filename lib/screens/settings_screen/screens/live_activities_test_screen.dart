@@ -38,8 +38,8 @@ class _LiveActivitiesTestScreenState extends State<LiveActivitiesTestScreen> {
     try {
       // 使用控制器初始化
       final isSupported = await _controller.init(
-        appGroupId: 'group.github.hunmer.memento',
-        urlScheme: 'memento',
+        appGroupId: 'group.github.hunmer.aboutme',
+        urlScheme: 'aboutme',
         requireNotificationPermission: true,
         onActivityUpdate: _handleActivityUpdate,
         onUrlScheme: _handleUrlScheme,
@@ -107,7 +107,7 @@ class _LiveActivitiesTestScreenState extends State<LiveActivitiesTestScreen> {
 
       // 准备活动数据 - 必须匹配 Swift ContentState 的字段
       final Map<String, dynamic> activityModel = {
-        'title': 'Memento 任务',
+        'title': 'Aboutme 任务',
         'subtitle': '正在处理中...',
         'progress': _progress,
         'status': _status,
@@ -145,7 +145,7 @@ class _LiveActivitiesTestScreenState extends State<LiveActivitiesTestScreen> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
       final Map<String, dynamic> activityModel = {
-        'title': 'Memento 任务',
+        'title': 'Aboutme 任务',
         'subtitle': '进度更新',
         'progress': _progress,
         'status': _status,

@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 import '../providers.dart';
 import '../utils.dart';
 

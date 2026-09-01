@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
-import 'package:Memento/plugins/timer/views/timer_task_card_adapter.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/plugins/timer/views/timer_task_card_adapter.dart';
 
 /// TimerTaskCard - 计时器任务卡片
 ///

@@ -8,7 +8,7 @@ final Map<String, String> notesTranslationsEn = {
   'notes_dayCardDesc': 'Show notes created or edited on the selected date',
   'notes_dayCardEmpty': 'No notes on this day',
   'notes_dayCardUntitled': 'Untitled',
-  'notes_notesPluginDescription': 'A simple note-taking plugin for Memento',
+  'notes_notesPluginDescription': 'A simple note-taking plugin for Aboutme',
 
   // Statistics
   'notes_totalNotes': 'Total',

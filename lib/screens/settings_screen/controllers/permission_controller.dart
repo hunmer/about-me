@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/calendar/services/system_calendar_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/calendar/services/system_calendar_manager.dart';
 
 class PermissionController {
   PermissionController();

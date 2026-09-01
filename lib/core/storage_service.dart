@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:path/path.dart' as path;
 
 class StorageService {

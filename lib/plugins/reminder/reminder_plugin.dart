@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
 import 'services/reminder_service.dart';
 import 'services/reminder_scheduler.dart';
 import 'screens/reminder_list_screen.dart';

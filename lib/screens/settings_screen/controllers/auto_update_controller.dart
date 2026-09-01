@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/utils/network.dart';
+import 'package:aboutme/core/utils/network.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:get/get.dart';
 
 class AutoUpdateController extends ChangeNotifier {
@@ -109,7 +109,7 @@ class AutoUpdateController extends ChangeNotifier {
     try {
       final response = await client.get(
         Uri.parse(
-          'https://api.github.com/repos/hunmer/Memento/releases/latest',
+          'https://api.github.com/repos/hunmer/Aboutme/releases/latest',
         ),
       );
 

@@ -1,8 +1,8 @@
 //
-//  MementoWidgetLiveActivity.swift
-//  MementoWidget
+//  AboutmeWidgetLiveActivity.swift
+//  AboutmeWidget
 //
-//  Created by Memento on $(DATE).
+//  Created by Aboutme on $(DATE).
 //
 
 import ActivityKit
@@ -33,7 +33,7 @@ extension LiveActivitiesAppAttributes {
     }
 }
 
-struct MementoWidgetLiveActivityWidget: Widget {
+struct AboutmeWidgetLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LiveActivitiesAppAttributes.self) { context in
             // 锁屏和动态岛视图

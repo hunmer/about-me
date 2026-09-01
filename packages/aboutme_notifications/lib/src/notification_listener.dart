@@ -3,26 +3,26 @@ import 'notification_action.dart';
 
 /// 通知创建回调
 typedef OnNotificationCreated = Future<void> Function(
-  MementoReceivedNotification notification,
+  AboutmeReceivedNotification notification,
 );
 
 /// 通知显示回调
 typedef OnNotificationDisplayed = Future<void> Function(
-  MementoReceivedNotification notification,
+  AboutmeReceivedNotification notification,
 );
 
 /// 通知关闭回调
 typedef OnNotificationDismissed = Future<void> Function(
-  MementoReceivedAction action,
+  AboutmeReceivedAction action,
 );
 
 /// 通知动作回调
 typedef OnNotificationAction = Future<void> Function(
-  MementoReceivedAction action,
+  AboutmeReceivedAction action,
 );
 
 /// 通知事件监听器配置
-class MementoNotificationListeners {
+class AboutmeNotificationListeners {
   /// 通知创建回调
   final OnNotificationCreated? onCreated;
 
@@ -35,7 +35,7 @@ class MementoNotificationListeners {
   /// 通知动作回调
   final OnNotificationAction? onAction;
 
-  const MementoNotificationListeners({
+  const AboutmeNotificationListeners({
     this.onCreated,
     this.onDisplayed,
     this.onDismissed,

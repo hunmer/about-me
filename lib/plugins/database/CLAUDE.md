@@ -6,7 +6,7 @@
 
 ## 模块职责
 
-数据库插件是 Memento 的核心功能模块之一，提供灵活的自定义数据库功能：
+数据库插件是 Aboutme 的核心功能模块之一，提供灵活的自定义数据库功能：
 
 - **自定义数据库结构**：用户可创建无限个数据库，每个数据库支持自定义名称、描述、封面图片
 - **灵活的字段系统**：支持 11 种字段类型（文本、长文本、整数、复选框、下拉选择、日期、时间、日期时间、图片、URL、评分、密码）
@@ -134,7 +134,7 @@ await invoke('database.getRecords', {
 await invoke('database.createRecord', {
   databaseId: 'db_id',
   fields: {
-    '项目名称': 'Memento 开发',
+    '项目名称': 'Aboutme 开发',
     '进度': 80
   }
 });
@@ -179,7 +179,7 @@ await invoke('database.findRecordById', { id: 'record_id' });
 await invoke('database.findRecordBy', {
   databaseId: 'db_id',
   field: '项目名称',
-  value: 'Memento'
+  value: 'Aboutme'
 });
 ```
 
@@ -214,8 +214,8 @@ await invoke('database.findRecordBy', {
 - `uuid: ^4.x.x`: UUID 生成（用于数据库复制）
 - `image_picker: ^1.x.x`: 图片选择器（字段类型：Image）
 - `get/get.dart`: 状态管理和国际化
-- `Memento/widgets/image_picker_dialog.dart`: 自定义图片选择对话框
-- `Memento/utils/image_utils.dart`: 图片工具类
+- `Aboutme/widgets/image_picker_dialog.dart`: 自定义图片选择对话框
+- `Aboutme/utils/image_utils.dart`: 图片工具类
 
 ### 插件依赖
 
@@ -340,7 +340,7 @@ class Record {
   "id": "1234567890123",
   "tableId": "1234567890",
   "fields": {
-    "项目名称": "Memento 应用开发",
+    "项目名称": "Aboutme 应用开发",
     "截止日期": "2025-03-01T00:00:00.000Z",
     "优先级": 5,
     "负责人": "张三",

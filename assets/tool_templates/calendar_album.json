@@ -8,7 +8,7 @@
         "method": "run_js",
         "title": "获取今日照片",
         "desc": "查询今天的照片日记",
-        "data": "const todayDate = await Memento.system.getCustomDate({format: 'yyyy-MM-dd'});\nconst response = await Memento.plugins.calendarAlbum.getPhotos({\n  date: todayDate\n});\n\nif (response.success) {\n  const result = {\n    count: response.data.length,\n    photos: response.data.map(p => ({\n      id: p.id,\n      caption: p.caption,\n      tags: p.tags\n    }))\n  };\n  setResult(result);\n  return result;\n} else {\n  throw new Error(response.error || '获取照片失败');\n}"
+        "data": "const todayDate = await Aboutme.system.getCustomDate({format: 'yyyy-MM-dd'});\nconst response = await Aboutme.plugins.calendarAlbum.getPhotos({\n  date: todayDate\n});\n\nif (response.success) {\n  const result = {\n    count: response.data.length,\n    photos: response.data.map(p => ({\n      id: p.id,\n      caption: p.caption,\n      tags: p.tags\n    }))\n  };\n  setResult(result);\n  return result;\n} else {\n  throw new Error(response.error || '获取照片失败');\n}"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",
@@ -26,7 +26,7 @@
         "method": "run_js",
         "title": "获取标签列表",
         "desc": "查询所有标签",
-        "data": "const tags = await Memento.plugins.calendarAlbum.getTags();\n\nconst result = {\n  count: tags.length,\n  tags: tags\n};\n\nsetResult(result);\nreturn result;"
+        "data": "const tags = await Aboutme.plugins.calendarAlbum.getTags();\n\nconst result = {\n  count: tags.length,\n  tags: tags\n};\n\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",
@@ -44,7 +44,7 @@
         "method": "run_js",
         "title": "获取统计数据",
         "desc": "查询相册统计",
-        "data": "const stats = await Memento.plugins.calendarAlbum.getStats();\n\nconst result = {\n  totalPhotos: stats.totalPhotos,\n  totalDays: stats.totalDays,\n  tagCount: stats.tagCount\n};\n\nsetResult(result);\nreturn result;"
+        "data": "const stats = await Aboutme.plugins.calendarAlbum.getStats();\n\nconst result = {\n  totalPhotos: stats.totalPhotos,\n  totalDays: stats.totalDays,\n  tagCount: stats.tagCount\n};\n\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",

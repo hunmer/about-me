@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 日志级别
 enum LogLevel {
@@ -342,7 +342,7 @@ class LogService {
       _currentSessionLogs.clear();
 
       // 写入文件头
-      final header = 'Memento 日志文件\n开始时间: ${DateTime.now().toIso8601String()}\n${'=' * 50}\n';
+      final header = 'Aboutme 日志文件\n开始时间: ${DateTime.now().toIso8601String()}\n${'=' * 50}\n';
       await file.writeAsString(header);
 
       print('[LogService] 创建新日志文件: ${file.path}');

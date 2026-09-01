@@ -2,18 +2,18 @@
 library;
 
 import 'dart:async';
-import 'package:Memento/core/event/event_args.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
-import 'package:Memento/plugins/habits/controllers/timer_controller.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/widgets/timer_dialog.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/widgets/common/habit_card.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/timer_controller.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/common/habit_card.dart';
 
 /// HabitCard 数据模型
 class HabitCardData {

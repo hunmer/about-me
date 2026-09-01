@@ -63,7 +63,7 @@ lib/plugins/openai/
 - 健康生活顾问 - 健康管理模板
 - 旅行规划大师 - 旅行规划模板
 - 心理支持伙伴 - 心理支持模板
-- 插件数据分析 - Memento 插件数据分析模板
+- 插件数据分析 - Aboutme 插件数据分析模板
 - 日常聊天伙伴 - 轻松日常对话模板
 
 ### 2. 自动初始化
@@ -107,7 +107,7 @@ Future<void> initializeDefaultData() async {
 ### 在插件中使用示例数据
 
 ```dart
-import 'package:Memento/plugins/openai/sample_data.dart';
+import 'package:aboutme/plugins/openai/sample_data.dart';
 
 // 获取默认 AI 助手
 final agents = OpenAISampleData.defaultAgents;
@@ -119,7 +119,7 @@ final presets = OpenAISampleData.defaultPresets;
 ### 在 PromptPresetService 中使用
 
 ```dart
-import 'package:Memento/plugins/openai/services/prompt_preset_service.dart';
+import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
 
 // 获取服务实例
 final service = PromptPresetService();

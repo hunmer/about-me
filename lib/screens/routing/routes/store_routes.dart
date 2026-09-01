@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/store/widgets/store_view/store_main.dart';
-import 'package:Memento/plugins/store/widgets/store_view/points_history_page.dart';
-import 'package:Memento/plugins/store/widgets/product_items_page.dart';
-import 'package:Memento/plugins/store/widgets/user_item_detail_page.dart';
-import 'package:Memento/plugins/store/store_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/store_main.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/points_history_page.dart';
+import 'package:aboutme/plugins/store/widgets/product_items_page.dart';
+import 'package:aboutme/plugins/store/widgets/user_item_detail_page.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
 
 /// Store 插件路由注册表
 class StoreRoutes implements RouteRegistry {

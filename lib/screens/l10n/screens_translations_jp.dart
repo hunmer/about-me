@@ -111,8 +111,8 @@ final Map<String, String> screensTranslationsJp = {
   // intent_test_screen
   'screens_quickRegisterIntent': 'クイック Intent 登録',
   'screens_selectPresetIntentType': 'クイック登録するプリセット Intent タイプを選択',
-  'screens_mementoTest': 'Memento テスト (memento:///test)',
-  'screens_mementoComplete': 'Memento 完了 (memento://app.example.com/open)',
+  'screens_aboutmeTest': 'Aboutme テスト (aboutme:///test)',
+  'screens_aboutmeComplete': 'Aboutme 完了 (aboutme://app.example.com/open)',
   'screens_customApp': 'カスタムアプリ (myapp://custom.host)',
   'screens_intentTest': 'Intent テスト',
   'screens_quickRegister': 'クイック登録',

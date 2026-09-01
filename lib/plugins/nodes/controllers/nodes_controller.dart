@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/nodes/models/node.dart';
-import 'package:Memento/plugins/nodes/models/notebook.dart';
-import 'package:Memento/plugins/nodes/sample_data.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/plugins/nodes/models/node.dart';
+import 'package:aboutme/plugins/nodes/models/notebook.dart';
+import 'package:aboutme/plugins/nodes/sample_data.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 class NodesController extends ChangeNotifier {
   final StorageManager _storageManager;

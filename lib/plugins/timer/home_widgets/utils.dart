@@ -1,7 +1,7 @@
 /// 计时器插件主页小组件工具函数
 library;
 
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 /// 格式化时长
 String formatDuration(Duration duration) {

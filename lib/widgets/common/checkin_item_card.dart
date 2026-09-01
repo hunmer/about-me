@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
 /// 打卡项目卡片组件
 ///

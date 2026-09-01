@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
-import 'package:Memento/plugins/calendar/screens/calendar_month_selector_screen.dart';
-import 'package:Memento/plugins/calendar/widgets/event_detail_card.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/todo/todo_plugin.dart';
-import 'package:Memento/plugins/todo/models/models.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/plugins/calendar/screens/calendar_month_selector_screen.dart';
+import 'package:aboutme/plugins/calendar/widgets/event_detail_card.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/plugins/todo/models/models.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// Calendar 插件路由注册表
 class CalendarRoutes implements RouteRegistry {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/todo/models/task.dart';
-import 'package:Memento/plugins/todo/widgets/todo_day_card.dart';
+import 'package:aboutme/plugins/todo/models/task.dart';
+import 'package:aboutme/plugins/todo/widgets/todo_day_card.dart';
 
 /// 周视图 - 展示从周一到周日的待办事项
 class TodoWeekView extends StatelessWidget {

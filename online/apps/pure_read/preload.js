@@ -2,10 +2,10 @@
  * PureRead WebView 卡片预加载脚本
  *
  * 此文件在 QuickJS 引擎中执行，而非在 WebView 页面中
- * 通过调用 memento.registerTool() 注册特定于 PureRead 的自定义 JavaScript 工具
+ * 通过调用 aboutme.registerTool() 注册特定于 PureRead 的自定义 JavaScript 工具
  * 注册的工具可以被 Agent Chat 直接调用，无需打开 WebView 页面
  *
- * 注意：Dart 端会在执行此脚本前验证 memento.registerTool 已存在
+ * 注意：Dart 端会在执行此脚本前验证 aboutme.registerTool 已存在
  * 因此无需在此脚本中轮询等待
  */
 
@@ -16,7 +16,7 @@ function registerTools() {
   // ==================== 书籍管理工具 ====================
 
   // 注册保存书籍工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'book_save',
     name: '保存书籍',
     description: '将新书籍保存到 PureRead 存储',
@@ -66,7 +66,7 @@ function registerTools() {
     ],
     examples: [
       {
-        code: `const result = await memento.tools.book_save({
+        code: `const result = await aboutme.tools.book_save({
   title: '三体',
   author: '刘慈欣',
   totalPages: 302,
@@ -78,7 +78,7 @@ setResult(result);`,
         comment: '保存新书籍《三体》'
       },
       {
-        code: `const result = await memento.tools.book_save({
+        code: `const result = await aboutme.tools.book_save({
   title: 'Clean Code',
   author: 'Robert C. Martin',
   totalPages: 464,
@@ -90,7 +90,7 @@ setResult(result);`,
     ],
     code: `
       // 读取现有卡片数据
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
       const data = cardData || { books: [], updatedAt: new Date().toISOString() };
 
       // 生成唯一 ID
@@ -117,7 +117,7 @@ setResult(result);`,
       data.updatedAt = now;
 
       // 保存回文件
-      await memento.storage.writeCardData('pureread', data);
+      await aboutme.storage.writeCardData('pureread', data);
 
       return {
         success: true,
@@ -130,7 +130,7 @@ setResult(result);`,
   });
 
   // 注册列出书籍工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'book_list',
     name: '列出书籍',
     description: '获取所有保存的书籍',
@@ -150,24 +150,24 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.book_list();
+        code: `const result = await aboutme.tools.book_list();
 setResult(result);`,
         comment: '获取所有书籍'
       },
       {
-        code: `const result = await memento.tools.book_list({ status: 'READING' });
+        code: `const result = await aboutme.tools.book_list({ status: 'READING' });
 setResult('正在阅读的书籍数: ' + result.books.length);`,
         comment: '获取正在阅读的书籍'
       },
       {
-        code: `const result = await memento.tools.book_list({ includeArchived: true });
+        code: `const result = await aboutme.tools.book_list({ includeArchived: true });
 setResult(result);`,
         comment: '获取包括已归档的所有书籍'
       }
     ],
     code: `
       // 从文件读取卡片数据
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return {
@@ -199,7 +199,7 @@ setResult(result);`,
   });
 
   // 注册搜索书籍工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'book_search',
     name: '搜索书籍',
     description: '根据标题、作者或类型搜索书籍',
@@ -213,19 +213,19 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.book_search({ query: '三体' });
+        code: `const result = await aboutme.tools.book_search({ query: '三体' });
 setResult(result);`,
         comment: '搜索包含 "三体" 的书籍'
       },
       {
-        code: `const result = await memento.tools.book_search({ query: 'Martin' });
+        code: `const result = await aboutme.tools.book_search({ query: 'Martin' });
 setResult(result);`,
         comment: '搜索作者名包含 "Martin" 的书籍'
       }
     ],
     code: `
       // 从文件读取卡片数据
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: true, books: [], total: 0 };
@@ -252,7 +252,7 @@ setResult(result);`,
   });
 
   // 注册更新书籍工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'book_update',
     name: '更新书籍',
     description: '更新现有书籍的信息',
@@ -308,7 +308,7 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.book_update({
+        code: `const result = await aboutme.tools.book_update({
   id: '1234567890',
   status: 'FINISHED'
 });
@@ -317,7 +317,7 @@ setResult(result);`,
       }
     ],
     code: `
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: false, message: '数据不存在' };
@@ -343,7 +343,7 @@ setResult(result);`,
 
       cardData.updatedAt = new Date().toISOString();
 
-      await memento.storage.writeCardData('pureread', cardData);
+      await aboutme.storage.writeCardData('pureread', cardData);
 
       return {
         success: true,
@@ -355,7 +355,7 @@ setResult(result);`,
   });
 
   // 注册删除书籍工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'book_delete',
     name: '删除书籍',
     description: '从 PureRead 中删除书籍',
@@ -369,13 +369,13 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.book_delete({ id: '1234567890' });
+        code: `const result = await aboutme.tools.book_delete({ id: '1234567890' });
 setResult(result);`,
         comment: '删除指定书籍'
       }
     ],
     code: `
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: false, message: '数据不存在' };
@@ -389,7 +389,7 @@ setResult(result);`,
       cardData.books.splice(bookIndex, 1);
       cardData.updatedAt = new Date().toISOString();
 
-      await memento.storage.writeCardData('pureread', cardData);
+      await aboutme.storage.writeCardData('pureread', cardData);
 
       return {
         success: true,
@@ -403,7 +403,7 @@ setResult(result);`,
   // ==================== 阅读记录管理工具 ====================
 
   // 注册添加阅读记录工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'log_add',
     name: '添加阅读记录',
     description: '为书籍添加新的阅读记录',
@@ -435,7 +435,7 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.log_add({
+        code: `const result = await aboutme.tools.log_add({
   bookId: '1234567890',
   pagesRead: 50,
   note: '今天读到了三体人回应地球信号的部分，非常震撼！'
@@ -445,7 +445,7 @@ setResult(result);`,
       }
     ],
     code: `
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: false, message: '数据不存在' };
@@ -473,7 +473,7 @@ setResult(result);`,
 
       cardData.updatedAt = new Date().toISOString();
 
-      await memento.storage.writeCardData('pureread', cardData);
+      await aboutme.storage.writeCardData('pureread', cardData);
 
       // 计算总阅读页数
       const totalRead = book.logs.reduce((sum, l) => sum + l.pagesRead, 0);
@@ -491,7 +491,7 @@ setResult(result);`,
   });
 
   // 注册列出阅读记录工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'log_list',
     name: '列出阅读记录',
     description: '获取指定书籍的所有阅读记录',
@@ -505,13 +505,13 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.log_list({ bookId: '1234567890' });
+        code: `const result = await aboutme.tools.log_list({ bookId: '1234567890' });
 setResult(result);`,
         comment: '获取书籍的所有阅读记录'
       }
     ],
     code: `
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: false, message: '数据不存在' };
@@ -537,7 +537,7 @@ setResult(result);`,
   });
 
   // 注册删除阅读记录工具
-  memento.registerTool({
+  aboutme.registerTool({
     id: 'log_delete',
     name: '删除阅读记录',
     description: '删除指定的阅读记录',
@@ -557,7 +557,7 @@ setResult(result);`,
     ],
     examples: [
       {
-        code: `const result = await memento.tools.log_delete({
+        code: `const result = await aboutme.tools.log_delete({
   bookId: '1234567890',
   logId: '9876543210'
 });
@@ -566,7 +566,7 @@ setResult(result);`,
       }
     ],
     code: `
-      const cardData = await memento.storage.readCardData('pureread');
+      const cardData = await aboutme.storage.readCardData('pureread');
 
       if (!cardData || !cardData.books) {
         return { success: false, message: '数据不存在' };
@@ -589,7 +589,7 @@ setResult(result);`,
       book.logs.splice(logIndex, 1);
       cardData.updatedAt = new Date().toISOString();
 
-      await memento.storage.writeCardData('pureread', cardData);
+      await aboutme.storage.writeCardData('pureread', cardData);
 
       return {
         success: true,
@@ -604,7 +604,7 @@ setResult(result);`,
   return true;
 }
 
-// 直接执行工具注册（Dart 端已确保 memento.registerTool 存在）
+// 直接执行工具注册（Dart 端已确保 aboutme.registerTool 存在）
 (function() {
   try {
     console.log('[Preload] 开始执行工具注册...');

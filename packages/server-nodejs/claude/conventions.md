@@ -14,7 +14,7 @@ npm run test:coverage    # 覆盖率
 npm run lint             # eslint src/**/*.ts
 ```
 
-- 全局安装视角：`npm i -g @hunmer/memento-server` → `memento-server`（`bin/memento-server.js`），首次运行在当前目录创建 `data/`。
+- 全局安装视角：`npm i -g @hunmer/aboutme-server` → `aboutme-server`（`bin/aboutme-server.js`），首次运行在当前目录创建 `data/`。
 
 ## 代码纪律
 

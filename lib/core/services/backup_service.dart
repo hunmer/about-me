@@ -1,8 +1,8 @@
-import 'package:Memento/widgets/backup_time_picker.dart';
+import 'package:aboutme/widgets/backup_time_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/screens/settings_screen/controllers/settings_screen_controller.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/screens/settings_screen/controllers/settings_screen_controller.dart';
 
 class BackupService {
   final SettingsScreenController _controller;

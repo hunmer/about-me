@@ -41,8 +41,8 @@ class SystemCalendarManager {
 
       debugPrint('SystemCalendarManager: 权限验证成功');
 
-      // 获取或创建 Memento 日历
-      _calendarId = await _getOrCreateMementoCalendar();
+      // 获取或创建 Aboutme 日历
+      _calendarId = await _getOrCreateAboutmeCalendar();
       if (_calendarId == null) {
         debugPrint('SystemCalendarManager: 无法获取或创建日历');
         return false;
@@ -58,8 +58,8 @@ class SystemCalendarManager {
     }
   }
 
-  /// 获取或创建 Memento 日历
-  Future<String?> _getOrCreateMementoCalendar() async {
+  /// 获取或创建 Aboutme 日历
+  Future<String?> _getOrCreateAboutmeCalendar() async {
     try {
       // 获取所有日历
       final calendars = await _deviceCalendar.retrieveCalendars();
@@ -68,22 +68,22 @@ class SystemCalendarManager {
         return null;
       }
 
-      // 查找名为 "Memento" 的日历
-      final mementoCalendar = calendars.data!.firstWhere(
-        (calendar) => calendar.name == 'Memento',
+      // 查找名为 "Aboutme" 的日历
+      final aboutmeCalendar = calendars.data!.firstWhere(
+        (calendar) => calendar.name == 'Aboutme',
         orElse: () => Calendar(),
       );
 
-      // 如果找到 Memento 日历，返回其 ID
-      if (mementoCalendar.id != null) {
-        debugPrint('SystemCalendarManager: 找到现有 Memento 日历');
-        return mementoCalendar.id;
+      // 如果找到 Aboutme 日历，返回其 ID
+      if (aboutmeCalendar.id != null) {
+        debugPrint('SystemCalendarManager: 找到现有 Aboutme 日历');
+        return aboutmeCalendar.id;
       }
 
-      // 如果没找到，创建新的 Memento 日历
-      debugPrint('SystemCalendarManager: 创建新的 Memento 日历');
+      // 如果没找到，创建新的 Aboutme 日历
+      debugPrint('SystemCalendarManager: 创建新的 Aboutme 日历');
       final createResult = await _deviceCalendar.createCalendar(
-        'Memento',
+        'Aboutme',
         calendarColor: const Color(0xFFD35B5B), // 使用日历插件的主题色，转换为 int
       );
 
@@ -228,7 +228,7 @@ class SystemCalendarManager {
     }
   }
 
-  /// 获取系统日历中的所有事件（包括 Memento 日历）
+  /// 获取系统日历中的所有事件（包括 Aboutme 日历）
   /// 注意：调用方需要自行处理去重逻辑，避免与本地事件重复
   /// 仅在移动端 (Android/iOS) 执行
   Future<List<CalendarEvent>> getSystemEvents({
@@ -264,12 +264,12 @@ class SystemCalendarManager {
       final start = startDate ?? now.subtract(const Duration(days: 365));
       final end = endDate ?? now.add(const Duration(days: 365));
 
-      // 遍历所有日历（包括 Memento 日历）
+      // 遍历所有日历（包括 Aboutme 日历）
       for (final calendar in calendars) {
         debugPrint(
           "SystemCalendarManager: 正在处理日历: ${calendar.name} (ID: ${calendar.id})",
         );
-        // 不再排除任何日历，包括 Memento 日历
+        // 不再排除任何日历，包括 Aboutme 日历
 
         try {
           final eventsResult = await _deviceCalendar.retrieveEvents(

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/app_initializer.dart' show globalConfigManager;
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_config.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/core/app_initializer.dart' show globalConfigManager;
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_config.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
 /// 语音识别配置服务
 ///

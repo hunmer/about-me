@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/plugins/checkin/screens/checkin_form_screen.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/screens/checkin_form_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
-import 'package:Memento/plugins/checkin/services/group_sort_service.dart';
-import 'package:Memento/plugins/checkin/widgets/group_sort_dialog.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
+import 'package:aboutme/plugins/checkin/widgets/group_sort_dialog.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 本地 TagGroup 类（用于分组管理对话框）
 class TagGroup {

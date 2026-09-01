@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
-import 'package:Memento/plugins/openai/models/api_format.dart';
-import 'package:Memento/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/plugins/openai/models/api_format.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'model_search_screen.dart';
 
 class ProviderEditScreen extends StatefulWidget {

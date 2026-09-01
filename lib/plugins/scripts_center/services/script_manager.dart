@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:Memento/plugins/scripts_center/models/script_info.dart';
-import 'package:Memento/plugins/scripts_center/models/script_folder.dart';
-import 'package:Memento/plugins/scripts_center/models/script_input.dart';
-import 'package:Memento/plugins/scripts_center/models/script_trigger.dart';
-import 'package:Memento/widgets/form_fields/config.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_trigger.dart';
+import 'package:aboutme/widgets/form_fields/config.dart';
 import 'script_loader.dart';
 
 /// 脚本管理器服务

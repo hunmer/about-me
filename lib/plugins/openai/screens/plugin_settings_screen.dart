@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'provider_settings_screen.dart';
 import 'model_list_screen.dart';
 import 'prompt_preset_screen.dart';

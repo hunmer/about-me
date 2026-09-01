@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import '../calendar_album_plugin.dart';
 import 'utils.dart';
 

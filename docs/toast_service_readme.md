@@ -11,7 +11,7 @@
 ### 1. 基本使用
 
 ```dart
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 // 显示普通消息
 Toast.show('这是一条消息');

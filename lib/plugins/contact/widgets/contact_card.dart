@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/contact/controllers/contact_controller.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
-import 'package:Memento/plugins/contact/screens/contact_records_screen.dart';
-import 'package:Memento/plugins/contact/widgets/contact_form.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/common/contact_card.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/screens/contact_records_screen.dart';
+import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/common/contact_card.dart';
 
 /// 联系人卡片组件（使用公共小组件）
 ///

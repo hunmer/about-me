@@ -9,7 +9,7 @@
 
 ## 模块职责
 
-WebView 插件是 Memento 的内置浏览器和应用商店解决方案，提供：
+WebView 插件是 Aboutme 的内置浏览器和应用商店解决方案，提供：
 
 - **多标签页浏览**：支持最多 10 个并发标签页，状态持久化
 - **网址卡片管理**：在线 URL 和本地 HTML 文件的统一管理
@@ -62,51 +62,51 @@ WebView 插件是 Memento 的内置浏览器和应用商店解决方案，提供
 
 ```javascript
 // 1. 检查 Bridge 就绪
-Memento_ready()
+Aboutme_ready()
 
 // 2. 调用插件方法
-Memento_plugin_call({
+Aboutme_plugin_call({
   pluginId: 'chat',
   method: 'sendMessage',
   params: { content: 'Hello' }
 })
 
 // 3. 调用系统 API
-Memento_system_call({
+Aboutme_system_call({
   method: 'getVersion',
   params: {}
 })
 
 // 4. UI 交互
-Memento_ui_toast({ message: '操作成功' })
-Memento_ui_alert({ message: '确认删除？', options: { title: '提示' } })
+Aboutme_ui_toast({ message: '操作成功' })
+Aboutme_ui_alert({ message: '确认删除？', options: { title: '提示' } })
 
 // 5. 存储 API
-Memento_storage_read({ key: 'userConfig' })
-Memento_storage_write({ key: 'userConfig', value: { theme: 'dark' } })
-Memento_storage_delete({ key: 'userConfig' })
+Aboutme_storage_read({ key: 'userConfig' })
+Aboutme_storage_write({ key: 'userConfig', value: { theme: 'dark' } })
+Aboutme_storage_delete({ key: 'userConfig' })
 ```
 
 ### WebView 插件 JS API
 
 ```javascript
 // 卡片管理
-Memento.webview.getCards()
-Memento.webview.addCard({ title, url, type })
-Memento.webview.deleteCard({ cardId })
-Memento.webview.updateCard({ cardId, changes })
+Aboutme.webview.getCards()
+Aboutme.webview.addCard({ title, url, type })
+Aboutme.webview.deleteCard({ cardId })
+Aboutme.webview.updateCard({ cardId, changes })
 
 // 标签页管理
-Memento.webview.getTabs()
-Memento.webview.createTab({ url, title })
-Memento.webview.closeTab({ tabId })
-Memento.webview.switchTab({ tabId })
+Aboutme.webview.getTabs()
+Aboutme.webview.createTab({ url, title })
+Aboutme.webview.closeTab({ tabId })
+Aboutme.webview.switchTab({ tabId })
 
 // 导航控制
-Memento.webview.navigate({ url })
-Memento.webview.goBack()
-Memento.webview.goForward()
-Memento.webview.reload()
+Aboutme.webview.navigate({ url })
+Aboutme.webview.goBack()
+Aboutme.webview.goForward()
+Aboutme.webview.reload()
 ```
 
 ---

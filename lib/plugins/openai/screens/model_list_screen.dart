@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
-import 'package:Memento/plugins/openai/controllers/model_controller.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class ModelListScreen extends StatefulWidget {
   const ModelListScreen({super.key});

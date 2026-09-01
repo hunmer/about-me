@@ -2,11 +2,11 @@
 // 通过适配现有的 StoreController 来实现 IStoreRepository 接口
 
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
-import 'package:Memento/plugins/store/models/product.dart';
-import 'package:Memento/plugins/store/models/user_item.dart';
-import 'package:Memento/plugins/store/models/points_log.dart';
-import 'package:Memento/plugins/store/models/used_item.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/store/models/points_log.dart';
+import 'package:aboutme/plugins/store/models/used_item.dart';
 
 /// 客户端 Store Repository 实现
 class ClientStoreRepository implements IStoreRepository {

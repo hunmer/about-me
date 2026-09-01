@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/calendar/widgets/event_detail_card.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/widgets/event_detail_card.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 class EventListPage extends StatefulWidget {
   final List<CalendarEvent> events;

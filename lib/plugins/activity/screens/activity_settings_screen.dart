@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 
 /// 活动插件设置页面
 class ActivitySettingsScreen extends StatefulWidget {

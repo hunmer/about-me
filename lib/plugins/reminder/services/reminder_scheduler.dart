@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event.dart';
+import 'package:aboutme/core/event/event.dart';
 import '../models/reminder.dart';
 import 'reminder_service.dart';
 import 'reminder_notification_service.dart';

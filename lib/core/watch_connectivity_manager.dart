@@ -1,6 +1,6 @@
 //
 //  WatchConnectivityManager.dart
-//  Memento - Watch Connectivity Manager
+//  Aboutme - Watch Connectivity Manager
 //
 //  Created by Claude on 2026/3/11.
 //

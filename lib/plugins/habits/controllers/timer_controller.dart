@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
-import 'package:Memento/core/services/timer/events/timer_events.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/services/timer/events/timer_events.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
 
 class HabitTimerEventArgs extends EventArgs {
   final String habitId;

@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 /// 物品管理插件主题色
 const Color goodsColor = Color.fromARGB(255, 207, 77, 116);

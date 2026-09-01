@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/statistics/statistics.dart';
+import 'package:aboutme/widgets/statistics/statistics.dart';
 
 /// 统计图表示例
 class StatisticsExample extends StatefulWidget {

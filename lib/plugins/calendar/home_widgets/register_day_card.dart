@@ -3,15 +3,15 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/home_date_controller.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/calendar/pages/event_edit_page.dart';
-import 'package:Memento/plugins/calendar/widgets/event_day_card.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/pages/event_edit_page.dart';
+import 'package:aboutme/plugins/calendar/widgets/event_day_card.dart';
 
 /// 与日历视图一致的事件归属判断：startTime 落在该日
 bool _isSameDay(DateTime a, DateTime b) {

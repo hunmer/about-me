@@ -1,4 +1,4 @@
-/// Memento 通知管理插件
+/// Aboutme 通知管理插件
 ///
 /// 封装 awesome_notifications，提供简洁统一的通知 API。
 /// 支持基础通知、大图通知、按钮通知等多种类型。

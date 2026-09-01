@@ -5,7 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:intl/intl.dart';
 
-class MementoEditor extends StatefulWidget {
+class AboutmeEditor extends StatefulWidget {
   final String? initialTitle;
   final String? initialContent; // JSON Delta or Plain Text
   final String pageTitle; // e.g. "Create Diary"
@@ -18,7 +18,7 @@ class MementoEditor extends StatefulWidget {
   final String contentHint;
   final List<Widget>? actions;
 
-  const MementoEditor({
+  const AboutmeEditor({
     super.key,
     this.initialTitle,
     this.initialContent,
@@ -34,10 +34,10 @@ class MementoEditor extends StatefulWidget {
   });
 
   @override
-  State<MementoEditor> createState() => _MementoEditorState();
+  State<AboutmeEditor> createState() => _AboutmeEditorState();
 }
 
-class _MementoEditorState extends State<MementoEditor> {
+class _AboutmeEditorState extends State<AboutmeEditor> {
   late TextEditingController _titleController;
   late quill.QuillController _contentController;
   final FocusNode _contentFocusNode = FocusNode();

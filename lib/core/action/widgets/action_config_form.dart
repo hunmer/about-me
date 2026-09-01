@@ -3,9 +3,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/action/models/action_definition.dart';
-import 'package:Memento/core/action/models/action_form.dart';
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/action/models/action_definition.dart';
+import 'package:aboutme/core/action/models/action_form.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:get/get.dart';
 
 /// 表单值改变回调

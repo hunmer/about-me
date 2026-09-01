@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_state.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../../../core/services/toast_service.dart';
 import '../../../../../../core/services/speech_recognition_config_service.dart';

@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'warehouse_detail_screen.dart';
-import 'package:Memento/plugins/goods/widgets/warehouse_card.dart';
-import 'package:Memento/plugins/goods/widgets/warehouse_form.dart';
+import 'package:aboutme/plugins/goods/widgets/warehouse_card.dart';
+import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
 
 class WarehouseListScreen extends StatefulWidget {
   const WarehouseListScreen({super.key, this.onWarehouseTap});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/widgets/prompt_editor.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/widgets/prompt_editor.dart';
 import 'form_field_wrapper.dart';
 
 /// PromptEditor 字段包装器

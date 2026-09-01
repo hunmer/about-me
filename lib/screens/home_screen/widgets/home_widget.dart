@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/screens/home_screen/widgets/selector_widget_types.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/common_widgets.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
 
 /// 小组件构建器函数类型
 typedef HomeWidgetBuilder =

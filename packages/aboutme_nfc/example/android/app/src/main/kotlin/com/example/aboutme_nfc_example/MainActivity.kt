@@ -1,4 +1,4 @@
-package com.example.memento_nfc_example
+package com.example.aboutme_nfc_example
 
 import io.flutter.embedding.android.FlutterActivity
 

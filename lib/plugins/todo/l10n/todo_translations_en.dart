@@ -1,7 +1,7 @@
 const Map<String, String> todoTranslationsEn = {
   // Basic information
   'todo_name': 'Todo',
-  'todo_todoPluginDescription': 'A simple todo plugin for Memento',
+  'todo_todoPluginDescription': 'A simple todo plugin for Aboutme',
 
   // Statistics
   'todo_totalTasks': 'Total Tasks',

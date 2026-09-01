@@ -1,14 +1,14 @@
-import 'package:Memento/plugins/chat/screens/channel_list/channel_list_screen.dart';
+import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/screens/timeline/timeline_screen.dart';
-import 'package:Memento/plugins/chat/screens/tags/tags_screen.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
+import 'package:aboutme/plugins/chat/screens/tags/tags_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/screens/channel_list/controllers/channel_list_controller.dart';
-import 'package:Memento/plugins/chat/screens/channel_list/widgets/channel_dialogs/channel_dialog.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/screens/channel_list/controllers/channel_list_controller.dart';
+import 'package:aboutme/plugins/chat/screens/channel_list/widgets/channel_dialogs/channel_dialog.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 /// Chat 插件的底部栏组件
 /// 提供频道列表和时间线两个 Tab 的切换功能

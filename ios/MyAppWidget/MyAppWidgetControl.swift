@@ -11,7 +11,7 @@ import WidgetKit
 
 @available(iOS 18.0, *)
 struct MyAppWidgetControl: ControlWidget {
-    static let kind: String = "github.hunmer.memento.MyAppWidget"
+    static let kind: String = "github.hunmer.aboutme.MyAppWidget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:Memento/core/floating_ball/floating_widget_controller.dart';
-import 'package:Memento/core/floating_ball/screens/floating_button_manager_screen.dart';
+import 'package:aboutme/core/floating_ball/floating_widget_controller.dart';
+import 'package:aboutme/core/floating_ball/screens/floating_button_manager_screen.dart';
 
 class FloatingBallScreen extends StatefulWidget {
   const FloatingBallScreen({super.key});

@@ -102,7 +102,7 @@ import 'package:flutter/material.dart';
 import '../../../plugins/my_plugin/my_plugin.dart';
 import '../../plugin_manager.dart';
 import 'plugin_widget_syncer.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 class MyPluginSyncer extends PluginWidgetSyncer {
   @override

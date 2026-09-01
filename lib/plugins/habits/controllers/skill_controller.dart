@@ -1,10 +1,10 @@
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event_args.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/sample_data.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/sample_data.dart';
 
 class SkillController {
   final StorageManager storage;

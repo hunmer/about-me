@@ -23,8 +23,8 @@ export 'home_widgets/register_monthly_bill_widget.dart';
 export 'home_widgets/register_day_card.dart';
 export 'home_widgets/register_quick_create.dart';
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
 import 'home_widgets/register_icon_widget.dart';
 import 'home_widgets/register_overview_widget.dart';
 import 'home_widgets/register_create_shortcut.dart';

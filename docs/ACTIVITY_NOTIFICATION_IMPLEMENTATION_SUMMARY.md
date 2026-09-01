@@ -1,8 +1,8 @@
-# Memento 活动插件 Android 常驻通知栏服务 - 实现总结
+# Aboutme 活动插件 Android 常驻通知栏服务 - 实现总结
 
 ## 项目概述
 
-成功为 Memento 应用中的活动插件添加了 Android 常驻通知栏服务，实现了显示距离上次活动记录的时间、上次活动内容，并提供快速打开活动表单的功能。
+成功为 Aboutme 应用中的活动插件添加了 Android 常驻通知栏服务，实现了显示距离上次活动记录的时间、上次活动内容，并提供快速打开活动表单的功能。
 
 ## 实现的功能特性
 
@@ -36,13 +36,13 @@ lib/plugins/activity/
 
 #### Android 原生层
 ```
-android/app/src/main/kotlin/github/hunmer/memento/
+android/app/src/main/kotlin/github/hunmer/aboutme/
 └── ActivityForegroundService.kt            # Android 前台服务
 ```
 
 #### 文档
 ```
-D:\Memento/
+D:\Aboutme/
 └── ACTIVITY_NOTIFICATION_IMPLEMENTATION_SUMMARY.md  # 本实现总结
 ```
 
@@ -58,7 +58,7 @@ lib/plugins/activity/screens/activity_timeline_screen/   # 集成通知点击事
 
 #### Android 原生层
 ```
-android/app/src/main/kotlin/github/hunmer/memento/
+android/app/src/main/kotlin/github/hunmer/aboutme/
 └── MainActivity.kt                                    # 添加平台通道和Intent处理
 
 android/app/src/main/
@@ -132,13 +132,13 @@ bool isNotificationEnabled();
 #### JS Bridge API
 ```javascript
 // 启用通知
-await memento.activity.enableNotification();
+await aboutme.activity.enableNotification();
 
 // 禁用通知
-await memento.activity.disableNotification();
+await aboutme.activity.disableNotification();
 
 // 获取状态
-const status = await memento.activity.getNotificationStatus();
+const status = await aboutme.activity.getNotificationStatus();
 ```
 
 ### Android 平台通道
@@ -181,7 +181,7 @@ updateActivityNotification(title: String?, content: String?)
 ### 服务声明
 ```xml
 <service
-    android:name="github.hunmer.memento.ActivityForegroundService"
+    android:name="github.hunmer.aboutme.ActivityForegroundService"
     android:exported="false"
     android:foregroundServiceType="dataSync" />
 ```

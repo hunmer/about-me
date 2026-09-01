@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 统一管理消息操作的处理器
 class MessageOperations {

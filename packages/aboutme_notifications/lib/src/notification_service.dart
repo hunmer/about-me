@@ -6,16 +6,16 @@ import 'notification_content.dart';
 import 'notification_action.dart';
 import 'notification_listener.dart';
 
-/// Memento 通知管理器
+/// Aboutme 通知管理器
 ///
 /// 封装 awesome_notifications，提供简洁的通知 API。
-class MementoNotifications {
-  static final MementoNotifications _instance = MementoNotifications._internal();
+class AboutmeNotifications {
+  static final AboutmeNotifications _instance = AboutmeNotifications._internal();
 
   /// 单例实例
-  static MementoNotifications get instance => _instance;
+  static AboutmeNotifications get instance => _instance;
 
-  MementoNotifications._internal();
+  AboutmeNotifications._internal();
 
   bool _isInitialized = false;
 
@@ -23,7 +23,7 @@ class MementoNotifications {
   bool get isInitialized => _isInitialized;
 
   /// 事件监听器
-  MementoNotificationListeners? _listeners;
+  AboutmeNotificationListeners? _listeners;
 
   /// 初始化通知服务
   ///
@@ -31,8 +31,8 @@ class MementoNotifications {
   /// [channelGroups] 通知通道组列表
   /// [debug] 是否启用调试日志
   Future<void> initialize({
-    List<MementoNotificationChannel>? channels,
-    List<MementoNotificationChannelGroup>? channelGroups,
+    List<AboutmeNotificationChannel>? channels,
+    List<AboutmeNotificationChannelGroup>? channelGroups,
     bool debug = false,
   }) async {
     if (_isInitialized) return;
@@ -74,11 +74,11 @@ class MementoNotifications {
     );
 
     _isInitialized = true;
-    debugPrint('[MementoNotifications] 初始化完成');
+    debugPrint('[AboutmeNotifications] 初始化完成');
   }
 
   /// 设置事件监听器
-  void setListeners(MementoNotificationListeners listeners) {
+  void setListeners(AboutmeNotificationListeners listeners) {
     _listeners = listeners;
   }
 
@@ -113,10 +113,10 @@ class MementoNotifications {
     required String title,
     required String body,
     String channelKey = 'basic_channel',
-    MementoNotificationLayout layout = MementoNotificationLayout.basic,
+    AboutmeNotificationLayout layout = AboutmeNotificationLayout.basic,
     String? bigPicture,
     String? largeIcon,
-    List<MementoNotificationButton>? buttons,
+    List<AboutmeNotificationButton>? buttons,
     Map<String, String>? payload,
     bool autoDismissible = true,
   }) async {
@@ -190,9 +190,9 @@ class MementoNotifications {
   }
 
   /// 获取已调度的通知列表
-  Future<List<MementoScheduledNotification>> getScheduledNotifications() async {
+  Future<List<AboutmeScheduledNotification>> getScheduledNotifications() async {
     final notifications = await AwesomeNotifications().listScheduledNotifications();
-    return notifications.map((n) => MementoScheduledNotification(
+    return notifications.map((n) => AboutmeScheduledNotification(
       id: n.content?.id ?? 0,
       title: n.content?.title,
       body: n.content?.body,
@@ -202,7 +202,7 @@ class MementoNotifications {
 
   // ==================== 内部转换方法 ====================
 
-  NotificationChannel _convertChannel(MementoNotificationChannel channel) {
+  NotificationChannel _convertChannel(AboutmeNotificationChannel channel) {
     return NotificationChannel(
       channelGroupKey: channel.groupKey,
       channelKey: channel.key,
@@ -217,50 +217,50 @@ class MementoNotifications {
     );
   }
 
-  NotificationChannelGroup _convertChannelGroup(MementoNotificationChannelGroup group) {
+  NotificationChannelGroup _convertChannelGroup(AboutmeNotificationChannelGroup group) {
     return NotificationChannelGroup(
       channelGroupKey: group.key,
       channelGroupName: group.name,
     );
   }
 
-  NotificationImportance _convertImportance(MementoNotificationImportance importance) {
+  NotificationImportance _convertImportance(AboutmeNotificationImportance importance) {
     switch (importance) {
-      case MementoNotificationImportance.none:
+      case AboutmeNotificationImportance.none:
         return NotificationImportance.None;
-      case MementoNotificationImportance.min:
+      case AboutmeNotificationImportance.min:
         return NotificationImportance.Min;
-      case MementoNotificationImportance.low:
+      case AboutmeNotificationImportance.low:
         return NotificationImportance.Low;
-      case MementoNotificationImportance.defaultImportance:
+      case AboutmeNotificationImportance.defaultImportance:
         return NotificationImportance.Default;
-      case MementoNotificationImportance.high:
+      case AboutmeNotificationImportance.high:
         return NotificationImportance.High;
-      case MementoNotificationImportance.max:
+      case AboutmeNotificationImportance.max:
         return NotificationImportance.Max;
     }
   }
 
-  NotificationLayout _convertLayout(MementoNotificationLayout layout) {
+  NotificationLayout _convertLayout(AboutmeNotificationLayout layout) {
     switch (layout) {
-      case MementoNotificationLayout.basic:
+      case AboutmeNotificationLayout.basic:
         return NotificationLayout.Default;
-      case MementoNotificationLayout.bigPicture:
+      case AboutmeNotificationLayout.bigPicture:
         return NotificationLayout.BigPicture;
-      case MementoNotificationLayout.bigText:
+      case AboutmeNotificationLayout.bigText:
         return NotificationLayout.BigText;
-      case MementoNotificationLayout.inbox:
+      case AboutmeNotificationLayout.inbox:
         return NotificationLayout.Inbox;
-      case MementoNotificationLayout.progressBar:
+      case AboutmeNotificationLayout.progressBar:
         return NotificationLayout.ProgressBar;
-      case MementoNotificationLayout.mediaPlayer:
+      case AboutmeNotificationLayout.mediaPlayer:
         return NotificationLayout.MediaPlayer;
-      case MementoNotificationLayout.messaging:
+      case AboutmeNotificationLayout.messaging:
         return NotificationLayout.Messaging;
     }
   }
 
-  NotificationActionButton _convertButton(MementoNotificationButton button) {
+  NotificationActionButton _convertButton(AboutmeNotificationButton button) {
     return NotificationActionButton(
       key: button.key,
       label: button.label,
@@ -272,21 +272,21 @@ class MementoNotifications {
     );
   }
 
-  ActionType _convertButtonActionType(MementoButtonActionType type) {
+  ActionType _convertButtonActionType(AboutmeButtonActionType type) {
     switch (type) {
-      case MementoButtonActionType.defaultAction:
+      case AboutmeButtonActionType.defaultAction:
         return ActionType.Default;
-      case MementoButtonActionType.silentAction:
+      case AboutmeButtonActionType.silentAction:
         return ActionType.SilentAction;
-      case MementoButtonActionType.silentBackgroundAction:
+      case AboutmeButtonActionType.silentBackgroundAction:
         return ActionType.SilentBackgroundAction;
-      case MementoButtonActionType.keepOnTop:
+      case AboutmeButtonActionType.keepOnTop:
         return ActionType.KeepOnTop;
-      case MementoButtonActionType.disabledAction:
+      case AboutmeButtonActionType.disabledAction:
         return ActionType.DisabledAction;
-      case MementoButtonActionType.dismissAction:
+      case AboutmeButtonActionType.dismissAction:
         return ActionType.DismissAction;
-      case MementoButtonActionType.inputField:
+      case AboutmeButtonActionType.inputField:
         // InputField 已弃用，使用 Default + requireInputText
         return ActionType.Default;
     }
@@ -298,11 +298,11 @@ class MementoNotifications {
   static Future<void> _onNotificationCreatedMethod(
     ReceivedNotification receivedNotification,
   ) async {
-    debugPrint('[MementoNotifications] 通知已创建: ID=${receivedNotification.id}');
+    debugPrint('[AboutmeNotifications] 通知已创建: ID=${receivedNotification.id}');
 
     final listener = _instance._listeners?.onCreated;
     if (listener != null) {
-      await listener(MementoReceivedNotification(
+      await listener(AboutmeReceivedNotification(
         id: receivedNotification.id,
         title: receivedNotification.title,
         body: receivedNotification.body,
@@ -316,11 +316,11 @@ class MementoNotifications {
   static Future<void> _onNotificationDisplayedMethod(
     ReceivedNotification receivedNotification,
   ) async {
-    debugPrint('[MementoNotifications] 通知已显示: ID=${receivedNotification.id}');
+    debugPrint('[AboutmeNotifications] 通知已显示: ID=${receivedNotification.id}');
 
     final listener = _instance._listeners?.onDisplayed;
     if (listener != null) {
-      await listener(MementoReceivedNotification(
+      await listener(AboutmeReceivedNotification(
         id: receivedNotification.id,
         title: receivedNotification.title,
         body: receivedNotification.body,
@@ -334,11 +334,11 @@ class MementoNotifications {
   static Future<void> _onDismissActionReceivedMethod(
     ReceivedAction receivedAction,
   ) async {
-    debugPrint('[MementoNotifications] 通知已关闭: ID=${receivedAction.id}');
+    debugPrint('[AboutmeNotifications] 通知已关闭: ID=${receivedAction.id}');
 
     final listener = _instance._listeners?.onDismissed;
     if (listener != null) {
-      await listener(MementoReceivedAction(
+      await listener(AboutmeReceivedAction(
         id: receivedAction.id,
         buttonKeyPressed: receivedAction.buttonKeyPressed,
         buttonKeyInput: receivedAction.buttonKeyInput,
@@ -355,13 +355,13 @@ class MementoNotifications {
     ReceivedAction receivedAction,
   ) async {
     debugPrint(
-      '[MementoNotifications] 通知动作: ID=${receivedAction.id}, '
+      '[AboutmeNotifications] 通知动作: ID=${receivedAction.id}, '
       'ButtonKey=${receivedAction.buttonKeyPressed}',
     );
 
     final listener = _instance._listeners?.onAction;
     if (listener != null) {
-      await listener(MementoReceivedAction(
+      await listener(AboutmeReceivedAction(
         id: receivedAction.id,
         buttonKeyPressed: receivedAction.buttonKeyPressed,
         buttonKeyInput: receivedAction.buttonKeyInput,

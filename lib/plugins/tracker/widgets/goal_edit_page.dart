@@ -1,16 +1,16 @@
 import 'package:get/get.dart';
 import 'dart:io' show File;
 
-import 'package:Memento/widgets/picker/circle_icon_picker.dart';
-import 'package:Memento/widgets/picker/image_picker_dialog.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/widgets/picker/color_picker_section.dart';
-import 'package:Memento/plugins/tracker/models/goal.dart';
-import 'package:Memento/plugins/tracker/controllers/tracker_controller.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/widgets/picker/color_picker_section.dart';
+import 'package:aboutme/plugins/tracker/models/goal.dart';
+import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 class GoalEditPage extends StatefulWidget {
   final TrackerController controller;

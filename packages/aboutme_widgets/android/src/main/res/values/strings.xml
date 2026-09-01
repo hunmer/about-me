@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Memento</string>
+    <string name="app_name">Aboutme</string>
 
     <!-- 快速小组件 -->
     <string name="widget_chat_quick_description">快速发送消息到频道</string>

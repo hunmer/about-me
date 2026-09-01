@@ -1,4 +1,4 @@
-name: Memento
+name: aboutme
 description: "personal assistant app"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -112,17 +112,17 @@ dependencies:
   super_cupertino_navigation_bar: ^2.0.0  # Super Cupertino Navigation Bar
   floating_ball_plugin:
     path: packages/floating_ball_plugin
-  memento_widgets:
-    path: packages/memento_widgets
+  aboutme_widgets:
+    path: packages/aboutme_widgets
   # 原生服务插件化
-  memento_foreground_service:
-    path: packages/memento_foreground_service
-  memento_notifications:
-    path: packages/memento_notifications
-  memento_intent:
-    path: packages/memento_intent
-  memento_nfc:
-    path: packages/memento_nfc
+  aboutme_foreground_service:
+    path: packages/aboutme_foreground_service
+  aboutme_notifications:
+    path: packages/aboutme_notifications
+  aboutme_intent:
+    path: packages/aboutme_intent
+  aboutme_nfc:
+    path: packages/aboutme_nfc
   shared_models:
     path: ./shared_models
 

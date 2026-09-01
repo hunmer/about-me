@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/store/controllers/store_controller.dart';
-import 'package:Memento/plugins/store/models/points_log.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/store/store_plugin.dart';
+import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/plugins/store/models/points_log.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
 
 /// 独立的积分历史页面（包含 Scaffold）
 class PointsHistoryPage extends StatelessWidget {

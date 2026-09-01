@@ -1,8 +1,8 @@
-# Memento 小组件新架构使用指南
+# Aboutme 小组件新架构使用指南
 
 > **版本**: 2.0
 > **更新日期**: 2025-11-30
-> **适用范围**: Memento 2.0+ (基于 memento_widgets 插件)
+> **适用范围**: Aboutme 2.0+ (基于 aboutme_widgets 插件)
 
 ## 目录
 
@@ -22,11 +22,11 @@
 
 ### 1.1 整体架构
 
-Memento 2.0 采用**插件化小组件架构**，所有 Android 小组件代码已迁移到独立的 `memento_widgets` Flutter 插件中。
+Aboutme 2.0 采用**插件化小组件架构**，所有 Android 小组件代码已迁移到独立的 `aboutme_widgets` Flutter 插件中。
 
 ```
 ┌─────────────────────────────────────────────────┐
-│          Memento 主应用 (Flutter)                │
+│          Aboutme 主应用 (Flutter)                │
 │  ┌───────────────────────────────────────┐      │
 │  │   SystemWidgetService                 │      │
 │  │   - updateWidgetData()                │      │
@@ -46,7 +46,7 @@ Memento 2.0 采用**插件化小组件架构**，所有 Android 小组件代码�
                 │ 依赖
                 ▼
 ┌─────────────────────────────────────────────────┐
-│       memento_widgets 插件 (Flutter)             │
+│       aboutme_widgets 插件 (Flutter)             │
 │  ┌───────────────────────────────────────┐      │
 │  │   MyWidgetManager (Dart API)          │      │
 │  │   - updatePluginWidgetData()          │      │
@@ -74,10 +74,10 @@ Memento 2.0 采用**插件化小组件架构**，所有 Android 小组件代码�
 |------|------|------|
 | **SystemWidgetService** | `lib/core/services/` | 主应用统一入口，提供简化的 API |
 | **PluginWidgetSyncHelper** | `lib/core/services/` | 各插件数据同步逻辑集中管理 |
-| **MyWidgetManager** | `packages/memento_widgets/lib/` | Flutter 插件 API，封装 home_widget |
-| **PluginWidgetData** | `packages/memento_widgets/lib/models/` | 小组件数据模型 |
-| **WidgetStatItem** | `packages/memento_widgets/lib/models/` | 统计项数据模型 |
-| **BasePluginWidgetProvider** | `memento_widgets/android/` | Kotlin 小组件基类 |
+| **MyWidgetManager** | `packages/aboutme_widgets/lib/` | Flutter 插件 API，封装 home_widget |
+| **PluginWidgetData** | `packages/aboutme_widgets/lib/models/` | 小组件数据模型 |
+| **WidgetStatItem** | `packages/aboutme_widgets/lib/models/` | 统计项数据模型 |
+| **BasePluginWidgetProvider** | `aboutme_widgets/android/` | Kotlin 小组件基类 |
 
 ### 1.3 数据流
 
@@ -105,11 +105,11 @@ Memento 2.0 采用**插件化小组件架构**，所有 Android 小组件代码�
 
 ### 2.1 添加依赖
 
-在插件中引入 memento_widgets：
+在插件中引入 aboutme_widgets：
 
 ```dart
 // 在插件文件顶部导入
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 ```
 
 ### 2.2 基础使用
@@ -134,7 +134,7 @@ await SystemWidgetService.instance.updateWidgetData('todo', widgetData);
 ### 2.3 三行代码更新小组件
 
 ```dart
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 final data = PluginWidgetData(/* ... */);
 await SystemWidgetService.instance.updateWidgetData('your_plugin_id', data);
@@ -176,7 +176,7 @@ await SystemWidgetService.instance.updateWidgetData('your_plugin_id', data);
 插件 ID 到 Provider 名称的映射在 `MyWidgetManager._getProviderName()` 中定义：
 
 ```dart
-// packages/memento_widgets/lib/memento_widgets.dart
+// packages/aboutme_widgets/lib/aboutme_widgets.dart
 String? _getProviderName(String pluginId) {
   const providerMap = {
     'todo': 'TodoWidgetProvider',
@@ -193,13 +193,13 @@ String? _getProviderName(String pluginId) {
 
 #### 步骤 1: 创建 Provider 类
 
-在 `memento_widgets/android/src/main/kotlin/github/hunmer/memento/widgets/providers/` 创建：
+在 `aboutme_widgets/android/src/main/kotlin/github/hunmer/aboutme/widgets/providers/` 创建：
 
 ```kotlin
 // YourPluginWidgetProvider.kt
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 
 class YourPluginWidgetProvider : BasePluginWidgetProvider() {
     override val pluginId: String = "your_plugin"
@@ -214,12 +214,12 @@ class YourPluginWidget2x1Provider : BasePluginWidgetProvider() {
 
 #### 步骤 2: 注册 Receiver
 
-在 `memento_widgets/android/src/main/AndroidManifest.xml` 添加：
+在 `aboutme_widgets/android/src/main/AndroidManifest.xml` 添加：
 
 ```xml
 <!-- 1x1 小组件 -->
 <receiver
-    android:name="github.hunmer.memento.widgets.providers.YourPluginWidgetProvider"
+    android:name="github.hunmer.aboutme.widgets.providers.YourPluginWidgetProvider"
     android:exported="true">
     <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -231,7 +231,7 @@ class YourPluginWidget2x1Provider : BasePluginWidgetProvider() {
 
 <!-- 2x2 小组件 -->
 <receiver
-    android:name="github.hunmer.memento.widgets.providers.YourPluginWidget2x1Provider"
+    android:name="github.hunmer.aboutme.widgets.providers.YourPluginWidget2x1Provider"
     android:exported="true">
     <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -244,7 +244,7 @@ class YourPluginWidget2x1Provider : BasePluginWidgetProvider() {
 
 #### 步骤 3: 添加插件 ID 映射
 
-在 `packages/memento_widgets/lib/memento_widgets.dart` 的 `_getProviderName()` 中添加：
+在 `packages/aboutme_widgets/lib/aboutme_widgets.dart` 的 `_getProviderName()` 中添加：
 
 ```dart
 String? _getProviderName(String pluginId) {
@@ -591,7 +591,7 @@ Color(0xFF5C6BC0).value     // 自定义色值
 ```dart
 // lib/plugins/todo/todo_plugin.dart
 import 'package:flutter/material.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 import '../../core/services/system_widget_service.dart';
 
 class TodoPlugin extends PluginBase {
@@ -659,7 +659,7 @@ class TodoPlugin extends PluginBase {
 ```dart
 // lib/plugins/diary/diary_plugin.dart
 import 'package:flutter/material.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 import '../../core/services/system_widget_service.dart';
 
 class DiaryPlugin extends PluginBase {
@@ -715,7 +715,7 @@ class DiaryPlugin extends PluginBase {
 
 ```dart
 // lib/main.dart 或应用启动时
-import 'package:memento/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 
 // 应用启动时同步所有小组件
 void main() async {
@@ -758,14 +758,14 @@ class SmartUpdatePlugin extends PluginBase {
 
 ### 7.1 从旧版本迁移
 
-**旧版代码** (Memento 1.x):
+**旧版代码** (Aboutme 1.x):
 ```dart
 // 直接使用 home_widget
 await HomeWidget.saveWidgetData<String>('todo_data', jsonData);
 await HomeWidget.updateWidget(name: 'TodoWidgetProvider');
 ```
 
-**新版代码** (Memento 2.0):
+**新版代码** (Aboutme 2.0):
 ```dart
 // 使用统一 API
 final widgetData = PluginWidgetData(/* ... */);
@@ -804,7 +804,7 @@ final widgetData = PluginWidgetData(
 - [ ] 替换 `HomeWidget.saveWidgetData()` 为 `SystemWidgetService.updateWidgetData()`
 - [ ] 替换自定义 JSON 为 `PluginWidgetData` 对象
 - [ ] 移除手动 JSON 编码/解码
-- [ ] 添加 `import 'package:memento_widgets/memento_widgets.dart';`
+- [ ] 添加 `import 'package:aboutme_widgets/aboutme_widgets.dart';`
 - [ ] 测试小组件更新是否正常
 - [ ] 验证点击跳转功能
 
@@ -845,7 +845,7 @@ await SystemWidgetService.instance.updateWidget('todo');
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
     <data
-        android:scheme="memento"
+        android:scheme="aboutme"
         android:host="widget" />
 </intent-filter>
 ```
@@ -986,7 +986,7 @@ Future<void> updateWidgetIfSupported(String pluginId, PluginWidgetData data) asy
 ```dart
 // test/widget_update_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 void main() {
   group('PluginWidgetData', () {
@@ -1079,20 +1079,20 @@ class PluginWidgetSyncHelper {
 |---------|------|
 | `lib/core/services/system_widget_service.dart` | 主应用 API 入口 |
 | `lib/core/services/plugin_widget_sync_helper.dart` | 批量同步工具 |
-| `packages/memento_widgets/lib/memento_widgets.dart` | 插件主 API |
-| `packages/memento_widgets/lib/models/plugin_widget_data.dart` | 数据模型 |
-| `memento_widgets/android/src/main/kotlin/.../BasePluginWidgetProvider.kt` | Kotlin 基类 |
-| `memento_widgets/android/src/main/AndroidManifest.xml` | Receiver 注册 |
+| `packages/aboutme_widgets/lib/aboutme_widgets.dart` | 插件主 API |
+| `packages/aboutme_widgets/lib/models/plugin_widget_data.dart` | 数据模型 |
+| `aboutme_widgets/android/src/main/kotlin/.../BasePluginWidgetProvider.kt` | Kotlin 基类 |
+| `aboutme_widgets/android/src/main/AndroidManifest.xml` | Receiver 注册 |
 
 ### C. 更新历史
 
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
-| 2.0.0 | 2025-11-30 | 完整迁移到 memento_widgets 插件 |
+| 2.0.0 | 2025-11-30 | 完整迁移到 aboutme_widgets 插件 |
 | 1.0.0 | - | 原始版本（主应用内实现） |
 
 ---
 
-**文档维护**: Memento 开发团队
-**反馈渠道**: [GitHub Issues](https://github.com/hunmer/Memento/issues)
+**文档维护**: Aboutme 开发团队
+**反馈渠道**: [GitHub Issues](https://github.com/hunmer/Aboutme/issues)
 **最后更新**: 2025-11-30

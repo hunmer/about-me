@@ -20,7 +20,7 @@
 
 #### 方法一：通过代码启用
 ```dart
-import 'package:memento/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
 
 // 启用活动通知服务
 await ActivityPlugin.instance.enableActivityNotification();
@@ -35,13 +35,13 @@ await ActivityPlugin.instance.disableActivityNotification();
 #### 方法二：通过JS API启用
 ```javascript
 // 在WebView或JS环境中调用
-await memento.activity.enableNotification();
+await aboutme.activity.enableNotification();
 
 // 获取通知状态
-const status = await memento.activity.getNotificationStatus();
+const status = await aboutme.activity.getNotificationStatus();
 
 // 禁用通知
-await memento.activity.disableNotification();
+await aboutme.activity.disableNotification();
 ```
 
 ### 2. 监听通知点击事件
@@ -58,7 +58,7 @@ eventManager.subscribe('activity_notification_tapped', (args) {
 ### 3. 测试功能
 
 ```dart
-import 'package:memento/plugins/activity/services/activity_notification_test.dart';
+import 'package:aboutme/plugins/activity/services/activity_notification_test.dart';
 
 // 运行测试
 final test = ActivityNotificationTest();
@@ -92,7 +92,7 @@ ActivityNotificationTest.showTestResults(context, results);
    - 功能：监听通知点击并打开表单
 
 5. **ActivityForegroundService**：Android前台服务
-   - 位置：`android/app/src/main/kotlin/github/hunmer/memento/ActivityForegroundService.kt`
+   - 位置：`android/app/src/main/kotlin/github/hunmer/aboutme/ActivityForegroundService.kt`
    - 功能：Android系统级常驻通知
 
 ### 关键方法
@@ -120,7 +120,7 @@ ActivityNotificationTest.showTestResults(context, results);
 ### Android服务配置
 ```xml
 <service
-    android:name="github.hunmer.memento.ActivityForegroundService"
+    android:name="github.hunmer.aboutme.ActivityForegroundService"
     android:exported="false"
     android:foregroundServiceType="dataSync" />
 ```

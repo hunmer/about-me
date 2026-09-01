@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:async';
-import 'package:memento_intent/memento_intent.dart';
+import 'package:aboutme_intent/aboutme_intent.dart';
 class IntentTestScreen extends StatefulWidget {
   const IntentTestScreen({super.key});
 
@@ -10,7 +10,7 @@ class IntentTestScreen extends StatefulWidget {
 }
 
 class _IntentTestScreenState extends State<IntentTestScreen> {
-  final MementoIntent _intent = MementoIntent.instance;
+  final AboutmeIntent _intent = AboutmeIntent.instance;
 
   // 测试状态
   String _platformVersion = 'Unknown';
@@ -188,10 +188,10 @@ class _IntentTestScreenState extends State<IntentTestScreen> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _quickRegister('memento', null, '/test');
+                  _quickRegister('aboutme', null, '/test');
                 },
                 icon: const Icon(Icons.link),
-                label: Text('screens_mementoTest'.tr),
+                label: Text('screens_aboutmeTest'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -203,10 +203,10 @@ class _IntentTestScreenState extends State<IntentTestScreen> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _quickRegister('memento', 'app.example.com', '/open');
+                  _quickRegister('aboutme', 'app.example.com', '/open');
                 },
                 icon: const Icon(Icons.link),
-                label: Text('screens_mementoComplete'.tr),
+                label: Text('screens_aboutmeComplete'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,

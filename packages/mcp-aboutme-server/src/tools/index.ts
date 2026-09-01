@@ -9,7 +9,7 @@ export function getToolDefinitions() {
   return [
     // ==================== Chat 工具 ====================
     {
-      name: 'memento_chat_getChannels',
+      name: 'aboutme_chat_getChannels',
       description: '获取聊天频道列表',
       inputSchema: {
         type: 'object',
@@ -20,7 +20,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_createChannel',
+      name: 'aboutme_chat_createChannel',
       description: '创建新的聊天频道',
       inputSchema: {
         type: 'object',
@@ -32,7 +32,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_updateChannel',
+      name: 'aboutme_chat_updateChannel',
       description: '更新频道信息',
       inputSchema: {
         type: 'object',
@@ -45,7 +45,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_deleteChannel',
+      name: 'aboutme_chat_deleteChannel',
       description: '删除频道',
       inputSchema: {
         type: 'object',
@@ -56,7 +56,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_getMessages',
+      name: 'aboutme_chat_getMessages',
       description: '获取指定频道的消息列表',
       inputSchema: {
         type: 'object',
@@ -69,7 +69,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_sendMessage',
+      name: 'aboutme_chat_sendMessage',
       description: '向频道发送消息',
       inputSchema: {
         type: 'object',
@@ -83,7 +83,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_deleteMessage',
+      name: 'aboutme_chat_deleteMessage',
       description: '删除消息',
       inputSchema: {
         type: 'object',
@@ -95,7 +95,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_chat_searchMessages',
+      name: 'aboutme_chat_searchMessages',
       description: '搜索消息',
       inputSchema: {
         type: 'object',
@@ -113,7 +113,7 @@ export function getToolDefinitions() {
 
     // ==================== Notes 工具 ====================
     {
-      name: 'memento_notes_getNotes',
+      name: 'aboutme_notes_getNotes',
       description: '获取笔记列表',
       inputSchema: {
         type: 'object',
@@ -125,7 +125,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_notes_createNote',
+      name: 'aboutme_notes_createNote',
       description: '创建新笔记',
       inputSchema: {
         type: 'object',
@@ -139,7 +139,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_notes_updateNote',
+      name: 'aboutme_notes_updateNote',
       description: '更新笔记',
       inputSchema: {
         type: 'object',
@@ -153,7 +153,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_notes_deleteNote',
+      name: 'aboutme_notes_deleteNote',
       description: '删除笔记',
       inputSchema: {
         type: 'object',
@@ -164,7 +164,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_notes_searchNotes',
+      name: 'aboutme_notes_searchNotes',
       description: '搜索笔记',
       inputSchema: {
         type: 'object',
@@ -179,7 +179,7 @@ export function getToolDefinitions() {
 
     // ==================== Activity 工具 ====================
     {
-      name: 'memento_activity_getActivities',
+      name: 'aboutme_activity_getActivities',
       description: '获取活动记录列表',
       inputSchema: {
         type: 'object',
@@ -191,7 +191,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_activity_createActivity',
+      name: 'aboutme_activity_createActivity',
       description: '创建活动记录',
       inputSchema: {
         type: 'object',
@@ -207,7 +207,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_activity_updateActivity',
+      name: 'aboutme_activity_updateActivity',
       description: '更新活动记录',
       inputSchema: {
         type: 'object',
@@ -225,7 +225,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_activity_deleteActivity',
+      name: 'aboutme_activity_deleteActivity',
       description: '删除活动记录',
       inputSchema: {
         type: 'object',
@@ -237,7 +237,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_activity_getTodayStats',
+      name: 'aboutme_activity_getTodayStats',
       description: '获取今日活动统计',
       inputSchema: {
         type: 'object',
@@ -247,7 +247,7 @@ export function getToolDefinitions() {
 
     // ==================== Goods 工具 ====================
     {
-      name: 'memento_goods_getWarehouses',
+      name: 'aboutme_goods_getWarehouses',
       description: '获取仓库列表',
       inputSchema: {
         type: 'object',
@@ -258,7 +258,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_goods_getItems',
+      name: 'aboutme_goods_getItems',
       description: '获取物品列表',
       inputSchema: {
         type: 'object',
@@ -270,7 +270,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_goods_createItem',
+      name: 'aboutme_goods_createItem',
       description: '创建物品',
       inputSchema: {
         type: 'object',
@@ -286,7 +286,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_goods_updateItem',
+      name: 'aboutme_goods_updateItem',
       description: '更新物品',
       inputSchema: {
         type: 'object',
@@ -302,7 +302,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_goods_deleteItem',
+      name: 'aboutme_goods_deleteItem',
       description: '删除物品',
       inputSchema: {
         type: 'object',
@@ -314,7 +314,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_goods_searchItems',
+      name: 'aboutme_goods_searchItems',
       description: '搜索物品',
       inputSchema: {
         type: 'object',
@@ -328,7 +328,7 @@ export function getToolDefinitions() {
 
     // ==================== Bill 工具 ====================
     {
-      name: 'memento_bill_getAccounts',
+      name: 'aboutme_bill_getAccounts',
       description: '获取账户列表',
       inputSchema: {
         type: 'object',
@@ -339,7 +339,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_bill_getBills',
+      name: 'aboutme_bill_getBills',
       description: '获取账单列表',
       inputSchema: {
         type: 'object',
@@ -352,7 +352,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_bill_createBill',
+      name: 'aboutme_bill_createBill',
       description: '创建账单',
       inputSchema: {
         type: 'object',
@@ -368,7 +368,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_bill_updateBill',
+      name: 'aboutme_bill_updateBill',
       description: '更新账单',
       inputSchema: {
         type: 'object',
@@ -384,7 +384,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_bill_deleteBill',
+      name: 'aboutme_bill_deleteBill',
       description: '删除账单',
       inputSchema: {
         type: 'object',
@@ -395,7 +395,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_bill_getStats',
+      name: 'aboutme_bill_getStats',
       description: '获取账单统计',
       inputSchema: {
         type: 'object',
@@ -408,7 +408,7 @@ export function getToolDefinitions() {
 
     // ==================== Todo 工具 ====================
     {
-      name: 'memento_todo_getTasks',
+      name: 'aboutme_todo_getTasks',
       description: '获取任务列表',
       inputSchema: {
         type: 'object',
@@ -422,7 +422,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_createTask',
+      name: 'aboutme_todo_createTask',
       description: '创建任务',
       inputSchema: {
         type: 'object',
@@ -438,7 +438,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_updateTask',
+      name: 'aboutme_todo_updateTask',
       description: '更新任务',
       inputSchema: {
         type: 'object',
@@ -454,7 +454,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_completeTask',
+      name: 'aboutme_todo_completeTask',
       description: '完成任务',
       inputSchema: {
         type: 'object',
@@ -465,7 +465,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_getTodayTasks',
+      name: 'aboutme_todo_getTodayTasks',
       description: '获取今日任务',
       inputSchema: {
         type: 'object',
@@ -473,7 +473,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_getOverdueTasks',
+      name: 'aboutme_todo_getOverdueTasks',
       description: '获取过期任务',
       inputSchema: {
         type: 'object',
@@ -481,7 +481,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_searchTasks',
+      name: 'aboutme_todo_searchTasks',
       description: '搜索任务',
       inputSchema: {
         type: 'object',
@@ -492,7 +492,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_todo_getStats',
+      name: 'aboutme_todo_getStats',
       description: '获取任务统计',
       inputSchema: {
         type: 'object',
@@ -502,7 +502,7 @@ export function getToolDefinitions() {
 
     // ==================== Diary 工具 ====================
     {
-      name: 'memento_diary_getEntries',
+      name: 'aboutme_diary_getEntries',
       description: '获取日记列表',
       inputSchema: {
         type: 'object',
@@ -515,7 +515,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_getEntry',
+      name: 'aboutme_diary_getEntry',
       description: '获取指定日期的日记',
       inputSchema: {
         type: 'object',
@@ -526,7 +526,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_createEntry',
+      name: 'aboutme_diary_createEntry',
       description: '创建日记',
       inputSchema: {
         type: 'object',
@@ -541,7 +541,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_updateEntry',
+      name: 'aboutme_diary_updateEntry',
       description: '更新日记',
       inputSchema: {
         type: 'object',
@@ -556,7 +556,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_deleteEntry',
+      name: 'aboutme_diary_deleteEntry',
       description: '删除日记',
       inputSchema: {
         type: 'object',
@@ -567,7 +567,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_searchEntries',
+      name: 'aboutme_diary_searchEntries',
       description: '搜索日记',
       inputSchema: {
         type: 'object',
@@ -580,7 +580,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_diary_getStats',
+      name: 'aboutme_diary_getStats',
       description: '获取日记统计',
       inputSchema: {
         type: 'object',
@@ -590,7 +590,7 @@ export function getToolDefinitions() {
 
     // ==================== Checkin 工具 ====================
     {
-      name: 'memento_checkin_getItems',
+      name: 'aboutme_checkin_getItems',
       description: '获取打卡项目列表',
       inputSchema: {
         type: 'object',
@@ -601,7 +601,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_checkin_createItem',
+      name: 'aboutme_checkin_createItem',
       description: '创建打卡项目',
       inputSchema: {
         type: 'object',
@@ -616,7 +616,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_checkin_updateItem',
+      name: 'aboutme_checkin_updateItem',
       description: '更新打卡项目',
       inputSchema: {
         type: 'object',
@@ -632,7 +632,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_checkin_deleteItem',
+      name: 'aboutme_checkin_deleteItem',
       description: '删除打卡项目',
       inputSchema: {
         type: 'object',
@@ -643,7 +643,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_checkin_addRecord',
+      name: 'aboutme_checkin_addRecord',
       description: '添加打卡记录',
       inputSchema: {
         type: 'object',
@@ -656,7 +656,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_checkin_getStats',
+      name: 'aboutme_checkin_getStats',
       description: '获取打卡统计',
       inputSchema: {
         type: 'object',
@@ -666,7 +666,7 @@ export function getToolDefinitions() {
 
     // ==================== Day 工具 ====================
     {
-      name: 'memento_day_getMemorialDays',
+      name: 'aboutme_day_getMemorialDays',
       description: '获取纪念日列表',
       inputSchema: {
         type: 'object',
@@ -678,7 +678,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_day_createMemorialDay',
+      name: 'aboutme_day_createMemorialDay',
       description: '创建纪念日',
       inputSchema: {
         type: 'object',
@@ -693,7 +693,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_day_updateMemorialDay',
+      name: 'aboutme_day_updateMemorialDay',
       description: '更新纪念日',
       inputSchema: {
         type: 'object',
@@ -709,7 +709,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_day_deleteMemorialDay',
+      name: 'aboutme_day_deleteMemorialDay',
       description: '删除纪念日',
       inputSchema: {
         type: 'object',
@@ -720,7 +720,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_day_searchMemorialDays',
+      name: 'aboutme_day_searchMemorialDays',
       description: '搜索纪念日',
       inputSchema: {
         type: 'object',
@@ -733,7 +733,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_day_getStats',
+      name: 'aboutme_day_getStats',
       description: '获取纪念日统计',
       inputSchema: {
         type: 'object',
@@ -743,7 +743,7 @@ export function getToolDefinitions() {
 
     // ==================== Tracker 工具 ====================
     {
-      name: 'memento_tracker_getGoals',
+      name: 'aboutme_tracker_getGoals',
       description: '获取追踪目标列表',
       inputSchema: {
         type: 'object',
@@ -754,7 +754,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_tracker_createGoal',
+      name: 'aboutme_tracker_createGoal',
       description: '创建追踪目标',
       inputSchema: {
         type: 'object',
@@ -769,7 +769,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_tracker_updateGoal',
+      name: 'aboutme_tracker_updateGoal',
       description: '更新追踪目标',
       inputSchema: {
         type: 'object',
@@ -785,7 +785,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_tracker_deleteGoal',
+      name: 'aboutme_tracker_deleteGoal',
       description: '删除追踪目标',
       inputSchema: {
         type: 'object',
@@ -796,7 +796,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_tracker_addRecord',
+      name: 'aboutme_tracker_addRecord',
       description: '添加追踪记录',
       inputSchema: {
         type: 'object',
@@ -810,7 +810,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_tracker_getStats',
+      name: 'aboutme_tracker_getStats',
       description: '获取追踪统计',
       inputSchema: {
         type: 'object',
@@ -820,7 +820,7 @@ export function getToolDefinitions() {
 
     // ==================== Contact 工具 ====================
     {
-      name: 'memento_contact_getContacts',
+      name: 'aboutme_contact_getContacts',
       description: '获取联系人列表',
       inputSchema: {
         type: 'object',
@@ -831,7 +831,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_contact_createContact',
+      name: 'aboutme_contact_createContact',
       description: '创建联系人',
       inputSchema: {
         type: 'object',
@@ -846,7 +846,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_contact_updateContact',
+      name: 'aboutme_contact_updateContact',
       description: '更新联系人',
       inputSchema: {
         type: 'object',
@@ -862,7 +862,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_contact_deleteContact',
+      name: 'aboutme_contact_deleteContact',
       description: '删除联系人',
       inputSchema: {
         type: 'object',
@@ -873,7 +873,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_contact_searchContacts',
+      name: 'aboutme_contact_searchContacts',
       description: '搜索联系人',
       inputSchema: {
         type: 'object',
@@ -884,7 +884,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_contact_getStats',
+      name: 'aboutme_contact_getStats',
       description: '获取联系人统计',
       inputSchema: {
         type: 'object',
@@ -894,7 +894,7 @@ export function getToolDefinitions() {
 
     // ==================== Calendar 工具 ====================
     {
-      name: 'memento_calendar_getEvents',
+      name: 'aboutme_calendar_getEvents',
       description: '获取日历事件列表',
       inputSchema: {
         type: 'object',
@@ -907,7 +907,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_calendar_createEvent',
+      name: 'aboutme_calendar_createEvent',
       description: '创建日历事件',
       inputSchema: {
         type: 'object',
@@ -922,7 +922,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_calendar_updateEvent',
+      name: 'aboutme_calendar_updateEvent',
       description: '更新日历事件',
       inputSchema: {
         type: 'object',
@@ -938,7 +938,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_calendar_deleteEvent',
+      name: 'aboutme_calendar_deleteEvent',
       description: '删除日历事件',
       inputSchema: {
         type: 'object',
@@ -949,7 +949,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_calendar_completeEvent',
+      name: 'aboutme_calendar_completeEvent',
       description: '完成日历事件',
       inputSchema: {
         type: 'object',
@@ -960,7 +960,7 @@ export function getToolDefinitions() {
       },
     },
     {
-      name: 'memento_calendar_searchEvents',
+      name: 'aboutme_calendar_searchEvents',
       description: '搜索日历事件',
       inputSchema: {
         type: 'object',

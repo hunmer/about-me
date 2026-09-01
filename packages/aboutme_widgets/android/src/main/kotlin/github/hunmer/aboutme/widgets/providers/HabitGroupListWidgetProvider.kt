@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -12,10 +12,10 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
-import github.hunmer.memento.widgets.services.HabitGroupListRemoteViewsFactory
-import github.hunmer.memento.widgets.services.HabitGroupListWidgetService
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme.widgets.services.HabitGroupListRemoteViewsFactory
+import github.hunmer.aboutme.widgets.services.HabitGroupListWidgetService
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -47,8 +47,8 @@ class HabitGroupListWidgetProvider : BasePluginWidgetProvider() {
         private const val DEFAULT_OPACITY = 1.0f
 
         // 广播 Action
-        const val ACTION_GROUP_CLICK = "github.hunmer.memento.widgets.HABIT_GROUP_LIST_GROUP_CLICK"
-        const val ACTION_HABIT_CLICK = "github.hunmer.memento.widgets.HABIT_GROUP_LIST_HABIT_CLICK"
+        const val ACTION_GROUP_CLICK = "github.hunmer.aboutme.widgets.HABIT_GROUP_LIST_GROUP_CLICK"
+        const val ACTION_HABIT_CLICK = "github.hunmer.aboutme.widgets.HABIT_GROUP_LIST_HABIT_CLICK"
 
         // 特殊分组 ID
         const val GROUP_ALL = "__all__"
@@ -167,8 +167,8 @@ class HabitGroupListWidgetProvider : BasePluginWidgetProvider() {
                 // 打开习惯计时器界面
                 Log.d(TAG, "Open habit timer: habitId=$habitId")
                 val timerIntent = Intent(Intent.ACTION_VIEW)
-                timerIntent.data = Uri.parse("memento://habits/timer?habitId=$habitId")
-                timerIntent.setPackage("github.hunmer.memento")
+                timerIntent.data = Uri.parse("aboutme://habits/timer?habitId=$habitId")
+                timerIntent.setPackage("github.hunmer.aboutme")
                 timerIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 context.startActivity(timerIntent)
             }
@@ -216,8 +216,8 @@ class HabitGroupListWidgetProvider : BasePluginWidgetProvider() {
 
         // 设置点击事件：打开配置页面
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/habit_group_list/config?widgetId=$appWidgetId")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/habit_group_list/config?widgetId=$appWidgetId")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(
@@ -302,8 +302,8 @@ class HabitGroupListWidgetProvider : BasePluginWidgetProvider() {
      */
     private fun setupHeaderClickIntent(context: Context, views: RemoteViews) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("memento://widget/habits")
-        intent.setPackage("github.hunmer.memento")
+        intent.data = Uri.parse("aboutme://widget/habits")
+        intent.setPackage("github.hunmer.aboutme")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val pendingIntent = PendingIntent.getActivity(

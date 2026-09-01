@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -10,8 +10,8 @@ import android.app.PendingIntent
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.services.ActivityWeeklyWidgetService
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.services.ActivityWeeklyWidgetService
 
 /**
  * 活动周视图小组件Provider
@@ -50,7 +50,7 @@ class ActivityWeeklyWidgetProvider : AppWidgetProvider() {
         editor.apply()
 
         // 通知 Flutter 端清理已删除的 widgetId
-        val intent = Intent("github.hunmer.memento.CLEANUP_WIDGET_IDS").apply {
+        val intent = Intent("github.hunmer.aboutme.CLEANUP_WIDGET_IDS").apply {
             putExtra("deletedWidgetIds", appWidgetIds)
             putExtra("widgetType", "activity_weekly")
         }
@@ -98,7 +98,7 @@ class ActivityWeeklyWidgetProvider : AppWidgetProvider() {
 
         // deeplink到配置页面
         val deepLinkIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://activity_weekly_config?widgetId=$widgetId")
+            data = Uri.parse("aboutme://activity_weekly_config?widgetId=$widgetId")
             setPackage(context.packageName)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
@@ -340,7 +340,7 @@ class ActivityWeeklyWidgetProvider : AppWidgetProvider() {
             prefs.edit().putString("activity_weekly_data_$widgetId", json.toString()).apply()
 
             // 通知Flutter重新计算数据
-            val refreshIntent = Intent("github.hunmer.memento.REFRESH_ACTIVITY_WEEKLY_WIDGET").apply {
+            val refreshIntent = Intent("github.hunmer.aboutme.REFRESH_ACTIVITY_WEEKLY_WIDGET").apply {
                 putExtra("widgetId", widgetId)
                 putExtra("weekOffset", newOffset)
             }
@@ -357,7 +357,7 @@ class ActivityWeeklyWidgetProvider : AppWidgetProvider() {
      */
     private fun openTagStatistics(context: Context, tagName: String) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://activity/tag_statistics?tag=${Uri.encode(tagName)}")
+            data = Uri.parse("aboutme://activity/tag_statistics?tag=${Uri.encode(tagName)}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             setPackage(context.packageName)
         }
@@ -412,9 +412,9 @@ class ActivityWeeklyWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "ActivityWeeklyWidget"
         private const val PREFS_NAME = "HomeWidgetPreferences"
-        private const val ACTION_PREV_WEEK = "github.hunmer.memento.widget.ACTIVITY_PREV_WEEK"
-        private const val ACTION_NEXT_WEEK = "github.hunmer.memento.widget.ACTIVITY_NEXT_WEEK"
-        private const val ACTION_ITEM_CLICK = "github.hunmer.memento.widget.ACTIVITY_ITEM_CLICK"
+        private const val ACTION_PREV_WEEK = "github.hunmer.aboutme.widget.ACTIVITY_PREV_WEEK"
+        private const val ACTION_NEXT_WEEK = "github.hunmer.aboutme.widget.ACTIVITY_NEXT_WEEK"
+        private const val ACTION_ITEM_CLICK = "github.hunmer.aboutme.widget.ACTIVITY_ITEM_CLICK"
 
         private const val DEFAULT_PRIMARY_COLOR = 0xFFEFF7F0.toInt()
         private const val DEFAULT_ACCENT_COLOR = 0xFF607afb.toInt()

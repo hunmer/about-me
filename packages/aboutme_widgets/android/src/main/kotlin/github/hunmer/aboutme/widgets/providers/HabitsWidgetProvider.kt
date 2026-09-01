@@ -1,6 +1,6 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 
 /**
  * 习惯小组件 - 1x1 尺寸

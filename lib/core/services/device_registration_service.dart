@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
-import 'package:Memento/core/services/fcm_service.dart';
+import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
+import 'package:aboutme/core/services/fcm_service.dart';
 
 /// 设备注册服务
 ///

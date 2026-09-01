@@ -1,5 +1,5 @@
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 
 class ServiceProviderController {
   List<ServiceProvider> providers = [];

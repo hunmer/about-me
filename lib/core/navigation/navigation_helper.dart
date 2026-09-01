@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:full_swipe_back_gesture/full_swipe_back_gesture.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'open_container_route.dart';
 export 'open_container_route.dart';

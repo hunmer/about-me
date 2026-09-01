@@ -16,8 +16,8 @@ module.exports = function createPlugin(BasePlugin) {
         title: '数据同步日志记录器',
         description: '监听所有插件数据变更并记录日志，用于调试和审计。',
         version: '2.0.0',
-        author: 'Memento',
-        website: 'https://github.com/memento/data-sync-logger',
+        author: 'Aboutme',
+        website: 'https://github.com/aboutme/data-sync-logger',
         permissions: {
           dataAccess: [],
           operations: ['read'],

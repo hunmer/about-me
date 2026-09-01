@@ -41,11 +41,11 @@
             android:name="flutterEmbedding"
             android:value="2" />
         <service
-            android:name="github.hunmer.memento.TimerForegroundService"
+            android:name="github.hunmer.aboutme.TimerForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
         <service
-            android:name="github.hunmer.memento.ActivityForegroundService"
+            android:name="github.hunmer.aboutme.ActivityForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
         <service
@@ -63,7 +63,7 @@
             android:foregroundServiceType="dataSync|remoteMessaging"
             android:exported="false" />
         <meta-data
-        android:name="github.hunmer.memento.service.APP_ICON"
+        android:name="github.hunmer.aboutme.service.APP_ICON"
         android:resource="@drawable/launcher_icon" />
         <activity
             android:name=".MainActivity"
@@ -92,27 +92,27 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- memento:// scheme -->
+                <!-- aboutme:// scheme -->
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="widget" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="activity_weekly_config" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="activity_daily_config" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="activity" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="habits_weekly_config" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="habits" />
                 <data
-                    android:scheme="memento"
+                    android:scheme="aboutme"
                     android:host="checkin" />
             </intent-filter>
 
@@ -120,11 +120,11 @@
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="memento" />
+                <data android:scheme="aboutme" />
             </intent-filter>
         </activity>
 
-        <!-- 动态深度链接 Activity - 初始禁用，由 memento_intent 插件动态启用 -->
+        <!-- 动态深度链接 Activity - 初始禁用，由 aboutme_intent 插件动态启用 -->
         <activity
             android:name=".DynamicDeepLinkActivity"
             android:exported="true"

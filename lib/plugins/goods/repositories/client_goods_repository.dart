@@ -1,7 +1,7 @@
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/goods/models/warehouse.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart';
+import 'package:aboutme/plugins/goods/models/warehouse.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:flutter/material.dart';
 
 /// Goods 插件 - 客户端 Repository 实现

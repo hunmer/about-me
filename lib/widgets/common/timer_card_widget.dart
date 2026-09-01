@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:async';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
-import 'package:Memento/plugins/timer/models/timer_item.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
-import 'package:Memento/plugins/timer/views/timer_task_details_page.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/plugins/timer/models/timer_item.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 计时器任务卡片小组件
 ///

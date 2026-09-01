@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show File, Directory, FileSystemException;
 import 'dart:typed_data';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,7 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class FullBackupController {
   final BuildContext _originalContext;

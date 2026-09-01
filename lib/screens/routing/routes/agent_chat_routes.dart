@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 
 /// Agent Chat 插件路由注册表
 class AgentChatRoutes implements RouteRegistry {

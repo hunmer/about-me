@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/webview/widgets/embedded_webview.dart';
+import 'package:aboutme/plugins/webview/widgets/embedded_webview.dart';
 
 /// 嵌入式 WebView 小组件
 class EmbeddedWebViewWidget extends StatefulWidget {

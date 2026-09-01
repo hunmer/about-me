@@ -404,9 +404,9 @@
         async function loadPasswords() {
             console.log('[PasswordManager] 开始加载密码数据...');
             try {
-                if (window.Memento && window.Memento.storage) {
-                    console.log('[PasswordManager] 调用 Memento.storage.read:', STORAGE_KEY);
-                    const data = await Memento.storage.read(STORAGE_KEY);
+                if (window.Aboutme && window.Aboutme.storage) {
+                    console.log('[PasswordManager] 调用 Aboutme.storage.read:', STORAGE_KEY);
+                    const data = await Aboutme.storage.read(STORAGE_KEY);
                     console.log('[PasswordManager] 读取到的数据:', data);
                     if (data && data.passwords) {
                         passwords = data.passwords;
@@ -415,7 +415,7 @@
                         console.log('[PasswordManager] 没有找到密码数据或数据为空');
                     }
                 } else {
-                    console.log('[PasswordManager] Memento.storage 不可用');
+                    console.log('[PasswordManager] Aboutme.storage 不可用');
                 }
             } catch (e) {
                 console.error('[PasswordManager] 加载密码失败:', e);
@@ -425,8 +425,8 @@
         // 保存到存储
         async function saveToStorage() {
             try {
-                if (window.Memento && window.Memento.storage) {
-                    await Memento.storage.write(STORAGE_KEY, {
+                if (window.Aboutme && window.Aboutme.storage) {
+                    await Aboutme.storage.write(STORAGE_KEY, {
                         passwords: passwords,
                         updatedAt: new Date().toISOString()
                     });
@@ -669,15 +669,15 @@
             return div.innerHTML;
         }
 
-        // 页面加载完成后直接初始化（JS 已预加载，Memento API 立即可用）
+        // 页面加载完成后直接初始化（JS 已预加载，Aboutme API 立即可用）
         function startApp() {
-            if (window.Memento && window.Memento._ready) {
+            if (window.Aboutme && window.Aboutme._ready) {
                 init();
-            } else if (window.Memento) {
-                Memento.ready(init);
+            } else if (window.Aboutme) {
+                Aboutme.ready(init);
             } else {
-                console.error('Memento API 不可用');
-                alert('Memento API 不可用，请确保在 Memento WebView 中打开此页面');
+                console.error('Aboutme API 不可用');
+                alert('Aboutme API 不可用，请确保在 Aboutme WebView 中打开此页面');
             }
         }
 

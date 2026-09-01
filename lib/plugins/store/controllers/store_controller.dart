@@ -1,18 +1,18 @@
 import 'dart:async';
 
-import 'package:Memento/plugins/store/models/used_item.dart';
+import 'package:aboutme/plugins/store/models/used_item.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/plugins/store/models/product.dart';
-import 'package:Memento/plugins/store/models/user_item.dart';
-import 'package:Memento/plugins/store/models/points_log.dart';
-import 'package:Memento/plugins/store/sample_data.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/store/models/points_log.dart';
+import 'package:aboutme/plugins/store/sample_data.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// Store 缓存更新事件参数
 class StoreCacheUpdatedEventArgs extends EventArgs {

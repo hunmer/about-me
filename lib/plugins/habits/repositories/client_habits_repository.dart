@@ -8,12 +8,12 @@ library;
 import 'package:shared_models/repositories/habits/habits_repository.dart';
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
-import 'package:Memento/plugins/habits/controllers/skill_controller.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
 
 /// 客户端 Habits Repository 实现
 class ClientHabitsRepository implements IHabitsRepository {

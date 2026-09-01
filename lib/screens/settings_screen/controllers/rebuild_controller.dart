@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:Memento/screens/home_screen/home_screen.dart';
+import 'package:aboutme/screens/home_screen/home_screen.dart';
 
 class RebuildController {
   /// 重建应用以应用新的设置
@@ -27,7 +27,7 @@ class RebuildController {
     navigator.pushReplacement(
       NavigationHelper.createRoute(
         MaterialApp(
-          title: 'Memento',
+          title: 'Aboutme',
           debugShowCheckedModeBanner: false,
           home: const HomeScreen(),
           locale: effectiveLocale,

@@ -5,5 +5,5 @@ library;
 
 // StatItemData 定义在 screens/home_screen/models/plugin_widget_config.dart
 // 这里导出以便其他文件使用
-export 'package:Memento/screens/home_screen/models/plugin_widget_config.dart'
+export 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart'
     show StatItemData;

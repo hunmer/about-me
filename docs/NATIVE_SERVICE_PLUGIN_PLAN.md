@@ -1,4 +1,4 @@
-# Memento 原生服务插件化重构计划
+# Aboutme 原生服务插件化重构计划
 
 > **创建日期**: 2024-12-04
 > **状态**: 待实施
@@ -9,7 +9,7 @@
 ## 1. 项目概述
 
 ### 1.1 目标
-将 Memento 项目中的原生平台服务抽取为独立的 Flutter 插件，实现：
+将 Aboutme 项目中的原生平台服务抽取为独立的 Flutter 插件，实现：
 - 主项目彻底移除 `awesome_notifications` 和 `flutter_foreground_task` 依赖
 - 对外暴露简洁统一的 API，隐藏底层实现细节
 - 提高代码复用性和维护性
@@ -17,11 +17,11 @@
 ### 1.2 范围
 | 插件名称 | 封装依赖 | 源代码行数 |
 |---------|---------|-----------|
-| `memento_foreground_service` | flutter_foreground_task ^9.1.0 | ~400行 (含原生) |
-| `memento_notifications` | awesome_notifications ^0.10.1 | ~260行 |
+| `aboutme_foreground_service` | flutter_foreground_task ^9.1.0 | ~400行 (含原生) |
+| `aboutme_notifications` | awesome_notifications ^0.10.1 | ~260行 |
 
 ### 1.3 策略
-- **命名规范**: `memento_xxx` 前缀
+- **命名规范**: `aboutme_xxx` 前缀
 - **存放位置**: `plugins/` 目录 (与 `lib/plugins/` 同级)
 - **兼容策略**: 直接替换，一次性迁移所有调用点
 
@@ -29,36 +29,36 @@
 
 ## 2. 插件架构设计
 
-### 2.1 memento_foreground_service
+### 2.1 aboutme_foreground_service
 
 #### 目录结构
 ```
-packages/memento_foreground_service/
+packages/aboutme_foreground_service/
 ├── lib/
-│   ├── memento_foreground_service.dart      # 主入口，导出公开API
+│   ├── aboutme_foreground_service.dart      # 主入口，导出公开API
 │   ├── src/
 │   │   ├── foreground_service.dart          # 核心服务类
 │   │   ├── foreground_service_config.dart   # 配置类
 │   │   ├── notification_config.dart         # 通知配置
 │   │   └── permission_helper.dart           # 权限助手
-│   └── memento_foreground_service_method_channel.dart
+│   └── aboutme_foreground_service_method_channel.dart
 ├── android/
-│   ├── src/main/kotlin/com/memento/foreground_service/
-│   │   ├── MementoForegroundServicePlugin.kt
+│   ├── src/main/kotlin/com/aboutme/foreground_service/
+│   │   ├── AboutmeForegroundServicePlugin.kt
 │   │   ├── TimerForegroundService.kt        # 从主项目迁移
 │   │   └── ActivityForegroundService.kt     # 从主项目迁移
 │   └── src/main/AndroidManifest.xml
 ├── ios/
 │   └── Classes/
-│       └── MementoForegroundServicePlugin.swift
+│       └── AboutmeForegroundServicePlugin.swift
 ├── pubspec.yaml
 └── README.md
 ```
 
 #### 公开 API 设计
 ```dart
-// lib/memento_foreground_service.dart
-library memento_foreground_service;
+// lib/aboutme_foreground_service.dart
+library aboutme_foreground_service;
 
 export 'src/foreground_service.dart';
 export 'src/foreground_service_config.dart';
@@ -67,9 +67,9 @@ export 'src/notification_config.dart';
 
 ```dart
 // lib/src/foreground_service.dart
-class MementoForegroundService {
-  static final MementoForegroundService instance = MementoForegroundService._();
-  MementoForegroundService._();
+class AboutmeForegroundService {
+  static final AboutmeForegroundService instance = AboutmeForegroundService._();
+  AboutmeForegroundService._();
 
   /// 初始化服务（自动请求权限）
   Future<void> initialize({ForegroundServiceConfig? config});
@@ -132,8 +132,8 @@ class ServiceResult {
 #### MethodChannel 设计
 ```dart
 // 通道名称（保持向后兼容或使用新名称）
-const String kTimerServiceChannel = 'com.memento.foreground_service/timer';
-const String kActivityServiceChannel = 'com.memento.foreground_service/activity';
+const String kTimerServiceChannel = 'com.aboutme.foreground_service/timer';
+const String kActivityServiceChannel = 'com.aboutme.foreground_service/activity';
 
 // 方法列表
 // timer_service:
@@ -149,20 +149,20 @@ const String kActivityServiceChannel = 'com.memento.foreground_service/activity'
 
 ---
 
-### 2.2 memento_notifications
+### 2.2 aboutme_notifications
 
 #### 目录结构
 ```
-packages/memento_notifications/
+packages/aboutme_notifications/
 ├── lib/
-│   ├── memento_notifications.dart           # 主入口
+│   ├── aboutme_notifications.dart           # 主入口
 │   ├── src/
 │   │   ├── notification_service.dart        # 核心服务类
 │   │   ├── notification_channel.dart        # 通知通道配置
 │   │   ├── notification_content.dart        # 通知内容模型
 │   │   ├── notification_action.dart         # 通知动作/按钮
 │   │   └── notification_listener.dart       # 事件监听器
-│   └── memento_notifications_method_channel.dart
+│   └── aboutme_notifications_method_channel.dart
 ├── android/
 │   └── src/main/AndroidManifest.xml         # 权限声明
 ├── ios/
@@ -173,8 +173,8 @@ packages/memento_notifications/
 
 #### 公开 API 设计
 ```dart
-// lib/memento_notifications.dart
-library memento_notifications;
+// lib/aboutme_notifications.dart
+library aboutme_notifications;
 
 export 'src/notification_service.dart';
 export 'src/notification_channel.dart';
@@ -185,13 +185,13 @@ export 'src/notification_listener.dart';
 
 ```dart
 // lib/src/notification_service.dart
-class MementoNotifications {
-  static final MementoNotifications instance = MementoNotifications._();
-  MementoNotifications._();
+class AboutmeNotifications {
+  static final AboutmeNotifications instance = AboutmeNotifications._();
+  AboutmeNotifications._();
 
   /// 初始化通知服务
   Future<void> initialize({
-    List<MementoNotificationChannel>? channels,
+    List<AboutmeNotificationChannel>? channels,
     bool debug = false,
   });
 
@@ -215,10 +215,10 @@ class MementoNotifications {
     required String title,
     required String body,
     String? channelKey,
-    MementoNotificationLayout layout = MementoNotificationLayout.basic,
+    AboutmeNotificationLayout layout = AboutmeNotificationLayout.basic,
     String? bigPicture,
     String? largeIcon,
-    List<MementoNotificationButton>? buttons,
+    List<AboutmeNotificationButton>? buttons,
     Map<String, String>? payload,
   });
 
@@ -227,22 +227,22 @@ class MementoNotifications {
   Future<void> cancelAll();
 
   /// 获取已调度的通知列表
-  Future<List<MementoScheduledNotification>> getScheduledNotifications();
+  Future<List<AboutmeScheduledNotification>> getScheduledNotifications();
 }
 
 // 通知通道
-class MementoNotificationChannel {
+class AboutmeNotificationChannel {
   final String key;
   final String name;
   final String description;
   final Color defaultColor;
-  final MementoNotificationImportance importance;
+  final AboutmeNotificationImportance importance;
   final bool playSound;
   final bool enableVibration;
 }
 
 // 通知布局类型
-enum MementoNotificationLayout {
+enum AboutmeNotificationLayout {
   basic,
   bigPicture,
   bigText,
@@ -251,39 +251,39 @@ enum MementoNotificationLayout {
 }
 
 // 通知按钮
-class MementoNotificationButton {
+class AboutmeNotificationButton {
   final String key;
   final String label;
-  final MementoButtonAction actionType;
+  final AboutmeButtonAction actionType;
   final Color? color;
 }
 
 // 回调类型定义
-typedef OnNotificationCreated = Future<void> Function(MementoReceivedNotification);
-typedef OnNotificationDisplayed = Future<void> Function(MementoReceivedNotification);
-typedef OnNotificationDismissed = Future<void> Function(MementoReceivedAction);
-typedef OnNotificationAction = Future<void> Function(MementoReceivedAction);
+typedef OnNotificationCreated = Future<void> Function(AboutmeReceivedNotification);
+typedef OnNotificationDisplayed = Future<void> Function(AboutmeReceivedNotification);
+typedef OnNotificationDismissed = Future<void> Function(AboutmeReceivedAction);
+typedef OnNotificationAction = Future<void> Function(AboutmeReceivedAction);
 ```
 
 ---
 
 ## 3. 实施步骤
 
-### 阶段一：创建 memento_foreground_service 插件
+### 阶段一：创建 aboutme_foreground_service 插件
 
 #### 步骤 1.1：创建插件项目
 ```bash
-cd /Users/Zhuanz/Documents/Memento
+cd /Users/Zhuanz/Documents/Aboutme
 mkdir -p plugins
 cd plugins
-flutter create --template=plugin --platforms=android,ios memento_foreground_service
+flutter create --template=plugin --platforms=android,ios aboutme_foreground_service
 ```
 
 #### 步骤 1.2：配置 pubspec.yaml
 ```yaml
-# packages/memento_foreground_service/pubspec.yaml
-name: memento_foreground_service
-description: Memento 前台服务管理插件，封装 flutter_foreground_task
+# packages/aboutme_foreground_service/pubspec.yaml
+name: aboutme_foreground_service
+description: Aboutme 前台服务管理插件，封装 flutter_foreground_task
 version: 1.0.0
 
 environment:
@@ -299,10 +299,10 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.memento.foreground_service
-        pluginClass: MementoForegroundServicePlugin
+        package: com.aboutme.foreground_service
+        pluginClass: AboutmeForegroundServicePlugin
       ios:
-        pluginClass: MementoForegroundServicePlugin
+        pluginClass: AboutmeForegroundServicePlugin
 ```
 
 #### 步骤 1.3：迁移 Dart 代码
@@ -320,7 +320,7 @@ flutter:
 - `android/app/src/main/kotlin/.../ActivityForegroundService.kt`
 
 **迁移到**:
-- `packages/memento_foreground_service/android/src/main/kotlin/com/memento/foreground_service/`
+- `packages/aboutme_foreground_service/android/src/main/kotlin/com/aboutme/foreground_service/`
 
 **需要修改**:
 1. 更新 package 声明
@@ -329,7 +329,7 @@ flutter:
 
 #### 步骤 1.5：配置 AndroidManifest.xml
 ```xml
-<!-- packages/memento_foreground_service/android/src/main/AndroidManifest.xml -->
+<!-- packages/aboutme_foreground_service/android/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -353,19 +353,19 @@ flutter:
 
 ---
 
-### 阶段二：创建 memento_notifications 插件
+### 阶段二：创建 aboutme_notifications 插件
 
 #### 步骤 2.1：创建插件项目
 ```bash
-cd /Users/Zhuanz/Documents/Memento/plugins
-flutter create --template=plugin --platforms=android,ios memento_notifications
+cd /Users/Zhuanz/Documents/Aboutme/plugins
+flutter create --template=plugin --platforms=android,ios aboutme_notifications
 ```
 
 #### 步骤 2.2：配置 pubspec.yaml
 ```yaml
-# packages/memento_notifications/pubspec.yaml
-name: memento_notifications
-description: Memento 通知管理插件，封装 awesome_notifications
+# packages/aboutme_notifications/pubspec.yaml
+name: aboutme_notifications
+description: Aboutme 通知管理插件，封装 awesome_notifications
 version: 1.0.0
 
 environment:
@@ -381,10 +381,10 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.memento.notifications
-        pluginClass: MementoNotificationsPlugin
+        package: com.aboutme.notifications
+        pluginClass: AboutmeNotificationsPlugin
       ios:
-        pluginClass: MementoNotificationsPlugin
+        pluginClass: AboutmeNotificationsPlugin
 ```
 
 #### 步骤 2.3：迁移 Dart 代码
@@ -400,7 +400,7 @@ flutter:
 
 #### 步骤 2.4：配置 AndroidManifest.xml
 ```xml
-<!-- packages/memento_notifications/android/src/main/AndroidManifest.xml -->
+<!-- packages/aboutme_notifications/android/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
@@ -420,10 +420,10 @@ dependencies:
   # flutter_foreground_task: ^9.1.0
 
   # 添加本地插件:
-  memento_foreground_service:
-    path: ./packages/memento_foreground_service
-  memento_notifications:
-    path: ./packages/memento_notifications
+  aboutme_foreground_service:
+    path: ./packages/aboutme_foreground_service
+  aboutme_notifications:
+    path: ./packages/aboutme_notifications
 ```
 
 #### 步骤 3.2：更新 import 语句
@@ -441,7 +441,7 @@ dependencies:
 
 #### 步骤 3.3：API 映射表
 
-**NotificationController → MementoNotifications**:
+**NotificationController → AboutmeNotifications**:
 ```dart
 // 旧 API
 NotificationController.initialize();
@@ -450,13 +450,13 @@ NotificationController.createBasicNotification(id: 1, title: 'T', body: 'B');
 NotificationController.cancelNotification(1);
 
 // 新 API
-MementoNotifications.instance.initialize();
-MementoNotifications.instance.requestPermission();
-MementoNotifications.instance.showNotification(id: 1, title: 'T', body: 'B');
-MementoNotifications.instance.cancel(1);
+AboutmeNotifications.instance.initialize();
+AboutmeNotifications.instance.requestPermission();
+AboutmeNotifications.instance.showNotification(id: 1, title: 'T', body: 'B');
+AboutmeNotifications.instance.cancel(1);
 ```
 
-**ForegroundTaskManager → MementoForegroundService**:
+**ForegroundTaskManager → AboutmeForegroundService**:
 ```dart
 // 旧 API
 ForegroundTaskManager().startService(...);
@@ -464,9 +464,9 @@ ForegroundTaskManager().stopService();
 ForegroundTaskManager().isServiceRunning();
 
 // 新 API
-MementoForegroundService.instance.startService(...);
-MementoForegroundService.instance.stopService();
-MementoForegroundService.instance.isRunning;
+AboutmeForegroundService.instance.startService(...);
+AboutmeForegroundService.instance.stopService();
+AboutmeForegroundService.instance.isRunning;
 ```
 
 #### 步骤 3.4：清理主项目原生代码
@@ -490,12 +490,12 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 export 'package:awesome_notifications/awesome_notifications.dart'; // ❌
 
 // 正确示例 - 定义自己的类型
-class MementoNotificationChannel {
+class AboutmeNotificationChannel {
   // 自定义属性，内部转换为 NotificationChannel
 }
 
-class MementoNotifications {
-  Future<void> initialize({List<MementoNotificationChannel>? channels}) async {
+class AboutmeNotifications {
+  Future<void> initialize({List<AboutmeNotificationChannel>? channels}) async {
     // 内部转换
     final awesomeChannels = channels?.map((c) => NotificationChannel(
       channelKey: c.key,
@@ -516,7 +516,7 @@ class MementoNotifications {
 // 方案1: 使用 meta-data 传递资源 ID
 val iconResId = context.packageManager
     .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-    .metaData.getInt("com.memento.foreground_service.NOTIFICATION_ICON")
+    .metaData.getInt("com.aboutme.foreground_service.NOTIFICATION_ICON")
 
 // 方案2: 使用通用图标
 .setSmallIcon(android.R.drawable.ic_notification_overlay)
@@ -533,11 +533,11 @@ val iconResId = context.resources.getIdentifier(
 
 ```dart
 // 插件内部
-const String kPluginChannel = 'com.memento.foreground_service/main';
-const String kTimerChannel = 'com.memento.foreground_service/timer';
+const String kPluginChannel = 'com.aboutme.foreground_service/main';
+const String kTimerChannel = 'com.aboutme.foreground_service/timer';
 
 // 主项目原有 (需要迁移或保持兼容)
-const String kOldTimerChannel = 'github.hunmer.memento/timer_service';
+const String kOldTimerChannel = 'github.hunmer.aboutme/timer_service';
 ```
 
 ### 4.4 事件回调的解耦
@@ -553,7 +553,7 @@ static Future<void> onActionReceivedMethod(ReceivedAction action) async {
 }
 
 // 新代码 - 通过回调解耦
-MementoNotifications.instance.setListeners(
+AboutmeNotifications.instance.setListeners(
   onAction: (action) async {
     // 由调用方决定如何处理
     if (action.payload?['type'] == 'activity_reminder') {
@@ -579,9 +579,9 @@ MementoNotifications.instance.setListeners(
 - **风险**: 插件无法直接访问主项目的 drawable 资源
 - **缓解**: 使用 meta-data 或动态资源查找
 
-### 5.4 与 memento_widgets 的兼容性
+### 5.4 与 aboutme_widgets 的兼容性
 - **风险**: 小组件可能直接使用了 NotificationController
-- **缓解**: 检查 memento_widgets 的依赖，必要时更新
+- **缓解**: 检查 aboutme_widgets 的依赖，必要时更新
 
 ---
 
@@ -589,10 +589,10 @@ MementoNotifications.instance.setListeners(
 
 ### 6.1 单元测试
 ```dart
-// test/memento_foreground_service_test.dart
+// test/aboutme_foreground_service_test.dart
 void main() {
   test('startService should return success', () async {
-    final result = await MementoForegroundService.instance.startService(
+    final result = await AboutmeForegroundService.instance.startService(
       serviceId: 1,
       title: 'Test',
       content: 'Test content',
@@ -629,8 +629,8 @@ grep -r "ForegroundTaskManager" lib/
 
 | 阶段 | 任务 | 预计时间 |
 |-----|------|---------|
-| 阶段一 | 创建 memento_foreground_service | 2-3 小时 |
-| 阶段二 | 创建 memento_notifications | 2-3 小时 |
+| 阶段一 | 创建 aboutme_foreground_service | 2-3 小时 |
+| 阶段二 | 创建 aboutme_notifications | 2-3 小时 |
 | 阶段三 | 主项目迁移 | 1-2 小时 |
 | 验证 | 测试与调试 | 1-2 小时 |
 | **总计** | | **6-10 小时** |
@@ -658,18 +658,18 @@ ios/Runner/AppDelegate.swift                                 # iOS 配置
 
 # 参考现有插件
 packages/floating_ball_plugin/                               # 参考结构
-packages/memento_widgets/                                    # 参考结构
+packages/aboutme_widgets/                                    # 参考结构
 ```
 
 ### 需要创建的目录结构
 ```
 packages/
-├── memento_foreground_service/
+├── aboutme_foreground_service/
 │   ├── lib/
 │   ├── android/
 │   ├── ios/
 │   └── pubspec.yaml
-└── memento_notifications/
+└── aboutme_notifications/
     ├── lib/
     ├── android/
     ├── ios/
@@ -680,25 +680,25 @@ packages/
 
 ## 附录：完整 API 对照表
 
-### NotificationController → MementoNotifications
+### NotificationController → AboutmeNotifications
 
 | 旧 API | 新 API |
 |--------|--------|
-| `NotificationController.initialize()` | `MementoNotifications.instance.initialize()` |
-| `NotificationController.requestPermission()` | `MementoNotifications.instance.requestPermission()` |
-| `NotificationController.checkPermission()` | `MementoNotifications.instance.checkPermission()` |
-| `NotificationController.createBasicNotification(...)` | `MementoNotifications.instance.showNotification(...)` |
-| `NotificationController.createCustomNotification(...)` | `MementoNotifications.instance.showNotification(...)` |
-| `NotificationController.createBigPictureNotification(...)` | `MementoNotifications.instance.showNotification(layout: bigPicture, ...)` |
-| `NotificationController.cancelNotification(id)` | `MementoNotifications.instance.cancel(id)` |
-| `NotificationController.cancelAllNotifications()` | `MementoNotifications.instance.cancelAll()` |
-| `NotificationController.getActiveNotifications()` | `MementoNotifications.instance.getScheduledNotifications()` |
+| `NotificationController.initialize()` | `AboutmeNotifications.instance.initialize()` |
+| `NotificationController.requestPermission()` | `AboutmeNotifications.instance.requestPermission()` |
+| `NotificationController.checkPermission()` | `AboutmeNotifications.instance.checkPermission()` |
+| `NotificationController.createBasicNotification(...)` | `AboutmeNotifications.instance.showNotification(...)` |
+| `NotificationController.createCustomNotification(...)` | `AboutmeNotifications.instance.showNotification(...)` |
+| `NotificationController.createBigPictureNotification(...)` | `AboutmeNotifications.instance.showNotification(layout: bigPicture, ...)` |
+| `NotificationController.cancelNotification(id)` | `AboutmeNotifications.instance.cancel(id)` |
+| `NotificationController.cancelAllNotifications()` | `AboutmeNotifications.instance.cancelAll()` |
+| `NotificationController.getActiveNotifications()` | `AboutmeNotifications.instance.getScheduledNotifications()` |
 
-### ForegroundTaskManager → MementoForegroundService
+### ForegroundTaskManager → AboutmeForegroundService
 
 | 旧 API | 新 API |
 |--------|--------|
-| `ForegroundTaskManager()` (构造函数) | `MementoForegroundService.instance` (单例) |
+| `ForegroundTaskManager()` (构造函数) | `AboutmeForegroundService.instance` (单例) |
 | `.initCommunicationPort()` | 内部自动处理 |
 | `.requestPermissions()` | `initialize()` 时自动处理 |
 | `.initService()` | `initialize(config: ...)` |

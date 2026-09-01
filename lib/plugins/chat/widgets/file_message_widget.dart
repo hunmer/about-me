@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/models/file_message.dart';
+import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FileMessageWidget extends StatelessWidget {

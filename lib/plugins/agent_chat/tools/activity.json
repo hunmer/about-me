@@ -16,23 +16,23 @@
     "examples": [
       {
         "title": "获取今日活动",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Memento.plugins.activity.getActivities({ date: today });\nsetResult(`今天共有 ${activities.length} 个活动`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Aboutme.plugins.activity.getActivities({ date: today });\nsetResult(`今天共有 ${activities.length} 个活动`);"
       },
       {
         "title": "获取默认日期（今天）的活动",
-        "code": "const activities = await Memento.plugins.activity.getActivities({});\nsetResult(`今天共有 ${activities.length} 个活动`);"
+        "code": "const activities = await Aboutme.plugins.activity.getActivities({});\nsetResult(`今天共有 ${activities.length} 个活动`);"
       },
       {
         "title": "分页获取今日活动（前10个）",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Memento.plugins.activity.getActivities({ date: today, offset: 0, count: 10 });\nsetResult(`共 ${result.total} 个活动，当前返回 ${result.data.length} 个`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Aboutme.plugins.activity.getActivities({ date: today, offset: 0, count: 10 });\nsetResult(`共 ${result.total} 个活动，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "分页获取今日活动（第二页）",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Memento.plugins.activity.getActivities({ date: today, offset: 10, count: 10 });\nsetResult(`还有更多: ${result.hasMore}`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Aboutme.plugins.activity.getActivities({ date: today, offset: 10, count: 10 });\nsetResult(`还有更多: ${result.hasMore}`);"
       },
       {
         "title": "遍历所有今日活动（分页加载）",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nlet allActivities = [];\nlet offset = 0;\nconst count = 20;\n\nwhile (true) {\n  const result = await Memento.plugins.activity.getActivities({ date: today, offset, count });\n  allActivities = allActivities.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allActivities.length} 个活动`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nlet allActivities = [];\nlet offset = 0;\nconst count = 20;\n\nwhile (true) {\n  const result = await Aboutme.plugins.activity.getActivities({ date: today, offset, count });\n  allActivities = allActivities.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allActivities.length} 个活动`);"
       }
     ],
     "notes": "日期格式必须为 YYYY-MM-DD，返回的活动按时间顺序排列。如果不传 date 参数，默认返回今天的活动。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-50 条数据",
@@ -59,15 +59,15 @@
     "examples": [
       {
         "title": "创建简单活动",
-        "code": "const baseTime = await Memento.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T08:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T10:00:00.000Z');\nconst result = await Memento.plugins.activity.createActivity({\n  startTime,\n  endTime,\n  title: '晨间会议'\n});\nsetResult(result.success ? '创建成功' : '创建失败');"
+        "code": "const baseTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T08:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T10:00:00.000Z');\nconst result = await Aboutme.plugins.activity.createActivity({\n  startTime,\n  endTime,\n  title: '晨间会议'\n});\nsetResult(result.success ? '创建成功' : '创建失败');"
       },
       {
         "title": "创建完整活动",
-        "code": "const baseTime = await Memento.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T08:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T10:00:00.000Z');\nconst result = await Memento.plugins.activity.createActivity({\n  startTime,\n  endTime,\n  title: '项目会议',\n  tags: ['工作', '会议'],\n  description: '讨论项目进度',\n  mood: '😊'\n});\nsetResult(`活动ID: ${result.activity.id}`);"
+        "code": "const baseTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T08:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T10:00:00.000Z');\nconst result = await Aboutme.plugins.activity.createActivity({\n  startTime,\n  endTime,\n  title: '项目会议',\n  tags: ['工作', '会议'],\n  description: '讨论项目进度',\n  mood: '😊'\n});\nsetResult(`活动ID: ${result.activity.id}`);"
       },
       {
         "title": "使用自定义ID创建活动",
-        "code": "const baseTime = await Memento.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T14:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T16:00:00.000Z');\nconst result = await Memento.plugins.activity.createActivity({\n  id: 'activity123',\n  startTime,\n  endTime,\n  title: '客户会谈',\n  tags: ['工作', '客户'],\n  description: '与客户讨论新项目需求',\n  mood: '🤝'\n});\nsetResult(`活动已创建，自定义ID: ${result.activity.id}`);"
+        "code": "const baseTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T14:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T16:00:00.000Z');\nconst result = await Aboutme.plugins.activity.createActivity({\n  id: 'activity123',\n  startTime,\n  endTime,\n  title: '客户会谈',\n  tags: ['工作', '客户'],\n  description: '与客户讨论新项目需求',\n  mood: '🤝'\n});\nsetResult(`活动已创建，自定义ID: ${result.activity.id}`);"
       }
     ],
     "notes": "必需参数: startTime(开始时间)、endTime(结束时间)、title(活动标题);可选参数: id(自定义ID)、tags(标签)、description(描述)、mood(心情);如果不提供id会自动生成UUID;ID不能与现有活动重复;如果时间段与现有活动重叠，会自动替换原活动;结束时间必须晚于开始时间;tags 参数支持数组或 JSON 字符串格式",
@@ -94,7 +94,7 @@
     "examples": [
       {
         "title": "更新活动",
-        "code": "const baseTime = await Memento.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T09:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T11:00:00.000Z');\nconst result = await Memento.plugins.activity.updateActivity({\n  activityId: 'activity-id-123',\n  startTime,\n  endTime,\n  title: '修改后的会议',\n  tags: ['工作'],\n  description: '延长了会议时间',\n  mood: '😊'\n});\nsetResult(result.success ? '更新成功' : result.error);"
+        "code": "const baseTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = baseTime.replace(/T.*/, 'T09:00:00.000Z');\nconst endTime = baseTime.replace(/T.*/, 'T11:00:00.000Z');\nconst result = await Aboutme.plugins.activity.updateActivity({\n  activityId: 'activity-id-123',\n  startTime,\n  endTime,\n  title: '修改后的会议',\n  tags: ['工作'],\n  description: '延长了会议时间',\n  mood: '😊'\n});\nsetResult(result.success ? '更新成功' : result.error);"
       }
     ],
     "notes": "如果修改后的时间与其他活动重叠会返回错误；如果日期改变，会自动迁移到新日期文件；tags 参数支持数组或 JSON 字符串格式",
@@ -116,7 +116,7 @@
     "examples": [
       {
         "title": "删除活动",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Memento.plugins.activity.deleteActivity({\n  activityId: 'activity-id-123',\n  date: today\n});\nsetResult(result.success ? '删除成功' : result.error);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst result = await Aboutme.plugins.activity.deleteActivity({\n  activityId: 'activity-id-123',\n  date: today\n});\nsetResult(result.success ? '删除成功' : result.error);"
       }
     ],
     "notes": "删除操作不可逆，请谨慎使用",
@@ -135,7 +135,7 @@
     "examples": [
       {
         "title": "获取今日统计",
-        "code": "const stats = await Memento.plugins.activity.getTodayStats({});\nsetResult(`今天记录了 ${stats.activityCount} 个活动，共 ${stats.durationHours} 小时，还剩 ${stats.remainingHours} 小时`);"
+        "code": "const stats = await Aboutme.plugins.activity.getTodayStats({});\nsetResult(`今天记录了 ${stats.activityCount} 个活动，共 ${stats.durationHours} 小时，还剩 ${stats.remainingHours} 小时`);"
       }
     ],
     "notes": "统计数据基于今天的所有活动记录，剩余时间计算到当天 23:59",
@@ -154,7 +154,7 @@
     "examples": [
       {
         "title": "获取标签分组",
-        "code": "const groups = await Memento.plugins.activity.getTagGroups({});\nsetResult(JSON.stringify(groups, null, 2));"
+        "code": "const groups = await Aboutme.plugins.activity.getTagGroups({});\nsetResult(JSON.stringify(groups, null, 2));"
       }
     ],
     "notes": "标签分组用于组织和快速选择标签",
@@ -173,7 +173,7 @@
     "examples": [
       {
         "title": "获取最近标签",
-        "code": "const recentTags = await Memento.plugins.activity.getRecentTags({});\nsetResult(`最近使用的标签: ${recentTags.join(', ')}`);"
+        "code": "const recentTags = await Aboutme.plugins.activity.getRecentTags({});\nsetResult(`最近使用的标签: ${recentTags.join(', ')}`);"
       }
     ],
     "notes": "最多保留10个最近使用的标签，新使用的标签会排在前面",
@@ -195,11 +195,11 @@
     "examples": [
       {
         "title": "根据 ID 查找活动",
-        "code": "const activity = await Memento.plugins.activity.findActivityBy({field: 'id', value: 'activity123'});\nif (activity) {\n  setResult(`找到活动: ${activity.title}，时长: ${activity.duration}分钟`);\n} else {\n  setResult('未找到该活动');\n}"
+        "code": "const activity = await Aboutme.plugins.activity.findActivityBy({field: 'id', value: 'activity123'});\nif (activity) {\n  setResult(`找到活动: ${activity.title}，时长: ${activity.duration}分钟`);\n} else {\n  setResult('未找到该活动');\n}"
       },
       {
         "title": "查找今天所有包含特定标题的活动",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Memento.plugins.activity.findActivityBy({field: 'title', value: '会议', date: today, findAll: true});\nsetResult(`今天有 ${activities.length} 个会议活动`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Aboutme.plugins.activity.findActivityBy({field: 'title', value: '会议', date: today, findAll: true});\nsetResult(`今天有 ${activities.length} 个会议活动`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历活动列表；date 可选，不传则在所有日期中查找",
@@ -219,7 +219,7 @@
     "examples": [
       {
         "title": "查找指定ID的活动",
-        "code": "const activity = await Memento.plugins.activity.findActivityById({id: 'activity123'});\nif (activity) {\n  setResult(`活动标题: ${activity.title}, 开始时间: ${activity.startTime}, 结束时间: ${activity.endTime}`);\n} else {\n  setResult('活动不存在');\n}"
+        "code": "const activity = await Aboutme.plugins.activity.findActivityById({id: 'activity123'});\nif (activity) {\n  setResult(`活动标题: ${activity.title}, 开始时间: ${activity.startTime}, 结束时间: ${activity.endTime}`);\n} else {\n  setResult('活动不存在');\n}"
       }
     ],
     "notes": "等价于 findActivityBy({field: 'id', value: id, date})",
@@ -241,11 +241,11 @@
     "examples": [
       {
         "title": "精确匹配活动标题",
-        "code": "const activity = await Memento.plugins.activity.findActivityByTitle({title: '晨间会议'});\nsetResult(activity ? `活动时间: ${activity.startTime}` : '未找到');"
+        "code": "const activity = await Aboutme.plugins.activity.findActivityByTitle({title: '晨间会议'});\nsetResult(activity ? `活动时间: ${activity.startTime}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的活动",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Memento.plugins.activity.findActivityByTitle({title: '会议', fuzzy: true, date: today, findAll: true});\nconst totalMinutes = activities.reduce((sum, a) => sum + (a.duration || 0), 0);\nsetResult(`今天有 ${activities.length} 个会议活动，共 ${totalMinutes} 分钟`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst activities = await Aboutme.plugins.activity.findActivityByTitle({title: '会议', fuzzy: true, date: today, findAll: true});\nconst totalMinutes = activities.reduce((sum, a) => sum + (a.duration || 0), 0);\nsetResult(`今天有 ${activities.length} 个会议活动，共 ${totalMinutes} 分钟`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes",
@@ -267,11 +267,11 @@
     "examples": [
       {
         "title": "查找所有带工作标签的活动",
-        "code": "const activities = await Memento.plugins.activity.findActivitiesByTag({tag: '工作'});\nsetResult(`找到 ${activities.length} 个工作活动`);"
+        "code": "const activities = await Aboutme.plugins.activity.findActivitiesByTag({tag: '工作'});\nsetResult(`找到 ${activities.length} 个工作活动`);"
       },
       {
         "title": "查找本月带会议标签的活动",
-        "code": "const startDate = await Memento.system.getCustomDate({relativePosition: 'startOfMonth', format: 'yyyy-MM-dd'});\nconst endDate = await Memento.system.getCustomDate({relativePosition: 'endOfMonth', format: 'yyyy-MM-dd'});\nconst activities = await Memento.plugins.activity.findActivitiesByTag({tag: '会议', startDate, endDate});\nconst totalHours = activities.reduce((sum, a) => sum + (a.duration || 0), 0) / 60;\nsetResult(`本月会议 ${activities.length} 个，共 ${totalHours.toFixed(1)} 小时`);"
+        "code": "const startDate = await Aboutme.system.getCustomDate({relativePosition: 'startOfMonth', format: 'yyyy-MM-dd'});\nconst endDate = await Aboutme.system.getCustomDate({relativePosition: 'endOfMonth', format: 'yyyy-MM-dd'});\nconst activities = await Aboutme.plugins.activity.findActivitiesByTag({tag: '会议', startDate, endDate});\nconst totalHours = activities.reduce((sum, a) => sum + (a.duration || 0), 0) / 60;\nsetResult(`本月会议 ${activities.length} 个，共 ${totalHours.toFixed(1)} 小时`);"
       }
     ],
     "notes": "标签匹配区分大小写；支持日期范围过滤",

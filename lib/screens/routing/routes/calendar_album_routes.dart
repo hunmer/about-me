@@ -1,7 +1,7 @@
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:Memento/plugins/calendar_album/screens/calendar_album_weekly_selector_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/plugins/calendar_album/screens/calendar_album_weekly_selector_screen.dart';
 
 /// Calendar Album 插件路由注册表
 class CalendarAlbumRoutes implements RouteRegistry {

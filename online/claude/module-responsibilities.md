@@ -11,7 +11,7 @@
 | `pure_read/` | 📖 阅读记录 | 记录书籍/文章并追踪阅读进度 | 阅读/工具/效率 | ✅ |
 | `timeline/` | ⏰ 时间线展示 | 按时间线排列展示记忆瞬间 | 时间线/记忆/展示 | — |
 
-（均为 v1.0.0，author: mementoTeam，permissions: storage；产物含 hashed 资产与 `files.json`。）
+（均为 v1.0.0，author: aboutmeTeam，permissions: storage；产物含 hashed 资产与 `files.json`。）
 
 ## 在线脚本（`scripts/`，清单 `scripts.json`）
 

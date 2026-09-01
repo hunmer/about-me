@@ -1,7 +1,7 @@
-name: memento_notifications
-description: "Memento 通知管理插件，封装 awesome_notifications，提供简洁的通知 API"
+name: aboutme_notifications
+description: "Aboutme 通知管理插件，封装 awesome_notifications，提供简洁的通知 API"
 version: 1.0.0
-homepage: https://github.com/hunmer/Memento
+homepage: https://github.com/hunmer/Aboutme
 
 environment:
   sdk: ^3.7.0
@@ -22,7 +22,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.memento.notifications
-        pluginClass: MementoNotificationsPlugin
+        package: com.aboutme.notifications
+        pluginClass: AboutmeNotificationsPlugin
       ios:
-        pluginClass: MementoNotificationsPlugin
+        pluginClass: AboutmeNotificationsPlugin

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/global_flags.dart';
+import 'package:aboutme/core/global_flags.dart';
 import 'home_screen_controller.dart';
 import 'home_screen_view.dart';
 

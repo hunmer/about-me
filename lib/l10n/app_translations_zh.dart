@@ -4,7 +4,7 @@
 /// Parameterized translations use @paramName format for GetX.
 const Map<String, String> appTranslationsZh = {
   // App basics
-  'app_appTitle': 'memento',
+  'app_appTitle': 'aboutme',
   'app_pluginManager': '插件管理器',
   'app_home': '首页',
   'app_settings': '设置',
@@ -162,13 +162,13 @@ const Map<String, String> appTranslationsZh = {
 
   // About
   'app_aboutTitle': '关于',
-  'app_aboutDescription': 'Memento是一款生产力应用,旨在帮助您组织和记住重要事项。',
+  'app_aboutDescription': 'Aboutme是一款生产力应用,旨在帮助您组织和记住重要事项。',
   'app_projectLinkTitle': '项目链接',
-  'app_projectLink': 'https://github.com/hunmer/memento',
+  'app_projectLink': 'https://github.com/hunmer/aboutme',
   'app_feedbackTitle': '反馈与建议',
-  'app_feedbackLink': 'https://github.com/hunmer/Memento/issues',
+  'app_feedbackLink': 'https://github.com/hunmer/Aboutme/issues',
   'app_documentationTitle': '项目文档',
-  'app_documentationLink': 'https://github.com/hunmer/Memento#readme',
+  'app_documentationLink': 'https://github.com/hunmer/Aboutme#readme',
 
   // Home Widget Categories
   'home_categoryRecord': '记录',

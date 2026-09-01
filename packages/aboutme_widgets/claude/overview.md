@@ -1,6 +1,6 @@
 # 架构总览
 
-> 所属：packages/memento_widgets · [返回索引](../CLAUDE.md)
+> 所属：packages/aboutme_widgets · [返回索引](../CLAUDE.md)
 
 ## 数据流
 
@@ -9,7 +9,7 @@ graph LR
     App[Flutter 应用<br/>plugin_widget_sync_helper] -->|saveString '{pluginId}_widget_data'<br/>JSON = PluginWidgetData| M[MyWidgetManager<br/>本包 Dart 层]
     M -->|HomeWidget API| HW[home_widget 插件]
     HW -->|App Group / SharedPreferences| A[Android AppWidgetProvider<br/>40+ 个]
-    HW -->|App Group group.github.hunmer.memento| I[iOS WidgetKit 扩展<br/>在主应用 ios 工程内]
+    HW -->|App Group group.github.hunmer.aboutme| I[iOS WidgetKit 扩展<br/>在主应用 ios 工程内]
     M -->|updateWidget 触发刷新| A
 ```
 
@@ -31,8 +31,8 @@ graph LR
 
 ## 双平台差异
 
-- **Android**：全部 Provider 在本包实现（包名 `github.hunmer.memento_widgets`，providers 子包 `github.hunmer.memento.widgets.providers`）；列表型小组件用 RemoteViewsService + Factory。
-- **iOS**：本包 Swift 侧仅 19 行插件注册壳；实际 WidgetKit 小组件扩展位于主应用 `ios/` 工程，与本包经 **App Group `group.github.hunmer.memento`** 共享 UserDefaults 数据（由 home_widget 机制承载）。
+- **Android**：全部 Provider 在本包实现（包名 `github.hunmer.aboutme_widgets`，providers 子包 `github.hunmer.aboutme.widgets.providers`）；列表型小组件用 RemoteViewsService + Factory。
+- **iOS**：本包 Swift 侧仅 19 行插件注册壳；实际 WidgetKit 小组件扩展位于主应用 `ios/` 工程，与本包经 **App Group `group.github.hunmer.aboutme`** 共享 UserDefaults 数据（由 home_widget 机制承载）。
 
 ## 设计取舍
 

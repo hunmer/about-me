@@ -20,7 +20,7 @@ class WebStorage implements StorageInterface {
   }
 
   // 应用根目录
-  static const _rootDir = '/memento_app';
+  static const _rootDir = '/aboutme_app';
 
   // 初始化根目录
   Future<void> _initRootDir() async {

@@ -1,8 +1,8 @@
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/theme_controller.dart';
-import 'package:Memento/core/builtin_plugins.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/services/clipboard_service.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/theme_controller.dart';
+import 'package:aboutme/core/builtin_plugins.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'base_settings_controller.dart';
@@ -11,7 +11,7 @@ import 'import_controller.dart';
 import 'full_backup_controller.dart';
 import 'webdav_sync_controller.dart';
 import 'auto_update_controller.dart';
-import 'package:Memento/widgets/backup_time_picker.dart';
+import 'package:aboutme/widgets/backup_time_picker.dart';
 
 class SettingsScreenController extends ChangeNotifier {
   final BaseSettingsController _baseController;

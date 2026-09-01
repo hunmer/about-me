@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import '../../../../../../utils/audio_service.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 

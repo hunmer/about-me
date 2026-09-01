@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
-import 'package:Memento/plugins/agent_chat/controllers/conversation_controller.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
-import 'package:Memento/plugins/agent_chat/screens/agent_chat_settings_screen.dart';
-import 'package:Memento/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
-import 'package:Memento/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_template_service.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/widgets/swipe_action/index.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/controllers/conversation_controller.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/agent_chat/screens/agent_chat_settings_screen.dart';
+import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
+import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/swipe_action/index.dart';
 
 /// 会话列表屏幕
 class ConversationListScreen extends StatefulWidget {

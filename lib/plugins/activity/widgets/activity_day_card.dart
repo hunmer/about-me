@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/widgets/day_card_header.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
 
 /// 活动单日卡片 - 展示某一天的活动记录
 ///

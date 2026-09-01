@@ -2,12 +2,12 @@ import Flutter
 import UIKit
 import Foundation
 
-public class MementoIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+public class AboutmeIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
-    private static let deepLinkEventChannelName = "memento_intent/deep_link/events"
-    private static let sharedTextEventChannelName = "memento_intent/shared_text/events"
-    private static let sharedFilesEventChannelName = "memento_intent/shared_files/events"
-    private static let intentDataEventChannelName = "memento_intent/intent_data/events"
+    private static let deepLinkEventChannelName = "aboutme_intent/deep_link/events"
+    private static let sharedTextEventChannelName = "aboutme_intent/shared_text/events"
+    private static let sharedFilesEventChannelName = "aboutme_intent/shared_files/events"
+    private static let intentDataEventChannelName = "aboutme_intent/intent_data/events"
 
     private var methodChannel: FlutterMethodChannel?
     private var deepLinkEventSink: FlutterEventSink?
@@ -18,10 +18,10 @@ public class MementoIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
     private var dynamicSchemes: [String] = []
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let instance = MementoIntentPlugin()
+        let instance = AboutmeIntentPlugin()
 
         instance.methodChannel = FlutterMethodChannel(
-            name: "memento_intent",
+            name: "aboutme_intent",
             binaryMessenger: registrar.messenger()
         )
         registrar.addMethodCallDelegate(instance, channel: instance.methodChannel!)
@@ -93,7 +93,7 @@ public class MementoIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
         }
 
         // Save to UserDefaults
-        UserDefaults.standard.set(dynamicSchemes, forKey: "memento_intent_dynamic_schemes")
+        UserDefaults.standard.set(dynamicSchemes, forKey: "aboutme_intent_dynamic_schemes")
 
         // Note: iOS doesn't support dynamic URL scheme registration at runtime
         // The scheme needs to be configured in Info.plist beforehand
@@ -104,7 +104,7 @@ public class MementoIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
 
     private func unregisterDynamicSchemeInternal() -> Bool {
         dynamicSchemes.removeAll()
-        UserDefaults.standard.removeObject(forKey: "memento_intent_dynamic_schemes")
+        UserDefaults.standard.removeObject(forKey: "aboutme_intent_dynamic_schemes")
         return true
     }
 
@@ -183,7 +183,7 @@ public class MementoIntentPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
 }
 
 // MARK: - AppDelegate Extension
-extension MementoIntentPlugin {
+extension AboutmeIntentPlugin {
     // This would typically be in your AppDelegate, but for the plugin example
     // We provide a helper to handle URL opening
     static func handleOpenURL(_ url: URL) {

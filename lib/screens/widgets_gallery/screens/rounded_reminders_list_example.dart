@@ -1,6 +1,6 @@
-import 'package:Memento/widgets/common/index.dart';
+import 'package:aboutme/widgets/common/index.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 圆角提醒事项列表卡片示例
 class RoundedRemindersListExample extends StatefulWidget {

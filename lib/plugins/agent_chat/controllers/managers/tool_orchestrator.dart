@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:openai_dart/openai_dart.dart';
 import '../../models/conversation.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../services/tool_service.dart';
-import 'package:Memento/plugins/openai/services/request_service.dart';
+import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'shared/manager_context.dart';
 
 /// 工具调用编排器 - 公共组件

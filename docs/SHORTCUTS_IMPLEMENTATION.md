@@ -40,13 +40,13 @@
 ┌─────────────────────────┐
 │   JSBridgeManager       │  (Dart)
 │  - 构建 JS 执行环境     │
-│  - Memento.plugins.*    │
+│  - Aboutme.plugins.*    │
 └────────┬────────────────┘
          │ JavaScript 调用
          ▼
 ┌─────────────────────────┐
 │  Plugin JavaScript API  │
-│  Memento.plugins.       │
+│  Aboutme.plugins.       │
 │    todo.createTodo()    │
 └────────┬────────────────┘
          │ JS Bridge 回调
@@ -172,7 +172,7 @@ String _buildJSCode(String pluginId, String methodName, Map params) {
   return '''
 (async function() {
   try {
-    const result = await Memento.plugins.$pluginId.$methodName($paramsStr);
+    const result = await Aboutme.plugins.$pluginId.$methodName($paramsStr);
     return JSON.stringify({ success: true, data: result });
   } catch (error) {
     return JSON.stringify({ success: false, error: error.message });
@@ -298,7 +298,7 @@ void main() {
         'priority': 'high',
       });
 
-      expect(code, contains('Memento.plugins.todo.createTodo'));
+      expect(code, contains('Aboutme.plugins.todo.createTodo'));
       expect(code, contains('"title":"买菜"'));
     });
 
@@ -383,7 +383,7 @@ flutter clean && flutter build ios
 [CallPluginMethod] 参数解析成功: {title: 买菜, priority: high}
 [ShortcutsHandler] 生成的 JS 代码:
 (async function() {
-  const result = await Memento.plugins.todo.createTodo({"title":"买菜"});
+  const result = await Aboutme.plugins.todo.createTodo({"title":"买菜"});
   ...
 })();
 ```
@@ -475,7 +475,7 @@ struct QuickAddTodoIntent: AppIntent {
 
 - [Apple App Intents Documentation](https://developer.apple.com/documentation/appintents)
 - [Flutter Intelligence Plugin](https://pub.dev/packages/intelligence)
-- [Memento JS Bridge 架构](lib/core/js_bridge/README.md)
+- [Aboutme JS Bridge 架构](lib/core/js_bridge/README.md)
 - [Agent Chat 工具调用系统](lib/plugins/agent_chat/CLAUDE.md)
 
 ---

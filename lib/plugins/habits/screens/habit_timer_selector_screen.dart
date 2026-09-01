@@ -2,10 +2,10 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 习惯计时器选择器界面（用于小组件配置）
 ///
@@ -515,7 +515,7 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
         name: 'HabitTimerWidgetProvider',
         iOSName: 'HabitTimerWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.HabitTimerWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.HabitTimerWidgetProvider',
       );
       debugPrint('HabitTimerWidgetProvider 更新完成');
 

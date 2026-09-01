@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
 
 /// 性别选择器字段
 ///

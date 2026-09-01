@@ -98,8 +98,8 @@ function handleClose(): void {
             overflow-x: auto;
             white-space: pre-wrap;
           "
-        >MEMENTO_API_KEY={{ apiKey.key }}
-MEMENTO_SERVER_URL={{ apiClient.getBaseUrl() }}
+        >ABOUTME_API_KEY={{ apiKey.key }}
+ABOUTME_SERVER_URL={{ apiClient.getBaseUrl() }}
 # 加密密钥需要在调用时通过请求头传递</pre>
       </div>
     </div>

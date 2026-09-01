@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/screens/timeline/models/timeline_filter.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/models/timeline_filter.dart';
 import 'timeline_controller/base_controller.dart';
 import 'timeline_controller/message_handler.dart';
 import 'timeline_controller/pagination_controller.dart';

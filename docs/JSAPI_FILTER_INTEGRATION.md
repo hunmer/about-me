@@ -108,39 +108,39 @@ return _serializeResult(filtered);
 
 ```javascript
 // 1. 默认调用（完整数据）
-const data = await Memento.plugins.activity.getActivities({
+const data = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15"
 });
 
 // 2. Summary 模式（仅统计，节省 90% token）
-const summary = await Memento.plugins.activity.getActivities({
+const summary = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   mode: "summary"
 });
 // 返回: { sum: { total: 50, dur: 3600, avg: 72 } }
 
 // 3. Compact 模式（简化字段，节省 75% token）
-const compact = await Memento.plugins.activity.getActivities({
+const compact = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   mode: "compact"
 });
 // 返回: { sum: {...}, recs: [{ id, title, start, end, dur }, ...] }
 
 // 4. Fields 白名单（自定义字段，节省 70-85% token）
-const custom = await Memento.plugins.activity.getActivities({
+const custom = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   fields: ["id", "title", "start", "end"]
 });
 // 返回: { recs: [{ id, title, start, end }, ...] }
 
 // 5. ExcludeFields 黑名单
-const filtered = await Memento.plugins.activity.getActivities({
+const filtered = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   excludeFields: ["description", "metadata"]
 });
 
 // 6. 组合使用
-const optimized = await Memento.plugins.activity.getActivities({
+const optimized = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   mode: "compact",
   fields: ["id", "title", "start", "end"],
@@ -219,15 +219,15 @@ const optimized = await Memento.plugins.activity.getActivities({
 **对于现有代码**:
 ```javascript
 // 这些调用完全不受影响，继续返回完整数据
-const data1 = await Memento.plugins.activity.getActivities({ date: "2025-01-15" });
-const data2 = await Memento.plugins.todo.getTasks({ status: "pending" });
-const data3 = await Memento.plugins.notes.getNotes({});
+const data1 = await Aboutme.plugins.activity.getActivities({ date: "2025-01-15" });
+const data2 = await Aboutme.plugins.todo.getTasks({ status: "pending" });
+const data3 = await Aboutme.plugins.notes.getNotes({});
 ```
 
 **对于新代码**:
 ```javascript
 // 可以选择性添加过滤参数优化
-const data = await Memento.plugins.activity.getActivities({
+const data = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   mode: "compact"  // 新增可选参数
 });
@@ -265,13 +265,13 @@ flutter analyze
 1. **基础测试**:
    ```javascript
    // 测试 mode 参数
-   const summary = await Memento.plugins.activity.getActivities({
+   const summary = await Aboutme.plugins.activity.getActivities({
      date: "2025-01-15",
      mode: "summary"
    });
    console.log(summary); // 应该只有 sum 字段
 
-   const compact = await Memento.plugins.activity.getActivities({
+   const compact = await Aboutme.plugins.activity.getActivities({
      date: "2025-01-15",
      mode: "compact"
    });
@@ -280,7 +280,7 @@ flutter analyze
 
 2. **Fields 测试**:
    ```javascript
-   const custom = await Memento.plugins.activity.getActivities({
+   const custom = await Aboutme.plugins.activity.getActivities({
      date: "2025-01-15",
      fields: ["id", "title"]
    });
@@ -290,7 +290,7 @@ flutter analyze
 3. **兼容性测试**:
    ```javascript
    // 不传过滤参数应该返回完整数据
-   const full = await Memento.plugins.activity.getActivities({
+   const full = await Aboutme.plugins.activity.getActivities({
      date: "2025-01-15"
    });
    console.log(full); // 应该包含所有字段
@@ -350,19 +350,19 @@ A:
 **推荐**:
 ```javascript
 // 当只需要统计时
-const summary = await Memento.plugins.activity.getActivities({
+const summary = await Aboutme.plugins.activity.getActivities({
   date: "2025-01-15",
   mode: "summary"
 });
 
 // 当需要列表但不需要描述时
-const list = await Memento.plugins.todo.getTasks({
+const list = await Aboutme.plugins.todo.getTasks({
   status: "pending",
   mode: "compact"
 });
 
 // 当只需要特定字段时
-const ids = await Memento.plugins.notes.getNotes({
+const ids = await Aboutme.plugins.notes.getNotes({
   fields: ["id", "title", "createdAt"]
 });
 ```
@@ -370,7 +370,7 @@ const ids = await Memento.plugins.notes.getNotes({
 **避免**:
 ```javascript
 // 不推荐：不需要详细数据却不使用过滤
-const data = await Memento.plugins.activity.getActivities({
+const data = await Aboutme.plugins.activity.getActivities({
   startDate: "2025-01-01",
   endDate: "2025-12-31"  // 一年的数据！
 });

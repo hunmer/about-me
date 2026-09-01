@@ -1,21 +1,21 @@
 /**
- * Memento JavaScript Bridge Mock
+ * Aboutme JavaScript Bridge Mock
  * 用于开发测试的独立模拟环境
  *
  * 基于 lib/plugins/webview/screens/webview_browser_screen.dart 中的
- * _createMementoUserScript 函数创建
+ * _createAboutmeUserScript 函数创建
  */
 
 (function() {
   'use strict';
 
   // 1. 注入基础命名空间
-  if (typeof window.Memento !== 'undefined') {
-    console.warn('[Memento Mock] Memento already exists, skipping initialization');
+  if (typeof window.Aboutme !== 'undefined') {
+    console.warn('[Aboutme Mock] Aboutme already exists, skipping initialization');
     return;
   }
 
-  window.Memento = {
+  window.Aboutme = {
     version: '1.0.0',
     plugins: {},
     system: {},
@@ -25,23 +25,23 @@
   };
 
   /**
-   * Memento ready 回调机制
+   * Aboutme ready 回调机制
    * @param {Function} callback - 回调函数
    */
-  window.Memento.ready = function(callback) {
-    if (window.Memento._ready) {
+  window.Aboutme.ready = function(callback) {
+    if (window.Aboutme._ready) {
       try {
         callback();
       } catch(e) {
-        console.error('[Memento Mock] Ready callback error:', e);
+        console.error('[Aboutme Mock] Ready callback error:', e);
       }
     } else {
-      window.Memento._readyCallbacks.push(callback);
+      window.Aboutme._readyCallbacks.push(callback);
     }
   };
 
   // 2. 注入插件代理
-  window.Memento.plugins = new Proxy({}, {
+  window.Aboutme.plugins = new Proxy({}, {
     get: function(target, pluginId) {
       if (pluginId === 'ui' || typeof pluginId === 'symbol') {
         return target[pluginId];
@@ -54,7 +54,7 @@
 
             return function(params) {
               // 模拟插件调用
-              console.log(`[Memento Mock] Plugin call: ${pluginId}.${methodName}`, params);
+              console.log(`[Aboutme Mock] Plugin call: ${pluginId}.${methodName}`, params);
 
               // 返回一个 Promise，模拟异步调用
               return Promise.resolve({
@@ -85,8 +85,8 @@
   ];
 
   systemMethods.forEach(function(methodName) {
-    window.Memento.system[methodName] = function(params) {
-      console.log(`[Memento Mock] System call: ${methodName}`, params);
+    window.Aboutme.system[methodName] = function(params) {
+      console.log(`[Aboutme Mock] System call: ${methodName}`, params);
 
       // 模拟不同系统 API 的返回值
       switch (methodName) {
@@ -105,7 +105,7 @@
           return Promise.resolve({
             version: '1.0.0',
             buildNumber: '100',
-            bundleId: 'com.example.memento'
+            bundleId: 'com.example.aboutme'
           });
         case 'formatDate':
           const date = params?.date ? new Date(params.date) : new Date();
@@ -139,7 +139,7 @@
   // 4. 注入 UI API 代理
   var uiApi = {
     toast: function(message, options) {
-      console.log('[Memento Mock] UI Toast:', message, options);
+      console.log('[Aboutme Mock] UI Toast:', message, options);
 
       // 模拟 toast 显示
       const toast = document.createElement('div');
@@ -176,13 +176,13 @@
       return Promise.resolve({ success: true });
     },
     alert: function(message, options) {
-      console.log('[Memento Mock] UI Alert:', message, options);
+      console.log('[Aboutme Mock] UI Alert:', message, options);
       // 使用浏览器的 alert 作为简单实现
       alert(message);
       return Promise.resolve({ success: true });
     },
     dialog: function(options) {
-      console.log('[Memento Mock] UI Dialog:', options);
+      console.log('[Aboutme Mock] UI Dialog:', options);
 
       // 创建一个简单的模态对话框
       const dialog = document.createElement('div');
@@ -267,14 +267,14 @@
     }
   };
 
-  window.Memento.plugins.ui = uiApi;
-  window.Memento.ui = uiApi;
+  window.Aboutme.plugins.ui = uiApi;
+  window.Aboutme.ui = uiApi;
 
   // 5. 注入 Storage API 代理（使用 localStorage 实现持久化存储）
-  var STORAGE_PREFIX = 'MementoMock_';
+  var STORAGE_PREFIX = 'AboutmeMock_';
   var storageApi = {
     read: function(key) {
-      console.log(`[Memento Mock] Storage read: ${key}`);
+      console.log(`[Aboutme Mock] Storage read: ${key}`);
 
       try {
         const prefixedKey = STORAGE_PREFIX + key;
@@ -292,12 +292,12 @@
           return Promise.resolve(value);
         }
       } catch (e) {
-        console.error('[Memento Mock] Storage read error:', e);
+        console.error('[Aboutme Mock] Storage read error:', e);
         return Promise.resolve(null);
       }
     },
     write: function(key, value) {
-      console.log(`[Memento Mock] Storage write: ${key}`, value);
+      console.log(`[Aboutme Mock] Storage write: ${key}`, value);
 
       // 转换为 JSON 字符串存储
       try {
@@ -306,27 +306,27 @@
         localStorage.setItem(prefixedKey, jsonValue);
         return Promise.resolve(true);
       } catch (e) {
-        console.error('[Memento Mock] Storage write error:', e);
+        console.error('[Aboutme Mock] Storage write error:', e);
         return Promise.resolve(false);
       }
     },
     delete: function(key) {
-      console.log(`[Memento Mock] Storage delete: ${key}`);
+      console.log(`[Aboutme Mock] Storage delete: ${key}`);
 
       try {
         const prefixedKey = STORAGE_PREFIX + key;
         localStorage.removeItem(prefixedKey);
         return Promise.resolve(true);
       } catch (e) {
-        console.error('[Memento Mock] Storage delete error:', e);
+        console.error('[Aboutme Mock] Storage delete error:', e);
         return Promise.resolve(false);
       }
     },
     clear: function() {
-      console.log('[Memento Mock] Storage clear');
+      console.log('[Aboutme Mock] Storage clear');
 
       try {
-        // 只清除 Memento Mock 相关的键
+        // 只清除 Aboutme Mock 相关的键
         var keys = Object.keys(localStorage);
         keys.forEach(function(key) {
           if (key.startsWith(STORAGE_PREFIX)) {
@@ -335,42 +335,42 @@
         });
         return Promise.resolve(true);
       } catch (e) {
-        console.error('[Memento Mock] Storage clear error:', e);
+        console.error('[Aboutme Mock] Storage clear error:', e);
         return Promise.resolve(false);
       }
     },
     keys: function() {
       try {
         var keys = Object.keys(localStorage);
-        var mementoKeys = [];
+        var aboutmeKeys = [];
         keys.forEach(function(key) {
           if (key.startsWith(STORAGE_PREFIX)) {
-            mementoKeys.push(key.substring(STORAGE_PREFIX.length));
+            aboutmeKeys.push(key.substring(STORAGE_PREFIX.length));
           }
         });
-        return Promise.resolve(mementoKeys);
+        return Promise.resolve(aboutmeKeys);
       } catch (e) {
-        console.error('[Memento Mock] Storage keys error:', e);
+        console.error('[Aboutme Mock] Storage keys error:', e);
         return Promise.resolve([]);
       }
     }
   };
 
-  window.Memento.storage = storageApi;
+  window.Aboutme.storage = storageApi;
 
   // 6. 添加辅助方法
-  window.Memento.utils = {
+  window.Aboutme.utils = {
     // 日志记录
     log: function(...args) {
-      console.log('[Memento]', ...args);
+      console.log('[Aboutme]', ...args);
     },
     // 错误记录
     error: function(...args) {
-      console.error('[Memento Error]', ...args);
+      console.error('[Aboutme Error]', ...args);
     },
     // 警告记录
     warn: function(...args) {
-      console.warn('[Memento Warning]', ...args);
+      console.warn('[Aboutme Warning]', ...args);
     },
     // 获取存储状态
     getStorageState: function() {
@@ -389,44 +389,44 @@
         });
         return state;
       } catch (e) {
-        console.error('[Memento Mock] getStorageState error:', e);
+        console.error('[Aboutme Mock] getStorageState error:', e);
         return {};
       }
     },
     // 重置存储
     resetStorage: function() {
       return storageApi.clear().then(function() {
-        console.log('[Memento Mock] Storage reset');
+        console.log('[Aboutme Mock] Storage reset');
         return true;
       });
     }
   };
 
   // 标记准备完成并触发回调
-  window.Memento._ready = true;
-  if (window.Memento._readyCallbacks) {
-    window.Memento._readyCallbacks.forEach(function(cb) {
+  window.Aboutme._ready = true;
+  if (window.Aboutme._readyCallbacks) {
+    window.Aboutme._readyCallbacks.forEach(function(cb) {
       try {
         cb();
       } catch(e) {
-        console.error('[Memento Mock] Ready callback error:', e);
+        console.error('[Aboutme Mock] Ready callback error:', e);
       }
     });
-    window.Memento._readyCallbacks = [];
+    window.Aboutme._readyCallbacks = [];
   }
 
   // 打印初始化完成信息
-  console.log('%c[Memento] JS Bridge Mock loaded successfully', 'color: #4CAF50; font-weight: bold; font-size: 12px;');
-  console.log('%cVersion: ' + window.Memento.version, 'color: #666;');
+  console.log('%c[Aboutme] JS Bridge Mock loaded successfully', 'color: #4CAF50; font-weight: bold; font-size: 12px;');
+  console.log('%cVersion: ' + window.Aboutme.version, 'color: #666;');
   console.log('%cAvailable APIs:', 'color: #666;');
-  console.log('  - Memento.plugins.<pluginName>.<method>()');
-  console.log('  - Memento.system.<methodName>()');
-  console.log('  - Memento.ui.toast(), Memento.ui.alert(), Memento.ui.dialog()');
-  console.log('  - Memento.storage.read(), write(), delete()');
-  console.log('  - Memento.utils for debugging utilities');
+  console.log('  - Aboutme.plugins.<pluginName>.<method>()');
+  console.log('  - Aboutme.system.<methodName>()');
+  console.log('  - Aboutme.ui.toast(), Aboutme.ui.alert(), Aboutme.ui.dialog()');
+  console.log('  - Aboutme.storage.read(), write(), delete()');
+  console.log('  - Aboutme.utils for debugging utilities');
 
   // 导出到全局，便于调试
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = window.Memento;
+    module.exports = window.Aboutme;
   }
 })();

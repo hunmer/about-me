@@ -2,7 +2,7 @@
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/todo/models/models.dart';
+import 'package:aboutme/plugins/todo/models/models.dart';
 
 class FilterDialog extends StatefulWidget {
   final Function(Map<String, dynamic>) onFilter;

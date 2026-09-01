@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/day/day_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/plugins/day/day_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'plugin_widget_syncer.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 /// 纪念日插件同步器
 class DaySyncer extends PluginWidgetSyncer {

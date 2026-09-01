@@ -1,6 +1,6 @@
 # 插件数据选择器系统指南
 
-> 本文档面向 AI/LLM，用于快速理解如何为 Memento 插件注册数据选择器。
+> 本文档面向 AI/LLM，用于快速理解如何为 Aboutme 插件注册数据选择器。
 
 ---
 
@@ -45,7 +45,7 @@ lib/widgets/data_selector_sheet/
 ### 1. 导入依赖
 
 ```dart
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 ```
 
 ### 2. 在插件 initialize() 中注册
@@ -372,7 +372,7 @@ if (result is MultiSelectorResult) {
 ```dart
 // my_plugin.dart
 
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 class MyPlugin extends BasePlugin {
   @override

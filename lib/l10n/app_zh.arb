@@ -1,6 +1,6 @@
 {
     "@@locale": "zh",
-  "appTitle": "memento",
+  "appTitle": "aboutme",
   "pluginManager": "插件管理器",
     "cancel": "取消",
     "editChannel": "编辑频道",
@@ -108,12 +108,12 @@
   "overwriteMode": "覆盖模式",
   "titleRequired": "请输入标题",
   "aboutTitle": "关于",
-  "aboutDescription": "Memento是一款生产力应用，旨在帮助您组织和记住重要事项。",
+  "aboutDescription": "Aboutme是一款生产力应用，旨在帮助您组织和记住重要事项。",
   "projectLinkTitle": "项目链接",
-  "projectLink": "https://github.com/hunmer/memento",
+  "projectLink": "https://github.com/hunmer/aboutme",
   "feedbackTitle": "反馈与建议",
-  "feedbackLink": "https://github.com/hunmer/Memento/issues",
+  "feedbackLink": "https://github.com/hunmer/Aboutme/issues",
   "documentationTitle": "项目文档",
-  "documentationLink": "https://github.com/hunmer/Memento#readme",
+  "documentationLink": "https://github.com/hunmer/Aboutme#readme",
   "version": "版本"
 }

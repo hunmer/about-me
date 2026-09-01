@@ -2,10 +2,10 @@
  * WebView 卡片预加载脚本
  *
  * 此文件在 QuickJS 引擎中执行，而非在 WebView 页面中
- * 通过调用 memento.registerTool() 注册特定于当前项目的自定义 JavaScript 工具
+ * 通过调用 aboutme.registerTool() 注册特定于当前项目的自定义 JavaScript 工具
  * 注册的工具可以被 Agent Chat 直接调用，无需打开 WebView 页面
  *
- * 注意：Dart 端会在执行此脚本前验证 memento.registerTool 已存在
+ * 注意：Dart 端会在执行此脚本前验证 aboutme.registerTool 已存在
  * 因此无需在此脚本中轮询等待
  */
 
@@ -14,10 +14,10 @@ function registerTools() {
   console.log('[Preload] 开始注册密码管理工具...');
 
   // 注册密码保存工具
-  memento.registerTool({
+  aboutme.registerTool({
   id: 'password_save',
   name: '保存密码',
-  description: '将密码保存到 Memento 存储',
+  description: '将密码保存到 Aboutme 存储',
   parameters: [
     {
       name: 'name',
@@ -58,7 +58,7 @@ function registerTools() {
   ],
   examples: [
     {
-      code: `const result = await memento.tools.password_save({
+      code: `const result = await aboutme.tools.password_save({
   name: 'GitHub 主账号',
   username: 'john_doe',
   password: 'my_password_123',
@@ -69,7 +69,7 @@ setResult(result);`,
       comment: '保存 GitHub 账号密码'
     },
     {
-      code: `const result = await memento.tools.password_save({
+      code: `const result = await aboutme.tools.password_save({
   name: '邮箱',
   username: 'john@example.com',
   password: 'email_password'
@@ -80,7 +80,7 @@ setResult(result);`,
   ],
   code: `
     // 读取现有卡片数据
-    const cardData = await memento.storage.readCardData('password_manager');
+    const cardData = await aboutme.storage.readCardData('password_manager');
     const data = cardData || { passwords: [], updatedAt: new Date().toISOString() };
 
     // 生成唯一 ID
@@ -102,7 +102,7 @@ setResult(result);`,
     data.updatedAt = now;
 
     // 保存回文件
-    await memento.storage.writeCardData('password_manager', data);
+    await aboutme.storage.writeCardData('password_manager', data);
 
     return {
       success: true,
@@ -115,7 +115,7 @@ setResult(result);`,
 });
 
 // 注册密码列表工具
-memento.registerTool({
+aboutme.registerTool({
   id: 'password_list',
   name: '列出密码',
   description: '获取所有保存的密码',
@@ -129,19 +129,19 @@ memento.registerTool({
   ],
   examples: [
     {
-      code: `const result = await memento.tools.password_list();
+      code: `const result = await aboutme.tools.password_list();
 setResult(result);`,
       comment: '获取所有密码'
     },
     {
-      code: `const result = await memento.tools.password_list({ category: '编程' });
+      code: `const result = await aboutme.tools.password_list({ category: '编程' });
 setResult('编程类密码数量: ' + result.passwords.length);`,
       comment: '获取指定分类的密码'
     }
   ],
   code: `
     // 从文件读取卡片数据
-    const cardData = await memento.storage.readCardData('password_manager');
+    const cardData = await aboutme.storage.readCardData('password_manager');
 
     if (!cardData || !cardData.passwords) {
       return {
@@ -168,7 +168,7 @@ setResult('编程类密码数量: ' + result.passwords.length);`,
 });
 
 // 注册密码搜索工具
-memento.registerTool({
+aboutme.registerTool({
   id: 'password_search',
   name: '搜索密码',
   description: '根据网站、用户名或名称搜索密码',
@@ -182,19 +182,19 @@ memento.registerTool({
   ],
   examples: [
     {
-      code: `const result = await memento.tools.password_search({ query: 'github' });
+      code: `const result = await aboutme.tools.password_search({ query: 'github' });
 setResult(result);`,
       comment: '搜索包含 "github" 的密码'
     },
     {
-      code: `const result = await memento.tools.password_search({ query: 'john' });
+      code: `const result = await aboutme.tools.password_search({ query: 'john' });
 setResult(result);`,
       comment: '搜索用户名包含 "john" 的密码'
     }
   ],
   code: `
     // 从文件读取卡片数据
-    const cardData = await memento.storage.readCardData('password_manager');
+    const cardData = await aboutme.storage.readCardData('password_manager');
 
     if (!cardData || !cardData.passwords) {
       return { success: true, passwords: [], total: 0 };
@@ -223,7 +223,7 @@ setResult(result);`,
   return true;
 }
 
-// 直接执行工具注册（Dart 端已确保 memento.registerTool 存在）
+// 直接执行工具注册（Dart 端已确保 aboutme.registerTool 存在）
 (function() {
   try {
     console.log('[Preload] 开始执行工具注册...');

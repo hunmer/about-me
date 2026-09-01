@@ -38,7 +38,7 @@ details: |
 
 3. **添加 import**
    ```dart
-   import 'package:Memento/widgets/swipe_action/index.dart';
+   import 'package:aboutme/widgets/swipe_action/index.dart';
    ```
 
 4. **包装列表项**

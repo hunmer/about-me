@@ -20,7 +20,7 @@ class ApiForwardingConfig {
     this.autoConnect = false,
     this.serverUrl = 'ws://localhost:8654',
     this.pairingKey = 'ABCD-1234-EFGH-5678',
-    this.deviceName = 'Memento Client',
+    this.deviceName = 'Aboutme Client',
   });
 
   /// 从 SharedPreferences 加载配置
@@ -31,7 +31,7 @@ class ApiForwardingConfig {
       autoConnect: prefs.getBool(_keyAutoConnect) ?? false,
       serverUrl: prefs.getString(_keyServerUrl) ?? '',
       pairingKey: prefs.getString(_keyPairingKey) ?? '',
-      deviceName: prefs.getString(_keyDeviceName) ?? 'Memento Client',
+      deviceName: prefs.getString(_keyDeviceName) ?? 'Aboutme Client',
     );
   }
 

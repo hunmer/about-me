@@ -3,11 +3,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/app_initializer.dart' show navigatorKey;
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/app_initializer.dart' show navigatorKey;
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import '../day_plugin.dart';
 import '../models/memorial_day.dart';
 import 'utils.dart';

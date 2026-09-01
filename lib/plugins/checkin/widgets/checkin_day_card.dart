@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/widgets/day_card_header.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
 /// 签到单日卡片 - 展示某一天各签到项的签到状态
 ///

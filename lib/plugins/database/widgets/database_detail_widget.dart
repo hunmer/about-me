@@ -1,16 +1,16 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/database/widgets/record_edit_widget.dart';
+import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/plugins/database/controllers/database_controller.dart';
-import 'package:Memento/plugins/database/models/database_model.dart';
-import 'package:Memento/plugins/database/widgets/database_edit_widget.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:Memento/widgets/form_fields/form_builder_wrapper.dart';
-import 'package:Memento/widgets/form_fields/config.dart';
-import 'package:Memento/widgets/form_fields/types.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/database/controllers/database_controller.dart';
+import 'package:aboutme/plugins/database/models/database_model.dart';
+import 'package:aboutme/plugins/database/widgets/database_edit_widget.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/widgets/form_fields/config.dart';
+import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../models/record.dart' as record_model;
 

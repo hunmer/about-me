@@ -1,6 +1,6 @@
 //
 //  ContactListView.swift
-//  memento_watchos Watch App
+//  aboutme_watchos Watch App
 //
 //  Created by Claude on 2026/3/13.
 //

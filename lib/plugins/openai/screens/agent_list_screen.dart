@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/widgets/agent_list_view.dart';
-import 'package:Memento/plugins/openai/widgets/agent_grid_view.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/plugins/openai/controllers/provider_controller.dart';
-import 'package:Memento/plugins/openai/screens/agent_marketplace_screen.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_list_view.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_grid_view.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/screens/agent_marketplace_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 class AgentListScreen extends StatefulWidget {
   const AgentListScreen({super.key});

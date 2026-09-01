@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/category_stack_widget.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/category_stack_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 分类堆叠消费卡片示例
 class CategoryStackWidgetExample extends StatelessWidget {

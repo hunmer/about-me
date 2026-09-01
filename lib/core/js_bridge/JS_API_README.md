@@ -2,15 +2,15 @@
 
 ## 概述
 
-Memento 提供了一套 JavaScript Bridge API，允许 JavaScript 代码与 Flutter 原生 UI 进行交互。
+Aboutme 提供了一套 JavaScript Bridge API，允许 JavaScript 代码与 Flutter 原生 UI 进行交互。
 
 ## 安装与设置
 
 ### 1. 在 Flutter 端注册 UI 处理器
 
 ```dart
-import 'package:memento/core/js_bridge/js_bridge.dart';
-import 'package:memento/core/js_bridge/js_ui_handlers.dart';
+import 'package:aboutme/core/js_bridge/js_bridge.dart';
+import 'package:aboutme/core/js_bridge/js_ui_handlers.dart';
 
 // 在你的 Widget 中
 class MyWidget extends StatefulWidget {
@@ -393,7 +393,7 @@ async function setupAccount() {
 如果默认的 UI 样式不满足需求，可以自定义处理器：
 
 ```dart
-import 'package:memento/core/js_bridge/platform/mobile_js_engine.dart';
+import 'package:aboutme/core/js_bridge/platform/mobile_js_engine.dart';
 
 void customRegisterHandlers(MobileJSEngine engine, BuildContext context) {
   // 自定义 Toast

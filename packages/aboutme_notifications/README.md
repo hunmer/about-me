@@ -1,4 +1,4 @@
-# memento_notifications
+# aboutme_notifications
 
 A new Flutter plugin project.
 

@@ -117,7 +117,7 @@ import '../widgets/l10n/location_picker_translations_jp.dart';
 
 /// 统一的 GetX 翻译聚合类
 ///
-/// 整合了 Memento 应用的所有模块翻译:
+/// 整合了 Aboutme 应用的所有模块翻译:
 /// - 1 个应用层 (app)
 /// - 1 个核心层 (core)
 /// - 21 个插件

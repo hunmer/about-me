@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/widgets/statistics/models/statistics_models.dart';
+import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
 
 /// 通用日期范围选择器
 class DateRangeSelector extends StatefulWidget {

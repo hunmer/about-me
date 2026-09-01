@@ -6,7 +6,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 
 /// 公共图片构建器
 ///

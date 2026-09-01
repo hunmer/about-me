@@ -17,8 +17,8 @@ MultiFilterBar 是一个强大的多条件过滤组件，支持多种过滤类�
 ### 1. 导入必要的包
 
 ```dart
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 ```
 
 ### 2. 基本用法
@@ -74,9 +74,9 @@ SuperCupertinoNavigationWrapper(
 ```dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/todo/models/models.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/plugins/todo/models/models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
 class TodoTaskListView extends StatefulWidget {
   const TodoTaskListView({super.key});

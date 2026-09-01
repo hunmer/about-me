@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:Memento/plugins/chat/services/file_service.dart';
+import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'handlers/index.dart';
 import 'types.dart';
 

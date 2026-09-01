@@ -10,10 +10,10 @@ import 'platform/js_engine_factory.dart';
 import 'platform/mobile_js_engine_stub.dart'
     if (dart.library.io) 'platform/mobile_js_engine.dart';
 import 'js_ui_handlers.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/data_filter/field_filter_service.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/data_filter/field_filter_service.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 /// 延迟注册的插件信息
 class PendingPluginRegistration {
@@ -218,19 +218,19 @@ class JSBridgeManager {
     await _engine!.evaluateDirect('''
       (function() {
         // 确保全局命名空间存在
-        if (typeof globalThis.Memento === 'undefined') {
-          globalThis.Memento = {
+        if (typeof globalThis.Aboutme === 'undefined') {
+          globalThis.Aboutme = {
             version: '1.0.0',
             plugins: {}
           };
         }
 
         // 创建插件命名空间
-        globalThis.Memento.plugins.${plugin.id} = {};
+        globalThis.Aboutme.plugins.${plugin.id} = {};
 
         // 兼容浏览器环境
         if (typeof window !== 'undefined') {
-          window.Memento = globalThis.Memento;
+          window.Aboutme = globalThis.Aboutme;
         }
       })();
     ''');
@@ -311,7 +311,7 @@ class JSBridgeManager {
 
       // 注册包装后的函数
       await _engine!.registerFunction(
-        'Memento_${plugin.id}_$apiName',
+        'Aboutme_${plugin.id}_$apiName',
         wrappedFunction,
       );
 
@@ -320,13 +320,13 @@ class JSBridgeManager {
       // 自动将 JSON 字符串解析为对象
       await _engine!.evaluateDirect('''
         (function() {
-          var namespace = globalThis.Memento;
+          var namespace = globalThis.Aboutme;
 
           // 返回 Promise 并自动解析 JSON 返回值
           namespace.plugins.${plugin.id}.$apiName = function() {
             var args = Array.prototype.slice.call(arguments);
             // 调用底层函数并自动解析 JSON 字符串
-            return Memento_${plugin.id}_$apiName.apply(null, args).then(function(result) {
+            return Aboutme_${plugin.id}_$apiName.apply(null, args).then(function(result) {
               // 如果返回值是字符串，尝试解析为 JSON
               if (typeof result === 'string') {
                 try {
@@ -400,8 +400,8 @@ class JSBridgeManager {
     await _engine!.evaluateDirect('''
       (function() {
         // 确保全局命名空间存在
-        if (typeof globalThis.Memento === 'undefined') {
-          globalThis.Memento = {
+        if (typeof globalThis.Aboutme === 'undefined') {
+          globalThis.Aboutme = {
             version: '1.0.0',
             plugins: {},
             system: {}
@@ -410,7 +410,7 @@ class JSBridgeManager {
 
         // 兼容浏览器环境
         if (typeof window !== 'undefined') {
-          window.Memento = globalThis.Memento;
+          window.Aboutme = globalThis.Aboutme;
         }
       })();
     ''');
@@ -430,7 +430,7 @@ class JSBridgeManager {
     if (_engine == null) return;
 
     // 1. 获取当前时间
-    await _engine!.registerFunction('Memento_system_getCurrentTime', ([
+    await _engine!.registerFunction('Aboutme_system_getCurrentTime', ([
       dynamic a,
     ]) async {
       try {
@@ -457,7 +457,7 @@ class JSBridgeManager {
     });
 
     // 2. 获取设备信息
-    await _engine!.registerFunction('Memento_system_getDeviceInfo', ([
+    await _engine!.registerFunction('Aboutme_system_getDeviceInfo', ([
       dynamic a,
     ]) async {
       try {
@@ -477,17 +477,17 @@ class JSBridgeManager {
     });
 
     // 3. 获取应用信息
-    await _engine!.registerFunction('Memento_system_getAppInfo', ([
+    await _engine!.registerFunction('Aboutme_system_getAppInfo', ([
       dynamic a,
     ]) async {
       try {
         // 导入 package_info_plus 包以获取详细应用信息
         // 这里先返回基础信息
         final appInfo = {
-          'appName': 'Memento',
+          'appName': 'Aboutme',
           'version': '1.0.0',
           'buildNumber': '1',
-          'packageName': 'github.hunmer.memento',
+          'packageName': 'github.hunmer.aboutme',
         };
 
         return jsonEncode(appInfo);
@@ -497,7 +497,7 @@ class JSBridgeManager {
     });
 
     // 4. 格式化日期时间
-    await _engine!.registerFunction('Memento_system_formatDate', ([
+    await _engine!.registerFunction('Aboutme_system_formatDate', ([
       dynamic a,
       dynamic b,
     ]) async {
@@ -522,7 +522,7 @@ class JSBridgeManager {
     });
 
     // 5. 获取当前时间戳
-    await _engine!.registerFunction('Memento_system_getTimestamp', ([
+    await _engine!.registerFunction('Aboutme_system_getTimestamp', ([
       dynamic a,
     ]) async {
       try {
@@ -533,7 +533,7 @@ class JSBridgeManager {
     });
 
     // 6. 获取自定义日期（解决时区问题的核心 API）
-    await _engine!.registerFunction('Memento_system_getCustomDate', ([
+    await _engine!.registerFunction('Aboutme_system_getCustomDate', ([
       dynamic options,
     ]) async {
       try {
@@ -675,7 +675,7 @@ class JSBridgeManager {
     // 在 JS 中创建系统 API 代理
     await _engine!.evaluateDirect('''
       (function() {
-        var namespace = globalThis.Memento;
+        var namespace = globalThis.Aboutme;
 
         // 辅助函数：自动解析 JSON 字符串结果
         function parseResult(result) {
@@ -690,28 +690,28 @@ class JSBridgeManager {
         }
 
         namespace.system.getCurrentTime = function() {
-          return Memento_system_getCurrentTime().then(parseResult);
+          return Aboutme_system_getCurrentTime().then(parseResult);
         };
 
         namespace.system.getDeviceInfo = function() {
-          return Memento_system_getDeviceInfo().then(parseResult);
+          return Aboutme_system_getDeviceInfo().then(parseResult);
         };
 
         namespace.system.getAppInfo = function() {
-          return Memento_system_getAppInfo().then(parseResult);
+          return Aboutme_system_getAppInfo().then(parseResult);
         };
 
         namespace.system.formatDate = function(dateInput, format) {
-          return Memento_system_formatDate(dateInput, format).then(parseResult);
+          return Aboutme_system_formatDate(dateInput, format).then(parseResult);
         };
 
         namespace.system.getTimestamp = function() {
-          return Memento_system_getTimestamp();
+          return Aboutme_system_getTimestamp();
         };
 
         // 获取自定义日期（推荐使用，解决时区问题）
         namespace.system.getCustomDate = function(options) {
-          return Memento_system_getCustomDate(options ? JSON.stringify(options) : '{}').then(parseResult);
+          return Aboutme_system_getCustomDate(options ? JSON.stringify(options) : '{}').then(parseResult);
         };
 
         // 获取位置信息
@@ -720,7 +720,7 @@ class JSBridgeManager {
           return flutter.getLocation(mode);
         };
 
-        // 创建 UI 插件命名空间，将 flutter.* 方法代理到 Memento.plugins.ui.*
+        // 创建 UI 插件命名空间，将 flutter.* 方法代理到 Aboutme.plugins.ui.*
         namespace.plugins.ui = {
           toast: function(message, options) {
             return flutter.toast(message, options);
@@ -741,7 +741,7 @@ class JSBridgeManager {
     if (_engine == null) return;
 
     // 1. events.on - 订阅事件
-    await _engine!.registerFunction('Memento_events_on', ([
+    await _engine!.registerFunction('Aboutme_events_on', ([
       dynamic a,
       dynamic b,
     ]) async {
@@ -787,7 +787,7 @@ class JSBridgeManager {
     });
 
     // 2. events.off - 取消订阅
-    await _engine!.registerFunction('Memento_events_off', ([dynamic a]) async {
+    await _engine!.registerFunction('Aboutme_events_off', ([dynamic a]) async {
       try {
         final subscriptionId = a as String?;
 
@@ -809,7 +809,7 @@ class JSBridgeManager {
     });
 
     // 3. events.getEvents - 获取队列中的事件
-    await _engine!.registerFunction('Memento_events_getEvents', ([
+    await _engine!.registerFunction('Aboutme_events_getEvents', ([
       dynamic a,
     ]) async {
       try {
@@ -832,7 +832,7 @@ class JSBridgeManager {
     // 在 JS 中创建事件 API 代理
     await _engine!.evaluateDirect('''
       (function() {
-        var namespace = globalThis.Memento;
+        var namespace = globalThis.Aboutme;
 
         // 创建 events 命名空间
         namespace.events = {
@@ -847,7 +847,7 @@ class JSBridgeManager {
           }
 
           // 调用 Dart 端注册订阅
-          return Memento_events_on(eventName).then(function(subscriptionId) {
+          return Aboutme_events_on(eventName).then(function(subscriptionId) {
             if (typeof subscriptionId === 'string' && subscriptionId.startsWith('sub_')) {
               // 保存订阅信息
               namespace.events._subscriptions[subscriptionId] = {
@@ -857,7 +857,7 @@ class JSBridgeManager {
 
               // 启动轮询(每500ms检查一次新事件)
               namespace.events._pollingIntervals[subscriptionId] = setInterval(function() {
-                Memento_events_getEvents(subscriptionId).then(function(result) {
+                Aboutme_events_getEvents(subscriptionId).then(function(result) {
                   var events = typeof result === 'string' ? JSON.parse(result) : result;
                   if (Array.isArray(events)) {
                     events.forEach(function(event) {
@@ -894,7 +894,7 @@ class JSBridgeManager {
           delete namespace.events._subscriptions[subscriptionId];
 
           // 调用 Dart 端取消订阅
-          return Memento_events_off(subscriptionId).then(function(result) {
+          return Aboutme_events_off(subscriptionId).then(function(result) {
             if (typeof result === 'string') {
               try {
                 return JSON.parse(result);
@@ -914,7 +914,7 @@ class JSBridgeManager {
     if (_engine == null) return;
 
     // 1. setResult - 设置结果
-    await _engine!.registerFunction('Memento_toolCall_setResult', ([
+    await _engine!.registerFunction('Aboutme_toolCall_setResult', ([
       dynamic a,
     ]) async {
       try {
@@ -939,7 +939,7 @@ class JSBridgeManager {
     });
 
     // 2. getResult - 获取结果
-    await _engine!.registerFunction('Memento_toolCall_getResult', ([
+    await _engine!.registerFunction('Aboutme_toolCall_getResult', ([
       dynamic a,
     ]) async {
       try {
@@ -965,7 +965,7 @@ class JSBridgeManager {
     // 在 JS 中创建 toolCall API 代理
     await _engine!.evaluateDirect('''
       (function() {
-        var namespace = globalThis.Memento;
+        var namespace = globalThis.Aboutme;
 
         // 创建 toolCall 命名空间
         namespace.toolCall = {};
@@ -975,7 +975,7 @@ class JSBridgeManager {
           if (!params || typeof params !== 'object') {
             throw new Error('setResult 需要参数对象 {id?, value}');
           }
-          return Memento_toolCall_setResult(params).then(function(result) {
+          return Aboutme_toolCall_setResult(params).then(function(result) {
             if (typeof result === 'string') {
               try {
                 return JSON.parse(result);
@@ -992,7 +992,7 @@ class JSBridgeManager {
           if (!params || typeof params !== 'object') {
             throw new Error('getResult 需要参数对象 {id?, step?, default?}');
           }
-          return Memento_toolCall_getResult(params).then(function(result) {
+          return Aboutme_toolCall_getResult(params).then(function(result) {
             if (typeof result === 'string') {
               try {
                 return JSON.parse(result);
@@ -1114,7 +1114,7 @@ class JSBridgeManager {
 
   /// 在工具调用上下文中设置结果
   ///
-  /// 从 JavaScript 中调用: await Memento.toolCall.setResult({id: 'myKey', value: {...}})
+  /// 从 JavaScript 中调用: await Aboutme.toolCall.setResult({id: 'myKey', value: {...}})
   /// 从 Dart 中调用: jsBridge.setToolCallResult('myKey', value)
   void setToolCallResult(String? id, dynamic value) {
     if (_currentToolCallId == null) {
@@ -1135,9 +1135,9 @@ class JSBridgeManager {
   /// 从工具调用上下文中获取结果
   ///
   /// 从 JavaScript 中调用:
-  /// - await Memento.toolCall.getResult({id: 'myKey'})
-  /// - await Memento.toolCall.getResult({step: 0})
-  /// - await Memento.toolCall.getResult({id: 'myKey', default: {}})
+  /// - await Aboutme.toolCall.getResult({id: 'myKey'})
+  /// - await Aboutme.toolCall.getResult({step: 0})
+  /// - await Aboutme.toolCall.getResult({id: 'myKey', default: {}})
   /// 从 Dart 中调用: jsBridge.getToolCallResult('myKey', null, defaultValue)
   dynamic getToolCallResult(String? id, int? step, dynamic defaultValue) {
     if (_currentToolCallId == null) {

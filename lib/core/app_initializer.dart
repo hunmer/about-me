@@ -4,30 +4,30 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
-import 'package:Memento/core/notification_controller.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/shortcut_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/core/services/system_widget_service.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/services/timer/unified_timer_controller.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:memento_foreground_service/memento_foreground_service.dart';
-import 'package:memento_notifications/memento_notifications.dart';
-import 'package:Memento/core/builtin_plugins.dart';
-import 'package:Memento/screens/settings_screen/controllers/auto_update_controller.dart';
-import 'package:Memento/screens/settings_screen/controllers/permission_controller.dart';
-import 'package:Memento/screens/settings_screen/widgets/permission_request_dialog.dart';
+import 'package:aboutme/core/notification_controller.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/shortcut_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/services/system_widget_service.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
+import 'package:aboutme_notifications/aboutme_notifications.dart';
+import 'package:aboutme/core/builtin_plugins.dart';
+import 'package:aboutme/screens/settings_screen/controllers/auto_update_controller.dart';
+import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
+import 'package:aboutme/screens/settings_screen/widgets/permission_request_dialog.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/core/action/action_manager.dart';
-import 'package:Memento/core/floating_ball/floating_ball_service.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/action/action_manager.dart';
+import 'package:aboutme/core/floating_ball/floating_ball_service.dart';
 import 'app_widgets/home_widget_service.dart';
 import 'app_widgets/floating_ball_service.dart';
-import 'package:Memento/screens/route.dart';
+import 'package:aboutme/screens/route.dart';
 import 'global_flags.dart';
 import 'services/toast_service.dart';
 import 'services/file_watch_sync_service.dart';
@@ -191,7 +191,7 @@ Future<void> initializeApp() async {
     // 在初始化通知服务之前先清理历史通知和计时器状态
     // 这是防止应用重启后通知自动复原的关键步骤
     AppStartupState.instance._setLoadingMessage('正在清理历史通知...');
-    await MementoNotifications.instance.cancelAll();
+    await AboutmeNotifications.instance.cancelAll();
 
     // 同时清理统一计时器控制器的活动计时器，防止插件重新创建通知
     try {
@@ -205,7 +205,7 @@ Future<void> initializeApp() async {
     // 仅在移动端执行此操作
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {
-        final foregroundService = MementoForegroundService.instance;
+        final foregroundService = AboutmeForegroundService.instance;
         if (await foregroundService.isRunning) {
           await foregroundService.stopService();
           debugPrint('[AppInitializer] 已停止前台服务');

@@ -1,12 +1,12 @@
-import 'package:Memento/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 

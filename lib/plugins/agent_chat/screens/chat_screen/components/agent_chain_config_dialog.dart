@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/widgets/agent_list_drawer.dart';
-import 'package:Memento/plugins/agent_chat/models/agent_chain_node.dart';
-import 'package:Memento/plugins/agent_chat/models/agent_chain_preset.dart';
-import 'package:Memento/plugins/agent_chat/services/agent_chain_preset_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
+import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
+import 'package:aboutme/plugins/agent_chat/models/agent_chain_preset.dart';
+import 'package:aboutme/plugins/agent_chat/services/agent_chain_preset_service.dart';
 
 /// Agent 链配置对话框
 class AgentChainConfigDialog extends StatefulWidget {

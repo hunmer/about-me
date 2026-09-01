@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_service_type.dart';
-import 'package:Memento/plugins/tts/services/background_announcement_service.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/services/background_announcement_service.dart';
 
 /// 后台播报测试页面
 class BackgroundAnnouncementTestScreen extends StatefulWidget {

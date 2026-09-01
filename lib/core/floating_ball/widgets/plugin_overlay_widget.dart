@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
-import 'package:Memento/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_base.dart';
 import 'package:get/get.dart';
 
 /// 插件覆盖层窗口组件

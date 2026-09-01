@@ -1,4 +1,4 @@
-package com.memento.memento_foreground_service
+package com.aboutme.aboutme_foreground_service
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -13,10 +13,10 @@ import kotlin.test.Test
  * you can run them directly from IDEs that support JUnit such as Android Studio.
  */
 
-internal class MementoForegroundServicePluginTest {
+internal class AboutmeForegroundServicePluginTest {
     @Test
     fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
-        val plugin = MementoForegroundServicePlugin()
+        val plugin = AboutmeForegroundServicePlugin()
 
         val call = MethodCall("getPlatformVersion", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)

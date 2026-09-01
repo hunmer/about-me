@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/todo/models/task.dart';
-import 'package:Memento/plugins/calendar/services/system_calendar_manager.dart';
+import 'package:aboutme/plugins/todo/models/task.dart';
+import 'package:aboutme/plugins/calendar/services/system_calendar_manager.dart';
 
 /// 提醒控制器
 /// 使用系统日历管理器来实现提醒功能

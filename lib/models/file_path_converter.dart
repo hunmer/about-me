@@ -1,4 +1,4 @@
-import 'package:Memento/core/storage/storage_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 文件路径转换工具类
 /// 用于处理文件路径在相对路径和绝对路径之间的转换

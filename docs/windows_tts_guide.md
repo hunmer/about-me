@@ -94,7 +94,7 @@ $synth.GetInstalledVoices() | ForEach-Object {
 }
 ```
 
-### 方法三：通过 Memento 应用
+### 方法三：通过 Aboutme 应用
 
 1. **运行应用**
    ```bash
@@ -121,7 +121,7 @@ $synth.GetInstalledVoices() | ForEach-Object {
 ### 创建 Windows TTS 服务
 
 1. **打开 TTS 插件**
-   - 在 Memento 主界面点击"语音朗读"插件
+   - 在 Aboutme 主界面点击"语音朗读"插件
 
 2. **添加新服务**
    - 点击右下角 ➕ 按钮
@@ -331,7 +331,7 @@ await flutterTts.setVoice({
 - [Microsoft Speech Platform](https://www.microsoft.com/en-us/download/details.aspx?id=27225)
 - [Windows TTS API 文档](https://learn.microsoft.com/en-us/windows/apps/develop/speech)
 - [flutter_tts 文档](https://pub.dev/packages/flutter_tts)
-- [Memento 项目](https://github.com/hunmer/Memento)
+- [Aboutme 项目](https://github.com/hunmer/Aboutme)
 
 ---
 
@@ -344,7 +344,7 @@ await flutterTts.setVoice({
    - 查找 `[ERROR]` 或 `[WARNING]` 标记
 
 2. **提交 Issue**
-   - 前往 [GitHub Issues](https://github.com/hunmer/Memento/issues)
+   - 前往 [GitHub Issues](https://github.com/hunmer/Aboutme/issues)
    - 提供详细的错误信息和日志
 
 3. **社区讨论**
@@ -354,4 +354,4 @@ await flutterTts.setVoice({
 ---
 
 **最后更新**: 2025-01-19
-**适用版本**: Memento 1.1.7+
+**适用版本**: Aboutme 1.1.7+

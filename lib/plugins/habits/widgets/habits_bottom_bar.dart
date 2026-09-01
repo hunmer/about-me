@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
-import 'package:Memento/plugins/habits/controllers/skill_controller.dart';
-import 'package:Memento/plugins/habits/widgets/habits_list/habits_view.dart';
-import 'package:Memento/plugins/habits/widgets/skills_list.dart';
-import 'package:Memento/plugins/habits/widgets/habit_form.dart';
-import 'package:Memento/plugins/habits/widgets/skill_form.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/core/widgets/keep_alive_wrapper.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
+import 'package:aboutme/plugins/habits/widgets/habits_list/habits_view.dart';
+import 'package:aboutme/plugins/habits/widgets/skills_list.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
+import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/core/widgets/keep_alive_wrapper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 
 /// Habits 插件的底部栏组件
 /// 提供习惯列表和技能列表两个 Tab 的切换功能

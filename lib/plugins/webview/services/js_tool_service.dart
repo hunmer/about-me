@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/js_bridge/js_tool_registry.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/js_bridge/js_tool_registry.dart';
 
 /// JavaScript 工具执行服务
 class JSToolService {

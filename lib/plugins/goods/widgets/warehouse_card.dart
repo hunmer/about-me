@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/goods/models/warehouse.dart';
+import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
-import 'package:Memento/plugins/goods/widgets/warehouse_action_sheet.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/plugins/goods/widgets/warehouse_action_sheet.dart';
 
 class WarehouseCard extends StatelessWidget {
   final Warehouse warehouse;

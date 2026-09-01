@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_detail/entry_detail_image_viewer.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_editor_screen.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_detail/entry_detail_image_viewer.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:Memento/plugins/calendar_album/controllers/tag_controller.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 
 class EntryDetailScreen extends StatefulWidget {
   final CalendarEntry entry;

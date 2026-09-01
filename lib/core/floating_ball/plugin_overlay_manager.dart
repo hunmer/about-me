@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_base.dart';
 import 'widgets/plugin_overlay_widget.dart';
 import 'widgets/minimized_plugin_icon.dart';
 import 'widgets/plugin_overlay_selector.dart';

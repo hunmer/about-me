@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/models/color_tag_task_card_data.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/color_tag_task_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/models/color_tag_task_card_data.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/color_tag_task_card.dart';
 
 /// 彩色标签任务列表卡片示例
 class ColorTagTaskCardExample extends StatelessWidget {

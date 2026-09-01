@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 
 class FilterDialog extends StatefulWidget {
   final Set<String> selectedProviders;

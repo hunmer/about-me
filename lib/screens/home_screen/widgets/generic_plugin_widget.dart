@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 通用图标小组件构建器
 ///

@@ -23,19 +23,19 @@
     "examples": [
       {
         "title": "获取所有仓库",
-        "code": "const warehouses = await Memento.plugins.goods.getWarehouses();\nsetResult(JSON.stringify(warehouses, null, 2));"
+        "code": "const warehouses = await Aboutme.plugins.goods.getWarehouses();\nsetResult(JSON.stringify(warehouses, null, 2));"
       },
       {
         "title": "分页获取仓库（前20个）",
-        "code": "const result = await Memento.plugins.goods.getWarehouses({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个仓库，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.goods.getWarehouses({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个仓库，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "分页获取仓库（第二页）",
-        "code": "const result = await Memento.plugins.goods.getWarehouses({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.goods.getWarehouses({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
       },
       {
         "title": "遍历所有仓库（分页加载）",
-        "code": "let allWarehouses = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Memento.plugins.goods.getWarehouses({offset, count});\n  allWarehouses = allWarehouses.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allWarehouses.length} 个仓库`);"
+        "code": "let allWarehouses = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Aboutme.plugins.goods.getWarehouses({offset, count});\n  allWarehouses = allWarehouses.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allWarehouses.length} 个仓库`);"
       }
     ],
     "notes": "返回的仓库对象不包含 items 字段，如需获取物品请使用 getGoods。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据",
@@ -54,7 +54,7 @@
     "examples": [
       {
         "title": "获取仓库详情",
-        "code": "const warehouse = await Memento.plugins.goods.getWarehouse({warehouseId: 'warehouse123'});\nsetResult(JSON.stringify(warehouse, null, 2));"
+        "code": "const warehouse = await Aboutme.plugins.goods.getWarehouse({warehouseId: 'warehouse123'});\nsetResult(JSON.stringify(warehouse, null, 2));"
       }
     ],
     "notes": "如仓库不存在则返回错误对象",
@@ -76,11 +76,11 @@
     "examples": [
       {
         "title": "创建简单仓库",
-        "code": "const wh = await Memento.plugins.goods.createWarehouse({title: '我的仓库'});\nsetResult(`仓库已创建: ${wh.title}`);"
+        "code": "const wh = await Aboutme.plugins.goods.createWarehouse({title: '我的仓库'});\nsetResult(`仓库已创建: ${wh.title}`);"
       },
       {
         "title": "使用自定义ID创建仓库",
-        "code": "const wh = await Memento.plugins.goods.createWarehouse({id: 'warehouse123', title: '我的仓库'});\nsetResult(`仓库已创建，ID: ${wh.id}`);"
+        "code": "const wh = await Aboutme.plugins.goods.createWarehouse({id: 'warehouse123', title: '我的仓库'});\nsetResult(`仓库已创建，ID: ${wh.id}`);"
       }
     ],
     "notes": "新创建的仓库初始为空，不包含任何物品;可以指定自定义ID，ID不能与现有仓库重复",
@@ -102,7 +102,7 @@
     "examples": [
       {
         "title": "更新仓库名称",
-        "code": "const updated = await Memento.plugins.goods.updateWarehouse({warehouseId: 'warehouse123', title: '新名称'});\nsetResult(`仓库已更新: ${updated.title}`);"
+        "code": "const updated = await Aboutme.plugins.goods.updateWarehouse({warehouseId: 'warehouse123', title: '新名称'});\nsetResult(`仓库已更新: ${updated.title}`);"
       }
     ],
     "notes": "仅更新提供的字段，未提供的字段保持不变",
@@ -121,7 +121,7 @@
     "examples": [
       {
         "title": "删除仓库",
-        "code": "const result = await Memento.plugins.goods.deleteWarehouse({warehouseId: 'warehouse123'});\nsetResult(result.success ? '删除成功' : '删除失败');"
+        "code": "const result = await Aboutme.plugins.goods.deleteWarehouse({warehouseId: 'warehouse123'});\nsetResult(result.success ? '删除成功' : '删除失败');"
       }
     ],
     "notes": "删除操作不可逆，会同时删除该仓库下的所有物品",
@@ -140,7 +140,7 @@
     "examples": [
       {
         "title": "清空仓库",
-        "code": "const result = await Memento.plugins.goods.clearWarehouse({warehouseId: 'warehouse123'});\nsetResult(result.success ? '仓库已清空' : '清空失败');"
+        "code": "const result = await Aboutme.plugins.goods.clearWarehouse({warehouseId: 'warehouse123'});\nsetResult(result.success ? '仓库已清空' : '清空失败');"
       }
     ],
     "notes": "仅删除物品数据，仓库本身及其名称描述保持不变",
@@ -171,23 +171,23 @@
     "examples": [
       {
         "title": "获取仓库中的所有物品",
-        "code": "const items = await Memento.plugins.goods.getGoods({warehouseId: 'warehouse123'});\nsetResult(`共有 ${items.length} 件物品`);"
+        "code": "const items = await Aboutme.plugins.goods.getGoods({warehouseId: 'warehouse123'});\nsetResult(`共有 ${items.length} 件物品`);"
       },
       {
         "title": "获取所有物品",
-        "code": "const items = await Memento.plugins.goods.getGoods({});\nsetResult(`总共有 ${items.length} 件物品`);"
+        "code": "const items = await Aboutme.plugins.goods.getGoods({});\nsetResult(`总共有 ${items.length} 件物品`);"
       },
       {
         "title": "分页获取物品（前30个）",
-        "code": "const result = await Memento.plugins.goods.getGoods({warehouseId: 'warehouse123', offset: 0, count: 30});\nsetResult(`共 ${result.total} 件物品，当前返回 ${result.data.length} 件`);"
+        "code": "const result = await Aboutme.plugins.goods.getGoods({warehouseId: 'warehouse123', offset: 0, count: 30});\nsetResult(`共 ${result.total} 件物品，当前返回 ${result.data.length} 件`);"
       },
       {
         "title": "分页获取所有仓库的物品",
-        "code": "const result = await Memento.plugins.goods.getGoods({offset: 0, count: 50});\nconst totalValue = result.data.reduce((sum, item) => sum + (item.purchasePrice || 0), 0);\nsetResult(`当前页物品总价值: ¥${totalValue}`);"
+        "code": "const result = await Aboutme.plugins.goods.getGoods({offset: 0, count: 50});\nconst totalValue = result.data.reduce((sum, item) => sum + (item.purchasePrice || 0), 0);\nsetResult(`当前页物品总价值: ¥${totalValue}`);"
       },
       {
         "title": "遍历所有物品（分页加载）",
-        "code": "let allItems = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Memento.plugins.goods.getGoods({offset, count});\n  allItems = allItems.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allItems.length} 件物品`);"
+        "code": "let allItems = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Aboutme.plugins.goods.getGoods({offset, count});\n  allItems = allItems.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allItems.length} 件物品`);"
       }
     ],
     "notes": "返回指定仓库或所有仓库的物品。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据",
@@ -206,7 +206,7 @@
     "examples": [
       {
         "title": "获取物品详情",
-        "code": "const item = await Memento.plugins.goods.getGoodsItem({itemId: 'goods123'});\nsetResult(JSON.stringify(item, null, 2));"
+        "code": "const item = await Aboutme.plugins.goods.getGoodsItem({itemId: 'goods123'});\nsetResult(JSON.stringify(item, null, 2));"
       }
     ],
     "notes": "如物品不存在则返回错误对象",
@@ -226,15 +226,15 @@
     "examples": [
       {
         "title": "创建简单物品（整数价格）",
-        "code": "const itemData = JSON.stringify({title: '笔记本电脑', purchasePrice: 8999});\nconst item = await Memento.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品已创建: ${item.title}，价值: ¥${item.purchasePrice}`);"
+        "code": "const itemData = JSON.stringify({title: '笔记本电脑', purchasePrice: 8999});\nconst item = await Aboutme.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品已创建: ${item.title}，价值: ¥${item.purchasePrice}`);"
       },
       {
         "title": "创建带自定义字段的物品（浮点数价格）",
-        "code": "const itemData = JSON.stringify({\n  title: '笔记本',\n  purchasePrice: 15999.99,\n  customFields: [{key: '品牌', value: 'Apple'}, {key: '型号', value: 'MacBook Pro'}]\n});\nconst item = await Memento.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品ID: ${item.id}，价值: ¥${item.purchasePrice}`);"
+        "code": "const itemData = JSON.stringify({\n  title: '笔记本',\n  purchasePrice: 15999.99,\n  customFields: [{key: '品牌', value: 'Apple'}, {key: '型号', value: 'MacBook Pro'}]\n});\nconst item = await Aboutme.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品ID: ${item.id}，价值: ¥${item.purchasePrice}`);"
       },
       {
         "title": "使用自定义ID创建物品（整数价格）",
-        "code": "const itemData = JSON.stringify({\n  id: 'goods123',\n  title: '机械键盘',\n  purchasePrice: 899,\n  customFields: [\n    {key: '品牌', value: 'Keychron'},\n    {key: '型号', value: 'K2'},\n    {key: '轴体', value: '红轴'}\n  ]\n});\nconst item = await Memento.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品已创建，自定义ID: ${item.id}，价值: ¥${item.purchasePrice}`);"
+        "code": "const itemData = JSON.stringify({\n  id: 'goods123',\n  title: '机械键盘',\n  purchasePrice: 899,\n  customFields: [\n    {key: '品牌', value: 'Keychron'},\n    {key: '型号', value: 'K2'},\n    {key: '轴体', value: '红轴'}\n  ]\n});\nconst item = await Aboutme.plugins.goods.createGoodsItem({warehouseId: 'warehouse123', itemData});\nsetResult(`物品已创建，自定义ID: ${item.id}，价值: ¥${item.purchasePrice}`);"
       }
     ],
     "notes": "必需参数: warehouseId(仓库ID)、itemData(物品数据JSON字符串);itemData 中可包含 id 字段用于自定义ID;如果不提供id会自动生成UUID;ID不能与现有物品重复;purchasePrice 字段支持整数和浮点数类型",
@@ -254,7 +254,7 @@
     "examples": [
       {
         "title": "更新物品标题",
-        "code": "const itemData = JSON.stringify({title: '新标题'});\nconst updated = await Memento.plugins.goods.updateGoodsItem({itemId: 'goods123', itemData});\nsetResult(`标题已更新为: ${updated.title}`);"
+        "code": "const itemData = JSON.stringify({title: '新标题'});\nconst updated = await Aboutme.plugins.goods.updateGoodsItem({itemId: 'goods123', itemData});\nsetResult(`标题已更新为: ${updated.title}`);"
       }
     ],
     "notes": "仅更新 itemData 中提供的字段，未提供的字段保持不变",
@@ -273,7 +273,7 @@
     "examples": [
       {
         "title": "删除物品",
-        "code": "const result = await Memento.plugins.goods.deleteGoodsItem({itemId: 'goods123'});\nsetResult(result.success ? '删除成功' : '删除失败');"
+        "code": "const result = await Aboutme.plugins.goods.deleteGoodsItem({itemId: 'goods123'});\nsetResult(result.success ? '删除成功' : '删除失败');"
       }
     ],
     "notes": "删除操作不可逆，会同时删除该物品的所有使用记录",
@@ -294,7 +294,7 @@
     "examples": [
       {
         "title": "添加使用记录",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst item = await Memento.plugins.goods.addUsageRecord({itemId: 'goods123', dateStr: today, note: '用于编程'});\nsetResult('已记录使用');"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst item = await Aboutme.plugins.goods.addUsageRecord({itemId: 'goods123', dateStr: today, note: '用于编程'});\nsetResult('已记录使用');"
       }
     ],
     "notes": "使用记录用于追踪物品的使用历史和频率",
@@ -311,7 +311,7 @@
     "examples": [
       {
         "title": "获取统计",
-        "code": "const stats = await Memento.plugins.goods.getStatistics();\nsetResult(`总物品数: ${stats.totalCount}, 总价值: ${stats.totalValue}`);"
+        "code": "const stats = await Aboutme.plugins.goods.getStatistics();\nsetResult(`总物品数: ${stats.totalCount}, 总价值: ${stats.totalValue}`);"
       }
     ],
     "notes": "统计信息包括物品总数、总价值、一个月未使用的物品数等",
@@ -332,11 +332,11 @@
     "examples": [
       {
         "title": "根据 ID 查找仓库",
-        "code": "const wh = await Memento.plugins.goods.findWarehouseBy({field: 'id', value: 'wh123'});\nif (wh) {\n  setResult(`找到仓库: ${wh.title}`);\n} else {\n  setResult('未找到该仓库');\n}"
+        "code": "const wh = await Aboutme.plugins.goods.findWarehouseBy({field: 'id', value: 'wh123'});\nif (wh) {\n  setResult(`找到仓库: ${wh.title}`);\n} else {\n  setResult('未找到该仓库');\n}"
       },
       {
         "title": "根据标题查找仓库",
-        "code": "const wh = await Memento.plugins.goods.findWarehouseBy({field: 'title', value: '客厅'});\nsetResult(wh ? `仓库ID: ${wh.id}` : '未找到');"
+        "code": "const wh = await Aboutme.plugins.goods.findWarehouseBy({field: 'title', value: '客厅'});\nsetResult(wh ? `仓库ID: ${wh.id}` : '未找到');"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历仓库列表；支持任意字段匹配",
@@ -355,7 +355,7 @@
     "examples": [
       {
         "title": "查找指定ID的仓库",
-        "code": "const wh = await Memento.plugins.goods.findWarehouseById({id: 'wh123'});\nif (wh) {\n  setResult(`仓库名: ${wh.title}`);\n} else {\n  setResult('仓库不存在');\n}"
+        "code": "const wh = await Aboutme.plugins.goods.findWarehouseById({id: 'wh123'});\nif (wh) {\n  setResult(`仓库名: ${wh.title}`);\n} else {\n  setResult('仓库不存在');\n}"
       }
     ],
     "notes": "等价于 findWarehouseBy({field: 'id', value: id})",
@@ -376,11 +376,11 @@
     "examples": [
       {
         "title": "精确匹配仓库名",
-        "code": "const wh = await Memento.plugins.goods.findWarehouseByName({name: '客厅'});\nsetResult(wh ? `找到仓库ID: ${wh.id}` : '未找到');"
+        "code": "const wh = await Aboutme.plugins.goods.findWarehouseByName({name: '客厅'});\nsetResult(wh ? `找到仓库ID: ${wh.id}` : '未找到');"
       },
       {
         "title": "模糊匹配仓库名",
-        "code": "const warehouses = await Memento.plugins.goods.findWarehouseByName({name: '房', fuzzy: true, findAll: true});\nsetResult(`找到 ${warehouses.length} 个包含【房】的仓库`);"
+        "code": "const warehouses = await Aboutme.plugins.goods.findWarehouseByName({name: '房', fuzzy: true, findAll: true});\nsetResult(`找到 ${warehouses.length} 个包含【房】的仓库`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes",
@@ -402,15 +402,15 @@
     "examples": [
       {
         "title": "根据ID查找物品",
-        "code": "const item = await Memento.plugins.goods.findGoodsItemBy({field: 'id', value: 'item123'});\nif (item) {\n  setResult(`物品: ${item.title}，价格: ${item.purchasePrice}`);\n} else {\n  setResult('未找到该物品');\n}"
+        "code": "const item = await Aboutme.plugins.goods.findGoodsItemBy({field: 'id', value: 'item123'});\nif (item) {\n  setResult(`物品: ${item.title}，价格: ${item.purchasePrice}`);\n} else {\n  setResult('未找到该物品');\n}"
       },
       {
         "title": "查找特定价格的物品",
-        "code": "const items = await Memento.plugins.goods.findGoodsItemBy({field: 'purchasePrice', value: 8999, findAll: true});\nsetResult(`找到 ${items.length} 件价格为8999的物品`);"
+        "code": "const items = await Aboutme.plugins.goods.findGoodsItemBy({field: 'purchasePrice', value: 8999, findAll: true});\nsetResult(`找到 ${items.length} 件价格为8999的物品`);"
       },
       {
         "title": "在指定仓库中查找物品",
-        "code": "const item = await Memento.plugins.goods.findGoodsItemBy({field: 'title', value: '笔记本', warehouseId: 'wh123'});\nsetResult(item ? `找到物品，价格: ${item.purchasePrice}` : '未找到');"
+        "code": "const item = await Aboutme.plugins.goods.findGoodsItemBy({field: 'title', value: '笔记本', warehouseId: 'wh123'});\nsetResult(item ? `找到物品，价格: ${item.purchasePrice}` : '未找到');"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历物品列表；warehouseId 可选，不传则在所有仓库中查找",
@@ -430,7 +430,7 @@
     "examples": [
       {
         "title": "查找指定ID的物品",
-        "code": "const item = await Memento.plugins.goods.findGoodsItemById({id: 'item123'});\nif (item) {\n  setResult(`物品名: ${item.title}, 价格: ${item.purchasePrice}`);\n} else {\n  setResult('物品不存在');\n}"
+        "code": "const item = await Aboutme.plugins.goods.findGoodsItemById({id: 'item123'});\nif (item) {\n  setResult(`物品名: ${item.title}, 价格: ${item.purchasePrice}`);\n} else {\n  setResult('物品不存在');\n}"
       }
     ],
     "notes": "等价于 findGoodsItemBy({field: 'id', value: id, warehouseId})",
@@ -452,11 +452,11 @@
     "examples": [
       {
         "title": "精确匹配物品名",
-        "code": "const item = await Memento.plugins.goods.findGoodsItemByName({name: '笔记本电脑'});\nsetResult(item ? `价格: ${item.purchasePrice}` : '未找到');"
+        "code": "const item = await Aboutme.plugins.goods.findGoodsItemByName({name: '笔记本电脑'});\nsetResult(item ? `价格: ${item.purchasePrice}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的物品",
-        "code": "const items = await Memento.plugins.goods.findGoodsItemByName({name: '笔记本', fuzzy: true, findAll: true});\nconst total = items.reduce((sum, i) => sum + (i.purchasePrice || 0), 0);\nsetResult(`找到 ${items.length} 件笔记本相关物品，总价值: ${total}`);"
+        "code": "const items = await Aboutme.plugins.goods.findGoodsItemByName({name: '笔记本', fuzzy: true, findAll: true});\nconst total = items.reduce((sum, i) => sum + (i.purchasePrice || 0), 0);\nsetResult(`找到 ${items.length} 件笔记本相关物品，总价值: ${total}`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes",

@@ -1,4 +1,4 @@
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.app.Service
 import android.content.Intent
@@ -14,14 +14,14 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.os.Bundle
 import android.util.Log
-import github.hunmer.memento.R
+import github.hunmer.aboutme.R
 import kotlin.math.abs
 
 class TimerForegroundService : Service() {
     private lateinit var methodChannel: MethodChannel
 
     companion object {
-        const val CHANNEL_NAME = "github.hunmer.memento/timer_service"
+        const val CHANNEL_NAME = "github.hunmer.aboutme/timer_service"
         lateinit var flutterEngine: FlutterEngine
 
         // 存储所有活动计时器的通知ID
@@ -52,7 +52,7 @@ class TimerForegroundService : Service() {
                         action = "START"
                         args?.let {
                             putExtra("taskId", it["taskId"] as? String ?: "default_timer")
-                            putExtra("taskName", it["taskName"] as? String ?: "Memento Timer")
+                            putExtra("taskName", it["taskName"] as? String ?: "Aboutme Timer")
                             putExtra("subTimers", it["subTimers"] as? ArrayList<*>)
                             putExtra("currentSubTimerIndex", it["currentSubTimerIndex"] as? Int ?: -1)
                         }
@@ -66,7 +66,7 @@ class TimerForegroundService : Service() {
                         action = "UPDATE"
                         args?.let {
                             putExtra("taskId", it["taskId"] as? String ?: "default_timer")
-                            putExtra("taskName", it["taskName"] as? String ?: "Memento Timer")
+                            putExtra("taskName", it["taskName"] as? String ?: "Aboutme Timer")
                             putExtra("subTimers", it["subTimers"] as? ArrayList<*>)
                             putExtra("currentSubTimerIndex", it["currentSubTimerIndex"] as? Int ?: -1)
                         }
@@ -94,7 +94,7 @@ class TimerForegroundService : Service() {
                     val color = args?.get("color") as? Int ?: 0xFFFF9800.toInt()
 
                     if (timerId != null) {
-                        startMultipleTimer(timerId, taskName ?: "Memento Timer", content ?: "", progress, maxProgress, color)
+                        startMultipleTimer(timerId, taskName ?: "Aboutme Timer", content ?: "", progress, maxProgress, color)
                         result.success(null)
                     } else {
                         result.error("INVALID_ARGUMENTS", "timerId is required", null)
@@ -134,7 +134,7 @@ class TimerForegroundService : Service() {
             when (action) {
                 "START" -> {
                     val taskId = intent.getStringExtra("taskId") ?: "default_timer"
-                    val taskName = intent.getStringExtra("taskName") ?: "Memento Timer"
+                    val taskName = intent.getStringExtra("taskName") ?: "Aboutme Timer"
                     val subTimers = intent.getSerializableExtra("subTimers") as? ArrayList<*>
                     val currentSubTimerIndex = intent.getIntExtra("currentSubTimerIndex", -1)
                     startTimerService(Bundle().apply {
@@ -146,7 +146,7 @@ class TimerForegroundService : Service() {
                 }
                 "UPDATE" -> {
                     val taskId = intent.getStringExtra("taskId") ?: "default_timer"
-                    val taskName = intent.getStringExtra("taskName") ?: "Memento Timer"
+                    val taskName = intent.getStringExtra("taskName") ?: "Aboutme Timer"
                     val subTimers = intent.getSerializableExtra("subTimers") as? ArrayList<*>
                     val currentSubTimerIndex = intent.getIntExtra("currentSubTimerIndex", -1)
                     Log.w("TimerForegroundService", "UPDATE called with taskId: $taskId")
@@ -198,11 +198,11 @@ class TimerForegroundService : Service() {
 
         val progressStyle = NotificationCompat.BigTextStyle()
             .bigText(buildSubTimersText(params.subTimers, params.currentSubTimerIndex))
-            .setBigContentTitle(params.taskName ?: "Memento Timer")
+            .setBigContentTitle(params.taskName ?: "Aboutme Timer")
             .setSummaryText("$currentName: $currentFormatted/$durationFormatted")
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(params.taskName ?: "Memento Timer")
+            .setContentTitle(params.taskName ?: "Aboutme Timer")
             .setContentText("$currentName: $currentFormatted/$durationFormatted")
             .setSmallIcon(R.drawable.launcher_icon)
             .setStyle(progressStyle)

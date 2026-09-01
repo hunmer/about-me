@@ -1,6 +1,6 @@
 # server-nodejs 同步服务器
 
-`@hunmer/memento-server` v1.0.3 —— Memento 的 Node.js + TypeScript 同步服务器（Express），是客户端与第三方 AI 工具的**唯一数据中枢**：负责用户认证（JWT + API Key）、端到端加密（AES-256-GCM）的文件同步、19 个插件域的 RESTful API、WebSocket 实时同步、服务端插件系统（钩子/商店/ZIP 安装）以及内置 Vue 3 管理面板。存储为**纯文件**（默认 `./data`），无数据库依赖；默认端口 8874，可 npm 全局安装后以 `memento-server` 启动。
+`@hunmer/aboutme-server` v1.0.3 —— Aboutme 的 Node.js + TypeScript 同步服务器（Express），是客户端与第三方 AI 工具的**唯一数据中枢**：负责用户认证（JWT + API Key）、端到端加密（AES-256-GCM）的文件同步、19 个插件域的 RESTful API、WebSocket 实时同步、服务端插件系统（钩子/商店/ZIP 安装）以及内置 Vue 3 管理面板。存储为**纯文件**（默认 `./data`），无数据库依赖；默认端口 8874，可 npm 全局安装后以 `aboutme-server` 启动。
 
 它取代了早期根目录下的 Dart（Shelf）版服务器——旧文档中 `cd server && dart run bin/server.dart` 已失效。
 
@@ -34,7 +34,7 @@
 | `src/middleware/` | authMiddleware、apiEnabledMiddleware |
 | `admin-vue/` | Vue3 + Naive UI + Pinia 管理面板（构建产物进 `dist/admin`）→ [admin-vue/CLAUDE.md](admin-vue/CLAUDE.md) |
 | `plugins/` | 服务端插件目录 + `plugin-store.json` 商店清单 |
-| `bin/memento-server.js` | npm 全局安装的 CLI 入口 |
+| `bin/aboutme-server.js` | npm 全局安装的 CLI 入口 |
 
 ## 扫描状态
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_base.dart';
 
 class PluginSelectionDialog extends StatefulWidget {
   final List<PluginBase> plugins;

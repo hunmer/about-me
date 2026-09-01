@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/models/timeline_status_card_data.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/timeline_status_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/models/timeline_status_card_data.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/timeline_status_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 时间线状态卡片示例
 class TimelineStatusCardExample extends StatelessWidget {

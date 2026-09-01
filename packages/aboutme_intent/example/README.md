@@ -1,6 +1,6 @@
-# memento_intent_example
+# aboutme_intent_example
 
-Demonstrates how to use the memento_intent plugin.
+Demonstrates how to use the aboutme_intent plugin.
 
 ## Getting Started
 

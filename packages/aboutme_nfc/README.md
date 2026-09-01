@@ -1,4 +1,4 @@
-# memento_nfc
+# aboutme_nfc
 
 Flutter NFC插件，支持Android和iOS平台的NFC标签读写功能。
 
@@ -28,8 +28,8 @@ Flutter NFC插件，支持Android和iOS平台的NFC标签读写功能。
 
 ```yaml
 dependencies:
-  memento_nfc:
-    path: ./memento_nfc
+  aboutme_nfc:
+    path: ./aboutme_nfc
 ```
 
 ## 使用方法
@@ -37,9 +37,9 @@ dependencies:
 ### 基本用法
 
 ```dart
-import 'package:memento_nfc/memento_nfc.dart';
+import 'package:aboutme_nfc/aboutme_nfc.dart';
 
-final nfc = MementoNfc();
+final nfc = AboutmeNfc();
 
 // 检查NFC支持状态
 bool supported = await nfc.isNfcSupported();
@@ -89,7 +89,7 @@ if (textResult.success) {
 
 ## API文档
 
-### 类: MementoNfc
+### 类: AboutmeNfc
 
 #### 方法
 

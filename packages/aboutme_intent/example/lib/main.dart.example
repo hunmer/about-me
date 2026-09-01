@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:memento_intent/memento_intent.dart';
+import 'package:aboutme_intent/aboutme_intent.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化 Intent 插件
-  await MementoIntent.instance.init();
+  await AboutmeIntent.instance.init();
 
   runApp(const MyApp());
 }
@@ -18,7 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final MementoIntent _intent = MementoIntent.instance;
+  final AboutmeIntent _intent = AboutmeIntent.instance;
 
   @override
   void initState() {
@@ -65,7 +65,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _registerScheme() async {
     final success = await _intent.registerDynamicScheme(
-      scheme: 'memento',
+      scheme: 'aboutme',
       host: 'example.com',
       pathPrefix: '/app',
     );
@@ -90,20 +90,20 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Memento Intent Example',
+      title: 'Aboutme Intent Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Memento Intent Example'),
+          title: const Text('Aboutme Intent Example'),
         ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Memento Intent Plugin 示例',
+                'Aboutme Intent Plugin 示例',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
@@ -138,7 +138,7 @@ class _MyAppState extends State<MyApp> {
                       SizedBox(height: 8),
                       Text(
                         '1. 点击"注册 Scheme"来注册深度链接\n'
-                        '2. 在浏览器中输入: memento://example.com/app\n'
+                        '2. 在浏览器中输入: aboutme://example.com/app\n'
                         '3. 观察应用接收到的深度链接\n'
                         '4. 从其他应用分享内容到本应用',
                         style: TextStyle(fontSize: 14),

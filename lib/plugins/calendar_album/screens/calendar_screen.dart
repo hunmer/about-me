@@ -1,15 +1,15 @@
 import 'dart:io' show File;
 
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:Memento/plugins/calendar_album/controllers/tag_controller.dart';
-import 'package:Memento/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:Memento/plugins/calendar_album/widgets/entry_list.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/widgets/enhanced_calendar/syncfusion_calendar.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/enhanced_calendar/syncfusion_calendar.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';

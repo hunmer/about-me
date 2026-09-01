@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.services
+package github.hunmer.aboutme.widgets.services
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,8 +15,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.providers.HabitTimerWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.providers.HabitTimerWidgetProvider
 import org.json.JSONObject
 
 /**
@@ -198,7 +198,7 @@ class HabitTimerForegroundService : Service() {
         updateRunnable?.let { handler.removeCallbacks(it) }
 
         // 记录完成（这里可以通过广播通知Flutter端保存记录）
-        val intent = Intent("github.hunmer.memento.widgets.HABIT_TIMER_COMPLETED")
+        val intent = Intent("github.hunmer.aboutme.widgets.HABIT_TIMER_COMPLETED")
         intent.putExtra("habitId", currentHabitId)
         intent.putExtra("durationSeconds", elapsedSeconds)
         sendBroadcast(intent)
@@ -220,8 +220,8 @@ class HabitTimerForegroundService : Service() {
 
         // 点击通知打开应用
         val openAppIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse("memento://habit_timer/open?habitId=$currentHabitId")
-            setPackage("github.hunmer.memento")
+            data = android.net.Uri.parse("aboutme://habit_timer/open?habitId=$currentHabitId")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val openPendingIntent = PendingIntent.getActivity(

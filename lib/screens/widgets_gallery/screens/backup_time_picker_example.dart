@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/backup_time_picker.dart';
+import 'package:aboutme/widgets/backup_time_picker.dart';
 
 /// 备份时间选择器示例
 class BackupTimePickerExample extends StatelessWidget {

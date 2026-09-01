@@ -41,25 +41,25 @@
 ### 1. 状态筛选
 ```javascript
 // 获取进行中的目标
-await memento.tracker.getGoals('active');
+await aboutme.tracker.getGoals('active');
 
 // 获取已完成的目标
-await memento.tracker.getGoals('completed');
+await aboutme.tracker.getGoals('completed');
 ```
 
 ### 2. 分组管理
 ```javascript
 // 获取"学习"分组的目标
-await memento.tracker.getGoals(null, '学习');
+await aboutme.tracker.getGoals(null, '学习');
 
 // 获取"健康"分组中已完成的目标
-await memento.tracker.getGoals('completed', '健康');
+await aboutme.tracker.getGoals('completed', '健康');
 ```
 
 ### 3. 灵活更新
 ```javascript
 // 使用 JSON 格式更新任意字段
-await memento.tracker.updateGoal(
+await aboutme.tracker.updateGoal(
   goalId,
   JSON.stringify({
     name: '新名称',
@@ -73,13 +73,13 @@ await memento.tracker.updateGoal(
 
 **全局统计**:
 ```javascript
-const stats = await memento.tracker.getStats();
+const stats = await aboutme.tracker.getStats();
 // 返回: totalGoals, todayCompleted, monthCompleted, overallProgress, groups 等
 ```
 
 **单个目标统计**:
 ```javascript
-const goalStats = await memento.tracker.getStats(goalId);
+const goalStats = await aboutme.tracker.getStats(goalId);
 // 返回: totalRecords, totalValue, currentValue, progress 等
 ```
 
@@ -124,7 +124,7 @@ const goalStats = await memento.tracker.getStats(goalId);
 
 ```javascript
 // 1. 创建目标
-const goal = await memento.tracker.createGoal(
+const goal = await aboutme.tracker.createGoal(
   '每日阅读',
   '分钟',
   30,
@@ -133,18 +133,18 @@ const goal = await memento.tracker.createGoal(
 const goalData = JSON.parse(goal);
 
 // 2. 记录数据
-await memento.tracker.recordData(
+await aboutme.tracker.recordData(
   goalData.id,
   30,
   '阅读技术文档'
 );
 
 // 3. 查看进度
-const progress = await memento.tracker.getProgress(goalData.id);
+const progress = await aboutme.tracker.getProgress(goalData.id);
 console.log('进度:', JSON.parse(progress).percentage + '%');
 
 // 4. 查看统计
-const stats = await memento.tracker.getStats();
+const stats = await aboutme.tracker.getStats();
 console.log('全局统计:', JSON.parse(stats));
 ```
 
@@ -152,12 +152,12 @@ console.log('全局统计:', JSON.parse(stats));
 
 ```javascript
 // 获取所有进行中的"健康"类目标
-const goals = await memento.tracker.getGoals('active', '健康');
+const goals = await aboutme.tracker.getGoals('active', '健康');
 const goalList = JSON.parse(goals);
 
 // 批量记录今日完成情况
 for (const goal of goalList) {
-  await memento.tracker.recordData(goal.id, 10, '今日完成');
+  await aboutme.tracker.recordData(goal.id, 10, '今日完成');
 }
 ```
 
@@ -220,18 +220,18 @@ flutter analyze lib/plugins/tracker/tracker_plugin.dart
 ### 单元测试
 ```javascript
 // 测试目标创建
-const goal = await memento.tracker.createGoal('测试', '次', 10);
+const goal = await aboutme.tracker.createGoal('测试', '次', 10);
 assert(JSON.parse(goal).name === '测试');
 
 // 测试记录添加
-await memento.tracker.recordData(goalId, 5);
-const progress = JSON.parse(await memento.tracker.getProgress(goalId));
+await aboutme.tracker.recordData(goalId, 5);
+const progress = JSON.parse(await aboutme.tracker.getProgress(goalId));
 assert(progress.currentValue === 5);
 
 // 测试删除操作
-await memento.tracker.deleteGoal(goalId);
+await aboutme.tracker.deleteGoal(goalId);
 try {
-  await memento.tracker.getGoal(goalId);
+  await aboutme.tracker.getGoal(goalId);
   assert(false, '应该抛出错误');
 } catch (e) {
   assert(e.message.includes('not found'));

@@ -1,5 +1,5 @@
-import 'package:Memento/plugins/webview/screens/app_store/source_management_screen.dart';
-import 'package:Memento/plugins/webview/screens/app_store/app_detail_sheet.dart';
+import 'package:aboutme/plugins/webview/screens/app_store/source_management_screen.dart';
+import 'package:aboutme/plugins/webview/screens/app_store/app_detail_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
@@ -7,9 +7,9 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../models/app_store_models.dart';
 import '../../services/app_store_manager.dart';
 import '../../services/download_manager.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 
 /// 小应用商场主界面
 class AppStoreScreen extends StatefulWidget {

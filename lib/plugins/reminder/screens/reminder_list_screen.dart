@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import '../models/reminder.dart';
 import '../controllers/reminder_list_controller.dart';
 import 'components/reminder_card.dart';

@@ -1,14 +1,14 @@
-# mcp-memento-server MCP 服务器
+# mcp-aboutme-server MCP 服务器
 
-`@hunmer/mcp-memento-server` v1.0.0 —— 基于 `@modelcontextprotocol/sdk` 的 MCP（Model Context Protocol）服务器，通过 **stdio** 与 AI 客户端（Claude Desktop 等 MCP Host）通信，把 Memento 的个人数据能力暴露为 AI 可调用的工具：覆盖 chat、notes、activity、goods、bill、todo、diary、checkin、calendar、contact、tracker、day 共 **12 个插件域、60+ 工具**（命名 `memento_{plugin}_{action}`）。工具经内建的 `MementoClient` 调用 server-nodejs 的 REST API（API Key + 加密），本体不存数据。
+`@hunmer/mcp-aboutme-server` v1.0.0 —— 基于 `@modelcontextprotocol/sdk` 的 MCP（Model Context Protocol）服务器，通过 **stdio** 与 AI 客户端（Claude Desktop 等 MCP Host）通信，把 Aboutme 的个人数据能力暴露为 AI 可调用的工具：覆盖 chat、notes、activity、goods、bill、todo、diary、checkin、calendar、contact、tracker、day 共 **12 个插件域、60+ 工具**（命名 `aboutme_{plugin}_{action}`）。工具经内建的 `AboutmeClient` 调用 server-nodejs 的 REST API（API Key + 加密），本体不存数据。
 
 源码极小（src 下 6 个 TS 文件），ESM（`"type": "module"`），Node ≥ 18。
 
 ## 约定的规则
 
 - 构建 `npm run build`（tsc）→ 运行 `npm start`；开发 `npm run dev`（tsx）；调试用 `npm run inspector`（MCP Inspector）。
-- 配置三个环境变量（`.env`）：`MEMENTO_SERVER_URL`（指向 server-nodejs）、`MEMENTO_API_KEY`（管理面板生成，`mk_live_` 前缀）、`MEMENTO_ENCRYPTION_KEY`。
-- 新增工具：在 `src/tools/index.ts` 按命名规范添加定义，客户端能力放 `src/client/memento-client.ts`。
+- 配置三个环境变量（`.env`）：`ABOUTME_SERVER_URL`（指向 server-nodejs）、`ABOUTME_API_KEY`（管理面板生成，`mk_live_` 前缀）、`ABOUTME_ENCRYPTION_KEY`。
+- 新增工具：在 `src/tools/index.ts` 按命名规范添加定义，客户端能力放 `src/client/aboutme-client.ts`。
 - 仓库内已有 `.env` 文件（含真实配置），注意不要泄露或提交密钥变更。
 
 ## 文件索引
@@ -27,7 +27,7 @@
 | `src/index.ts` | 服务器启动（stdio transport） |
 | `src/config.ts` | 环境变量加载与校验 |
 | `src/tools/index.ts` | 全部 MCP 工具定义 |
-| `src/client/memento-client.ts` | 调用 server-nodejs REST 的客户端 |
+| `src/client/aboutme-client.ts` | 调用 server-nodejs REST 的客户端 |
 | `src/types/index.ts` | 类型定义 |
 | `scripts/start-inspector.js` | MCP Inspector 启动器 |
 

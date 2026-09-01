@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
-import 'package:Memento/plugins/openai/controllers/model_controller.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import '../../../../core/services/toast_service.dart';
 
 class ModelSearchScreen extends StatefulWidget {

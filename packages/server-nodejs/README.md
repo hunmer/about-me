@@ -1,6 +1,6 @@
-# Memento Sync Server (Node.js + TypeScript)
+# Aboutme Sync Server (Node.js + TypeScript)
 
-基于 Node.js + TypeScript 的 Memento 同步服务器
+基于 Node.js + TypeScript 的 Aboutme 同步服务器
 
 ## 功能特性
       - ✅ 端到端加密（AES-256-GCM）
@@ -31,13 +31,13 @@
 
 ```bash
 # 全局安装
-npm install -g @hunmer/memento-server
+npm install -g @hunmer/aboutme-server
 
 # 启动服务器
-memento-server
+aboutme-server
 
 # 指定端口启动
-PORT=8080 memento-server
+PORT=8080 aboutme-server
 ```
 
 首次启动会在当前目录创建 `data` 文件夹存储数据。
@@ -48,10 +48,10 @@ PORT=8080 memento-server
 
 ```bash
 # Linux/macOS
-PORT=8080 DATA_DIR=/var/memento-data memento-server
+PORT=8080 DATA_DIR=/var/aboutme-data aboutme-server
 
 # Windows PowerShell
-$env:PORT=8080; $env:DATA_DIR="C:\memento-data"; memento-server
+$env:PORT=8080; $env:DATA_DIR="C:\aboutme-data"; aboutme-server
 
 # 或创建 .env 文件在运行目录
 ```
@@ -195,10 +195,10 @@ plugin.zip
 {
   "uuid": "data-sync-logger",
   "title": "数据同步日志记录器",
-  "author": "Memento",
+  "author": "Aboutme",
   "description": "监听插件数据变更并记录日志",
   "version": "1.0.0",
-  "website": "https://github.com/memento/data-sync-logger",
+  "website": "https://github.com/aboutme/data-sync-logger",
   "permissions": {
     "dataAccess": [],
     "operations": ["read"],

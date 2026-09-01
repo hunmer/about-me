@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/diary/diary_plugin.dart';
-import 'package:Memento/plugins/diary/screens/diary_editor_screen.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/diary/diary_plugin.dart';
+import 'package:aboutme/plugins/diary/screens/diary_editor_screen.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 
 /// Diary 插件路由注册表
 class DiaryRoutes implements RouteRegistry {

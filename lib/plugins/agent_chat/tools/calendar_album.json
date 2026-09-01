@@ -13,11 +13,11 @@
     "examples": [
       {
         "title": "获取所有图文（无分页）",
-        "code": "const entries = await Memento.plugins.calendar_album.getEntries({});\nsetResult(JSON.stringify(entries, null, 2));"
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntries({});\nsetResult(JSON.stringify(entries, null, 2));"
       },
       {
         "title": "分页获取图文（第1页，每页10条）",
-        "code": "const result = await Memento.plugins.calendar_album.getEntries({offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条, 还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntries({offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条, 还有更多: ${result.hasMore}`);"
       }
     ],
     "notes": "图文内容为 Markdown 格式；分页从 offset=0 开始",
@@ -36,7 +36,7 @@
     "examples": [
       {
         "title": "获取今日图文",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entries = await Memento.plugins.calendar_album.getEntriesForDate({ dateStr: today });\nsetResult(`今天有 ${entries.length} 条图文`);"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entries = await Aboutme.plugins.calendar_album.getEntriesForDate({ dateStr: today });\nsetResult(`今天有 ${entries.length} 条图文`);"
       }
     ],
     "notes": "日期格式必须为 YYYY-MM-DD",
@@ -62,11 +62,11 @@
     "examples": [
       {
         "title": "添加简单图文",
-        "code": "const entry = await Memento.plugins.calendar_album.addEntry({\n  title: '美好的一天',\n  content: '今天天气很好，心情愉快！'\n});\nsetResult(`图文已创建: ${entry.id}`);"
+        "code": "const entry = await Aboutme.plugins.calendar_album.addEntry({\n  title: '美好的一天',\n  content: '今天天气很好，心情愉快！'\n});\nsetResult(`图文已创建: ${entry.id}`);"
       },
       {
         "title": "添加完整图文",
-        "code": "const timeInfo = await Memento.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entry = await Memento.plugins.calendar_album.addEntry({\n  title: '生日聚会',\n  content: '今天过生日，很开心！',\n  dateStr: today,\n  tags: ['生活', '生日'],\n  location: '家',\n  mood: '😊',\n  weather: '晴天',\n  imageUrls: ['photos/1.jpg', 'photos/2.jpg']\n});\nsetResult('已添加生日图文');"
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entry = await Aboutme.plugins.calendar_album.addEntry({\n  title: '生日聚会',\n  content: '今天过生日，很开心！',\n  dateStr: today,\n  tags: ['生活', '生日'],\n  location: '家',\n  mood: '😊',\n  weather: '晴天',\n  imageUrls: ['photos/1.jpg', 'photos/2.jpg']\n});\nsetResult('已添加生日图文');"
       }
     ],
     "notes": "标签和图片URL使用数组格式",
@@ -92,7 +92,7 @@
     "examples": [
       {
         "title": "更新图文内容",
-        "code": "const updated = await Memento.plugins.calendar_album.updateEntry({\n  entryId: 'entry123',\n  content: '更新后的内容...'\n});\nsetResult('图文已更新');"
+        "code": "const updated = await Aboutme.plugins.calendar_album.updateEntry({\n  entryId: 'entry123',\n  content: '更新后的内容...'\n});\nsetResult('图文已更新');"
       }
     ],
     "notes": "仅更新提供的字段，其他字段保持不变",
@@ -111,7 +111,7 @@
     "examples": [
       {
         "title": "删除图文",
-        "code": "const result = await Memento.plugins.calendar_album.deleteEntry({ entryId: 'entry123' });\nsetResult(result.success ? '删除成功' : result.error);"
+        "code": "const result = await Aboutme.plugins.calendar_album.deleteEntry({ entryId: 'entry123' });\nsetResult(result.success ? '删除成功' : result.error);"
       }
     ],
     "notes": "删除操作不可逆",
@@ -130,7 +130,7 @@
     "examples": [
       {
         "title": "获取图文详情",
-        "code": "const entry = await Memento.plugins.calendar_album.getEntryById({ entryId: 'entry123' });\nif (entry.error) {\n  setResult('图文不存在');\n} else {\n  setResult(JSON.stringify(entry, null, 2));\n}"
+        "code": "const entry = await Aboutme.plugins.calendar_album.getEntryById({ entryId: 'entry123' });\nif (entry.error) {\n  setResult('图文不存在');\n} else {\n  setResult(JSON.stringify(entry, null, 2));\n}"
       }
     ],
     "notes": "如图文不存在，返回对象包含 error 字段",
@@ -147,7 +147,7 @@
     "examples": [
       {
         "title": "获取标签列表",
-        "code": "const tags = await Memento.plugins.calendar_album.getTags({});\nsetResult(tags.join(', '));"
+        "code": "const tags = await Aboutme.plugins.calendar_album.getTags({});\nsetResult(tags.join(', '));"
       }
     ],
     "notes": "返回去重后的标签列表",
@@ -168,11 +168,11 @@
     "examples": [
       {
         "title": "获取生活类图文（无分页）",
-        "code": "const entries = await Memento.plugins.calendar_album.getEntriesByTag({ tag: '生活' });\nsetResult(`共有 ${entries.length} 条生活类图文`);"
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntriesByTag({ tag: '生活' });\nsetResult(`共有 ${entries.length} 条生活类图文`);"
       },
       {
         "title": "分页获取生活类图文",
-        "code": "const result = await Memento.plugins.calendar_album.getEntriesByTag({ tag: '生活', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntriesByTag({ tag: '生活', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
       }
     ],
     "notes": "单标签筛选；按创建时间倒序",
@@ -193,11 +193,11 @@
     "examples": [
       {
         "title": "获取同时包含多个标签的图文（无分页）",
-        "code": "const entries = await Memento.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'] });\nsetResult(`共有 ${entries.length} 条同时标记为生活和心情的图文`);"
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'] });\nsetResult(`共有 ${entries.length} 条同时标记为生活和心情的图文`);"
       },
       {
         "title": "分页获取多标签图文",
-        "code": "const result = await Memento.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'], offset: 0, count: 10 });\nsetResult(`找到 ${result.total} 条，当前页 ${result.count} 条`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'], offset: 0, count: 10 });\nsetResult(`找到 ${result.total} 条，当前页 ${result.count} 条`);"
       }
     ],
     "notes": "AND 逻辑：只返回同时包含所有指定标签的图文；按创建时间倒序",
@@ -217,11 +217,11 @@
     "examples": [
       {
         "title": "获取所有照片（无分页）",
-        "code": "const photos = await Memento.plugins.calendar_album.getPhotos({});\nsetResult(`共有 ${photos.length} 张照片`);"
+        "code": "const photos = await Aboutme.plugins.calendar_album.getPhotos({});\nsetResult(`共有 ${photos.length} 张照片`);"
       },
       {
         "title": "分页获取照片",
-        "code": "const result = await Memento.plugins.calendar_album.getPhotos({offset: 0, count: 50});\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.getPhotos({offset: 0, count: 50});\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
       }
     ],
     "notes": "包括直接上传的图片和 Markdown 内容中提取的图片",
@@ -243,11 +243,11 @@
     "examples": [
       {
         "title": "获取本月的照片（无分页）",
-        "code": "const startDate = await Memento.system.getCustomDate({relativePosition: 'startOfMonth', format: 'yyyy-MM-dd'});\nconst endDate = await Memento.system.getCustomDate({relativePosition: 'endOfMonth', format: 'yyyy-MM-dd'});\nconst photos = await Memento.plugins.calendar_album.getPhotosByDateRange({ startDate, endDate });\nsetResult(JSON.stringify(photos, null, 2));"
+        "code": "const startDate = await Aboutme.system.getCustomDate({relativePosition: 'startOfMonth', format: 'yyyy-MM-dd'});\nconst endDate = await Aboutme.system.getCustomDate({relativePosition: 'endOfMonth', format: 'yyyy-MM-dd'});\nconst photos = await Aboutme.plugins.calendar_album.getPhotosByDateRange({ startDate, endDate });\nsetResult(JSON.stringify(photos, null, 2));"
       },
       {
         "title": "分页获取日期范围照片",
-        "code": "const result = await Memento.plugins.calendar_album.getPhotosByDateRange({ startDate: '2025-01-01', endDate: '2025-01-31', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.getPhotosByDateRange({ startDate: '2025-01-01', endDate: '2025-01-31', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
       }
     ],
     "notes": "返回照片的日期、URL、所属图文ID和标题",
@@ -264,7 +264,7 @@
     "examples": [
       {
         "title": "获取统计信息",
-        "code": "const stats = await Memento.plugins.calendar_album.getStatistics({});\nsetResult(`今日: ${stats.todayCount}, 近7天: ${stats.last7DaysCount}, 总计: ${stats.totalCount}`);"
+        "code": "const stats = await Aboutme.plugins.calendar_album.getStatistics({});\nsetResult(`今日: ${stats.todayCount}, 近7天: ${stats.last7DaysCount}, 总计: ${stats.totalCount}`);"
       }
     ],
     "notes": "包含今日、近7天、总数、标签数、照片数等统计信息",
@@ -287,15 +287,15 @@
     "examples": [
       {
         "title": "根据 ID 查找图文",
-        "code": "const entry = await Memento.plugins.calendar_album.findEntryBy({field: 'id', value: 'entry123'});\nif (entry) {\n  setResult(`找到图文: ${entry.title}`);\n} else {\n  setResult('未找到该图文');\n}"
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryBy({field: 'id', value: 'entry123'});\nif (entry) {\n  setResult(`找到图文: ${entry.title}`);\n} else {\n  setResult('未找到该图文');\n}"
       },
       {
         "title": "查找所有心情为开心的图文（无分页）",
-        "code": "const entries = await Memento.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true});\nsetResult(`找到 ${entries.length} 条开心的图文`);"
+        "code": "const entries = await Aboutme.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true});\nsetResult(`找到 ${entries.length} 条开心的图文`);"
       },
       {
         "title": "分页查找所有心情为开心的图文",
-        "code": "const result = await Memento.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true, offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
+        "code": "const result = await Aboutme.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true, offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历图文列表；支持任意字段匹配；分页仅在 findAll=true 时生效",
@@ -314,7 +314,7 @@
     "examples": [
       {
         "title": "查找指定ID的图文",
-        "code": "const entry = await Memento.plugins.calendar_album.findEntryById({id: 'entry123'});\nif (entry) {\n  setResult(`图文标题: ${entry.title}, 内容: ${entry.content.substring(0, 50)}...`);\n} else {\n  setResult('图文不存在');\n}"
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryById({id: 'entry123'});\nif (entry) {\n  setResult(`图文标题: ${entry.title}, 内容: ${entry.content.substring(0, 50)}...`);\n} else {\n  setResult('图文不存在');\n}"
       }
     ],
     "notes": "等价于 getEntryById，但遵循统一命名规范",
@@ -335,11 +335,11 @@
     "examples": [
       {
         "title": "精确匹配图文标题",
-        "code": "const entry = await Memento.plugins.calendar_album.findEntryByTitle({title: '美好的一天'});\nsetResult(entry ? `找到图文，创建时间: ${entry.createdAt}` : '未找到');"
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryByTitle({title: '美好的一天'});\nsetResult(entry ? `找到图文，创建时间: ${entry.createdAt}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的图文",
-        "code": "const entries = await Memento.plugins.calendar_album.findEntryByTitle({title: '旅行', fuzzy: true, findAll: true});\nsetResult(`找到 ${entries.length} 条包含'旅行'的图文`);"
+        "code": "const entries = await Aboutme.plugins.calendar_album.findEntryByTitle({title: '旅行', fuzzy: true, findAll: true});\nsetResult(`找到 ${entries.length} 条包含'旅行'的图文`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 includes",

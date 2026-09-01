@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
-import 'package:Memento/core/services/log_service.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/core/services/log_service.dart';
 
 /// 日志查看界面
 class LogScreen extends StatefulWidget {

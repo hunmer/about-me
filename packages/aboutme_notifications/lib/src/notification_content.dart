@@ -1,5 +1,5 @@
 /// 通知布局类型
-enum MementoNotificationLayout {
+enum AboutmeNotificationLayout {
   /// 默认布局
   basic,
 
@@ -23,7 +23,7 @@ enum MementoNotificationLayout {
 }
 
 /// 通知内容配置
-class MementoNotificationContent {
+class AboutmeNotificationContent {
   /// 通知唯一标识
   final int id;
 
@@ -37,7 +37,7 @@ class MementoNotificationContent {
   final String body;
 
   /// 通知布局
-  final MementoNotificationLayout layout;
+  final AboutmeNotificationLayout layout;
 
   /// 大图 URL（用于大图布局）
   final String? bigPicture;
@@ -60,12 +60,12 @@ class MementoNotificationContent {
   /// 进度值（0-100，用于进度条布局）
   final int? progress;
 
-  const MementoNotificationContent({
+  const AboutmeNotificationContent({
     required this.id,
     required this.channelKey,
     required this.title,
     required this.body,
-    this.layout = MementoNotificationLayout.basic,
+    this.layout = AboutmeNotificationLayout.basic,
     this.bigPicture,
     this.largeIcon,
     this.summary,
@@ -77,7 +77,7 @@ class MementoNotificationContent {
 }
 
 /// 已接收的通知
-class MementoReceivedNotification {
+class AboutmeReceivedNotification {
   /// 通知 ID
   final int? id;
 
@@ -93,7 +93,7 @@ class MementoReceivedNotification {
   /// 通道标识
   final String? channelKey;
 
-  const MementoReceivedNotification({
+  const AboutmeReceivedNotification({
     this.id,
     this.title,
     this.body,
@@ -103,7 +103,7 @@ class MementoReceivedNotification {
 }
 
 /// 已调度的通知
-class MementoScheduledNotification {
+class AboutmeScheduledNotification {
   /// 通知 ID
   final int id;
 
@@ -116,7 +116,7 @@ class MementoScheduledNotification {
   /// 调度时间
   final DateTime? scheduledDate;
 
-  const MementoScheduledNotification({
+  const AboutmeScheduledNotification({
     required this.id,
     this.title,
     this.body,

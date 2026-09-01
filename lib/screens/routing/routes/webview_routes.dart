@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/webview/screens/webview_browser_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/webview/screens/webview_browser_screen.dart';
 
 /// WebView 插件路由注册表
 class WebViewRoutes implements RouteRegistry {

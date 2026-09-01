@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
-import 'package:Memento/plugins/agent_chat/models/ai_message_status.dart';
-import 'package:Memento/plugins/agent_chat/managers/ai_message_status_manager.dart';
-import 'package:Memento/plugins/agent_chat/services/message_service.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event_args.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/ai_message_status.dart';
+import 'package:aboutme/plugins/agent_chat/managers/ai_message_status_manager.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'markdown_content.dart';
 import 'tool_call_steps.dart';
 

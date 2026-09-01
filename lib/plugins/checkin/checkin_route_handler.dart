@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/routing/plugin_route_handler.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
-import 'package:Memento/plugins/checkin/screens/checkin_item_selector_screen.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/checkin/screens/checkin_item_selector_screen.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 打卡插件路由处理器
 class CheckinRouteHandler extends PluginRouteHandler {

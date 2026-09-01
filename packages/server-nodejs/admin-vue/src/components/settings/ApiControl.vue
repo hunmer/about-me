@@ -163,7 +163,7 @@ async function handleSaveKey(): Promise<void> {
       const verificationData = JSON.parse(decryptedJson)
 
       // 验证内容
-      if (verificationData.content !== 'MEMENTO_KEY_VERIFICATION_v1') {
+      if (verificationData.content !== 'ABOUTME_KEY_VERIFICATION_v1') {
         message.error('密钥验证失败：内容不匹配')
         return
       }
@@ -304,7 +304,7 @@ async function copyToClipboard(text: string): Promise<void> {
           type="warning"
           style="margin-top: 12px"
         >
-          ⚠️ 需要提供加密密钥才能解密文件（从 Memento 客户端获取）
+          ⚠️ 需要提供加密密钥才能解密文件（从 Aboutme 客户端获取）
         </NAlert>
       </div>
 
@@ -324,7 +324,7 @@ async function copyToClipboard(text: string): Promise<void> {
           <NButton @click="handleCancel">取消</NButton>
         </NInputGroup>
         <p style="color: #6b7280; font-size: 0.75rem; margin-top: 8px">
-          💡 加密密钥可在 Memento 客户端 "设置 > 开发者选项" 中查看
+          💡 加密密钥可在 Aboutme 客户端 "设置 > 开发者选项" 中查看
         </p>
       </div>
 

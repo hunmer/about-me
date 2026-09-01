@@ -12,7 +12,7 @@
 
 ## 模块职责
 
-日历插件是 Memento 的核心时间管理模块，提供全方位的时间管理能力：
+日历插件是 Aboutme 的核心时间管理模块，提供全方位的时间管理能力：
 
 - **多视图日历管理**：支持日、周、工作周、月、时间轴等 8 种视图模式
 - **事件全生命周期管理**：创建、编辑、删除、完成、搜索日历事件
@@ -351,7 +351,7 @@ if (result != null) {
 ### 外部依赖
 
 - `syncfusion_flutter_calendar`: Syncfusion 日历组件（核心依赖）
-- `memento_notifications`: 通知系统封装
+- `aboutme_notifications`: 通知系统封装
 - `intl`: 日期格式化
 - `uuid`: UUID 生成
 - `get`: GetX 状态管理和国际化
@@ -754,7 +754,7 @@ if (reminderTime.isAfter(DateTime.now())) {
 }
 ```
 
-**使用 memento_notifications 包**:
+**使用 aboutme_notifications 包**:
 - 封装了 AwesomeNotifications
 - 提供统一的 notification layout
 - 支持自定义通知样式
@@ -900,7 +900,7 @@ Future<void> syncWidgetData() async {
   await HomeWidget.updateWidget(
     name: 'CalendarMonthWidgetProvider',
     qualifiedAndroidName:
-        'github.hunmer.memento.widgets.providers.CalendarMonthWidgetProvider',
+        'github.hunmer.aboutme.widgets.providers.CalendarMonthWidgetProvider',
   );
 }
 ```
@@ -1393,7 +1393,7 @@ List<syncfusion.Appointment> getUserAppointments() {
 ### 框架依赖
 
 - **shared_models**: UseCase 和数据模型
-- **memento_notifications**: 通知系统封装
+- **aboutme_notifications**: 通知系统封装
 - **plugin_data_selector**: 数据选择器框架
 - **super_cupertino_navigation**: iOS 风格导航
 

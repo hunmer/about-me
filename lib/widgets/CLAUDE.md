@@ -4,7 +4,7 @@
 
 ## 模块概述
 
-`lib/widgets/` 是 Memento 应用的通用组件库，包含项目中多处使用的可复用 UI 组件。这些组件涵盖了编辑器、对话框、选择器、预览器等多种类型，为应用提供统一的用户界面和交互体验。
+`lib/widgets/` 是 Aboutme 应用的通用组件库，包含项目中多处使用的可复用 UI 组件。这些组件涵盖了编辑器、对话框、选择器、预览器等多种类型，为应用提供统一的用户界面和交互体验。
 
 ### 设计原则
 
@@ -18,8 +18,8 @@
 
 1. **导入方式**：通常使用具名导入
    ```dart
-   import 'package:Memento/widgets/markdown_editor/index.dart';
-   import 'package:Memento/widgets/file_preview/index.dart';
+   import 'package:aboutme/widgets/markdown_editor/index.dart';
+   import 'package:aboutme/widgets/file_preview/index.dart';
    ```
 
 2. **回调约定**：使用 `onXxx` 命名回调函数
@@ -88,7 +88,7 @@ Markdown 编辑器组件，提供完整的 Markdown 编辑和预览功能。
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/markdown_editor/index.dart';
+import 'package:aboutme/widgets/markdown_editor/index.dart';
 
 // 基础使用
 QuillEditor(
@@ -151,7 +151,7 @@ QuillEditor(
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/file_preview/index.dart';
+import 'package:aboutme/widgets/file_preview/index.dart';
 
 // 预览图片
 Navigator.push(
@@ -241,7 +241,7 @@ class TagManagerConfig {
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/tag_manager_dialog.dart';
+import 'package:aboutme/widgets/tag_manager_dialog.dart';
 
 // 基础使用
 final result = await showDialog<List<String>>(
@@ -322,7 +322,7 @@ showDialog<List<String>>(
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/location_picker.dart';
+import 'package:aboutme/widgets/location_picker.dart';
 
 showDialog(
   context: context,
@@ -375,7 +375,7 @@ List<Map<String, dynamic>>
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/image_picker_dialog.dart';
+import 'package:aboutme/widgets/image_picker_dialog.dart';
 
 // 单图选择
 final result = await showDialog<Map<String, dynamic>>(
@@ -444,7 +444,7 @@ if (results != null) {
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/avatar_picker.dart';
+import 'package:aboutme/widgets/avatar_picker.dart';
 
 AvatarPicker(
   size: 100,
@@ -474,7 +474,7 @@ AvatarPicker(
 #### 使用方法
 
 ```dart
-import 'package:Memento/widgets/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/icon_picker_dialog.dart';
 
 // 显示图标选择器
 final IconData? selectedIcon = await showIconPickerDialog(
@@ -512,7 +512,7 @@ if (selectedIcon != null) {
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/group_selector_dialog.dart';
+import 'package:aboutme/widgets/group_selector_dialog.dart';
 
 final selectedGroup = await showDialog<String>(
   context: context,
@@ -550,7 +550,7 @@ if (selectedGroup != null) {
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/custom_dialog.dart';
+import 'package:aboutme/widgets/custom_dialog.dart';
 
 showDialog(
   context: context,
@@ -601,7 +601,7 @@ enum BackupScheduleType {
 #### 使用示例
 
 ```dart
-import 'package:Memento/widgets/backup_time_picker.dart';
+import 'package:aboutme/widgets/backup_time_picker.dart';
 
 showDialog(
   context: context,
@@ -684,7 +684,7 @@ lib/widgets/
 ### 核心依赖
 
 - **flutter/material.dart**：Flutter 框架基础
-- **Memento/l10n/app_localizations.dart**：应用国际化
+- **Aboutme/l10n/app_localizations.dart**：应用国际化
 
 ### 第三方包依赖
 
@@ -761,7 +761,7 @@ lib/widgets/
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:Memento/l10n/app_localizations.dart';
+import 'package:aboutme/l10n/app_localizations.dart';
 
 /// [组件名称] - 简要描述
 ///
@@ -816,7 +816,7 @@ class _MyComponentState extends State<MyComponent> {
 ### Q1: 如何在组件中使用国际化？
 
 ```dart
-import 'package:Memento/l10n/app_localizations.dart';
+import 'package:aboutme/l10n/app_localizations.dart';
 
 // 在 build 方法中
 Text(AppLocalizations.of(context)!.someKey)

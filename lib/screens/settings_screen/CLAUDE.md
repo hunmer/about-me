@@ -167,7 +167,7 @@ ImportController.importData(file)
 
 **备份��式**:
 ```
-memento_backup_2025-11-13.zip
+aboutme_backup_2025-11-13.zip
 ├── configs/
 ├── chat/
 ├── diary/

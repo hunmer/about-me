@@ -1,9 +1,9 @@
 // ignore_for_file: overridden_fields
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/plugin_data_selector_service.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_config.dart';
-import 'package:Memento/widgets/form_fields/form_field_wrapper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_config.dart';
+import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 
 /// 插件数据选择器字段
 ///

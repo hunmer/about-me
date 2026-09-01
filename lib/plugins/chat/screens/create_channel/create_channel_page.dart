@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 创建频道 Sheet 内容
 ///

@@ -13,7 +13,7 @@
 | `analysis_options.yaml` / `flutter_config.yaml` | 分析器与构建配置 |
 | `firebase.json` / `vercel.json` | Firebase / Vercel 部署配置 |
 | `findings.md` / `progress.md` / `task_plan.md` | 历史工作底稿（非产品文档） |
-| `Memento.ipa` | iOS 构建产物（30MB，勿编辑） |
+| `Aboutme.ipa` | iOS 构建产物（30MB，勿编辑） |
 
 ## lib/（应用代码，1943 个 Dart 文件）
 
@@ -31,13 +31,13 @@
 | 子包 | 文件数（约） | 类型 |
 |------|------|------|
 | `server-nodejs/` | 618（含 admin-vue） | Node 同步服务器 |
-| `memento_widgets/` | 265 | Flutter 原生插件（桌面小组件） |
-| `memento_intent/` | 121 | Flutter 原生插件（Android Intent） |
-| `memento_nfc/` | 113 | Flutter 原生插件（NFC） |
-| `memento_foreground_service/` | 37 | Flutter 原生插件（前台服务） |
-| `memento_notifications/` | 34 | Flutter 原生插件（通知） |
+| `aboutme_widgets/` | 265 | Flutter 原生插件（桌面小组件） |
+| `aboutme_intent/` | 121 | Flutter 原生插件（Android Intent） |
+| `aboutme_nfc/` | 113 | Flutter 原生插件（NFC） |
+| `aboutme_foreground_service/` | 37 | Flutter 原生插件（前台服务） |
+| `aboutme_notifications/` | 34 | Flutter 原生插件（通知） |
 | `floating_ball_plugin/` | 33 | Flutter 原生插件（悬浮球） |
-| `mcp-memento-server/` | 13 | MCP 服务器 |
+| `mcp-aboutme-server/` | 13 | MCP 服务器 |
 | `api_forwarding_server/` | 9 | API 转发服务器 |
 
 ## 其他目录
@@ -45,7 +45,7 @@
 | 目录 | 说明 |
 |------|------|
 | `shared_models/` | 共享 Dart 模型包（46 个 Dart 文件：repositories 20 / usecases 20 / sync / auth / utils） |
-| `docs/`（71 篇） | 按主题：小组件（WIDGET_*、TODO_QUADRANT_*、CHECKIN_WIDGET_*）、快捷方式（SHORTCUTS_*）、统一计时器（UNIFIED_TIMER_*、README_UNIFIED_TIMER）、Live Activities（live_activities* 5 篇）、原生插件实现（NFC_PLUGIN_*、MEMENTO_INTENT_*、NATIVE_SERVICE_*）、导航（SUPER_CUPERTINO_* 2 篇）、架构（USECASE_MIGRATION_GUIDE、WIDGET_ARCHITECTURE_UNIFIED、bidirectional_sync_implementation、event）、AI（AI_PROMPT_GUIDE、PROMPT_*、agent_chat_chain_feature、工具调用结果传递示例）、三方库笔记（webdav_client、openai_dart、fs_shim 等）、`script_examples/` |
+| `docs/`（71 篇） | 按主题：小组件（WIDGET_*、TODO_QUADRANT_*、CHECKIN_WIDGET_*）、快捷方式（SHORTCUTS_*）、统一计时器（UNIFIED_TIMER_*、README_UNIFIED_TIMER）、Live Activities（live_activities* 5 篇）、原生插件实现（NFC_PLUGIN_*、ABOUTME_INTENT_*、NATIVE_SERVICE_*）、导航（SUPER_CUPERTINO_* 2 篇）、架构（USECASE_MIGRATION_GUIDE、WIDGET_ARCHITECTURE_UNIFIED、bidirectional_sync_implementation、event）、AI（AI_PROMPT_GUIDE、PROMPT_*、agent_chat_chain_feature、工具调用结果传递示例）、三方库笔记（webdav_client、openai_dart、fs_shim 等）、`script_examples/` |
 | `online/` | `apps/`（4 个小程序 + apps.json）、`scripts/`（在线脚本 + ai_encouragement_bot）、`agents.json` |
 | `scripts/` | build.sh、release.sh、build_apk.sh、deploy_to_vercel.sh、fix_ios_build.sh、copy_models.dart 等（有独立 CLAUDE.md） |
 | `tool_templates/` | bill / calendar_album / store 三份工具 JSON 模板（随 assets 打包） |

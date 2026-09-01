@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memento JS Bridge 测试</title>
+    <title>Aboutme JS Bridge 测试</title>
     <style>
         * {
             box-sizing: border-box;
@@ -191,7 +191,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Memento JS Bridge 测试</h1>
+        <h1>Aboutme JS Bridge 测试</h1>
 
         <!-- 状态栏 -->
         <div class="status-bar">
@@ -289,15 +289,15 @@
             log('日志已清空', 'info');
         }
 
-        // 检测 Memento Bridge 是否可用
+        // 检测 Aboutme Bridge 是否可用
         function checkBridge() {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
 
-            if (typeof window.Memento !== 'undefined') {
+            if (typeof window.Aboutme !== 'undefined') {
                 statusDot.classList.add('connected');
-                statusText.textContent = 'Memento Bridge 已连接';
-                log('Memento JS Bridge 已连接', 'success');
+                statusText.textContent = 'Aboutme Bridge 已连接';
+                log('Aboutme JS Bridge 已连接', 'success');
                 return true;
             } else if (typeof window.flutter_inappwebview !== 'undefined') {
                 statusDot.classList.add('connected');
@@ -306,16 +306,16 @@
                 return true;
             } else {
                 statusText.textContent = 'Bridge 未连接';
-                log('Memento JS Bridge 未连接，请在 Memento WebView 中打开此页面', 'error');
+                log('Aboutme JS Bridge 未连接，请在 Aboutme WebView 中打开此页面', 'error');
                 return false;
             }
         }
 
         // 包装调用以处理 Bridge 未注入的情况
-        async function callMemento(callback) {
+        async function callAboutme(callback) {
             try {
-                if (typeof window.Memento === 'undefined') {
-                    throw new Error('Memento Bridge 未注入');
+                if (typeof window.Aboutme === 'undefined') {
+                    throw new Error('Aboutme Bridge 未注入');
                 }
                 const result = await callback();
                 return result;
@@ -328,9 +328,9 @@
         // ==================== 系统 API ====================
 
         async function testGetCurrentTime() {
-            log('调用: Memento.system.getCurrentTime()', 'info');
+            log('调用: Aboutme.system.getCurrentTime()', 'info');
             try {
-                const result = await callMemento(() => Memento.system.getCurrentTime());
+                const result = await callAboutme(() => Aboutme.system.getCurrentTime());
                 log(`当前时间: ${JSON.stringify(result)}`, 'success');
             } catch (e) {
                 log(`获取时间失败: ${e.message}`, 'error');
@@ -338,9 +338,9 @@
         }
 
         async function testGetDeviceInfo() {
-            log('调用: Memento.system.getDeviceInfo()', 'info');
+            log('调用: Aboutme.system.getDeviceInfo()', 'info');
             try {
-                const result = await callMemento(() => Memento.system.getDeviceInfo());
+                const result = await callAboutme(() => Aboutme.system.getDeviceInfo());
                 log(result, 'success');
             } catch (e) {
                 log(`获取设备信息失败: ${e.message}`, 'error');
@@ -348,9 +348,9 @@
         }
 
         async function testGetAppInfo() {
-            log('调用: Memento.system.getAppInfo()', 'info');
+            log('调用: Aboutme.system.getAppInfo()', 'info');
             try {
-                const result = await callMemento(() => Memento.system.getAppInfo());
+                const result = await callAboutme(() => Aboutme.system.getAppInfo());
                 log(result, 'success');
             } catch (e) {
                 log(`获取应用信息失败: ${e.message}`, 'error');
@@ -361,9 +361,9 @@
 
         async function testToast() {
             const message = document.getElementById('toastMessage').value || 'Hello!';
-            log(`调用: Memento.ui.toast("${message}")`, 'info');
+            log(`调用: Aboutme.ui.toast("${message}")`, 'info');
             try {
-                await callMemento(() => Memento.ui.toast(message));
+                await callAboutme(() => Aboutme.ui.toast(message));
                 log('Toast 显示成功', 'success');
             } catch (e) {
                 log(`Toast 失败: ${e.message}`, 'error');
@@ -371,9 +371,9 @@
         }
 
         async function testAlert() {
-            log('调用: Memento.ui.alert(...)', 'info');
+            log('调用: Aboutme.ui.alert(...)', 'info');
             try {
-                await callMemento(() => Memento.ui.alert({
+                await callAboutme(() => Aboutme.ui.alert({
                     title: '测试 Alert',
                     message: '这是一个来自 WebView 的 Alert 对话框',
                     buttonText: '我知道了'
@@ -385,9 +385,9 @@
         }
 
         async function testConfirm() {
-            log('调用: Memento.ui.confirm(...)', 'info');
+            log('调用: Aboutme.ui.confirm(...)', 'info');
             try {
-                const result = await callMemento(() => Memento.ui.confirm({
+                const result = await callAboutme(() => Aboutme.ui.confirm({
                     title: '确认操作',
                     message: '你确定要执行这个操作吗？',
                     confirmText: '确定',
@@ -402,9 +402,9 @@
         // ==================== WebView 插件 ====================
 
         async function testGetCards() {
-            log('调用: Memento.plugins.webview.getCards()', 'info');
+            log('调用: Aboutme.plugins.webview.getCards()', 'info');
             try {
-                const result = await callMemento(() => Memento.plugins.webview.getCards());
+                const result = await callAboutme(() => Aboutme.plugins.webview.getCards());
                 const data = typeof result === 'string' ? JSON.parse(result) : result;
                 log(`获取到 ${Array.isArray(data) ? data.length : 0} 张卡片:`, 'success');
                 log(data, 'info');
@@ -414,9 +414,9 @@
         }
 
         async function testGetTabs() {
-            log('调用: Memento.plugins.webview.getTabs()', 'info');
+            log('调用: Aboutme.plugins.webview.getTabs()', 'info');
             try {
-                const result = await callMemento(() => Memento.plugins.webview.getTabs());
+                const result = await callAboutme(() => Aboutme.plugins.webview.getTabs());
                 const data = typeof result === 'string' ? JSON.parse(result) : result;
                 log(`获取到 ${Array.isArray(data) ? data.length : 0} 个标签页:`, 'success');
                 log(data, 'info');
@@ -429,9 +429,9 @@
             const title = document.getElementById('cardTitle').value || '测试卡片';
             const url = document.getElementById('cardUrl').value || 'https://example.com';
 
-            log(`调用: Memento.plugins.webview.addCard({title: "${title}", url: "${url}"})`, 'info');
+            log(`调用: Aboutme.plugins.webview.addCard({title: "${title}", url: "${url}"})`, 'info');
             try {
-                const result = await callMemento(() => Memento.plugins.webview.addCard({
+                const result = await callAboutme(() => Aboutme.plugins.webview.addCard({
                     title: title,
                     url: url,
                     type: 'url'
@@ -447,10 +447,10 @@
         let lastCardId = null;
 
         async function testDeleteLastCard() {
-            log('调用: Memento.plugins.webview.getCards() 然后删除最后一张', 'info');
+            log('调用: Aboutme.plugins.webview.getCards() 然后删除最后一张', 'info');
             try {
                 // 先获取所有卡片
-                const cardsResult = await callMemento(() => Memento.plugins.webview.getCards());
+                const cardsResult = await callAboutme(() => Aboutme.plugins.webview.getCards());
                 const cards = typeof cardsResult === 'string' ? JSON.parse(cardsResult) : cardsResult;
 
                 if (!Array.isArray(cards) || cards.length === 0) {
@@ -461,7 +461,7 @@
                 const lastCard = cards[cards.length - 1];
                 log(`删除卡片: ${lastCard.title} (${lastCard.id})`, 'info');
 
-                const result = await callMemento(() => Memento.plugins.webview.deleteCard({
+                const result = await callAboutme(() => Aboutme.plugins.webview.deleteCard({
                     cardId: lastCard.id
                 }));
 
@@ -500,9 +500,9 @@
 
         async function testPlugin(pluginId, method, paramsStr) {
             const params = JSON.parse(paramsStr);
-            log(`调用: Memento.plugins.${pluginId}.${method}(${JSON.stringify(params)})`, 'info');
+            log(`调用: Aboutme.plugins.${pluginId}.${method}(${JSON.stringify(params)})`, 'info');
             try {
-                const result = await callMemento(() => Memento.plugins[pluginId][method](params));
+                const result = await callAboutme(() => Aboutme.plugins[pluginId][method](params));
                 const data = typeof result === 'string' ? JSON.parse(result) : result;
                 log(`${pluginId}.${method} 返回:`, 'success');
                 log(data, 'info');
@@ -528,9 +528,9 @@
                 return;
             }
 
-            log(`调用: Memento.plugins.${pluginId}.${method}(${JSON.stringify(params)})`, 'info');
+            log(`调用: Aboutme.plugins.${pluginId}.${method}(${JSON.stringify(params)})`, 'info');
             try {
-                const result = await callMemento(() => Memento.plugins[pluginId][method](params));
+                const result = await callAboutme(() => Aboutme.plugins[pluginId][method](params));
                 const data = typeof result === 'string' ? JSON.parse(result) : result;
                 log('返回结果:', 'success');
                 log(data, 'info');
@@ -551,8 +551,8 @@
 
         // 监听 Bridge 注入
         if (typeof window.flutter_inappwebview !== 'undefined') {
-            window.flutter_inappwebview.callHandler('Memento_ready').then(() => {
-                log('收到 Memento Bridge 就绪信号', 'success');
+            window.flutter_inappwebview.callHandler('Aboutme_ready').then(() => {
+                log('收到 Aboutme Bridge 就绪信号', 'success');
                 checkBridge();
             }).catch(() => {});
         }

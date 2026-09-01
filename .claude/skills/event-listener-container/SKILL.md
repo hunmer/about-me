@@ -20,7 +20,7 @@ description: 为Flutter插件视图添加事件监听容器，自动管理事件
 ### 2. Add Import
 
 ```dart
-import 'package:Memento/widgets/event_listener_container.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
 ```
 
 ### 3. Wrap UI with EventListenerContainer

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
 
 class StatisticsTab extends StatelessWidget {
   final Skill skill;

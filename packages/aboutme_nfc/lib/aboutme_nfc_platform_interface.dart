@@ -1,25 +1,25 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'memento_nfc_method_channel.dart';
-import 'memento_nfc.dart';
+import 'aboutme_nfc_method_channel.dart';
+import 'aboutme_nfc.dart';
 
-abstract class MementoNfcPlatform extends PlatformInterface {
-  /// Constructs a MementoNfcPlatform.
-  MementoNfcPlatform() : super(token: _token);
+abstract class AboutmeNfcPlatform extends PlatformInterface {
+  /// Constructs a AboutmeNfcPlatform.
+  AboutmeNfcPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static MementoNfcPlatform _instance = MethodChannelMementoNfc();
+  static AboutmeNfcPlatform _instance = MethodChannelAboutmeNfc();
 
-  /// The default instance of [MementoNfcPlatform] to use.
+  /// The default instance of [AboutmeNfcPlatform] to use.
   ///
-  /// Defaults to [MethodChannelMementoNfc].
-  static MementoNfcPlatform get instance => _instance;
+  /// Defaults to [MethodChannelAboutmeNfc].
+  static AboutmeNfcPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [MementoNfcPlatform] when
+  /// platform-specific class that extends [AboutmeNfcPlatform] when
   /// they register themselves.
-  static set instance(MementoNfcPlatform instance) {
+  static set instance(AboutmeNfcPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

@@ -1,4 +1,4 @@
-group = "github.hunmer.memento_intent"
+group = "github.hunmer.aboutme_intent"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -25,7 +25,7 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 android {
-    namespace = "github.hunmer.memento_intent"
+    namespace = "github.hunmer.aboutme_intent"
 
     compileSdk = 36
 

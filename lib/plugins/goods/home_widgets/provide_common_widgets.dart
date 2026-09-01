@@ -3,7 +3,7 @@
 /// 支持通过 dataSelector 选择物品后，使用公共小组件渲染
 library;
 
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:flutter/foundation.dart';
 
 /// 公共小组件提供者函数

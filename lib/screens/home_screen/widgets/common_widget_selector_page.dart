@@ -1,17 +1,17 @@
 import 'dart:convert';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selectable_item.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 import 'package:extended_tabs/extended_tabs.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/core/services/plugin_data_selector/plugin_data_selector_service.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_item.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/selector_widget_types.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/common_widgets.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
 
 /// 公共小组件选择页面
 ///

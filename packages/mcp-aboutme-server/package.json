@@ -1,11 +1,11 @@
 {
-  "name": "@hunmer/mcp-memento-server",
+  "name": "@hunmer/mcp-aboutme-server",
   "version": "1.0.0",
-  "description": "MCP server for Memento app - provides AI tools for managing personal data",
+  "description": "MCP server for Aboutme app - provides AI tools for managing personal data",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "mcp-memento-server": "./dist/index.js"
+    "mcp-aboutme-server": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -17,7 +17,7 @@
   },
   "keywords": [
     "mcp",
-    "memento",
+    "aboutme",
     "ai",
     "tools",
     "personal-assistant"

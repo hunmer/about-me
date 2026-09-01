@@ -26,7 +26,7 @@ jobs:
       run: flutter build macos --release --no-tree-shake-icons
       
     - name: Create ZIP package
-      run: cd build/macos/Build/Products/Release && zip -r Memento-macos.app.zip Memento.app
+      run: cd build/macos/Build/Products/Release && zip -r Aboutme-macos.app.zip Aboutme.app
       
     - name: Get current date
       id: date
@@ -41,7 +41,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.SECERT }}
       with:
-        files: build/macos/Build/Products/Release/Memento-macos.app.zip
+        files: build/macos/Build/Products/Release/Aboutme-macos.app.zip
         tag_name: release-${{ steps.date.outputs.date }}-${{ steps.commit_sha.outputs.sha }}
         generate_release_notes: false
         

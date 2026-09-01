@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/core/route/page_visit_record.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/page_visit_record.dart';
 
 /// 路由历史记录对话框
 ///

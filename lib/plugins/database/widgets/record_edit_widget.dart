@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/database/controllers/database_controller.dart';
-import 'package:Memento/plugins/database/models/database_model.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/plugins/database/controllers/database_controller.dart';
+import 'package:aboutme/plugins/database/models/database_model.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 import '../models/record.dart' as record_model;
 
 class RecordEditWidget extends StatefulWidget {

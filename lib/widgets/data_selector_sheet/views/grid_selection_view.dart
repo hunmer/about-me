@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selectable_item.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_definition.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_definition.dart';
 
 /// 网格选择视图
 ///

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/utils/color_extensions.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/utils/color_extensions.dart';
 import 'package:uuid/uuid.dart';
 
 class HabitsUtils {

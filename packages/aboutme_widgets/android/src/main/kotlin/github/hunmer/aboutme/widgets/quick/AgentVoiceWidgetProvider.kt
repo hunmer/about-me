@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.quick
+package github.hunmer.aboutme.widgets.quick
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -8,7 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.RemoteViews
 import org.json.JSONArray
-import github.hunmer.memento_widgets.R
+import github.hunmer.aboutme_widgets.R
 
 /**
  * AI 语音快捷小组件 Provider
@@ -87,8 +87,8 @@ class AgentVoiceWidgetProvider : AppWidgetProvider() {
 
                         // 设置点击事件 - 直接跳转到 agent_chat 并打开指定对话
                         val intent = Intent(Intent.ACTION_VIEW)
-                        intent.data = Uri.parse("memento://widget/agent_chat?conversationId=$conversationId")
-                        intent.setPackage("github.hunmer.memento")
+                        intent.data = Uri.parse("aboutme://widget/agent_chat?conversationId=$conversationId")
+                        intent.setPackage("github.hunmer.aboutme")
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
                         val pendingIntent = PendingIntent.getActivity(
@@ -107,8 +107,8 @@ class AgentVoiceWidgetProvider : AppWidgetProvider() {
 
                 // 设置"选择对话"按钮点击事件 - 打开 agent_chat 主界面
                 val newConversationIntent = Intent(Intent.ACTION_VIEW)
-                newConversationIntent.data = Uri.parse("memento://widget/agent_chat")
-                newConversationIntent.setPackage("github.hunmer.memento")
+                newConversationIntent.data = Uri.parse("aboutme://widget/agent_chat")
+                newConversationIntent.setPackage("github.hunmer.aboutme")
                 newConversationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
                 val newConversationPendingIntent = PendingIntent.getActivity(

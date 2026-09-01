@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.example.memento_nfc">
+  package="com.example.aboutme_nfc">
 
   <uses-permission android:name="android.permission.NFC" />
   <uses-permission android:name="android.permission.VIBRATE" />

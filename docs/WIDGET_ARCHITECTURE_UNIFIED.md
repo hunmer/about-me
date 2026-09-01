@@ -1,4 +1,4 @@
-# Memento 小组件统一架构文档
+# Aboutme 小组件统一架构文档
 
 > **版本**: 2.0 (统一架构)
 > **更新日期**: 2025-11-30
@@ -8,7 +8,7 @@
 
 ## 架构总览
 
-Memento 小组件系统已完成统一架构改造,所有小组件遵循一致的设计模式和最佳实践。
+Aboutme 小组件系统已完成统一架构改造,所有小组件遵循一致的设计模式和最佳实践。
 
 ### 核心原则
 
@@ -100,7 +100,7 @@ class ChatWidgetService {
       // 3. 使用完整包名更新
       await HomeWidget.updateWidget(
         name: 'ChatQuickWidget',
-        qualifiedAndroidName: 'github.hunmer.memento.widgets.quick.ChatQuickWidgetProvider',
+        qualifiedAndroidName: 'github.hunmer.aboutme.widgets.quick.ChatQuickWidgetProvider',
         iOSName: 'ChatQuickWidget',
       );
     } catch (e, stack) {
@@ -196,19 +196,19 @@ void main() async {
 
 **常规插件小组件**:
 ```
-格式: github.hunmer.memento.widgets.providers.{PluginName}WidgetProvider
+格式: github.hunmer.aboutme.widgets.providers.{PluginName}WidgetProvider
 示例:
-- TodoWidgetProvider         → github.hunmer.memento.widgets.providers.TodoWidgetProvider
-- DiaryWidgetProvider        → github.hunmer.memento.widgets.providers.DiaryWidgetProvider
-- ChatWidgetProvider         → github.hunmer.memento.widgets.providers.ChatWidgetProvider
+- TodoWidgetProvider         → github.hunmer.aboutme.widgets.providers.TodoWidgetProvider
+- DiaryWidgetProvider        → github.hunmer.aboutme.widgets.providers.DiaryWidgetProvider
+- ChatWidgetProvider         → github.hunmer.aboutme.widgets.providers.ChatWidgetProvider
 ```
 
 **快速小组件**:
 ```
-格式: github.hunmer.memento.widgets.quick.{WidgetName}Provider
+格式: github.hunmer.aboutme.widgets.quick.{WidgetName}Provider
 示例:
-- ChatQuickWidgetProvider    → github.hunmer.memento.widgets.quick.ChatQuickWidgetProvider
-- AgentVoiceWidgetProvider   → github.hunmer.memento.widgets.quick.AgentVoiceWidgetProvider
+- ChatQuickWidgetProvider    → github.hunmer.aboutme.widgets.quick.ChatQuickWidgetProvider
+- AgentVoiceWidgetProvider   → github.hunmer.aboutme.widgets.quick.AgentVoiceWidgetProvider
 ```
 
 ---
@@ -217,7 +217,7 @@ void main() async {
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│           Memento 主应用 (Flutter)                  │
+│           Aboutme 主应用 (Flutter)                  │
 │                                                     │
 │  ┌───────────────────────────────────────────────┐  │
 │  │  插件数据变更 (Plugin Data Change)            │  │
@@ -241,7 +241,7 @@ void main() async {
                       │
                       ▼
      ┌────────────────────────────────────┐
-     │  memento_widgets 插件 (Flutter)    │
+     │  aboutme_widgets 插件 (Flutter)    │
      │  ┌──────────────────────────────┐  │
      │  │  MyWidgetManager             │  │
      │  │  - updatePluginWidgetData()  │  │
@@ -331,7 +331,7 @@ void main() async {
 - [ ] Android Provider 使用完整包名 `qualifiedAndroidName`
 - [ ] 在 `PluginWidgetSyncHelper` 中添加同步方法
 - [ ] 在 `MyWidgetManager._getProviderName()` 中添加映射
-- [ ] 在 `memento_widgets/android/AndroidManifest.xml` 注册 Receiver
+- [ ] 在 `aboutme_widgets/android/AndroidManifest.xml` 注册 Receiver
 - [ ] 提供标准化的错误处理和日志输出
 
 ---
@@ -344,8 +344,8 @@ void main() async {
 | `lib/core/services/plugin_widget_sync_helper.dart` | 批量同步工具 |
 | `lib/plugins/chat/services/widget_service.dart` | 快速小组件示例 |
 | `lib/plugins/agent_chat/services/widget_service.dart` | 常规小组件示例 |
-| `packages/memento_widgets/lib/memento_widgets.dart` | 底层插件 API |
-| `memento_widgets/android/src/main/AndroidManifest.xml` | Provider 注册 |
+| `packages/aboutme_widgets/lib/aboutme_widgets.dart` | 底层插件 API |
+| `aboutme_widgets/android/src/main/AndroidManifest.xml` | Provider 注册 |
 
 ---
 
@@ -356,11 +356,11 @@ void main() async {
 **问题**:
 ```
 PlatformException(-3, No Widget found with Name TodoWidgetProvider.
-ClassNotFoundException: github.hunmer.memento.TodoWidgetProvider
+ClassNotFoundException: github.hunmer.aboutme.TodoWidgetProvider
 ```
 
 **原因**:
-`packages/memento_widgets/lib/memento_widgets.dart` 中的 `_androidProviders` 映射只包含示例小组件,缺少所有插件小组件的完整包名。
+`packages/aboutme_widgets/lib/aboutme_widgets.dart` 中的 `_androidProviders` 映射只包含示例小组件,缺少所有插件小组件的完整包名。
 
 **修复**:
 在 `_androidProviders` 中添加了所有 42 个小组件的完整包名映射:
@@ -371,17 +371,17 @@ ClassNotFoundException: github.hunmer.memento.TodoWidgetProvider
 ```dart
 static const Map<String, String> _androidProviders = {
   // 插件小组件 - 1x1
-  'TodoWidgetProvider': 'github.hunmer.memento.widgets.providers.TodoWidgetProvider',
-  'DiaryWidgetProvider': 'github.hunmer.memento.widgets.providers.DiaryWidgetProvider',
+  'TodoWidgetProvider': 'github.hunmer.aboutme.widgets.providers.TodoWidgetProvider',
+  'DiaryWidgetProvider': 'github.hunmer.aboutme.widgets.providers.DiaryWidgetProvider',
   // ... 其他 18 个
 
   // 插件小组件 - 2x2
-  'TodoWidget2x1Provider': 'github.hunmer.memento.widgets.providers.TodoWidget2x1Provider',
+  'TodoWidget2x1Provider': 'github.hunmer.aboutme.widgets.providers.TodoWidget2x1Provider',
   // ... 其他 19 个
 
   // 快速小组件
-  'ChatQuickWidgetProvider': 'github.hunmer.memento.widgets.quick.ChatQuickWidgetProvider',
-  'AgentVoiceWidgetProvider': 'github.hunmer.memento.widgets.quick.AgentVoiceWidgetProvider',
+  'ChatQuickWidgetProvider': 'github.hunmer.aboutme.widgets.quick.ChatQuickWidgetProvider',
+  'AgentVoiceWidgetProvider': 'github.hunmer.aboutme.widgets.quick.AgentVoiceWidgetProvider',
 };
 ```
 
@@ -397,5 +397,5 @@ static const Map<String, String> _androidProviders = {
 
 ---
 
-**文档维护**: Memento 开发团队
-**反馈渠道**: [GitHub Issues](https://github.com/hunmer/Memento/issues)
+**文档维护**: Aboutme 开发团队
+**反馈渠道**: [GitHub Issues](https://github.com/hunmer/Aboutme/issues)

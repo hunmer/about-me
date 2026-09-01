@@ -62,7 +62,7 @@ class TagGroupWithTags {
 ### 1. 对话框模式 + JSON 文件存储
 
 ```dart
-import 'package:Memento/widgets/tags_dialog/tags_dialog.dart';
+import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 
 // 显示对话框，自动从 JSON 文件读取和保存
 final selectedTags = await TagsDialog.show(
@@ -417,5 +417,5 @@ class TagsManagementPage extends StatelessWidget {
 
 ---
 
-**维护者**: Memento 开发团队
+**维护者**: Aboutme 开发团队
 **最后更新**: 2025-01-07

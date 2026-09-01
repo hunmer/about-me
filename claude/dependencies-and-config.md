@@ -27,7 +27,7 @@
 
 ### 路径依赖（workspace 内子包）
 
-`floating_ball_plugin`、`memento_widgets`、`memento_foreground_service`、`memento_notifications`、`memento_intent`、`memento_nfc`（均位于 `packages/`）与 `shared_models`。
+`floating_ball_plugin`、`aboutme_widgets`、`aboutme_foreground_service`、`aboutme_notifications`、`aboutme_intent`、`aboutme_nfc`（均位于 `packages/`）与 `shared_models`。
 
 ### dependency_overrides
 
@@ -38,7 +38,7 @@
 ## Node 子包依赖要点
 
 - **server-nodejs**：`express` + `express-ws`/`ws`（HTTP/WS）、`jsonwebtoken`（JWT）、`firebase-admin`（FCM 推送）、`winston`（日志）、`adm-zip`/`archiver`（ZIP 导出与插件安装）、`chokidar`（文件监听）、`hookable`（插件钩子）、`multer`（上传）；构建期 `typescript ^5.5`、`jest` + `supertest`。管理面板 `admin-vue/`：Vue ^3.5 + `naive-ui` + `pinia` + Vite ^8。
-- **mcp-memento-server**：`@modelcontextprotocol/sdk` ^1.0、`dotenv`。
+- **mcp-aboutme-server**：`@modelcontextprotocol/sdk` ^1.0、`dotenv`。
 - **api_forwarding_server**：`ws`、`uuid`，零其他运行时依赖。
 
 ## 配置文件清单

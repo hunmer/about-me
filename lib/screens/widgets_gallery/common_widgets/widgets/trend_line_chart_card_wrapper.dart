@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/widgets/trend_line_chart_widget/trend_line_chart_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/trend_line_chart_widget/trend_line_chart_widget.dart';
 
 /// 趋势折线图卡片包装器
 ///

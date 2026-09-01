@@ -3,10 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/screens/bill_edit_screen.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/screens/bill_edit_screen.dart';
 
 /// 注册账单的快速创建项（主页底部 ＋ 按钮）
 void registerQuickCreate(QuickCreateRegistry registry) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/floating_ball/plugin_overlay_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/floating_ball/plugin_overlay_manager.dart';
 import 'package:get/get.dart';
 
 /// 显示插件覆盖层对话框

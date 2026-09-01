@@ -5,17 +5,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/base/live_selector_widget.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/base/live_selector_widget.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'utils.dart' show pluginColor;
 import 'providers.dart' show provideHabitStatsWidgets;
 import 'widget_config.dart';
-import 'package:Memento/screens/home_screen/widgets/selector_widget_types.dart';
+import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
 
 /// 导航到习惯插件
 void _navigateToHabits(BuildContext context, SelectorResult result) {

@@ -1,11 +1,11 @@
-import 'package:Memento/plugins/timer/models/timer_item.dart';
+import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/timer/timer_plugin.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/timer/timer_plugin.dart';
 
 class TimerTaskDetailsPage extends StatefulWidget {
   final String taskId;

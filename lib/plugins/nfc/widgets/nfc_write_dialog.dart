@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:get/get.dart';
 import '../models/nfc_record_item.dart';
 import '../models/nfc_record_type.dart';
@@ -50,15 +50,15 @@ class _NfcWriteDialogState extends State<NfcWriteDialog> {
   String _getHintText(NfcRecordType type) {
     switch (type) {
       case NfcRecordType.uri:
-        return '例如: https://example.com 或 memento://...';
+        return '例如: https://example.com 或 aboutme://...';
       case NfcRecordType.text:
         return '输入要写入的文本内容';
       case NfcRecordType.mime:
         return '格式: mime类型|内容 (例如: application/json|{"key":"value"})';
       case NfcRecordType.aar:
-        return '应用包名 (例如: github.hunmer.memento)';
+        return '应用包名 (例如: github.hunmer.aboutme)';
       case NfcRecordType.external_:
-        return '格式: domain:type|内容 (例如: memento:checkin|item_id)';
+        return '格式: domain:type|内容 (例如: aboutme:checkin|item_id)';
     }
   }
 

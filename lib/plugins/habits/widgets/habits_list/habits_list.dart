@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/habits/models/habit.dart';
-import 'package:Memento/plugins/habits/widgets/habit_form.dart';
-import 'package:Memento/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/habits/models/habit.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
+import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
-import 'package:Memento/plugins/habits/widgets/habits_list/habits_app_bar.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/widgets/habits_list/habits_app_bar.dart';
 
 class HabitsList extends StatefulWidget {
   final HabitController controller;

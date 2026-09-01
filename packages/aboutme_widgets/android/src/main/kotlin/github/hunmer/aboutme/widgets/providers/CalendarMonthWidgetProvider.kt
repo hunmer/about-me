@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -11,8 +11,8 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.Toast
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.BasePluginWidgetProvider
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.BasePluginWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
@@ -53,9 +53,9 @@ class CalendarMonthWidgetProvider : BasePluginWidgetProvider() {
         private const val TEXT_COLOR_MUTED = 0xFF9CA3AF.toInt()
 
         // Action
-        private const val ACTION_COMPLETE_EVENT = "github.hunmer.memento.widgets.COMPLETE_CALENDAR_EVENT"
-        private const val ACTION_PREV_MONTH = "github.hunmer.memento.widgets.CALENDAR_PREV_MONTH"
-        private const val ACTION_NEXT_MONTH = "github.hunmer.memento.widgets.CALENDAR_NEXT_MONTH"
+        private const val ACTION_COMPLETE_EVENT = "github.hunmer.aboutme.widgets.COMPLETE_CALENDAR_EVENT"
+        private const val ACTION_PREV_MONTH = "github.hunmer.aboutme.widgets.CALENDAR_PREV_MONTH"
+        private const val ACTION_NEXT_MONTH = "github.hunmer.aboutme.widgets.CALENDAR_NEXT_MONTH"
 
         // 待同步的完成事件队列 key
         private const val PREF_KEY_PENDING_COMPLETE_EVENTS = "calendar_pending_complete_events"
@@ -359,11 +359,11 @@ class CalendarMonthWidgetProvider : BasePluginWidgetProvider() {
         appWidgetId: Int
     ) {
         val dateString = String.format("%04d-%02d-%02d", year, month, day)
-        val uriString = "memento://widget/calendar_month?date=$dateString"
+        val uriString = "aboutme://widget/calendar_month?date=$dateString"
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(uriString)
-            setPackage("github.hunmer.memento")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -389,11 +389,11 @@ class CalendarMonthWidgetProvider : BasePluginWidgetProvider() {
         appWidgetId: Int,
         index: Int
     ) {
-        val uriString = "memento://widget/calendar_month/event?eventId=$eventId"
+        val uriString = "aboutme://widget/calendar_month/event?eventId=$eventId"
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(uriString)
-            setPackage("github.hunmer.memento")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -577,8 +577,8 @@ class CalendarMonthWidgetProvider : BasePluginWidgetProvider() {
      */
     private fun setupWidgetClickIntent(context: Context, views: RemoteViews) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://widget/calendar")
-            setPackage("github.hunmer.memento")
+            data = Uri.parse("aboutme://widget/calendar")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -855,10 +855,10 @@ class CalendarMonthWidgetProvider : BasePluginWidgetProvider() {
         }
 
         // 设置点击事件：跳转到配置页面
-        val configUri = Uri.parse("memento://widget/calendar_month/config?widgetId=$appWidgetId")
+        val configUri = Uri.parse("aboutme://widget/calendar_month/config?widgetId=$appWidgetId")
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = configUri
-            setPackage("github.hunmer.memento")
+            setPackage("github.hunmer.aboutme")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 

@@ -21,7 +21,7 @@ Read the target file and identify:
 ### 2. Add RouteHistoryManager Import
 
 ```dart
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 ```
 
 ### 3. Create Update Method

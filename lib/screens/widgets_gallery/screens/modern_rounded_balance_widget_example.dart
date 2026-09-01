@@ -1,5 +1,5 @@
-import 'package:Memento/widgets/common/modern_rounded_balance_card.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/common/modern_rounded_balance_card.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:flutter/material.dart';
 
 /// 余额卡片示例

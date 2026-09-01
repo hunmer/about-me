@@ -1,5 +1,5 @@
-import 'package:Memento/plugins/tts/models/tts_service_config.dart';
-import 'package:Memento/plugins/tts/models/tts_voice.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_voice.dart';
 
 /// TTS服务回调
 typedef TTSCallback = void Function();

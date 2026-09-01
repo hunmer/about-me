@@ -9,10 +9,10 @@ library;
 
 import 'dart:convert';
 
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:flutter/material.dart';
 
-import 'package:Memento/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
 
 /// 统一计时器存储管理器
 class TimerStorage {

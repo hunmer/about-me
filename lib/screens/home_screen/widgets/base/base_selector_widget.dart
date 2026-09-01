@@ -14,12 +14,12 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/home_screen/widgets/home_widget.dart';
-import 'package:Memento/screens/home_screen/widgets/selector_widget_types.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/common_widgets.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
 
 /// 选择模式枚举
 enum SelectionMode {

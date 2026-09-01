@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.memento.foreground_service">
+    package="com.aboutme.foreground_service">
 
     <!-- 前台服务权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -28,7 +28,7 @@
 
         <!-- 通知图标 meta-data -->
         <meta-data
-            android:name="com.memento.foreground_service.NOTIFICATION_ICON"
+            android:name="com.aboutme.foreground_service.NOTIFICATION_ICON"
             android:resource="@drawable/ic_notification" />
     </application>
 </manifest>

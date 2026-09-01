@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/chat_screen.dart';
-import 'package:Memento/plugins/chat/utils/date_formatter.dart';
-import 'package:Memento/widgets/swipe_action/index.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
+import 'package:aboutme/widgets/swipe_action/index.dart';
 
 class ChannelTile extends StatelessWidget {
   final Channel channel;

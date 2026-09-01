@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 // 重新导出数据模型，供其他文件使用
-export 'package:memento_widgets/memento_widgets.dart'
+export 'package:aboutme_widgets/aboutme_widgets.dart'
     show PluginWidgetData, WidgetStatItem;
 
 /// 系统桌面小组件数据同步服务
@@ -18,7 +18,7 @@ class SystemWidgetService {
   static SystemWidgetService get instance => _instance;
 
   /// SharedPreferences 的前缀名
-  static const String _appGroupId = 'group.github.hunmer.memento';
+  static const String _appGroupId = 'group.github.hunmer.aboutme';
 
   /// 初始化 home_widget
   Future<void> initialize() async {
@@ -39,7 +39,7 @@ class SystemWidgetService {
     }
 
     try {
-      // 改为调用 memento_widgets 的 API
+      // 改为调用 aboutme_widgets 的 API
       await MyWidgetManager().updatePluginWidgetData(pluginId, data);
     } catch (e) {
       debugPrint('Failed to update widget data for $pluginId: $e');

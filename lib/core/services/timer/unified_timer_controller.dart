@@ -10,11 +10,11 @@ library;
 
 import 'dart:async';
 
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event_args.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:flutter/material.dart';
 
-import 'package:Memento/core/services/foreground_timer_service.dart';
+import 'package:aboutme/core/services/foreground_timer_service.dart';
 import 'events/timer_events.dart';
 import 'models/timer_state.dart';
 import 'storage/timer_storage.dart';
@@ -492,7 +492,7 @@ class UnifiedTimerController {
       'todo': '待办事项',
       'tracker': '目标追踪',
     };
-    return names[pluginId] ?? 'Memento';
+    return names[pluginId] ?? 'Aboutme';
   }
 
   /// 获取状态显示文本

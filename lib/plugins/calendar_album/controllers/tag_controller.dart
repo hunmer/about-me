@@ -1,10 +1,10 @@
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/widgets/tags_dialog/tags_dialog.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/item_event_args.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 /// 简单的标签组数据结构（本地定义，保持向后兼容）
 class TagGroup {

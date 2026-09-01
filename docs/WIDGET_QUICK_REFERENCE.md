@@ -1,4 +1,4 @@
-# Memento 小组件快速参考
+# Aboutme 小组件快速参考
 
 > 5 分钟快速为插件添加小组件支持
 
@@ -10,8 +10,8 @@
 
 ```kotlin
 // android/app/src/main/kotlin/.../widget/providers/<Plugin>WidgetProvider.kt
-package github.hunmer.memento.widget.providers
-import github.hunmer.memento.widget.BasePluginWidgetProvider
+package github.hunmer.aboutme.widget.providers
+import github.hunmer.aboutme.widget.BasePluginWidgetProvider
 
 class <Plugin>WidgetProvider : BasePluginWidgetProvider() {
     override val pluginId: String = "<plugin_id>"

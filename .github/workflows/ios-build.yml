@@ -31,7 +31,7 @@ jobs:
         cd build/ios/iphoneos
         mkdir -p Payload
         cp -r Runner.app Payload/
-        zip -r Memento-ios-unsigned.ipa Payload
+        zip -r Aboutme-ios-unsigned.ipa Payload
         rm -rf Payload
 
     - name: Get current date
@@ -47,7 +47,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.SECERT }}
       with:
-        files: build/ios/iphoneos/Memento-ios-unsigned.ipa
+        files: build/ios/iphoneos/Aboutme-ios-unsigned.ipa
         tag_name: release-${{ steps.date.outputs.date }}-${{ steps.commit_sha.outputs.sha }}
         generate_release_notes: false
 
@@ -55,4 +55,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-release-unsigned
-        path: build/ios/iphoneos/Memento-ios-unsigned.ipa
+        path: build/ios/iphoneos/Aboutme-ios-unsigned.ipa

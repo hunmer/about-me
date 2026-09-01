@@ -34,7 +34,7 @@
 ### 1. 基础示例
 
 ```dart
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 class MyScreen extends StatelessWidget {
   final List<String> items = ['Apple', 'Banana', 'Orange', 'Grape'];
@@ -613,5 +613,5 @@ bool get _hasActiveFilters =>
 
 ---
 
-**维护者**: Memento 开发团队
+**维护者**: Aboutme 开发团队
 **最后更新**: 2025-12-05

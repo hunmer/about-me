@@ -1,5 +1,5 @@
 /**
- * Memento MCP Server 类型定义
+ * Aboutme MCP Server 类型定义
  */
 
 // ==================== 通用类型 ====================
@@ -192,7 +192,7 @@ export interface TodoStats {
 
 // ==================== 配置类型 ====================
 
-export interface MementoConfig {
+export interface AboutmeConfig {
   serverUrl: string;
   /** @deprecated 使用 apiKey 替代 */
   authToken?: string;

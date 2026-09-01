@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../models/conversation.dart';
 import '../../models/agent_chain_node.dart';
 import '../../services/conversation_service.dart';

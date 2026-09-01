@@ -1,19 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="github.hunmer.memento_widgets">
+  package="github.hunmer.aboutme_widgets">
 
   <!-- 允许接收自定义广播 -->
-  <uses-permission android:name="github.hunmer.memento.REFRESH_ACTIVITY_WEEKLY_WIDGET" />
-  <uses-permission android:name="github.hunmer.memento.REFRESH_ACTIVITY_DAILY_WIDGET" />
-  <uses-permission android:name="github.hunmer.memento.REFRESH_HABITS_WEEKLY_WIDGET" />
-  <uses-permission android:name="github.hunmer.memento.REFRESH_CHECKIN_WEEKLY_WIDGET" />
-  <uses-permission android:name="github.hunmer.memento.CLEANUP_WIDGET_IDS" />
+  <uses-permission android:name="github.hunmer.aboutme.REFRESH_ACTIVITY_WEEKLY_WIDGET" />
+  <uses-permission android:name="github.hunmer.aboutme.REFRESH_ACTIVITY_DAILY_WIDGET" />
+  <uses-permission android:name="github.hunmer.aboutme.REFRESH_HABITS_WEEKLY_WIDGET" />
+  <uses-permission android:name="github.hunmer.aboutme.REFRESH_CHECKIN_WEEKLY_WIDGET" />
+  <uses-permission android:name="github.hunmer.aboutme.CLEANUP_WIDGET_IDS" />
 
   <application>
     <!-- ========== 快速小组件 ========== -->
 
     <!-- 频道快速发送 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.quick.ChatQuickWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.quick.ChatQuickWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -25,7 +25,7 @@
 
     <!-- AI 语音快捷 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.quick.AgentVoiceWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.quick.AgentVoiceWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -39,7 +39,7 @@
 
     <!-- 待办事项 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TodoWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.TodoWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -51,7 +51,7 @@
 
     <!-- 计时器 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TimerWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.TimerWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -63,7 +63,7 @@
 
     <!-- 账单 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.BillWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.BillWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -75,7 +75,7 @@
 
     <!-- 日历 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CalendarWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.CalendarWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -87,7 +87,7 @@
 
     <!-- 活动记录 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ActivityWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.ActivityWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -99,7 +99,7 @@
 
     <!-- 目标追踪 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TrackerWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.TrackerWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -111,7 +111,7 @@
 
     <!-- 习惯 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.HabitsWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.HabitsWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -123,7 +123,7 @@
 
     <!-- 日记 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DiaryWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.DiaryWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -135,7 +135,7 @@
 
     <!-- 签到 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CheckinWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.CheckinWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -147,7 +147,7 @@
 
     <!-- 节点 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.NodesWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.NodesWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -159,7 +159,7 @@
 
     <!-- 数据库 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DatabaseWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.DatabaseWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -171,7 +171,7 @@
 
     <!-- 联系人 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ContactWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.ContactWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -183,7 +183,7 @@
 
     <!-- 纪念日 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DayWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.DayWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -195,7 +195,7 @@
 
     <!-- 物品 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.GoodsWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.GoodsWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -207,7 +207,7 @@
 
     <!-- 笔记 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.NotesWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.NotesWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -219,7 +219,7 @@
 
     <!-- 商店 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.StoreWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.StoreWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -231,7 +231,7 @@
 
     <!-- OpenAI 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.OpenaiWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.OpenaiWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -243,7 +243,7 @@
 
     <!-- AI对话 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.AgentChatWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.AgentChatWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -255,7 +255,7 @@
 
     <!-- 日记相册 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CalendarAlbumWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.CalendarAlbumWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -267,7 +267,7 @@
 
     <!-- 聊天 1x1 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ChatWidgetProvider"
+      android:name="github.hunmer.aboutme.widgets.providers.ChatWidgetProvider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -281,7 +281,7 @@
 
     <!-- 待办事项 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TodoWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.TodoWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -293,7 +293,7 @@
 
     <!-- 计时器 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TimerWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.TimerWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -305,7 +305,7 @@
 
     <!-- 账单 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.BillWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.BillWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -317,7 +317,7 @@
 
     <!-- 日历 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CalendarWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.CalendarWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -329,7 +329,7 @@
 
     <!-- 活动记录 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ActivityWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.ActivityWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -341,7 +341,7 @@
 
     <!-- 目标追踪 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.TrackerWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.TrackerWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -353,7 +353,7 @@
 
     <!-- 习惯 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.HabitsWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.HabitsWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -365,7 +365,7 @@
 
     <!-- 日记 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DiaryWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.DiaryWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -377,7 +377,7 @@
 
     <!-- 签到 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CheckinWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.CheckinWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -389,7 +389,7 @@
 
     <!-- 节点 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.NodesWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.NodesWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -401,7 +401,7 @@
 
     <!-- 数据库 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DatabaseWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.DatabaseWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -413,7 +413,7 @@
 
     <!-- 联系人 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ContactWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.ContactWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -425,7 +425,7 @@
 
     <!-- 纪念日 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.DayWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.DayWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -437,7 +437,7 @@
 
     <!-- 物品 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.GoodsWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.GoodsWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -449,7 +449,7 @@
 
     <!-- 笔记 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.NotesWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.NotesWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -461,7 +461,7 @@
 
     <!-- 商店 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.StoreWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.StoreWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -473,7 +473,7 @@
 
     <!-- OpenAI 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.OpenaiWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.OpenaiWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -485,7 +485,7 @@
 
     <!-- AI对话 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.AgentChatWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.AgentChatWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -497,7 +497,7 @@
 
     <!-- 日记相册 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.CalendarAlbumWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.CalendarAlbumWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -509,7 +509,7 @@
 
     <!-- 聊天 2x2 -->
     <receiver
-      android:name="github.hunmer.memento.widgets.providers.ChatWidget2x1Provider"
+      android:name="github.hunmer.aboutme.widgets.providers.ChatWidget2x1Provider"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -521,7 +521,7 @@
 
     <!-- 签到项 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CheckinItemWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CheckinItemWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -533,7 +533,7 @@
 
     <!-- 每周相册 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CalendarAlbumWeeklyWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CalendarAlbumWeeklyWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -545,7 +545,7 @@
 
     <!-- 打卡月份视图 3x3 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CheckinMonthWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CheckinMonthWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -557,12 +557,12 @@
 
     <!-- 日历月视图 4x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CalendarMonthWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CalendarMonthWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.CALENDAR_PREVIOUS_MONTH" />
-            <action android:name="github.hunmer.memento.widgets.CALENDAR_NEXT_MONTH" />
+            <action android:name="github.hunmer.aboutme.widgets.CALENDAR_PREVIOUS_MONTH" />
+            <action android:name="github.hunmer.aboutme.widgets.CALENDAR_NEXT_MONTH" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -571,7 +571,7 @@
 
     <!-- 本周打卡列表 4x2 (自定义 - 日历网格视图) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CalendarTodayListWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CalendarTodayListWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -583,11 +583,11 @@
 
     <!-- 待办列表 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.TodoListWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.TodoListWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.TODO_LIST_TASK_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.TODO_LIST_TASK_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -596,18 +596,18 @@
 
     <!-- 待办列表小组件的 RemoteViewsService -->
     <service
-        android:name="github.hunmer.memento.widgets.providers.TodoListWidgetService"
+        android:name="github.hunmer.aboutme.widgets.providers.TodoListWidgetService"
         android:exported="false"
         android:permission="android.permission.BIND_REMOTEVIEWS" />
 
     <!-- 任务四象限小组件 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.TodoQuadrantWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.TodoQuadrantWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.TODO_QUADRANT_TASK_CLICK" />
-            <action android:name="github.hunmer.memento.widgets.TODO_QUADRANT_DATE_RANGE_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.TODO_QUADRANT_TASK_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.TODO_QUADRANT_DATE_RANGE_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -616,7 +616,7 @@
 
     <!-- 打卡周视图 4x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.CheckinWeeklyListWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.CheckinWeeklyListWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -628,7 +628,7 @@
 
     <!-- 目标追踪进度增减 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.TrackerGoalWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.TrackerGoalWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -640,7 +640,7 @@
 
     <!-- 目标追踪进度增减（进度条样式）2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.TrackerGoalProgressWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.TrackerGoalProgressWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -652,12 +652,12 @@
 
     <!-- 习惯计时器 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.HabitTimerWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.HabitTimerWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.HABIT_TIMER_TOGGLE" />
-            <action android:name="github.hunmer.memento.widgets.HABIT_TIMER_SWITCH_MODE" />
+            <action android:name="github.hunmer.aboutme.widgets.HABIT_TIMER_TOGGLE" />
+            <action android:name="github.hunmer.aboutme.widgets.HABIT_TIMER_SWITCH_MODE" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -666,18 +666,18 @@
 
     <!-- 习惯计时器前台服务 -->
     <service
-        android:name="github.hunmer.memento.widgets.services.HabitTimerForegroundService"
+        android:name="github.hunmer.aboutme.widgets.services.HabitTimerForegroundService"
         android:enabled="true"
         android:exported="false"
         android:foregroundServiceType="dataSync" />
 
     <!-- 快捷记账 2x2 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.BillShortcutsWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.BillShortcutsWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.BILL_SHORTCUTS_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.BILL_SHORTCUTS_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -686,19 +686,19 @@
 
     <!-- 快捷记账小组件的 RemoteViewsService -->
     <service
-        android:name="github.hunmer.memento.widgets.providers.BillShortcutsWidgetService"
+        android:name="github.hunmer.aboutme.widgets.providers.BillShortcutsWidgetService"
         android:exported="false"
         android:permission="android.permission.BIND_REMOTEVIEWS" />
 
     <!-- Activity Weekly Widget Provider -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.ActivityWeeklyWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.ActivityWeeklyWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_PREV_WEEK" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_NEXT_WEEK" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_ITEM_CLICK" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_PREV_WEEK" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_NEXT_WEEK" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_ITEM_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -707,19 +707,19 @@
 
     <!-- Activity Weekly Widget Service -->
     <service
-        android:name="github.hunmer.memento.widgets.services.ActivityWeeklyWidgetService"
+        android:name="github.hunmer.aboutme.widgets.services.ActivityWeeklyWidgetService"
         android:permission="android.permission.BIND_REMOTEVIEWS"
         android:exported="false" />
 
     <!-- Habits Weekly Widget Provider -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.HabitsWeeklyWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.HabitsWeeklyWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widget.HABITS_PREV_WEEK" />
-            <action android:name="github.hunmer.memento.widget.HABITS_NEXT_WEEK" />
-            <action android:name="github.hunmer.memento.widget.HABITS_ITEM_CLICK" />
+            <action android:name="github.hunmer.aboutme.widget.HABITS_PREV_WEEK" />
+            <action android:name="github.hunmer.aboutme.widget.HABITS_NEXT_WEEK" />
+            <action android:name="github.hunmer.aboutme.widget.HABITS_ITEM_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -728,19 +728,19 @@
 
     <!-- Habits Weekly Widget Service -->
     <service
-        android:name="github.hunmer.memento.widgets.services.HabitsWeeklyWidgetService"
+        android:name="github.hunmer.aboutme.widgets.services.HabitsWeeklyWidgetService"
         android:permission="android.permission.BIND_REMOTEVIEWS"
         android:exported="false" />
 
     <!-- Activity Daily Widget Provider (本日活动详细视图) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.ActivityDailyWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.ActivityDailyWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_PREV_DAY" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_NEXT_DAY" />
-            <action android:name="github.hunmer.memento.widget.ACTIVITY_DAILY_ITEM_CLICK" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_PREV_DAY" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_NEXT_DAY" />
+            <action android:name="github.hunmer.aboutme.widget.ACTIVITY_DAILY_ITEM_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -749,18 +749,18 @@
 
     <!-- Activity Daily Widget Service -->
     <service
-        android:name="github.hunmer.memento.widgets.services.ActivityDailyWidgetService"
+        android:name="github.hunmer.aboutme.widgets.services.ActivityDailyWidgetService"
         android:permission="android.permission.BIND_REMOTEVIEWS"
         android:exported="false" />
 
     <!-- 习惯分组列表 4x3 (自定义) -->
     <receiver
-        android:name="github.hunmer.memento.widgets.providers.HabitGroupListWidgetProvider"
+        android:name="github.hunmer.aboutme.widgets.providers.HabitGroupListWidgetProvider"
         android:exported="true">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            <action android:name="github.hunmer.memento.widgets.HABIT_GROUP_LIST_GROUP_CLICK" />
-            <action android:name="github.hunmer.memento.widgets.HABIT_GROUP_LIST_HABIT_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.HABIT_GROUP_LIST_GROUP_CLICK" />
+            <action android:name="github.hunmer.aboutme.widgets.HABIT_GROUP_LIST_HABIT_CLICK" />
         </intent-filter>
         <meta-data
             android:name="android.appwidget.provider"
@@ -769,7 +769,7 @@
 
     <!-- 习惯分组列表小组件的 RemoteViewsService -->
     <service
-        android:name="github.hunmer.memento.widgets.services.HabitGroupListWidgetService"
+        android:name="github.hunmer.aboutme.widgets.services.HabitGroupListWidgetService"
         android:exported="false"
         android:permission="android.permission.BIND_REMOTEVIEWS" />
   </application>

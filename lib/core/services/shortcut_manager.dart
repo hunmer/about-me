@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter_shortcut_plus/flutter_shortcut.dart';
-import 'package:Memento/core/event/event.dart';
+import 'package:aboutme/core/event/event.dart';
 
 class ShortcutEventArgs extends EventArgs {
   final String action;

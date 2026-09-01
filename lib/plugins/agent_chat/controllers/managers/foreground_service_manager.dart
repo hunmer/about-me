@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:memento_foreground_service/memento_foreground_service.dart';
-import 'package:Memento/core/services/foreground_task_manager.dart';
+import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
+import 'package:aboutme/core/services/foreground_task_manager.dart';
 import 'package:universal_platform/universal_platform.dart';
 import '../../services/chat_task_handler.dart';
 import '../../services/token_counter_service.dart';

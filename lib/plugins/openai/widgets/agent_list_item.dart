@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/screens/agent_edit_screen.dart';
-import 'package:Memento/widgets/swipe_action/swipe_action_wrapper.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
 class AgentListItem extends StatelessWidget {
   final AIAgent agent;

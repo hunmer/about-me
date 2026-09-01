@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 /// 选择器面包屑导航组件
 ///

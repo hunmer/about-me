@@ -3,7 +3,7 @@
     {
       "id": "msg_default_001",
       "channelId": "default",
-      "content": "🎉 欢迎使用 **Memento Chat**!\n\n这是您的默认频道。在这里您可以：\n- 💬 记录日常想法\n- 🤝 与AI助手对话\n- 📝 管理多个频道\n- 🏷️ 使用Markdown格式\n\n试试输入 **/help** 查看更多命令！",
+      "content": "🎉 欢迎使用 **Aboutme Chat**!\n\n这是您的默认频道。在这里您可以：\n- 💬 记录日常想法\n- 🤝 与AI助手对话\n- 📝 管理多个频道\n- 🏷️ 使用Markdown格式\n\n试试输入 **/help** 查看更多命令！",
       "type": "system",
       "sender": "system",
       "senderName": "系统",
@@ -19,7 +19,7 @@
     {
       "id": "msg_default_002",
       "channelId": "default",
-      "content": "### 📚 Markdown 支持展示\n\n您可以使用以下格式：\n\n1. **粗体文本** 或 __粗体文本__\n2. *斜体文本* 或 _斜体文本_\n3. ~~删除线~~\n4. `行内代码`\n\n```dart\n// 代码块示例\nvoid main() {\n  print('Hello, Memento!');\n}\n```\n\n> 💡 提示：所有消息都支持 Markdown 格式！",
+      "content": "### 📚 Markdown 支持展示\n\n您可以使用以下格式：\n\n1. **粗体文本** 或 __粗体文本__\n2. *斜体文本* 或 _斜体文本_\n3. ~~删除线~~\n4. `行内代码`\n\n```dart\n// 代码块示例\nvoid main() {\n  print('Hello, Aboutme!');\n}\n```\n\n> 💡 提示：所有消息都支持 Markdown 格式！",
       "type": "user",
       "sender": "user",
       "senderName": "我",

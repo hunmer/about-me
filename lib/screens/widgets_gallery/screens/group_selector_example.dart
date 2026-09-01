@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/group_selector_dialog.dart';
+import 'package:aboutme/widgets/group_selector_dialog.dart';
 
 /// 组选择器对话框示例
 class GroupSelectorExample extends StatefulWidget {

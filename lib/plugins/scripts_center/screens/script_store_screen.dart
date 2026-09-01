@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/scripts_center/models/script_store_models.dart';
-import 'package:Memento/plugins/scripts_center/services/script_manager.dart';
-import 'package:Memento/plugins/scripts_center/services/script_store_manager.dart';
-import 'package:Memento/plugins/scripts_center/services/script_download_manager.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_store_manager.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_download_manager.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 脚本商场主界面
 class ScriptStoreScreen extends StatefulWidget {

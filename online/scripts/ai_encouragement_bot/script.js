@@ -1,6 +1,6 @@
 
     // 获取脚本配置（getConfig 现在直接返回对象，无需 JSON.parse）
-    const config = await Memento.script_executor.getConfig('ai_encouragement_bot');
+    const config = await Aboutme.script_executor.getConfig('ai_encouragement_bot');
 
     // 检查是否配置了 Agent
     if (!config.agentId) {
@@ -162,7 +162,7 @@
 
     // 发送给 AI（使用 OpenAI Plugin 的 API）
     console.log(`发送消息给 AI: ${message}`, 'info');
-    const result = await Memento.plugins.openai.sendMessage({
+    const result = await Aboutme.plugins.openai.sendMessage({
       agentId: agentId,
       message: message
     });
@@ -175,7 +175,7 @@
     const encouragementText = result.response || '继续加油！';
 
     // 显示 Toast
-    Memento.plugins.ui.toast(encouragementText, {type: 'success', duration: 5000, gravity: 'top'});
+    Aboutme.plugins.ui.toast(encouragementText, {type: 'success', duration: 5000, gravity: 'top'});
 
     console.log(`AI 鼓励消息已显示: ${encouragementText}`, 'info');
 

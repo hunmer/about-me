@@ -3,11 +3,11 @@ import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import '../models/subscription.dart';
 import '../bill_plugin.dart';
 import 'subscription_edit_screen.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class SubscriptionListScreen extends StatefulWidget {
   final BillPlugin billPlugin;

@@ -21,7 +21,7 @@ export 'register_points_goal_progress.dart';
 export 'register_product_selector.dart';
 export 'register_user_item_selector.dart';
 
-import 'package:Memento/screens/home_screen/managers/home_widget_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_points_goal_progress.dart';

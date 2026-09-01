@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:get/get.dart';
-import 'package:Memento/widgets/picker/icon_picker_dialog.dart';
-import 'package:Memento/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
-import 'package:Memento/constants/app_icons.dart';
-import 'package:Memento/core/action/action_manager.dart';
-import 'package:Memento/core/action/widgets/action_selector_dialog.dart';
-import 'package:Memento/core/action/models/action_instance.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/constants/app_icons.dart';
+import 'package:aboutme/core/action/action_manager.dart';
+import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
+import 'package:aboutme/core/action/models/action_instance.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 悬浮按钮编辑对话框
 class FloatingButtonEditDialog extends StatefulWidget {

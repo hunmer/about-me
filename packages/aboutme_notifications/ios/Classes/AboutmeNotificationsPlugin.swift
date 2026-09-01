@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class MementoNotificationsPlugin: NSObject, FlutterPlugin {
+public class AboutmeNotificationsPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "memento_notifications", binaryMessenger: registrar.messenger())
-    let instance = MementoNotificationsPlugin()
+    let channel = FlutterMethodChannel(name: "aboutme_notifications", binaryMessenger: registrar.messenger())
+    let instance = AboutmeNotificationsPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

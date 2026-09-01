@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_state.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 /// 点击录音按钮组件

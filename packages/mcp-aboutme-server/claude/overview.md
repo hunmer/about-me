@@ -1,6 +1,6 @@
 # 架构总览
 
-> 所属：packages/mcp-memento-server · [返回索引](../CLAUDE.md)
+> 所属：packages/mcp-aboutme-server · [返回索引](../CLAUDE.md)
 
 ## 分层
 
@@ -12,7 +12,7 @@ graph LR
 ```
 
 - **工具层**（`src/tools/index.ts`）：60+ 工具定义（名称、描述、JSON Schema 参数），按插件域分组注册。
-- **客户端层**（`src/client/memento-client.ts`）：把工具调用翻译为 server-nodejs REST 请求（JWT/API Key 认证 + 加密载荷）。
+- **客户端层**（`src/client/aboutme-client.ts`）：把工具调用翻译为 server-nodejs REST 请求（JWT/API Key 认证 + 加密载荷）。
 - **配置层**（`src/config.ts`）：从 `.env` / 环境变量读取三要素。
 
 ## 12 个工具域

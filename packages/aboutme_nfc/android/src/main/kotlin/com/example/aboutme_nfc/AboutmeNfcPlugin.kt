@@ -1,4 +1,4 @@
-package com.example.memento_nfc
+package com.example.aboutme_nfc
 
 import android.content.Context
 import android.content.Intent
@@ -27,8 +27,8 @@ data class NfcRecordData(
     val data: String
 )
 
-/** MementoNfcPlugin */
-class MementoNfcPlugin :
+/** AboutmeNfcPlugin */
+class AboutmeNfcPlugin :
     FlutterPlugin,
     MethodCallHandler,
     ActivityAware,
@@ -51,12 +51,12 @@ class MementoNfcPlugin :
     }
 
     companion object {
-        private const val TAG = "MementoNfcPlugin"
+        private const val TAG = "AboutmeNfcPlugin"
         private const val NFC_TIMEOUT_MS = 15000L // 15秒超时
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "memento_nfc")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "aboutme_nfc")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
         nfcAdapter = NfcAdapter.getDefaultAdapter(context)
@@ -387,7 +387,7 @@ class MementoNfcPlugin :
             "EXTERNAL" -> {
                 // 外部类型记录 - data 格式: "domain:type|content"
                 val parts = data.split("|", limit = 2)
-                val typeSpec = if (parts.size > 1) parts[0] else "memento:data"
+                val typeSpec = if (parts.size > 1) parts[0] else "aboutme:data"
                 val content = if (parts.size > 1) parts[1] else data
                 val typeParts = typeSpec.split(":", limit = 2)
                 val domain = typeParts[0]

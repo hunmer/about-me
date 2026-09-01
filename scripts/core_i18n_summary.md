@@ -83,7 +83,7 @@
 - ✅ '未找到路由: ${settings.name}' → CoreLocalizations.of(context)!.routeNotFound(settings.name ?? '')
 
 ### 3. 在 main.dart 中注册了核心模块国际化
-- ✅ 添加了导入: `import 'package:Memento/core/l10n/core_localizations.dart';`
+- ✅ 添加了导入: `import 'package:aboutme/core/l10n/core_localizations.dart';`
 - ✅ 注册了委托: `CoreLocalizationsDelegate(),`
 
 ## 使用的脚本
@@ -97,7 +97,7 @@
 
 1. 所有硬编码文本已经替换为国际化调用
 2. 支持中英双语切换
-3. 遵循了 Memento 项目的国际化规范
+3. 遵循了 Aboutme 项目的国际化规范
 4. 保持了代码的一致性和可维护性
 
 ## 后续建议

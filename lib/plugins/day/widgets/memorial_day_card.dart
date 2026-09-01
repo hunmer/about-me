@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/widgets/common/memorial_day_card.dart' as common;
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/common/memorial_day_card.dart' as common;
 
 /// 纪念日卡片组件
 ///

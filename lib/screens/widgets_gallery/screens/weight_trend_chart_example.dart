@@ -1,5 +1,5 @@
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/widgets/card_trend_line_chart.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/card_trend_line_chart.dart';
 import 'package:flutter/material.dart';
 
 /// 体重趋势图表示例

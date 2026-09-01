@@ -1,36 +1,36 @@
 import 'package:flutter/services.dart';
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
-import 'package:Memento/plugins/agent_chat/services/conversation_service.dart';
-import 'package:Memento/plugins/agent_chat/services/message_service.dart';
-import 'package:Memento/plugins/diary/diary_plugin.dart';
-import 'package:Memento/plugins/diary/models/diary_entry.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/plugins/checkin/checkin_plugin.dart';
-import 'package:Memento/plugins/contact/contact_plugin.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/timer/timer_plugin.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
-import 'package:Memento/plugins/todo/todo_plugin.dart';
-import 'package:Memento/plugins/day/day_plugin.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/notes/notes_plugin.dart';
-import 'package:Memento/plugins/store/store_plugin.dart';
-import 'package:Memento/plugins/store/models/product.dart';
-import 'package:Memento/plugins/store/models/user_item.dart';
-import 'package:Memento/plugins/nodes/nodes_plugin.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/plugins/diary/diary_plugin.dart';
+import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
+import 'package:aboutme/plugins/contact/contact_plugin.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/timer/timer_plugin.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/plugins/day/day_plugin.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/notes/notes_plugin.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
+import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/nodes/nodes_plugin.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:intl/intl.dart';
 
 /// WatchConnectivity 服务
 ///
 /// 处理来自 iOS Watch 应用的数据请求
 class WatchConnectivityService {
-  static const _channelName = 'github.hunmer.memento/watch_connectivity';
+  static const _channelName = 'github.hunmer.aboutme/watch_connectivity';
 
   static WatchConnectivityService? _instance;
   final MethodChannel _methodChannel;

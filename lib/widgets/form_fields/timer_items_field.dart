@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/timer/models/timer_item.dart';
-import 'package:Memento/plugins/timer/views/add_timer_item_dialog.dart';
-import 'package:Memento/core/services/timer/models/timer_state.dart';
+import 'package:aboutme/plugins/timer/models/timer_item.dart';
+import 'package:aboutme/plugins/timer/views/add_timer_item_dialog.dart';
+import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'builders/index.dart' show createRoundedContainerDecoration;
 
 /// 计时器列表字段组件

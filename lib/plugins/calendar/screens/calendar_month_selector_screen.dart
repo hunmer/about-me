@@ -3,15 +3,15 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/calendar/calendar_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
 import '../controllers/calendar_controller.dart' as app;
-import 'package:Memento/widgets/widget_config_editor/widget_config_editor.dart';
-import 'package:Memento/widgets/widget_config_editor/models/widget_config.dart';
-import 'package:Memento/widgets/widget_config_editor/models/color_config.dart';
-import 'package:Memento/widgets/widget_config_editor/models/widget_size.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/widgets/widget_config_editor/widget_config_editor.dart';
+import 'package:aboutme/widgets/widget_config_editor/models/widget_config.dart';
+import 'package:aboutme/widgets/widget_config_editor/models/color_config.dart';
+import 'package:aboutme/widgets/widget_config_editor/models/widget_size.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 日历月视图小组件配置界面
 ///
@@ -355,7 +355,7 @@ class _CalendarMonthSelectorScreenState
         name: 'CalendarMonthWidgetProvider',
         iOSName: 'CalendarMonthWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.CalendarMonthWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.CalendarMonthWidgetProvider',
       );
 
       if (mounted) {

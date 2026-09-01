@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_message.dart';
-import 'package:Memento/plugins/agent_chat/models/saved_tool_template.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_call_step.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_template_service.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 保存/编辑工具对话框
 ///
@@ -502,7 +502,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                     labelText: 'JavaScript 代码',
                     border: OutlineInputBorder(),
                     isDense: true,
-                    hintText: 'const result = await Memento.plugins...',
+                    hintText: 'const result = await Aboutme.plugins...',
                   ),
                   controller: TextEditingController(text: step.data),
                   maxLines: 8,

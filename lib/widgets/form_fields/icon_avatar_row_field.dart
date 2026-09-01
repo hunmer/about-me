@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/circle_icon_picker.dart';
-import 'package:Memento/widgets/picker/image_picker_dialog.dart';
-import 'package:Memento/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 import 'form_field_wrapper.dart';
 
 /// 图标头像行字段

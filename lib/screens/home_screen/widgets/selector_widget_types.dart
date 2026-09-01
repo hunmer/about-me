@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selectable_item.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 
 /// 数据渲染器：将选择器结果渲染为Widget
 ///

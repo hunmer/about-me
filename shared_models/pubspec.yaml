@@ -1,5 +1,5 @@
 name: shared_models
-description: Memento 共享数据模型包 - 客户端与服务器共用
+description: Aboutme 共享数据模型包 - 客户端与服务器共用
 version: 1.0.0
 
 environment:

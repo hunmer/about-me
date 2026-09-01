@@ -1,15 +1,15 @@
 import 'package:get/get.dart' hide Node;
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/quill_viewer/quill_viewer.dart';
-import 'package:Memento/plugins/nodes/controllers/nodes_controller.dart';
-import 'package:Memento/plugins/nodes/models/notebook.dart';
-import 'package:Memento/plugins/nodes/models/node.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:Memento/plugins/nodes/widgets/node_item.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
+import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
+import 'package:aboutme/plugins/nodes/models/notebook.dart';
+import 'package:aboutme/plugins/nodes/models/node.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/nodes/widgets/node_item.dart';
 import 'node_edit_screen.dart';
 import 'package:uuid/uuid.dart';
 

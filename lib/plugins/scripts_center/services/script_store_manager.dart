@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/scripts_center/models/script_store_models.dart';
-import 'package:Memento/plugins/scripts_center/services/script_loader.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_loader.dart';
 
 /// 脚本商场管理器
 ///
@@ -85,9 +85,9 @@ class ScriptStoreManager extends ChangeNotifier {
       id: const Uuid().v4(),
       name: '网络仓库',
       url:
-          'https://gitee.com/neysummer2000/memento/raw/master/online/scripts/scripts.json',
+          'https://gitee.com/neysummer2000/aboutme/raw/master/online/scripts/scripts.json',
       baseUrl:
-          'https://gitee.com/neysummer2000/memento/raw/master/online/scripts',
+          'https://gitee.com/neysummer2000/aboutme/raw/master/online/scripts',
       isDefault: true,
       createdAt: DateTime.now(),
     );

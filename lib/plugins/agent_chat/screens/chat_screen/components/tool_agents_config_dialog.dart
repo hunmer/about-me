@@ -1,8 +1,8 @@
-import 'package:Memento/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
 
 /// 工具调用 Agent 配置对话框
 /// 适用于单 Agent 和 Agent 链模式

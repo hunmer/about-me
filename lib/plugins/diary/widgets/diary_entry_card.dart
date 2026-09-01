@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/widgets/quill_viewer/index.dart';
-import 'package:Memento/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/widgets/quill_viewer/index.dart';
+import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 
 /// 日记条目卡片 - 展示一篇日记的摘要
 ///

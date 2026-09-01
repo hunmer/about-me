@@ -5,7 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
-import 'package:Memento/widgets/statistics/models/statistics_models.dart';
+import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
 
 /// 通用卡片构建器
 Widget buildStatisticsCard({

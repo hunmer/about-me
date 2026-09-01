@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/timer/models/timer_task.dart';
-import 'package:Memento/widgets/common/timer_card_widget.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/widgets/common/timer_card_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// TimerTaskCard 适配器
 ///

@@ -1,11 +1,11 @@
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/screens/settings_screen/settings_screen.dart';
-import 'package:Memento/screens/route.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/screens/settings_screen/settings_screen.dart';
+import 'package:aboutme/screens/route.dart';
 // 导入全局实例
 
 class AppDrawer extends StatelessWidget {

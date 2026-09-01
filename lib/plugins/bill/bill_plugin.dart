@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 // UseCase 架构相关导入
 import 'package:shared_models/usecases/bill/bill_usecase.dart';

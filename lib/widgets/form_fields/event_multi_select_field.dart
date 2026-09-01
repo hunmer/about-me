@@ -1,7 +1,7 @@
 // ignore_for_file: overridden_fields
 
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/form_fields/form_field_wrapper.dart';
+import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 
 /// 所有可用事件的默认列表
 const List<EventOption> kDefaultAvailableEvents = [

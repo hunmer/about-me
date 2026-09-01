@@ -2,5 +2,5 @@
 library;
 
 /// 统计项数据（复用自 HomeWidget）
-export 'package:Memento/screens/home_screen/models/plugin_widget_config.dart'
+export 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart'
     show StatItemData;

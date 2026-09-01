@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Memento 仓库 - 文件列表生成工具
+Aboutme 仓库 - 文件列表生成工具
 
 功能：
 - 自动扫描指定目录下的所有应用和脚本
@@ -197,7 +197,7 @@ def generate_files_json_for_type(base_path: Path, item_type: str, item_name: Opt
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Memento 仓库 - 文件列表生成工具',
+        description='Aboutme 仓库 - 文件列表生成工具',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
@@ -249,7 +249,7 @@ def main():
     base_path = Path(args.base_path).resolve()
 
     print("="*60)
-    print("🚀 Memento 仓库 - 文件列表生成工具")
+    print("🚀 Aboutme 仓库 - 文件列表生成工具")
     print("="*60)
     print(f"📁 仓库路径: {base_path}")
 

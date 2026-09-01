@@ -3,7 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../models/subscription.dart';
 import '../models/bill.dart';
 import '../bill_plugin.dart';
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 /// 订阅服务事件参数
 class SubscriptionAddedEventArgs extends EventArgs {

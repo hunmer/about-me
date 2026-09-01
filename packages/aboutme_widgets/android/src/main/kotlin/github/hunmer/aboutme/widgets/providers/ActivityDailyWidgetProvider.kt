@@ -1,4 +1,4 @@
-package github.hunmer.memento.widgets.providers
+package github.hunmer.aboutme.widgets.providers
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -10,8 +10,8 @@ import android.app.PendingIntent
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
-import github.hunmer.memento_widgets.R
-import github.hunmer.memento.widgets.services.ActivityDailyWidgetService
+import github.hunmer.aboutme_widgets.R
+import github.hunmer.aboutme.widgets.services.ActivityDailyWidgetService
 
 /**
  * 本日活动详细视图小组件Provider
@@ -50,7 +50,7 @@ class ActivityDailyWidgetProvider : AppWidgetProvider() {
         editor.apply()
 
         // 通知 Flutter 端清理已删除的 widgetId
-        val intent = Intent("github.hunmer.memento.CLEANUP_WIDGET_IDS").apply {
+        val intent = Intent("github.hunmer.aboutme.CLEANUP_WIDGET_IDS").apply {
             putExtra("deletedWidgetIds", appWidgetIds)
             putExtra("widgetType", "activity_daily")
         }
@@ -98,7 +98,7 @@ class ActivityDailyWidgetProvider : AppWidgetProvider() {
 
         // deeplink到配置页面
         val deepLinkIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://activity_daily_config?widgetId=$widgetId")
+            data = Uri.parse("aboutme://activity_daily_config?widgetId=$widgetId")
             setPackage(context.packageName)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
@@ -456,7 +456,7 @@ class ActivityDailyWidgetProvider : AppWidgetProvider() {
             prefs.edit().putString("activity_daily_data_$widgetId", json.toString()).apply()
 
             // 通知Flutter重新计算数据
-            val refreshIntent = Intent("github.hunmer.memento.REFRESH_ACTIVITY_DAILY_WIDGET").apply {
+            val refreshIntent = Intent("github.hunmer.aboutme.REFRESH_ACTIVITY_DAILY_WIDGET").apply {
                 putExtra("widgetId", widgetId)
                 putExtra("dayOffset", newOffset)
             }
@@ -473,7 +473,7 @@ class ActivityDailyWidgetProvider : AppWidgetProvider() {
      */
     private fun openTagStatistics(context: Context, tagName: String) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("memento://activity/tag_statistics?tag=${Uri.encode(tagName)}")
+            data = Uri.parse("aboutme://activity/tag_statistics?tag=${Uri.encode(tagName)}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             setPackage(context.packageName)
         }
@@ -491,9 +491,9 @@ class ActivityDailyWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "ActivityDailyWidget"
         private const val PREFS_NAME = "HomeWidgetPreferences"
-        private const val ACTION_PREV_DAY = "github.hunmer.memento.widget.ACTIVITY_PREV_DAY"
-        private const val ACTION_NEXT_DAY = "github.hunmer.memento.widget.ACTIVITY_NEXT_DAY"
-        private const val ACTION_ITEM_CLICK = "github.hunmer.memento.widget.ACTIVITY_DAILY_ITEM_CLICK"
+        private const val ACTION_PREV_DAY = "github.hunmer.aboutme.widget.ACTIVITY_PREV_DAY"
+        private const val ACTION_NEXT_DAY = "github.hunmer.aboutme.widget.ACTIVITY_NEXT_DAY"
+        private const val ACTION_ITEM_CLICK = "github.hunmer.aboutme.widget.ACTIVITY_DAILY_ITEM_CLICK"
 
         private const val DEFAULT_PRIMARY_COLOR = 0xFFF8F9FA.toInt()
         private const val DEFAULT_ACCENT_COLOR = 0xFF1F2937.toInt()

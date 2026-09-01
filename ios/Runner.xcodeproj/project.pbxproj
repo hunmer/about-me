@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		4B8276432F607D5500DF8056 /* memento Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4B8276232F607D5400DF8056 /* memento Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4B8276432F607D5500DF8056 /* aboutme Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4B8276232F607D5400DF8056 /* aboutme Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4B854B812F61D0FA00D90D6C /* WCSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B854B802F61D0FA00D90D6C /* WCSessionManager.swift */; };
 		4B95490C2EFAD21F005F06E5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B95490B2EFAD21F005F06E5 /* WidgetKit.framework */; };
 		4B95490E2EFAD21F005F06E5 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B95490D2EFAD21F005F06E5 /* SwiftUI.framework */; };
@@ -40,7 +40,7 @@
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4B8276222F607D5400DF8056;
-			remoteInfo = "memento Watch App";
+			remoteInfo = "aboutme Watch App";
 		};
 		4B95491D2EFAD220005F06E5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -58,7 +58,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				4B8276432F607D5500DF8056 /* memento Watch App.app in Embed Watch Content */,
+				4B8276432F607D5500DF8056 /* aboutme Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -92,7 +92,7 @@
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		4ACC8550CC39FBD01EB2F17E /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
-		4B8276232F607D5400DF8056 /* memento Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "memento Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B8276232F607D5400DF8056 /* aboutme Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "aboutme Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B854B802F61D0FA00D90D6C /* WCSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionManager.swift; sourceTree = "<group>"; };
 		4B9549052EFAD1D0005F06E5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		4B95490A2EFAD21F005F06E5 /* MyAppWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAppWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -131,12 +131,12 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4B8276512F607D5600DF8056 /* Exceptions for "memento Watch App" folder in "memento Watch App" target */ = {
+		4B8276512F607D5600DF8056 /* Exceptions for "aboutme Watch App" folder in "aboutme Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 4B8276222F607D5400DF8056 /* memento Watch App */;
+			target = 4B8276222F607D5400DF8056 /* aboutme Watch App */;
 		};
 		4B9549202EFAD220005F06E5 /* Exceptions for "MyAppWidget" folder in "MyAppWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -148,16 +148,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4B8276242F607D5400DF8056 /* memento Watch App */ = {
+		4B8276242F607D5400DF8056 /* aboutme Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4B8276512F607D5600DF8056 /* Exceptions for "memento Watch App" folder in "memento Watch App" target */,
+				4B8276512F607D5600DF8056 /* Exceptions for "aboutme Watch App" folder in "aboutme Watch App" target */,
 			);
 			explicitFileTypes = {
 			};
 			explicitFolders = (
 			);
-			path = "memento Watch App";
+			path = "aboutme Watch App";
 			sourceTree = "<group>";
 		};
 		4B95490F2EFAD21F005F06E5 /* MyAppWidget */ = {
@@ -233,7 +233,7 @@
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
 				4B95490F2EFAD21F005F06E5 /* MyAppWidget */,
-				4B8276242F607D5400DF8056 /* memento Watch App */,
+				4B8276242F607D5400DF8056 /* aboutme Watch App */,
 				97C146EF1CF9000F007C117D /* Products */,
 				4BF3C3E7338630C25B3992C9 /* Pods */,
 				D7A782C01DA3F248DAAA5138 /* Frameworks */,
@@ -246,7 +246,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				4B95490A2EFAD21F005F06E5 /* MyAppWidgetExtension.appex */,
-				4B8276232F607D5400DF8056 /* memento Watch App.app */,
+				4B8276232F607D5400DF8056 /* aboutme Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -294,9 +294,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4B8276222F607D5400DF8056 /* memento Watch App */ = {
+		4B8276222F607D5400DF8056 /* aboutme Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4B82764E2F607D5500DF8056 /* Build configuration list for PBXNativeTarget "memento Watch App" */;
+			buildConfigurationList = 4B82764E2F607D5500DF8056 /* Build configuration list for PBXNativeTarget "aboutme Watch App" */;
 			buildPhases = (
 				4B82761F2F607D5400DF8056 /* Sources */,
 				4B8276202F607D5400DF8056 /* Frameworks */,
@@ -307,11 +307,11 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4B8276242F607D5400DF8056 /* memento Watch App */,
+				4B8276242F607D5400DF8056 /* aboutme Watch App */,
 			);
-			name = "memento Watch App";
-			productName = "memento Watch App";
-			productReference = 4B8276232F607D5400DF8056 /* memento Watch App.app */;
+			name = "aboutme Watch App";
+			productName = "aboutme Watch App";
+			productReference = 4B8276232F607D5400DF8056 /* aboutme Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4B9549092EFAD21F005F06E5 /* MyAppWidgetExtension */ = {
@@ -399,7 +399,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				4B9549092EFAD21F005F06E5 /* MyAppWidgetExtension */,
-				4B8276222F607D5400DF8056 /* memento Watch App */,
+				4B8276222F607D5400DF8056 /* aboutme Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -565,7 +565,7 @@
 /* Begin PBXTargetDependency section */
 		4B8276422F607D5500DF8056 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4B8276222F607D5400DF8056 /* memento Watch App */;
+			target = 4B8276222F607D5400DF8056 /* aboutme Watch App */;
 			targetProxy = 4B8276412F607D5500DF8056 /* PBXContainerItemProxy */;
 		};
 		4B95491E2EFAD220005F06E5 /* PBXTargetDependency */ = {
@@ -670,7 +670,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.0.3;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -697,7 +697,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "memento Watch App/memento Watch App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "aboutme Watch App/aboutme Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -705,7 +705,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "memento Watch App/Info.plist";
+				INFOPLIST_FILE = "aboutme Watch App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -714,7 +714,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -746,7 +746,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "memento Watch App/memento Watch App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "aboutme Watch App/aboutme Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -754,7 +754,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "memento Watch App/Info.plist";
+				INFOPLIST_FILE = "aboutme Watch App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -762,7 +762,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -792,7 +792,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "memento Watch App/memento Watch App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "aboutme Watch App/aboutme Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -800,7 +800,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "memento Watch App/Info.plist";
+				INFOPLIST_FILE = "aboutme Watch App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -808,7 +808,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -855,7 +855,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.MyAppWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.MyAppWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -899,7 +899,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.MyAppWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.MyAppWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -941,7 +941,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento.MyAppWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme.MyAppWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1090,7 +1090,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.0.3;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1124,7 +1124,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.0.3;
-				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.memento;
+				PRODUCT_BUNDLE_IDENTIFIER = github.hunmer.aboutme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1140,7 +1140,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4B82764E2F607D5500DF8056 /* Build configuration list for PBXNativeTarget "memento Watch App" */ = {
+		4B82764E2F607D5500DF8056 /* Build configuration list for PBXNativeTarget "aboutme Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4B8276452F607D5500DF8056 /* Debug */,

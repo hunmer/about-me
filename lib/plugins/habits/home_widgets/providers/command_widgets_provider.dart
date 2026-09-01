@@ -1,9 +1,9 @@
 /// 习惯追踪插件 - 公共小组件数据提供者
 library;
 
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/habits/habits_plugin.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
 
 /// 提供公共小组件的数据
 class HabitsCommandWidgetsProvider {

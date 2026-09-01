@@ -9,6 +9,41 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.59"
+  aboutme_foreground_service:
+    dependency: "direct main"
+    description:
+      path: "packages/aboutme_foreground_service"
+      relative: true
+    source: path
+    version: "1.0.0"
+  aboutme_intent:
+    dependency: "direct main"
+    description:
+      path: "packages/aboutme_intent"
+      relative: true
+    source: path
+    version: "0.0.1"
+  aboutme_nfc:
+    dependency: "direct main"
+    description:
+      path: "packages/aboutme_nfc"
+      relative: true
+    source: path
+    version: "0.0.1"
+  aboutme_notifications:
+    dependency: "direct main"
+    description:
+      path: "packages/aboutme_notifications"
+      relative: true
+    source: path
+    version: "1.0.0"
+  aboutme_widgets:
+    dependency: "direct main"
+    description:
+      path: "packages/aboutme_widgets"
+      relative: true
+    source: path
+    version: "0.0.1"
   adaptive_theme:
     dependency: "direct main"
     description:
@@ -1262,41 +1297,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.3"
-  memento_foreground_service:
-    dependency: "direct main"
-    description:
-      path: "packages/memento_foreground_service"
-      relative: true
-    source: path
-    version: "1.0.0"
-  memento_intent:
-    dependency: "direct main"
-    description:
-      path: "packages/memento_intent"
-      relative: true
-    source: path
-    version: "0.0.1"
-  memento_nfc:
-    dependency: "direct main"
-    description:
-      path: "packages/memento_nfc"
-      relative: true
-    source: path
-    version: "0.0.1"
-  memento_notifications:
-    dependency: "direct main"
-    description:
-      path: "packages/memento_notifications"
-      relative: true
-    source: path
-    version: "1.0.0"
-  memento_widgets:
-    dependency: "direct main"
-    description:
-      path: "packages/memento_widgets"
-      relative: true
-    source: path
-    version: "0.0.1"
   meta:
     dependency: transitive
     description:

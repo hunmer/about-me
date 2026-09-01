@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/plugins/chat/events/user_events.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/plugins/chat/events/user_events.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
 
 class MessageAvatar extends StatefulWidget {
   final User user;

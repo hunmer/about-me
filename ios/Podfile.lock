@@ -158,15 +158,15 @@ PODS:
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
-  - memento_foreground_service (0.0.1):
+  - aboutme_foreground_service (0.0.1):
     - Flutter
-  - memento_intent (0.0.1):
+  - aboutme_intent (0.0.1):
     - Flutter
-  - memento_nfc (0.0.1):
+  - aboutme_nfc (0.0.1):
     - Flutter
-  - memento_notifications (0.0.1):
+  - aboutme_notifications (0.0.1):
     - Flutter
-  - memento_widgets (0.0.1):
+  - aboutme_widgets (0.0.1):
     - Flutter
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
@@ -235,11 +235,11 @@ DEPENDENCIES:
   - irondash_engine_context (from `.symlinks/plugins/irondash_engine_context/ios`)
   - live_activities (from `.symlinks/plugins/live_activities/ios`)
   - location (from `.symlinks/plugins/location/ios`)
-  - memento_foreground_service (from `.symlinks/plugins/memento_foreground_service/ios`)
-  - memento_intent (from `.symlinks/plugins/memento_intent/ios`)
-  - memento_nfc (from `.symlinks/plugins/memento_nfc/ios`)
-  - memento_notifications (from `.symlinks/plugins/memento_notifications/ios`)
-  - memento_widgets (from `.symlinks/plugins/memento_widgets/ios`)
+  - aboutme_foreground_service (from `.symlinks/plugins/aboutme_foreground_service/ios`)
+  - aboutme_intent (from `.symlinks/plugins/aboutme_intent/ios`)
+  - aboutme_nfc (from `.symlinks/plugins/aboutme_nfc/ios`)
+  - aboutme_notifications (from `.symlinks/plugins/aboutme_notifications/ios`)
+  - aboutme_widgets (from `.symlinks/plugins/aboutme_widgets/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
@@ -321,16 +321,16 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/live_activities/ios"
   location:
     :path: ".symlinks/plugins/location/ios"
-  memento_foreground_service:
-    :path: ".symlinks/plugins/memento_foreground_service/ios"
-  memento_intent:
-    :path: ".symlinks/plugins/memento_intent/ios"
-  memento_nfc:
-    :path: ".symlinks/plugins/memento_nfc/ios"
-  memento_notifications:
-    :path: ".symlinks/plugins/memento_notifications/ios"
-  memento_widgets:
-    :path: ".symlinks/plugins/memento_widgets/ios"
+  aboutme_foreground_service:
+    :path: ".symlinks/plugins/aboutme_foreground_service/ios"
+  aboutme_intent:
+    :path: ".symlinks/plugins/aboutme_intent/ios"
+  aboutme_nfc:
+    :path: ".symlinks/plugins/aboutme_nfc/ios"
+  aboutme_notifications:
+    :path: ".symlinks/plugins/aboutme_notifications/ios"
+  aboutme_widgets:
+    :path: ".symlinks/plugins/aboutme_widgets/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -390,11 +390,11 @@ SPEC CHECKSUMS:
   live_activities: 4dfa736d0736e1c77866a2f9c056a76513cc9e7b
   location: 155caecf9da4f280ab5fe4a55f94ceccfab838f8
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
-  memento_foreground_service: 49c7208564aae506f3ea4b2a347021816239a390
-  memento_intent: c40e4f6a331a5d63e7b511999cce7c40e2df9283
-  memento_nfc: 849ca55969b39eea737521f70bfd1543c44d8512
-  memento_notifications: f18360cb848156b0c152f4244eba9736da498ce0
-  memento_widgets: 6e7654aca3fb3267bd1918c568395749fd0e10ce
+  aboutme_foreground_service: 49c7208564aae506f3ea4b2a347021816239a390
+  aboutme_intent: c40e4f6a331a5d63e7b511999cce7c40e2df9283
+  aboutme_nfc: 849ca55969b39eea737521f70bfd1543c44d8512
+  aboutme_notifications: f18360cb848156b0c152f4244eba9736da498ce0
+  aboutme_widgets: 6e7654aca3fb3267bd1918c568395749fd0e10ce
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499

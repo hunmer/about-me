@@ -1,12 +1,12 @@
 import 'package:get/get.dart' hide Node;
 import 'dart:convert';
-import 'package:Memento/core/config_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'controllers/nodes_controller.dart';
 import 'screens/notebooks_screen.dart';
 import 'models/node.dart';

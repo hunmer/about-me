@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/core/services/system_widget_service.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/core/services/system_widget_service.dart';
 import 'package:logging/logging.dart';
 
 /// 频道消息小组件服务
@@ -60,7 +60,7 @@ class ChatWidgetService {
       await HomeWidget.updateWidget(
         name: 'ChatQuickWidget',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.quick.ChatQuickWidgetProvider',
+            'github.hunmer.aboutme.widgets.quick.ChatQuickWidgetProvider',
         iOSName: 'ChatQuickWidget',
       );
 
@@ -125,7 +125,7 @@ class ChatWidgetService {
 
         _logger.info('小组件被点击: $uri');
 
-        // 解析 URI: memento://widget/chat?channelId=xxx
+        // 解析 URI: aboutme://widget/chat?channelId=xxx
         if (uri.host == 'widget') {
           final pathSegments = uri.pathSegments;
           if (pathSegments.isNotEmpty && pathSegments[0] == 'chat') {

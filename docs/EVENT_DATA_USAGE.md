@@ -50,7 +50,7 @@ if (args.event === 'todo_task_added') {
 
     console.log(`新任务已添加: ${taskTitle} (ID: ${taskId})`);
 
-    // 可以调用其他 Memento API 进行处理
+    // 可以调用其他 Aboutme API 进行处理
     // 例如：发送通知、记录日志、触发其他脚本等
 }
 ```
@@ -133,7 +133,7 @@ if (args.event === 'diary_entry_added') {
     const addedTime = args.eventData.whenOccurred;
 
     // 通过 chat 插件发送通知消息
-    await Memento.chat.sendMessage(
+    await Aboutme.chat.sendMessage(
         'notifications',  // 频道名称
         `📝 新日记已添加\n标题: ${diaryTitle}\n时间: ${new Date(addedTime).toLocaleString()}`
     );

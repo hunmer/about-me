@@ -2,8 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 /// 从选择器数据中提取必要字段保存到本地存储
 Map<String, dynamic> extractCardData(List<dynamic> dataArray) {

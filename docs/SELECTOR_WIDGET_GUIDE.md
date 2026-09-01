@@ -1,6 +1,6 @@
 # 选择器小组件注册指南
 
-> 本文档用于快速为 Memento 插件注册数据选择器类型的 HomeWidget
+> 本文档用于快速为 Aboutme 插件注册数据选择器类型的 HomeWidget
 
 ## 概述
 
@@ -84,10 +84,10 @@ void _registerDataSelectors() {
 在 `registerWidgets()` 方法中添加：
 
 ```dart
-import 'package:Memento/screens/home_screen/widgets/generic_selector_widget.dart';
-import 'package:Memento/screens/home_screen/models/home_widget.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/screens/home_screen/widgets/generic_selector_widget.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 
 class [PluginName]HomeWidgets {
   static void registerWidgets(HomeWidgetRegistry registry) {
@@ -289,7 +289,7 @@ static void _navigateTo[Item](
 ### 5.1 添加导入
 
 ```dart
-import 'package:Memento/plugins/[plugin_name]/screens/[detail_screen].dart';
+import 'package:aboutme/plugins/[plugin_name]/screens/[detail_screen].dart';
 ```
 
 ### 5.2 在 `generateRoute` 方法中添加路由
@@ -506,7 +506,7 @@ static void _navigateToEntry(
 ### 5. 注册路由 (`route.dart`)
 
 ```dart
-import 'package:Memento/plugins/diary/screens/diary_entry_screen.dart';
+import 'package:aboutme/plugins/diary/screens/diary_entry_screen.dart';
 
 // 在 generateRoute 中:
 case '/diary/entry':

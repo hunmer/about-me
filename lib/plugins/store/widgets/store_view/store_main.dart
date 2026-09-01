@@ -1,5 +1,5 @@
-import 'package:Memento/plugins/store/store_plugin.dart';
-import 'package:Memento/plugins/store/widgets/store_bottom_bar.dart';
+import 'package:aboutme/plugins/store/store_plugin.dart';
+import 'package:aboutme/plugins/store/widgets/store_bottom_bar.dart';
 import 'package:flutter/material.dart';
 
 /// Store 插件主视图

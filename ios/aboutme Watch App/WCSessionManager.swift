@@ -1,6 +1,6 @@
 //
 //  WCSessionManager.swift
-//  memento_watchos Watch App
+//  aboutme_watchos Watch App
 //
 //  Created by Claude on 2026/3/11.
 //
@@ -722,7 +722,7 @@ enum ResponseKey: String, Codable {
 
 class WCSessionManager: NSObject, ObservableObject {
     static let shared = WCSessionManager()
-    private let logger = Logger(subsystem: "com.memento.watch", category: "WCSession")
+    private let logger = Logger(subsystem: "com.aboutme.watch", category: "WCSession")
 
     @Published var isConnected = false
     @Published var isReachable = false

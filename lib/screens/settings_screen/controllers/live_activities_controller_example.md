@@ -11,15 +11,15 @@
 在应用启动时初始化控制器（通常在 `main.dart` 或应用入口）：
 
 ```dart
-import 'package:memento/screens/settings_screen/controllers/live_activities_controller.dart';
+import 'package:aboutme/screens/settings_screen/controllers/live_activities_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化 Live Activities
   await LiveActivitiesController.instance.init(
-    appGroupId: 'group.github.hunmer.memento',
-    urlScheme: 'memento',
+    appGroupId: 'group.github.hunmer.aboutme',
+    urlScheme: 'aboutme',
     requireNotificationPermission: true,
   );
 
@@ -107,7 +107,7 @@ await controller.endActivity(activityId);
 
 ```dart
 await controller.init(
-  appGroupId: 'group.github.hunmer.memento',
+  appGroupId: 'group.github.hunmer.aboutme',
   onActivityUpdate: (event) {
     event.map(
       active: (activity) {
@@ -244,7 +244,7 @@ class WebDAVSyncController {
 ```dart
 Future<bool> init({
   required String appGroupId,         // App Group ID (iOS必需)
-  String urlScheme = 'memento',       // URL Scheme
+  String urlScheme = 'aboutme',       // URL Scheme
   bool requireNotificationPermission, // 是否需要通知权限
   Function(ActivityUpdate)? onActivityUpdate,  // 活动状态回调
   Function(UrlSchemeData)? onUrlScheme,        // URL Scheme回调

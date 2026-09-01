@@ -7,11 +7,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/js_bridge/js_bridge_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 import 'models/webview_card.dart';
 import 'models/webview_settings.dart';
@@ -32,7 +32,7 @@ part 'webview_data_selectors.dart';
 /// 支持：
 /// - 多标签页浏览
 /// - 网址卡片管理（在线/本地）
-/// - Memento JS Bridge 集成
+/// - Aboutme JS Bridge 集成
 class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   static WebViewPlugin? _instance;
 

@@ -1,6 +1,6 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 渲染图标，支持 emoji 字符串和 MaterialIcons codePoint
 Widget _renderIcon(String icon, {double size = 28}) {

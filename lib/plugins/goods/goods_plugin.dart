@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/plugins/base_plugin.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/js_bridge/js_bridge_plugin.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:shared_models/shared_models.dart';
 import 'widgets/goods_bottom_bar.dart';
 import 'models/warehouse.dart';
@@ -20,7 +20,7 @@ import 'repositories/client_goods_repository.dart';
 import 'sample_data.dart';
 
 // HTTP 服务器导入
-import 'package:Memento/plugins/webview/services/local_http_server.dart';
+import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 
 part 'goods_js_api.dart';
 part 'goods_data_selectors.dart';

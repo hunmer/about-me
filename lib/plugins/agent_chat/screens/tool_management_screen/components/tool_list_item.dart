@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/adaptive_switch.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/agent_chat/models/tool_config.dart';
-import 'package:Memento/plugins/agent_chat/services/tool_config_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'tool_editor_dialog.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 /// 工具列表项组件
 class ToolListItem extends StatelessWidget {
   final String pluginId;

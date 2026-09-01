@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
 
 /// 图标选择器示例
 class IconPickerExample extends StatefulWidget {

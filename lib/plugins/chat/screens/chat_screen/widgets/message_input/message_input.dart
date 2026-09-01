@@ -1,17 +1,17 @@
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'message_input_types.dart';
 import 'message_input_state.dart';
-import 'package:Memento/plugins/openai/widgets/agent_list_drawer.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'widgets/metadata_display.dart';
 import 'widgets/input_field.dart';
 import 'widgets/send_button.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/tencent_asr_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
 
 class MessageInput extends StatefulWidget {
   final TextEditingController controller;

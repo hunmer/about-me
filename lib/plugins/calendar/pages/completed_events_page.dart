@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/calendar/models/event.dart';
-import 'package:Memento/plugins/calendar/utils/date_utils.dart';
+import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/utils/date_utils.dart';
 
 class CompletedEventsPage extends StatelessWidget {
   final List<CalendarEvent> completedEvents;

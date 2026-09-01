@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/routing/plugin_route_handler.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
-import 'package:Memento/plugins/goods/dialogs/add_usage_record_dialog.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/models/usage_record.dart';
-import 'package:Memento/plugins/goods/screens/warehouse_detail_screen.dart';
-import 'package:Memento/plugins/goods/screens/goods_item_detail_screen.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/dialogs/add_usage_record_dialog.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/models/usage_record.dart';
+import 'package:aboutme/plugins/goods/screens/warehouse_detail_screen.dart';
+import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 物品插件路由处理器
 class GoodsRouteHandler extends PluginRouteHandler {
@@ -33,7 +33,7 @@ class GoodsRouteHandler extends PluginRouteHandler {
 
     // 处理物品使用记录路由
     // 格式: /goods/usage?itemId={itemId}&action=add_usage
-    // 或者深度链接格式: memento://goods/usage?itemId={itemId}&action=add_usage
+    // 或者深度链接格式: aboutme://goods/usage?itemId={itemId}&action=add_usage
     if (routeName.startsWith('/goods/usage') ||
         routeName.startsWith('/goods_usage')) {
       return _handleUsageRoute(routeName, settings.arguments);

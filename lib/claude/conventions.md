@@ -49,7 +49,7 @@ MyPlugin（JS API 适配层）
 ## 主题与 UI
 
 - 明暗主题经 `AdaptiveTheme`（`core/theme_controller.dart`），Material 3。
-- 跨插件复用组件放 `widgets/`（memento_editor、form_fields、enhanced_calendar、data_selector_sheet 等），插件私有 UI 不外提。
+- 跨插件复用组件放 `widgets/`（aboutme_editor、form_fields、enhanced_calendar、data_selector_sheet 等），插件私有 UI 不外提。
 
 ## 其他
 

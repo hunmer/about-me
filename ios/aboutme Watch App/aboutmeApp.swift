@@ -1,6 +1,6 @@
 //
-//  memento_watchosApp.swift
-//  memento_watchos Watch App
+//  aboutme_watchosApp.swift
+//  aboutme_watchos Watch App
 //
 //  Created by liao on 2026/3/9.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct memento_watchos_Watch_AppApp: App {
+struct aboutme_watchos_Watch_AppApp: App {
     init() {
         // 初始化 WCSessionManager
         _ = WCSessionManager.shared

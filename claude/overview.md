@@ -4,7 +4,7 @@
 
 ## 仓库形态
 
-Memento 是一个**单仓多模块（monorepo）**项目，由四类角色组成：
+Aboutme 是一个**单仓多模块（monorepo）**项目，由四类角色组成：
 
 1. **Flutter 客户端**（`lib/`，约 1900+ Dart 文件）：跨平台个人助手应用本体，插件化架构，25 个内置功能插件。
 2. **本地/自建子包**（`packages/`，9 个子包）：6 个 Flutter 原生插件（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）+ 3 个 Node.js/TypeScript 服务。
@@ -18,7 +18,7 @@ graph LR
     App[Flutter 客户端<br/>Android/iOS/桌面/Web] -->|REST + WebSocket<br/>AES-256-GCM 端到端加密| Server[server-nodejs<br/>默认端口 8874]
     App -->|WebDAV| Cloud[WebDAV 网盘]
     Server --> Admin[admin-vue 管理面板<br/>Vue3 + Naive UI]
-    AI[AI 客户端 / MCP Host] -->|stdio MCP 协议| MCP[mcp-memento-server]
+    AI[AI 客户端 / MCP Host] -->|stdio MCP 协议| MCP[mcp-aboutme-server]
     MCP -->|REST + API Key| Server
     Web[Web 前端] <-->|WebSocket 配对| FWD[api_forwarding_server<br/>端口 8654]
     FWD <--> App

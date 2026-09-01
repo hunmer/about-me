@@ -1,7 +1,7 @@
 {
-  "name": "memento-api-forwarding-server",
+  "name": "aboutme-api-forwarding-server",
   "version": "1.0.0",
-  "description": "Memento API 转发服务器 - 连接前端和 Memento 客户端",
+  "description": "Aboutme API 转发服务器 - 连接前端和 Aboutme 客户端",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -10,7 +10,7 @@
     "watch": "tsc --watch"
   },
   "keywords": [
-    "memento",
+    "aboutme",
     "websocket",
     "api-forwarding"
   ],

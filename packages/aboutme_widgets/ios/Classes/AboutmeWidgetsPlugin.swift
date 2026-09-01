@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class MementoWidgetsPlugin: NSObject, FlutterPlugin {
+public class AboutmeWidgetsPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "memento_widgets", binaryMessenger: registrar.messenger())
-    let instance = MementoWidgetsPlugin()
+    let channel = FlutterMethodChannel(name: "aboutme_widgets", binaryMessenger: registrar.messenger())
+    let instance = AboutmeWidgetsPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

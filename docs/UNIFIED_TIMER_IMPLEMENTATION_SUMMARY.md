@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-本项目成功将Memento应用中的4个插件（todo、tracker、timer、habits）的计时器功能统一到一个控制器中，并实现了移动设备通知栏的多计时器同步显示功能。
+本项目成功将Aboutme应用中的4个插件（todo、tracker、timer、habits）的计时器功能统一到一个控制器中，并实现了移动设备通知栏的多计时器同步显示功能。
 
 ## 核心成果
 
@@ -30,7 +30,7 @@
 - `lib/plugins/tracker/widgets/timer_dialog.dart` - 简化集成统一控制器
 
 #### 增强的Android原生代码
-- `android/app/src/main/kotlin/github/hunmer/memento/TimerForegroundService.kt` - 支持多通知栏实例
+- `android/app/src/main/kotlin/github/hunmer/aboutme/TimerForegroundService.kt` - 支持多通知栏实例
 
 ## 技术架构
 
@@ -351,4 +351,4 @@ Future<void> _broadcastTimerEvent() {
 - Android原生多通知栏支持
 - 完全向下兼容的API设计
 
-这个统一计时器控制器将成为Memento应用的基础设施，为未来新增的插件提供标准化的计时器功能。
+这个统一计时器控制器将成为Aboutme应用的基础设施，为未来新增的插件提供标准化的计时器功能。

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/widgets/swipe_action/swipe_action_wrapper.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
 class GoodsItemListTile extends StatefulWidget {
   final GoodsItem item;

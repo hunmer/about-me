@@ -1,8 +1,8 @@
-import 'package:Memento/widgets/statistics/statistics.dart';
+import 'package:aboutme/widgets/statistics/statistics.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'widgets/daily_checkin_chart.dart';
 import 'widgets/checkin_streak_ranking.dart';
 import 'widgets/checkin_group_pie_chart.dart';

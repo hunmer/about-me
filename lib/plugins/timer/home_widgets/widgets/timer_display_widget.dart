@@ -2,8 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import '../../models/timer_task.dart';
 import '../../models/timer_item.dart';
 import '../../timer_plugin.dart';

@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/plugins/tracker/screens/goal_detail_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

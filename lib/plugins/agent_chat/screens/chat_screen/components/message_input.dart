@@ -1,18 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/plugins/agent_chat/controllers/chat_controller.dart';
-import 'package:Memento/plugins/agent_chat/models/chat_command.dart';
-import 'package:Memento/plugins/agent_chat/models/saved_tool_template.dart';
-import 'package:Memento/utils/file_picker_helper.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/tencent_asr_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
-import 'package:Memento/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_command.dart';
+import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
+import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
-import 'package:Memento/plugins/agent_chat/widgets/press_to_record_button.dart';
+import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
 import '../../../../../../core/services/toast_service.dart';
 
 /// 消息输入框组件

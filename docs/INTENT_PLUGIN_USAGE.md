@@ -1,10 +1,10 @@
-# Memento Intent Plugin 使用指南
+# Aboutme Intent Plugin 使用指南
 
 ## 快速开始
 
 ### 访问测试页面
 
-1. 打开 Memento 应用
+1. 打开 Aboutme 应用
 2. 进入 **设置** 页面
 3. 在"开发者测试"部分找到 **"Intent 测试"**
 4. 点击进入测试页面
@@ -16,14 +16,14 @@
 - 显示 Scheme 注册状态
 
 #### 2. 动态注册 Scheme
-- 在"Scheme"字段输入要注册的 URL Scheme（如：`memento`）
+- 在"Scheme"字段输入要注册的 URL Scheme（如：`aboutme`）
 - 在"Host"字段输入主机名（如：`example.com`）可选
 - 在"Path Prefix"字段输入路径前缀（如：`/app`）可选
 - 点击"注册 Scheme"按钮
 
 #### 3. 测试深度链接
 注册 Scheme 后：
-1. 在手机浏览器中输入 `memento://example.com/app`
+1. 在手机浏览器中输入 `aboutme://example.com/app`
 2. 观察应用是否被打开
 3. 查看测试页面的日志区域，确认收到深度链接
 
@@ -41,22 +41,22 @@
 ### 场景 1：测试深度链接
 ```bash
 # 注册 Scheme 后，在浏览器或任何支持的应用中输入：
-memento://example.com/app
+aboutme://example.com/app
 
 # 或者带查询参数：
-memento://example.com/app?param1=value1&param2=value2
+aboutme://example.com/app?param1=value1&param2=value2
 ```
 
 ### 场景 2：测试分享文本
 1. 在任何应用中选择文本内容
 2. 点击"分享"
-3. 选择"Memento"应用
+3. 选择"Aboutme"应用
 4. 观察应用是否接收到分享的文本
 
 ### 场景 3：测试分享图片/视频
 1. 在任何应用中打开一张图片或视频
 2. 点击分享按钮
-3. 选择"Memento"应用
+3. 选择"Aboutme"应用
 4. 观察应用是否接收到文件信息
 
 ## 功能说明
@@ -106,11 +106,11 @@ intent.onIntentData = (IntentData data) {
 
 ### 基本初始化
 ```dart
-import 'package:memento_intent/memento_intent.dart';
+import 'package:aboutme_intent/aboutme_intent.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await MementoIntent.instance.init();
+  await AboutmeIntent.instance.init();
   runApp(MyApp());
 }
 ```
@@ -118,7 +118,7 @@ void main() async {
 ### 设置回调
 ```dart
 class _MyAppState extends State<MyApp> {
-  final IntentPlugin _intent = MementoIntent.instance;
+  final IntentPlugin _intent = AboutmeIntent.instance;
 
   @override
   void initState() {
@@ -197,9 +197,9 @@ print('已注册的 Schemes: $schemes');
 
 ## 更多资源
 
-- [插件 README](./packages/memento_intent/README.md) - 详细的 API 文档
-- [实现总结](./MEMENTO_INTENT_IMPLEMENTATION.md) - 技术实现详情
-- 示例代码：`memento_intent/example/lib/main.dart`
+- [插件 README](./packages/aboutme_intent/README.md) - 详细的 API 文档
+- [实现总结](./ABOUTME_INTENT_IMPLEMENTATION.md) - 技术实现详情
+- 示例代码：`aboutme_intent/example/lib/main.dart`
 
 ## 反馈与支持
 

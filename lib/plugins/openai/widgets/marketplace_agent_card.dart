@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 
 /// 商场 Agent 卡片
 /// 在基础 AgentCard 的基础上增加安装状态显示

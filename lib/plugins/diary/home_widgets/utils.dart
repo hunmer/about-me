@@ -3,9 +3,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/home_screen/models/plugin_widget_config.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import '../diary_plugin.dart';
 import '../models/diary_entry.dart';
 import '../screens/diary_editor_screen.dart';

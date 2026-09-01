@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'memento_nfc_platform_interface.dart';
-import 'memento_nfc.dart';
+import 'aboutme_nfc_platform_interface.dart';
+import 'aboutme_nfc.dart';
 
-/// An implementation of [MementoNfcPlatform] that uses method channels.
-class MethodChannelMementoNfc extends MementoNfcPlatform {
+/// An implementation of [AboutmeNfcPlatform] that uses method channels.
+class MethodChannelAboutmeNfc extends AboutmeNfcPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('memento_nfc');
+  final methodChannel = const MethodChannel('aboutme_nfc');
 
   @override
   Future<String?> getPlatformVersion() async {

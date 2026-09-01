@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/core/global_flags.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/global_flags.dart';
 import 'package:flutter/material.dart';
 import 'managers/home_layout_manager.dart';
 import 'managers/home_widget_registry.dart';

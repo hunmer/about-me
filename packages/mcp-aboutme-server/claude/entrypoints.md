@@ -1,6 +1,6 @@
 # 入口与启动
 
-> 所属：packages/mcp-memento-server · [返回索引](../CLAUDE.md)
+> 所属：packages/mcp-aboutme-server · [返回索引](../CLAUDE.md)
 
 ## 启动链路
 
@@ -9,8 +9,8 @@
 
 ## MCP Host 接入
 
-- 全局安装：`npm i -g @hunmer/mcp-memento-server` → `memento-server` 命令，或 `npx @hunmer/mcp-memento-server`。
-- 在 MCP Host（如 Claude Desktop）配置中把本命令注册为 stdio 服务器，并通过环境变量注入三要素：`MEMENTO_SERVER_URL` / `MEMENTO_API_KEY` / `MEMENTO_ENCRYPTION_KEY`。
+- 全局安装：`npm i -g @hunmer/mcp-aboutme-server` → `aboutme-server` 命令，或 `npx @hunmer/mcp-aboutme-server`。
+- 在 MCP Host（如 Claude Desktop）配置中把本命令注册为 stdio 服务器，并通过环境变量注入三要素：`ABOUTME_SERVER_URL` / `ABOUTME_API_KEY` / `ABOUTME_ENCRYPTION_KEY`。
 
 ## 调试
 

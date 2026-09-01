@@ -111,8 +111,8 @@ final Map<String, String> screensTranslationsZh = {
   // intent_test_screen
   'screens_quickRegisterIntent': '快速注册 Intent',
   'screens_selectPresetIntentType': '选择一个预设的 Intent 类型进行快速注册',
-  'screens_mementoTest': 'Memento 测试 (memento:///test)',
-  'screens_mementoComplete': 'Memento 完整 (memento://app.example.com/open)',
+  'screens_aboutmeTest': 'Aboutme 测试 (aboutme:///test)',
+  'screens_aboutmeComplete': 'Aboutme 完整 (aboutme://app.example.com/open)',
   'screens_customApp': '自定义应用 (myapp://custom.host)',
   'screens_intentTest': 'Intent 测试',
   'screens_quickRegister': '快速注册',

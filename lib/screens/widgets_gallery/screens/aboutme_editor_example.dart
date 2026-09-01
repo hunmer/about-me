@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/memento_editor/memento_editor.dart';
+import 'package:aboutme/widgets/aboutme_editor/aboutme_editor.dart';
 
-/// Memento 编辑器示例
-class MementoEditorExample extends StatefulWidget {
-  const MementoEditorExample({super.key});
+/// Aboutme 编辑器示例
+class AboutmeEditorExample extends StatefulWidget {
+  const AboutmeEditorExample({super.key});
 
   @override
-  State<MementoEditorExample> createState() => _MementoEditorExampleState();
+  State<AboutmeEditorExample> createState() => _AboutmeEditorExampleState();
 }
 
-class _MementoEditorExampleState extends State<MementoEditorExample> {
+class _AboutmeEditorExampleState extends State<AboutmeEditorExample> {
   String? _selectedMood;
   final List<String> _moods = [
     '😊',
@@ -27,7 +27,7 @@ class _MementoEditorExampleState extends State<MementoEditorExample> {
   // 示例内容：JSON Delta 格式（使用原始字符串避免转义问题）
   final String _sampleContent = r'''{
   "ops": [
-    {"insert": "欢迎使用 Memento 编辑器！", "attributes": {"header": 1}},
+    {"insert": "欢迎使用 Aboutme 编辑器！", "attributes": {"header": 1}},
     {"insert": "\n"},
     {"insert": "这是一个功能强大的富文本编辑器，支持：\n"},
     {"insert": "\n"},
@@ -43,7 +43,7 @@ class _MementoEditorExampleState extends State<MementoEditorExample> {
 
   @override
   Widget build(BuildContext context) {
-    return MementoEditor(
+    return AboutmeEditor(
       pageTitle: '编辑器',
       initialTitle: '新笔记',
       initialContent: _sampleContent,

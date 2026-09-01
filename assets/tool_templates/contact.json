@@ -8,7 +8,7 @@
         "method": "run_js",
         "title": "获取联系人列表",
         "desc": "查询所有联系人",
-        "data": "const contacts = await Memento.plugins.contact.getContacts();\n\nconst result = {\n  count: contacts.data.length,\n  contacts: contacts.data.map(c => ({\n    id: c.id,\n    name: c.name,\n    phone: c.phone,\n    email: c.email\n  }))\n};\nsetResult(result);\nreturn result;"
+        "data": "const contacts = await Aboutme.plugins.contact.getContacts();\n\nconst result = {\n  count: contacts.data.length,\n  contacts: contacts.data.map(c => ({\n    id: c.id,\n    name: c.name,\n    phone: c.phone,\n    email: c.email\n  }))\n};\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",
@@ -26,7 +26,7 @@
         "method": "run_js",
         "title": "创建联系人",
         "desc": "添加新联系人",
-        "data": "const contact = await Memento.plugins.contact.createContact({\n  name: '张三',\n  phone: '13800138000',\n  email: 'zhangsan@example.com'\n});\n\nconst result = {\n  success: true,\n  contact: {\n    id: contact.id,\n    name: contact.name\n  }\n};\nsetResult(result);\nreturn result;"
+        "data": "const contact = await Aboutme.plugins.contact.createContact({\n  name: '张三',\n  phone: '13800138000',\n  email: 'zhangsan@example.com'\n});\n\nconst result = {\n  success: true,\n  contact: {\n    id: contact.id,\n    name: contact.name\n  }\n};\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",
@@ -44,7 +44,7 @@
         "method": "run_js",
         "title": "记录交互",
         "desc": "记录今天一起吃饭",
-        "data": "const contacts = await Memento.plugins.contact.getContacts();\nconst contact = contacts[0];\n\nif (!contact) {\n  const errorResult = { success: false, message: '没有联系人' };\n  setResult(errorResult);\n  return errorResult;\n}\n\nconst interaction = await Memento.plugins.contact.addInteraction({\n  contactId: contact.id,\n  type: '聚餐',\n  note: '今天一起吃饭'\n});\n\nconst result = {\n  success: true,\n  interaction: {\n    contactName: contact.name,\n    type: interaction.type,\n    date: interaction.date\n  }\n};\nsetResult(result);\nreturn result;"
+        "data": "const contacts = await Aboutme.plugins.contact.getContacts();\nconst contact = contacts[0];\n\nif (!contact) {\n  const errorResult = { success: false, message: '没有联系人' };\n  setResult(errorResult);\n  return errorResult;\n}\n\nconst interaction = await Aboutme.plugins.contact.addInteraction({\n  contactId: contact.id,\n  type: '聚餐',\n  note: '今天一起吃饭'\n});\n\nconst result = {\n  success: true,\n  interaction: {\n    contactName: contact.name,\n    type: interaction.type,\n    date: interaction.date\n  }\n};\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",
@@ -63,7 +63,7 @@
         "method": "run_js",
         "title": "获取最近联系",
         "desc": "查询最近联系的人",
-        "data": "const recent = await Memento.plugins.contact.getRecentContacts({\n  limit: 10\n});\n\nconst result = {\n  count: recent.length,\n  contacts: recent.map(c => ({\n    name: c.name,\n    lastInteraction: c.lastInteraction\n  }))\n};\nsetResult(result);\nreturn result;"
+        "data": "const recent = await Aboutme.plugins.contact.getRecentContacts({\n  limit: 10\n});\n\nconst result = {\n  count: recent.length,\n  contacts: recent.map(c => ({\n    name: c.name,\n    lastInteraction: c.lastInteraction\n  }))\n};\nsetResult(result);\nreturn result;"
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000",

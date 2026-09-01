@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/plugins/bill/models/bill_shortcut.dart';
-import 'package:Memento/core/services/system_widget_service.dart';
+import 'package:aboutme/plugins/bill/models/bill_shortcut.dart';
+import 'package:aboutme/core/services/system_widget_service.dart';
 
 /// 快捷记账小组件数据同步服务
 ///
@@ -191,7 +191,7 @@ class BillShortcutsWidgetService {
         name: 'BillShortcutsWidgetProvider',
         iOSName: 'BillShortcutsWidgetProvider',
         qualifiedAndroidName:
-            'github.hunmer.memento.widgets.providers.BillShortcutsWidgetProvider',
+            'github.hunmer.aboutme.widgets.providers.BillShortcutsWidgetProvider',
       );
       debugPrint('BillShortcutsWidgetService: 小组件更新已触发 (widgetId: $widgetId)');
     } catch (e) {

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
 class GoodsItemSelectorDialog extends StatefulWidget {
   final String? excludeItemId; // 要排除的物品ID（避免选择自己或已选择的子物品）

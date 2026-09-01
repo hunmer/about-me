@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/widgets/widget_config_editor/index.dart';
 
 /// 任务四象限小组件配置界面
 ///
@@ -126,7 +126,7 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
       await HomeWidget.updateWidget(
         name: 'TodoQuadrantWidgetProvider',
         iOSName: 'TodoQuadrantWidgetProvider',
-        qualifiedAndroidName: 'github.hunmer.memento.widgets.providers.TodoQuadrantWidgetProvider',
+        qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.TodoQuadrantWidgetProvider',
       );
 
       if (mounted) Navigator.of(context).pop();

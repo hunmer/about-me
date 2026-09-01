@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 
 /// Chat 插件路由注册表
 class ChatRoutes implements RouteRegistry {

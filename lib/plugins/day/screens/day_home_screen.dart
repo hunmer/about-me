@@ -2,14 +2,14 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/day/controllers/day_controller.dart';
-import 'package:Memento/plugins/day/widgets/memorial_day_card.dart';
-import 'package:Memento/plugins/day/widgets/memorial_day_list_item.dart';
-import 'package:Memento/plugins/day/widgets/edit_memorial_day_dialog/edit_memorial_day_page.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/core/event/event_manager.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/day/controllers/day_controller.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_day_card.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_day_list_item.dart';
+import 'package:aboutme/plugins/day/widgets/edit_memorial_day_dialog/edit_memorial_day_page.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 class DayHomeScreen extends StatefulWidget {
   const DayHomeScreen({super.key});

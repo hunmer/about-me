@@ -88,7 +88,7 @@ static Widget _renderCheckinItemData(
 // lib/screens/widgets_gallery/common_widgets/widgets/checkin_item_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 签到项目卡片小组件
 ///
@@ -693,9 +693,9 @@ registry.register(
 ```dart
 // lib/plugins/checkin/home_widgets.dart
 
-import 'package:Memento/widgets/event_listener_container.dart';
-import 'package:Memento/screens/home_screen/widgets/selector_widget_types.dart';
-import 'package:Memento/screens/widgets_gallery/common_widgets/common_widgets.dart';
+import 'package:aboutme/widgets/event_listener_container.dart';
+import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
 ```
 
 #### 2. 修改小组件 builder

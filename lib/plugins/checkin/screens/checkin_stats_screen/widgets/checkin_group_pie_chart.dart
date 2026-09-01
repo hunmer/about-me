@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:Memento/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'dart:math' as math;
 
 class CheckinGroupPieChart extends StatefulWidget {

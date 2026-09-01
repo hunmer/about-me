@@ -1,6 +1,6 @@
 //
 //  ChatChannelView.swift
-//  memento_watchos Watch App
+//  aboutme_watchos Watch App
 //
 //  Created by liao on 2026/3/9.
 //

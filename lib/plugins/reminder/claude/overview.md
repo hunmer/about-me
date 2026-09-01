@@ -27,5 +27,5 @@ graph TD
 
 ## 与其他模块的关系
 
-- 通知最终经 `memento_notifications` 插件能力发送（由 ReminderNotificationService 封装）。
+- 通知最终经 `aboutme_notifications` 插件能力发送（由 ReminderNotificationService 封装）。
 - 不在 `shared_models` 的 20 个共享域内，也不注册 JS API 与数据选择器——纯客户端本地插件。

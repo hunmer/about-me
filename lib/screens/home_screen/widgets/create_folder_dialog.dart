@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/models/home_folder_item.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
 import '../../../../core/services/toast_service.dart';
 
 /// 创建文件夹对话框

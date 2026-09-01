@@ -1,13 +1,13 @@
 import 'package:get/get.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/habits/widgets/skill_form.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
-import 'package:Memento/plugins/habits/controllers/skill_controller.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/widgets/completion_records_tab.dart';
-import 'package:Memento/plugins/habits/widgets/statistics_tab.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/widgets/completion_records_tab.dart';
+import 'package:aboutme/plugins/habits/widgets/statistics_tab.dart';
 
 class SkillDetailPage extends StatefulWidget {
   final Skill skill;

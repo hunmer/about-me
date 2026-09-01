@@ -6,14 +6,14 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/sync_client_service.dart';
-import 'package:Memento/core/services/sync_record_service.dart';
-import 'package:Memento/core/services/sync_websocket_service.dart';
-import 'package:Memento/core/services/encryption_service.dart';
-import 'package:Memento/core/route/route_refresh_manager.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/settings_screen/models/server_sync_config.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/sync_client_service.dart';
+import 'package:aboutme/core/services/sync_record_service.dart';
+import 'package:aboutme/core/services/sync_websocket_service.dart';
+import 'package:aboutme/core/services/encryption_service.dart';
+import 'package:aboutme/core/route/route_refresh_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
 
 /// 文件监听同步服务
 ///

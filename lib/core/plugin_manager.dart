@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:Memento/core/config_manager.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';

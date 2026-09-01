@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_service.dart';
-import 'package:Memento/plugins/agent_chat/services/speech/speech_recognition_state.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
-import 'package:Memento/plugins/agent_chat/models/voice_call_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart';
 
 /// 语音通话状态
 enum VoiceCallState {

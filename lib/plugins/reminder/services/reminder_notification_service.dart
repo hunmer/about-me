@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/notification_controller.dart';
-import 'package:memento_notifications/memento_notifications.dart';
+import 'package:aboutme/core/notification_controller.dart';
+import 'package:aboutme_notifications/aboutme_notifications.dart';
 import '../models/reminder.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 提醒通知服务
 /// 封装通知控制器的提醒专用方法
@@ -20,7 +20,7 @@ class ReminderNotificationService {
 
     try {
       // 先取消之前的调度
-      await MementoNotifications.instance.cancel(notificationId);
+      await AboutmeNotifications.instance.cancel(notificationId);
 
       String? bigPicture;
       if (reminder.imageUrl != null && reminder.imageUrl!.isNotEmpty) {
@@ -31,8 +31,8 @@ class ReminderNotificationService {
         }
       }
 
-      // 使用 MementoNotifications 调度定时通知
-      await MementoNotifications.instance.scheduleNotification(
+      // 使用 AboutmeNotifications 调度定时通知
+      await AboutmeNotifications.instance.scheduleNotification(
         id: notificationId,
         title: reminder.title,
         body: reminder.content,
@@ -59,13 +59,13 @@ class ReminderNotificationService {
   /// 取消提醒的调度通知
   Future<void> cancelScheduledNotification(String reminderId) async {
     final notificationId = reminderId.hashCode;
-    await MementoNotifications.instance.cancel(notificationId);
+    await AboutmeNotifications.instance.cancel(notificationId);
     debugPrint('[ReminderNotificationService] 已取消调度通知: $reminderId');
   }
 
   /// 取消所有调度通知
   Future<void> cancelAllScheduledNotifications() async {
-    await MementoNotifications.instance.cancelAll();
+    await AboutmeNotifications.instance.cancelAll();
     debugPrint('[ReminderNotificationService] 已取消所有调度通知');
   }
 
@@ -108,12 +108,12 @@ class ReminderNotificationService {
           title: reminder.title,
           body: reminder.content,
           bigPicture: absolutePath,
-          layout: MementoNotificationLayout.bigPicture,
+          layout: AboutmeNotificationLayout.bigPicture,
           actionButtons: const [
-            MementoNotificationButton(
+            AboutmeNotificationButton(
               key: 'dismiss',
               label: '关闭',
-              actionType: MementoButtonActionType.dismissAction,
+              actionType: AboutmeButtonActionType.dismissAction,
             ),
           ],
         );
@@ -124,10 +124,10 @@ class ReminderNotificationService {
           title: reminder.title,
           body: reminder.content,
           actionButtons: const [
-            MementoNotificationButton(
+            AboutmeNotificationButton(
               key: 'dismiss',
               label: '关闭',
-              actionType: MementoButtonActionType.dismissAction,
+              actionType: AboutmeButtonActionType.dismissAction,
             ),
           ],
         );

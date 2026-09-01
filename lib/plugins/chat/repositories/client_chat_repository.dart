@@ -4,11 +4,11 @@
 library;
 
 import 'package:shared_models/shared_models.dart';
-import 'package:Memento/plugins/chat/services/chat_data_service.dart';
-import 'package:Memento/plugins/chat/services/chat_config_service.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/services/chat_data_service.dart';
+import 'package:aboutme/plugins/chat/services/chat_config_service.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:flutter/material.dart';
 
 /// 客户端 Chat Repository 实现

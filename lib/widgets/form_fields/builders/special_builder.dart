@@ -3,7 +3,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
 import '../../picker/icon_picker_dialog.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart';
+import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import '../tags_field.dart';
 import '../icon_title_field.dart';
 import '../category_selector_field.dart';
@@ -11,7 +11,7 @@ import '../option_selector_field.dart';
 import '../form_field_group.dart';
 import '../custom_fields_field.dart';
 import '../list_add_field.dart';
-import 'package:Memento/plugins/todo/models/models.dart';
+import 'package:aboutme/plugins/todo/models/models.dart';
 import '../plugin_data_selector_field.dart';
 import '../event_multi_select_field.dart';
 

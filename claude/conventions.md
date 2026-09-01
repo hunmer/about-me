@@ -18,7 +18,7 @@ npm run build            # 含 admin-vue 构建 + tsc + 拷贝 plugins/admin
 npm test                 # jest --runInBand
 npm run lint             # eslint src/**/*.ts
 
-# MCP 服务器（packages/mcp-memento-server）
+# MCP 服务器（packages/mcp-aboutme-server）
 npm run build && npm start
 npm run inspector        # MCP Inspector 调试
 
@@ -45,7 +45,7 @@ npm run inspector        # MCP Inspector 调试
 - **旧文档中的 `server/` 目录已不存在**：Dart 版同步服务器已移除，现行服务器是 `packages/server-nodejs`（默认端口 **8874**，不是旧文档写的 8080）。遇到 `cd server && dart run bin/server.dart` 一类指令一律视为过时。
 - `flutter_config.yaml` 设置 `tree-shake-icons: false`，因为项目使用动态 `IconData`；不要在构建中开启图标树摇。
 - Web 平台差异：`StyledToast` 等库用条件导入（`if (dart.library.io)`）提供存根实现，改动平台相关代码时注意。
-- `Memento.ipa`、`build/`、`dist/`、`.dart_tool/` 均为生成物，不要手工编辑或提交。
+- `Aboutme.ipa`、`build/`、`dist/`、`.dart_tool/` 均为生成物，不要手工编辑或提交。
 - `.claude/hooks/` 下存在 auto-commit 等钩子脚本；Agent 不应主动执行 git 提交、分支、reset 等操作。
 
 ## 环境变量
@@ -57,4 +57,4 @@ npm run inspector        # MCP Inspector 调试
 | server-nodejs | `JWT_SECRET` / `TOKEN_EXPIRY_DAYS` | JWT 配置（未设置时使用开发默认值并告警） |
 | server-nodejs | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 管理面板账号，默认 admin/admin123 |
 | server-nodejs | `ALLOW_REGISTER` / `ENABLE_CORS` / `CORS_ORIGINS` / `MAX_REQUEST_SIZE` | 注册与 CORS 开关 |
-| mcp-memento-server | `MEMENTO_SERVER_URL` / `MEMENTO_API_KEY` / `MEMENTO_ENCRYPTION_KEY` | 指向 server-nodejs 的地址与密钥 |
+| mcp-aboutme-server | `ABOUTME_SERVER_URL` / `ABOUTME_API_KEY` / `ABOUTME_ENCRYPTION_KEY` | 指向 server-nodejs 的地址与密钥 |

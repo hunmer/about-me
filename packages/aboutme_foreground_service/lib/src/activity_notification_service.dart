@@ -6,18 +6,18 @@ import 'package:flutter/services.dart';
 /// 活动通知前台服务
 ///
 /// 提供活动提醒的前台服务管理，包括启动、更新和停止活动通知服务。
-class MementoActivityNotificationService {
-  static final MementoActivityNotificationService _instance =
-      MementoActivityNotificationService._internal();
+class AboutmeActivityNotificationService {
+  static final AboutmeActivityNotificationService _instance =
+      AboutmeActivityNotificationService._internal();
 
   /// 单例实例
-  static MementoActivityNotificationService get instance => _instance;
+  static AboutmeActivityNotificationService get instance => _instance;
 
-  MementoActivityNotificationService._internal();
+  AboutmeActivityNotificationService._internal();
 
   /// MethodChannel 名称
   static const String _channelName =
-      'com.memento.foreground_service/activity_notification';
+      'com.aboutme.foreground_service/activity_notification';
 
   /// MethodChannel 实例
   static const MethodChannel _channel = MethodChannel(_channelName);
@@ -43,15 +43,15 @@ class MementoActivityNotificationService {
   /// 启动活动通知服务
   Future<void> startService() async {
     if (!Platform.isAndroid) {
-      debugPrint('[MementoActivityNotificationService] 仅支持 Android 平台');
+      debugPrint('[AboutmeActivityNotificationService] 仅支持 Android 平台');
       return;
     }
 
     try {
       await _channel.invokeMethod('startActivityNotificationService');
-      debugPrint('[MementoActivityNotificationService] 活动通知服务已启动');
+      debugPrint('[AboutmeActivityNotificationService] 活动通知服务已启动');
     } catch (e) {
-      debugPrint('[MementoActivityNotificationService] 启动活动通知服务失败: $e');
+      debugPrint('[AboutmeActivityNotificationService] 启动活动通知服务失败: $e');
       rethrow;
     }
   }
@@ -62,9 +62,9 @@ class MementoActivityNotificationService {
 
     try {
       await _channel.invokeMethod('stopActivityNotificationService');
-      debugPrint('[MementoActivityNotificationService] 活动通知服务已停止');
+      debugPrint('[AboutmeActivityNotificationService] 活动通知服务已停止');
     } catch (e) {
-      debugPrint('[MementoActivityNotificationService] 停止活动通知服务失败: $e');
+      debugPrint('[AboutmeActivityNotificationService] 停止活动通知服务失败: $e');
       rethrow;
     }
   }
@@ -84,9 +84,9 @@ class MementoActivityNotificationService {
         'title': title,
         'content': content,
       });
-      debugPrint('[MementoActivityNotificationService] 通知已更新: $title');
+      debugPrint('[AboutmeActivityNotificationService] 通知已更新: $title');
     } catch (e) {
-      debugPrint('[MementoActivityNotificationService] 更新通知失败: $e');
+      debugPrint('[AboutmeActivityNotificationService] 更新通知失败: $e');
       rethrow;
     }
   }

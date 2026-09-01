@@ -2,63 +2,63 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:Memento/plugins/activity/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/activity/home_widgets/home_widgets.dart'
     as ActivityHomeWidgets;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import 'package:Memento/plugins/chat/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/chat/home_widgets/home_widgets.dart'
     as ChatHomeWidgets;
-import 'package:Memento/plugins/diary/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/diary/home_widgets/home_widgets.dart'
     as DiaryHomeWidgets;
-import 'package:Memento/plugins/agent_chat/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/agent_chat/home_widgets/home_widgets.dart'
     as AgentChatHomeWidgets;
-import 'package:Memento/plugins/openai/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/openai/home_widgets/home_widgets.dart'
     as OpenAIHomeWidgets;
-import 'package:Memento/plugins/notes/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/notes/home_widgets/home_widgets.dart'
     as NotesHomeWidgets;
-import 'package:Memento/plugins/goods/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/goods/home_widgets/home_widgets.dart'
     as GoodsHomeWidgets;
-import 'package:Memento/plugins/bill/home_widgets.dart' as BillHomeWidgets;
-import 'package:Memento/plugins/todo/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/bill/home_widgets.dart' as BillHomeWidgets;
+import 'package:aboutme/plugins/todo/home_widgets/home_widgets.dart'
     as TodoHomeWidgets;
-import 'package:Memento/plugins/checkin/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/checkin/home_widgets/home_widgets.dart'
     as CheckinHomeWidgets;
-import 'package:Memento/plugins/calendar/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/calendar/home_widgets/home_widgets.dart'
     as CalendarHomeWidgets;
-import 'package:Memento/plugins/timer/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/timer/home_widgets/home_widgets.dart'
     as TimerHomeWidgets;
-import 'package:Memento/plugins/day/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/day/home_widgets/home_widgets.dart'
     as DayHomeWidgets;
-import 'package:Memento/plugins/tracker/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/tracker/home_widgets/home_widgets.dart'
     as TrackerHomeWidgets;
-import 'package:Memento/plugins/store/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/store/home_widgets/home_widgets.dart'
     as StoreHomeWidgets;
-import 'package:Memento/plugins/nodes/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/nodes/home_widgets/home_widgets.dart'
     as NodesHomeWidgets;
-import 'package:Memento/plugins/contact/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/contact/home_widgets/home_widgets.dart'
     as ContactHomeWidgets;
-import 'package:Memento/plugins/habits/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/habits/home_widgets/home_widgets.dart'
     as HabitsHomeWidgets;
-import 'package:Memento/plugins/database/home_widgets.dart';
-import 'package:Memento/plugins/calendar_album/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/database/home_widgets.dart';
+import 'package:aboutme/plugins/calendar_album/home_widgets/home_widgets.dart'
     as CalendarAlbumHomeWidgets;
-import 'package:Memento/plugins/scripts_center/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/scripts_center/home_widgets/home_widgets.dart'
     as ScriptsCenterHomeWidgets;
-import 'package:Memento/plugins/nfc/home_widgets/home_widgets.dart' as NfcHomeWidgets;
-import 'package:Memento/plugins/tts/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/nfc/home_widgets/home_widgets.dart' as NfcHomeWidgets;
+import 'package:aboutme/plugins/tts/home_widgets/home_widgets.dart'
     as TtsHomeWidgets;
-import 'package:Memento/plugins/webview/home_widgets/home_widgets.dart'
+import 'package:aboutme/plugins/webview/home_widgets/home_widgets.dart'
     as WebviewHomeWidgets;
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/route.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:memento_widgets/memento_widgets.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/global_flags.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/route.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/global_flags.dart';
 
 /// 初始化主页小组件系统
 Future<void> initializeHomeWidgets() async {
@@ -107,19 +107,19 @@ Future<void> setupWidgetClickListener() async {
     return;
   }
 
-  // 初始化 memento_widgets 插件的 MyWidgetManager
+  // 初始化 aboutme_widgets 插件的 MyWidgetManager
   try {
     final widgetManager = MyWidgetManager();
     await widgetManager.init(null); // Android 不需要 App Group ID
-    debugPrint('memento_widgets 插件初始化成功');
+    debugPrint('aboutme_widgets 插件初始化成功');
   } catch (e) {
-    debugPrint('memento_widgets 插件初始化失败: $e');
+    debugPrint('aboutme_widgets 插件初始化失败: $e');
   }
 
   // 初始化 HomeWidget (必须在监听前调用)
   // 只在 iOS 平台上设置 App Group ID，因为 setAppGroupId 只在 iOS 上有效
   if (UniversalPlatform.isIOS) {
-    await HomeWidget.setAppGroupId('group.github.hunmer.memento');
+    await HomeWidget.setAppGroupId('group.github.hunmer.aboutme');
   }
 
   // 监听 HomeWidget 的点击事件（备用方式）
@@ -130,7 +130,7 @@ Future<void> setupWidgetClickListener() async {
   });
 
   // 监听 Android 原生通过 MethodChannel 发送的小组件点击事件
-  const platform = MethodChannel('github.hunmer.memento/widget');
+  const platform = MethodChannel('github.hunmer.aboutme/widget');
   platform.setMethodCallHandler((call) async {
     if (call.method == 'onWidgetClicked') {
       final url = call.arguments as String?;
@@ -162,18 +162,18 @@ Future<void> setupWidgetClickListener() async {
 
 /// 注册 Android 广播监听器
 Future<void> _registerBroadcastReceiver() async {
-  const platform = MethodChannel('github.hunmer.memento/widget_broadcast');
+  const platform = MethodChannel('github.hunmer.aboutme/widget_broadcast');
 
   try {
     await platform.invokeMethod('registerBroadcastReceiver', <String, dynamic>{
       'actions': [
-        'github.hunmer.memento.REFRESH_ACTIVITY_WEEKLY_WIDGET',
-        'github.hunmer.memento.REFRESH_ACTIVITY_DAILY_WIDGET',
-        'github.hunmer.memento.REFRESH_HABITS_WEEKLY_WIDGET',
-        'github.hunmer.memento.REFRESH_CHECKIN_WEEKLY_WIDGET',
-        'github.hunmer.memento.REFRESH_CALENDAR_ALBUM_WEEKLY_WIDGET',
-        'github.hunmer.memento.REFRESH_TODO_QUADRANT_WIDGET',
-        'github.hunmer.memento.CLEANUP_WIDGET_IDS',
+        'github.hunmer.aboutme.REFRESH_ACTIVITY_WEEKLY_WIDGET',
+        'github.hunmer.aboutme.REFRESH_ACTIVITY_DAILY_WIDGET',
+        'github.hunmer.aboutme.REFRESH_HABITS_WEEKLY_WIDGET',
+        'github.hunmer.aboutme.REFRESH_CHECKIN_WEEKLY_WIDGET',
+        'github.hunmer.aboutme.REFRESH_CALENDAR_ALBUM_WEEKLY_WIDGET',
+        'github.hunmer.aboutme.REFRESH_TODO_QUADRANT_WIDGET',
+        'github.hunmer.aboutme.CLEANUP_WIDGET_IDS',
       ],
     });
 
@@ -188,7 +188,7 @@ Future<void> _registerBroadcastReceiver() async {
         try {
           // 处理活动周视图小组件刷新
           if (action ==
-              'github.hunmer.memento.REFRESH_ACTIVITY_WEEKLY_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_ACTIVITY_WEEKLY_WIDGET') {
             final widgetId = data?['widgetId'] as int?;
             final weekOffset = data?['weekOffset'] as int?;
 
@@ -230,7 +230,7 @@ Future<void> _registerBroadcastReceiver() async {
                 name: 'ActivityWeeklyWidgetProvider',
                 iOSName: 'ActivityWeeklyWidget',
                 qualifiedAndroidName:
-                    'github.hunmer.memento.widgets.providers.ActivityWeeklyWidgetProvider',
+                    'github.hunmer.aboutme.widgets.providers.ActivityWeeklyWidgetProvider',
               );
 
               debugPrint('活动周视图小组件刷新完成');
@@ -238,7 +238,7 @@ Future<void> _registerBroadcastReceiver() async {
           }
           // 处理活动日视图小组件刷新
           else if (action ==
-              'github.hunmer.memento.REFRESH_ACTIVITY_DAILY_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_ACTIVITY_DAILY_WIDGET') {
             final widgetId = data?['widgetId'] as int?;
             final dayOffset = data?['dayOffset'] as int?;
 
@@ -280,7 +280,7 @@ Future<void> _registerBroadcastReceiver() async {
                 name: 'ActivityDailyWidgetProvider',
                 iOSName: 'ActivityDailyWidget',
                 qualifiedAndroidName:
-                    'github.hunmer.memento.widgets.providers.ActivityDailyWidgetProvider',
+                    'github.hunmer.aboutme.widgets.providers.ActivityDailyWidgetProvider',
               );
 
               debugPrint('活动日视图小组件刷新完成');
@@ -288,31 +288,31 @@ Future<void> _registerBroadcastReceiver() async {
           }
           // 处理习惯周视图小组件刷新
           else if (action ==
-              'github.hunmer.memento.REFRESH_HABITS_WEEKLY_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_HABITS_WEEKLY_WIDGET') {
             debugPrint('习惯周视图小组件刷新请求');
             await PluginWidgetSyncHelper.instance.syncHabitsWeeklyWidget();
             await HomeWidget.updateWidget(
               name: 'HabitsWeeklyWidgetProvider',
               iOSName: 'HabitsWeeklyWidget',
               qualifiedAndroidName:
-                  'github.hunmer.memento.widgets.providers.HabitsWeeklyWidgetProvider',
+                  'github.hunmer.aboutme.widgets.providers.HabitsWeeklyWidgetProvider',
             );
           }
           // 处理签到周视图小组件刷新
           else if (action ==
-              'github.hunmer.memento.REFRESH_CHECKIN_WEEKLY_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_CHECKIN_WEEKLY_WIDGET') {
             debugPrint('签到周视图小组件刷新请求');
             await PluginWidgetSyncHelper.instance.syncCheckinWeeklyWidget();
             await HomeWidget.updateWidget(
               name: 'CheckinWeeklyWidgetProvider',
               iOSName: 'CheckinWeeklyWidget',
               qualifiedAndroidName:
-                  'github.hunmer.memento.widgets.providers.CheckinWeeklyWidgetProvider',
+                  'github.hunmer.aboutme.widgets.providers.CheckinWeeklyWidgetProvider',
             );
           }
           // 处理每周相册小组件刷新
           else if (action ==
-              'github.hunmer.memento.REFRESH_CALENDAR_ALBUM_WEEKLY_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_CALENDAR_ALBUM_WEEKLY_WIDGET') {
             final widgetId = data?['widgetId'] as int?;
             final weekOffset = data?['weekOffset'] as int?;
 
@@ -349,7 +349,7 @@ Future<void> _registerBroadcastReceiver() async {
                 name: 'CalendarAlbumWeeklyWidgetProvider',
                 iOSName: 'CalendarAlbumWeeklyWidget',
                 qualifiedAndroidName:
-                    'github.hunmer.memento.widgets.providers.CalendarAlbumWeeklyWidgetProvider',
+                    'github.hunmer.aboutme.widgets.providers.CalendarAlbumWeeklyWidgetProvider',
               );
 
               debugPrint('每周相册小组件刷新完成');
@@ -357,18 +357,18 @@ Future<void> _registerBroadcastReceiver() async {
           }
           // 处理四象限任务小组件刷新
           else if (action ==
-              'github.hunmer.memento.REFRESH_TODO_QUADRANT_WIDGET') {
+              'github.hunmer.aboutme.REFRESH_TODO_QUADRANT_WIDGET') {
             debugPrint('四象限任务小组件刷新请求');
             await PluginWidgetSyncHelper.instance.syncTodoQuadrantWidget();
             await HomeWidget.updateWidget(
               name: 'TodoQuadrantWidgetProvider',
               iOSName: 'TodoQuadrantWidgetProvider',
               qualifiedAndroidName:
-                  'github.hunmer.memento.widgets.providers.TodoQuadrantWidgetProvider',
+                  'github.hunmer.aboutme.widgets.providers.TodoQuadrantWidgetProvider',
             );
           }
           // 处理小组件清理请求（删除时）
-          else if (action == 'github.hunmer.memento.CLEANUP_WIDGET_IDS') {
+          else if (action == 'github.hunmer.aboutme.CLEANUP_WIDGET_IDS') {
             final widgetType = data?['widgetType'] as String?;
             final deletedWidgetIds = data?['deletedWidgetIds'] as List?;
 
@@ -449,9 +449,9 @@ void handleWidgetClick(String url) {
 
     // 解析 URI 路径和参数
     // 支持多种格式:
-    // 1. memento://widget/quick_send?channelId=xxx (path-based, host=widget)
-    // 2. memento://habits_weekly_config?widgetId=35 (host-based, path=/)
-    // 3. memento://checkin/item?itemId=xxx (host+path combined)
+    // 1. aboutme://widget/quick_send?channelId=xxx (path-based, host=widget)
+    // 2. aboutme://habits_weekly_config?widgetId=35 (host-based, path=/)
+    // 3. aboutme://checkin/item?itemId=xxx (host+path combined)
     String routePath = uri.path;
 
     // 如果 path 为空或只有斜杠，使用 host 作为路由路径
@@ -460,7 +460,7 @@ void handleWidgetClick(String url) {
       debugPrint('使用 host 作为路由路径: $routePath');
     } else if (uri.host != 'widget' && uri.host.isNotEmpty) {
       // 如果 host 不是 'widget' 且 path 不为空，组合 host 和 path
-      // 例如: memento://checkin/item -> /checkin/item
+      // 例如: aboutme://checkin/item -> /checkin/item
       routePath = '/${uri.host}${uri.path}';
       debugPrint('组合 host 和 path 作为路由路径: $routePath');
     }
@@ -618,7 +618,7 @@ void handleWidgetClick(String url) {
 
     // 特殊处理：习惯周小组件计时器对话框路由
     // 从 /timer 且 host 为 habits 时，说明是习惯插件的计时器
-    // 例如: memento://habits/timer?habitId=xxx
+    // 例如: aboutme://habits/timer?habitId=xxx
     if (routePath == '/timer' && uri.host == 'habits') {
       routePath = '/habit_timer_dialog';
       debugPrint('习惯周小组件计时器对话框路由转换为: $routePath');

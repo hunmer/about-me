@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/controllers/agent_controller.dart';
-import 'package:Memento/plugins/openai/services/agent_marketplace_service.dart';
-import 'package:Memento/plugins/openai/widgets/marketplace_agent_grid_view.dart';
-import 'package:Memento/plugins/openai/widgets/marketplace_agent_list_view.dart';
-import 'package:Memento/plugins/openai/widgets/filter_dialog.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/services/agent_marketplace_service.dart';
+import 'package:aboutme/plugins/openai/widgets/marketplace_agent_grid_view.dart';
+import 'package:aboutme/plugins/openai/widgets/marketplace_agent_list_view.dart';
+import 'package:aboutme/plugins/openai/widgets/filter_dialog.dart';
 
 /// Agent 商场页面
 /// 从远程服务器获取并展示可安装的 Agent

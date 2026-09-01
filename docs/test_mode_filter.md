@@ -2,7 +2,7 @@
 
 ## 问题描述
 
-调用 `Memento.plugins.activity.getActivities({date: "2025-11-19", mode: "compact"})` 时，mode 参数没有生效，返回的仍然是完整的活动记录数据。
+调用 `Aboutme.plugins.activity.getActivities({date: "2025-11-19", mode: "compact"})` 时，mode 参数没有生效，返回的仍然是完整的活动记录数据。
 
 ## 问题根源
 
@@ -65,7 +65,7 @@ return FilterOptions(
 ### 测试 1: Summary 模式
 
 ```javascript
-const summary = await Memento.plugins.activity.getActivities({
+const summary = await Aboutme.plugins.activity.getActivities({
   date: "2025-11-19",
   mode: "summary"
 });
@@ -86,7 +86,7 @@ console.log(summary);
 ### 测试 2: Compact 模式
 
 ```javascript
-const compact = await Memento.plugins.activity.getActivities({
+const compact = await Aboutme.plugins.activity.getActivities({
   date: "2025-11-19",
   mode: "compact"
 });
@@ -119,7 +119,7 @@ console.log(compact);
 ### 测试 3: Fields 白名单
 
 ```javascript
-const custom = await Memento.plugins.activity.getActivities({
+const custom = await Aboutme.plugins.activity.getActivities({
   date: "2025-11-19",
   fields: ["id", "title", "startTime", "endTime"]
 });
@@ -146,7 +146,7 @@ console.log(custom);
 ### 测试 4: 向后兼容（不传 mode 参数）
 
 ```javascript
-const full = await Memento.plugins.activity.getActivities({
+const full = await Aboutme.plugins.activity.getActivities({
   date: "2025-11-19"
 });
 console.log(full);

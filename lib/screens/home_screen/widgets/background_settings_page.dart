@@ -4,9 +4,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:Memento/screens/home_screen/managers/home_layout_manager.dart';
-import 'package:Memento/screens/home_screen/models/layout_config.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
+import 'package:aboutme/screens/home_screen/models/layout_config.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 /// 主页主题设置页面
 class BackgroundSettingsPage extends StatefulWidget {

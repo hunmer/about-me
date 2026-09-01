@@ -6,18 +6,18 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'foreground_service_config.dart';
 import 'service_result.dart';
 
-/// Memento 前台服务管理器
+/// Aboutme 前台服务管理器
 ///
 /// 封装 flutter_foreground_task，提供简洁的前台服务 API。
 /// 用于管理前台服务的初始化、启动、停止和数据通信。
-class MementoForegroundService {
-  static final MementoForegroundService _instance =
-      MementoForegroundService._internal();
+class AboutmeForegroundService {
+  static final AboutmeForegroundService _instance =
+      AboutmeForegroundService._internal();
 
   /// 单例实例
-  static MementoForegroundService get instance => _instance;
+  static AboutmeForegroundService get instance => _instance;
 
-  MementoForegroundService._internal();
+  AboutmeForegroundService._internal();
 
   bool _isInitialized = false;
 
@@ -62,7 +62,7 @@ class MementoForegroundService {
     );
 
     _isInitialized = true;
-    debugPrint('[MementoForegroundService] 初始化完成');
+    debugPrint('[AboutmeForegroundService] 初始化完成');
   }
 
   /// 请求必要的权限

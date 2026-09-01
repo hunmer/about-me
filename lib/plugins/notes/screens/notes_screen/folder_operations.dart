@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'notes_screen_state.dart';
 
 mixin FolderOperations on NotesMainViewState {

@@ -22,8 +22,8 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
   console.log('✅ 已加载环境变量文件:', envPath);
   console.log('📝 环境变量:');
-  console.log('   MEMENTO_SERVER_URL:', process.env.MEMENTO_SERVER_URL || '(未设置)');
-  console.log('   MEMENTO_AUTH_TOKEN:', process.env.MEMENTO_AUTH_TOKEN ? '(已设置)' : '(未设置)');
+  console.log('   ABOUTME_SERVER_URL:', process.env.ABOUTME_SERVER_URL || '(未设置)');
+  console.log('   ABOUTME_AUTH_TOKEN:', process.env.ABOUTME_AUTH_TOKEN ? '(已设置)' : '(未设置)');
 } else {
   console.warn('⚠️  未找到 .env 文件:', envPath);
   console.warn('   Inspector 将在没有环境变量的情况下启动');
@@ -38,8 +38,8 @@ const inspector = spawn('npx', ['@modelcontextprotocol/inspector', 'node', 'dist
   env: {
     ...process.env,
     // 确保关键环境变量被传递
-    MEMENTO_SERVER_URL: process.env.MEMENTO_SERVER_URL,
-    MEMENTO_AUTH_TOKEN: process.env.MEMENTO_AUTH_TOKEN,
+    ABOUTME_SERVER_URL: process.env.ABOUTME_SERVER_URL,
+    ABOUTME_AUTH_TOKEN: process.env.ABOUTME_AUTH_TOKEN,
   },
   shell: true,
 });

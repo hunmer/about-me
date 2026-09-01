@@ -12,7 +12,7 @@ Timer 插件提供了 9 个 JS API 方法,用于在 JavaScript 环境中管理�
 
 **调用方式:**
 ```javascript
-const timers = await window.memento.timer.getTimers();
+const timers = await window.aboutme.timer.getTimers();
 console.log(JSON.parse(timers));
 ```
 
@@ -67,11 +67,11 @@ console.log(JSON.parse(timers));
 **调用示例:**
 ```javascript
 // 创建正计时 60 秒
-const result = await window.memento.timer.createTimer('学习计时', 60, 'countUp', '工作');
+const result = await window.aboutme.timer.createTimer('学习计时', 60, 'countUp', '工作');
 console.log(JSON.parse(result));
 
 // 创建倒计时 300 秒(5分钟)
-const result2 = await window.memento.timer.createTimer('午休提醒', 300, 'countDown');
+const result2 = await window.aboutme.timer.createTimer('午休提醒', 300, 'countDown');
 console.log(JSON.parse(result2));
 ```
 
@@ -95,7 +95,7 @@ console.log(JSON.parse(result2));
 
 **调用示例:**
 ```javascript
-const result = await window.memento.timer.deleteTimer('1705300800000');
+const result = await window.aboutme.timer.deleteTimer('1705300800000');
 console.log(JSON.parse(result));
 ```
 
@@ -118,7 +118,7 @@ console.log(JSON.parse(result));
 
 **调用示例:**
 ```javascript
-const result = await window.memento.timer.startTimer('1705300800000');
+const result = await window.aboutme.timer.startTimer('1705300800000');
 console.log(JSON.parse(result));
 ```
 
@@ -143,7 +143,7 @@ console.log(JSON.parse(result));
 
 **调用示例:**
 ```javascript
-const result = await window.memento.timer.pauseTimer('1705300800000');
+const result = await window.aboutme.timer.pauseTimer('1705300800000');
 console.log(JSON.parse(result));
 ```
 
@@ -168,7 +168,7 @@ console.log(JSON.parse(result));
 
 **调用示例:**
 ```javascript
-const result = await window.memento.timer.stopTimer('1705300800000');
+const result = await window.aboutme.timer.stopTimer('1705300800000');
 console.log(JSON.parse(result));
 ```
 
@@ -193,7 +193,7 @@ console.log(JSON.parse(result));
 
 **调用示例:**
 ```javascript
-const result = await window.memento.timer.resetTimer('1705300800000');
+const result = await window.aboutme.timer.resetTimer('1705300800000');
 console.log(JSON.parse(result));
 ```
 
@@ -217,7 +217,7 @@ console.log(JSON.parse(result));
 
 **调用示例:**
 ```javascript
-const status = await window.memento.timer.getTimerStatus('1705300800000');
+const status = await window.aboutme.timer.getTimerStatus('1705300800000');
 console.log(JSON.parse(status));
 ```
 
@@ -274,7 +274,7 @@ console.log(JSON.parse(status));
 
 **调用示例:**
 ```javascript
-const history = await window.memento.timer.getHistory();
+const history = await window.aboutme.timer.getHistory();
 console.log(JSON.parse(history));
 ```
 
@@ -309,7 +309,7 @@ console.log(JSON.parse(history));
 
 ```javascript
 // 创建计时器
-const createResult = await window.memento.timer.createTimer(
+const createResult = await window.aboutme.timer.createTimer(
   '学习时间',
   3600,
   'countUp',
@@ -318,10 +318,10 @@ const createResult = await window.memento.timer.createTimer(
 const { id } = JSON.parse(createResult);
 
 // 启动计时器
-await window.memento.timer.startTimer(id);
+await window.aboutme.timer.startTimer(id);
 
 // 获取状态
-const status = await window.memento.timer.getTimerStatus(id);
+const status = await window.aboutme.timer.getTimerStatus(id);
 console.log('当前状态:', JSON.parse(status));
 ```
 
@@ -329,19 +329,19 @@ console.log('当前状态:', JSON.parse(status));
 
 ```javascript
 // 获取所有计时器
-const timers = JSON.parse(await window.memento.timer.getTimers());
+const timers = JSON.parse(await window.aboutme.timer.getTimers());
 
 // 启动所有未运行的计时器
 for (const timer of timers) {
   if (!timer.isRunning) {
-    await window.memento.timer.startTimer(timer.id);
+    await window.aboutme.timer.startTimer(timer.id);
   }
 }
 
 // 暂停所有正在运行的计时器
 for (const timer of timers) {
   if (timer.isRunning) {
-    await window.memento.timer.pauseTimer(timer.id);
+    await window.aboutme.timer.pauseTimer(timer.id);
   }
 }
 ```
@@ -353,7 +353,7 @@ const timerId = '1705300800000';
 
 // 每秒查询一次状态
 const interval = setInterval(async () => {
-  const status = JSON.parse(await window.memento.timer.getTimerStatus(timerId));
+  const status = JSON.parse(await window.aboutme.timer.getTimerStatus(timerId));
 
   if (status.isCompleted) {
     console.log('计时器已完成!');
@@ -370,7 +370,7 @@ const interval = setInterval(async () => {
 ### 4. 查看历史统计
 
 ```javascript
-const history = JSON.parse(await window.memento.timer.getHistory());
+const history = JSON.parse(await window.aboutme.timer.getHistory());
 
 console.log(`已完成 ${history.total} 个计时任务`);
 
@@ -393,7 +393,7 @@ console.log(`总计时: ${hours}小时${minutes}分钟`);
 
 ```javascript
 try {
-  const result = await window.memento.timer.startTimer('invalid_id');
+  const result = await window.aboutme.timer.startTimer('invalid_id');
   console.log(result);
 } catch (error) {
   console.error('启动失败:', error.message);

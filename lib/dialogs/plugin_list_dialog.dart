@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
 
 /// 防重复弹窗标志位
 bool _isDialogShowing = false;

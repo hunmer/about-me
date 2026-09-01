@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/chat/models/tag.dart';
+import 'package:aboutme/plugins/chat/models/tag.dart';
 
 /// 标签卡片组件
 /// 显示标签名称和消息数量，支持点击跳转

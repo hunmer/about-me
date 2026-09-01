@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/widgets/swipe_action/swipe_action_wrapper.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 
 class MemorialDayListItem extends StatelessWidget {
   final MemorialDay memorialDay;

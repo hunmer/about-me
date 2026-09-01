@@ -126,7 +126,7 @@ class AboutScreen extends StatelessWidget {
               // App Name
               Center(
                 child: Text(
-                  'Memento',
+                  'Aboutme',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

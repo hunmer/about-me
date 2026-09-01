@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:Memento/core/plugin_base.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/core/config_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:get/get.dart';
 import 'nfc_controller.dart';
 import 'card_handlers/read_card_handler.dart';

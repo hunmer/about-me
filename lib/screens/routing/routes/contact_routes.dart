@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/contact/contact_plugin.dart';
-import 'package:Memento/plugins/contact/widgets/contact_form.dart';
-import 'package:Memento/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/contact/contact_plugin.dart';
+import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:get/get.dart';
 
 /// Contact 插件路由注册表

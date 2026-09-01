@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'dart:io' show File;
-import 'package:Memento/plugins/goods/models/goods_item.dart';
-import 'package:Memento/plugins/goods/dialogs/add_usage_record_dialog.dart';
-import 'package:Memento/plugins/goods/screens/goods_item_history_page.dart';
-import 'package:Memento/plugins/goods/goods_plugin.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/goods/models/goods_item.dart';
+import 'package:aboutme/plugins/goods/dialogs/add_usage_record_dialog.dart';
+import 'package:aboutme/plugins/goods/screens/goods_item_history_page.dart';
+import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class GoodsItemCard extends StatefulWidget {
   final GoodsItem item;

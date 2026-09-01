@@ -1,4 +1,4 @@
-package github.hunmer.memento_intent_example
+package github.hunmer.aboutme_intent_example
 
 import io.flutter.embedding.android.FlutterActivity
 

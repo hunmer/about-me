@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/api_forwarding/api_forwarding_config.dart';
-import 'package:Memento/core/api_forwarding/api_forwarding_service.dart';
+import 'package:aboutme/core/api_forwarding/api_forwarding_config.dart';
+import 'package:aboutme/core/api_forwarding/api_forwarding_service.dart';
 
 /// API 转发服务设置对话框
 class ApiForwardingSettingsDialog extends StatefulWidget {
@@ -285,7 +285,7 @@ class _ApiForwardingSettingsDialogState
               controller: _deviceNameController,
               decoration: const InputDecoration(
                 labelText: '设备名称',
-                hintText: 'Memento Client',
+                hintText: 'Aboutme Client',
                 prefixIcon: Icon(Icons.devices),
                 border: OutlineInputBorder(),
               ),

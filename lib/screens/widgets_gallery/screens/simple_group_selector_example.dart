@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/simple_group_selector.dart';
+import 'package:aboutme/widgets/simple_group_selector.dart';
 
 /// 简单组选择器示例
 class SimpleGroupSelectorExample extends StatefulWidget {

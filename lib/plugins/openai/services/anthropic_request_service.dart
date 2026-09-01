@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 

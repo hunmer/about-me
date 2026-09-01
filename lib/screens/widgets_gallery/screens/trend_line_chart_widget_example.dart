@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/trend_line_chart_widget/index.dart';
-import 'package:Memento/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/trend_line_chart_widget/index.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 趋势折线图示例
 class TrendLineChartWidgetExample extends StatelessWidget {

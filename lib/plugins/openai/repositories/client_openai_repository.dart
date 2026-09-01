@@ -7,12 +7,12 @@ library;
 import 'package:shared_models/repositories/openai/openai_repository.dart';
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
-import 'package:Memento/plugins/openai/controllers/agent_controller.dart';
-import 'package:Memento/plugins/openai/controllers/service_provider_controller.dart';
-import 'package:Memento/plugins/openai/controllers/model_controller.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/models/service_provider.dart';
-import 'package:Memento/plugins/openai/models/llm_models.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/controllers/service_provider_controller.dart';
+import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
 
 /// 客户端 OpenAI Repository 实现
 class ClientOpenAIRepository implements IOpenAIRepository {

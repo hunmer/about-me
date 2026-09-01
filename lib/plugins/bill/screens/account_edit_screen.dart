@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/models/account.dart';
-import 'package:Memento/widgets/picker/icon_picker_dialog.dart';
-import 'package:Memento/widgets/form_fields/text_input_field.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/models/account.dart';
+import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/form_fields/text_input_field.dart';
 
 class AccountEditScreen extends StatefulWidget {
   final BillPlugin billPlugin;

@@ -1,4 +1,4 @@
-import 'package:Memento/core/app_initializer.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:flutter/material.dart';
 
 class PluginOrderManager {

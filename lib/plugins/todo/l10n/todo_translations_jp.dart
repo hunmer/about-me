@@ -2,7 +2,7 @@
 const Map<String, String> todoTranslationsJp = {
   // Basic information
   'todo_name': 'タスクリスト',
-  'todo_todoPluginDescription': 'Memento用のシンプルなタスクプラグイン',
+  'todo_todoPluginDescription': 'Aboutme用のシンプルなタスクプラグイン',
 
   // Statistics
   'todo_totalTasks': '総タスク数',

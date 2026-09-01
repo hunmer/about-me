@@ -3,7 +3,7 @@ import intelligence
 
 struct SendToAgentChatIntent: AppIntent {
     static var title: LocalizedStringResource = "发送消息到AI聊天"
-    static var description: IntentDescription = "发送文本和图片到 Memento 的 AI 聊天频道"
+    static var description: IntentDescription = "发送文本和图片到 Aboutme 的 AI 聊天频道"
     static var openAppWhenRun: Bool = true
 
     // 参数1: 文本内容（必填）

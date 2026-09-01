@@ -1,4 +1,4 @@
-package github.hunmer.memento
+package github.hunmer.aboutme
 
 import android.app.Notification
 import android.app.PendingIntent

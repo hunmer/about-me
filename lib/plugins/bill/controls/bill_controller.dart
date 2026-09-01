@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:Memento/plugins/bill/bill_plugin.dart';
-import 'package:Memento/plugins/bill/models/account.dart';
-import 'package:Memento/plugins/bill/models/bill.dart';
-import 'package:Memento/plugins/bill/models/bill_statistics.dart';
-import 'package:Memento/plugins/bill/models/statistic_range.dart';
-import 'package:Memento/plugins/bill/data/sample_data.dart';
-import 'package:Memento/plugins/bill/controls/subscription_controller.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/models/account.dart';
+import 'package:aboutme/plugins/bill/models/bill.dart';
+import 'package:aboutme/plugins/bill/models/bill_statistics.dart';
+import 'package:aboutme/plugins/bill/models/statistic_range.dart';
+import 'package:aboutme/plugins/bill/data/sample_data.dart';
+import 'package:aboutme/plugins/bill/controls/subscription_controller.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 
 /// 账单添加事件参数
 class BillAddedEventArgs extends EventArgs {

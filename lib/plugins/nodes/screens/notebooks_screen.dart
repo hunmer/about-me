@@ -1,14 +1,14 @@
 import 'package:get/get.dart' hide Node;
 
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
-import 'package:Memento/plugins/nodes/controllers/nodes_controller.dart';
-import 'package:Memento/plugins/nodes/models/notebook.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
+import 'package:aboutme/plugins/nodes/models/notebook.dart';
 import 'nodes_screen.dart';
-import 'package:Memento/widgets/picker/circle_icon_picker.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 
 class NotebooksScreen extends StatefulWidget {
   const NotebooksScreen({super.key});

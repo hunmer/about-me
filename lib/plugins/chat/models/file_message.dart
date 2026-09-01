@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/chat/services/file_service.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/plugins/chat/services/file_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 enum FileMessageType { document, image, video, audio, other }
 

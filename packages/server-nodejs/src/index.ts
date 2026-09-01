@@ -58,7 +58,7 @@ function getMimeType(fileName: string): string {
 
 async function main() {
   console.log('====================================');
-  console.log('  Memento Sync Server (Node.js)');
+  console.log('  Aboutme Sync Server (Node.js)');
   console.log('====================================');
   console.log('');
 
@@ -147,7 +147,7 @@ async function main() {
   app.get('/version', (req, res) => {
     res.json({
       version: '1.0.0',
-      name: 'Memento Sync Server (Node.js)',
+      name: 'Aboutme Sync Server (Node.js)',
     });
   });
 
@@ -300,7 +300,7 @@ async function main() {
     // 简单的根路由
     app.get('/', (req, res) => {
       res.json({
-        name: 'Memento Sync Server',
+        name: 'Aboutme Sync Server',
         version: '1.0.0',
         status: 'running',
       });

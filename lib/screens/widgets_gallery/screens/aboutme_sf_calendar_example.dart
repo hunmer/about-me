@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:Memento/widgets/memento_sf_calendar/memento_sf_calendar.dart';
+import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
 
-/// MementoSfCalendar 示例展示页面
-class MementoSfCalendarExample extends StatefulWidget {
-  const MementoSfCalendarExample({super.key});
+/// AboutmeSfCalendar 示例展示页面
+class AboutmeSfCalendarExample extends StatefulWidget {
+  const AboutmeSfCalendarExample({super.key});
 
   @override
-  State<MementoSfCalendarExample> createState() =>
-      _MementoSfCalendarExampleState();
+  State<AboutmeSfCalendarExample> createState() =>
+      _AboutmeSfCalendarExampleState();
 }
 
-class _MementoSfCalendarExampleState extends State<MementoSfCalendarExample> {
+class _AboutmeSfCalendarExampleState extends State<AboutmeSfCalendarExample> {
   final CalendarController _controller = CalendarController();
 
   // 可交互配置
@@ -135,7 +135,7 @@ class _MementoSfCalendarExampleState extends State<MementoSfCalendarExample> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MementoSfCalendar 示例'),
+        title: const Text('AboutmeSfCalendar 示例'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -153,7 +153,7 @@ class _MementoSfCalendarExampleState extends State<MementoSfCalendarExample> {
           Expanded(
             child:
                 _isFullWidth()
-                    ? MementoSfCalendar(
+                    ? AboutmeSfCalendar(
                       view: _currentView,
                       controller: _controller,
                       allowedViews: const [
@@ -220,7 +220,7 @@ class _MementoSfCalendarExampleState extends State<MementoSfCalendarExample> {
                       child: SizedBox(
                         width: _getWidth(),
                         height: screenWidth * 0.9,
-                        child: MementoSfCalendar(
+                        child: AboutmeSfCalendar(
                           view: _currentView,
                           controller: _controller,
                           allowedViews: const [

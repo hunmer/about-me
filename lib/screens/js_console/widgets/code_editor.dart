@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/screens/js_console/controllers/js_console_controller.dart';
+import 'package:aboutme/screens/js_console/controllers/js_console_controller.dart';
 
 class CodeEditor extends StatefulWidget {
   const CodeEditor({super.key});
@@ -50,7 +50,7 @@ class _CodeEditorState extends State<CodeEditor> {
               color: Colors.white,
             ),
             decoration: const InputDecoration(
-              hintText: '// 在此输入 JavaScript 代码\n// 可以使用 Memento.chat.* API',
+              hintText: '// 在此输入 JavaScript 代码\n// 可以使用 Aboutme.chat.* API',
               hintStyle: TextStyle(color: Colors.white38),
               border: InputBorder.none,
             ),

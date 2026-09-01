@@ -3,15 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:Memento/core/app_widgets/page_transitions.dart';
-import 'package:Memento/core/app_initializer.dart';
-import 'package:Memento/core/services/log_service.dart';
-import 'package:Memento/core/services/fcm_service.dart';
-import 'package:Memento/firebase_options.dart';
+import 'package:aboutme/core/app_widgets/page_transitions.dart';
+import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/services/log_service.dart';
+import 'package:aboutme/core/services/fcm_service.dart';
+import 'package:aboutme/firebase_options.dart';
 import 'package:procm_sdk_dart/procm_sdk_dart.dart';
 
 // GetX 统一翻译导入
-import 'package:Memento/l10n/unified_translations.dart';
+import 'package:aboutme/l10n/unified_translations.dart';
 
 // 第三方库国际化
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -50,7 +50,7 @@ void main() {
       // 0.3 初始化 procm 房间结构化日志：仅在环境变量 PROCM_WS_URL/PROCM_ROOM_ID
       // 存在时连接房间并双写；缺失时退化为纯 console 输出，不影响现有行为
       setupLoggerFromEnv().info(
-        'Memento 启动',
+        'Aboutme 启动',
         {'platform': defaultTargetPlatform.name},
       );
 
@@ -288,7 +288,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               fallbackLocale: const Locale('zh', 'CN'),
               scaffoldMessengerKey: scaffoldMessengerKey,
               navigatorKey: navigatorKey,
-              title: 'Memento',
+              title: 'Aboutme',
               debugShowCheckedModeBanner: false,
               localizationsDelegates: const [
                 // 仅保留第三方库的国际化

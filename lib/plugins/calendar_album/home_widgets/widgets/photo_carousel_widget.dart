@@ -7,10 +7,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:infinite_carousel/infinite_carousel.dart';
 import 'package:provider/provider.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/plugins/calendar_album/screens/entry_detail_screen.dart';
-import 'package:Memento/plugins/calendar_album/calendar_album_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import '../data.dart';
 
 /// 图片轮播小组件（StatefulWidget 以管理控制器）

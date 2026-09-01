@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_models/repositories/bill/bill_repository.dart';
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
-import 'package:Memento/plugins/bill/controls/bill_controller.dart';
-import 'package:Memento/plugins/bill/models/account.dart';
-import 'package:Memento/plugins/bill/models/bill.dart';
+import 'package:aboutme/plugins/bill/controls/bill_controller.dart';
+import 'package:aboutme/plugins/bill/models/account.dart';
+import 'package:aboutme/plugins/bill/models/bill.dart';
 
 /// 客户端 Bill Repository 实现
 class ClientBillRepository implements IBillRepository {

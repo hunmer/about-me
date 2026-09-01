@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/core/services/plugin_data_selector/index.dart';
-import 'package:Memento/core/services/toast_service.dart';
-import 'package:memento_nfc/memento_nfc.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme_nfc/aboutme_nfc.dart';
 import 'package:get/get.dart';
 import 'base_card_handler.dart';
 
@@ -40,12 +40,12 @@ class HabitTimerCardHandler extends BaseCardHandler {
     }
 
     // 构建深度链接 URL
-    final deepLinkUrl = 'memento://habit/timer?habitId=$habitId&action=start_timer';
+    final deepLinkUrl = 'aboutme://habit/timer?habitId=$habitId&action=start_timer';
 
     // 返回NFC记录数据
     return [
       {'type': 'URI', 'data': deepLinkUrl},
-      {'type': 'AAR', 'data': 'github.hunmer.memento'},
+      {'type': 'AAR', 'data': 'github.hunmer.aboutme'},
     ];
   }
 
@@ -91,7 +91,7 @@ class HabitTimerCardHandler extends BaseCardHandler {
     );
 
     try {
-      final nfc = MementoNfc();
+      final nfc = AboutmeNfc();
       // 使用已构建的records进行写入
       final writeResult = await nfc.writeNfcRecords(records);
 

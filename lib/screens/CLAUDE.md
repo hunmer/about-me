@@ -6,7 +6,7 @@
 
 ## 模块概述
 
-`lib/screens/` 是 Memento 应用的屏幕层，包含应用的主要页面和界面组件。每个屏幕负责特定的用户界面功能，如主屏幕、设置、测试页面等。
+`lib/screens/` 是 Aboutme 应用的屏幕层，包含应用的主要页面和界面组件。每个屏幕负责特定的用户界面功能，如主屏幕、设置、测试页面等。
 
 ### 已有文档的模块
 
@@ -120,7 +120,7 @@
   - `image_picker_example.dart` - 图片选择器示例
   - `location_picker_example.dart` - 位置选择器示例
   - `backup_time_picker_example.dart` - 备份时间选择器示例
-  - `memento_editor_example.dart` - 编辑器示例
+  - `aboutme_editor_example.dart` - 编辑器示例
   - `data_selector_example.dart` - 数据选择器示例
   - `enhanced_calendar_example.dart` - 增强日历示例
   - `group_selector_example.dart` - 分组选择器示例

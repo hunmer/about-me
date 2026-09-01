@@ -1,8 +1,8 @@
 /// 上次活动小组件数据提供者
 library;
 
-import 'package:Memento/core/plugin_manager.dart';
-import 'package:Memento/plugins/activity/activity_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'utils.dart';
 
 /// 上次活动小组件数据提供者

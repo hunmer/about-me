@@ -1,25 +1,25 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'memento_intent_method_channel.dart';
-import 'memento_intent.dart';
+import 'aboutme_intent_method_channel.dart';
+import 'aboutme_intent.dart';
 
-abstract class MementoIntentPlatform extends PlatformInterface {
-  /// Constructs a MementoIntentPlatform.
-  MementoIntentPlatform() : super(token: _token);
+abstract class AboutmeIntentPlatform extends PlatformInterface {
+  /// Constructs a AboutmeIntentPlatform.
+  AboutmeIntentPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static MementoIntentPlatform _instance = MethodChannelMementoIntent();
+  static AboutmeIntentPlatform _instance = MethodChannelAboutmeIntent();
 
-  /// The default instance of [MementoIntentPlatform] to use.
+  /// The default instance of [AboutmeIntentPlatform] to use.
   ///
-  /// Defaults to [MethodChannelMementoIntent].
-  static MementoIntentPlatform get instance => _instance;
+  /// Defaults to [MethodChannelAboutmeIntent].
+  static AboutmeIntentPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [MementoIntentPlatform] when
+  /// platform-specific class that extends [AboutmeIntentPlatform] when
   /// they register themselves.
-  static set instance(MementoIntentPlatform instance) {
+  static set instance(AboutmeIntentPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

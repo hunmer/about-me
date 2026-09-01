@@ -1,4 +1,4 @@
-package github.hunmer.memento_intent
+package github.hunmer.aboutme_intent
 
 import android.content.ComponentName
 import android.content.Context
@@ -18,8 +18,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import java.util.concurrent.ConcurrentHashMap
 
-/** MementoIntentPlugin */
-class MementoIntentPlugin :
+/** AboutmeIntentPlugin */
+class AboutmeIntentPlugin :
     FlutterPlugin,
     MethodCallHandler,
     ActivityAware,
@@ -52,13 +52,13 @@ class MementoIntentPlugin :
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
 
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "memento_intent")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "aboutme_intent")
         channel.setMethodCallHandler(this)
 
-        deepLinkEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "memento_intent/deep_link/events")
-        sharedTextEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "memento_intent/shared_text/events")
-        sharedFilesEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "memento_intent/shared_files/events")
-        intentDataEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "memento_intent/intent_data/events")
+        deepLinkEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "aboutme_intent/deep_link/events")
+        sharedTextEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "aboutme_intent/shared_text/events")
+        sharedFilesEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "aboutme_intent/shared_files/events")
+        intentDataEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "aboutme_intent/intent_data/events")
 
         deepLinkEventChannel.setStreamHandler(this)
         sharedTextEventChannel.setStreamHandler(this)

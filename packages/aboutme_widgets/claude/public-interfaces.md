@@ -1,8 +1,8 @@
 # 对外接口
 
-> 所属：packages/memento_widgets · [返回索引](../CLAUDE.md)
+> 所属：packages/aboutme_widgets · [返回索引](../CLAUDE.md)
 
-## Dart API：`MyWidgetManager`（单例，`lib/memento_widgets.dart`）
+## Dart API：`MyWidgetManager`（单例，`lib/aboutme_widgets.dart`）
 
 | 方法 | 说明 |
 |------|------|
@@ -16,7 +16,7 @@
 | `updatePluginWidget(pluginId)` | 仅刷新某插件的小组件（1x1 + 2x1） |
 | `updateAllPluginWidgets()` | 刷新全部插件小组件 |
 
-另有 `MementoWidgets.getPlatformVersion()`（MethodChannel `memento_widgets`，模板遗留）。导出模型：`PluginWidgetData`、`WidgetStatItem`。
+另有 `AboutmeWidgets.getPlatformVersion()`（MethodChannel `aboutme_widgets`，模板遗留）。导出模型：`PluginWidgetData`、`WidgetStatItem`。
 
 ## pluginId → Provider 映射规则
 
@@ -26,5 +26,5 @@
 
 ## 平台约束
 
-- iOS App Group：`group.github.hunmer.memento`（首次调用自动 `setAppGroupId`）。
+- iOS App Group：`group.github.hunmer.aboutme`（首次调用自动 `setAppGroupId`）。
 - Android Provider 完整包名映射表：`MyWidgetManager._androidProviders`（新增 Provider 必须在此注册）。

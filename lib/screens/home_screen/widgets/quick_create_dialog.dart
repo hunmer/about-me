@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
 
 /// 快速新建对话框
 ///

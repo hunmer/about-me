@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/widgets/swipe_action/index.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/widgets/swipe_action/index.dart';
 
 // Custom painter for the dashed timeline
 class DashedLinePainter extends CustomPainter {

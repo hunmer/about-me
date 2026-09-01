@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/plugins/notes/models/note.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'folder_selection_dialog.dart';
 import 'note_operations.dart';
 import 'notes_screen_state.dart';

@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/timer_task.dart' show TimerTask;
-import 'package:Memento/plugins/timer/models/timer_item.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/timer/models/timer_item.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 /// 添加/编辑计时器任务对话框
 ///

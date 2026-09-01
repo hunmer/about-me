@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
 import 'dart:io';
 
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/utils/image_utils.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/habits/controllers/completion_record_controller.dart';
-import 'package:Memento/plugins/habits/controllers/skill_controller.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
-import 'package:Memento/plugins/habits/widgets/skill_detail_page.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/plugins/habits/widgets/skill_detail_page.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class SkillsList extends StatefulWidget {
   final SkillController skillController;

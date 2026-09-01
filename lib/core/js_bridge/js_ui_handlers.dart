@@ -6,7 +6,7 @@ import 'package:location/location.dart';
 // 条件导入：默认 Web 平台存根，有 IO 库时（移动/桌面）使用真实实现
 import 'platform/mobile_js_engine_stub.dart'
     if (dart.library.io) 'platform/mobile_js_engine.dart';
-import 'package:Memento/widgets/picker/location_picker.dart';
+import 'package:aboutme/widgets/picker/location_picker.dart';
 
 /// JavaScript Bridge UI 处理器
 /// 提供 Alert/Dialog/Location 的实现（Toast 已在 MobileJSEngine 中直接处理）

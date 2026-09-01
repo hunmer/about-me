@@ -14,7 +14,7 @@
 
 ## CLI 入口
 
-- `bin/memento-server.js`：npm 全局安装后的 `memento-server` 命令，直接拉起 `dist/index.js`。
+- `bin/aboutme-server.js`：npm 全局安装后的 `aboutme-server` 命令，直接拉起 `dist/index.js`。
 - `package.json` `files: ["dist"]` —— 发布物只含 dist（内含编译代码 + admin 面板 + plugins 清单）。
 
 ## 管理面板（admin-vue）

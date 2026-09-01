@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
-import 'package:Memento/plugins/openai/screens/agent_edit_screen.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 
 class AgentListDrawer extends StatefulWidget {
   /// 当前已选择的智能体列表

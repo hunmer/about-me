@@ -1,15 +1,15 @@
 import 'dart:io';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/utils/file_utils.dart';
-import 'package:Memento/core/utils/zip.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/utils/file_utils.dart';
+import 'package:aboutme/core/utils/zip.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
@@ -296,7 +296,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
     try {
       // 创建一个临时目录来存储要压缩的文件
-      final tempDir = await Directory.systemTemp.createTemp('memento_temp_');
+      final tempDir = await Directory.systemTemp.createTemp('aboutme_temp_');
 
       // 复制选中的文件/目录到临时目录
       for (var filePath in selectedPaths) {
@@ -314,7 +314,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       }
 
       // 创建临时 ZIP 文件
-      final tempZipPath = '${tempDir.path}/memento_export.zip';
+      final tempZipPath = '${tempDir.path}/aboutme_export.zip';
       final zipFile = ZipFileEncoder();
       zipFile.create(tempZipPath);
 
@@ -329,7 +329,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       zipFile.close();
       final savePath = await exportZIP(
         tempZipPath,
-        'memento_export_${DateTime.now().millisecondsSinceEpoch}.zip',
+        'aboutme_export_${DateTime.now().millisecondsSinceEpoch}.zip',
       );
 
       if (savePath != null) {

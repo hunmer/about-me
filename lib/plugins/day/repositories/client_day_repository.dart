@@ -4,8 +4,8 @@ library;
 
 import 'package:shared_models/shared_models.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/day/controllers/day_controller.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/plugins/day/controllers/day_controller.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
 
 /// 客户端 Day Repository 实现
 class ClientDayRepository implements IDayRepository {

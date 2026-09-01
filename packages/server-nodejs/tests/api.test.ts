@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Memento 同步服务器集成测试
+ * Aboutme 同步服务器集成测试
  *
  * 测试所有 API 端点的功能
  */
@@ -30,7 +30,7 @@ let authToken: string;
 let userId: string;
 let userSalt: string;
 
-describe('Memento Sync Server', () => {
+describe('Aboutme Sync Server', () => {
   // ==================== 健康检查测试 ====================
 
   describe('Health & Version', () => {
@@ -51,7 +51,7 @@ describe('Memento Sync Server', () => {
         .expect(200);
 
       expect(response.body.version).toBeDefined();
-      expect(response.body.name).toContain('Memento');
+      expect(response.body.name).toContain('Aboutme');
     });
   });
 

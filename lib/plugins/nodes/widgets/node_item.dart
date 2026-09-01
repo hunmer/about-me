@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:get/get.dart' hide Node;
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/widgets/quill_viewer/quill_viewer.dart';
-import 'package:Memento/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/plugins/nodes/controllers/nodes_controller.dart';
-import 'package:Memento/plugins/nodes/models/node.dart';
-import 'package:Memento/plugins/nodes/screens/node_edit_screen.dart';
+import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
+import 'package:aboutme/plugins/nodes/models/node.dart';
+import 'package:aboutme/plugins/nodes/screens/node_edit_screen.dart';
 
 class _StatusInfo {
   final Color color;

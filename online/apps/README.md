@@ -1,6 +1,6 @@
-# Memento 小应用仓库
+# Aboutme 小应用仓库
 
-这是 Memento WebView 插件的官方小应用仓库，包含可在 Memento 中运行的各种小应用。
+这是 Aboutme WebView 插件的官方小应用仓库，包含可在 Aboutme 中运行的各种小应用。
 
 ## 仓库结构
 
@@ -49,9 +49,9 @@ online/
 
 ## 如何使用
 
-### 在 Memento 中添加应用源
+### 在 Aboutme 中添加应用源
 
-1. 打开 Memento 应用
+1. 打开 Aboutme 应用
 2. 进入 WebView 插件的应用商店
 3. 添加新的应用源，配置如下：
    - **源名称**: 本地仓库（或自定义名称）

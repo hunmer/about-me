@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/chat/models/file_message.dart';
-import 'package:Memento/plugins/chat/services/file_service.dart';
-import 'package:Memento/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
+import 'package:aboutme/plugins/chat/models/file_message.dart';
+import 'package:aboutme/plugins/chat/services/file_service.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import '../../../../../../../../core/services/toast_service.dart';
 
 Future<void> handleFileSelection({

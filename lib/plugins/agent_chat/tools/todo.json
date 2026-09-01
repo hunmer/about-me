@@ -38,27 +38,27 @@
     },
     "examples": [
       {
-        "code": "const allTasks = await Memento.plugins.todo.getTasks({});\nsetResult(allTasks);",
+        "code": "const allTasks = await Aboutme.plugins.todo.getTasks({});\nsetResult(allTasks);",
         "comment": "获取所有任务"
       },
       {
-        "code": "const todoTasks = await Memento.plugins.todo.getTasks({ status: 'todo' });\nsetResult(todoTasks);",
+        "code": "const todoTasks = await Aboutme.plugins.todo.getTasks({ status: 'todo' });\nsetResult(todoTasks);",
         "comment": "获取待办任务"
       },
       {
-        "code": "const highPriorityTasks = await Memento.plugins.todo.getTasks({ priority: 'high' });\nsetResult(highPriorityTasks);",
+        "code": "const highPriorityTasks = await Aboutme.plugins.todo.getTasks({ priority: 'high' });\nsetResult(highPriorityTasks);",
         "comment": "获取高优先级任务"
       },
       {
-        "code": "const inProgressHigh = await Memento.plugins.todo.getTasks({ status: 'inProgress', priority: 'high' });\nsetResult(inProgressHigh);",
+        "code": "const inProgressHigh = await Aboutme.plugins.todo.getTasks({ status: 'inProgress', priority: 'high' });\nsetResult(inProgressHigh);",
         "comment": "获取进行中的高优先级任务"
       },
       {
-        "code": "const result = await Memento.plugins.todo.getTasks({ offset: 0, count: 20 });\nsetResult(`共 ${result.total} 个任务，当前返回 ${result.data.length} 个`);",
+        "code": "const result = await Aboutme.plugins.todo.getTasks({ offset: 0, count: 20 });\nsetResult(`共 ${result.total} 个任务，当前返回 ${result.data.length} 个`);",
         "comment": "分页获取任务（前20个）"
       },
       {
-        "code": "const result = await Memento.plugins.todo.getTasks({ status: 'todo', offset: 20, count: 20 });\nsetResult(`待办任务还有更多: ${result.hasMore}`);",
+        "code": "const result = await Aboutme.plugins.todo.getTasks({ status: 'todo', offset: 20, count: 20 });\nsetResult(`待办任务还有更多: ${result.hasMore}`);",
         "comment": "分页获取待办任务（第二页）"
       }
     ],
@@ -89,7 +89,7 @@
     },
     "examples": [
       {
-        "code": "const task = await Memento.plugins.todo.getTask({ taskId: 'task123' });\nsetResult(task);",
+        "code": "const task = await Aboutme.plugins.todo.getTask({ taskId: 'task123' });\nsetResult(task);",
         "comment": "获取指定任务的详情"
       }
     ],
@@ -125,11 +125,11 @@
     },
     "examples": [
       {
-        "code": "const tasks = await Memento.plugins.todo.getTodayTasks({});\nsetResult(tasks);",
+        "code": "const tasks = await Aboutme.plugins.todo.getTodayTasks({});\nsetResult(tasks);",
         "comment": "获取今日所有任务"
       },
       {
-        "code": "const result = await Memento.plugins.todo.getTodayTasks({ offset: 0, count: 10 });\nsetResult(`今日共 ${result.total} 个任务，当前返回 ${result.data.length} 个`);",
+        "code": "const result = await Aboutme.plugins.todo.getTodayTasks({ offset: 0, count: 10 });\nsetResult(`今日共 ${result.total} 个任务，当前返回 ${result.data.length} 个`);",
         "comment": "分页获取今日任务（前10个）"
       }
     ],
@@ -165,11 +165,11 @@
     },
     "examples": [
       {
-        "code": "const tasks = await Memento.plugins.todo.getOverdueTasks({});\nsetResult(tasks);",
+        "code": "const tasks = await Aboutme.plugins.todo.getOverdueTasks({});\nsetResult(tasks);",
         "comment": "获取所有过期任务"
       },
       {
-        "code": "const result = await Memento.plugins.todo.getOverdueTasks({ offset: 0, count: 15 });\nsetResult(`共 ${result.total} 个过期任务，当前返回 ${result.data.length} 个，还有更多: ${result.hasMore}`);",
+        "code": "const result = await Aboutme.plugins.todo.getOverdueTasks({ offset: 0, count: 15 });\nsetResult(`共 ${result.total} 个过期任务，当前返回 ${result.data.length} 个，还有更多: ${result.hasMore}`);",
         "comment": "分页获取过期任务（前15个）"
       }
     ],
@@ -230,15 +230,15 @@
     },
     "examples": [
       {
-        "code": "const task1 = await Memento.plugins.todo.createTask({ title: '完成项目文档' });\nsetResult(task1);",
+        "code": "const task1 = await Aboutme.plugins.todo.createTask({ title: '完成项目文档' });\nsetResult(task1);",
         "comment": "创建简单任务"
       },
       {
-        "code": "const today = await Memento.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = today.replace(/T.*/, 'T09:00:00.000Z');\nconst futureDay = await Memento.system.getCustomDate({add: {days: 5}, relativePosition: 'startOfDay', format: 'iso'});\nconst endTime = futureDay.replace(/T.*/, 'T18:00:00.000Z');\nconst task2 = await Memento.plugins.todo.createTask({\n  title: '编写需求分析',\n  description: '详细描述项目需求和功能点',\n  startDate: startTime,\n  dueDate: endTime,\n  priority: 'high',\n  tags: '[\"工作\",\"文档\",\"紧急\"]'\n});\nsetResult(task2);",
+        "code": "const today = await Aboutme.system.getCustomDate({relativePosition: 'startOfDay', format: 'iso'});\nconst startTime = today.replace(/T.*/, 'T09:00:00.000Z');\nconst futureDay = await Aboutme.system.getCustomDate({add: {days: 5}, relativePosition: 'startOfDay', format: 'iso'});\nconst endTime = futureDay.replace(/T.*/, 'T18:00:00.000Z');\nconst task2 = await Aboutme.plugins.todo.createTask({\n  title: '编写需求分析',\n  description: '详细描述项目需求和功能点',\n  startDate: startTime,\n  dueDate: endTime,\n  priority: 'high',\n  tags: '[\"工作\",\"文档\",\"紧急\"]'\n});\nsetResult(task2);",
         "comment": "创建完整任务(从今天到5天后)"
       },
       {
-        "code": "const task3 = await Memento.plugins.todo.createTask({\n  id: 'task123',\n  title: '重要会议',\n  description: '与客户讨论项目进展',\n  priority: 'high',\n  tags: '[\"工作\",\"会议\"]'\n});\nsetResult(`任务已创建，自定义ID: ${task3.id}`);",
+        "code": "const task3 = await Aboutme.plugins.todo.createTask({\n  id: 'task123',\n  title: '重要会议',\n  description: '与客户讨论项目进展',\n  priority: 'high',\n  tags: '[\"工作\",\"会议\"]'\n});\nsetResult(`任务已创建，自定义ID: ${task3.id}`);",
         "comment": "使用自定义ID创建任务"
       }
     ],
@@ -274,11 +274,11 @@
     },
     "examples": [
       {
-        "code": "const updated = await Memento.plugins.todo.updateTask({\n  taskId: 'task123',\n  updates: {\n    title: '新标题',\n    priority: 'high',\n    tags: ['工作', '紧急', '重要']\n  }\n});\nsetResult(updated);",
+        "code": "const updated = await Aboutme.plugins.todo.updateTask({\n  taskId: 'task123',\n  updates: {\n    title: '新标题',\n    priority: 'high',\n    tags: ['工作', '紧急', '重要']\n  }\n});\nsetResult(updated);",
         "comment": "更新任务标题和优先级"
       },
       {
-        "code": "const updated2 = await Memento.plugins.todo.updateTask({\n  taskId: 'task123',\n  updates: { status: 'inProgress' }\n});\nsetResult(updated2);",
+        "code": "const updated2 = await Aboutme.plugins.todo.updateTask({\n  taskId: 'task123',\n  updates: { status: 'inProgress' }\n});\nsetResult(updated2);",
         "comment": "更新任务状态"
       }
     ],
@@ -309,7 +309,7 @@
     },
     "examples": [
       {
-        "code": "const result = await Memento.plugins.todo.deleteTask({ taskId: 'task123' });\nsetResult(result);",
+        "code": "const result = await Aboutme.plugins.todo.deleteTask({ taskId: 'task123' });\nsetResult(result);",
         "comment": "删除任务"
       }
     ],
@@ -340,7 +340,7 @@
     },
     "examples": [
       {
-        "code": "const task = await Memento.plugins.todo.completeTask({ taskId: 'task123' });\nsetResult(task);",
+        "code": "const task = await Aboutme.plugins.todo.completeTask({ taskId: 'task123' });\nsetResult(task);",
         "comment": "完成任务"
       }
     ],
@@ -364,15 +364,15 @@
     "examples": [
       {
         "title": "根据 ID 查找任务",
-        "code": "const task = await Memento.plugins.todo.findTaskBy({field: 'id', value: 'task123'});\nif (task) {\n  setResult(`找到任务: ${task.title}`);\n} else {\n  setResult('未找到该任务');\n}"
+        "code": "const task = await Aboutme.plugins.todo.findTaskBy({field: 'id', value: 'task123'});\nif (task) {\n  setResult(`找到任务: ${task.title}`);\n} else {\n  setResult('未找到该任务');\n}"
       },
       {
         "title": "查找所有高优先级任务",
-        "code": "const tasks = await Memento.plugins.todo.findTaskBy({field: 'priority', value: 'high', findAll: true});\nsetResult(`找到 ${tasks.length} 个高优先级任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTaskBy({field: 'priority', value: 'high', findAll: true});\nsetResult(`找到 ${tasks.length} 个高优先级任务`);"
       },
       {
         "title": "分页查找高优先级任务",
-        "code": "const result = await Memento.plugins.todo.findTaskBy({field: 'priority', value: 'high', findAll: true, offset: 0, count: 10});\nsetResult(`共 ${result.total} 个高优先级任务，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.todo.findTaskBy({field: 'priority', value: 'high', findAll: true, offset: 0, count: 10});\nsetResult(`共 ${result.total} 个高优先级任务，当前返回 ${result.data.length} 个`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历任务列表；支持任意字段匹配；分页仅在 findAll=true 时生效，推荐每页 20-50 条数据",
@@ -391,7 +391,7 @@
     "examples": [
       {
         "title": "查找指定ID的任务",
-        "code": "const task = await Memento.plugins.todo.findTaskById({id: 'task123'});\nif (task) {\n  setResult(`任务: ${task.title}, 状态: ${task.status}`);\n} else {\n  setResult('任务不存在');\n}"
+        "code": "const task = await Aboutme.plugins.todo.findTaskById({id: 'task123'});\nif (task) {\n  setResult(`任务: ${task.title}, 状态: ${task.status}`);\n} else {\n  setResult('任务不存在');\n}"
       }
     ],
     "notes": "等价于 findTaskBy({field: 'id', value: id})",
@@ -414,15 +414,15 @@
     "examples": [
       {
         "title": "精确匹配任务标题",
-        "code": "const task = await Memento.plugins.todo.findTaskByTitle({title: '完成项目文档'});\nsetResult(task ? `找到任务ID: ${task.id}` : '未找到');"
+        "code": "const task = await Aboutme.plugins.todo.findTaskByTitle({title: '完成项目文档'});\nsetResult(task ? `找到任务ID: ${task.id}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的任务",
-        "code": "const tasks = await Memento.plugins.todo.findTaskByTitle({title: '文档', fuzzy: true, findAll: true});\nsetResult(`找到 ${tasks.length} 个包含【文档】的任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTaskByTitle({title: '文档', fuzzy: true, findAll: true});\nsetResult(`找到 ${tasks.length} 个包含【文档】的任务`);"
       },
       {
         "title": "分页模糊匹配",
-        "code": "const result = await Memento.plugins.todo.findTaskByTitle({title: '文档', fuzzy: true, findAll: true, offset: 0, count: 10});\nsetResult(`共找到 ${result.total} 个包含【文档】的任务，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.todo.findTaskByTitle({title: '文档', fuzzy: true, findAll: true, offset: 0, count: 10});\nsetResult(`共找到 ${result.total} 个包含【文档】的任务，当前返回 ${result.data.length} 个`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 contains；分页仅在 findAll=true 时生效，推荐每页 20-50 条数据",
@@ -445,15 +445,15 @@
     "examples": [
       {
         "title": "查找所有带工作标签的任务",
-        "code": "const tasks = await Memento.plugins.todo.findTasksByTag({tag: '工作'});\nsetResult(`找到 ${tasks.length} 个工作任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTasksByTag({tag: '工作'});\nsetResult(`找到 ${tasks.length} 个工作任务`);"
       },
       {
         "title": "查找带紧急标签且未完成的任务",
-        "code": "const tasks = await Memento.plugins.todo.findTasksByTag({tag: '紧急', status: 'todo'});\nsetResult(`找到 ${tasks.length} 个紧急待办任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTasksByTag({tag: '紧急', status: 'todo'});\nsetResult(`找到 ${tasks.length} 个紧急待办任务`);"
       },
       {
         "title": "分页查找带工作标签的任务",
-        "code": "const result = await Memento.plugins.todo.findTasksByTag({tag: '工作', offset: 0, count: 10});\nsetResult(`共 ${result.total} 个工作任务，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.todo.findTasksByTag({tag: '工作', offset: 0, count: 10});\nsetResult(`共 ${result.total} 个工作任务，当前返回 ${result.data.length} 个`);"
       }
     ],
     "notes": "标签匹配区分大小写；支持额外的状态和优先级过滤；使用分页参数可以控制返回数据量，推荐每页 20-50 条数据",
@@ -476,15 +476,15 @@
     "examples": [
       {
         "title": "查找所有进行中的任务",
-        "code": "const tasks = await Memento.plugins.todo.findTasksByStatus({status: 'inProgress'});\nsetResult(`进行中: ${tasks.length} 个任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTasksByStatus({status: 'inProgress'});\nsetResult(`进行中: ${tasks.length} 个任务`);"
       },
       {
         "title": "查找本周完成的任务",
-        "code": "const weekStart = await Memento.system.getCustomDate({relativePosition: 'startOfWeek', format: 'iso'});\nconst weekEnd = await Memento.system.getCustomDate({relativePosition: 'endOfWeek', format: 'iso'});\nconst tasks = await Memento.plugins.todo.findTasksByStatus({status: 'done', startDate: weekStart, endDate: weekEnd});\nsetResult(`本周完成 ${tasks.length} 个任务`);"
+        "code": "const weekStart = await Aboutme.system.getCustomDate({relativePosition: 'startOfWeek', format: 'iso'});\nconst weekEnd = await Aboutme.system.getCustomDate({relativePosition: 'endOfWeek', format: 'iso'});\nconst tasks = await Aboutme.plugins.todo.findTasksByStatus({status: 'done', startDate: weekStart, endDate: weekEnd});\nsetResult(`本周完成 ${tasks.length} 个任务`);"
       },
       {
         "title": "分页查找待办任务",
-        "code": "const result = await Memento.plugins.todo.findTasksByStatus({status: 'todo', offset: 0, count: 20});\nsetResult(`共 ${result.total} 个待办任务，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.todo.findTasksByStatus({status: 'todo', offset: 0, count: 20});\nsetResult(`共 ${result.total} 个待办任务，当前返回 ${result.data.length} 个`);"
       }
     ],
     "notes": "日期过滤基于任务的 dueDate 或 completedDate 字段；使用分页参数可以控制返回数据量，推荐每页 20-50 条数据",
@@ -506,15 +506,15 @@
     "examples": [
       {
         "title": "查找所有高优先级任务",
-        "code": "const tasks = await Memento.plugins.todo.findTasksByPriority({priority: 'high'});\nsetResult(`高优先级: ${tasks.length} 个任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTasksByPriority({priority: 'high'});\nsetResult(`高优先级: ${tasks.length} 个任务`);"
       },
       {
         "title": "查找高优先级且待办的任务",
-        "code": "const tasks = await Memento.plugins.todo.findTasksByPriority({priority: 'high', status: 'todo'});\nsetResult(`高优先级待办: ${tasks.length} 个任务`);"
+        "code": "const tasks = await Aboutme.plugins.todo.findTasksByPriority({priority: 'high', status: 'todo'});\nsetResult(`高优先级待办: ${tasks.length} 个任务`);"
       },
       {
         "title": "分页查找高优先级任务",
-        "code": "const result = await Memento.plugins.todo.findTasksByPriority({priority: 'high', offset: 0, count: 15});\nsetResult(`共 ${result.total} 个高优先级任务，当前返回 ${result.data.length} 个，还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.todo.findTasksByPriority({priority: 'high', offset: 0, count: 15});\nsetResult(`共 ${result.total} 个高优先级任务，当前返回 ${result.data.length} 个，还有更多: ${result.hasMore}`);"
       }
     ],
     "notes": "支持额外的状态过滤；使用分页参数可以控制返回数据量，推荐每页 20-50 条数据",

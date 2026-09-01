@@ -77,25 +77,25 @@ final List<RegExp> removeImportPatterns = [
   RegExp(r"import\s+'package:flutter/.*';"),
   // Material
   RegExp(r"import\s+'package:flutter/material\.dart';"),
-  // Memento 特定工具 (非模型)
-  RegExp(r"import\s+'package:memento/core/utils/.*';"),
-  RegExp(r"import\s+'package:memento/widgets/.*';"),
-  RegExp(r"import\s+'package:memento/screens/.*';"),
+  // Aboutme 特定工具 (非模型)
+  RegExp(r"import\s+'package:aboutme/core/utils/.*';"),
+  RegExp(r"import\s+'package:aboutme/widgets/.*';"),
+  RegExp(r"import\s+'package:aboutme/screens/.*';"),
   // 本地化
   RegExp(r"import\s+'.*l10n.*';"),
 ];
 
 /// 需要替换的 import 模式
 final Map<RegExp, String> replaceImportPatterns = {
-  // 将 package:memento/plugins/.../models/ 替换为 package:shared_models/models/
-  RegExp(r"import\s+'package:memento/plugins/\w+/models/(\w+\.dart)';"):
+  // 将 package:aboutme/plugins/.../models/ 替换为 package:shared_models/models/
+  RegExp(r"import\s+'package:aboutme/plugins/\w+/models/(\w+\.dart)';"):
       "import 'package:shared_models/models/\$1';",
 };
 
 void main(List<String> args) async {
   final projectRoot = Directory.current.path;
 
-  print('=== Memento 模型复制脚本 ===');
+  print('=== Aboutme 模型复制脚本 ===');
   print('项目根目录: $projectRoot');
   print('');
 

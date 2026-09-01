@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'memento_widgets_platform_interface.dart';
+import 'aboutme_widgets_platform_interface.dart';
 
-/// An implementation of [MementoWidgetsPlatform] that uses method channels.
-class MethodChannelMementoWidgets extends MementoWidgetsPlatform {
+/// An implementation of [AboutmeWidgetsPlatform] that uses method channels.
+class MethodChannelAboutmeWidgets extends AboutmeWidgetsPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('memento_widgets');
+  final methodChannel = const MethodChannel('aboutme_widgets');
 
   @override
   Future<String?> getPlatformVersion() async {

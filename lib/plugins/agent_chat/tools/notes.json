@@ -18,15 +18,15 @@
     },
     "examples": [
       {
-        "code": "const allNotes = await Memento.plugins.notes.getNotes({});\nsetResult(allNotes);",
+        "code": "const allNotes = await Aboutme.plugins.notes.getNotes({});\nsetResult(allNotes);",
         "comment": "获取所有笔记"
       },
       {
-        "code": "const folderNotes = await Memento.plugins.notes.getNotes({ folderId: 'folder' });\nsetResult(folderNotes);",
+        "code": "const folderNotes = await Aboutme.plugins.notes.getNotes({ folderId: 'folder' });\nsetResult(folderNotes);",
         "comment": "获取指定文件夹的笔记"
       },
       {
-        "code": "const result = await Memento.plugins.notes.getNotes({offset: 0, count: 20});\nsetResult(`共${result.total}条笔记，返回${result.count}条：\\n${JSON.stringify(result.items, null, 2)}`);",
+        "code": "const result = await Aboutme.plugins.notes.getNotes({offset: 0, count: 20});\nsetResult(`共${result.total}条笔记，返回${result.count}条：\\n${JSON.stringify(result.items, null, 2)}`);",
         "comment": "分页获取笔记（前20条）"
       }
     ],
@@ -50,7 +50,7 @@
     },
     "examples": [
       {
-        "code": "const note = await Memento.plugins.notes.getNote({ noteId: 'note123' });\nsetResult(note);",
+        "code": "const note = await Aboutme.plugins.notes.getNote({ noteId: 'note123' });\nsetResult(note);",
         "comment": "获取笔记详情"
       }
     ],
@@ -98,15 +98,15 @@
     },
     "examples": [
       {
-        "code": "const note1 = await Memento.plugins.notes.createNote({\n  title: '每日总结',\n  content: '# 今日完成\\n\\n- 任务1\\n- 任务2'\n});\nsetResult(note1);",
+        "code": "const note1 = await Aboutme.plugins.notes.createNote({\n  title: '每日总结',\n  content: '# 今日完成\\n\\n- 任务1\\n- 任务2'\n});\nsetResult(note1);",
         "comment": "创建基础笔记"
       },
       {
-        "code": "const note2 = await Memento.plugins.notes.createNote({\n  title: '会议记录',\n  content: '# 产品会议\\n\\n讨论内容...',\n  folderId: 'work_folder_id',\n  tags: ['会议', '产品']\n});\nsetResult(note2);",
+        "code": "const note2 = await Aboutme.plugins.notes.createNote({\n  title: '会议记录',\n  content: '# 产品会议\\n\\n讨论内容...',\n  folderId: 'work_folder_id',\n  tags: ['会议', '产品']\n});\nsetResult(note2);",
         "comment": "创建带标签的笔记"
       },
       {
-        "code": "const note3 = await Memento.plugins.notes.createNote({\n  title: '项目计划',\n  content: '# Q1项目计划\\n\\n## 目标\\n- 完成产品开发\\n- 上线测试版本\\n\\n## 时间线\\n- 1月：需求分析\\n- 2月：开发阶段\\n- 3月：测试上线',\n  id: 'note123',\n  folderId: 'project_folder_id',\n  tags: ['工作', '项目', '重要']\n});\nsetResult(`笔记已创建，自定义ID: ${note3.id}`);",
+        "code": "const note3 = await Aboutme.plugins.notes.createNote({\n  title: '项目计划',\n  content: '# Q1项目计划\\n\\n## 目标\\n- 完成产品开发\\n- 上线测试版本\\n\\n## 时间线\\n- 1月：需求分析\\n- 2月：开发阶段\\n- 3月：测试上线',\n  id: 'note123',\n  folderId: 'project_folder_id',\n  tags: ['工作', '项目', '重要']\n});\nsetResult(`笔记已创建，自定义ID: ${note3.id}`);",
         "comment": "使用自定义ID创建笔记"
       }
     ],
@@ -148,7 +148,7 @@
     },
     "examples": [
       {
-        "code": "const updatedNote = await Memento.plugins.notes.updateNote({\n  noteId: 'note123',\n  title: '项目计划 (已更新)',\n  content: '# 项目计划\\n\\n本周目标:\\n- 完成设计稿\\n- 开发核心功能',\n  tags: ['工作', '计划', '重要']\n});\nsetResult(updatedNote);",
+        "code": "const updatedNote = await Aboutme.plugins.notes.updateNote({\n  noteId: 'note123',\n  title: '项目计划 (已更新)',\n  content: '# 项目计划\\n\\n本周目标:\\n- 完成设计稿\\n- 开发核心功能',\n  tags: ['工作', '计划', '重要']\n});\nsetResult(updatedNote);",
         "comment": "更新笔记的所有内容"
       }
     ],
@@ -172,7 +172,7 @@
     },
     "examples": [
       {
-        "code": "const success = await Memento.plugins.notes.deleteNote({ noteId: 'note123' });\nsetResult(success);",
+        "code": "const success = await Aboutme.plugins.notes.deleteNote({ noteId: 'note123' });\nsetResult(success);",
         "comment": "删除笔记"
       }
     ],
@@ -216,23 +216,23 @@
     },
     "examples": [
       {
-        "code": "const results1 = await Memento.plugins.notes.searchNotes({ keyword: '项目' });\nsetResult(results1);",
+        "code": "const results1 = await Aboutme.plugins.notes.searchNotes({ keyword: '项目' });\nsetResult(results1);",
         "comment": "搜索标题或内容包含\"项目\"的笔记"
       },
       {
-        "code": "const results2 = await Memento.plugins.notes.searchNotes({ keyword: '', tags: ['工作'] });\nsetResult(results2);",
+        "code": "const results2 = await Aboutme.plugins.notes.searchNotes({ keyword: '', tags: ['工作'] });\nsetResult(results2);",
         "comment": "搜索带\"工作\"标签的笔记"
       },
       {
-        "code": "const startTime = await Memento.system.getCustomDate({relativePosition: 'startOfWeek', format: 'iso'});\nconst endTime = await Memento.system.getCustomDate({relativePosition: 'endOfWeek', format: 'iso'});\nconst results3 = await Memento.plugins.notes.searchNotes({ keyword: '', startDate: startTime, endDate: endTime });\nsetResult(results3);",
+        "code": "const startTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfWeek', format: 'iso'});\nconst endTime = await Aboutme.system.getCustomDate({relativePosition: 'endOfWeek', format: 'iso'});\nconst results3 = await Aboutme.plugins.notes.searchNotes({ keyword: '', startDate: startTime, endDate: endTime });\nsetResult(results3);",
         "comment": "搜索本周创建的笔记"
       },
       {
-        "code": "const startTime = await Memento.system.getCustomDate({relativePosition: 'startOfMonth', format: 'iso'});\nconst endTime = await Memento.system.getCustomDate({relativePosition: 'endOfMonth', format: 'iso'});\nconst results4 = await Memento.plugins.notes.searchNotes({ keyword: '会议', tags: ['工作', '产品'], startDate: startTime, endDate: endTime });\nsetResult(results4);",
+        "code": "const startTime = await Aboutme.system.getCustomDate({relativePosition: 'startOfMonth', format: 'iso'});\nconst endTime = await Aboutme.system.getCustomDate({relativePosition: 'endOfMonth', format: 'iso'});\nconst results4 = await Aboutme.plugins.notes.searchNotes({ keyword: '会议', tags: ['工作', '产品'], startDate: startTime, endDate: endTime });\nsetResult(results4);",
         "comment": "组合搜索：关键词 + 标签 + 本月日期范围"
       },
       {
-        "code": "const result = await Memento.plugins.notes.searchNotes({keyword: '', offset: 0, count: 20});\nsetResult(`搜索结果共${result.total}条，返回${result.count}条：\\n${JSON.stringify(result.items, null, 2)}`);",
+        "code": "const result = await Aboutme.plugins.notes.searchNotes({keyword: '', offset: 0, count: 20});\nsetResult(`搜索结果共${result.total}条，返回${result.count}条：\\n${JSON.stringify(result.items, null, 2)}`);",
         "comment": "分页搜索（前20条）"
       }
     ],
@@ -252,11 +252,11 @@
     },
     "examples": [
       {
-        "code": "const folders = await Memento.plugins.notes.getFolders();\nsetResult(folders);",
+        "code": "const folders = await Aboutme.plugins.notes.getFolders();\nsetResult(folders);",
         "comment": "获取所有文件夹"
       },
       {
-        "code": "const result = await Memento.plugins.notes.getFolders({offset: 0, count: 10});\nsetResult(`共${result.total}个文件夹，返回${result.count}个：\\n${JSON.stringify(result.items, null, 2)}`);",
+        "code": "const result = await Aboutme.plugins.notes.getFolders({offset: 0, count: 10});\nsetResult(`共${result.total}个文件夹，返回${result.count}个：\\n${JSON.stringify(result.items, null, 2)}`);",
         "comment": "分页获取文件夹（前10个）"
       }
     ],
@@ -280,7 +280,7 @@
     },
     "examples": [
       {
-        "code": "const folder = await Memento.plugins.notes.getFolder({ folderId: 'folder123' });\nsetResult(folder);",
+        "code": "const folder = await Aboutme.plugins.notes.getFolder({ folderId: 'folder123' });\nsetResult(folder);",
         "comment": "获取文件夹详情"
       }
     ],
@@ -316,15 +316,15 @@
     },
     "examples": [
       {
-        "code": "const folder1 = await Memento.plugins.notes.createFolder({ name: '个人笔记' });\nsetResult(folder1);",
+        "code": "const folder1 = await Aboutme.plugins.notes.createFolder({ name: '个人笔记' });\nsetResult(folder1);",
         "comment": "在根目录下创建文件夹"
       },
       {
-        "code": "const folder2 = await Memento.plugins.notes.createFolder({ name: '项目A', parentId: 'work_folder_id' });\nsetResult(folder2);",
+        "code": "const folder2 = await Aboutme.plugins.notes.createFolder({ name: '项目A', parentId: 'work_folder_id' });\nsetResult(folder2);",
         "comment": "创建子文件夹"
       },
       {
-        "code": "const folder3 = await Memento.plugins.notes.createFolder({ name: '工作文件夹', id: 'folder123' });\nsetResult(`文件夹已创建，自定义ID: ${folder3.id}`);",
+        "code": "const folder3 = await Aboutme.plugins.notes.createFolder({ name: '工作文件夹', id: 'folder123' });\nsetResult(`文件夹已创建，自定义ID: ${folder3.id}`);",
         "comment": "使用自定义ID创建文件夹"
       }
     ],
@@ -354,7 +354,7 @@
     },
     "examples": [
       {
-        "code": "const success = await Memento.plugins.notes.renameFolder({ folderId: 'folder123', newName: '工作笔记 2025' });\nsetResult(success);",
+        "code": "const success = await Aboutme.plugins.notes.renameFolder({ folderId: 'folder123', newName: '工作笔记 2025' });\nsetResult(success);",
         "comment": "重命名文件夹"
       }
     ],
@@ -378,7 +378,7 @@
     },
     "examples": [
       {
-        "code": "const success = await Memento.plugins.notes.deleteFolder({ folderId: 'old_folder_id' });\nsetResult(success);",
+        "code": "const success = await Aboutme.plugins.notes.deleteFolder({ folderId: 'old_folder_id' });\nsetResult(success);",
         "comment": "删除文件夹及其所有内容"
       }
     ],
@@ -402,7 +402,7 @@
     },
     "examples": [
       {
-        "code": "const noteList = await Memento.plugins.notes.getFolderNotes({ folderId: 'work_folder_id' });\nsetResult(noteList);",
+        "code": "const noteList = await Aboutme.plugins.notes.getFolderNotes({ folderId: 'work_folder_id' });\nsetResult(noteList);",
         "comment": "获取文件夹笔记"
       }
     ],
@@ -432,7 +432,7 @@
     },
     "examples": [
       {
-        "code": "const success = await Memento.plugins.notes.moveNote({ noteId: 'note123', targetFolderId: 'new_folder_id' });\nsetResult(success);",
+        "code": "const success = await Aboutme.plugins.notes.moveNote({ noteId: 'note123', targetFolderId: 'new_folder_id' });\nsetResult(success);",
         "comment": "移动笔记到新文件夹"
       }
     ],
@@ -454,11 +454,11 @@
     "examples": [
       {
         "title": "根据 ID 查找笔记",
-        "code": "const note = await Memento.plugins.notes.findNoteBy({field: 'id', value: 'note123'});\nif (note) {\n  setResult(`找到笔记: ${note.title}`);\n} else {\n  setResult('未找到该笔记');\n}"
+        "code": "const note = await Aboutme.plugins.notes.findNoteBy({field: 'id', value: 'note123'});\nif (note) {\n  setResult(`找到笔记: ${note.title}`);\n} else {\n  setResult('未找到该笔记');\n}"
       },
       {
         "title": "查找指定文件夹的所有笔记",
-        "code": "const notes = await Memento.plugins.notes.findNoteBy({field: 'folderId', value: 'folder123', findAll: true});\nsetResult(`找到 ${notes.length} 条笔记`);"
+        "code": "const notes = await Aboutme.plugins.notes.findNoteBy({field: 'folderId', value: 'folder123', findAll: true});\nsetResult(`找到 ${notes.length} 条笔记`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历笔记列表；支持任意字段匹配",
@@ -477,7 +477,7 @@
     "examples": [
       {
         "title": "查找指定ID的笔记",
-        "code": "const note = await Memento.plugins.notes.findNoteById({id: 'note123'});\nif (note) {\n  setResult(`笔记标题: ${note.title}, 内容长度: ${note.content.length}`);\n} else {\n  setResult('笔记不存在');\n}"
+        "code": "const note = await Aboutme.plugins.notes.findNoteById({id: 'note123'});\nif (note) {\n  setResult(`笔记标题: ${note.title}, 内容长度: ${note.content.length}`);\n} else {\n  setResult('笔记不存在');\n}"
       }
     ],
     "notes": "等价于 findNoteBy({field: 'id', value: id})",
@@ -498,11 +498,11 @@
     "examples": [
       {
         "title": "精确匹配笔记标题",
-        "code": "const note = await Memento.plugins.notes.findNoteByTitle({title: '项目计划'});\nsetResult(note ? `找到笔记ID: ${note.id}` : '未找到');"
+        "code": "const note = await Aboutme.plugins.notes.findNoteByTitle({title: '项目计划'});\nsetResult(note ? `找到笔记ID: ${note.id}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的笔记",
-        "code": "const notes = await Memento.plugins.notes.findNoteByTitle({title: '会议', fuzzy: true, findAll: true});\nsetResult(`找到 ${notes.length} 条包含会议的笔记`);"
+        "code": "const notes = await Aboutme.plugins.notes.findNoteByTitle({title: '会议', fuzzy: true, findAll: true});\nsetResult(`找到 ${notes.length} 条包含会议的笔记`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 contains",
@@ -523,11 +523,11 @@
     "examples": [
       {
         "title": "根据 ID 查找文件夹",
-        "code": "const folder = await Memento.plugins.notes.findFolderBy({field: 'id', value: 'folder123'});\nif (folder) {\n  setResult(`找到文件夹: ${folder.name}`);\n} else {\n  setResult('未找到该文件夹');\n}"
+        "code": "const folder = await Aboutme.plugins.notes.findFolderBy({field: 'id', value: 'folder123'});\nif (folder) {\n  setResult(`找到文件夹: ${folder.name}`);\n} else {\n  setResult('未找到该文件夹');\n}"
       },
       {
         "title": "查找某个文件夹的所有子文件夹",
-        "code": "const subFolders = await Memento.plugins.notes.findFolderBy({field: 'parentId', value: 'folder123', findAll: true});\nsetResult(`找到 ${subFolders.length} 个子文件夹`);"
+        "code": "const subFolders = await Aboutme.plugins.notes.findFolderBy({field: 'parentId', value: 'folder123', findAll: true});\nsetResult(`找到 ${subFolders.length} 个子文件夹`);"
       }
     ],
     "notes": "简化查找逻辑，避免手动遍历文件夹列表；支持任意字段匹配",
@@ -546,7 +546,7 @@
     "examples": [
       {
         "title": "查找指定ID的文件夹",
-        "code": "const folder = await Memento.plugins.notes.findFolderById({id: 'folder123'});\nif (folder) {\n  setResult(`文件夹名称: ${folder.name}`);\n} else {\n  setResult('文件夹不存在');\n}"
+        "code": "const folder = await Aboutme.plugins.notes.findFolderById({id: 'folder123'});\nif (folder) {\n  setResult(`文件夹名称: ${folder.name}`);\n} else {\n  setResult('文件夹不存在');\n}"
       }
     ],
     "notes": "等价于 findFolderBy({field: 'id', value: id})",
@@ -567,11 +567,11 @@
     "examples": [
       {
         "title": "精确匹配文件夹名",
-        "code": "const folder = await Memento.plugins.notes.findFolderByName({name: '工作笔记'});\nsetResult(folder ? `找到文件夹ID: ${folder.id}` : '未找到');"
+        "code": "const folder = await Aboutme.plugins.notes.findFolderByName({name: '工作笔记'});\nsetResult(folder ? `找到文件夹ID: ${folder.id}` : '未找到');"
       },
       {
         "title": "模糊匹配查找所有包含关键词的文件夹",
-        "code": "const folders = await Memento.plugins.notes.findFolderByName({name: '项目', fuzzy: true, findAll: true});\nsetResult(`找到 ${folders.length} 个包含项目的文件夹`);"
+        "code": "const folders = await Aboutme.plugins.notes.findFolderByName({name: '项目', fuzzy: true, findAll: true});\nsetResult(`找到 ${folders.length} 个包含项目的文件夹`);"
       }
     ],
     "notes": "精确匹配使用 ===，模糊匹配使用 contains",

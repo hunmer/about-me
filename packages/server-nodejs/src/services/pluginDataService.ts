@@ -7,7 +7,7 @@ import { PaginatedResult } from '../types';
 /** 密钥验证文件名 */
 const KEY_VERIFICATION_FILE_NAME = '.key_verification.json';
 /** 密钥验证文件内容 */
-const KEY_VERIFICATION_CONTENT = 'MEMENTO_KEY_VERIFICATION_v1';
+const KEY_VERIFICATION_CONTENT = 'ABOUTME_KEY_VERIFICATION_v1';
 
 /**
  * 插件数据访问服务

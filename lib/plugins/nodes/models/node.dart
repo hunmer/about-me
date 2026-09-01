@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/goods/models/custom_field.dart' as goods_custom_field;
+import 'package:aboutme/plugins/goods/models/custom_field.dart' as goods_custom_field;
 
 enum NodeStatus { todo, doing, done, none }
 

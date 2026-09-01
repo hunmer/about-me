@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/core/services/plugin_widget_sync_helper.dart';
-import 'package:Memento/plugins/activity/models/activity_record.dart';
-import 'package:Memento/plugins/activity/sample_data.dart';
-import 'package:Memento/widgets/tags_dialog/models/models.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/plugins/activity/sample_data.dart';
+import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 
 class ActivityService {
   final StorageManager _storage;

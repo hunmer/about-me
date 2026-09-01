@@ -1,6 +1,6 @@
 # 小组件快速参考 (新版)
 
-> **版本**: Memento 2.0+
+> **版本**: Aboutme 2.0+
 > **完整文档**: 见 [WIDGET_MIGRATION_GUIDE.md](./WIDGET_MIGRATION_GUIDE.md)
 
 ## 三步更新小组件
@@ -8,7 +8,7 @@
 ### 1️⃣ 导入
 
 ```dart
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 ```
 
 ### 2️⃣ 创建数据
@@ -84,7 +84,7 @@ await PluginWidgetSyncHelper.instance.syncAllPlugins();
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:memento_widgets/memento_widgets.dart';
+import 'package:aboutme_widgets/aboutme_widgets.dart';
 
 class MyPlugin extends PluginBase {
   Future<void> updateMyWidget() async {

@@ -63,11 +63,11 @@ lib/core/app_widgets/home_widget_service.dart
     • 广播事件处理 - 处理四象限小组件刷新
 ```
 
-### Android 端（memento_widgets/）
+### Android 端（aboutme_widgets/）
 
 #### Provider 实现
 ```
-memento_widgets/android/src/main/kotlin/.../providers/TodoQuadrantWidgetProvider.kt
+aboutme_widgets/android/src/main/kotlin/.../providers/TodoQuadrantWidgetProvider.kt
 └── 新增文件:
     • TodoQuadrantWidgetProvider - 小组件 Provider
     • 处理任务点击事件 (ACTION_TASK_CLICK)
@@ -77,7 +77,7 @@ memento_widgets/android/src/main/kotlin/.../providers/TodoQuadrantWidgetProvider
 
 #### 布局文件
 ```
-memento_widgets/android/src/main/res/layout/widget_todo_quadrant.xml
+aboutme_widgets/android/src/main/res/layout/widget_todo_quadrant.xml
 └── 新增文件:
     • 2x2 网格布局
     • 四象限展示区域
@@ -86,7 +86,7 @@ memento_widgets/android/src/main/res/layout/widget_todo_quadrant.xml
 
 #### 背景 Drawable
 ```
-memento_widgets/android/src/main/res/drawable/
+aboutme_widgets/android/src/main/res/drawable/
 ├── widget_todo_quadrant_background.xml - 小组件背景
 ├── widget_quadrant_background.xml - 象限背景
 ├── widget_date_range_button_background.xml - 日期按钮背景
@@ -95,7 +95,7 @@ memento_widgets/android/src/main/res/drawable/
 
 #### 小组件元数据
 ```
-memento_widgets/android/src/main/res/xml/widget_todo_quadrant_info.xml
+aboutme_widgets/android/src/main/res/xml/widget_todo_quadrant_info.xml
 └── 新增文件:
     • 小组件配置（2x2 尺寸）
     • 预览布局和描述
@@ -103,7 +103,7 @@ memento_widgets/android/src/main/res/xml/widget_todo_quadrant_info.xml
 
 #### 字符串资源
 ```
-memento_widgets/android/src/main/res/values/strings.xml
+aboutme_widgets/android/src/main/res/values/strings.xml
 └── 修改:
     • 添加 widget_todo_quadrant_label
     • 添加 widget_todo_quadrant_description
@@ -111,7 +111,7 @@ memento_widgets/android/src/main/res/values/strings.xml
 
 #### Android 配置
 ```
-memento_widgets/android/src/main/AndroidManifest.xml
+aboutme_widgets/android/src/main/AndroidManifest.xml
 └── 修改:
     • 注册 TodoQuadrantWidgetProvider Receiver
     • 添加广播 Action 过滤:
@@ -120,11 +120,11 @@ memento_widgets/android/src/main/AndroidManifest.xml
       - TODO_QUADRANT_DATE_RANGE_CLICK
 ```
 
-### memento_widgets 插件
+### aboutme_widgets 插件
 
 #### 小组件映射
 ```
-packages/memento_widgets/lib/memento_widgets.dart
+packages/aboutme_widgets/lib/aboutme_widgets.dart
 └── 修改:
     • _androidProviders - 添加 TodoQuadrantWidgetProvider 映射
     • _getProviderNames() - 添加 todo_quadrant 插件映射
@@ -139,7 +139,7 @@ packages/memento_widgets/lib/memento_widgets.dart
     ↓
 显示"点击设置小组件"
     ↓
-点击进入配置页面 (deeplink: memento://widget/todo_quadrant/config)
+点击进入配置页面 (deeplink: aboutme://widget/todo_quadrant/config)
     ↓
 选择颜色和透明度
     ↓
@@ -255,7 +255,7 @@ if (isImportant && isUrgent) {
 ```dart
 await platform.invokeMethod('registerBroadcastReceiver', {
   'actions': [
-    'github.hunmer.memento.REFRESH_TODO_QUADRANT_WIDGET',
+    'github.hunmer.aboutme.REFRESH_TODO_QUADRANT_WIDGET',
     // ... 其他广播
   ],
 });
@@ -263,7 +263,7 @@ await platform.invokeMethod('registerBroadcastReceiver', {
 
 ### 广播事件处理
 ```dart
-else if (action == 'github.hunmer.memento.REFRESH_TODO_QUADRANT_WIDGET') {
+else if (action == 'github.hunmer.aboutme.REFRESH_TODO_QUADRANT_WIDGET') {
   await PluginWidgetSyncHelper.instance.syncTodoQuadrantWidget();
   await HomeWidget.updateWidget(
     name: 'TodoQuadrantWidgetProvider',

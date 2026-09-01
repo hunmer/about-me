@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:Memento/screens/routing/route_definition.dart';
-import 'package:Memento/screens/routing/route_helpers.dart';
-import 'package:Memento/plugins/tracker/tracker_plugin.dart';
-import 'package:Memento/plugins/tracker/screens/goal_detail_screen.dart';
-import 'package:Memento/plugins/tracker/screens/tracker_goal_selector_screen.dart';
-import 'package:Memento/plugins/tracker/screens/tracker_goal_progress_selector_screen.dart';
+import 'package:aboutme/screens/routing/route_definition.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
+import 'package:aboutme/plugins/tracker/screens/tracker_goal_selector_screen.dart';
+import 'package:aboutme/plugins/tracker/screens/tracker_goal_progress_selector_screen.dart';
 
 /// Tracker 插件路由注册表
 class TrackerRoutes implements RouteRegistry {

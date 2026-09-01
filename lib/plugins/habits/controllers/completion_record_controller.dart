@@ -1,9 +1,9 @@
-import 'package:Memento/core/event/event_args.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/storage/storage_manager.dart';
-import 'package:Memento/plugins/habits/controllers/habit_controller.dart';
-import 'package:Memento/plugins/habits/controllers/skill_controller.dart';
-import 'package:Memento/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/core/event/event_args.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
+import 'package:aboutme/plugins/habits/models/completion_record.dart';
 
 class CompletionRecordController {
   final StorageManager storage;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/app_drawer.dart';
+import 'package:aboutme/widgets/app_drawer.dart';
 
 /// 应用抽屉示例
 class AppDrawerExample extends StatelessWidget {

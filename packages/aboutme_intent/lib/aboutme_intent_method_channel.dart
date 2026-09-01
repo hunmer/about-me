@@ -1,20 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'memento_intent_platform_interface.dart';
-import 'memento_intent.dart';
+import 'aboutme_intent_platform_interface.dart';
+import 'aboutme_intent.dart';
 
-/// An implementation of [MementoIntentPlatform] that uses method channels.
-class MethodChannelMementoIntent extends MementoIntentPlatform {
+/// An implementation of [AboutmeIntentPlatform] that uses method channels.
+class MethodChannelAboutmeIntent extends AboutmeIntentPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('memento_intent');
+  final methodChannel = const MethodChannel('aboutme_intent');
 
   // Event channels for streaming data
-  static const String _deepLinkEventChannel = 'memento_intent/deep_link/events';
-  static const String _sharedTextEventChannel = 'memento_intent/shared_text/events';
-  static const String _sharedFilesEventChannel = 'memento_intent/shared_files/events';
-  static const String _intentDataEventChannel = 'memento_intent/intent_data/events';
+  static const String _deepLinkEventChannel = 'aboutme_intent/deep_link/events';
+  static const String _sharedTextEventChannel = 'aboutme_intent/shared_text/events';
+  static const String _sharedFilesEventChannel = 'aboutme_intent/shared_files/events';
+  static const String _intentDataEventChannel = 'aboutme_intent/intent_data/events';
 
   // Event channel handlers
   late final Stream<Uri> _onDeepLink;
@@ -22,7 +22,7 @@ class MethodChannelMementoIntent extends MementoIntentPlatform {
   late final Stream<List<SharedMediaFile>> _onSharedFiles;
   late final Stream<IntentData> _onIntentData;
 
-  MethodChannelMementoIntent() {
+  MethodChannelAboutmeIntent() {
     _setupEventStreams();
   }
 

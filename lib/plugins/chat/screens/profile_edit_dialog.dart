@@ -1,11 +1,11 @@
-import 'package:Memento/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/widgets/picker/avatar_picker.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/picker/avatar_picker.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 
 class ProfileEditDialog extends StatefulWidget {
   final User user;

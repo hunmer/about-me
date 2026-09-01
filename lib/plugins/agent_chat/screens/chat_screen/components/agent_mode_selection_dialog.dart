@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../../models/agent_chain_node.dart';
 
 /// Agent 模式选择对话框

@@ -3,10 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Memento/screens/home_screen/managers/quick_create_registry.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/plugins/todo/todo_plugin.dart';
-import 'package:Memento/plugins/todo/widgets/task_form.dart';
+import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/plugins/todo/widgets/task_form.dart';
 
 /// 注册待办的快速创建项（主页底部 ＋ 按钮）
 void registerQuickCreate(QuickCreateRegistry registry) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'bill.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/plugins/bill/controls/bill_controller.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/plugins/bill/controls/bill_controller.dart';
 
 class Account {
   final String id;

@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/habits/models/skill.dart';
-import 'package:Memento/plugins/habits/utils/habits_utils.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/habits/models/skill.dart';
+import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
 
 /// 技能表单 - 使用 FormBuilderWrapper 重构
 class SkillForm extends StatefulWidget {

@@ -1,6 +1,6 @@
 # api_forwarding_server API 转发服务器
 
-`memento-api-forwarding-server` v1.0.0 —— 一个轻量 WebSocket 代理（仅 4 个 TS 源文件 + ws/uuid 两个依赖），用于在 **Web 前端**与 **Flutter 客户端**之间转发 API 请求：两端用相同的**配对密钥**（形如 `ABCD-1234-EFGH-5678`）连接即完成配对，此后前端发出的请求经服务器转给客户端的 JSBridge 执行、响应原路返回，从而让纯 Web 页面借道用户自己的 Memento 客户端访问插件数据（含 memento-mock 等前端方案）。默认端口 **8654**，支持心跳检测。
+`aboutme-api-forwarding-server` v1.0.0 —— 一个轻量 WebSocket 代理（仅 4 个 TS 源文件 + ws/uuid 两个依赖），用于在 **Web 前端**与 **Flutter 客户端**之间转发 API 请求：两端用相同的**配对密钥**（形如 `ABCD-1234-EFGH-5678`）连接即完成配对，此后前端发出的请求经服务器转给客户端的 JSBridge 执行、响应原路返回，从而让纯 Web 页面借道用户自己的 Aboutme 客户端访问插件数据（含 aboutme-mock 等前端方案）。默认端口 **8654**，支持心跳检测。
 
 ## 约定的规则
 

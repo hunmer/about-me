@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:Memento/widgets/form_fields/index.dart';
-import 'package:Memento/plugins/day/models/memorial_day.dart';
-import 'package:Memento/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 /// 笔记项（包装类，用于 ListAddField）
 class _NoteItem {

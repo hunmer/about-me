@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Memento/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
 
 /// 计时器图标网格选择器字段组件
 ///

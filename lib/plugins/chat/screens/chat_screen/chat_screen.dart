@@ -1,23 +1,23 @@
-import 'package:Memento/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:get/get.dart';
-import 'package:Memento/core/event/event_manager.dart';
-import 'package:Memento/core/event/event.dart';
-import 'package:Memento/plugins/openai/openai_plugin.dart';
-import 'package:Memento/plugins/openai/screens/agent_edit_screen.dart';
-import 'package:Memento/utils/image_utils.dart';
-import 'package:Memento/plugins/openai/handlers/chat_event_handler.dart'; // 导入ValuesEventArgs
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/plugins/openai/handlers/chat_event_handler.dart'; // 导入ValuesEventArgs
 import 'package:flutter/material.dart';
-import 'package:Memento/core/navigation/navigation_helper.dart';
-import 'package:Memento/core/services/toast_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:io'; // 添加File类支持
-import 'package:Memento/core/route/route_history_manager.dart';
-import 'package:Memento/plugins/chat/models/channel.dart';
-import 'package:Memento/plugins/chat/models/message.dart';
-import 'package:Memento/plugins/chat/models/user.dart';
-import 'package:Memento/plugins/chat/chat_plugin.dart';
-import 'package:Memento/plugins/chat/screens/profile_edit_dialog.dart';
-import 'package:Memento/plugins/chat/utils/message_operations.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
+import 'package:aboutme/plugins/chat/utils/message_operations.dart';
 // 移除未使用的导入
 import 'controllers/chat_screen_controller.dart';
 import 'widgets/message_list.dart';
@@ -25,8 +25,8 @@ import 'widgets/message_input/index.dart';
 import 'dialogs/clear_messages_dialog.dart';
 import 'utils/message_list_builder.dart';
 // SuperCupertino 导航包装器
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:Memento/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {

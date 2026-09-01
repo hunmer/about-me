@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/activity_record.dart';
 import '../services/activity_service.dart';
-import 'package:Memento/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
 
 /// 活动后台播报服务
 ///

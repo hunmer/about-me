@@ -1,8 +1,8 @@
-# Memento 事件系统 JavaScript API 文档
+# Aboutme 事件系统 JavaScript API 文档
 
 ## 概述
 
-Memento 提供了完整的事件系统 JavaScript API,允许 JavaScript 代码订阅和监听应用内各个插件的数据变化事件。
+Aboutme 提供了完整的事件系统 JavaScript API,允许 JavaScript 代码订阅和监听应用内各个插件的数据变化事件。
 
 ## 快速开始
 
@@ -10,28 +10,28 @@ Memento 提供了完整的事件系统 JavaScript API,允许 JavaScript 代码�
 
 ```javascript
 // 订阅事件
-const subscriptionId = await Memento.events.on('task_added', (event) => {
+const subscriptionId = await Aboutme.events.on('task_added', (event) => {
   console.log('新任务已添加:', event);
   console.log('任务ID:', event.data.itemId);
   console.log('任务标题:', event.data.title);
 });
 
 // 取消订阅
-await Memento.events.off(subscriptionId);
+await Aboutme.events.off(subscriptionId);
 ```
 
 ---
 
 ## API 参考
 
-### Memento.events.on()
+### Aboutme.events.on()
 
 订阅一个事件,当事件发生时执行回调函数。
 
 #### 语法
 
 ```javascript
-Memento.events.on(eventName, handler) -> Promise<String>
+Aboutme.events.on(eventName, handler) -> Promise<String>
 ```
 
 #### 参数
@@ -63,27 +63,27 @@ Memento.events.on(eventName, handler) -> Promise<String>
 
 ```javascript
 // 监听任务添加事件
-const subId = await Memento.events.on('task_added', (event) => {
+const subId = await Aboutme.events.on('task_added', (event) => {
   console.log('新任务:', event.data.title);
   console.log('添加时间:', event.whenOccurred);
 });
 
 // 监听日记删除事件
-await Memento.events.on('calendar_entry_deleted', (event) => {
+await Aboutme.events.on('calendar_entry_deleted', (event) => {
   console.log('日记已删除:', event.data.itemId);
 });
 ```
 
 ---
 
-### Memento.events.off()
+### Aboutme.events.off()
 
 取消事件订阅,停止接收事件通知。
 
 #### 语法
 
 ```javascript
-Memento.events.off(subscriptionId) -> Promise<Object>
+Aboutme.events.off(subscriptionId) -> Promise<Object>
 ```
 
 #### 参数
@@ -106,10 +106,10 @@ Memento.events.off(subscriptionId) -> Promise<Object>
 
 ```javascript
 // 订阅事件
-const subId = await Memento.events.on('task_completed', handler);
+const subId = await Aboutme.events.on('task_completed', handler);
 
 // 稍后取消订阅
-const result = await Memento.events.off(subId);
+const result = await Aboutme.events.off(subId);
 console.log('取消成功:', result.success);
 ```
 
@@ -151,14 +151,14 @@ class TaskTracker {
 
   async init() {
     // 监听任务添加
-    const addSub = await Memento.events.on('task_added', (event) => {
+    const addSub = await Aboutme.events.on('task_added', (event) => {
       console.log('✅ 任务已创建:', event.data.title);
       this.updateDashboard();
     });
     this.subscriptions.push(addSub);
 
     // 监听任务完成
-    const completeSub = await Memento.events.on('task_completed', (event) => {
+    const completeSub = await Aboutme.events.on('task_completed', (event) => {
       console.log('🎉 任务已完成:', event.data.title);
       this.showCelebration();
       this.updateDashboard();
@@ -166,7 +166,7 @@ class TaskTracker {
     this.subscriptions.push(completeSub);
 
     // 监听任务删除
-    const deleteSub = await Memento.events.on('task_deleted', (event) => {
+    const deleteSub = await Aboutme.events.on('task_deleted', (event) => {
       console.log('🗑️ 任务已删除:', event.data.title);
       this.updateDashboard();
     });
@@ -186,7 +186,7 @@ class TaskTracker {
   async cleanup() {
     // 清理所有订阅
     for (const subId of this.subscriptions) {
-      await Memento.events.off(subId);
+      await Aboutme.events.off(subId);
     }
     this.subscriptions = [];
   }
@@ -212,7 +212,7 @@ class DiaryStats {
 
   async init() {
     // 监听日记添加
-    await Memento.events.on('calendar_entry_added', (event) => {
+    await Aboutme.events.on('calendar_entry_added', (event) => {
       this.totalCount++;
 
       // 检查是否是今天的日记
@@ -226,7 +226,7 @@ class DiaryStats {
     });
 
     // 监听日记删除
-    await Memento.events.on('calendar_entry_deleted', (event) => {
+    await Aboutme.events.on('calendar_entry_deleted', (event) => {
       this.totalCount--;
       console.log(`📊 统计: 总计 ${this.totalCount} 篇`);
     });
@@ -251,7 +251,7 @@ const tagHeatMap = {};
 const tagSubscriptions = [];
 
 // 监听标签添加
-const addSub = await Memento.events.on('calendar_tag_added', (event) => {
+const addSub = await Aboutme.events.on('calendar_tag_added', (event) => {
   const tagName = event.data.title;
 
   if (!tagHeatMap[tagName]) {
@@ -265,7 +265,7 @@ const addSub = await Memento.events.on('calendar_tag_added', (event) => {
 tagSubscriptions.push(addSub);
 
 // 监听标签删除
-const delSub = await Memento.events.on('calendar_tag_deleted', (event) => {
+const delSub = await Aboutme.events.on('calendar_tag_deleted', (event) => {
   const tagName = event.data.title;
   delete tagHeatMap[tagName];
   console.log(`🗑️ 标签 "${tagName}" 已删除`);
@@ -283,7 +283,7 @@ function getTopTags(count) {
 // 清理订阅
 async function cleanup() {
   for (const subId of tagSubscriptions) {
-    await Memento.events.off(subId);
+    await Aboutme.events.off(subId);
   }
 }
 ```
@@ -315,7 +315,7 @@ class AutoBackup {
     ];
 
     for (const eventName of events) {
-      const subId = await Memento.events.on(eventName, (event) => {
+      const subId = await Aboutme.events.on(eventName, (event) => {
         this.operationCount++;
         console.log(`📝 操作计数: ${this.operationCount}`);
 
@@ -331,12 +331,12 @@ class AutoBackup {
   triggerBackup() {
     console.log('💾 触发自动备份...');
     // 这里调用备份 API
-    // await Memento.plugins.backup.createBackup();
+    // await Aboutme.plugins.backup.createBackup();
   }
 
   async cleanup() {
     for (const subId of this.subscriptions) {
-      await Memento.events.off(subId);
+      await Aboutme.events.off(subId);
     }
     this.subscriptions = [];
   }
@@ -352,21 +352,21 @@ const backup = new AutoBackup({ backupThreshold: 5 });
 
 ### 事件轮询机制
 
-Memento 事件系统使用**轮询机制**来实现 JavaScript 回调:
+Aboutme 事件系统使用**轮询机制**来实现 JavaScript 回调:
 
-1. JavaScript 调用 `Memento.events.on()` 时,在 Dart 端注册订阅并返回订阅 ID
+1. JavaScript 调用 `Aboutme.events.on()` 时,在 Dart 端注册订阅并返回订阅 ID
 2. JavaScript 端启动一个定时器(500ms 间隔),定期轮询事件队列
 3. 当 Dart 端有新事件时,将事件数据放入队列
 4. JavaScript 轮询到新事件后,调用用户提供的回调函数
-5. 调用 `Memento.events.off()` 时,停止轮询并清理订阅
+5. 调用 `Aboutme.events.off()` 时,停止轮询并清理订阅
 
 ```javascript
 // 内部实现(简化版)
-Memento.events.on = function(eventName, handler) {
-  return Memento_events_on(eventName).then(function(subscriptionId) {
+Aboutme.events.on = function(eventName, handler) {
+  return Aboutme_events_on(eventName).then(function(subscriptionId) {
     // 启动轮询
     const intervalId = setInterval(function() {
-      Memento_events_getEvents(subscriptionId).then(function(events) {
+      Aboutme_events_getEvents(subscriptionId).then(function(events) {
         events.forEach(function(event) {
           handler(event); // 调用用户回调
         });
@@ -374,7 +374,7 @@ Memento.events.on = function(eventName, handler) {
     }, 500);
 
     // 保存 intervalId 用于后续清理
-    Memento.events._pollingIntervals[subscriptionId] = intervalId;
+    Aboutme.events._pollingIntervals[subscriptionId] = intervalId;
 
     return subscriptionId;
   });
@@ -401,7 +401,7 @@ Memento.events.on = function(eventName, handler) {
 
 ```javascript
 try {
-  await Memento.events.on('task_added', (event) => {
+  await Aboutme.events.on('task_added', (event) => {
     // 回调函数中的错误会被捕获
     throw new Error('处理失败');
   });
@@ -415,16 +415,16 @@ try {
 ```javascript
 // ✅ 推荐: 保存订阅 ID 并在适当时机清理
 const subscriptions = [];
-subscriptions.push(await Memento.events.on('task_added', handler1));
-subscriptions.push(await Memento.events.on('task_deleted', handler2));
+subscriptions.push(await Aboutme.events.on('task_added', handler1));
+subscriptions.push(await Aboutme.events.on('task_deleted', handler2));
 
 // 清理
 for (const subId of subscriptions) {
-  await Memento.events.off(subId);
+  await Aboutme.events.off(subId);
 }
 
 // ❌ 不推荐: 忘记取消订阅
-await Memento.events.on('task_added', handler); // 内存泄漏风险
+await Aboutme.events.on('task_added', handler); // 内存泄漏风险
 ```
 
 ---
@@ -435,7 +435,7 @@ await Memento.events.on('task_added', handler); // 内存泄漏风险
 
 ```javascript
 // 查看当前活动的订阅
-console.log('活动订阅:', Object.keys(Memento.events._subscriptions));
+console.log('活动订阅:', Object.keys(Aboutme.events._subscriptions));
 
 // 示例输出: ['sub_1', 'sub_2', 'sub_3']
 ```
@@ -454,7 +454,7 @@ const events = [
 ];
 
 for (const eventName of events) {
-  await Memento.events.on(eventName, (event) => {
+  await Aboutme.events.on(eventName, (event) => {
     eventLogger.push({
       time: new Date().toISOString(),
       event: event
@@ -472,7 +472,7 @@ console.table(eventLogger);
 ```javascript
 // 监控回调执行时间
 async function monitoredOn(eventName, handler) {
-  return await Memento.events.on(eventName, (event) => {
+  return await Aboutme.events.on(eventName, (event) => {
     const startTime = performance.now();
     handler(event);
     const duration = performance.now() - startTime;
@@ -494,8 +494,8 @@ await monitoredOn('task_added', (event) => {
 ## 更新日志
 
 - **v1.0.0** (2025-12-08): 初始版本,支持事件订阅/取消订阅
-  - 添加 `Memento.events.on()` API
-  - 添加 `Memento.events.off()` API
+  - 添加 `Aboutme.events.on()` API
+  - 添加 `Aboutme.events.off()` API
   - 支持 Todo 插件事件(task_added/deleted/completed)
   - 支持 Calendar Album 插件事件(entry 和 tag 相关)
 

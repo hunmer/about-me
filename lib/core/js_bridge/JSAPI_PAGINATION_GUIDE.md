@@ -292,19 +292,19 @@ Future<String> _jsFindBy(Map<String, dynamic> params) async {
     "examples": [
       {
         "title": "获取所有项目",
-        "code": "const items = await Memento.plugins.yourPlugin.getItems();\nsetResult(JSON.stringify(items, null, 2));"
+        "code": "const items = await Aboutme.plugins.yourPlugin.getItems();\nsetResult(JSON.stringify(items, null, 2));"
       },
       {
         "title": "分页获取项目（前20个）",
-        "code": "const result = await Memento.plugins.yourPlugin.getItems({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个项目，当前返回 ${result.data.length} 个`);"
+        "code": "const result = await Aboutme.plugins.yourPlugin.getItems({offset: 0, count: 20});\nsetResult(`共 ${result.total} 个项目，当前返回 ${result.data.length} 个`);"
       },
       {
         "title": "分页获取项目（第二页）",
-        "code": "const result = await Memento.plugins.yourPlugin.getItems({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
+        "code": "const result = await Aboutme.plugins.yourPlugin.getItems({offset: 20, count: 20});\nsetResult(`还有更多: ${result.hasMore}`);"
       },
       {
         "title": "遍历所有项目（分页加载）",
-        "code": "let allItems = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Memento.plugins.yourPlugin.getItems({offset, count});\n  allItems = allItems.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allItems.length} 个项目`);"
+        "code": "let allItems = [];\nlet offset = 0;\nconst count = 50;\n\nwhile (true) {\n  const result = await Aboutme.plugins.yourPlugin.getItems({offset, count});\n  allItems = allItems.concat(result.data);\n  \n  if (!result.hasMore) break;\n  offset += count;\n}\n\nsetResult(`共加载 ${allItems.length} 个项目`);"
       }
     ],
     "notes": "使用分页参数可以控制返回数据量，提高性能。推荐每页 20-100 条数据。"
@@ -367,18 +367,18 @@ void main() {
 
 ```javascript
 // 测试 1: 无分页参数
-const allItems = await Memento.plugins.yourPlugin.getItems();
+const allItems = await Aboutme.plugins.yourPlugin.getItems();
 console.log('全部数据:', allItems.length);
 
 // 测试 2: 分页获取
-const page1 = await Memento.plugins.yourPlugin.getItems({offset: 0, count: 10});
+const page1 = await Aboutme.plugins.yourPlugin.getItems({offset: 0, count: 10});
 console.log('第一页:', page1);
 
 // 测试 3: 遍历所有数据
 let total = 0;
 let offset = 0;
 while (true) {
-  const result = await Memento.plugins.yourPlugin.getItems({offset, count: 50});
+  const result = await Aboutme.plugins.yourPlugin.getItems({offset, count: 50});
   total += result.data.length;
   if (!result.hasMore) break;
   offset += 50;
@@ -534,10 +534,10 @@ Future<String> _jsGetItems(Map<String, dynamic> params) async {
 /// 示例:
 /// ```javascript
 /// // 获取全部
-/// const items = await Memento.plugins.yourPlugin.getItems();
+/// const items = await Aboutme.plugins.yourPlugin.getItems();
 ///
 /// // 分页获取
-/// const result = await Memento.plugins.yourPlugin.getItems({offset: 0, count: 20});
+/// const result = await Aboutme.plugins.yourPlugin.getItems({offset: 0, count: 20});
 /// console.log(`共 ${result.total} 个，当前 ${result.data.length} 个`);
 /// ```
 Future<String> _jsGetItems(Map<String, dynamic> params) async {
@@ -616,4 +616,4 @@ Future<String> _jsGetItems(Map<String, dynamic> params) async {
 
 **文档版本**: 1.0.0
 **最后更新**: 2025-11-19
-**维护者**: Memento 开发团队
+**维护者**: Aboutme 开发团队
