@@ -1524,9 +1524,10 @@ packages:
   procm_sdk_dart:
     dependency: "direct main"
     description:
-      path: "../procm-mcp/packages/procm-sdk-dart"
-      relative: true
-    source: path
+      name: procm_sdk_dart
+      sha256: "20b494438cca2ec07590302482433934416009bd04142c2252b0ff680b19b719"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   provider:
     dependency: "direct main"
