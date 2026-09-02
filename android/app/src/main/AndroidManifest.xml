@@ -33,7 +33,7 @@
     <application
         android:label="蓝色星球"
         android:name="${applicationName}"
-        android:icon="@drawable/app_icon"
+        android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true"
         android:networkSecurityConfig="@xml/network_security_config">
         <!-- 前台服务类型声明 -->
