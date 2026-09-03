@@ -55,7 +55,7 @@ class DSLinearProgress extends StatelessWidget {
                       raised: false,
                     ),
                   ),
-                  // 渐变填充
+                  // 渐变填充（带水晶玻璃罩）
                   Positioned(
                     left: 0,
                     top: thumb != null ? 14 : 0,
@@ -71,6 +71,10 @@ class DSLinearProgress extends StatelessWidget {
                               theme.secondary,
                             ],
                           ),
+                        ),
+                        foregroundDecoration: JellyGlossDecoration(
+                          radius: theme.radii.pill,
+                          isDark: theme.isDark,
                         ),
                       ),
                     ),

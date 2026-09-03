@@ -83,7 +83,7 @@ class _DSSliderState extends State<DSSlider> {
                       color: disabled ? theme.disabled : theme.surfaceAlt,
                     ),
                   ),
-                  // 渐变进度
+                  // 渐变进度（带水晶玻璃罩）
                   Positioned(
                     left: 0,
                     bottom: 0,
@@ -97,6 +97,10 @@ class _DSSliderState extends State<DSSlider> {
                             color,
                             theme.secondary,
                           ]),
+                        ),
+                        foregroundDecoration: JellyGlossDecoration(
+                          radius: theme.radii.pill,
+                          isDark: theme.isDark,
                         ),
                       ),
                     ),

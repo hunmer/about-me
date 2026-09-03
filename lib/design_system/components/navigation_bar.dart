@@ -107,12 +107,17 @@ class _NavItemView extends StatelessWidget {
                       : null,
                   borderRadius: theme.radii.lg,
                   border: selected
-                      ? Border.all(color: theme.jellyStroke(theme.primary), width: 1.2)
+                      ? Border.all(color: theme.jellyRim(theme.primary), width: 1.2)
                       : null,
                   boxShadow: selected && !pressed
                       ? theme.jellyShadow(theme.primary, height: 4)
                       : null,
                 ),
+                // 选中块叠加水晶玻璃罩
+                foregroundDecoration: selected
+                    ? JellyGlossDecoration(
+                        radius: theme.radii.lg, isDark: theme.isDark)
+                    : null,
                 child: Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.center,

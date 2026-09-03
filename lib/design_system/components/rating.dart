@@ -34,9 +34,14 @@ class DSRating extends StatelessWidget {
     for (var i = 0; i < max; i++) {
       final fraction = (value - i).clamp(0.0, 1.0);
       final star = DsIcon(DsIconKind.star, size: size, color: empty);
+      // 实星叠加顶部透亮光泽（ShaderMask 只作用于星星像素）
+      final glossyFilled = _StarGloss(
+        isDark: theme.isDark,
+        child: DsIcon(DsIconKind.star, size: size, color: filled),
+      );
       final Widget cell;
       if (fraction >= 1) {
-        cell = DsIcon(DsIconKind.star, size: size, color: filled);
+        cell = glossyFilled;
       } else if (fraction <= 0) {
         cell = star;
       } else {
@@ -46,7 +51,7 @@ class DSRating extends StatelessWidget {
             star,
             ClipRect(
               clipper: _FractionClipper(fraction),
-              child: DsIcon(DsIconKind.star, size: size, color: filled),
+              child: glossyFilled,
             ),
           ],
         );
@@ -95,4 +100,31 @@ class _FractionClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(_FractionClipper oldDelegate) =>
       oldDelegate.fraction != fraction;
+}
+
+/// 星星的水晶光泽：ShaderMask 沿星形像素叠加顶部透亮渐变
+/// （srcATop 只在 child 非透明区域着色，不会糊到背景上）
+class _StarGloss extends StatelessWidget {
+  const _StarGloss({required this.isDark, required this.child});
+
+  final bool isDark;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: BlendMode.srcATop,
+      shaderCallback: (rect) => LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFFFFFFFF).withValues(alpha: isDark ? 0.25 : 0.5),
+          const Color(0xFFFFFFFF).withValues(alpha: isDark ? 0.06 : 0.15),
+          const Color(0x00000000),
+        ],
+        stops: const [0.0, 0.45, 0.75],
+      ).createShader(rect),
+      child: child,
+    );
+  }
 }

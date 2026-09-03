@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
+import 'jelly_box.dart';
 
 /// 果冻开关：滑块带表情（开=微笑，关=睡觉）
 class DSSwitch extends StatelessWidget {
@@ -55,7 +56,7 @@ class DSSwitch extends StatelessWidget {
               borderRadius: theme.radii.pill,
               border: Border.all(
                 color: value && !disabled
-                    ? theme.jellyStroke(trackColor)
+                    ? theme.jellyRim(trackColor)
                     : theme.textSub.withValues(alpha: disabled ? 0.25 : 0.45),
                 width: 1.2,
               ),
@@ -63,6 +64,11 @@ class DSSwitch extends StatelessWidget {
                   ? theme.jellyShadow(trackColor, height: 4)
                   : theme.shadows.soft,
             ),
+            // 开启态：轨道叠加水晶玻璃罩
+            foregroundDecoration: value && !disabled
+                ? JellyGlossDecoration(
+                    radius: theme.radii.pill, isDark: theme.isDark)
+                : null,
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutBack,
