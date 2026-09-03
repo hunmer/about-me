@@ -9,7 +9,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_js
   irondash_engine_context
   record_linux
-  rive_native
   super_native_extensions
   url_launcher_linux
 )
