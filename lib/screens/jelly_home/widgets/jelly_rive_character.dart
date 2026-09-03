@@ -8,16 +8,44 @@ import 'package:rive/rive.dart';
 
 /// 果冻小屋角色：girl.riv 虚拟形象（画板 child / 状态机 State Machine 1）
 ///
+/// 尺寸按百分比缩放：宽度 = 可用宽度 × [widthFactor]（[maxWidth] 封顶），
+/// 高度 = 宽度 × [heightRatio]，且不超过 [availableHeight] × [heightFactor]
+/// （[maxHeight] 封顶）——防止角色过高把下方卡片挤出视口。
+///
 /// 长按（触屏）或右键（桌面）弹出状态列表，点击切换角色状态：
 /// - 动作（触发器）：点击触发一次，如跳跃、胜利、换装
 /// - 开关（布尔）：点击开/关，如显示上衣、居家模式
 /// - 数值（数字）：点击循环 +1，如表情、瞳色、坐姿
 /// 列表按状态机输入动态生成，命名见 [_entryLabels]。
 class JellyRiveCharacter extends StatefulWidget {
-  const JellyRiveCharacter({super.key, this.width = 216, this.height = 240});
+  const JellyRiveCharacter({
+    super.key,
+    this.widthFactor = 1.0,
+    this.heightFactor = 0.38,
+    this.maxWidth = 480,
+    this.maxHeight = 440,
+    this.heightRatio = 1.13,
+    this.availableHeight,
+  });
 
-  final double width;
-  final double height;
+  /// 宽度占父级可用宽度的比例（0~1）
+  final double widthFactor;
+
+  /// 高度预算占可用高度（视口）的比例（0~1）
+  final double heightFactor;
+
+  /// 宽度上限（桌面宽窗口下防止角色无限放大）
+  final double maxWidth;
+
+  /// 高度上限
+  final double maxHeight;
+
+  /// 高度 = 宽度 × 该比例
+  final double heightRatio;
+
+  /// 可用高度（视口高）。组件在滚动视图里自身高度约束无界，需从外部传入；
+  /// 为 null 时只按宽度规则缩放。
+  final double? availableHeight;
 
   @override
   State<JellyRiveCharacter> createState() => _JellyRiveCharacterState();
@@ -335,27 +363,47 @@ class _JellyRiveCharacterState extends State<JellyRiveCharacter> {
     final theme = AppTheme.of(context);
     final controller = _controller;
 
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: controller == null
-          // 加载中/失败兜底：浅色圆斑占位
-          ? Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.surface.withValues(alpha: 0.55),
-                border: Border.all(color: theme.stroke, width: 2),
-              ),
-            )
-          : GestureDetector(
-              // 长按（触屏）/ 右键（桌面）弹出状态列表
-              onLongPressStart: (d) => _openMenu(d.globalPosition),
-              onSecondaryTapDown: (d) => _openMenu(d.globalPosition),
-              child: RiveWidget(
-                controller: controller,
-                fit: Fit.contain,
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 宽度按可用宽度百分比缩放，再与视口高度预算取小，避免挤掉下方卡片
+        final byWidth = (constraints.maxWidth * widget.widthFactor)
+            .clamp(120.0, widget.maxWidth);
+        var height = byWidth * widget.heightRatio;
+        final budget = widget.availableHeight;
+        if (budget != null && budget.isFinite) {
+          height = height.clamp(0.0, budget * widget.heightFactor);
+        }
+        height = height.clamp(160.0, widget.maxHeight);
+        final width = height / widget.heightRatio;
+
+        return SizedBox(
+          width: width,
+          height: height,
+          child: controller == null
+              // 加载中/失败兜底：浅色圆斑占位
+              ? Center(
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.surface.withValues(alpha: 0.55),
+                        border: Border.all(color: theme.stroke, width: 2),
+                      ),
+                    ),
+                  ),
+                )
+              : GestureDetector(
+                  // 长按（触屏）/ 右键（桌面）弹出状态列表
+                  onLongPressStart: (d) => _openMenu(d.globalPosition),
+                  onSecondaryTapDown: (d) => _openMenu(d.globalPosition),
+                  child: RiveWidget(
+                    controller: controller,
+                    fit: Fit.contain,
+                  ),
+                ),
+        );
+      },
     );
   }
 }

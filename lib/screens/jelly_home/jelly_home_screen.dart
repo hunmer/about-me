@@ -3,17 +3,15 @@ import 'package:aboutme/design_system/design_system.dart';
 
 import 'widgets/jelly_daily_tasks_card.dart';
 import 'widgets/jelly_growth_card.dart';
-import 'widgets/jelly_mood_card.dart';
 import 'widgets/jelly_profile_card.dart';
 import 'widgets/jelly_quick_action.dart';
 import 'widgets/jelly_rive_character.dart';
-import 'widgets/jelly_speech_bubble.dart';
 import 'widgets/jelly_stat_card.dart';
 import 'widgets/jelly_store_banner.dart';
 
 /// 果冻小屋主页（软糖果冻风布局还原）
 ///
-/// 参考设计稿自上而下：资料卡 + 统计卡 → 对话气泡 → 角色区 + 心情卡
+/// 参考设计稿自上而下：资料卡 + 统计卡 → 角色区
 /// → 快捷操作（写日记/打卡/记账 + 新增键）→ 每日任务 + 成长 → 商店横幅 → 底部导航。
 /// 中间角色为 girl.riv Rive 虚拟形象（长按/右键弹出状态列表切换状态）。
 ///
@@ -67,12 +65,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
                               SizedBox(height: theme.spacing.lg),
                               _buildHeader(theme),
                               SizedBox(height: theme.spacing.xl),
-                              Center(
-                                child: JellySpeechBubble(
-                                    text: '今天想记录点什么呢？'),
-                              ),
-                              SizedBox(height: theme.spacing.sm),
-                              _buildCharacterArea(theme),
+                              _buildCharacterArea(theme, viewport.maxHeight),
                             ],
                           ),
                           Column(
@@ -177,47 +170,37 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
     (DsIconKind.book, '本月记录', '128 条'),
   ];
 
-  /// 中部角色区：girl.riv Rive 虚拟形象 + 点缀星星；右侧挂心情卡
-  Widget _buildCharacterArea(AppThemeData theme) {
-    return SizedBox(
-      height: 250,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Rive 角色：长按（触屏）/ 右键（桌面）弹出状态列表
-          Center(
-            child: JellyRiveCharacter(),
+  /// 中部角色区：girl.riv Rive 虚拟形象 + 点缀星星。
+  /// 角色宽度按内容区百分比缩放，高度同时受视口高度预算约束
+  /// （[viewportHeight] 即滚动区视口高），保证下方卡片不被挤出视口；
+  /// Stack 由角色子项撑起高度，随窗口自适应。
+  Widget _buildCharacterArea(AppThemeData theme, double viewportHeight) {
+    return Stack(
+      clipBehavior: Clip.none,
+      // Stack 默认 topStart 对齐，宽窗口下角色窄于内容区会贴左，显式居中
+      alignment: Alignment.center,
+      children: [
+        // Rive 角色：长按（触屏）/ 右键（桌面）弹出状态列表
+        JellyRiveCharacter(availableHeight: viewportHeight),
+        Positioned(
+          left: theme.spacing.xl,
+          top: theme.spacing.xs,
+          child: DsIcon(
+            DsIconKind.star,
+            size: 13,
+            color: theme.warning.withValues(alpha: 0.8),
           ),
-          Positioned(
-            left: theme.spacing.xl,
-            top: theme.spacing.xs,
-            child: DsIcon(
-              DsIconKind.star,
-              size: 13,
-              color: theme.warning.withValues(alpha: 0.8),
-            ),
+        ),
+        Positioned(
+          left: theme.spacing.xxxl,
+          bottom: theme.spacing.xxxl,
+          child: DsIcon(
+            DsIconKind.star,
+            size: 9,
+            color: theme.secondary.withValues(alpha: 0.9),
           ),
-          Positioned(
-            left: theme.spacing.xxxl,
-            bottom: theme.spacing.xxxl,
-            child: DsIcon(
-              DsIconKind.star,
-              size: 9,
-              color: theme.secondary.withValues(alpha: 0.9),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            top: 0,
-            child: JellyMoodCard(
-              title: '今日心情',
-              emoji: '😊',
-              message: '心情超棒！你认真记录的样子真的很闪耀~',
-              onAction: () {},
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
