@@ -450,28 +450,6 @@ class ActionManager {
 
   // === 配置存储 ===
 
-  /// 保存配置到文件
-  Future<void> saveConfig() async {
-    try {
-      final config = {
-        'version': '1.0',
-        'saveTime': DateTime.now().toIso8601String(),
-        'actions': _actions.values.map((a) => a.toJson()).toList(),
-        'customActions': _customActions.values.map((a) => a.toJson()).toList(),
-        'actionGroups': _actionGroups.values.map((g) => g.toJson()).toList(),
-        'gestureActions': _gestureActions.map(
-          (k, v) => MapEntry(k.name, v.toJson()),
-        ),
-        'statistics': getStatistics(),
-      };
-
-      await globalStorage.write('floating_ball_config_v1', config);
-    } catch (e) {
-      print('Error saving action config: $e');
-      rethrow;
-    }
-  }
-
   /// 从文件加载配置
   Future<void> _loadConfig() async {
     try {
@@ -496,7 +474,7 @@ class ActionManager {
 
       // 加载动作组配置
       final groupsData = await globalStorage.read(
-        'floating_ball_action_groups',
+        'floating_ball_action_groups.json',
       );
       if (groupsData != null && groupsData is Map) {
         _actionGroups.clear();
@@ -591,7 +569,10 @@ class ActionManager {
       for (final entry in _actionGroups.entries) {
         groupsData[entry.key] = entry.value.toJson();
       }
-      await globalStorage.write('floating_ball_action_groups', groupsData);
+      await globalStorage.write(
+        'floating_ball_action_groups.json',
+        groupsData,
+      );
     } catch (e) {
       print('Error saving action groups: $e');
     }

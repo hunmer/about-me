@@ -42,7 +42,7 @@ class FloatingBallManager {
   // 默认大小比例 (100%)
   // 默认启用状态
   // 存储键名
-  static const String _storageKey = 'floating_ball_config';
+  static const String _storageKey = 'floating_ball_config.json';
 
   // 初始化完成器，确保数据加载完成
   final Completer<void> _initCompleter = Completer<void>();
