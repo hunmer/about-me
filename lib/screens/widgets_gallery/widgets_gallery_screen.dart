@@ -12,6 +12,14 @@ class WidgetsGalleryScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          // 设计系统（软糖果冻风组件库）
+          _buildListItem(
+            context,
+            icon: Icons.auto_awesome,
+            title: '软糖果冻风设计系统',
+            subtitle: 'DesignSystemGallery（零依赖组件库）',
+            route: '/design_system',
+          ),
           // Picker 类组件
           _buildSectionHeader(context, 'Picker 选择器类'),
           _buildListItem(

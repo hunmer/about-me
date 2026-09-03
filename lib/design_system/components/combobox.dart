@@ -1,0 +1,321 @@
+import 'package:flutter/widgets.dart';
+
+import '../primitives/pressable.dart';
+import '../theme/app_theme.dart';
+import '../tokens/typography.dart';
+import 'icons.dart';
+import 'input.dart';
+import 'jelly_box.dart';
+import 'select.dart';
+
+/// 可搜索下拉（Combobox）：面板顶部带过滤输入框
+class DSCombobox<T> extends StatefulWidget {
+  const DSCombobox({
+    super.key,
+    required this.items,
+    required this.onChanged,
+    this.value,
+    this.hint = '请选择',
+    this.searchHint = '搜索...',
+    this.enabled = true,
+    this.width,
+  });
+
+  final List<DSSelectItem<T>> items;
+  final T? value;
+  final ValueChanged<T>? onChanged;
+  final String hint;
+  final String searchHint;
+  final bool enabled;
+  final double? width;
+
+  @override
+  State<DSCombobox<T>> createState() => _DSComboboxState<T>();
+}
+
+class _DSComboboxState<T> extends State<DSCombobox<T>> {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  bool _openUpward = false;
+
+  bool get _open => _entry != null;
+
+  @override
+  void dispose() {
+    _removeEntry();
+    super.dispose();
+  }
+
+  void _toggle() {
+    _open ? _removeEntry() : _insertEntry();
+    setState(() {});
+  }
+
+  void _insertEntry() {
+    final box = context.findRenderObject() as RenderBox;
+    final size = box.size;
+    final top = box.localToGlobal(Offset.zero).dy;
+    final below = MediaQuery.sizeOf(context).height - top - size.height;
+    _openUpward = below < 320 && top > 320;
+
+    final theme = AppTheme.of(context);
+    _entry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _removeEntry,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor:
+                _openUpward ? Alignment.topLeft : Alignment.bottomLeft,
+            followerAnchor:
+                _openUpward ? Alignment.bottomLeft : Alignment.topLeft,
+            offset: Offset(0, _openUpward ? -8 : 8),
+            child: AppTheme(
+              data: theme,
+              child: SizedBox(
+                width: size.width,
+                child: _ComboPanel<T>(
+                  items: widget.items,
+                  value: widget.value,
+                  searchHint: widget.searchHint,
+                  alignTop: _openUpward,
+                  onSelect: (item) {
+                    _removeEntry();
+                    setState(() {});
+                    widget.onChanged?.call(item.value);
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context, rootOverlay: true).insert(_entry!);
+  }
+
+  void _removeEntry() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    final selected = widget.items
+        .where((e) => e.value == widget.value)
+        .firstOrNull;
+
+    return CompositedTransformTarget(
+      link: _link,
+      child: Pressable(
+        onPressed: widget.enabled ? _toggle : null,
+        semanticLabel: selected?.label ?? widget.hint,
+        builder: (context, states) {
+          return SizedBox(
+            width: widget.width,
+            child: JellyBox(
+              height: 46,
+              radius: theme.radii.lg,
+              raised: !_open,
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+              child: Row(
+                children: [
+                  DsIcon(
+                    DsIconKind.search,
+                    size: 18,
+                    color: theme.textSub,
+                  ),
+                  SizedBox(width: theme.spacing.sm),
+                  Expanded(
+                    child: Text(
+                      selected?.label ?? widget.hint,
+                      style: DsTypography.body.copyWith(
+                        color: selected != null
+                            ? theme.text
+                            : theme.textSub.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 180),
+                    turns: _open ? 0.5 : 0,
+                    child: DsIcon(
+                      DsIconKind.chevronDown,
+                      size: 18,
+                      color: theme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ComboPanel<T> extends StatefulWidget {
+  const _ComboPanel({
+    required this.items,
+    required this.value,
+    required this.searchHint,
+    required this.alignTop,
+    required this.onSelect,
+  });
+
+  final List<DSSelectItem<T>> items;
+  final T? value;
+  final String searchHint;
+  final bool alignTop;
+  final ValueChanged<DSSelectItem<T>> onSelect;
+
+  @override
+  State<_ComboPanel<T>> createState() => _ComboPanelState<T>();
+}
+
+class _ComboPanelState<T> extends State<_ComboPanel<T>> {
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    final q = _query.text.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? widget.items
+        : widget.items
+            .where((e) => e.label.toLowerCase().contains(q))
+            .toList();
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.85, end: 1),
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOutBack,
+      builder: (context, t, child) => Opacity(
+        opacity: t.clamp(0, 1),
+        child: Transform.scale(
+          scale: t,
+          alignment:
+              widget.alignTop ? Alignment.bottomCenter : Alignment.topCenter,
+          child: child,
+        ),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 320, maxWidth: 320),
+        child: JellyBox(
+          radius: theme.radii.lg,
+          raised: false,
+          shadows: theme.shadows.float,
+          padding: EdgeInsets.all(theme.spacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DSInput(
+                controller: _query,
+                hint: widget.searchHint,
+                onChanged: (_) => setState(() {}),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (filtered.isEmpty)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: theme.spacing.md),
+                          child: Text(
+                            '没有匹配的选项',
+                            textAlign: TextAlign.center,
+                            style: DsTypography.caption
+                                .copyWith(color: theme.textSub),
+                          ),
+                        ),
+                      for (final item in filtered)
+                        _ComboRow(
+                          item: item,
+                          selected: item.value == widget.value,
+                          onTap: () => widget.onSelect(item),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComboRow extends StatelessWidget {
+  const _ComboRow({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DSSelectItem<dynamic> item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final hovered = states.contains(WidgetState.hovered);
+        final pressed = states.contains(WidgetState.pressed);
+        if (selected) {
+          return JellyBox(
+            radius: theme.radii.md,
+            color: theme.primary,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm + 2,
+            ),
+            child: Text(
+              item.label,
+              style: DsTypography.body.copyWith(color: theme.onPrimary),
+            ),
+          );
+        }
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.md,
+            vertical: theme.spacing.sm + 2,
+          ),
+          decoration: BoxDecoration(
+            color: pressed
+                ? theme.surfaceAlt
+                : hovered
+                    ? theme.surfaceAlt.withValues(alpha: 0.55)
+                    : DsColors.transparent,
+            borderRadius: theme.radii.md,
+          ),
+          child: Text(
+            item.label,
+            style: DsTypography.body.copyWith(color: theme.text),
+          ),
+        );
+      },
+    );
+  }
+}

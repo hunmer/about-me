@@ -8,6 +8,7 @@ import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/routing/routes/core_routes.dart';
 import 'package:aboutme/screens/routing/routes/test_routes.dart';
 import 'package:aboutme/screens/routing/routes/widget_gallery_routes.dart';
+import 'package:aboutme/screens/routing/routes/design_system_routes.dart';
 import 'package:aboutme/screens/routing/routes/chat_routes.dart';
 import 'package:aboutme/screens/routing/routes/diary_routes.dart';
 import 'package:aboutme/screens/routing/routes/plugin_common_routes.dart';
@@ -89,6 +90,8 @@ class AppRoutes extends NavigatorObserver {
         TestRoutes(),
         // 组件展示路由
         WidgetGalleryRoutes(),
+        // 设计系统（软糖果冻风组件库）展示路由
+        DesignSystemRoutes(),
         // 插件路由
         ChatRoutes(),
         DiaryRoutes(),
@@ -136,6 +139,7 @@ class AppRoutes extends NavigatorObserver {
   static const String overlayTest = '/overlay_test';
   static const String formFieldsTest = '/form_fields_test';
   static const String widgetsGallery = '/widgets_gallery';
+  static const String designSystem = '/design_system';
   static const String log = '/log';
 
   // 插件路由路径
