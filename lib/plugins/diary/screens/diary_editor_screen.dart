@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/aboutme_editor/aboutme_editor.dart';
 import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:get/get.dart';
@@ -56,121 +58,182 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
   }
 
   void _showMoodSelector() {
-    showDialog(
+    // 本屏幕是独立路由，不在任何主题桥之下，用 resolve 解析主题
+    final theme = DSThemeBridge.resolve(context);
+    showDSDialog(
       context: context,
+      theme: theme,
       builder:
-          (context) => AlertDialog(
-            title: Text('diary_selectMood'.tr),
-            content: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  _moods.map((mood) {
-                    return InkWell(
-                      onTap: () {
-                        setState(() => _selectedMood = mood);
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color:
-                                mood == _selectedMood
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.grey,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(mood, style: const TextStyle(fontSize: 24)),
-                      ),
-                    );
-                  }).toList(),
-            ),
-            actions: [
-              if (_selectedMood != null)
-                TextButton(
-                  onPressed: () {
-                    setState(() => _selectedMood = null);
-                    Navigator.pop(context);
-                  },
-                  child: Text('diary_clearSelection'.tr),
+          (dialogContext) => JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'diary_selectMood'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
                 ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_close'.tr),
-              ),
-            ],
+                SizedBox(height: theme.spacing.lg),
+                Wrap(
+                  spacing: theme.spacing.sm,
+                  runSpacing: theme.spacing.sm,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final mood in _moods)
+                      _MoodOption(
+                        emoji: mood,
+                        selected: mood == _selectedMood,
+                        theme: theme,
+                        onTap: () {
+                          setState(() => _selectedMood = mood);
+                          Navigator.pop(dialogContext);
+                        },
+                      ),
+                  ],
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    if (_selectedMood != null)
+                      Expanded(
+                        child: DSButton(
+                          label: 'diary_clearSelection'.tr,
+                          variant: DSButtonVariant.outline,
+                          size: DSButtonSize.sm,
+                          onPressed: () {
+                            setState(() => _selectedMood = null);
+                            Navigator.pop(dialogContext);
+                          },
+                        ),
+                      ),
+                    if (_selectedMood != null)
+                      SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_close'.tr,
+                        size: DSButtonSize.sm,
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
     );
   }
 
   void _showDeleteConfirmation() {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('diary_confirmDeleteDiary'.tr),
-            content: Text('diary_deleteDiaryMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () async {
-                  // 关闭对话框
-                  Navigator.pop(context);
-                  // 删除日记
-                  await DiaryUtils.deleteDiaryEntry(widget.date);
-                  // 返回上一级
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: Text('diary_confirmDeleteDiary'.tr),
-              ),
-            ],
+          (dialogContext) => DSDialog(
+            title: 'diary_confirmDeleteDiary'.tr,
+            message: 'diary_deleteDiaryMessage'.tr,
+            confirmText: 'diary_confirmDeleteDiary'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () async {
+              // 关闭对话框
+              Navigator.pop(dialogContext);
+              // 删除日记
+              await DiaryUtils.deleteDiaryEntry(widget.date);
+              // 返回上一级
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
           ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AboutmeEditor(
-      initialTitle: widget.initialTitle,
-      initialContent: widget.initialContent,
-      pageTitle: 'diary_name'.tr,
-      date: widget.date,
-      mood: _selectedMood,
-      onMoodTap: _showMoodSelector,
-      titleHint: 'diary_titleHint'.tr,
-      contentHint: 'diary_contentHint'.tr,
-      onSave: (title, content) async {
-        // 保存前捕获当前上下文
-        final currentContext = context;
+    return DSThemeBridge(
+      child: AboutmeEditor(
+        initialTitle: widget.initialTitle,
+        initialContent: widget.initialContent,
+        pageTitle: 'diary_name'.tr,
+        date: widget.date,
+        mood: _selectedMood,
+        onMoodTap: _showMoodSelector,
+        titleHint: 'diary_titleHint'.tr,
+        contentHint: 'diary_contentHint'.tr,
+        onSave: (title, content) async {
+          // 保存前捕获当前上下文
+          final currentContext = context;
 
-        await DiaryUtils.saveDiaryEntry(
-          widget.date,
-          content,
-          title: title,
-          mood: _selectedMood,
-        );
+          await DiaryUtils.saveDiaryEntry(
+            widget.date,
+            content,
+            title: title,
+            mood: _selectedMood,
+          );
 
-        if (mounted) {
-          Navigator.of(currentContext).pop();
-        }
-      },
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: _showDeleteConfirmation,
-          tooltip: 'diary_deleteDiary'.tr,
+          if (mounted) {
+            Navigator.of(currentContext).pop();
+          }
+        },
+        actions: [
+          // 删除按钮：危险色果冻圆钮（编辑器头部在本屏主题桥之内）
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = AppTheme.of(context);
+                return DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 36,
+                  color: theme.danger,
+                  iconColor: theme.onDanger,
+                  onPressed: _showDeleteConfirmation,
+                  tooltip: 'diary_delete'.tr,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 心情选项：果冻圆底座 + 表情，选中态主色描边
+class _MoodOption extends StatelessWidget {
+  const _MoodOption({
+    required this.emoji,
+    required this.selected,
+    required this.theme,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final bool selected;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? theme.primary.mixWhite(0.85) : theme.surfaceAlt,
+          borderRadius: theme.radii.lg,
+          border: Border.all(
+            color: selected ? theme.primary : theme.stroke,
+            width: selected ? 2 : 1.4,
+          ),
         ),
-      ],
+        child: Text(emoji, style: const TextStyle(fontSize: 26)),
+      ),
     );
   }
 }

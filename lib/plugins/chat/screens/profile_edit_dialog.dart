@@ -1,6 +1,8 @@
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/picker/avatar_picker.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -68,114 +70,118 @@ class _ProfileEditDialogState extends State<ProfileEditDialog>
     });
   }
 
+  Future<void> _save() async {
+    final newUsername = _usernameController.text.trim();
+    if (newUsername.isEmpty) {
+      toastService.showToast('chat_usernameCannotBeEmpty'.tr);
+      return;
+    }
+
+    try {
+      // 创建更新后的用户对象
+      final updatedUser = widget.user.copyWith(
+        username: newUsername,
+        iconPath: _avatarPath,
+      );
+
+      // 使用 updateUser 方法更新用户信息
+      await widget.chatPlugin.userService.updateUser(updatedUser);
+
+      // 强制清除图片缓存
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+
+      // 通知所有监听器（包括聊天消息气泡）更新
+      widget.chatPlugin.refresh();
+
+      if (mounted) {
+        // 返回更新后的用户对象
+        Navigator.of(context).pop(updatedUser);
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('${'chat_updateFailed'.tr}: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '编辑个人信息',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            RepaintBoundary(
-              child: AvatarPicker(
-                key: const ValueKey('avatar_picker'),
-                size: 80,
-                username: widget.user.username,
-                currentAvatarPath: _avatarPath,
-                saveDirectory: 'chat/avatars',
-                onAvatarChanged: _onAvatarChanged,
-                showPickerDialog: (
-                  BuildContext context,
-                  String? initialPath,
-                ) async {
-                  return showDialog<Map<String, dynamic>>(
-                    context: context,
-                    barrierDismissible: true,
-                    builder:
-                        (BuildContext dialogContext) => ImagePickerDialog(
-                          initialUrl: initialPath,
-                          saveDirectory: 'chat/avatars',
-                          enableCrop: true,
-                          cropAspectRatio: 1.0,
-                        ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 用户名输入框
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'chat_username'.tr,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 按钮行
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+    return DSThemeBridge(
+      // Builder 让表单在主题桥之内构建，可读取 AppTheme
+      child: Builder(
+        builder: (context) {
+          final theme = AppTheme.of(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('app_cancel'.tr),
+                Text(
+                  '编辑个人信息',
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    final newUsername = _usernameController.text.trim();
-                    if (newUsername.isEmpty) {
-                      toastService.showToast(
-                        'chat_usernameCannotBeEmpty'.tr,
+                SizedBox(height: theme.spacing.lg),
+
+                RepaintBoundary(
+                  child: AvatarPicker(
+                    key: const ValueKey('avatar_picker'),
+                    size: 80,
+                    username: widget.user.username,
+                    currentAvatarPath: _avatarPath,
+                    saveDirectory: 'chat/avatars',
+                    onAvatarChanged: _onAvatarChanged,
+                    showPickerDialog: (
+                      BuildContext context,
+                      String? initialPath,
+                    ) async {
+                      return showDialog<Map<String, dynamic>>(
+                        context: context,
+                        barrierDismissible: true,
+                        builder:
+                            (BuildContext dialogContext) => ImagePickerDialog(
+                              initialUrl: initialPath,
+                              saveDirectory: 'chat/avatars',
+                              enableCrop: true,
+                              cropAspectRatio: 1.0,
+                            ),
                       );
-                      return;
-                    }
+                    },
+                  ),
+                ),
+                SizedBox(height: theme.spacing.lg),
 
-                    try {
-                      // 创建更新后的用户对象
-                      final updatedUser = widget.user.copyWith(
-                        username: newUsername,
-                        iconPath: _avatarPath,
-                      );
+                // 用户名输入框
+                DSInput(
+                  controller: _usernameController,
+                  label: 'chat_username'.tr,
+                ),
+                SizedBox(height: theme.spacing.xl),
 
-                      // 使用 updateUser 方法更新用户信息
-                      await widget.chatPlugin.userService.updateUser(
-                        updatedUser,
-                      );
-
-                      // 强制清除图片缓存
-                      PaintingBinding.instance.imageCache.clear();
-                      PaintingBinding.instance.imageCache.clearLiveImages();
-
-                      // 通知所有监听器（包括聊天消息气泡）更新
-                      widget.chatPlugin.refresh();
-
-                      if (context.mounted) {
-                        // 返回更新后的用户对象
-                        Navigator.of(context).pop(updatedUser);
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        toastService.showToast(
-                          '${'chat_updateFailed'.tr}: $e',
-                        );
-                      }
-                    }
-                  },
-                  child: Text('app_save'.tr),
+                // 按钮行
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(label: 'app_save'.tr, onPressed: _save),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

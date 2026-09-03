@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/chat/models/message.dart';
@@ -36,17 +37,16 @@ class TimelineMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
     final cardColor = message.bubbleColor;
 
     // 根据视图模式调整卡片样式
-    return Card(
-      elevation: isGridView ? 2 : 1,
-      color: cardColor,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
         borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
+        boxShadow: isGridView ? theme.shadows.soft : null,
       ),
-      margin: EdgeInsets.zero, // 移除卡片默认边距，使用外部padding控制间距
       child: InkWell(
         onLongPress: () {
           MessageOptionsHandler.showOptionsDialog(
@@ -71,12 +71,13 @@ class TimelineMessageCard extends StatelessWidget {
           // 使用 MaterialPageRoute 直接构建 ChatScreen 页面
           await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                channel: channel,
-                initialMessage: message, // 用于初始滚动定位
-                highlightMessage: message, // 用于高亮显示
-                autoScroll: true, // 明确指示需要自动滚动
-              ),
+              builder:
+                  (_) => ChatScreen(
+                    channel: channel,
+                    initialMessage: message, // 用于初始滚动定位
+                    highlightMessage: message, // 用于高亮显示
+                    autoScroll: true, // 明确指示需要自动滚动
+                  ),
             ),
           );
         },
@@ -95,7 +96,7 @@ class TimelineMessageCard extends StatelessWidget {
                       height: isGridView ? 28 : 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.primary,
+                        color: theme.primary,
                       ),
                       child:
                           message.user.iconPath != null
@@ -130,18 +131,16 @@ class TimelineMessageCard extends StatelessWidget {
                           message.user.username,
                           style:
                               isGridView
-                                  ? theme.textTheme.titleSmall
-                                  : theme.textTheme.titleMedium,
+                                  ? DsTypography.heading
+                                  : DsTypography.title,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           DateFormatter.formatDateTime(message.date, context),
                           style:
                               isGridView
-                                  ? theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 10,
-                                  )
-                                  : theme.textTheme.bodySmall,
+                                  ? DsTypography.caption.copyWith(fontSize: 10)
+                                  : DsTypography.caption,
                         ),
                       ],
                     ),
@@ -164,13 +163,13 @@ class TimelineMessageCard extends StatelessWidget {
                       ),
                       margin: EdgeInsets.only(right: isGridView ? 4 : 8),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                        color: theme.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         message.fixedSymbol!,
                         style: TextStyle(
-                          color: theme.colorScheme.primary,
+                          color: theme.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: isGridView ? 10 : 12,
                         ),
@@ -196,13 +195,15 @@ class TimelineMessageCard extends StatelessWidget {
                             case FileMessageType.image:
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(context, FilePreviewScreen(
-                                                filePath: fileInfo.filePath,
-                                                fileName: fileInfo.fileName,
-                                                mimeType:
-                                                    fileInfo.mimeType ??
-                                                    'image/jpeg',
-                                                fileSize: fileInfo.fileSize,),
+                                  NavigationHelper.push(
+                                    context,
+                                    FilePreviewScreen(
+                                      filePath: fileInfo.filePath,
+                                      fileName: fileInfo.fileName,
+                                      mimeType:
+                                          fileInfo.mimeType ?? 'image/jpeg',
+                                      fileSize: fileInfo.fileSize,
+                                    ),
                                   );
                                 },
                                 child: Container(
@@ -230,22 +231,24 @@ class TimelineMessageCard extends StatelessWidget {
                                   audioPath: fileInfo.filePath,
                                   durationInSeconds: message.audioDuration,
                                   isLocalFile: true,
-                                  primaryColor: theme.colorScheme.primary,
-                                  backgroundColor: theme.colorScheme.surface,
-                                  progressColor: theme.colorScheme.primary,
+                                  primaryColor: theme.primary,
+                                  backgroundColor: theme.surface,
+                                  progressColor: theme.primary,
                                 ),
                               );
 
                             case FileMessageType.video:
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(context, FilePreviewScreen(
-                                                filePath: fileInfo.filePath,
-                                                fileName: fileInfo.fileName,
-                                                mimeType:
-                                                    fileInfo.mimeType ??
-                                                    'video/mp4',
-                                                fileSize: fileInfo.fileSize,),
+                                  NavigationHelper.push(
+                                    context,
+                                    FilePreviewScreen(
+                                      filePath: fileInfo.filePath,
+                                      fileName: fileInfo.fileName,
+                                      mimeType:
+                                          fileInfo.mimeType ?? 'video/mp4',
+                                      fileSize: fileInfo.fileSize,
+                                    ),
                                   );
                                 },
                                 child: Container(
@@ -254,17 +257,18 @@ class TimelineMessageCard extends StatelessWidget {
                                     maxHeight: isGridView ? 120 : 200,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.surface,
+                                    color: theme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        Icons.video_library,
-                                        size: isGridView ? 24 : 32,
-                                        color: theme.colorScheme.primary,
+                                      DsIcon(
+                                        DsIconKind.video,
+                                        size: isGridView ? 24.0 : 32.0,
+                                        color: theme.primary,
                                       ),
                                       SizedBox(width: 8),
                                       Expanded(
@@ -272,7 +276,7 @@ class TimelineMessageCard extends StatelessWidget {
                                           fileInfo.originalFileName,
                                           style: TextStyle(
                                             fontSize: isGridView ? 10 : 12,
-                                            color: theme.colorScheme.onSurface,
+                                            color: theme.text,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -287,13 +291,16 @@ class TimelineMessageCard extends StatelessWidget {
                             default: // 文档和其他类型文件
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(context, FilePreviewScreen(
-                                                filePath: fileInfo.filePath,
-                                                fileName: fileInfo.fileName,
-                                                mimeType:
-                                                    fileInfo.mimeType ??
-                                                    'application/octet-stream',
-                                                fileSize: fileInfo.fileSize,),
+                                  NavigationHelper.push(
+                                    context,
+                                    FilePreviewScreen(
+                                      filePath: fileInfo.filePath,
+                                      fileName: fileInfo.fileName,
+                                      mimeType:
+                                          fileInfo.mimeType ??
+                                          'application/octet-stream',
+                                      fileSize: fileInfo.fileSize,
+                                    ),
                                   );
                                 },
                                 child: Row(
@@ -302,7 +309,7 @@ class TimelineMessageCard extends StatelessWidget {
                                     Icon(
                                       fileInfo.getIcon(),
                                       size: isGridView ? 16 : 24,
-                                      color: theme.colorScheme.primary,
+                                      color: theme.primary,
                                     ),
                                     SizedBox(width: isGridView ? 4 : 8),
                                     Expanded(
@@ -316,8 +323,7 @@ class TimelineMessageCard extends StatelessWidget {
                                             style: TextStyle(
                                               fontWeight: FontWeight.w500,
                                               fontSize: isGridView ? 12 : 14,
-                                              color:
-                                                  theme.colorScheme.onSurface,
+                                              color: theme.text,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -326,10 +332,7 @@ class TimelineMessageCard extends StatelessWidget {
                                             fileInfo.formattedSize,
                                             style: TextStyle(
                                               fontSize: isGridView ? 10 : 12,
-                                              color:
-                                                  theme
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
+                                              color: theme.textSub,
                                             ),
                                           ),
                                         ],
@@ -350,16 +353,11 @@ class TimelineMessageCard extends StatelessWidget {
                               query: controller.searchQuery,
                               style:
                                   isGridView
-                                      ? theme.textTheme.bodyMedium?.copyWith(
-                                            fontSize: 13,
-                                            height: 1.3, // 调整行高使文本更紧凑
-                                          ) ??
-                                          const TextStyle(
-                                            fontSize: 13,
-                                            height: 1.3,
-                                          )
-                                      : theme.textTheme.bodyLarge ??
-                                          const TextStyle(),
+                                      ? DsTypography.body.copyWith(
+                                        fontSize: 13,
+                                        height: 1.3, // 调整行高使文本更紧凑
+                                      )
+                                      : DsTypography.body,
                             ),
                           ),
                         );
@@ -375,10 +373,10 @@ class TimelineMessageCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: isGridView ? 12 : 16,
-                    color: theme.colorScheme.onSurfaceVariant,
+                  DsIcon(
+                    DsIconKind.chat,
+                    size: isGridView ? 12.0 : 16.0,
+                    color: theme.textSub,
                   ),
                   SizedBox(width: isGridView ? 2 : 4),
                   RichText(
@@ -388,12 +386,10 @@ class TimelineMessageCard extends StatelessWidget {
                       children: TextHighlight.highlightText(
                         text: channel.title,
                         query: controller.searchQuery,
-                        style:
-                            theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: isGridView ? 10 : null,
-                            ) ??
-                            const TextStyle(),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                          fontSize: isGridView ? 10 : null,
+                        ),
                       ),
                     ),
                   ),
@@ -406,14 +402,14 @@ class TimelineMessageCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDefaultAvatar(ThemeData theme, bool isGridView) {
+  Widget _buildDefaultAvatar(AppThemeData theme, bool isGridView) {
     return Center(
       child: Text(
         message.user.username.isNotEmpty
             ? message.user.username[0].toUpperCase()
             : '?',
         style: TextStyle(
-          color: theme.colorScheme.onPrimary,
+          color: theme.onPrimary,
           fontSize: isGridView ? 12 : 16,
           fontWeight: FontWeight.bold,
         ),

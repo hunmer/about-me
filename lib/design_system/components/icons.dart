@@ -38,6 +38,20 @@ enum DsIconKind {
   clipboard,
   sprout,
   cart,
+  drag,
+  layers,
+  block,
+  edit,
+  tag,
+  clock,
+  refresh,
+  sort,
+  hash,
+  grid,
+  list,
+  video,
+  columns,
+  rows,
 }
 
 /// 自绘图标组件：24x24 逻辑画布，线条圆头
@@ -80,16 +94,18 @@ class _DsIconPainter extends CustomPainter {
     canvas.save();
     canvas.scale(size.width / 24);
 
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.3
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    final stroke =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.3
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
 
-    final solid = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final solid =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
 
     switch (kind) {
       case DsIconKind.check:
@@ -109,13 +125,20 @@ class _DsIconPainter extends CustomPainter {
         canvas.drawLine(const Offset(6, 6), const Offset(18, 18), stroke);
         canvas.drawLine(const Offset(18, 6), const Offset(6, 18), stroke);
       case DsIconKind.heart:
-        canvas.drawPath(_heartPath(), fill ? solid : stroke..strokeWidth = 2);
+        canvas.drawPath(
+          _heartPath(),
+          fill ? solid : stroke
+            ..strokeWidth = 2,
+        );
       case DsIconKind.gear:
         _paintGear(canvas);
       case DsIconKind.search:
         canvas.drawCircle(const Offset(11, 11), 5.5, stroke);
         canvas.drawLine(
-            const Offset(15.3, 15.3), const Offset(19.8, 19.8), stroke);
+          const Offset(15.3, 15.3),
+          const Offset(19.8, 19.8),
+          stroke,
+        );
       case DsIconKind.chevronLeft:
         canvas.drawPath(
           Path()
@@ -155,8 +178,10 @@ class _DsIconPainter extends CustomPainter {
         canvas.drawPath(
           Path()
             ..moveTo(10.1, 19)
-            ..arcToPoint(const Offset(13.9, 19),
-                radius: const Radius.circular(1.9)),
+            ..arcToPoint(
+              const Offset(13.9, 19),
+              radius: const Radius.circular(1.9),
+            ),
           stroke..strokeWidth = 2,
         );
       case DsIconKind.home:
@@ -210,8 +235,10 @@ class _DsIconPainter extends CustomPainter {
           Path()
             ..moveTo(9, 8.8)
             ..lineTo(9, 7.2)
-            ..arcToPoint(const Offset(15, 7.2),
-                radius: const Radius.circular(3))
+            ..arcToPoint(
+              const Offset(15, 7.2),
+              radius: const Radius.circular(3),
+            )
             ..lineTo(15, 8.8),
           stroke,
         );
@@ -235,16 +262,25 @@ class _DsIconPainter extends CustomPainter {
         canvas.drawLine(const Offset(4, 10), const Offset(20, 10), stroke);
         canvas.drawLine(const Offset(8.5, 3.6), const Offset(8.5, 7.2), stroke);
         canvas.drawLine(
-            const Offset(15.5, 3.6), const Offset(15.5, 7.2), stroke);
+          const Offset(15.5, 3.6),
+          const Offset(15.5, 7.2),
+          stroke,
+        );
       case DsIconKind.trash:
         canvas.drawLine(
-            const Offset(4.6, 6.6), const Offset(19.4, 6.6), stroke);
+          const Offset(4.6, 6.6),
+          const Offset(19.4, 6.6),
+          stroke,
+        );
         canvas.drawPath(
           Path()
             ..moveTo(9.8, 6.6)
             ..lineTo(9.8, 5)
-            ..arcToPoint(const Offset(14.2, 5),
-                radius: const Radius.circular(2.2), clockwise: false)
+            ..arcToPoint(
+              const Offset(14.2, 5),
+              radius: const Radius.circular(2.2),
+              clockwise: false,
+            )
             ..lineTo(14.2, 6.6),
           stroke,
         );
@@ -252,11 +288,17 @@ class _DsIconPainter extends CustomPainter {
           Path()
             ..moveTo(7, 6.6)
             ..lineTo(7.7, 18.8)
-            ..arcToPoint(const Offset(9.7, 20.6),
-                radius: const Radius.circular(2), clockwise: false)
+            ..arcToPoint(
+              const Offset(9.7, 20.6),
+              radius: const Radius.circular(2),
+              clockwise: false,
+            )
             ..lineTo(14.3, 20.6)
-            ..arcToPoint(const Offset(16.3, 18.8),
-                radius: const Radius.circular(2), clockwise: false)
+            ..arcToPoint(
+              const Offset(16.3, 18.8),
+              radius: const Radius.circular(2),
+              clockwise: false,
+            )
             ..lineTo(17, 6.6),
           stroke,
         );
@@ -265,9 +307,15 @@ class _DsIconPainter extends CustomPainter {
         canvas.drawCircle(const Offset(17.4, 5.8), 2.4, stroke);
         canvas.drawCircle(const Offset(17.4, 18.2), 2.4, stroke);
         canvas.drawLine(
-            const Offset(8.4, 10.9), const Offset(15.2, 6.9), stroke);
+          const Offset(8.4, 10.9),
+          const Offset(15.2, 6.9),
+          stroke,
+        );
         canvas.drawLine(
-            const Offset(8.4, 13.1), const Offset(15.2, 17.1), stroke);
+          const Offset(8.4, 13.1),
+          const Offset(15.2, 17.1),
+          stroke,
+        );
       case DsIconKind.download:
         canvas.drawLine(const Offset(12, 4.4), const Offset(12, 14), stroke);
         canvas.drawPath(
@@ -278,7 +326,10 @@ class _DsIconPainter extends CustomPainter {
           stroke,
         );
         canvas.drawLine(
-            const Offset(4.6, 19.6), const Offset(19.4, 19.6), stroke);
+          const Offset(4.6, 19.6),
+          const Offset(19.4, 19.6),
+          stroke,
+        );
       case DsIconKind.more:
         canvas.drawCircle(const Offset(5, 12), 1.7, solid);
         canvas.drawCircle(const Offset(12, 12), 1.7, solid);
@@ -291,8 +342,7 @@ class _DsIconPainter extends CustomPainter {
           canvas.save();
           canvas.translate(12, 12);
           canvas.rotate(i * math.pi / 4);
-          canvas.drawLine(
-              const Offset(0, -6.2), const Offset(0, -8.6), stroke);
+          canvas.drawLine(const Offset(0, -6.2), const Offset(0, -8.6), stroke);
           canvas.restore();
         }
       case DsIconKind.book:
@@ -321,7 +371,10 @@ class _DsIconPainter extends CustomPainter {
         );
         canvas.drawLine(const Offset(8.5, 3.6), const Offset(8.5, 7.2), stroke);
         canvas.drawLine(
-            const Offset(15.5, 3.6), const Offset(15.5, 7.2), stroke);
+          const Offset(15.5, 3.6),
+          const Offset(15.5, 7.2),
+          stroke,
+        );
         canvas.drawPath(
           Path()
             ..moveTo(8.4, 12.8)
@@ -333,7 +386,10 @@ class _DsIconPainter extends CustomPainter {
         // 蓄钱罐：椭圆身体 + 左侧猪鼻 + 耳朵 + 硬币口 + 四腿简化为两腿
         canvas.drawOval(const Rect.fromLTRB(4.6, 8.0, 19.8, 18.0), stroke);
         canvas.drawLine(
-            const Offset(10.6, 8.0), const Offset(14.0, 8.0), stroke);
+          const Offset(10.6, 8.0),
+          const Offset(14.0, 8.0),
+          stroke,
+        );
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             const Rect.fromLTRB(2.2, 11.0, 6.4, 14.8),
@@ -348,9 +404,16 @@ class _DsIconPainter extends CustomPainter {
             ..lineTo(18.0, 8.6),
           stroke,
         );
-        canvas.drawLine(const Offset(8.6, 18.0), const Offset(8.6, 20.2), stroke);
         canvas.drawLine(
-            const Offset(15.8, 18.0), const Offset(15.8, 20.2), stroke);
+          const Offset(8.6, 18.0),
+          const Offset(8.6, 20.2),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(15.8, 18.0),
+          const Offset(15.8, 20.2),
+          stroke,
+        );
       case DsIconKind.gift:
         // 礼盒：盒身 + 盖子 + 竖丝带 + 蝴蝶结
         canvas.drawRRect(
@@ -402,11 +465,23 @@ class _DsIconPainter extends CustomPainter {
           ),
           stroke,
         );
-        canvas.drawLine(const Offset(8.6, 11.4), const Offset(15.4, 11.4), stroke);
-        canvas.drawLine(const Offset(8.6, 15.2), const Offset(13.4, 15.2), stroke);
+        canvas.drawLine(
+          const Offset(8.6, 11.4),
+          const Offset(15.4, 11.4),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(8.6, 15.2),
+          const Offset(13.4, 15.2),
+          stroke,
+        );
       case DsIconKind.sprout:
         // 嫩芽：土壤线 + 茎 + 左右两片叶子
-        canvas.drawLine(const Offset(6.2, 20.2), const Offset(17.8, 20.2), stroke);
+        canvas.drawLine(
+          const Offset(6.2, 20.2),
+          const Offset(17.8, 20.2),
+          stroke,
+        );
         canvas.drawLine(const Offset(12, 20.2), const Offset(12, 11.8), stroke);
         canvas.drawPath(
           Path()
@@ -438,19 +513,250 @@ class _DsIconPainter extends CustomPainter {
         );
         canvas.drawCircle(const Offset(9.6, 18.6), 1.7, stroke);
         canvas.drawCircle(const Offset(16.9, 18.6), 1.7, stroke);
+      case DsIconKind.drag:
+        // 拖拽把手：两列三行圆点
+        for (final center in const [
+          Offset(9.2, 6.2),
+          Offset(14.8, 6.2),
+          Offset(9.2, 12),
+          Offset(14.8, 12),
+          Offset(9.2, 17.8),
+          Offset(14.8, 17.8),
+        ]) {
+          canvas.drawCircle(center, 1.8, solid);
+        }
+      case DsIconKind.layers:
+        // 堆叠：菱形顶面 + 两层底边
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 4.2)
+            ..lineTo(19.8, 8.4)
+            ..lineTo(12, 12.6)
+            ..lineTo(4.2, 8.4)
+            ..close(),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(4.6, 12.4)
+            ..lineTo(12, 16.4)
+            ..lineTo(19.4, 12.4),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(4.6, 16.2)
+            ..lineTo(12, 20.2)
+            ..lineTo(19.4, 16.2),
+          stroke,
+        );
+      case DsIconKind.block:
+        // 禁用：圆圈 + 斜杠
+        canvas.drawCircle(const Offset(12, 12), 8, stroke);
+        canvas.drawLine(
+          const Offset(6.4, 6.4),
+          const Offset(17.6, 17.6),
+          stroke,
+        );
+      case DsIconKind.edit:
+        // 铅笔：斜笔身 + 笔尖 + 笔尖分隔线
+        canvas.drawPath(
+          Path()
+            ..moveTo(4, 20)
+            ..lineTo(4.9, 16.1)
+            ..lineTo(16.2, 4.8)
+            ..lineTo(19.2, 7.8)
+            ..lineTo(7.9, 19.1)
+            ..close(),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(6.6, 14.4),
+          const Offset(9.6, 17.4),
+          stroke,
+        );
+      case DsIconKind.tag:
+        // 标签：斜圆角方形 + 圆孔
+        canvas.drawPath(
+          Path()
+            ..moveTo(4.4, 12.4)
+            ..lineTo(12.4, 4.4)
+            ..lineTo(18.8, 4.4)
+            ..arcToPoint(
+              const Offset(19.6, 5.2),
+              radius: const Radius.circular(0.8),
+            )
+            ..lineTo(19.6, 11.6)
+            ..lineTo(11.6, 19.6)
+            ..lineTo(5.2, 19.6)
+            ..arcToPoint(
+              const Offset(4.4, 18.8),
+              radius: const Radius.circular(0.8),
+            )
+            ..close(),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(15.4, 8.6), 1.6, stroke);
+      case DsIconKind.clock:
+        // 时钟：圆盘 + 指针
+        canvas.drawCircle(const Offset(12, 12), 8, stroke);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 7.6)
+            ..lineTo(12, 12)
+            ..lineTo(15.4, 14),
+          stroke,
+        );
+      case DsIconKind.refresh:
+        // 刷新：3/4 圆弧 + 箭头
+        canvas.drawArc(
+          Rect.fromCircle(center: const Offset(12, 12), radius: 7.6),
+          0.6,
+          math.pi * 1.55,
+          false,
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(20.2, 5.2)
+            ..lineTo(17.0, 6.6)
+            ..lineTo(18.3, 9.8),
+          stroke,
+        );
+      case DsIconKind.sort:
+        // 排序：递减横线
+        canvas.drawLine(
+          const Offset(4.6, 6.8),
+          const Offset(19.4, 6.8),
+          stroke,
+        );
+        canvas.drawLine(const Offset(4.6, 12), const Offset(15.2, 12), stroke);
+        canvas.drawLine(
+          const Offset(4.6, 17.2),
+          const Offset(11, 17.2),
+          stroke,
+        );
+      case DsIconKind.hash:
+        // 井号（数字序号）
+        canvas.drawLine(
+          const Offset(9.4, 4.6),
+          const Offset(7.6, 19.4),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(16.4, 4.6),
+          const Offset(14.6, 19.4),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(4.6, 9.2),
+          const Offset(19.4, 9.2),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(4.2, 14.8),
+          const Offset(19.0, 14.8),
+          stroke,
+        );
+      case DsIconKind.grid:
+        // 网格视图：2x2 圆角方块
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4.4, 4.4, 11, 11),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(13, 4.4, 19.6, 11),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4.4, 13, 11, 19.6),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(13, 13, 19.6, 19.6),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+      case DsIconKind.list:
+        // 列表视图：两行卡片
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4.4, 5, 19.6, 10.8),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4.4, 13.2, 19.6, 19),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+      case DsIconKind.video:
+        // 视频文件：圆角矩形 + 播放三角
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4, 5, 20, 19),
+            const Radius.circular(2.2),
+          ),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(10.2, 9.2)
+            ..lineTo(15.4, 12)
+            ..lineTo(10.2, 14.8)
+            ..close(),
+          solid,
+        );
+      case DsIconKind.columns:
+        // 多列布局：三条竖排
+        for (final x in const [5.2, 10.6, 16.0]) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTRB(x, 4.6, x + 2.8, 19.4),
+              const Radius.circular(1.2),
+            ),
+            stroke,
+          );
+        }
+      case DsIconKind.rows:
+        // 多行布局：三条横排
+        for (final y in const [5.2, 10.6, 16.0]) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTRB(4.6, y, 19.4, y + 2.8),
+              const Radius.circular(1.2),
+            ),
+            stroke,
+          );
+        }
     }
     canvas.restore();
   }
 
-  Path _heartPath() => Path()
-    ..moveTo(12, 20.2)
-    ..cubicTo(6.2, 15.6, 3.6, 12.4, 3.6, 9.3)
-    ..cubicTo(3.6, 6.6, 5.7, 4.6, 8.2, 4.6)
-    ..cubicTo(9.8, 4.6, 11.2, 5.4, 12, 6.7)
-    ..cubicTo(12.8, 5.4, 14.2, 4.6, 15.8, 4.6)
-    ..cubicTo(18.3, 4.6, 20.4, 6.6, 20.4, 9.3)
-    ..cubicTo(20.4, 12.4, 17.8, 15.6, 12, 20.2)
-    ..close();
+  Path _heartPath() =>
+      Path()
+        ..moveTo(12, 20.2)
+        ..cubicTo(6.2, 15.6, 3.6, 12.4, 3.6, 9.3)
+        ..cubicTo(3.6, 6.6, 5.7, 4.6, 8.2, 4.6)
+        ..cubicTo(9.8, 4.6, 11.2, 5.4, 12, 6.7)
+        ..cubicTo(12.8, 5.4, 14.2, 4.6, 15.8, 4.6)
+        ..cubicTo(18.3, 4.6, 20.4, 6.6, 20.4, 9.3)
+        ..cubicTo(20.4, 12.4, 17.8, 15.6, 12, 20.2)
+        ..close();
 
   Path _starPath() {
     const center = Offset(12, 12.4);
@@ -471,37 +777,40 @@ class _DsIconPainter extends CustomPainter {
     return path..close();
   }
 
-  Path _moonPath() => Path()
-    ..moveTo(19.6, 14.9)
-    ..arcToPoint(
-      const Offset(9.1, 4.1),
-      radius: const Radius.circular(8.4),
-      largeArc: true,
-      clockwise: false,
-    )
-    ..arcToPoint(
-      const Offset(19.6, 14.9),
-      radius: const Radius.circular(7.0),
-      clockwise: true,
-    )
-    ..close();
+  Path _moonPath() =>
+      Path()
+        ..moveTo(19.6, 14.9)
+        ..arcToPoint(
+          const Offset(9.1, 4.1),
+          radius: const Radius.circular(8.4),
+          largeArc: true,
+          clockwise: false,
+        )
+        ..arcToPoint(
+          const Offset(19.6, 14.9),
+          radius: const Radius.circular(7.0),
+          clockwise: true,
+        )
+        ..close();
 
-  Path _bellPath() => Path()
-    ..moveTo(12, 3.8)
-    ..cubicTo(8.8, 3.8, 6.6, 6.3, 6.6, 9.6)
-    ..lineTo(6.6, 13.2)
-    ..cubicTo(6.6, 14.4, 6.2, 15.2, 5.4, 16.2)
-    ..lineTo(18.6, 16.2)
-    ..cubicTo(17.8, 15.2, 17.4, 14.4, 17.4, 13.2)
-    ..lineTo(17.4, 9.6)
-    ..cubicTo(17.4, 6.3, 15.2, 3.8, 12, 3.8)
-    ..close();
+  Path _bellPath() =>
+      Path()
+        ..moveTo(12, 3.8)
+        ..cubicTo(8.8, 3.8, 6.6, 6.3, 6.6, 9.6)
+        ..lineTo(6.6, 13.2)
+        ..cubicTo(6.6, 14.4, 6.2, 15.2, 5.4, 16.2)
+        ..lineTo(18.6, 16.2)
+        ..cubicTo(17.8, 15.2, 17.4, 14.4, 17.4, 13.2)
+        ..lineTo(17.4, 9.6)
+        ..cubicTo(17.4, 6.3, 15.2, 3.8, 12, 3.8)
+        ..close();
 
   void _paintGear(Canvas canvas) {
-    final ring = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.6;
+    final ring =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6;
     canvas.drawCircle(const Offset(12, 12), 6.0, ring);
     canvas.drawCircle(
       const Offset(12, 12),
@@ -511,11 +820,12 @@ class _DsIconPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2,
     );
-    final teeth = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.9
-      ..strokeCap = StrokeCap.round;
+    final teeth =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.9
+          ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 8; i++) {
       canvas.save();
       canvas.translate(12, 12);

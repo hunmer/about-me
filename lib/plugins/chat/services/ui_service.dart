@@ -5,6 +5,8 @@ import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'chat_config_service.dart';
@@ -14,8 +16,11 @@ class UIService {
   final ChatConfigService _configService;
   final ChatPlugin _plugin;
 
-  UIService(ChatConfigService settingsService, ChatConfigService userService, this._plugin)
-      : _configService = settingsService;
+  UIService(
+    ChatConfigService settingsService,
+    ChatConfigService userService,
+    this._plugin,
+  ) : _configService = settingsService;
 
   Future<void> initialize() async {
     // 初始化UI服务相关的内容
@@ -125,7 +130,6 @@ class UIService {
   }
 
   Widget buildMainView(BuildContext context) {
-
     final theme = Theme.of(context);
     final channels = _plugin.channelService.channels;
 
@@ -148,10 +152,7 @@ class UIService {
               icon: const Icon(Icons.chat_bubble_outline),
               text: 'chat_channelsTab'.tr,
             ),
-            Tab(
-              icon: const Icon(Icons.timeline),
-              text: 'chat_timelineTab'.tr,
-            ),
+            Tab(icon: const Icon(Icons.timeline), text: 'chat_timelineTab'.tr),
           ],
         ),
       ),
@@ -206,8 +207,9 @@ class UIService {
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () async {
-                    final updatedUser = await showDialog<User>(
+                    final updatedUser = await showDSDialog<User>(
                       context: context,
+                      theme: DSThemeBridge.resolve(context),
                       builder:
                           (context) => ProfileEditDialog(
                             user: _configService.currentUser,

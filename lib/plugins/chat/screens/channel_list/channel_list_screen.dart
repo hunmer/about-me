@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -130,8 +132,9 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
   }
 
   void _showEditChannelDialog(Channel channel) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => ChannelDialog(
             isEditMode: true,
@@ -142,8 +145,9 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
   }
 
   void _showDeleteChannelDialog(Channel channel) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => DeleteChannelDialog(
             channel: channel,

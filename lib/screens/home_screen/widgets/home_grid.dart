@@ -1,10 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
@@ -169,46 +171,52 @@ class _HomeGridState extends State<HomeGrid> {
   Widget build(BuildContext context) {
     final orderedItems = _buildOrderedItems();
     if (orderedItems.isEmpty) {
-      return _buildEmptyState(context);
+      return DSThemeBridge(child: _buildEmptyState(context));
     }
 
     // 根据对齐方式选择不同的布局，并用 Listener 包裹以捕获真正的指针位置
-    return Listener(
-      onPointerMove: (event) {
-        _lastPointerPosition = event.position;
-      },
-      onPointerHover: (event) {
-        _lastPointerPosition = event.position;
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // 计算网格尺寸信息
-          final metrics = _calculateGridMetrics(constraints);
+    return DSThemeBridge(
+      child: Listener(
+        onPointerMove: (event) {
+          _lastPointerPosition = event.position;
+        },
+        onPointerHover: (event) {
+          _lastPointerPosition = event.position;
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 计算网格尺寸信息
+            final metrics = _calculateGridMetrics(constraints);
 
-          if (widget.alignment == Alignment.center) {
-            // 居中模式：内容在可用空间中垂直居中
+            if (widget.alignment == Alignment.center) {
+              // 居中模式：内容在可用空间中垂直居中
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: _buildGridWithMetrics(
+                      context,
+                      orderedItems,
+                      metrics,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // 顶部模式：内容从顶部开始
             return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: _buildGridWithMetrics(orderedItems, metrics),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _buildGridWithMetrics(context, orderedItems, metrics),
                 ),
               ),
             );
-          }
-
-          // 顶部模式：内容从顶部开始
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: _buildGridWithMetrics(orderedItems, metrics),
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -240,7 +248,11 @@ class _HomeGridState extends State<HomeGrid> {
   }
 
   /// 构建带有网格尺寸信息的网格组件
+  ///
+  /// [context] 必须来自主题桥之下的构建器（LayoutBuilder 的 builder），
+  /// 内部瓦片依赖 AppTheme.of(context) 读取设计令牌。
   Widget _buildGridWithMetrics(
+    BuildContext context,
     List<HomeItem> orderedItems,
     WidgetGridMetrics metrics,
   ) {
@@ -299,7 +311,7 @@ class _HomeGridState extends State<HomeGrid> {
       return StaggeredGridTile.count(
         crossAxisCellCount: crossAxisCellCount,
         mainAxisCellCount: mainAxisCellCount,
-        child: _buildSkeletonCard(),
+        child: _buildSkeletonCard(context),
       );
     }
 
@@ -344,47 +356,37 @@ class _HomeGridState extends State<HomeGrid> {
       );
     }
 
+    final theme = AppTheme.of(context);
     final dragHandleWidget = Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.9),
+        color: theme.primary.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: DsColors.black.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Icon(
-        Icons.drag_indicator,
-        size: 20,
-        color: Theme.of(context).colorScheme.onPrimary,
-      ),
+      child: DsIcon(DsIconKind.drag, size: 20, color: theme.onPrimary),
     );
 
     final draggableCard = Draggable<String>(
       data: item.id,
-      feedback: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(12),
-        child: Opacity(
-          opacity: 0.8,
-          child: Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Theme.of(context).cardColor,
-            ),
-            child: Center(
-              child: Icon(
-                Icons.drag_indicator,
-                size: 48,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
+      feedback: Opacity(
+        opacity: 0.8,
+        child: Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: theme.surface,
+            boxShadow: theme.shadows.float,
+          ),
+          child: Center(
+            child: DsIcon(DsIconKind.drag, size: 48, color: theme.primary),
           ),
         ),
       ),
@@ -436,7 +438,7 @@ class _HomeGridState extends State<HomeGrid> {
           borderRadius: BorderRadius.circular(12),
           border:
               isHoveringCenter
-                  ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+                  ? Border.all(color: theme.primary, width: 2)
                   : null,
         ),
         child: _wrapWithDisabledOverlay(
@@ -526,25 +528,25 @@ class _HomeGridState extends State<HomeGrid> {
   }
 
   Widget _buildDropIndicator(BuildContext context, _DropDirection? direction) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
     // 中心区域：显示合并/堆叠指示器
     if (direction == null) {
       return Container(
         decoration: BoxDecoration(
-          color: theme.primaryColor.withValues(alpha: 0.2),
+          color: theme.primary.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: theme.primaryColor.withValues(alpha: 0.5),
+            color: theme.primary.withValues(alpha: 0.5),
             width: 2,
             strokeAlign: BorderSide.strokeAlignInside,
           ),
         ),
         child: Center(
-          child: Icon(
-            Icons.layers,
+          child: DsIcon(
+            DsIconKind.layers,
             size: 48,
-            color: theme.primaryColor.withValues(alpha: 0.6),
+            color: theme.primary.withValues(alpha: 0.6),
           ),
         ),
       );
@@ -560,7 +562,7 @@ class _HomeGridState extends State<HomeGrid> {
         heightFactor: isHorizontal ? 0.35 : 1,
         child: Container(
           decoration: BoxDecoration(
-            color: theme.primaryColor.withValues(alpha: 0.25),
+            color: theme.primary.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(12),
           ),
         ),
@@ -1020,7 +1022,9 @@ class _HomeGridState extends State<HomeGrid> {
       return child;
     }
 
-    final overlayColor = Colors.black.withOpacity(isInEditMode ? 0.2 : 0.4);
+    final overlayColor = DsColors.black.withValues(
+      alpha: isInEditMode ? 0.2 : 0.4,
+    );
 
     return Stack(
       children: [
@@ -1037,22 +1041,26 @@ class _HomeGridState extends State<HomeGrid> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.block, color: Colors.white70, size: 32),
+                    DsIcon(
+                      DsIconKind.block,
+                      color: DsColors.white.withValues(alpha: 0.7),
+                      size: 32,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       state.displayName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      style: DsTypography.body.copyWith(
+                        color: DsColors.white,
+                        fontWeight: FontWeight.w700,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'screens_pluginDisabled'.tr,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.white),
+                      style: DsTypography.caption.copyWith(
+                        color: DsColors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -1065,55 +1073,33 @@ class _HomeGridState extends State<HomeGrid> {
   }
 
   void _showPluginDisabledToast(BuildContext context, _PluginCardState state) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('${state.displayName} ${'screens_pluginDisabled'.tr}'),
-        duration: const Duration(seconds: 2),
-      ),
+    showDSToast(
+      context,
+      message: '${state.displayName} ${'screens_pluginDisabled'.tr}',
+      type: DSToastType.warning,
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.widgets_outlined,
-            size: 64,
-            color: Theme.of(context).disabledColor,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'screens_noWidgetsYet'.tr,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).disabledColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'screens_clickPlusToAdd'.tr,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).disabledColor,
-            ),
-          ),
-        ],
+      child: DSEmptyState(
+        emoji: '🧩',
+        title: 'screens_noWidgetsYet'.tr,
+        message: 'screens_clickPlusToAdd'.tr,
       ),
     );
   }
 
   /// 构建骨架卡片
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Padding(
       padding: const EdgeInsets.all(4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(12),
-        ),
+      child: DSSkeleton(
+        width: double.infinity,
+        height: double.infinity,
+        radius: theme.radii.lg,
       ),
     );
   }
@@ -1176,43 +1162,70 @@ Future<_DragToFolderAction?> _showDragToFolderDialog(
     itemName = 'screens_item'.tr;
   }
 
-  return showDialog<_DragToFolderAction>(
+  // 在调用点（主题桥之下）预先捕获设计令牌：
+  // 对话框路由的 builder context 在 AppTheme 包裹生效前执行，不能直接取
+  final theme = AppTheme.of(context);
+
+  return showDSDialog<_DragToFolderAction>(
     context: context,
-    builder:
-        (context) => AlertDialog(
-          title: Text('screens_dragToFolder'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
+    builder: (context) {
+      return JellyBox(
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.xl),
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'screens_dragToFolder'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: theme.spacing.sm),
+              child: Text(
                 'screens_dragItemToFolder'.trParams({
                   'item': itemName,
                   'folder': targetFolder.name,
                 }),
+                textAlign: TextAlign.center,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
-              const SizedBox(height: 16),
-              Text('screens_pleaseSelectAction'.tr),
-            ],
-          ),
-          actions: [
-            TextButton(
+            ),
+            SizedBox(height: theme.spacing.xs),
+            Text(
+              'screens_pleaseSelectAction'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+            SizedBox(height: theme.spacing.lg),
+            DSButton(
+              label: 'screens_cancel'.tr,
+              variant: DSButtonVariant.outline,
+              size: DSButtonSize.sm,
               onPressed:
                   () => Navigator.pop(context, _DragToFolderAction.cancel),
-              child: Text('screens_cancel'.tr),
             ),
-            TextButton(
+            SizedBox(height: theme.spacing.sm),
+            DSButton(
+              label: 'screens_replacePosition'.tr,
+              variant: DSButtonVariant.secondary,
+              size: DSButtonSize.sm,
               onPressed:
                   () => Navigator.pop(context, _DragToFolderAction.replace),
-              child: Text('screens_replacePosition'.tr),
             ),
-            ElevatedButton(
+            SizedBox(height: theme.spacing.sm),
+            DSButton(
+              label: 'screens_addToFolder'.tr,
+              size: DSButtonSize.sm,
               onPressed:
                   () => Navigator.pop(context, _DragToFolderAction.addToFolder),
-              child: Text('screens_addToFolder'.tr),
             ),
           ],
         ),
+      );
+    },
   );
 }
 

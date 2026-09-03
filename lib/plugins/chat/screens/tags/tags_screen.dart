@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/tag.dart';
 import 'package:aboutme/plugins/chat/screens/tags/widgets/tag_card.dart';
@@ -92,48 +94,18 @@ class _TagsScreenState extends State<TagsScreen> {
     );
   }
 
-  /// 构建排序按钮
+  /// 构建排序按钮（两种排序方式之间切换）
   Widget _buildSortButton() {
-    return PopupMenuButton<SortType>(
-      icon: const Icon(Icons.sort),
-      onSelected: (SortType type) {
-        setState(() => _sortType = type);
+    final byCount = _sortType == SortType.byMessageCount;
+    return DSIconButton(
+      icon: byCount ? DsIconKind.hash : DsIconKind.clock,
+      size: 36,
+      tooltip: byCount ? 'chat_sortByCount'.tr : 'chat_sortByTime'.tr,
+      onPressed: () {
+        setState(() {
+          _sortType = byCount ? SortType.byLastUsed : SortType.byMessageCount;
+        });
       },
-      itemBuilder:
-          (context) => [
-            PopupMenuItem(
-              value: SortType.byMessageCount,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.numbers,
-                    color:
-                        _sortType == SortType.byMessageCount
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                  ),
-                  const SizedBox(width: 8),
-                  Text('chat_sortByCount'.tr),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: SortType.byLastUsed,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color:
-                        _sortType == SortType.byLastUsed
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                  ),
-                  const SizedBox(width: 8),
-                  Text('chat_sortByTime'.tr),
-                ],
-              ),
-            ),
-          ],
     );
   }
 
@@ -159,62 +131,49 @@ class _TagsScreenState extends State<TagsScreen> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final colorScheme = Theme.of(context).colorScheme;
     final message =
         _searchQuery.isEmpty ? 'chat_noTagsFound'.tr : 'chat_noMatchingTags'.tr;
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.tag,
-            size: 64,
-            color: colorScheme.onSurface.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(
-              fontSize: 16,
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    );
+    return Center(child: DSEmptyState(emoji: '🏷️', title: message));
   }
 
   @override
   Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
-      title: Text('chat_tagsTab'.tr),
-      largeTitle: 'chat_tagsTab'.tr,
-      enableSearchBar: true,
-      searchPlaceholder: 'chat_searchTags'.tr,
-      onSearchChanged: (query) {
-        setState(() => _searchQuery = query);
-      },
-      onSearchSubmitted: (query) {
-        setState(() => _searchQuery = query);
-      },
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('chat_tagsTab'.tr),
+        largeTitle: 'chat_tagsTab'.tr,
+        enableSearchBar: true,
+        searchPlaceholder: 'chat_searchTags'.tr,
+        onSearchChanged: (query) {
+          setState(() => _searchQuery = query);
+        },
+        onSearchSubmitted: (query) {
+          setState(() => _searchQuery = query);
+        },
 
-      actions: [
-        // 排序按钮
-        _buildSortButton(),
-        // 刷新按钮
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: _loadTags,
-          tooltip: 'chat_refresh'.tr,
-        ),
-      ],
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredTags.isEmpty
-              ? _buildEmptyState()
-              : _buildTagsGrid(),
+        actions: [
+          // SuperAppBar 的 actions 经 Overlay 渲染，脱离页面主题桥，
+          // DS 按钮需自带 DSThemeBridge 提供 AppTheme
+          // 排序按钮
+          DSThemeBridge(child: _buildSortButton()),
+          // 刷新按钮
+          DSThemeBridge(
+            child: DSIconButton(
+              icon: DsIconKind.refresh,
+              size: 36,
+              onPressed: _loadTags,
+              tooltip: 'chat_refresh'.tr,
+            ),
+          ),
+        ],
+        body:
+            _isLoading
+                ? const Center(child: DSLoadingDots())
+                : _filteredTags.isEmpty
+                ? _buildEmptyState()
+                : _buildTagsGrid(),
+      ),
     );
   }
 }

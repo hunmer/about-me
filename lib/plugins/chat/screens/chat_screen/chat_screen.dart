@@ -20,6 +20,8 @@ import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/utils/message_operations.dart';
 // 移除未使用的导入
 import 'controllers/chat_screen_controller.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'widgets/message_list.dart';
 import 'widgets/message_input/index.dart';
 import 'dialogs/clear_messages_dialog.dart';
@@ -943,8 +945,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   orElse: () => message.user,
                 );
 
-                final updatedUser = await showDialog<User>(
+                final updatedUser = await showDSDialog<User>(
                   context: context,
+                  theme: DSThemeBridge.resolve(context),
                   builder:
                       (context) => ProfileEditDialog(
                         user: targetUser,

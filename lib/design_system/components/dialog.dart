@@ -8,31 +8,36 @@ import 'jelly_box.dart';
 /// 果冻对话框：缩放淡入 + 遮罩
 ///
 /// 浮层挂在根导航上，脱离主题树，因此内部预先捕获主题并重建继承树。
+/// [theme] 用于调用点不在 AppTheme 树内时显式传入（如独立路由页面）。
 Future<T?> showDSDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool barrierDismissible = true,
+  AppThemeData? theme,
 }) {
-  final theme = AppTheme.of(context);
+  final effectiveTheme = theme ?? AppTheme.of(context);
   return Navigator.of(context, rootNavigator: true).push(
     PageRouteBuilder<T>(
       opaque: false,
       barrierDismissible: barrierDismissible,
-      barrierColor: theme.barrier,
+      barrierColor: effectiveTheme.barrier,
       transitionDuration: const Duration(milliseconds: 220),
       reverseTransitionDuration: const Duration(milliseconds: 160),
-      pageBuilder: (c, animation, secondaryAnimation) => AppTheme(
-        data: theme,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 36),
-            child: builder(c),
+      pageBuilder:
+          (c, animation, secondaryAnimation) => AppTheme(
+            data: effectiveTheme,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 36),
+                child: builder(c),
+              ),
+            ),
           ),
-        ),
-      ),
       transitionsBuilder: (c, animation, secondaryAnimation, child) {
-        final curved =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
         return FadeTransition(
           opacity: animation,
           child: ScaleTransition(
@@ -56,6 +61,7 @@ class DSDialog extends StatelessWidget {
     this.cancelText,
     this.onConfirm,
     this.onCancel,
+    this.confirmVariant = DSButtonVariant.primary,
   });
 
   final String title;
@@ -71,6 +77,9 @@ class DSDialog extends StatelessWidget {
   final String? cancelText;
   final VoidCallback? onConfirm;
   final VoidCallback? onCancel;
+
+  /// 确认按钮变体（危险操作传 [DSButtonVariant.destructive]）
+  final DSButtonVariant confirmVariant;
 
   void _defaultConfirm(BuildContext context) => Navigator.of(context).pop(true);
   void _defaultCancel(BuildContext context) => Navigator.of(context).pop(false);
@@ -95,7 +104,10 @@ class DSDialog extends StatelessWidget {
             style: DsTypography.title.copyWith(color: theme.text),
           ),
           if (content != null)
-            Padding(padding: EdgeInsets.only(top: theme.spacing.md), child: content!)
+            Padding(
+              padding: EdgeInsets.only(top: theme.spacing.md),
+              child: content!,
+            )
           else if (message != null)
             Padding(
               padding: EdgeInsets.only(top: theme.spacing.sm),
@@ -121,6 +133,7 @@ class DSDialog extends StatelessWidget {
               Expanded(
                 child: DSButton(
                   label: confirmText,
+                  variant: confirmVariant,
                   onPressed: onConfirm ?? () => _defaultConfirm(context),
                 ),
               ),
@@ -139,22 +152,14 @@ class _SparkleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    const colors = [
-      Color(0xFFFCD34D),
-      Color(0xFFF5A8D4),
-      Color(0xFF885CF6),
-    ];
+    const colors = [Color(0xFFFCD34D), Color(0xFFF5A8D4), Color(0xFF885CF6)];
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var i = 0; i < colors.length; i++)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: theme.spacing.xs),
-            child: _Sparkle(
-              color: colors[i],
-              size: 10 + i * 5.0,
-              spin: i == 1,
-            ),
+            child: _Sparkle(color: colors[i], size: 10 + i * 5.0, spin: i == 1),
           ),
       ],
     );
@@ -187,22 +192,23 @@ class _SparklePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final paint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
     final w = size.width;
     final h = size.height;
-    final path = Path()
-      ..moveTo(w * 0.5, 0)
-      ..quadraticBezierTo(w * 0.58, h * 0.42, w, h * 0.5)
-      ..quadraticBezierTo(w * 0.58, h * 0.58, w * 0.5, h)
-      ..quadraticBezierTo(w * 0.42, h * 0.58, 0, h * 0.5)
-      ..quadraticBezierTo(w * 0.42, h * 0.42, w * 0.5, 0)
-      ..close();
+    final path =
+        Path()
+          ..moveTo(w * 0.5, 0)
+          ..quadraticBezierTo(w * 0.58, h * 0.42, w, h * 0.5)
+          ..quadraticBezierTo(w * 0.58, h * 0.58, w * 0.5, h)
+          ..quadraticBezierTo(w * 0.42, h * 0.58, 0, h * 0.5)
+          ..quadraticBezierTo(w * 0.42, h * 0.42, w * 0.5, 0)
+          ..close();
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(_SparklePainter oldDelegate) =>
-      oldDelegate.color != color;
+  bool shouldRepaint(_SparklePainter oldDelegate) => oldDelegate.color != color;
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 
 class DeleteChannelDialog extends StatelessWidget {
@@ -14,31 +16,18 @@ class DeleteChannelDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('chat_deleteChannel'.tr),
-      content: Text('chat_deleteChannelConfirmation'.tr),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('app_cancel'.tr),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            onDeleteChannel(channel.id);
-            Navigator.of(context).pop();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white, // 设置文字颜色为白色，确保在红色背景上清晰可见
-          ),
-          child: Text(
-            'app_delete'.tr,
-            style: TextStyle(
-              fontWeight: FontWeight.bold, // 加粗文字增强可见性
-            ),
-          ),
-        ),
-      ],
+    return DSThemeBridge(
+      child: DSDialog(
+        title: 'chat_deleteChannel'.tr,
+        message: 'chat_deleteChannelConfirmation'.tr,
+        confirmText: 'app_delete'.tr,
+        cancelText: 'app_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () {
+          onDeleteChannel(channel.id);
+          Navigator.of(context).pop();
+        },
+      ),
     );
   }
 }

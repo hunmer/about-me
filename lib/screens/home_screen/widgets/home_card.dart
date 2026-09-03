@@ -5,6 +5,8 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
@@ -88,35 +90,42 @@ class _HomeCardState extends State<HomeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final HomeItem currentItem = item;
+    // 主题桥 + Builder：卡片各构建方法通过参数 context 读取 DS 主题
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final HomeItem currentItem = item;
 
-    if (isEditMode) {
-      return _buildCardContent(context, currentItem);
-    }
+          if (isEditMode) {
+            return _buildCardContent(context, currentItem);
+          }
 
-    if (currentItem is HomeStackItem) {
-      // HomeStackItem 的点击事件由内部的 carousel 处理
-      // 这里只处理长按事件，不处理点击事件
-      return GestureDetector(
-        key: _cardKey,
-        onLongPress: onLongPress,
-        child: _buildCardContent(context, currentItem),
-      );
-    }
+          if (currentItem is HomeStackItem) {
+            // HomeStackItem 的点击事件由内部的 carousel 处理
+            // 这里只处理长按事件，不处理点击事件
+            return GestureDetector(
+              key: _cardKey,
+              onLongPress: onLongPress,
+              child: _buildCardContent(context, currentItem),
+            );
+          }
 
-    if (currentItem is HomeWidgetItem) {
-      return GestureDetector(
-        key: _cardKey,
-        onTap: onTap ?? () => _openWidgetPlugin(context),
-        onLongPress: onLongPress,
-        child: _buildCardContent(context, currentItem),
-      );
-    }
+          if (currentItem is HomeWidgetItem) {
+            return GestureDetector(
+              key: _cardKey,
+              onTap: onTap ?? () => _openWidgetPlugin(context),
+              onLongPress: onLongPress,
+              child: _buildCardContent(context, currentItem),
+            );
+          }
 
-    return GestureDetector(
-      onTap: onTap ?? () => _handleTap(context),
-      onLongPress: onLongPress,
-      child: _buildCardContent(context, currentItem),
+          return GestureDetector(
+            onTap: onTap ?? () => _handleTap(context),
+            onLongPress: onLongPress,
+            child: _buildCardContent(context, currentItem),
+          );
+        },
+      ),
     );
   }
 
@@ -140,6 +149,7 @@ class _HomeCardState extends State<HomeCard> {
   }
 
   Widget _buildCardContent(BuildContext context, HomeItem currentItem) {
+    final theme = AppTheme.of(context);
     final isWidgetLike =
         currentItem is HomeWidgetItem || currentItem is HomeStackItem;
     final Widget content =
@@ -150,24 +160,21 @@ class _HomeCardState extends State<HomeCard> {
             : _buildFolderCard(context, currentItem as HomeFolderItem);
     return Stack(
       children: [
-        Card(
-          elevation: isSelected ? 8 : 2,
-          shape: RoundedRectangleBorder(
+        // 对应原 Material Card（默认 margin 4 + 12 圆角 + 阴影/描边）
+        Container(
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isWidgetLike ? DsColors.transparent : theme.surface,
             borderRadius: BorderRadius.circular(12),
-            side:
-                isSelected
-                    ? BorderSide(
-                      color: Theme.of(context).primaryColor,
-                      width: 2,
-                    )
-                    : BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
+            border: Border.all(
+              color:
+                  isSelected
+                      ? theme.primary
+                      : theme.textSub.withValues(alpha: 0.3),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: isSelected ? theme.shadows.float : theme.shadows.soft,
           ),
-          color: isWidgetLike ? Colors.transparent : null,
           child: content,
         ),
         if (isEditMode && dragHandle != null)
@@ -182,23 +189,25 @@ class _HomeCardState extends State<HomeCard> {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? Theme.of(context).primaryColor
-                        : Theme.of(context).cardColor.withValues(alpha: 0.8),
+                        ? theme.primary
+                        : theme.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color:
                       isSelected
-                          ? Theme.of(context).primaryColor
-                          : Theme.of(context).dividerColor,
+                          ? theme.primary
+                          : theme.textSub.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
               child:
                   isSelected
-                      ? Icon(
-                        Icons.check,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                      ? Center(
+                        child: DsIcon(
+                          DsIconKind.check,
+                          size: 14,
+                          color: theme.onPrimary,
+                        ),
                       )
                       : null,
             ),
@@ -223,7 +232,7 @@ class _HomeCardState extends State<HomeCard> {
           layoutManager.globalWidgetBackgroundOpacity;
 
       // 获取背景配置 - 使用默认的主题卡片颜色
-      final defaultColor = Theme.of(context).cardColor;
+      final defaultColor = AppTheme.of(context).surface;
       final backgroundColor = defaultColor.withValues(
         alpha: defaultColor.a * globalBackgroundOpacity,
       );
@@ -288,7 +297,7 @@ class _HomeCardState extends State<HomeCard> {
 
   /// 构建文件夹卡片
   Widget _buildFolderCard(BuildContext context, HomeFolderItem folder) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
     return SizedBox.expand(
       child: Padding(
@@ -302,6 +311,7 @@ class _HomeCardState extends State<HomeCard> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // folder.icon 为持久化的 Material IconData，保持原样
                   Icon(folder.icon, size: 40, color: folder.color),
                   if (folder.children.isNotEmpty)
                     Positioned(
@@ -314,15 +324,14 @@ class _HomeCardState extends State<HomeCard> {
                           minHeight: 18,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
+                          color: theme.primary,
                           shape: BoxShape.circle,
                         ),
                         child: Text(
                           '${folder.children.length}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimary,
+                          style: DsTypography.label.copyWith(
+                            color: theme.onPrimary,
                             fontSize: 9,
-                            fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -336,9 +345,9 @@ class _HomeCardState extends State<HomeCard> {
               flex: 1,
               child: Text(
                 folder.name,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                style: DsTypography.caption.copyWith(
+                  color: theme.text,
+                  fontWeight: FontWeight.w700,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -354,12 +363,12 @@ class _HomeCardState extends State<HomeCard> {
   /// 构建加载中卡片
   /// 占满小组件的实际尺寸，并带有渐显和加载动画效果
   Widget _buildLoadingCard(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
     return SizedBox.expand(
       child: Container(
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.5),
+          color: theme.surface.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -369,16 +378,7 @@ class _HomeCardState extends State<HomeCard> {
             builder: (context, opacity, child) {
               return Opacity(opacity: opacity, child: child);
             },
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  theme.colorScheme.primary.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
+            child: DSLoadingDots(color: theme.primary.withValues(alpha: 0.6)),
           ),
         ),
       ),
@@ -387,17 +387,18 @@ class _HomeCardState extends State<HomeCard> {
 
   /// 构建错误卡片
   Widget _buildErrorCard(BuildContext context, String error) {
+    final theme = AppTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 32, color: Colors.red),
+          DsIcon(DsIconKind.block, size: 32, color: theme.danger),
           const SizedBox(height: 8),
           Text(
             error,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -444,7 +445,6 @@ class _HomeCardState extends State<HomeCard> {
       );
     }
   }
-
 
   Future<void> _openTodayDiaryEditor(BuildContext context) async {
     try {
@@ -534,8 +534,11 @@ class _HomeCardState extends State<HomeCard> {
       debugPrint('[HomeCard] result.data type: ${result.data.runtimeType}');
 
       // 检查是否可以执行导航
-      final canNavigate = result.data != null && widgetDef.navigationHandler != null;
-      debugPrint('[HomeCard] canNavigate: $canNavigate (data != null: ${result.data != null}, navigationHandler != null: ${widgetDef.navigationHandler != null})');
+      final canNavigate =
+          result.data != null && widgetDef.navigationHandler != null;
+      debugPrint(
+        '[HomeCard] canNavigate: $canNavigate (data != null: ${result.data != null}, navigationHandler != null: ${widgetDef.navigationHandler != null})',
+      );
 
       if (canNavigate) {
         try {
@@ -548,7 +551,9 @@ class _HomeCardState extends State<HomeCard> {
         }
       } else {
         // 如果没有导航处理器，给出提示
-        debugPrint('[HomeCard] 无法导航：data=${result.data}, navigationHandler=${widgetDef.navigationHandler}');
+        debugPrint(
+          '[HomeCard] 无法导航：data=${result.data}, navigationHandler=${widgetDef.navigationHandler}',
+        );
         if (result.data == null) {
           Toast.error('数据为空，无法打开');
         }
@@ -727,13 +732,14 @@ class _HomeStackCarouselState extends State<_HomeStackCarousel>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     if (widget.stack.children.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor.withValues(alpha: 0.15),
+          color: theme.surface.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(child: Icon(Icons.widgets_outlined)),
+        child: Center(child: DsIcon(DsIconKind.grid, color: theme.textSub)),
       );
     }
 
@@ -838,6 +844,7 @@ class _HomeStackCarouselState extends State<_HomeStackCarousel>
   }
 
   Widget _buildDotsIndicator() {
+    final theme = AppTheme.of(context);
     final total = widget.stack.children.length;
     if (total <= 1) {
       return const SizedBox.shrink();
@@ -855,9 +862,7 @@ class _HomeStackCarouselState extends State<_HomeStackCarousel>
         height: axis == Axis.horizontal ? 6 : 8,
         decoration: BoxDecoration(
           color:
-              isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              isActive ? theme.primary : theme.primary.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(999),
         ),
       );

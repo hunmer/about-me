@@ -10,6 +10,7 @@ class DSSkeleton extends StatefulWidget {
     this.height = 14,
     this.circle = false,
     this.color,
+    this.radius,
   });
 
   /// 为 null 时占满可用宽度
@@ -19,6 +20,9 @@ class DSSkeleton extends StatefulWidget {
   /// 圆形（头像占位）
   final bool circle;
   final Color? color;
+
+  /// 覆盖圆角（默认按高度取胶囊圆角）
+  final BorderRadiusGeometry? radius;
 
   @override
   State<DSSkeleton> createState() => _DSSkeletonState();
@@ -53,15 +57,16 @@ class _DSSkeletonState extends State<DSSkeleton>
     return FadeTransition(
       opacity: _controller,
       child: Container(
-        width: widget.circle
-            ? (widget.width ?? widget.height * 2)
-            : widget.width,
+        width:
+            widget.circle ? (widget.width ?? widget.height * 2) : widget.width,
         height: widget.height,
         decoration: BoxDecoration(
           color: base,
           shape: widget.circle ? BoxShape.circle : BoxShape.rectangle,
           borderRadius:
-              widget.circle ? null : BorderRadius.circular(widget.height),
+              widget.circle
+                  ? null
+                  : (widget.radius ?? BorderRadius.circular(widget.height)),
         ),
       ),
     );

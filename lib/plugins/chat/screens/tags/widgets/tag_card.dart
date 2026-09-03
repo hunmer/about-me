@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/tag.dart';
 
 /// 标签卡片组件
@@ -8,66 +9,48 @@ class TagCard extends StatelessWidget {
   final MessageTag tag;
   final VoidCallback onTap;
 
-  const TagCard({
-    super.key,
-    required this.tag,
-    required this.onTap,
-  });
+  const TagCard({super.key, required this.tag, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = AppTheme.of(context);
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+    return DSCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 标签名称（带#前缀）
+          Row(
             children: [
-              // 标签名称（带#前缀）
-              Row(
-                children: [
-                  Icon(
-                    Icons.tag,
-                    size: 16,
-                    color: tag.color ?? colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      tag.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              DsIcon(
+                DsIconKind.tag,
+                size: 16,
+                color: tag.color ?? theme.primary,
               ),
-
-              const SizedBox(height: 4),
-
-              // 消息数量
-              Text(
-                'chat_messageCount'.trParams({'count': tag.messageCount.toString()}),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  tag.name,
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-        ),
+
+          const SizedBox(height: 4),
+
+          // 消息数量
+          Text(
+            'chat_messageCount'.trParams({
+              'count': tag.messageCount.toString(),
+            }),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+        ],
       ),
     );
   }

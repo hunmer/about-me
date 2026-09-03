@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -103,63 +105,70 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
-      title: Text('chat_timelineTab'.tr),
-      largeTitle: 'chat_timelineTab'.tr,
-      enableSearchBar: true,
-      searchPlaceholder: '搜索消息...',
-      onSearchChanged: (query) {
-        // 搜索防抖处理已在控制器中实现
-        _controller.searchController.text = query;
-      },
-      onSearchSubmitted: (query) {
-        _controller.searchController.text = query;
-      },
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('chat_timelineTab'.tr),
+        largeTitle: 'chat_timelineTab'.tr,
+        enableSearchBar: true,
+        searchPlaceholder: '搜索消息...',
+        onSearchChanged: (query) {
+          // 搜索防抖处理已在控制器中实现
+          _controller.searchController.text = query;
+        },
+        onSearchSubmitted: (query) {
+          _controller.searchController.text = query;
+        },
 
-      // 启用多条件过滤
-      enableMultiFilter: true,
-      multiFilterItems: _buildFilterItems(),
-      onMultiFilterChanged: _applyMultiFilters,
-      actions: [
-        // 视图切换按钮
-        IconButton(
-          icon: Icon(_isGridView ? Icons.view_agenda : Icons.grid_view),
-          tooltip: _isGridView ? '切换到卡片视图' : '切换到瀑布流视图',
-          onPressed: () {
-            setState(() {
-              _isGridView = !_isGridView;
-              // 保存视图模式到插件配置
-              widget.chatPlugin.settingsService.setTimelineIsGridView(
-                _isGridView,
-              );
-            });
+        // 启用多条件过滤
+        enableMultiFilter: true,
+        multiFilterItems: _buildFilterItems(),
+        onMultiFilterChanged: _applyMultiFilters,
+        actions: [
+          // 视图切换按钮
+          // SuperAppBar 的 actions 经 Overlay 渲染，脱离页面主题桥，
+          // 需自带 DSThemeBridge 提供 AppTheme，否则 DS 组件取主题会崩
+          DSThemeBridge(
+            child: DSIconButton(
+              icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+              size: 36,
+              tooltip: _isGridView ? '切换到卡片视图' : '切换到瀑布流视图',
+              onPressed: () {
+                setState(() {
+                  _isGridView = !_isGridView;
+                  // 保存视图模式到插件配置
+                  widget.chatPlugin.settingsService.setTimelineIsGridView(
+                    _isGridView,
+                  );
+                });
+              },
+            ),
+          ),
+        ],
+        body: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            if (_controller.isLoading) {
+              return const Center(child: DSLoadingDots());
+            }
+
+            if (_controller.displayMessages.isEmpty) {
+              if (_controller.searchQuery.isNotEmpty ||
+                  _controller.isFilterActive) {
+                return Center(
+                  child: Text(
+                    '${'chat_noMessagesFound'.tr} "${_controller.searchQuery}"',
+                  ),
+                );
+              }
+              return Center(child: Text('chat_noMessagesYet'.tr));
+            }
+
+            return RefreshIndicator(
+              onRefresh: _controller.refreshTimeline,
+              child: _isGridView ? _buildGridView() : _buildListView(),
+            );
           },
         ),
-      ],
-      body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) {
-          if (_controller.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (_controller.displayMessages.isEmpty) {
-            if (_controller.searchQuery.isNotEmpty ||
-                _controller.isFilterActive) {
-              return Center(
-                child: Text(
-                  '${'chat_noMessagesFound'.tr} "${_controller.searchQuery}"',
-                ),
-              );
-            }
-            return Center(child: Text('chat_noMessagesYet'.tr));
-          }
-
-          return RefreshIndicator(
-            onRefresh: _controller.refreshTimeline,
-            child: _isGridView ? _buildGridView() : _buildListView(),
-          );
-        },
       ),
     );
   }
@@ -183,7 +192,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(child: DSLoadingDots()),
           );
         }
         final message = _controller.displayMessages[index];
@@ -243,7 +252,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     return Container(
                       height: 80,
                       alignment: Alignment.center,
-                      child: const CircularProgressIndicator(),
+                      child: const DSLoadingDots(),
                     );
                   }
                   // 返回空容器而不是null
@@ -272,7 +281,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildGridCard(int index) {
     // 检查是否是加载更多指示器
     if (index >= _controller.displayMessages.length) {
-      return const Card(child: Center(child: CircularProgressIndicator()));
+      return const DSCard(child: Center(child: DSLoadingDots()));
     }
 
     final message = _controller.displayMessages[index];

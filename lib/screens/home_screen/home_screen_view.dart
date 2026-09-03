@@ -11,6 +11,8 @@ import 'package:extended_tabs/extended_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'home_screen_controller.dart';
 import 'managers/home_date_controller.dart';
 import 'managers/home_layout_manager.dart';
@@ -62,9 +64,11 @@ class HomeScreenView extends StatelessWidget {
         drawer: const AppDrawer(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton:
-            controller.isEditMode || controller.isBatchMode || controller.isLoading
-            ? null
-            : _buildQuickCreateButton(context),
+            controller.isEditMode ||
+                    controller.isBatchMode ||
+                    controller.isLoading
+                ? null
+                : _buildQuickCreateButton(context),
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -136,13 +140,15 @@ class HomeScreenView extends StatelessWidget {
   /// 弹出快速新建对话框
   void _showQuickCreateDialog(BuildContext context) {
     // 在对话框关闭后再执行创建，保证使用主页上下文打开编辑界面
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (dialogContext) => QuickCreateDialog(
-        onSelected: (item) {
-          item.onCreate(context, HomeDateController().date);
-        },
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => QuickCreateDialog(
+            onSelected: (item) {
+              item.onCreate(context, HomeDateController().date);
+            },
+          ),
     );
   }
 
@@ -193,9 +199,10 @@ class HomeScreenView extends StatelessWidget {
                   : Icons.calendar_view_day,
             ),
             onPressed: () => controller.toggleDateViewMode(),
-            tooltip: controller.isDateViewMode
-                ? 'home_modeFixedLayout'.tr
-                : 'home_modeDateView'.tr,
+            tooltip:
+                controller.isDateViewMode
+                    ? 'home_modeFixedLayout'.tr
+                    : 'home_modeDateView'.tr,
           ),
           IconButton(
             icon: const Icon(Icons.add),
@@ -263,8 +270,8 @@ class HomeScreenView extends StatelessWidget {
             padding: EdgeInsets.only(
               top:
                   !isCenter && controller.currentBackgroundPath != null
-                  ? MediaQuery.of(context).padding.top
-                  : 0,
+                      ? MediaQuery.of(context).padding.top
+                      : 0,
             ),
             child: HomeGrid(
               items: controller.layoutManager.items,
@@ -562,8 +569,9 @@ class HomeScreenView extends StatelessWidget {
   }
 
   void _showCreateFolderDialog(BuildContext context) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder: (context) => const CreateFolderDialog(),
     );
   }

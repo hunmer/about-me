@@ -3,6 +3,8 @@ import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -42,11 +44,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   // GlobalKeys for OpenContainer animation
   final GlobalKey _editButtonKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
-
-  // Colors from design
-  static const Color _primaryColor = Color(0xFFD8BFD8); // Dusty Rose
-  static const Color _primaryTextColor = Color(0xFF4A4A4A); // Soft charcoal
-  static const Color _backgroundColor = Color(0xFFFAF8F5); // Light cream
 
   @override
   void initState() {
@@ -147,60 +144,35 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
-      title: Text('diary_myDiary'.tr),
-      largeTitle: 'diary_myDiary'.tr,
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('diary_myDiary'.tr),
+        largeTitle: 'diary_myDiary'.tr,
 
-      enableSearchBar: true,
-      searchPlaceholder: 'diary_searchPlaceholder'.tr,
-      onSearchChanged: _handleSearch,
-      onSearchSubmitted: _handleSearch,
-      body: _buildCalendarView(),
-      searchBody: _buildSearchResults(),
+        enableSearchBar: true,
+        searchPlaceholder: 'diary_searchPlaceholder'.tr,
+        onSearchChanged: _handleSearch,
+        onSearchSubmitted: _handleSearch,
+        // Builder 让视图方法在主题桥之内构建，可读取 AppTheme
+        body: Builder(builder: _buildCalendarView),
+        searchBody: Builder(builder: _buildSearchResults),
+      ),
     );
   }
 
   /// 构建搜索结果视图
-  Widget _buildSearchResults() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? Theme.of(context).scaffoldBackgroundColor : _backgroundColor;
-    final textColor = isDark ? Colors.white : _primaryTextColor;
-    final primaryColor =
-        isDark ? Theme.of(context).colorScheme.primary : _primaryColor;
+  Widget _buildSearchResults(BuildContext context) {
+    final theme = AppTheme.of(context);
 
     return Container(
-      color: bgColor,
+      color: theme.background,
       child:
           _searchResults.isEmpty
               ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.search_off,
-                      size: 64,
-                      color: textColor.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '没有找到匹配的日记',
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.6),
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (_searchQuery.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        '搜索词：$_searchQuery',
-                        style: TextStyle(
-                          color: textColor.withValues(alpha: 0.4),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: DSEmptyState(
+                  emoji: '🔍',
+                  title: '没有找到匹配的日记',
+                  message: _searchQuery.isNotEmpty ? '搜索词：$_searchQuery' : null,
                 ),
               )
               : ListView.builder(
@@ -208,28 +180,19 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                 itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
                   final entry = _searchResults[index];
-                  return _buildSearchResultCard(
-                    entry,
-                    textColor,
-                    primaryColor,
-                    isDark,
-                  );
+                  return _buildSearchResultCard(context, entry);
                 },
               ),
     );
   }
 
   /// 构建搜索结果卡片
-  Widget _buildSearchResultCard(
-    DiaryEntry entry,
-    Color textColor,
-    Color primaryColor,
-    bool isDark,
-  ) {
+  Widget _buildSearchResultCard(BuildContext context, DiaryEntry entry) {
+    final theme = AppTheme.of(context);
     return DiaryEntryCard(
       entry: entry,
-      primaryColor: primaryColor,
-      textColor: textColor,
+      primaryColor: theme.primary,
+      textColor: theme.text,
       onTap: () => _navigateToEntry(entry),
     );
   }
@@ -248,7 +211,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   }
 
   /// 构建日历视图
-  Widget _buildCalendarView() {
+  Widget _buildCalendarView(BuildContext context) {
+    final theme = AppTheme.of(context);
     // 确保_selectedDay也是标准化的
     final normalizedSelectedDay =
         _selectedDay != null
@@ -262,11 +226,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
         normalizedSelectedDay != null
             ? _diaryEntries[normalizedSelectedDay]
             : null;
-    // Check if current theme is dark
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : _primaryTextColor;
-    final primaryColor =
-        isDark ? Theme.of(context).colorScheme.primary : _primaryColor;
+    final textColor = theme.text;
+    final primaryColor = theme.primary;
 
     return Stack(
       children: [
@@ -377,7 +338,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                     day,
                     textColor,
                     isToday || isSelected ? primaryColor : null,
-                    isDark,
                     entry,
                     isToday: isToday,
                     isSelected: isSelected,
@@ -431,67 +391,40 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                               color: textColor,
                             ),
                           ),
-                          Material(
+                          DSButton(
                             key: _editButtonKey,
-                            elevation: 2,
-                            borderRadius: BorderRadius.circular(20),
-                            color: primaryColor,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: () {
-                                final targetDay =
-                                    _selectedDay ?? DateTime.now();
-                                final normalizedTargetDay = DateTime(
-                                  targetDay.year,
-                                  targetDay.month,
-                                  targetDay.day,
-                                );
-                                NavigationHelper.openContainerWithHero(
-                                  context,
-                                  (_) => DiaryEditorScreen(
-                                    date: normalizedTargetDay,
-                                    storage: widget.storage,
-                                    initialTitle: selectedEntry?.title ?? '',
-                                    initialContent:
-                                        selectedEntry?.content ?? '',
-                                  ),
-                                  sourceKey: _editButtonKey,
-                                  heroTag: 'diary_edit_button',
-                                  closedColor: primaryColor,
-                                  closedShape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ).then((_) => _loadDiaryEntries());
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                            label:
+                                selectedEntry != null
+                                    ? 'diary_edit'.tr
+                                    : 'diary_create'.tr,
+                            icon:
+                                selectedEntry != null
+                                    ? DsIconKind.edit
+                                    : DsIconKind.plus,
+                            size: DSButtonSize.sm,
+                            onPressed: () {
+                              final targetDay = _selectedDay ?? DateTime.now();
+                              final normalizedTargetDay = DateTime(
+                                targetDay.year,
+                                targetDay.month,
+                                targetDay.day,
+                              );
+                              NavigationHelper.openContainerWithHero(
+                                context,
+                                (_) => DiaryEditorScreen(
+                                  date: normalizedTargetDay,
+                                  storage: widget.storage,
+                                  initialTitle: selectedEntry?.title ?? '',
+                                  initialContent: selectedEntry?.content ?? '',
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      selectedEntry != null
-                                          ? Icons.edit
-                                          : Icons.add,
-                                      size: 16,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      selectedEntry != null
-                                          ? 'diary_edit'.tr
-                                          : 'diary_create'.tr,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                                sourceKey: _editButtonKey,
+                                heroTag: 'diary_edit_button',
+                                closedColor: primaryColor,
+                                closedShape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              ),
-                            ),
+                              ).then((_) => _loadDiaryEntries());
+                            },
                           ),
                         ],
                       ),
@@ -542,22 +475,9 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                         SizedBox(
                           height: 200,
                           child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.edit_note,
-                                  size: 48,
-                                  color: textColor.withValues(alpha: 0.3),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'diary_noDiaryForDate'.tr,
-                                  style: TextStyle(
-                                    color: textColor.withValues(alpha: 0.4),
-                                  ),
-                                ),
-                              ],
+                            child: DSEmptyState(
+                              emoji: '📖',
+                              title: 'diary_noDiaryForDate'.tr,
                             ),
                           ),
                         ),
@@ -576,44 +496,32 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
         Positioned(
           bottom: 16,
           right: 16,
-          child: Material(
+          child: DSFab(
             key: _fabKey,
-            elevation: 6,
-            shape: const CircleBorder(),
-            color: primaryColor,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {
-                final targetDay = _selectedDay ?? DateTime.now();
-                final normalizedTargetDay = DateTime(
-                  targetDay.year,
-                  targetDay.month,
-                  targetDay.day,
-                );
-                // 获取当前选中日期的条目
-                final entry = _diaryEntries[normalizedTargetDay];
-                NavigationHelper.openContainerWithHero(
-                  context,
-                  (_) => DiaryEditorScreen(
-                    date: normalizedTargetDay,
-                    storage: widget.storage,
-                    initialTitle: entry?.title ?? '',
-                    initialContent: entry?.content ?? '',
-                  ),
-                  sourceKey: _fabKey,
-                  heroTag: 'diary_fab_add',
-                  closedColor: primaryColor,
-                  closedShape: const CircleBorder(),
-                ).then((_) => _loadDiaryEntries());
-              },
-              child: const SizedBox(
-                height: 56,
-                width: 56,
-                child: Center(
-                  child: Icon(Icons.add, color: Colors.white, size: 32),
+            size: 56,
+            onPressed: () {
+              final targetDay = _selectedDay ?? DateTime.now();
+              final normalizedTargetDay = DateTime(
+                targetDay.year,
+                targetDay.month,
+                targetDay.day,
+              );
+              // 获取当前选中日期的条目
+              final entry = _diaryEntries[normalizedTargetDay];
+              NavigationHelper.openContainerWithHero(
+                context,
+                (_) => DiaryEditorScreen(
+                  date: normalizedTargetDay,
+                  storage: widget.storage,
+                  initialTitle: entry?.title ?? '',
+                  initialContent: entry?.content ?? '',
                 ),
-              ),
-            ),
+                sourceKey: _fabKey,
+                heroTag: 'diary_fab_add',
+                closedColor: primaryColor,
+                closedShape: const CircleBorder(),
+              ).then((_) => _loadDiaryEntries());
+            },
           ),
         ),
       ],
@@ -624,11 +532,11 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     DateTime day,
     Color textColor,
     Color? borderColor,
-    bool isDark,
     DiaryEntry? entry, {
     bool isToday = false,
     bool isSelected = false,
   }) {
+    final theme = AppTheme.of(context);
     final hasEntry = entry != null;
 
     return Container(
@@ -637,12 +545,17 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
         borderRadius: BorderRadius.circular(12),
         border:
             (isSelected || isToday)
-                ? Border.all(color: borderColor ?? Colors.transparent, width: 2)
+                ? Border.all(
+                  color: borderColor ?? DsColors.transparent,
+                  width: 2,
+                )
                 : null,
         color:
             hasEntry
-                ? (isDark ? Colors.white10 : Colors.grey.shade100)
-                : Colors.transparent,
+                ? (theme.isDark
+                    ? theme.surfaceAlt.withValues(alpha: 0.35)
+                    : theme.surfaceAlt)
+                : DsColors.transparent,
       ),
       child: Stack(
         children: [

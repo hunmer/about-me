@@ -116,9 +116,10 @@ class DSButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: padH),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: hovered && !disabled
-                  ? theme.surfaceAlt.withValues(alpha: 0.7)
-                  : DsColors.transparent,
+              color:
+                  hovered && !disabled
+                      ? theme.surfaceAlt.withValues(alpha: 0.7)
+                      : DsColors.transparent,
               borderRadius: theme.radii.lg,
             ),
             child: content,
@@ -130,13 +131,17 @@ class DSButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: padH),
             // outline 变体：白表面 + 主色描边
             color: variant == DSButtonVariant.outline ? null : base,
-            strokeColor: variant == DSButtonVariant.outline
-                ? theme.primary.withValues(alpha: 0.55)
-                : null,
+            strokeColor:
+                variant == DSButtonVariant.outline
+                    ? theme.primary.withValues(alpha: 0.55)
+                    : null,
             raised: !pressed && !disabled,
-            shadows: pressed && !disabled
-                ? theme.pressedShadow(base == theme.surface ? theme.primary : base)
-                : null,
+            shadows:
+                pressed && !disabled
+                    ? theme.pressedShadow(
+                      base == theme.surface ? theme.primary : base,
+                    )
+                    : null,
             alignment: Alignment.center,
             child: content,
           );
@@ -188,9 +193,10 @@ class DSIconButton extends StatelessWidget {
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
         final disabled = onPressed == null;
-        final effectiveBase = disabled
-            ? theme.disabled
-            : pressed
+        final effectiveBase =
+            disabled
+                ? theme.disabled
+                : pressed
                 ? base.mixBlack(0.08)
                 : base;
         return AnimatedScale(
@@ -203,15 +209,16 @@ class DSIconButton extends StatelessWidget {
             radius: theme.radii.circle,
             color: effectiveBase,
             raised: !pressed && !disabled,
-            shadows:
-                pressed && !disabled ? theme.pressedShadow(base) : null,
+            shadows: pressed && !disabled ? theme.pressedShadow(base) : null,
             alignment: Alignment.center,
             child: DsIcon(
               icon,
               size: size * 0.5,
-              color: disabled
-                  ? theme.surface
-                  : iconColor ?? (color == null ? theme.onPrimary : theme.onPrimary),
+              color:
+                  disabled
+                      ? theme.surface
+                      : iconColor ??
+                          (color == null ? theme.onPrimary : theme.onPrimary),
             ),
           ),
         );
@@ -231,15 +238,25 @@ class DSFab extends StatelessWidget {
     this.icon = DsIconKind.plus,
     this.onPressed,
     this.size = 60,
+    this.color,
+    this.iconColor,
   });
 
   final DsIconKind icon;
   final VoidCallback? onPressed;
   final double size;
 
+  /// 覆盖按钮基色（默认主题主色）
+  final Color? color;
+
+  /// 覆盖图标颜色（默认主色上的前景色）
+  final Color? iconColor;
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final base = color ?? theme.primary;
+    final effectiveIconColor = iconColor ?? theme.onPrimary;
     return Pressable(
       onPressed: onPressed,
       builder: (context, states) {
@@ -253,13 +270,14 @@ class DSFab extends StatelessWidget {
             width: size,
             height: size,
             radius: theme.radii.circle,
-            color: theme.primary,
+            color: disabled ? theme.disabled : base,
             raised: !pressed,
-            shadows: pressed
-                ? theme.pressedShadow(theme.primary, height: 8)
-                : theme.jellyShadow(theme.primary, height: 8),
+            shadows:
+                pressed
+                    ? theme.pressedShadow(base, height: 8)
+                    : theme.jellyShadow(base, height: 8),
             alignment: Alignment.center,
-            child: DsIcon(icon, size: size * 0.46, color: theme.onPrimary),
+            child: DsIcon(icon, size: size * 0.46, color: effectiveIconColor),
           ),
         );
       },

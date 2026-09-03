@@ -5,6 +5,8 @@ import 'package:aboutme/plugins/chat/screens/tags/tags_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/controllers/channel_list_controller.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/widgets/channel_dialogs/channel_dialog.dart';
@@ -28,15 +30,13 @@ class _ChatBottomBarState extends State<ChatBottomBar>
   final GlobalKey _bottomBarKey = GlobalKey();
   late ChannelListController _channelListController;
 
-  // 使用插件主题色和辅助色（动态计算）
+  // 使用插件主题色和设计系统辅助色（动态计算）
   List<Color> _getColors(BuildContext context) {
-    final Color pluginColor = widget.plugin.color;
-    final Color secondaryColor = Theme.of(context).colorScheme.secondary;
-    final Color tertiaryColor = Theme.of(context).colorScheme.tertiary;
+    final theme = AppTheme.of(context);
     return [
-      pluginColor, // Tab0 - 频道列表 (插件主色)
-      secondaryColor, // Tab1 - 时间线
-      tertiaryColor, // Tab2 - 标签
+      widget.plugin.color, // Tab0 - 频道列表 (插件主色)
+      theme.secondary, // Tab1 - 时间线
+      theme.success, // Tab2 - 标签
     ];
   }
 
@@ -111,15 +111,16 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       defaultGroup = null;
     }
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => ChannelDialog(
             onAddChannel: (channel) async {
               await _channelListController.addChannel(channel);
             },
             defaultGroup: defaultGroup,
-      ),
+          ),
     );
   }
 
@@ -129,64 +130,59 @@ class _ChatBottomBarState extends State<ChatBottomBar>
     if (_currentPage != 0) {
       return null;
     }
-    return FloatingActionButton(
-      backgroundColor: widget.plugin.color,
-      elevation: 4,
-      shape: const CircleBorder(),
+    return DSFab(
+      icon: DsIconKind.chat,
+      color: widget.plugin.color,
+      iconColor:
+          widget.plugin.color.computeLuminance() < 0.5
+              ? DsColors.white
+              : DsColors.night,
       onPressed: _showAddChannelDialog,
-      child: Icon(
-        Icons.add_comment,
-        color: widget.plugin.color.computeLuminance() < 0.5
-            ? Colors.white
-            : Colors.black,
-        size: 32,
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = _getColors(context);
-
-    return CustomBottomBar(
-      colors: colors,
-      currentIndex: _currentPage,
-      tabController: _tabController,
-      bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          // Tab0: 频道列表
-          ChannelListScreen(
-            channels: widget.plugin.channelService.channels,
-            chatPlugin: widget.plugin,
-            controller: _channelListController,
-            onAddChannel: _showAddChannelDialog,
-          ),
-          // Tab1: 时间线
-          TimelineScreen(chatPlugin: widget.plugin),
-          // Tab2: 标签
-          TagsScreen(chatPlugin: widget.plugin),
-        ],
+    return DSThemeBridge(
+      // Builder 让取色在主题桥内执行，可读取 AppTheme
+      child: Builder(
+        builder:
+            (context) => CustomBottomBar(
+              colors: _getColors(context),
+              currentIndex: _currentPage,
+              tabController: _tabController,
+              bottomBarKey: _bottomBarKey,
+              body:
+                  (context, controller) => TabBarView(
+                    controller: _tabController,
+                    dragStartBehavior: DragStartBehavior.start,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      // Tab0: 频道列表
+                      ChannelListScreen(
+                        channels: widget.plugin.channelService.channels,
+                        chatPlugin: widget.plugin,
+                        controller: _channelListController,
+                        onAddChannel: _showAddChannelDialog,
+                      ),
+                      // Tab1: 时间线
+                      TimelineScreen(chatPlugin: widget.plugin),
+                      // Tab2: 标签
+                      TagsScreen(chatPlugin: widget.plugin),
+                    ],
+                  ),
+              fab: _buildFab(),
+              fabLocation: Alignment.topRight,
+              children: [
+                Tab(icon: DsIcon(DsIconKind.chat), text: 'chat_channelsTab'.tr),
+                Tab(
+                  icon: DsIcon(DsIconKind.clock),
+                  text: 'chat_timelineTab'.tr,
+                ),
+                Tab(icon: DsIcon(DsIconKind.tag), text: 'chat_tagsTab'.tr),
+              ],
+            ),
       ),
-      fab: _buildFab(),
-      fabLocation: Alignment.topRight,
-      children: [
-        Tab(
-          icon: const Icon(Icons.chat_bubble_outline),
-          text: 'chat_channelsTab'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.timeline),
-          text: 'chat_timelineTab'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.tag),
-          text: 'chat_tagsTab'.tr,
-        ),
-      ],
     );
   }
 }
