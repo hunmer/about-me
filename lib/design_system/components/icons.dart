@@ -30,6 +30,14 @@ enum DsIconKind {
   more,
   moon,
   sun,
+  book,
+  calendarCheck,
+  piggy,
+  gift,
+  drop,
+  clipboard,
+  sprout,
+  cart,
 }
 
 /// 自绘图标组件：24x24 逻辑画布，线条圆头
@@ -287,6 +295,149 @@ class _DsIconPainter extends CustomPainter {
               const Offset(0, -6.2), const Offset(0, -8.6), stroke);
           canvas.restore();
         }
+      case DsIconKind.book:
+        // 摊开的书：左右两页 + 中缝
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 6.8)
+            ..cubicTo(10.2, 5.0, 7.2, 4.6, 4.2, 5.2)
+            ..lineTo(4.2, 18.6)
+            ..cubicTo(7.2, 18.0, 10.2, 18.4, 12, 20.0)
+            ..cubicTo(13.8, 18.4, 16.8, 18.0, 19.8, 18.6)
+            ..lineTo(19.8, 5.2)
+            ..cubicTo(16.8, 4.6, 13.8, 5.0, 12, 6.8)
+            ..close(),
+          stroke,
+        );
+        canvas.drawLine(const Offset(12, 7.2), const Offset(12, 19.6), stroke);
+      case DsIconKind.calendarCheck:
+        // 日历 + 对勾（打卡）
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4, 5.6, 20, 19.6),
+            const Radius.circular(2.8),
+          ),
+          stroke,
+        );
+        canvas.drawLine(const Offset(8.5, 3.6), const Offset(8.5, 7.2), stroke);
+        canvas.drawLine(
+            const Offset(15.5, 3.6), const Offset(15.5, 7.2), stroke);
+        canvas.drawPath(
+          Path()
+            ..moveTo(8.4, 12.8)
+            ..lineTo(11.2, 15.5)
+            ..lineTo(15.9, 10.3),
+          stroke,
+        );
+      case DsIconKind.piggy:
+        // 蓄钱罐：椭圆身体 + 左侧猪鼻 + 耳朵 + 硬币口 + 四腿简化为两腿
+        canvas.drawOval(const Rect.fromLTRB(4.6, 8.0, 19.8, 18.0), stroke);
+        canvas.drawLine(
+            const Offset(10.6, 8.0), const Offset(14.0, 8.0), stroke);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(2.2, 11.0, 6.4, 14.8),
+            const Radius.circular(1.9),
+          ),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(14.8, 8.4)
+            ..lineTo(16.6, 5.8)
+            ..lineTo(18.0, 8.6),
+          stroke,
+        );
+        canvas.drawLine(const Offset(8.6, 18.0), const Offset(8.6, 20.2), stroke);
+        canvas.drawLine(
+            const Offset(15.8, 18.0), const Offset(15.8, 20.2), stroke);
+      case DsIconKind.gift:
+        // 礼盒：盒身 + 盖子 + 竖丝带 + 蝴蝶结
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(5, 11, 19, 20.2),
+            const Radius.circular(2),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(4, 7.4, 20, 11),
+            const Radius.circular(1.8),
+          ),
+          stroke,
+        );
+        canvas.drawLine(const Offset(12, 7.4), const Offset(12, 20.2), stroke);
+        canvas.drawCircle(const Offset(9.1, 5.2), 2.1, stroke);
+        canvas.drawCircle(const Offset(14.9, 5.2), 2.1, stroke);
+      case DsIconKind.drop:
+        // 水滴
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 4)
+            ..cubicTo(9.8, 7.4, 5.5, 11.8, 5.5, 15.0)
+            ..arcToPoint(
+              const Offset(18.5, 15.0),
+              radius: const Radius.circular(6.5),
+              largeArc: false,
+              clockwise: false,
+            )
+            ..cubicTo(18.5, 11.8, 14.2, 7.4, 12, 4)
+            ..close(),
+          stroke,
+        );
+      case DsIconKind.clipboard:
+        // 任务剪贴板：板身 + 顶部夹子 + 两条清单线
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(5, 5.2, 19, 20.4),
+            const Radius.circular(2.6),
+          ),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(9, 3.2, 15, 7.0),
+            const Radius.circular(1.5),
+          ),
+          stroke,
+        );
+        canvas.drawLine(const Offset(8.6, 11.4), const Offset(15.4, 11.4), stroke);
+        canvas.drawLine(const Offset(8.6, 15.2), const Offset(13.4, 15.2), stroke);
+      case DsIconKind.sprout:
+        // 嫩芽：土壤线 + 茎 + 左右两片叶子
+        canvas.drawLine(const Offset(6.2, 20.2), const Offset(17.8, 20.2), stroke);
+        canvas.drawLine(const Offset(12, 20.2), const Offset(12, 11.8), stroke);
+        canvas.drawPath(
+          Path()
+            ..moveTo(11.9, 12.4)
+            ..cubicTo(11.7, 8.8, 8.8, 6.4, 4.6, 6.7)
+            ..cubicTo(4.8, 10.4, 7.7, 12.7, 11.9, 12.4)
+            ..close(),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(12.1, 10.8)
+            ..cubicTo(12.3, 7.5, 14.9, 5.5, 18.7, 5.7)
+            ..cubicTo(18.5, 9.1, 15.9, 11.1, 12.1, 10.8)
+            ..close(),
+          stroke,
+        );
+      case DsIconKind.cart:
+        // 购物车：车斗 + 把手 + 两轮
+        canvas.drawPath(
+          Path()
+            ..moveTo(3.4, 4.8)
+            ..lineTo(6.1, 4.8)
+            ..lineTo(8.4, 14.4)
+            ..lineTo(18.6, 14.4)
+            ..lineTo(20.6, 7.4)
+            ..lineTo(7.0, 7.4),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(9.6, 18.6), 1.7, stroke);
+        canvas.drawCircle(const Offset(16.9, 18.6), 1.7, stroke);
     }
     canvas.restore();
   }

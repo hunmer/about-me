@@ -84,13 +84,17 @@ class DSSwitch extends StatelessWidget {
       builder: (context, states) {
         return Semantics(
           toggled: value,
+          // 外框 72×54 > 轨道 62×36：顶部与两侧留白给反馈线和轨道挤压形变，
+          // 所有绘制都在布局边界内，任何父级裁剪都不会切到动效
           child: SizedBox(
-            width: 62,
-            height: 36,
+            width: 72,
+            height: 54,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Positioned.fill(
+                Positioned(
+                  left: 5,
+                  bottom: 2,
                   child: _buildTrack(theme, trackColor, disabled)
                       // カチッ：轨道挤压形变（跟随滑块节拍）。
                       // 注意：flutter_animate 同名效果是嵌套叠加而非替换，
@@ -110,8 +114,8 @@ class DSSwitch extends StatelessWidget {
                 ),
                 // カチッ：开启瞬间右上方划过的反馈短线
                 Positioned(
-                  right: -3,
-                  top: -12,
+                  right: 8,
+                  top: 3,
                   child: _KachiLines(
                     color: disabled
                         ? theme.disabled
@@ -232,20 +236,17 @@ class _KachiLines extends StatelessWidget {
     return AnimatedOpacity(
       opacity: active ? 1 : 0,
       duration: const Duration(milliseconds: 90),
-      child: Transform.rotate(
-        angle: -0.45,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _line(0.24),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: _line(-0.24),
-            ),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _line(0.24),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: _line(-0.24),
+          ),
+        ],
       ),
     );
   }
@@ -271,7 +272,7 @@ class _KachiLines extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(999),
         child: SizedBox(
-          width: 14,
+          width: 22,
           height: 3,
           // 滑入 → 稍过冲 → 回稳；反向（关闭）时被 AnimatedOpacity 隐藏
           child: Container(
