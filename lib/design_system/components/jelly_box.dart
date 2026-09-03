@@ -103,18 +103,17 @@ class JellyBox extends StatelessWidget {
 
 /// 水晶高光装饰：绘制在果冻件表层（child 之上）
 ///
-/// 对应设计稿的玻璃/水晶反光，三层叠加：
+/// 对应设计稿的玻璃/水晶反光，两层叠加：
 /// 1. 顶部弧形「玻璃罩」高光带（下缘为弧线，水晶感的关键）
 /// 2. 内侧亮白描边（贴合外形的内圈亮边）
-/// 3. 右下角柔和回光（环境光底部反射）
 ///
 /// [JellyBox] 彩色件自动带这层效果；不用 JellyBox 的组件
 /// （switch 轨道 / slider 进度 / 底部导航选中块等）可直接把它
 /// 挂到 Container 的 `foregroundDecoration` 上复用同款质感。
 ///
-/// 注：曾加过左上角点状高光斑（RadialGradient），但在宽扁按钮上
-/// 会被拉成椭圆形白斑、观感像污渍投影，已移除——点状高光需要
-/// 接近正圆的画布才好看，不适合通用罩层。
+/// 注：曾加过左上角点状高光斑、右下角回光（都是 RadialGradient），
+/// 但在宽扁按钮上会被拉成椭圆形斑、观感像脏污投影，均已移除——
+/// 径向光斑不适合通用罩层，高光只保留贴合外形的结构光。
 class JellyGlossDecoration extends Decoration {
   const JellyGlossDecoration({required this.radius, required this.isDark});
 
@@ -148,6 +147,14 @@ class _JellyGlossPainter extends BoxPainter {
 
     // 内缩一圈，高光与内描边都贴在外描边内侧
     final inner = rrect.deflate(2.5);
+
+    // 退化尺寸保护：宽/高 ≤ 2（如 slider 进度 value≈0 时宽仅 4px，
+    // deflate 后为负值）继续绘制会产生非法 RRect/椭圆半径，
+    // debug 下直接断言崩溃、组件被错误件替换——直接跳过罩层
+    if (inner.width <= 2 || inner.height <= 2) {
+      canvas.restore();
+      return;
+    }
 
     // 1. 顶部弧形「玻璃罩」高光带：高度约一半，下缘用椭圆角拉出弧线
     final glossH = rect.height * 0.52;
@@ -200,21 +207,8 @@ class _JellyGlossPainter extends BoxPainter {
     );
     canvas.restore();
 
-    // 3. 右下角柔和回光
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(0.8, 0.85),
-          radius: 0.65,
-          colors: [
-            _white.withValues(alpha: dark ? 0.08 : 0.18),
-            _clear,
-          ],
-          stops: const [0.0, 0.7],
-        ).createShader(rect),
-    );
-
+    // 配对最外层的 save（clipRRect）——漏掉会导致裁剪泄漏，
+    // 本组件之后的整页内容都被这个圆角矩形裁掉（组件"不显示"）
     canvas.restore();
   }
 }
