@@ -10,6 +10,7 @@ import 'models/action_definition.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
 import 'action_executor.dart';
+import 'action_storage.dart';
 import 'package:aboutme/core/app_initializer.dart';
 
 /// 动作管理器单例
@@ -450,45 +451,84 @@ class ActionManager {
 
   // === 配置存储 ===
 
-  /// 从文件加载配置
+  /// 从存储加载配置（统一走 ActionStorage）
   Future<void> _loadConfig() async {
     try {
-      // 加载手势动作配置
-      final gestureActionsData = await globalStorage.read(
-        'floating_ball_gesture_actions.json',
-      );
-      if (gestureActionsData != null && gestureActionsData is Map) {
-        _gestureActions.clear();
-        for (final entry in gestureActionsData.entries) {
-          final gestureName = entry.key as String;
-          final configData = entry.value as Map<String, dynamic>;
+      final storage = ActionStorage();
 
-          final gesture = FloatingBallGesture.values.firstWhere(
-            (g) => g.name == gestureName,
-            orElse: () => throw Exception('Unknown gesture: $gestureName'),
-          );
+      if (await storage.hasConfig()) {
+        final data = await storage.loadConfig();
 
-          _gestureActions[gesture] = GestureActionConfig.fromJson(configData);
-        }
-      }
-
-      // 加载动作组配置
-      final groupsData = await globalStorage.read(
-        'floating_ball_action_groups.json',
-      );
-      if (groupsData != null && groupsData is Map) {
-        _actionGroups.clear();
-        for (final entry in groupsData.entries) {
-          final groupId = entry.key as String;
-          final groupData = entry.value as Map<String, dynamic>;
-          _actionGroups[groupId] = ActionGroup.fromJson(groupData);
-        }
+        _gestureActions
+          ..clear()
+          ..addAll(data.gestureActions);
+        _customActions
+          ..clear()
+          ..addAll(data.customActions);
+        _actionGroups
+          ..clear()
+          ..addAll(data.actionGroups);
+      } else {
+        // 兼容旧版分散存储的 key，一次性迁入统一配置文件
+        await _loadLegacyConfig();
+        await _saveConfig();
       }
 
       // 为 tap 手势设置默认动作（如果没有配置的话）
       _ensureDefaultTapAction();
     } catch (e) {
-      print('Error loading gesture actions: $e');
+      debugPrint('Error loading action config: $e');
+    }
+  }
+
+  /// 读取旧版分散存储的手势动作与动作组（仅用于首次迁移）
+  Future<void> _loadLegacyConfig() async {
+    final gestureActionsData = await globalStorage.read(
+      'floating_ball_gesture_actions.json',
+    );
+    if (gestureActionsData is Map) {
+      for (final entry in gestureActionsData.entries) {
+        final gesture = FloatingBallGesture.values
+            .where((g) => g.name == entry.key)
+            .firstOrNull;
+        if (gesture == null || entry.value is! Map) continue;
+
+        _gestureActions[gesture] = GestureActionConfig.fromJson(
+          Map<String, dynamic>.from(entry.value),
+        );
+      }
+    }
+
+    final groupsData = await globalStorage.read(
+      'floating_ball_action_groups.json',
+    );
+    if (groupsData is Map) {
+      for (final entry in groupsData.entries) {
+        if (entry.value is! Map) continue;
+        _actionGroups[entry.key as String] = ActionGroup.fromJson(
+          Map<String, dynamic>.from(entry.value),
+        );
+      }
+    }
+  }
+
+  /// 通过 ActionStorage 统一保存当前动作配置
+  Future<void> _saveConfig() async {
+    try {
+      await ActionStorage().saveConfig(
+        ActionStorageData(
+          version: STORAGE_VERSION,
+          lastModified: DateTime.now(),
+          gestureActions: Map<FloatingBallGesture, GestureActionConfig>.from(
+            _gestureActions,
+          ),
+          customActions: Map<String, ActionInstance>.from(_customActions),
+          actionGroups: Map<String, ActionGroup>.from(_actionGroups),
+          settings: {},
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error saving action config: $e');
     }
   }
 
@@ -507,39 +547,26 @@ class ActionManager {
   }
 
   /// 保存手势动作配置
-  Future<void> _saveGestureActions() async {
-    try {
-      final gestureActionsData = <String, Map<String, dynamic>>{};
-
-      for (final entry in _gestureActions.entries) {
-        gestureActionsData[entry.key.name] = entry.value.toJson();
-      }
-
-      await globalStorage.write(
-        'floating_ball_gesture_actions.json',
-        gestureActionsData,
-      );
-    } catch (e) {
-      print('Error saving gesture actions: $e');
-    }
-  }
+  Future<void> _saveGestureActions() => _saveConfig();
 
   // === 自定义动作实例管理 ===
 
   /// 保存自定义动作实例
-  void saveCustomAction(ActionInstance instance) {
+  Future<void> saveCustomAction(ActionInstance instance) async {
     if (instance.id == null) {
       throw ArgumentError('Action instance must have an ID');
     }
     _customActions[instance.id!] = instance;
+    await _saveConfig();
   }
 
   /// 获取自定义动作实例
   ActionInstance? getCustomAction(String id) => _customActions[id];
 
   /// 删除自定义动作实例
-  void deleteCustomAction(String id) {
+  Future<void> deleteCustomAction(String id) async {
     _customActions.remove(id);
+    await _saveConfig();
   }
 
   // === 动作组管理 ===
@@ -563,20 +590,7 @@ class ActionManager {
   }
 
   /// 保存动作组到存储
-  Future<void> _saveActionGroups() async {
-    try {
-      final groupsData = <String, Map<String, dynamic>>{};
-      for (final entry in _actionGroups.entries) {
-        groupsData[entry.key] = entry.value.toJson();
-      }
-      await globalStorage.write(
-        'floating_ball_action_groups.json',
-        groupsData,
-      );
-    } catch (e) {
-      print('Error saving action groups: $e');
-    }
-  }
+  Future<void> _saveActionGroups() => _saveConfig();
 
   // === 资源清理 ===
 
@@ -679,8 +693,7 @@ class ActionManager {
         }
       }
 
-      await _saveGestureActions();
-      await _saveActionGroups();
+      await _saveConfig();
     } catch (e) {
       print('Error importing action config: $e');
       rethrow;

@@ -1,9 +1,9 @@
 /// 动作存储管理
-/// 负责动作配置的持久化存储
+/// 负责动作配置的持久化存储（基于 globalStorage，桌面/移动/Web 通用）
 library;
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 import 'package:flutter/material.dart';
 import 'models/action_instance.dart';
@@ -12,8 +12,11 @@ import 'models/action_group.dart';
 /// 存储配置版本
 const String STORAGE_VERSION = '1.0';
 
-/// 动作存储配置文件名
+/// 动作存储配置文件名（globalStorage 存储 key，位于 app_data 根目录）
 const String CONFIG_FILE_NAME = 'floating_ball_config_v1.json';
+
+/// 备份文件所在目录（app_data 下的子目录）
+const String _backupDir = 'action_config_backups';
 
 /// 动作存储管理类
 class ActionStorage {
@@ -22,61 +25,21 @@ class ActionStorage {
   factory ActionStorage() => _instance;
   ActionStorage._internal();
 
-  // 存储目录路径
-  String? _storageDir;
-
-  /// 初始化存储
-  Future<void> initialize({String? storageDir}) async {
-    _storageDir = storageDir ?? await _getDefaultStorageDir();
-
-    // 确保目录存在
-    final dir = Directory(_storageDir!);
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-  }
-
-  /// 获取默认存储目录
-  Future<String> _getDefaultStorageDir() async {
-    // TODO: 从 storage_manager 获取存储目录
-    // 或者使用应用数据目录
-    // return '${AppPaths.storage}/action';
-
-    // 临时实现
-    return 'storage';
-  }
-
-  /// 获取配置文件路径
-  String get configFilePath {
-    if (_storageDir == null) {
-      throw StateError('Storage not initialized. Call initialize() first.');
-    }
-    return '$_storageDir/$CONFIG_FILE_NAME';
-  }
+  /// 检查配置文件是否存在
+  Future<bool> hasConfig() => globalStorage.exists(CONFIG_FILE_NAME);
 
   /// 加载配置
   Future<ActionStorageData> loadConfig() async {
-    final file = File(configFilePath);
-
-    if (!await file.exists()) {
-      // 文件不存在，返回空配置
-      return ActionStorageData(
-        version: STORAGE_VERSION,
-        lastModified: DateTime.now(),
-        gestureActions: {},
-        customActions: {},
-        actionGroups: {},
-        settings: {},
-      );
-    }
-
     try {
-      final jsonString = await file.readAsString();
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      final raw = await globalStorage.readJson(CONFIG_FILE_NAME);
+      if (raw is! Map || raw.isEmpty) {
+        return _emptyConfig();
+      }
+      final json = _toStringKeyMap(raw);
 
       // 解析手势动作
       final gestureActions = <FloatingBallGesture, GestureActionConfig>{};
-      final gestureJson = json['gestureActions'] as Map<String, dynamic>?;
+      final gestureJson = _toMapOrNull(json['gestureActions']);
       if (gestureJson != null) {
         gestureJson.forEach((key, value) {
           final gesture = FloatingBallGesture.values.firstWhere(
@@ -84,48 +47,47 @@ class ActionStorage {
             orElse: () => FloatingBallGesture.tap,
           );
           gestureActions[gesture] = GestureActionConfig.fromJson(
-            value as Map<String, dynamic>,
+            _toStringKeyMap(value),
           );
         });
       }
 
       // 解析自定义动作实例
       final customActions = <String, ActionInstance>{};
-      final customActionsJson = json['customActions'] as Map<String, dynamic>?;
+      final customActionsJson = _toMapOrNull(json['customActions']);
       if (customActionsJson != null) {
         customActionsJson.forEach((key, value) {
-          customActions[key] = ActionInstance.fromJson(
-            value as Map<String, dynamic>,
-          );
+          customActions[key] = ActionInstance.fromJson(_toStringKeyMap(value));
         });
       }
 
       // 解析动作组
       final actionGroups = <String, ActionGroup>{};
-      final actionGroupsJson = json['actionGroups'] as Map<String, dynamic>?;
+      final actionGroupsJson = _toMapOrNull(json['actionGroups']);
       if (actionGroupsJson != null) {
         actionGroupsJson.forEach((key, value) {
-          actionGroups[key] = ActionGroup.fromJson(
-            value as Map<String, dynamic>,
-          );
+          actionGroups[key] = ActionGroup.fromJson(_toStringKeyMap(value));
         });
       }
 
-      // 解析设置
-      final settings = json['settings'] as Map<String, dynamic>? ?? {};
-
       return ActionStorageData(
         version: json['version'] as String? ?? STORAGE_VERSION,
-        lastModified: DateTime.parse(json['lastModified'] as String),
+        lastModified:
+            DateTime.tryParse(json['lastModified'] as String? ?? '') ??
+            DateTime.now(),
         gestureActions: gestureActions,
         customActions: customActions,
         actionGroups: actionGroups,
-        settings: settings,
+        settings: _toMapOrNull(json['settings']) ?? {},
       );
     } catch (e) {
       debugPrint('Failed to load config: $e');
       // 出错时返回空配置
-      return ActionStorageData(
+      return _emptyConfig();
+    }
+  }
+
+  ActionStorageData _emptyConfig() => ActionStorageData(
         version: STORAGE_VERSION,
         lastModified: DateTime.now(),
         gestureActions: {},
@@ -133,206 +95,75 @@ class ActionStorage {
         actionGroups: {},
         settings: {},
       );
-    }
-  }
 
   /// 保存配置
   Future<void> saveConfig(ActionStorageData data) async {
-    final file = File(configFilePath);
-
-    final json = {
-      'version': data.version,
-      'lastModified': data.lastModified.toIso8601String(),
-      'gestureActions': data.gestureActions.map(
-        (gesture, config) => MapEntry(gesture.name, config.toJson()),
-      ),
-      'customActions': data.customActions.map(
-        (id, instance) => MapEntry(id, instance.toJson()),
-      ),
-      'actionGroups': data.actionGroups.map(
-        (id, group) => MapEntry(id, group.toJson()),
-      ),
-      'settings': data.settings,
-    };
-
-    final jsonString = JsonEncoder.withIndent('  ').convert(json);
-
-    await file.writeAsString(jsonString);
+    await globalStorage.writeJson(CONFIG_FILE_NAME, data.toJson());
   }
 
-  /// 备份配置
+  /// 备份配置，返回备份文件的存储 key
   Future<String> backupConfig() async {
-    final file = File(configFilePath);
-    if (!await file.exists()) {
+    final content = await globalStorage.readFile(CONFIG_FILE_NAME);
+    if (content.isEmpty) {
       throw StateError('Config file does not exist');
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final backupFileName = 'floating_ball_config_v1_backup_$timestamp.json';
-    final backupPath = '$_storageDir/$backupFileName';
+    final backupKey =
+        '$_backupDir/floating_ball_config_v1_backup_$timestamp.json';
+    await globalStorage.writeFile(backupKey, content);
 
-    await file.copy(backupPath);
-
-    return backupPath;
+    return backupKey;
   }
 
   /// 恢复配置
   Future<void> restoreConfig(String backupPath) async {
-    final backupFile = File(backupPath);
-    if (!await backupFile.exists()) {
-      throw StateError('Backup file does not exist: $backupPath');
+    final content = await globalStorage.readFile(backupPath);
+    if (content.isEmpty) {
+      throw StateError('Backup file does not exist');
     }
 
-    // 备份当前配置
-    final currentBackup = await backupConfig();
-
-    try {
-      // 恢复配置
-      await backupFile.copy(configFilePath);
-    } catch (e) {
-      // 恢复失败，恢复备份
-      await File(currentBackup).copy(configFilePath);
-      rethrow;
-    }
-  }
-
-  /// 导出配置为 JSON 字符串
-  Future<String> exportConfigAsJson() async {
-    final data = await loadConfig();
-
-    final exportData = {
-      'exportVersion': STORAGE_VERSION,
-      'exportTime': DateTime.now().toIso8601String(),
-      'data': {
-        'version': data.version,
-        'gestureActions': data.gestureActions.map(
-          (gesture, config) => MapEntry(gesture.name, config.toJson()),
-        ),
-        'customActions': data.customActions.map(
-          (id, instance) => MapEntry(id, instance.toJson()),
-        ),
-        'actionGroups': data.actionGroups.map(
-          (id, group) => MapEntry(id, group.toJson()),
-        ),
-        'settings': data.settings,
-      },
-    };
-
-    return JsonEncoder.withIndent('  ').convert(exportData);
-  }
-
-  /// 从 JSON 字符串导入配置
-  Future<void> importConfigFromJson(String jsonString) async {
-    // 备份当前配置
-    final backup = await backupConfig();
-
-    try {
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final dataJson = json['data'] as Map<String, dynamic>? ?? json;
-
-      // 解析手势动作
-      final gestureActions = <FloatingBallGesture, GestureActionConfig>{};
-      final gestureJson = dataJson['gestureActions'] as Map<String, dynamic>?;
-      if (gestureJson != null) {
-        gestureJson.forEach((key, value) {
-          final gesture = FloatingBallGesture.values.firstWhere(
-            (g) => g.name == key,
-            orElse: () => FloatingBallGesture.tap,
-          );
-          gestureActions[gesture] = GestureActionConfig.fromJson(
-            value as Map<String, dynamic>,
-          );
-        });
-      }
-
-      // 解析自定义动作实例
-      final customActions = <String, ActionInstance>{};
-      final customActionsJson = dataJson['customActions'] as Map<String, dynamic>?;
-      if (customActionsJson != null) {
-        customActionsJson.forEach((key, value) {
-          customActions[key] = ActionInstance.fromJson(
-            value as Map<String, dynamic>,
-          );
-        });
-      }
-
-      // 解析动作组
-      final actionGroups = <String, ActionGroup>{};
-      final actionGroupsJson = dataJson['actionGroups'] as Map<String, dynamic>?;
-      if (actionGroupsJson != null) {
-        actionGroupsJson.forEach((key, value) {
-          actionGroups[key] = ActionGroup.fromJson(
-            value as Map<String, dynamic>,
-          );
-        });
-      }
-
-      // 解析设置
-      final settings = dataJson['settings'] as Map<String, dynamic>? ?? {};
-
-      final data = ActionStorageData(
-        version: dataJson['version'] as String? ?? STORAGE_VERSION,
-        lastModified: DateTime.now(),
-        gestureActions: gestureActions,
-        customActions: customActions,
-        actionGroups: actionGroups,
-        settings: settings,
-      );
-
-      await saveConfig(data);
-    } catch (e) {
-      // 导入失败，恢复备份
-      await restoreConfig(backup);
-      rethrow;
-    }
+    await globalStorage.writeFile(CONFIG_FILE_NAME, content);
   }
 
   /// 删除配置
   Future<void> deleteConfig() async {
-    final file = File(configFilePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
+    await globalStorage.deleteFile(CONFIG_FILE_NAME);
   }
 
   /// 获取配置信息
   Future<ConfigInfo> getConfigInfo() async {
-    final file = File(configFilePath);
+    final content = await globalStorage.readFile(CONFIG_FILE_NAME);
 
-    if (!await file.exists()) {
-      return ConfigInfo(
-        exists: false,
-        size: 0,
-        lastModified: null,
-      );
-    }
-
-    final stat = await file.stat();
     return ConfigInfo(
-      exists: true,
-      size: stat.size,
-      lastModified: stat.modified,
+      exists: content.isNotEmpty,
+      size: content.length,
+      lastModified: null,
     );
   }
 
   /// 列出所有备份文件
   Future<List<BackupFileInfo>> listBackups() async {
-    final dir = Directory(_storageDir!);
-    if (!await dir.exists()) return [];
-
-    final files = await dir.list().toList();
+    final keys = await globalStorage.getKeysWithPrefix(_backupDir);
     final backups = <BackupFileInfo>[];
 
-    for (final file in files) {
-      if (file is File && file.path.contains('backup')) {
-        final stat = await file.stat();
-        backups.add(BackupFileInfo(
-          path: file.path,
-          name: file.uri.pathSegments.last,
-          size: stat.size,
-          createdAt: stat.modified,
-        ));
-      }
+    for (final key in keys) {
+      if (!key.contains('backup')) continue;
+
+      final content = await globalStorage.readFile(key);
+      final match = RegExp(r'backup_(\d+)\.json$').firstMatch(key);
+      backups.add(
+        BackupFileInfo(
+          path: key,
+          name: key.split('/').last,
+          size: content.length,
+          createdAt: match != null
+              ? DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(match.group(1)!),
+                )
+              : DateTime.now(),
+        ),
+      );
     }
 
     // 按创建时间排序
@@ -349,28 +180,25 @@ class ActionStorage {
 
     // 删除多余的备份
     for (int i = keepCount; i < backups.length; i++) {
-      await File(backups[i].path).delete();
+      await globalStorage.deleteFile(backups[i].path);
     }
   }
 
   /// 验证配置文件
   Future<ConfigValidationResult> validateConfig() async {
-    final file = File(configFilePath);
-
-    if (!await file.exists()) {
-      return ConfigValidationResult(
-        isValid: false,
-        errors: ['Config file does not exist'],
-        warnings: [],
-      );
-    }
-
-    final errors = <String>[];
-    final warnings = <String>[];
-
     try {
-      final jsonString = await file.readAsString();
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      final raw = await globalStorage.readJson(CONFIG_FILE_NAME);
+      if (raw is! Map || raw.isEmpty) {
+        return ConfigValidationResult(
+          isValid: false,
+          errors: ['Config file does not exist'],
+          warnings: [],
+        );
+      }
+      final json = _toStringKeyMap(raw);
+
+      final errors = <String>[];
+      final warnings = <String>[];
 
       // 检查版本
       final version = json['version'] as String?;
@@ -389,22 +217,21 @@ class ActionStorage {
       }
 
       // 检查手势动作格式
-      final gestureJson = json['gestureActions'] as Map<String, dynamic>?;
+      final gestureJson = _toMapOrNull(json['gestureActions']);
       if (gestureJson != null) {
         for (final entry in gestureJson.entries) {
           final gestureName = entry.key;
-          final config = entry.value as Map<String, dynamic>?;
+          final config = _toMapOrNull(entry.value);
 
           if (config == null) {
             errors.add('Invalid gesture config for $gestureName');
             continue;
           }
 
-          FloatingBallGesture.values
-              .firstWhere(
-                (g) => g.name == gestureName,
-                orElse: () => FloatingBallGesture.tap,
-              );
+          FloatingBallGesture.values.firstWhere(
+            (g) => g.name == gestureName,
+            orElse: () => FloatingBallGesture.tap,
+          );
 
           // 验证配置结构
           try {
@@ -416,11 +243,11 @@ class ActionStorage {
       }
 
       // 检查自定义动作实例格式
-      final customActionsJson = json['customActions'] as Map<String, dynamic>?;
+      final customActionsJson = _toMapOrNull(json['customActions']);
       if (customActionsJson != null) {
         for (final entry in customActionsJson.entries) {
           final id = entry.key;
-          final instanceJson = entry.value as Map<String, dynamic>?;
+          final instanceJson = _toMapOrNull(entry.value);
 
           if (instanceJson == null) {
             errors.add('Invalid custom action instance: $id');
@@ -436,11 +263,11 @@ class ActionStorage {
       }
 
       // 检查动作组格式
-      final actionGroupsJson = json['actionGroups'] as Map<String, dynamic>?;
+      final actionGroupsJson = _toMapOrNull(json['actionGroups']);
       if (actionGroupsJson != null) {
         for (final entry in actionGroupsJson.entries) {
           final id = entry.key;
-          final groupJson = entry.value as Map<String, dynamic>?;
+          final groupJson = _toMapOrNull(entry.value);
 
           if (groupJson == null) {
             errors.add('Invalid action group: $id');
@@ -467,6 +294,87 @@ class ActionStorage {
         warnings: [],
       );
     }
+  }
+
+  /// 导出配置为 JSON 字符串
+  Future<String> exportConfigAsJson() async {
+    final data = await loadConfig();
+
+    final exportData = {
+      'exportVersion': STORAGE_VERSION,
+      'exportTime': DateTime.now().toIso8601String(),
+      'data': data.toJson(),
+    };
+
+    return JsonEncoder.withIndent('  ').convert(exportData);
+  }
+
+  /// 从 JSON 字符串导入配置
+  Future<void> importConfigFromJson(String jsonString) async {
+    // 备份当前配置
+    final backup = await backupConfig();
+
+    try {
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      final dataJson = _toMapOrNull(json['data']) ?? json;
+
+      // 解析手势动作
+      final gestureActions = <FloatingBallGesture, GestureActionConfig>{};
+      final gestureJson = _toMapOrNull(dataJson['gestureActions']);
+      if (gestureJson != null) {
+        gestureJson.forEach((key, value) {
+          final gesture = FloatingBallGesture.values.firstWhere(
+            (g) => g.name == key,
+            orElse: () => FloatingBallGesture.tap,
+          );
+          gestureActions[gesture] = GestureActionConfig.fromJson(
+            _toStringKeyMap(value),
+          );
+        });
+      }
+
+      // 解析自定义动作实例
+      final customActions = <String, ActionInstance>{};
+      final customActionsJson = _toMapOrNull(dataJson['customActions']);
+      if (customActionsJson != null) {
+        customActionsJson.forEach((key, value) {
+          customActions[key] = ActionInstance.fromJson(_toStringKeyMap(value));
+        });
+      }
+
+      // 解析动作组
+      final actionGroups = <String, ActionGroup>{};
+      final actionGroupsJson = _toMapOrNull(dataJson['actionGroups']);
+      if (actionGroupsJson != null) {
+        actionGroupsJson.forEach((key, value) {
+          actionGroups[key] = ActionGroup.fromJson(_toStringKeyMap(value));
+        });
+      }
+
+      final data = ActionStorageData(
+        version: dataJson['version'] as String? ?? STORAGE_VERSION,
+        lastModified: DateTime.now(),
+        gestureActions: gestureActions,
+        customActions: customActions,
+        actionGroups: actionGroups,
+        settings: _toMapOrNull(dataJson['settings']) ?? {},
+      );
+
+      await saveConfig(data);
+    } catch (e) {
+      // 导入失败，恢复备份
+      await restoreConfig(backup);
+      rethrow;
+    }
+  }
+
+  // Web 端解码结果可能是 Map<dynamic, dynamic>，统一转成 Map<String, dynamic>
+  Map<String, dynamic> _toStringKeyMap(dynamic value) {
+    return (value as Map).map((k, v) => MapEntry(k.toString(), v));
+  }
+
+  Map<String, dynamic>? _toMapOrNull(dynamic value) {
+    return value is Map ? _toStringKeyMap(value) : null;
   }
 }
 
