@@ -47,31 +47,53 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             Expanded(
               child: SafeArea(
                 bottom: false,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(height: theme.spacing.lg),
-                      _buildHeader(theme),
-                      SizedBox(height: theme.spacing.xl),
-                      Center(
-                        child: JellySpeechBubble(text: '今天想记录点什么呢？'),
+                child: LayoutBuilder(
+                  builder: (context, viewport) => SingleChildScrollView(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+                    // 内容不足一屏时也撑满视口高度，让底部卡片组贴住底部导航
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: viewport.maxHeight),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(height: theme.spacing.lg),
+                              _buildHeader(theme),
+                              SizedBox(height: theme.spacing.xl),
+                              Center(
+                                child: JellySpeechBubble(
+                                    text: '今天想记录点什么呢？'),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              _buildCharacterArea(theme),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // 富余空间都在角色区之上，快捷操作行贴着底部卡片组
+                              SizedBox(height: theme.spacing.md),
+                              _buildQuickActions(theme),
+                              SizedBox(height: theme.spacing.lg),
+                              _buildTaskRow(theme),
+                              SizedBox(height: theme.spacing.lg),
+                              JellyStoreBanner(
+                                title: '插件商店上新',
+                                subtitle: '新插件限时免费领',
+                                onTap: () {},
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+                            ],
+                          ),
+                        ],
                       ),
-                      SizedBox(height: theme.spacing.sm),
-                      _buildCharacterArea(theme),
-                      SizedBox(height: theme.spacing.md),
-                      _buildQuickActions(theme),
-                      SizedBox(height: theme.spacing.lg),
-                      _buildTaskRow(theme),
-                      SizedBox(height: theme.spacing.lg),
-                      JellyStoreBanner(
-                        title: '插件商店上新',
-                        subtitle: '新插件限时免费领',
-                        onTap: () {},
-                      ),
-                      SizedBox(height: theme.spacing.xxl),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -161,7 +183,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 角色占位（素材到位后替换）
+          // 角色占位（素材到位后替换）；不用 emoji——Windows 缺字形会渲染成方框
           Center(
             child: Container(
               width: 190,
@@ -173,11 +195,6 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
                   color: theme.stroke,
                   width: 2,
                 ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '🫧',
-                style: TextStyle(fontSize: 56),
               ),
             ),
           ),
@@ -257,10 +274,13 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 
   /// 任务 + 成长双卡
   ///
-  /// 在滚动视图内高度无界，需用 [IntrinsicHeight] 让 stretch 拿到
-  /// 有限高度，两张卡片才能等高。
+  /// 滚动视图内高度无界，不能用 IntrinsicHeight 拉等高——成长卡里的
+  /// DSLinearProgress 内部是 LayoutBuilder，不支持固有尺寸探测
+  /// （LayoutBuilder does not support returning intrinsic dimensions）。
+  /// 这里直接给定行高让 stretch 生效，高度取任务卡自然高度（约 136）+ 余量。
   Widget _buildTaskRow(AppThemeData theme) {
-    return IntrinsicHeight(
+    return SizedBox(
+      height: 148,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

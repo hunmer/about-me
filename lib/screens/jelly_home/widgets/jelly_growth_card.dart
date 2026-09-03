@@ -26,6 +26,8 @@ class JellyGrowthCard extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
+              // 双卡等高拉伸后内容垂直居中，避免堆在顶部
+              mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
