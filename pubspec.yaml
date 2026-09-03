@@ -69,6 +69,7 @@ dependencies:
   flutter_styled_toast: ^2.3.0
   smooth_sheets: ^0.15.0
   lottie: ^3.3.2
+  rive: ^0.14.11
   infinite_carousel: ^1.1.1
   animated_tree_view: ^2.3.0
   image: ^4.1.3

@@ -13,6 +13,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   irondash_engine_context
   permission_handler_windows
   record_windows
+  rive_native
   share_plus
   super_native_extensions
   url_launcher_windows
