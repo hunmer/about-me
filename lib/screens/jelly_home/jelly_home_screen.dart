@@ -126,7 +126,16 @@ class _CottageTabState extends State<_CottageTab> {
                       children: [
                         // 富余空间都在角色区之上，Live2D 角色贴着底部卡片组
                         SizedBox(height: theme.spacing.md),
-                        const Center(child: JellyLive2D()),
+                        // 点击命中角色本体（hit area）算一次陪伴互动
+                        Center(
+                          child: JellyLive2D(
+                            onTap: (hitAreaId, _) {
+                              if (hitAreaId != null) {
+                                _companion.recordInteraction();
+                              }
+                            },
+                          ),
+                        ),
                         SizedBox(height: theme.spacing.lg),
                         JellyCompanionCard(controller: _companion),
                         SizedBox(height: theme.spacing.lg),
