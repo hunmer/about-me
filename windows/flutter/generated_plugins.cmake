@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_js
   flutter_tts
   irondash_engine_context
+  live2d_flutter
   permission_handler_windows
   record_windows
   share_plus

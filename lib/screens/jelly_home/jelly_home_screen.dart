@@ -7,6 +7,7 @@ import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 import 'widgets/jelly_bottom_nav.dart';
 import 'widgets/jelly_daily_tasks_card.dart';
 import 'widgets/jelly_growth_card.dart';
+import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_profile_card.dart';
 import 'widgets/jelly_quick_action.dart';
 import 'widgets/jelly_stat_card.dart';
@@ -37,11 +38,17 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
       onTap: (index) => setState(() => _tabIndex = index),
       child: IndexedStack(
         index: _tabIndex,
-        children: const [
-          _CottageTab(),
-          HomeScheduleScreen(),
-          HomeScreen(asRoot: false),
-          SettingsScreen(),
+        children: [
+          HeroMode(enabled: _tabIndex == 0, child: const _CottageTab()),
+          HeroMode(
+            enabled: _tabIndex == 1,
+            child: const HomeScheduleScreen(),
+          ),
+          HeroMode(
+            enabled: _tabIndex == 2,
+            child: const HomeScreen(asRoot: false),
+          ),
+          HeroMode(enabled: _tabIndex == 3, child: const SettingsScreen()),
         ],
       ),
     );
@@ -101,6 +108,8 @@ class _CottageTab extends StatelessWidget {
                         // 富余空间都在角色区之上，快捷操作行贴着底部卡片组
                         SizedBox(height: theme.spacing.md),
                         _buildQuickActions(theme),
+                        SizedBox(height: theme.spacing.md),
+                        const Center(child: JellyLive2D()),
                         SizedBox(height: theme.spacing.lg),
                         _buildTaskRow(theme),
                         SizedBox(height: theme.spacing.lg),
@@ -171,12 +180,13 @@ class _CottageTab extends StatelessWidget {
 
   /// 快捷操作行：三个果冻圆钮居中，右侧悬浮「+」
   Widget _buildQuickActions(AppThemeData theme) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return SizedBox(
+      height: 84,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               JellyQuickAction(
                 icon: DsIconKind.book,
@@ -203,10 +213,9 @@ class _CottageTab extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        SizedBox(width: theme.spacing.sm),
-        DSFab(onPressed: () {}),
-      ],
+          Positioned(right: 0, top: 0, child: DSFab(onPressed: () {})),
+        ],
+      ),
     );
   }
 
