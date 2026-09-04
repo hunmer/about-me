@@ -11,12 +11,16 @@ class DSSlider extends StatefulWidget {
     super.key,
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
     this.activeColor,
   });
 
   /// 0.0 ~ 1.0
   final double value;
   final ValueChanged<double>? onChanged;
+
+  /// 拖动/点击结束时触发（值已在结束时经由 [onChanged] 更新）
+  final ValueChanged<double>? onChangeEnd;
   final Color? activeColor;
 
   @override
@@ -24,9 +28,19 @@ class DSSlider extends StatefulWidget {
 }
 
 class _DSSliderState extends State<DSSlider> {
+  double? _lastValue;
+
   void _update(double ratio, BoxConstraints constraints) {
     final t = (ratio / constraints.maxWidth).clamp(0.0, 1.0);
+    _lastValue = t;
     widget.onChanged?.call(t);
+  }
+
+  void _end() {
+    if (_lastValue != null) {
+      widget.onChangeEnd?.call(_lastValue!);
+      _lastValue = null;
+    }
   }
 
   @override
@@ -39,16 +53,16 @@ class _DSSliderState extends State<DSSlider> {
     return Semantics(
       slider: true,
       value: '${(value * 100).round()}%',
-      increasedValue:
-          '${(((value + 0.1).clamp(0.0, 1.0)) * 100).round()}%',
-      decreasedValue:
-          '${(((value - 0.1).clamp(0.0, 1.0)) * 100).round()}%',
-      onIncrease: disabled
-          ? null
-          : () => widget.onChanged!((value + 0.1).clamp(0.0, 1.0)),
-      onDecrease: disabled
-          ? null
-          : () => widget.onChanged!((value - 0.1).clamp(0.0, 1.0)),
+      increasedValue: '${(((value + 0.1).clamp(0.0, 1.0)) * 100).round()}%',
+      decreasedValue: '${(((value - 0.1).clamp(0.0, 1.0)) * 100).round()}%',
+      onIncrease:
+          disabled
+              ? null
+              : () => widget.onChanged!((value + 0.1).clamp(0.0, 1.0)),
+      onDecrease:
+          disabled
+              ? null
+              : () => widget.onChanged!((value - 0.1).clamp(0.0, 1.0)),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
@@ -56,15 +70,21 @@ class _DSSliderState extends State<DSSlider> {
 
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTapDown: disabled
-                ? null
-                : (d) => _update(d.localPosition.dx, constraints),
-            onPanStart: disabled
-                ? null
-                : (d) => _update(d.localPosition.dx, constraints),
-            onPanUpdate: disabled
-                ? null
-                : (d) => _update(d.localPosition.dx, constraints),
+            onTapDown:
+                disabled
+                    ? null
+                    : (d) => _update(d.localPosition.dx, constraints),
+            onTapUp: disabled ? null : (_) => _end(),
+            onPanStart:
+                disabled
+                    ? null
+                    : (d) => _update(d.localPosition.dx, constraints),
+            onPanUpdate:
+                disabled
+                    ? null
+                    : (d) => _update(d.localPosition.dx, constraints),
+            onPanEnd: disabled ? null : (_) => _end(),
+            onPanCancel: disabled ? null : _end,
             child: SizedBox(
               height: starSize + 8,
               child: Stack(
@@ -93,10 +113,9 @@ class _DSSliderState extends State<DSSlider> {
                         width: (width - 4) * value + 4,
                         height: 13,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [
-                            color,
-                            theme.secondary,
-                          ]),
+                          gradient: LinearGradient(
+                            colors: [color, theme.secondary],
+                          ),
                         ),
                         foregroundDecoration: JellyGlossDecoration(
                           radius: theme.radii.pill,

@@ -149,7 +149,7 @@ class _HomeCardState extends State<HomeCard> {
   }
 
   Widget _buildCardContent(BuildContext context, HomeItem currentItem) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final isWidgetLike =
         currentItem is HomeWidgetItem || currentItem is HomeStackItem;
     final Widget content =
@@ -232,7 +232,7 @@ class _HomeCardState extends State<HomeCard> {
           layoutManager.globalWidgetBackgroundOpacity;
 
       // 获取背景配置 - 使用默认的主题卡片颜色
-      final defaultColor = AppTheme.of(context).surface;
+      final defaultColor = DSThemeBridge.resolve(context).surface;
       final backgroundColor = defaultColor.withValues(
         alpha: defaultColor.a * globalBackgroundOpacity,
       );
@@ -297,7 +297,7 @@ class _HomeCardState extends State<HomeCard> {
 
   /// 构建文件夹卡片
   Widget _buildFolderCard(BuildContext context, HomeFolderItem folder) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return SizedBox.expand(
       child: Padding(
@@ -363,7 +363,7 @@ class _HomeCardState extends State<HomeCard> {
   /// 构建加载中卡片
   /// 占满小组件的实际尺寸，并带有渐显和加载动画效果
   Widget _buildLoadingCard(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return SizedBox.expand(
       child: Container(
@@ -387,7 +387,7 @@ class _HomeCardState extends State<HomeCard> {
 
   /// 构建错误卡片
   Widget _buildErrorCard(BuildContext context, String error) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -631,8 +631,9 @@ class _HomeCardState extends State<HomeCard> {
 
   /// 打开文件夹对话框
   void _openFolderDialog(BuildContext context, HomeFolderItem folder) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder: (context) => FolderDialog(folder: folder),
     );
   }
@@ -732,7 +733,7 @@ class _HomeStackCarouselState extends State<_HomeStackCarousel>
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     if (widget.stack.children.isEmpty) {
       return Container(
         decoration: BoxDecoration(
@@ -844,7 +845,7 @@ class _HomeStackCarouselState extends State<_HomeStackCarousel>
   }
 
   Widget _buildDotsIndicator() {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final total = widget.stack.children.length;
     if (total <= 1) {
       return const SizedBox.shrink();

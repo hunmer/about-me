@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 中部快捷操作：彩色果冻圆钮 + 下方文字（写日记 / 打卡 / 记账）
 class JellyQuickAction extends StatelessWidget {
@@ -20,7 +21,7 @@ class JellyQuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Pressable(
       onPressed: onPressed,
@@ -40,8 +41,7 @@ class JellyQuickAction extends StatelessWidget {
                 radius: theme.radii.circle,
                 color: color,
                 raised: !pressed,
-                shadows:
-                    pressed ? theme.pressedShadow(color, height: 7) : null,
+                shadows: pressed ? theme.pressedShadow(color, height: 7) : null,
                 alignment: Alignment.center,
                 child: DsIcon(icon, size: size * 0.46, color: theme.onPrimary),
               ),

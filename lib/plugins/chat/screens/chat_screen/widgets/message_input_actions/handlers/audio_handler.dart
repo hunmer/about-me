@@ -5,6 +5,8 @@ import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/record_audio_dialog.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/utils.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import '../../../../../../../../core/services/toast_service.dart';
@@ -17,8 +19,9 @@ Future<void> handleAudioRecording({
   if (!context.mounted) return;
 
   // 显示录音对话框 - 权限检查和录音逻辑在对话框内部处理
-  showDialog(
+  showDSDialog(
     context: context,
+    theme: DSThemeBridge.resolve(context),
     barrierDismissible: false,
     builder:
         (dialogContext) => RecordAudioDialog(

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'sections/buttons_section.dart';
 import 'sections/controls_section.dart';
@@ -156,7 +157,7 @@ class _TokensCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return DSCard(
       radius: theme.radii.xxl,
       child: Column(
@@ -187,10 +188,7 @@ class _TokensCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: theme.stroke,
-                          width: 2,
-                        ),
+                        border: Border.all(color: theme.stroke, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: color.withValues(alpha: 0.4),
@@ -203,8 +201,9 @@ class _TokensCard extends StatelessWidget {
                     SizedBox(width: theme.spacing.sm),
                     Text(
                       name,
-                      style: DsTypography.caption
-                          .copyWith(color: theme.textSub),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                   ],
                 ),

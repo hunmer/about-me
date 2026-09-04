@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class MessageActions extends StatelessWidget {
   final VoidCallback onEdit;
@@ -16,35 +18,33 @@ class MessageActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.edit, size: 16),
+        DSIconButton(
+          icon: DsIconKind.edit,
+          size: 32,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
           onPressed: onEdit,
           tooltip: '编辑',
-          constraints: const BoxConstraints(
-            minWidth: 32,
-            minHeight: 32,
-          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.copy, size: 16),
+        DSIconButton(
+          icon: DsIconKind.copy,
+          size: 32,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
           onPressed: onCopy,
           tooltip: '复制',
-          constraints: const BoxConstraints(
-            minWidth: 32,
-            minHeight: 32,
-          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.delete, size: 16),
+        DSIconButton(
+          icon: DsIconKind.trash,
+          size: 32,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
           onPressed: onDelete,
           tooltip: '删除',
-          constraints: const BoxConstraints(
-            minWidth: 32,
-            minHeight: 32,
-          ),
         ),
       ],
     );

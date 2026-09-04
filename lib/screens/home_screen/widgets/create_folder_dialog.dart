@@ -70,7 +70,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog> {
       // Builder 让表单在主题桥之内构建，可读取 AppTheme
       child: Builder(
         builder: (context) {
-          final theme = AppTheme.of(context);
+          final theme = DSThemeBridge.resolve(context);
           return JellyBox(
             radius: theme.radii.xxl,
             padding: EdgeInsets.all(theme.spacing.xl),

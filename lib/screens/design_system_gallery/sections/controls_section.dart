@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -20,7 +21,7 @@ class _ControlsSectionState extends State<ControlsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '02',
       title: '选择控件',

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
 
@@ -31,6 +33,18 @@ class MessageOptionsDialog extends StatelessWidget {
     this.initiallyShowFixedSymbolDialog = false,
   });
 
+  /// 气泡颜色选项（消息气泡的自定义配色，与主题无关）
+  static final List<Color> _bubbleColors = [
+    Color(0xFFD6E4FF), // 默认蓝色
+    Color(0xFFF8BBD0), // 粉
+    Color(0xFFE1BEE7), // 紫
+    Color(0xFFC8E6C9), // 绿
+    Color(0xFFFFE0B2), // 橙
+    Color(0xFFB2DFDB), // 青
+    Color(0xFFFFECB3), // 黄
+    Color(0xFFEEEEEE), // 默认灰色
+  ];
+
   /// 显示消息选项对话框的静态方法
   static Future<void> show({
     required BuildContext context,
@@ -45,8 +59,9 @@ class MessageOptionsDialog extends StatelessWidget {
     bool useRecentSymbols = true,
     bool initiallyShowFixedSymbolDialog = false,
   }) {
-    return showDialog(
+    return showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => MessageOptionsDialog(
             message: message,
@@ -73,170 +88,185 @@ class MessageOptionsDialog extends StatelessWidget {
       });
     }
 
-    return AlertDialog(
-      title: Text('chat_messageOptions'.tr),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 设置气泡颜色选项
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 重置按钮
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        onSetBubbleColor(message, null);
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.grey[400]!,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.refresh,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // 颜色选项
-                  ...[
-                    const Color(0xFFD6E4FF), // 默认蓝色
-                    Colors.pink[100]!,
-                    Colors.purple[100]!,
-                    Colors.green[100]!,
-                    Colors.orange[100]!,
-                    Colors.teal[100]!,
-                    Colors.amber[100]!,
-                    Colors.grey[200]!, // 默认灰色
-                  ].map(
-                    (color) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: GestureDetector(
-                        onTap: () {
-                          onSetBubbleColor(message, color);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.grey[400]!,
-                              width: 1,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'chat_messageOptions'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+
+                // 设置气泡颜色选项
+                Padding(
+                  padding: EdgeInsets.only(top: theme.spacing.lg),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 重置按钮
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              onSetBubbleColor(message, null);
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.stroke,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: DsIcon(
+                                  DsIconKind.refresh,
+                                  size: 20,
+                                  color: theme.textSub,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        // 颜色选项
+                        ..._bubbleColors.map(
+                          (color) => Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4.0,
+                            ),
+                            child: GestureDetector(
+                              onTap: () {
+                                onSetBubbleColor(message, color);
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: theme.stroke,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // 分隔线
+                Container(
+                  height: 1,
+                  margin: EdgeInsets.symmetric(vertical: theme.spacing.md),
+                  color: theme.stroke.withValues(alpha: 0.5),
+                ),
+
+                // 功能按钮区域 - 使用Wrap实现自动换行，每行最多5个
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12.0, // 水平间距
+                  runSpacing: 12.0, // 垂直间距
+                  children: [
+                    // 设置固定标记
+                    _buildIconButton(
+                      context,
+                      DsIconKind.pin,
+                      theme.primary,
+                      () {
+                        Navigator.pop(context);
+                        _showFixedSymbolDialog(context);
+                      },
+                    ),
+                    // 编辑
+                    _buildIconButton(
+                      context,
+                      DsIconKind.edit,
+                      theme.success,
+                      () {
+                        Navigator.pop(context);
+                        onMessageEdit(message);
+                      },
+                    ),
+                    // 复制
+                    _buildIconButton(
+                      context,
+                      DsIconKind.copy,
+                      theme.warning,
+                      () {
+                        Navigator.pop(context);
+                        onMessageCopy(message);
+                      },
+                    ),
+                    // 删除
+                    _buildIconButton(
+                      context,
+                      DsIconKind.trash,
+                      theme.danger,
+                      () {
+                        Navigator.pop(context);
+                        onMessageDelete(message);
+                      },
+                    ),
+                    // 分享
+                    _buildIconButton(
+                      context,
+                      DsIconKind.share,
+                      theme.secondary,
+                      () {
+                        Navigator.pop(context);
+                        MessageOptionsHandler.shareMessage(context, message);
+                      },
+                    ),
+                    // 回复
+                    if (onReply != null)
+                      _buildIconButton(
+                        context,
+                        DsIconKind.reply,
+                        theme.primary,
+                        () {
+                          Navigator.pop(context);
+                          onReply!(message);
+                        },
+                      ),
+                    // 收藏
+                    if (onToggleFavorite != null)
+                      _buildIconButton(
+                        context,
+                        // 根据消息是否已收藏显示实心/空心星星
+                        DsIconKind.star,
+                        theme.warning,
+                        isFilled:
+                            (message.metadata?['isFavorite'] as bool?) == true,
+                        () {
+                          Navigator.pop(context);
+                          onToggleFavorite!(message);
+                        },
+                      ),
+                  ],
+                ),
+              ],
             ),
-          ),
-          const Divider(),
-          // 功能按钮区域 - 使用Wrap实现自动换行，每行最多5个
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12.0, // 水平间距
-              runSpacing: 12.0, // 垂直间距
-              children:
-                  [
-                        // 设置固定标记
-                        _buildIconButton(
-                          context,
-                          Icons.push_pin,
-                          Colors.blue,
-                          () {
-                            Navigator.pop(context);
-                            _showFixedSymbolDialog(context);
-                          },
-                        ),
-                        // 编辑
-                        _buildIconButton(context, Icons.edit, Colors.green, () {
-                          Navigator.pop(context);
-                          onMessageEdit(message);
-                        }),
-                        // 复制
-                        _buildIconButton(context, Icons.copy, Colors.amber, () {
-                          Navigator.pop(context);
-                          onMessageCopy(message);
-                        }),
-                        // 删除
-                        _buildIconButton(context, Icons.delete, Colors.red, () {
-                          Navigator.pop(context);
-                          onMessageDelete(message);
-                        }),
-                        // 分享
-                        _buildIconButton(
-                          context,
-                          Icons.share,
-                          Colors.purple,
-                          () {
-                            Navigator.pop(context);
-                            MessageOptionsHandler.shareMessage(
-                              context,
-                              message,
-                            );
-                          },
-                        ),
-                        // 回复
-                        if (onReply != null)
-                          _buildIconButton(
-                            context,
-                            Icons.reply,
-                            Colors.indigo,
-                            () {
-                              Navigator.pop(context);
-                              onReply!(message);
-                            },
-                          ),
-                        // 收藏
-                        if (onToggleFavorite != null)
-                          _buildIconButton(
-                            context,
-                            // 根据消息是否已收藏显示不同图标
-                            (message.metadata?['isFavorite'] as bool?) == true
-                                ? Icons.star
-                                : Icons.star_border,
-                            Colors.amber,
-                            () {
-                              Navigator.pop(context);
-                              onToggleFavorite!(message);
-                            },
-                          ),
-                      ]
-                      .map(
-                        (button) => SizedBox(
-                          width: 50, // 固定宽度，确保每行最多5个
-                          child: button,
-                        ),
-                      )
-                      .toList(),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -256,7 +286,7 @@ class MessageOptionsDialog extends StatelessWidget {
 
     // 如果符号已存在，先移除旧的
     recentSymbols.remove(symbol);
-    // 将新符号添加到列表开头
+    // 将新使用的符号添加到列表开头
     recentSymbols.insert(0, symbol);
     // 保持列表最多20个符号
     if (recentSymbols.length > 20) {
@@ -270,67 +300,92 @@ class MessageOptionsDialog extends StatelessWidget {
     final TextEditingController symbolController = TextEditingController();
     final List<String> recentSymbols = await _getRecentSymbols();
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('chat_addEmoji'.tr),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: symbolController,
-                  decoration: InputDecoration(
-                    labelText: 'chat_tag'.tr,
-                    hintText: 'chat_tagHint'.tr,
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'chat_addEmoji'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: symbolController,
+                        label: 'chat_tag'.tr,
+                        hint: 'chat_tagHint'.tr,
+                        maxLength: 1, // 限制只能输入一个字符
+                      ),
+                      if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
+                        SizedBox(height: theme.spacing.md),
+                        Text(
+                          '最近使用',
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                        Wrap(
+                          spacing: theme.spacing.sm,
+                          runSpacing: theme.spacing.sm,
+                          children:
+                              recentSymbols
+                                  .map(
+                                    (symbol) => DSChip(
+                                      label: symbol,
+                                      onSelected:
+                                          (_) => symbolController.text = symbol,
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ],
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'app_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'chat_settings'.tr,
+                              onPressed: () async {
+                                final symbol =
+                                    symbolController.text.isEmpty
+                                        ? null
+                                        : symbolController.text;
+                                if (symbol != null) {
+                                  await _addRecentSymbol(symbol);
+                                }
+                                onSetFixedSymbol(message, symbol);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  maxLength: 1, // 限制只能输入一个字符
-                ),
-                if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    '最近使用',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        recentSymbols
-                            .map(
-                              (symbol) => ActionChip(
-                                label: Text(symbol),
-                                onPressed: () {
-                                  symbolController.text = symbol;
-                                },
-                              ),
-                            )
-                            .toList(),
-                  ),
-                ],
-              ],
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final symbol =
-                      symbolController.text.isEmpty
-                          ? null
-                          : symbolController.text;
-                  if (symbol != null) {
-                    await _addRecentSymbol(symbol);
-                  }
-                  onSetFixedSymbol(message, symbol);
-                  Navigator.pop(context);
-                },
-                child: Text('chat_settings'.tr),
-              ),
-            ],
           ),
     );
   }
@@ -338,13 +393,13 @@ class MessageOptionsDialog extends StatelessWidget {
   // 构建图标按钮
   Widget _buildIconButton(
     BuildContext context,
-    IconData icon,
+    DsIconKind icon,
     Color color,
-    VoidCallback onPressed,
-  ) {
-    return InkWell(
+    VoidCallback onPressed, {
+    bool isFilled = false,
+  }) {
+    return GestureDetector(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(30),
       child: Container(
         width: 50,
         height: 50,
@@ -352,7 +407,7 @@ class MessageOptionsDialog extends StatelessWidget {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: color, size: 24),
+        child: DsIcon(icon, color: color, size: 24, fill: isFilled),
       ),
     );
   }

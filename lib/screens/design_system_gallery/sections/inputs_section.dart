@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -31,7 +32,7 @@ class _InputsSectionState extends State<InputsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '03',
       title: '输入控件',
@@ -67,11 +68,7 @@ class _InputsSectionState extends State<InputsSection> {
             ),
             SizedBox(
               width: 220,
-              child: DSInput(
-                hint: '记录点什么呢...',
-                label: '禁用',
-                enabled: false,
-              ),
+              child: DSInput(hint: '记录点什么呢...', label: '禁用', enabled: false),
             ),
           ],
         ),

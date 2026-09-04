@@ -1,5 +1,7 @@
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'message_input_types.dart';
 import 'message_input_state.dart';
@@ -69,8 +71,9 @@ class _MessageInputState extends State<MessageInput> {
 
     try {
       // 使用 VoiceRecognitionHelper 创建服务（不显示错误提示）
-      final service =
-          await VoiceRecognitionHelper.createServiceSilently(context);
+      final service = await VoiceRecognitionHelper.createServiceSilently(
+        context,
+      );
 
       if (service != null && mounted) {
         setState(() {
@@ -264,91 +267,96 @@ class _MessageInputState extends State<MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[900]
-                : Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(25),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 元数据显示区域
-          MetadataDisplay(
-            selectedFile: selectedFile,
-            selectedAgents: selectedAgents,
-            onShowAgentListDrawer: _showAgentListDrawer,
-            onFileRemove: _removeFile,
-            onAgentRemove: _removeAgent,
-            contextRange: contextRange,
-            onContextRangeChange: _handleContextRangeChange,
-          ),
-
-          // 输入区域
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () {
-                  SmoothBottomSheet.show(
-                    context: context,
-                    builder:
-                        (context) => MessageInputActionsDrawer(
-                          actions: MessageInputActionsBuilder.getDefaultActions(
-                            context,
-                            onFileSelected: _handleFileSelected,
-                            onSendMessage: widget.onSendMessage,
-                            textController: widget.controller,
-                          ),
-                          onFileSelected: _handleFileSelected,
-                        ),
-                  );
-                },
-              ),
-
-              // 文本输入框
-              Expanded(
-                child: InputField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  keyboardListenerFocusNode: _keyboardListenerFocusNode,
-                  onChanged: (text) => widget.onSaveDraft(text),
-                  onKeyEvent:
-                      (event) => _messageInputState.handleKeyPress(event),
-                ),
-              ),
-
-              // 语音输入按钮
-              if (_recognitionService != null)
-                IconButton(
-                  icon: const Icon(Icons.mic),
-                  onPressed: _showVoiceInputDialog,
-                  tooltip: '语音输入',
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.mic),
-                  onPressed: null,
-                  tooltip: '语音输入（未配置）',
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Container(
+            decoration: BoxDecoration(
+              color: theme.surface,
+              boxShadow: theme.shadows.soft,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 元数据显示区域
+                MetadataDisplay(
+                  selectedFile: selectedFile,
+                  selectedAgents: selectedAgents,
+                  onShowAgentListDrawer: _showAgentListDrawer,
+                  onFileRemove: _removeFile,
+                  onAgentRemove: _removeAgent,
+                  contextRange: contextRange,
+                  onContextRangeChange: _handleContextRangeChange,
                 ),
 
-              // 发送按钮
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0, bottom: 4.0),
-                child: SendButton(onPressed: _handleSendMessage),
-              ),
-            ],
-          ),
-        ],
+                // 输入区域
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    DSIconButton(
+                      icon: DsIconKind.plus,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: () {
+                        SmoothBottomSheet.show(
+                          context: context,
+                          builder:
+                              (context) => MessageInputActionsDrawer(
+                                actions:
+                                    MessageInputActionsBuilder.getDefaultActions(
+                                      context,
+                                      onFileSelected: _handleFileSelected,
+                                      onSendMessage: widget.onSendMessage,
+                                      textController: widget.controller,
+                                    ),
+                                onFileSelected: _handleFileSelected,
+                              ),
+                        );
+                      },
+                    ),
+
+                    // 文本输入框
+                    Expanded(
+                      child: InputField(
+                        controller: widget.controller,
+                        focusNode: _focusNode,
+                        keyboardListenerFocusNode: _keyboardListenerFocusNode,
+                        onChanged: (text) => widget.onSaveDraft(text),
+                        onKeyEvent:
+                            (event) => _messageInputState.handleKeyPress(event),
+                      ),
+                    ),
+
+                    // 语音输入按钮
+                    if (_recognitionService != null)
+                      DSIconButton(
+                        icon: DsIconKind.mic,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _showVoiceInputDialog,
+                        tooltip: '语音输入',
+                      )
+                    else
+                      DSIconButton(
+                        icon: DsIconKind.mic,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: null,
+                        tooltip: '语音输入（未配置）',
+                      ),
+
+                    // 发送按钮
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0, bottom: 4.0),
+                      child: SendButton(onPressed: _handleSendMessage),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

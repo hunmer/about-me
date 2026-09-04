@@ -32,7 +32,7 @@ class _ChatBottomBarState extends State<ChatBottomBar>
 
   // 使用插件主题色和设计系统辅助色（动态计算）
   List<Color> _getColors(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return [
       widget.plugin.color, // Tab0 - 频道列表 (插件主色)
       theme.secondary, // Tab1 - 时间线

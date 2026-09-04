@@ -1,33 +1,23 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class SendButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const SendButton({
-    super.key,
-    required this.onPressed,
-  });
+  const SendButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: Container(
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.send,
-            color: Theme.of(context).colorScheme.onPrimary,
-            size: 20,
-          ),
-        ),
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return DSIconButton(
+            icon: DsIconKind.send,
+            size: 40,
+            onPressed: onPressed,
+          );
+        },
       ),
     );
   }

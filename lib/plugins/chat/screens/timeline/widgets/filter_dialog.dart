@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -52,239 +54,330 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Text(
+                    'chat_advancedFilter'.tr,
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.lg),
 
-    final theme = Theme.of(context);
+                  // 搜索范围选项
+                  Text(
+                    'chat_searchIn'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
 
-    return AlertDialog(
-      title: Text('chat_advancedFilter'.tr),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            // 搜索范围选项
-            Text(
-              'chat_searchIn'.tr,
-              style: theme.textTheme.titleMedium,
+                  _buildCheckRow(
+                    theme,
+                    label: 'chat_channelNames'.tr,
+                    value: _filter.includeChannels,
+                    onChanged: (value) {
+                      setState(() {
+                        _filter.includeChannels = value ?? true;
+                      });
+                    },
+                  ),
+                  _buildCheckRow(
+                    theme,
+                    label: 'chat_usernames'.tr,
+                    value: _filter.includeUsernames,
+                    onChanged: (value) {
+                      setState(() {
+                        _filter.includeUsernames = value ?? true;
+                      });
+                    },
+                  ),
+                  _buildCheckRow(
+                    theme,
+                    label: 'chat_messageContent'.tr,
+                    value: _filter.includeContent,
+                    onChanged: (value) {
+                      setState(() {
+                        _filter.includeContent = value ?? true;
+                      });
+                    },
+                  ),
+
+                  _buildDivider(theme),
+
+                  // 元数据过滤选项
+                  Text(
+                    'chat_metadataFilters'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+
+                  // AI 消息过滤选项
+                  _buildCheckRow(
+                    theme,
+                    label: 'chat_aiMessages'.tr,
+                    subtitle: 'chat_filterAiMessages'.tr,
+                    value: _filter.isAI,
+                    tristate: true,
+                    onChanged: (value) {
+                      setState(() {
+                        _filter.isAI = value;
+                      });
+                    },
+                  ),
+
+                  // 收藏消息过滤选项
+                  _buildCheckRow(
+                    theme,
+                    label: 'chat_favoriteMessages'.tr,
+                    subtitle: 'chat_showOnlyFavorites'.tr,
+                    value: _filter.isFavorite,
+                    tristate: true,
+                    onChanged: (value) {
+                      setState(() {
+                        _filter.isFavorite = value;
+                      });
+                    },
+                  ),
+
+                  _buildDivider(theme),
+
+                  // 日期范围选择
+                  Text(
+                    'chat_dateRange'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          icon: DsIconKind.calendar,
+                          label:
+                              _filter.startDate != null
+                                  ? '${_filter.startDate!.day}/${_filter.startDate!.month}/${_filter.startDate!.year}'
+                                  : 'chat_startDate'.tr,
+                          variant: DSButtonVariant.outline,
+                          size: DSButtonSize.sm,
+                          onPressed: () => _selectDate(context, true),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: DSButton(
+                          icon: DsIconKind.calendar,
+                          label:
+                              _filter.endDate != null
+                                  ? '${_filter.endDate!.day}/${_filter.endDate!.month}/${_filter.endDate!.year}'
+                                  : 'chat_endDate'.tr,
+                          variant: DSButtonVariant.outline,
+                          size: DSButtonSize.sm,
+                          onPressed: () => _selectDate(context, false),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (_filter.startDate != null || _filter.endDate != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: DSButton(
+                        label: 'chat_clearDates'.tr,
+                        variant: DSButtonVariant.ghost,
+                        size: DSButtonSize.sm,
+                        onPressed: () {
+                          setState(() {
+                            _filter.startDate = null;
+                            _filter.endDate = null;
+                          });
+                        },
+                      ),
+                    ),
+
+                  _buildDivider(theme),
+
+                  // 频道选择
+                  Text(
+                    'chat_selectChannels'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+
+                  if (_availableChannels.isEmpty)
+                    Text(
+                      'chat_noChannelsAvailable'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: theme.spacing.sm,
+                      runSpacing: theme.spacing.sm,
+                      children:
+                          _availableChannels.map((channel) {
+                            final isSelected = _filter.selectedChannelIds
+                                .contains(channel.id);
+                            return DSChip(
+                              label: channel.title,
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _filter.selectedChannelIds.add(channel.id);
+                                  } else {
+                                    _filter.selectedChannelIds.remove(
+                                      channel.id,
+                                    );
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
+
+                  SizedBox(height: theme.spacing.lg),
+
+                  // 用户选择
+                  Text(
+                    'chat_selectUsers'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+
+                  if (_availableUsers.isEmpty)
+                    Text(
+                      'chat_noUsersAvailable'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: theme.spacing.sm,
+                      runSpacing: theme.spacing.sm,
+                      children:
+                          _availableUsers.map((user) {
+                            final isSelected = _filter.selectedUserIds.contains(
+                              user.id,
+                            );
+                            return DSChip(
+                              label: user.username,
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _filter.selectedUserIds.add(user.id);
+                                  } else {
+                                    _filter.selectedUserIds.remove(user.id);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
+
+                  SizedBox(height: theme.spacing.lg),
+
+                  // 操作按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          size: DSButtonSize.sm,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_reset'.tr,
+                          variant: DSButtonVariant.ghost,
+                          size: DSButtonSize.sm,
+                          onPressed: () {
+                            _filter.reset();
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_apply'.tr,
+                          size: DSButtonSize.sm,
+                          onPressed: () {
+                            Navigator.of(context).pop(_filter.toJson());
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
+          );
+        },
+      ),
+    );
+  }
 
-            CheckboxListTile(
-              title: Text('chat_channelNames'.tr),
-              value: _filter.includeChannels,
-              onChanged: (value) {
-                setState(() {
-                  _filter.includeChannels = value ?? true;
-                });
-              },
-              dense: true,
-            ),
-
-            CheckboxListTile(
-              title: Text('chat_usernames'.tr),
-              value: _filter.includeUsernames,
-              onChanged: (value) {
-                setState(() {
-                  _filter.includeUsernames = value ?? true;
-                });
-              },
-              dense: true,
-            ),
-
-            CheckboxListTile(
-              title: Text('chat_messageContent'.tr),
-              value: _filter.includeContent,
-              onChanged: (value) {
-                setState(() {
-                  _filter.includeContent = value ?? true;
-                });
-              },
-              dense: true,
-            ),
-
-            const Divider(),
-
-            // 元数据过滤选项
-            Text(
-              'chat_metadataFilters'.tr,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-
-            // AI 消息过滤选项
-            CheckboxListTile(
-              title: Text('chat_aiMessages'.tr),
-              subtitle: Text('chat_filterAiMessages'.tr),
-              value: _filter.isAI,
-              tristate: true,
-              onChanged: (value) {
-                setState(() {
-                  _filter.isAI = value;
-                });
-              },
-              dense: true,
-            ),
-
-            // 收藏消息过滤选项
-            CheckboxListTile(
-              title: Text('chat_favoriteMessages'.tr),
-              subtitle: Text('chat_showOnlyFavorites'.tr),
-              value: _filter.isFavorite,
-              tristate: true,
-              onChanged: (value) {
-                setState(() {
-                  _filter.isFavorite = value;
-                });
-              },
-              dense: true,
-            ),
-
-            const Divider(),
-
-            // 日期范围选择
-            Text(
-              'chat_dateRange'.tr,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-
-            Row(
+  /// 勾选行
+  Widget _buildCheckRow(
+    AppThemeData theme, {
+    required String label,
+    String? subtitle,
+    required bool? value,
+    bool tristate = false,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: theme.spacing.xs / 2),
+      child: Row(
+        children: [
+          DSCheckbox(value: value, tristate: tristate, onChanged: onChanged),
+          SizedBox(width: theme.spacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(
-                      _filter.startDate != null
-                          ? '${_filter.startDate!.day}/${_filter.startDate!.month}/${_filter.startDate!.year}'
-                          : 'chat_startDate'.tr,
-                    ),
-                    onPressed: () => _selectDate(context, true),
-                  ),
+                Text(
+                  label,
+                  style: DsTypography.body.copyWith(color: theme.text),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(
-                      _filter.endDate != null
-                          ? '${_filter.endDate!.day}/${_filter.endDate!.month}/${_filter.endDate!.year}'
-                          : 'chat_endDate'.tr,
-                    ),
-                    onPressed: () => _selectDate(context, false),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
-                ),
+                ],
               ],
             ),
-
-            if (_filter.startDate != null || _filter.endDate != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _filter.startDate = null;
-                      _filter.endDate = null;
-                    });
-                  },
-                  child: Text('chat_clearDates'.tr),
-                ),
-              ),
-
-            const Divider(),
-
-            // 频道选择
-            Text(
-              'chat_selectChannels'.tr,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-
-            if (_availableChannels.isEmpty)
-              Text('chat_noChannelsAvailable'.tr)
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    _availableChannels.map((channel) {
-                      final isSelected = _filter.selectedChannelIds.contains(
-                        channel.id,
-                      );
-                      return FilterChip(
-                        label: Text(channel.title),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _filter.selectedChannelIds.add(channel.id);
-                            } else {
-                              _filter.selectedChannelIds.remove(channel.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-              ),
-
-            const SizedBox(height: 16),
-
-            // 用户选择
-            Text(
-              'chat_selectUsers'.tr,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-
-            if (_availableUsers.isEmpty)
-              Text('chat_noUsersAvailable'.tr)
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    _availableUsers.map((user) {
-                      final isSelected = _filter.selectedUserIds.contains(
-                        user.id,
-                      );
-                      return FilterChip(
-                        label: Text(user.username),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _filter.selectedUserIds.add(user.id);
-                            } else {
-                              _filter.selectedUserIds.remove(user.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('app_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () {
-            _filter.reset();
-            setState(() {});
-          },
-          child: Text('app_reset'.tr),
-        ),
-        FilledButton(
-          onPressed: () {
-            Navigator.of(context).pop(_filter.toJson());
-          },
-          child: Text('app_apply'.tr),
-        ),
-      ],
+    );
+  }
+
+  /// 分隔线
+  Widget _buildDivider(AppThemeData theme) {
+    return Container(
+      height: 1,
+      margin: EdgeInsets.symmetric(vertical: theme.spacing.md),
+      color: theme.stroke.withValues(alpha: 0.5),
     );
   }
 
@@ -292,11 +385,9 @@ class _FilterDialogState extends State<FilterDialog> {
     final initialDate = isStartDate ? _filter.startDate : _filter.endDate;
     final now = DateTime.now();
 
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate ?? now,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
+    final DateTime? picked = await _showDSDatePicker(
+      context,
+      initialDate ?? now,
     );
 
     if (picked != null) {
@@ -317,4 +408,56 @@ class _FilterDialogState extends State<FilterDialog> {
       });
     }
   }
+}
+
+/// 果冻日期选择对话框：DSDatePicker + 确认按钮
+Future<DateTime?> _showDSDatePicker(BuildContext context, DateTime initial) {
+  DateTime selected = initial;
+  return showDSDialog<DateTime>(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (context) => DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DSDatePicker(
+                      value: initial,
+                      initialMonth: initial,
+                      onChanged: (date) => selected = date,
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_ok'.tr,
+                            onPressed:
+                                () => Navigator.of(context).pop(selected),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+  );
 }

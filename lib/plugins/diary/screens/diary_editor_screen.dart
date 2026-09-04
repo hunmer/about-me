@@ -184,7 +184,7 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
           DSThemeBridge(
             child: Builder(
               builder: (context) {
-                final theme = AppTheme.of(context);
+                final theme = DSThemeBridge.resolve(context);
                 return DSIconButton(
                   icon: DsIconKind.trash,
                   size: 36,

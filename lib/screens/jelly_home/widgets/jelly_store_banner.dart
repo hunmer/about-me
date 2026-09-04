@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 「插件商店上新」横幅：主色果冻条 + 标题 + 立即领取胶囊按钮
 class JellyStoreBanner extends StatelessWidget {
@@ -18,7 +19,7 @@ class JellyStoreBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     final banner = JellyBox(
       radius: theme.radii.xxl,
@@ -38,11 +39,7 @@ class JellyStoreBanner extends StatelessWidget {
               shape: BoxShape.circle,
               color: theme.onPrimary.withValues(alpha: 0.20),
             ),
-            child: DsIcon(
-              DsIconKind.cart,
-              size: 22,
-              color: theme.onPrimary,
-            ),
+            child: DsIcon(DsIconKind.cart, size: 22, color: theme.onPrimary),
           ),
           SizedBox(width: theme.spacing.md),
           Expanded(
@@ -95,9 +92,10 @@ class JellyStoreBanner extends StatelessWidget {
                       color: theme.primary.withValues(alpha: 0.35),
                       width: 1.2,
                     ),
-                    boxShadow: pressed
-                        ? theme.pressedShadow(theme.primary, height: 3)
-                        : theme.jellyShadow(theme.primary, height: 3),
+                    boxShadow:
+                        pressed
+                            ? theme.pressedShadow(theme.primary, height: 3)
+                            : theme.jellyShadow(theme.primary, height: 3),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -122,11 +120,7 @@ class JellyStoreBanner extends StatelessWidget {
             },
           ),
           SizedBox(width: theme.spacing.md),
-          DsIcon(
-            DsIconKind.gift,
-            size: 30,
-            color: theme.warning,
-          ),
+          DsIcon(DsIconKind.gift, size: 30, color: theme.warning),
         ],
       ),
     );
@@ -134,9 +128,11 @@ class JellyStoreBanner extends StatelessWidget {
     if (onTap == null) return banner;
     return Pressable(
       onPressed: onTap,
-      builder: (context, states) => states.contains(WidgetState.pressed)
-          ? Opacity(opacity: 0.9, child: banner)
-          : banner,
+      builder:
+          (context, states) =>
+              states.contains(WidgetState.pressed)
+                  ? Opacity(opacity: 0.9, child: banner)
+                  : banner,
     );
   }
 }

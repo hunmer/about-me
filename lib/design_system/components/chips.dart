@@ -11,12 +11,16 @@ class DSChip extends StatelessWidget {
   const DSChip({
     super.key,
     required this.label,
+    this.icon,
     this.selected = false,
     this.onSelected,
     this.onDeleted,
   });
 
   final String label;
+
+  /// 可选前缀图标
+  final DsIconKind? icon;
 
   /// 是否处于选中态（果冻高亮）
   final bool selected;
@@ -33,22 +37,32 @@ class DSChip extends StatelessWidget {
     final interactive = onSelected != null;
 
     return Pressable(
-      onPressed: interactive
-          ? () => onSelected?.call(!selected)
-          : null,
+      onPressed: interactive ? () => onSelected?.call(!selected) : null,
       semanticLabel: label,
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
         final Widget content = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (icon != null) ...[
+              DsIcon(
+                icon!,
+                size: 14,
+                color:
+                    selected
+                        ? (onSelected == null ? theme.surface : theme.onPrimary)
+                        : theme.textSub,
+              ),
+              const SizedBox(width: 6),
+            ],
             Text(
               label,
               style: DsTypography.caption.copyWith(
                 fontWeight: FontWeight.w700,
-                color: selected
-                    ? (onSelected == null ? theme.surface : theme.onPrimary)
-                    : theme.textSub,
+                color:
+                    selected
+                        ? (onSelected == null ? theme.surface : theme.onPrimary)
+                        : theme.textSub,
               ),
             ),
             if (onDeleted != null) ...[
@@ -60,9 +74,10 @@ class DSChip extends StatelessWidget {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: selected
-                        ? theme.onPrimary.withValues(alpha: 0.25)
-                        : theme.surfaceAlt,
+                    color:
+                        selected
+                            ? theme.onPrimary.withValues(alpha: 0.25)
+                            : theme.surfaceAlt,
                     shape: BoxShape.circle,
                   ),
                   child: DsIcon(

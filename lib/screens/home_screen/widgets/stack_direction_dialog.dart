@@ -39,7 +39,7 @@ class _StackDirectionDialogState extends State<_StackDirectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return JellyBox(
       radius: theme.radii.xxl,
       padding: EdgeInsets.all(theme.spacing.xl),

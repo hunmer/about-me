@@ -1,23 +1,31 @@
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class AudioPlayerWidget extends StatefulWidget {
   final String audioPath;
   final int durationInSeconds;
   final bool isLocalFile;
-  final Color primaryColor;
-  final Color backgroundColor;
-  final Color progressColor;
+
+  /// 主色（播放按钮/时间文字）；null 时取主题 primary
+  final Color? primaryColor;
+
+  /// 底色（轨道/背景）；null 时取主题 textSub
+  final Color? backgroundColor;
+
+  /// 进度色；null 时取主题 primary
+  final Color? progressColor;
 
   const AudioPlayerWidget({
     super.key,
     required this.audioPath,
     this.durationInSeconds = 0,
     this.isLocalFile = true,
-    this.primaryColor = Colors.blue,
-    this.backgroundColor = Colors.grey,
-    this.progressColor = Colors.blue,
+    this.primaryColor,
+    this.backgroundColor,
+    this.progressColor,
   });
 
   @override
@@ -146,8 +154,8 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
     }
   }
 
-  Future<void> _seek(double value) async {
-    final position = Duration(seconds: value.toInt());
+  Future<void> _seek(double ratio) async {
+    final position = Duration(seconds: (ratio * _duration.inSeconds).round());
     await _audioPlayer.seek(position);
   }
 
@@ -172,10 +180,15 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final primaryColor = widget.primaryColor ?? theme.primary;
+    final backgroundColor = widget.backgroundColor ?? theme.textSub;
+    final progressColor = widget.progressColor ?? theme.primary;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: widget.backgroundColor.withValues(alpha: 0.1),
+        color: backgroundColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -186,22 +199,26 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
               ? SizedBox(
                 width: 36,
                 height: 36,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    widget.primaryColor,
-                  ),
+                child: Center(
+                  child: DSLoadingDots(size: 10, color: primaryColor),
                 ),
               )
-              : IconButton(
-                icon: Icon(
-                  _isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
-                  color: widget.primaryColor,
-                  size: 36,
+              : GestureDetector(
+                onTap: _isInitialized ? _playPause : null,
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: DsIcon(
+                      _isPlaying ? DsIconKind.pause : DsIconKind.play,
+                      size: 28,
+                      color:
+                          _isInitialized
+                              ? primaryColor
+                              : primaryColor.withValues(alpha: 0.4),
+                    ),
+                  ),
                 ),
-                onPressed: _isInitialized ? _playPause : null,
               ),
 
           const SizedBox(width: 8),
@@ -217,66 +234,45 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   children: [
                     Text(
                       _formatDuration(_position),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: widget.primaryColor,
-                      ),
+                      style: DsTypography.label.copyWith(color: primaryColor),
                     ),
                     Text(
                       _formatDuration(_duration),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: widget.primaryColor.withValues(alpha: 0.7),
+                      style: DsTypography.label.copyWith(
+                        color: primaryColor.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
                 ),
 
                 // 进度滑块
-                SliderTheme(
-                  data: SliderThemeData(
-                    trackHeight: 4,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 6,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 14,
-                    ),
-                    activeTrackColor: widget.progressColor,
-                    inactiveTrackColor: widget.backgroundColor.withValues(
-                      alpha: 0.3,
-                    ),
-                    thumbColor: widget.primaryColor,
-                    overlayColor: widget.primaryColor.withValues(alpha: 0.3),
-                  ),
-                  child: Slider(
-                    min: 0,
-                    max: _duration.inSeconds.toDouble(),
-                    value: _position.inSeconds.toDouble().clamp(
-                      0,
-                      _duration.inSeconds.toDouble(),
-                    ),
-                    onChanged: _isInitialized ? _seek : null,
-                  ),
+                DSSlider(
+                  value:
+                      _duration.inSeconds == 0
+                          ? 0
+                          : (_position.inSeconds / _duration.inSeconds).clamp(
+                            0.0,
+                            1.0,
+                          ),
+                  activeColor: progressColor,
+                  onChanged: _isInitialized ? _seek : null,
                 ),
               ],
             ),
           ),
 
           // 播放速度按钮
-          TextButton(
-            onPressed: _isInitialized ? _changeSpeed : null,
-            style: TextButton.styleFrom(
-              minimumSize: Size.zero,
+          GestureDetector(
+            onTap: _isInitialized ? _changeSpeed : null,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              '${_playbackSpeed}x',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: widget.primaryColor,
+              child: Text(
+                '${_playbackSpeed}x',
+                style: DsTypography.label.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
               ),
             ),
           ),

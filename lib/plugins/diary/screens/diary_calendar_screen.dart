@@ -162,7 +162,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   /// 构建搜索结果视图
   Widget _buildSearchResults(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Container(
       color: theme.background,
@@ -188,7 +188,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   /// 构建搜索结果卡片
   Widget _buildSearchResultCard(BuildContext context, DiaryEntry entry) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return DiaryEntryCard(
       entry: entry,
       primaryColor: theme.primary,
@@ -212,7 +212,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   /// 构建日历视图
   Widget _buildCalendarView(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     // 确保_selectedDay也是标准化的
     final normalizedSelectedDay =
         _selectedDay != null
@@ -536,7 +536,9 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     bool isToday = false,
     bool isSelected = false,
   }) {
-    final theme = AppTheme.of(context);
+    // SfCalendar 的 monthCellBuilder 在第三方组件内部重建，
+    // 其调用链可能位于主题桥之外，用 resolve 永不抛错地取令牌
+    final theme = DSThemeBridge.resolve(context);
     final hasEntry = entry != null;
 
     return Container(

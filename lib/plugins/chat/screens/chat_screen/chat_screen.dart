@@ -227,8 +227,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _showClearConfirmationDialog() {
     final BuildContext currentContext = context;
-    showDialog(
+    showDSDialog(
       context: currentContext,
+      theme: DSThemeBridge.resolve(currentContext),
       builder:
           (BuildContext dialogContext) => ClearMessagesDialog(
             onConfirm: () async {
@@ -278,22 +279,24 @@ class _ChatScreenState extends State<ChatScreen> {
     if (selectedMessages.isEmpty) return;
 
     // 显示一次确认对话框
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('chat_deleteMessages'.tr),
-            content: Text('确定要删除选中的 ${selectedMessages.length} 条消息吗？此操作不可撤销。'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('chat_delete'.tr),
-              ),
-            ],
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'chat_deleteMessages'.tr,
+                    message:
+                        '确定要删除选中的 ${selectedMessages.length} 条消息吗？此操作不可撤销。',
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'chat_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(context, true),
+                    onCancel: () => Navigator.pop(context, false),
+                  ),
+            ),
           ),
     );
 
@@ -484,52 +487,70 @@ class _ChatScreenState extends State<ChatScreen> {
             spacing: 8,
             children: [
               // 开始日期
-              ActionChip(
-                avatar: Icon(Icons.calendar_today, size: 18),
-                label: Text(
-                  startDate == null
-                      ? '开始日期'
-                      : DateFormat('MM/dd').format(startDate),
+              DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return DSChip(
+                      icon: DsIconKind.calendar,
+                      label:
+                          startDate == null
+                              ? '开始日期'
+                              : DateFormat('MM/dd').format(startDate),
+                      onSelected: (_) async {
+                        final picked = await showDSDatePickerDialog(
+                          context: context,
+                          theme: theme,
+                          initial: startDate ?? DateTime.now(),
+                        );
+                        if (picked != null) {
+                          onChanged({'start': picked, 'end': endDate});
+                        }
+                      },
+                    );
+                  },
                 ),
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: startDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    onChanged({'start': picked, 'end': endDate});
-                  }
-                },
               ),
               // 结束日期
-              ActionChip(
-                avatar: Icon(Icons.calendar_today, size: 18),
-                label: Text(
-                  endDate == null
-                      ? '结束日期'
-                      : DateFormat('MM/dd').format(endDate),
+              DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return DSChip(
+                      icon: DsIconKind.calendar,
+                      label:
+                          endDate == null
+                              ? '结束日期'
+                              : DateFormat('MM/dd').format(endDate),
+                      onSelected: (_) async {
+                        final picked = await showDSDatePickerDialog(
+                          context: context,
+                          theme: theme,
+                          initial: endDate ?? DateTime.now(),
+                        );
+                        if (picked != null) {
+                          onChanged({'start': startDate, 'end': picked});
+                        }
+                      },
+                    );
+                  },
                 ),
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: endDate ?? DateTime.now(),
-                    firstDate: startDate ?? DateTime(2020),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    onChanged({'start': startDate, 'end': picked});
-                  }
-                },
               ),
               // 清除按钮
               if (startDate != null || endDate != null)
-                IconButton(
-                  icon: Icon(Icons.clear, size: 18),
-                  onPressed: () => onChanged(null),
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.close,
+                        size: 32,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () => onChanged(null),
+                      );
+                    },
+                  ),
                 ),
             ],
           );
@@ -656,14 +677,16 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       // 根据是否有背景图片决定背景颜色
       backgroundColor:
-          backgroundPath != null ? Colors.transparent : Colors.white,
+          backgroundPath != null
+              ? const Color(0x00000000)
+              : DSThemeBridge.resolve(context).surface,
       body: Stack(
         fit: StackFit.expand,
         children: [
           // 默认白色背景 - 当没有背景图片时显示
           if (backgroundPath == null && !_isLoadingBackground)
             Container(
-              color: Colors.white,
+              color: DSThemeBridge.resolve(context).surface,
               width: double.infinity,
               height: double.infinity,
             ),
@@ -680,7 +703,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
                 // 使用Container包装图片，确保它占满整个屏幕
                 return Container(
-                  color: Colors.transparent, // 确保容器背景透明
+                  color: const Color(0x00000000), // 确保容器背景透明
                   child: Image.file(
                     file,
                     fit: BoxFit.cover,
@@ -692,7 +715,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       debugPrint('Error loading background image: $error');
                       debugPrint('Stack trace: $stackTrace');
                       return Container(
-                        color: Colors.red.withAlpha(77),
+                        color: DSThemeBridge.resolve(
+                          context,
+                        ).danger.withAlpha(77),
                       ); // 错误时显示红色背景以便调试
                     },
                   ),
@@ -704,7 +729,11 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(color: Colors.black.withAlpha(128)),
           // 加载指示器
           if (_isLoadingBackground)
-            const Center(child: CircularProgressIndicator()),
+            Center(
+              child: DSLoadingDots(
+                color: DSThemeBridge.resolve(context).textSub,
+              ),
+            ),
           // 使用 SuperCupertinoNavigationWrapper 的主内容
           _buildSuperCupertinoContent(backgroundPath),
         ],

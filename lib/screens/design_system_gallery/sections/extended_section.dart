@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -19,7 +20,7 @@ class _ExtendedSectionState extends State<ExtendedSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '08',
       title: '扩展组件',
@@ -36,24 +37,27 @@ class _ExtendedSectionState extends State<ExtendedSection> {
           entries: [
             DSAccordionEntry(
               title: '什么是软糖果冻风？',
-              builder: (context) => Text(
-                'claymorphism 立体质感：圆润可爱、顶部高光、白色描边、彩色投影。',
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+              builder:
+                  (context) => Text(
+                    'claymorphism 立体质感：圆润可爱、顶部高光、白色描边、彩色投影。',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
             ),
             DSAccordionEntry(
               title: '如何自定义主题？',
-              builder: (context) => Text(
-                '替换 AppThemeData 的语义色即可，所有组件样式由令牌派生。',
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+              builder:
+                  (context) => Text(
+                    '替换 AppThemeData 的语义色即可，所有组件样式由令牌派生。',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
             ),
             DSAccordionEntry(
               title: '支持多开吗？',
-              builder: (context) => Text(
-                '设置 multiple: true 即可同时展开多项。',
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+              builder:
+                  (context) => Text(
+                    '设置 multiple: true 即可同时展开多项。',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
             ),
           ],
         ),
@@ -86,35 +90,42 @@ class _ExtendedSectionState extends State<ExtendedSection> {
               children: [
                 const DemoSubHeader('气泡卡（Popover，点击展开）'),
                 DSPopover(
-                  contentBuilder: (context) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        '更多操作',
-                        style: DsTypography.heading
-                            .copyWith(color: theme.text),
+                  contentBuilder:
+                      (context, close) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '更多操作',
+                            style: DsTypography.heading.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSButton(
+                            label: '重命名',
+                            variant: DSButtonVariant.ghost,
+                            size: DSButtonSize.sm,
+                            onPressed: () {
+                              close();
+                              showDSToast(
+                                context,
+                                message: '已重命名',
+                                type: DSToastType.success,
+                              );
+                            },
+                          ),
+                          DSButton(
+                            label: '删除',
+                            variant: DSButtonVariant.destructive,
+                            size: DSButtonSize.sm,
+                            onPressed: () {
+                              close();
+                              showDSToast(context, message: '已删除');
+                            },
+                          ),
+                        ],
                       ),
-                      SizedBox(height: theme.spacing.sm),
-                      DSButton(
-                        label: '重命名',
-                        variant: DSButtonVariant.ghost,
-                        size: DSButtonSize.sm,
-                        onPressed: () => showDSToast(
-                          context,
-                          message: '已重命名',
-                          type: DSToastType.success,
-                        ),
-                      ),
-                      DSButton(
-                        label: '删除',
-                        variant: DSButtonVariant.destructive,
-                        size: DSButtonSize.sm,
-                        onPressed: () =>
-                            showDSToast(context, message: '已删除'),
-                      ),
-                    ],
-                  ),
                   child: DSButton(
                     label: '更多操作',
                     variant: DSButtonVariant.outline,
@@ -134,11 +145,12 @@ class _ExtendedSectionState extends State<ExtendedSection> {
             title: '还没有记录哦',
             message: '快去记录你的第一笔吧~',
             actionLabel: '立即记录',
-            onAction: () => showDSToast(
-              context,
-              message: '去记录啦',
-              type: DSToastType.info,
-            ),
+            onAction:
+                () => showDSToast(
+                  context,
+                  message: '去记录啦',
+                  type: DSToastType.info,
+                ),
           ),
         ),
         SizedBox(height: theme.spacing.lg),

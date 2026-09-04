@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 日期卡片通用头部
 ///
@@ -42,8 +44,8 @@ class DayCardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? color.withOpacity(0.8) : color;
+    final theme = DSThemeBridge.resolve(context);
+    final titleColor = theme.isDark ? color.withOpacity(0.8) : color;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -67,10 +69,7 @@ class DayCardHeader extends StatelessWidget {
                 ),
                 Text(
                   '${date.month}/${date.day}',
-                  style: TextStyle(
-                    color: Theme.of(context).disabledColor,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: theme.textSub, fontSize: 11),
                 ),
               ],
             ),
@@ -104,12 +103,13 @@ class DayCardHeader extends StatelessWidget {
               ),
             ),
           if (onAdd != null)
-            IconButton(
-              icon: Icon(Icons.add, size: 18, color: titleColor),
-              onPressed: onAdd,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              splashRadius: 16,
+            GestureDetector(
+              onTap: onAdd,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: DsIcon(DsIconKind.plus, size: 18, color: titleColor),
+              ),
             ),
         ],
       ),

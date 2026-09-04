@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 右侧「今日心情」卡：表情 + 鼓励语 + 去聊聊按钮
 class JellyMoodCard extends StatelessWidget {
@@ -22,7 +23,7 @@ class JellyMoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return JellyBox(
       width: width,

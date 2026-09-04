@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:aboutme/core/event/event.dart' as aboutme_event;
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'components/avatar.dart';
@@ -180,6 +182,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Color _getBackgroundColor(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     // 优先使用消息的自定义气泡颜色
     if (_currentMessage.bubbleColor != null) {
       return _currentMessage.bubbleColor!;
@@ -187,17 +190,16 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     // 如果没有自定义颜色，则使用默认主题颜色
     if (widget.isSelected) {
-      return Theme.of(context).colorScheme.primaryContainer;
+      return theme.primary.mixWhite(0.8);
     }
     if (widget.isHighlighted) {
-      return Theme.of(context).colorScheme.tertiaryContainer;
+      return theme.secondary.mixWhite(0.82);
     }
-    return _isCurrentUser
-        ? Theme.of(context).colorScheme.primaryContainer
-        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    return _isCurrentUser ? theme.primary.mixWhite(0.85) : theme.surfaceAlt;
   }
 
   Color _getTextColor(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     // 如果消息有自定义气泡颜色，根据背景亮度动态计算文字颜色
     if (_currentMessage.bubbleColor != null) {
       final bgColor = _currentMessage.bubbleColor!;
@@ -205,18 +207,13 @@ class _MessageBubbleState extends State<MessageBubble> {
       // 使用 computeLuminance() 方法，返回 0.0（最暗）到 1.0（最亮）
       final luminance = bgColor.computeLuminance();
       // 亮度阈值 0.5：浅色背景用深色文字，深色背景用浅色文字
-      return luminance > 0.5 ? Colors.black87 : Colors.white;
+      return luminance > 0.5
+          ? const Color(0xDD000000)
+          : const Color(0xFFFFFFFF);
     }
 
-    if (widget.isSelected) {
-      return Theme.of(context).colorScheme.onPrimaryContainer;
-    }
-    if (widget.isHighlighted) {
-      return Theme.of(context).colorScheme.onTertiaryContainer;
-    }
-    return _isCurrentUser
-        ? Theme.of(context).colorScheme.onPrimaryContainer
-        : Theme.of(context).colorScheme.onSurface;
+    // 选中/高亮/普通气泡均为浅色果冻底，统一使用正文色
+    return theme.text;
   }
 
   @override
@@ -263,7 +260,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                     decoration: BoxDecoration(
                       color:
                           _isImageMessage()
-                              ? Colors.transparent
+                              ? const Color(0x00000000)
                               : backgroundColor,
                       borderRadius: BorderRadius.circular(12.0),
                     ),
@@ -344,29 +341,26 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Widget _buildCheckbox(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       width: 24,
       height: 24,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color:
-              widget.isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline,
+          color: widget.isSelected ? theme.primary : theme.stroke,
           width: 2,
         ),
-        color:
-            widget.isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
+        color: widget.isSelected ? theme.primary : const Color(0x00000000),
       ),
       child:
           widget.isSelected
-              ? Icon(
-                Icons.check,
-                size: 16,
-                color: Theme.of(context).colorScheme.onPrimary,
+              ? Center(
+                child: DsIcon(
+                  DsIconKind.check,
+                  size: 14,
+                  color: theme.onPrimary,
+                ),
               )
               : null,
     );

@@ -52,6 +52,19 @@ enum DsIconKind {
   video,
   columns,
   rows,
+  image,
+  palette,
+  info,
+  copy,
+  send,
+  mic,
+  bot,
+  camera,
+  pin,
+  reply,
+  stop,
+  play,
+  pause,
 }
 
 /// 自绘图标组件：24x24 逻辑画布，线条圆头
@@ -743,6 +756,223 @@ class _DsIconPainter extends CustomPainter {
             stroke,
           );
         }
+      case DsIconKind.image:
+        // 图片：圆角相框 + 山峰 + 太阳
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(3.6, 4.8, 20.4, 19.2),
+            const Radius.circular(2.6),
+          ),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(6.2, 16.6)
+            ..lineTo(10.4, 12.0)
+            ..lineTo(13.4, 15.2)
+            ..lineTo(16.0, 12.4)
+            ..lineTo(18.2, 15.0),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(8.6, 8.8), 1.4, solid);
+      case DsIconKind.palette:
+        // 调色板：盘身 + 拇指孔 + 三个颜料点
+        canvas.drawPath(
+          Path()
+            ..moveTo(11.2, 3.8)
+            ..cubicTo(6.3, 4.4, 3.0, 8.3, 3.0, 12.3)
+            ..cubicTo(3.0, 17.0, 6.9, 20.2, 11.6, 20.2)
+            ..cubicTo(13.1, 20.2, 13.6, 19.2, 13.6, 18.3)
+            ..cubicTo(13.6, 17.6, 13.2, 17.2, 13.2, 16.5)
+            ..cubicTo(13.2, 15.7, 13.8, 15.2, 14.8, 15.2)
+            ..lineTo(16.7, 15.2)
+            ..cubicTo(19.4, 15.2, 21.0, 13.2, 21.0, 10.6)
+            ..cubicTo(21.0, 6.5, 17.0, 3.4, 12.3, 3.5)
+            ..close(),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(8.2, 9.0), 1.2, solid);
+        canvas.drawCircle(const Offset(12.2, 7.4), 1.2, solid);
+        canvas.drawCircle(const Offset(15.8, 9.4), 1.2, solid);
+      case DsIconKind.info:
+        // 信息：圆环 + i
+        canvas.drawCircle(const Offset(12, 12), 8.6, stroke);
+        canvas.drawCircle(const Offset(12, 8.6), 1.2, solid);
+        canvas.drawLine(const Offset(12, 11.4), const Offset(12, 16.2), stroke);
+      case DsIconKind.copy:
+        // 复制：两张错位圆角纸
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(8.8, 3.6, 20.4, 15.2),
+            const Radius.circular(2.2),
+          ),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(9.8, 6.2)
+            ..lineTo(6.4, 6.2)
+            ..arcToPoint(
+              const Offset(3.6, 9.0),
+              radius: const Radius.circular(2.8),
+              clockwise: false,
+            )
+            ..lineTo(3.6, 17.2)
+            ..arcToPoint(
+              const Offset(6.4, 20.0),
+              radius: const Radius.circular(2.8),
+              clockwise: false,
+            )
+            ..lineTo(14.6, 20.0)
+            ..arcToPoint(
+              const Offset(17.4, 17.2),
+              radius: const Radius.circular(2.8),
+              clockwise: false,
+            )
+            ..lineTo(17.4, 14.6),
+          stroke,
+        );
+      case DsIconKind.send:
+        // 发送：纸飞机
+        canvas.drawPath(
+          Path()
+            ..moveTo(3.8, 11.6)
+            ..lineTo(20.2, 4.2)
+            ..lineTo(13.6, 20.0)
+            ..lineTo(11.0, 13.8)
+            ..close(),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(20.2, 4.2),
+          const Offset(11.0, 13.8),
+          stroke,
+        );
+      case DsIconKind.mic:
+        // 麦克风：胶囊 + 支架
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(9.4, 3.4, 14.6, 12.6),
+            const Radius.circular(2.6),
+          ),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(6.2, 11.4)
+            ..cubicTo(6.2, 14.6, 8.8, 16.8, 12, 16.8)
+            ..cubicTo(15.2, 16.8, 17.8, 14.6, 17.8, 11.4),
+          stroke,
+        );
+        canvas.drawLine(const Offset(12, 16.8), const Offset(12, 20.2), stroke);
+        canvas.drawLine(
+          const Offset(9.2, 20.2),
+          const Offset(14.8, 20.2),
+          stroke,
+        );
+      case DsIconKind.bot:
+        // 机器人：天线 + 圆头 + 双眼
+        canvas.drawLine(const Offset(12, 6.0), const Offset(12, 3.6), stroke);
+        canvas.drawCircle(const Offset(12, 3.2), 1.0, solid);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(5.2, 6.0, 18.8, 17.2),
+            const Radius.circular(4.2),
+          ),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(9.4, 11.6), 1.2, solid);
+        canvas.drawCircle(const Offset(14.6, 11.6), 1.2, solid);
+        canvas.drawLine(
+          const Offset(9.0, 14.8),
+          const Offset(15.0, 14.8),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(3.6, 11.6), 1.2, solid);
+        canvas.drawCircle(const Offset(20.4, 11.6), 1.2, solid);
+      case DsIconKind.camera:
+        // 相机：机身 + 镜头 + 取景凸起
+        canvas.drawPath(
+          Path()
+            ..moveTo(8.2, 6.8)
+            ..lineTo(9.4, 5.2)
+            ..lineTo(14.6, 5.2)
+            ..lineTo(15.8, 6.8),
+          stroke,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(3.8, 6.8, 20.2, 18.8),
+            const Radius.circular(2.8),
+          ),
+          stroke,
+        );
+        canvas.drawCircle(const Offset(12, 12.8), 3.6, stroke);
+      case DsIconKind.pin:
+        // 图钉：钉帽 + 针杆
+        canvas.drawCircle(const Offset(9.0, 9.0), 4.6, stroke);
+        canvas.drawLine(
+          const Offset(12.2, 12.2),
+          const Offset(18.6, 18.6),
+          stroke,
+        );
+        canvas.drawLine(
+          const Offset(15.8, 15.8),
+          const Offset(20.4, 20.4),
+          stroke,
+        );
+      case DsIconKind.reply:
+        // 回复：左弯箭头
+        canvas.drawPath(
+          Path()
+            ..moveTo(9.0, 5.6)
+            ..lineTo(4.0, 10.6)
+            ..lineTo(9.0, 15.6),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(4.6, 10.6)
+            ..lineTo(14.6, 10.6)
+            ..cubicTo(18.2, 10.6, 20.0, 12.4, 20.0, 16.0)
+            ..lineTo(20.0, 18.4),
+          stroke,
+        );
+      case DsIconKind.stop:
+        // 停止：实心方块
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(6.8, 6.8, 17.2, 17.2),
+            const Radius.circular(2.0),
+          ),
+          solid,
+        );
+      case DsIconKind.play:
+        // 播放：实心三角
+        canvas.drawPath(
+          Path()
+            ..moveTo(8.2, 5.2)
+            ..lineTo(18.8, 12)
+            ..lineTo(8.2, 18.8)
+            ..close(),
+          solid,
+        );
+      case DsIconKind.pause:
+        // 暂停：两条实心竖条
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(7.4, 5.6, 10.8, 18.4),
+            const Radius.circular(1.4),
+          ),
+          solid,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTRB(13.2, 5.6, 16.6, 18.4),
+            const Radius.circular(1.4),
+          ),
+          solid,
+        );
     }
     canvas.restore();
   }

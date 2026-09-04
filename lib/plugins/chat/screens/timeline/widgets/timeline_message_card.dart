@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/chat/models/message.dart';
@@ -37,7 +38,7 @@ class TimelineMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final cardColor = message.bubbleColor;
 
     // 根据视图模式调整卡片样式

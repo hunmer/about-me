@@ -1,9 +1,11 @@
-import 'package:aboutme/screens/home_screen/models/home_item.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
 import 'package:aboutme/screens/home_screen/models/layout_config.dart';
+import 'package:aboutme/screens/home_screen/models/home_item.dart';
 import '../../../../core/services/toast_service.dart';
 
 /// 布局管理对话框
@@ -47,20 +49,24 @@ class _LayoutManagerDialogState extends State<LayoutManagerDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-        });        toastService.showToast('${'screens_loadLayoutFailed'.tr}：$e');
+        });
+        toastService.showToast('${'screens_loadLayoutFailed'.tr}：$e');
       }
     }
   }
 
   /// 切换到指定布局
-  Future<void> _switchLayout(LayoutConfig layout) async {    try {
+  Future<void> _switchLayout(LayoutConfig layout) async {
+    try {
       await _layoutManager.loadLayoutConfig(layout.id);
       if (mounted) {
         setState(() {
           _currentLayoutId = layout.id;
         });
         Navigator.pop(context);
-        toastService.showToast('${'screens_switchedToLayout'.tr}"${layout.name}"');
+        toastService.showToast(
+          '${'screens_switchedToLayout'.tr}"${layout.name}"',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -70,74 +76,123 @@ class _LayoutManagerDialogState extends State<LayoutManagerDialog> {
   }
 
   /// 显示重命名对话框
-  void _showRenameDialog(LayoutConfig layout) {    final TextEditingController controller = TextEditingController(text: layout.name);
+  void _showRenameDialog(LayoutConfig layout) {
+    final controller = TextEditingController(text: layout.name);
+    final focus = FocusNode();
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('screens_renameLayout'.tr),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: 'screens_layoutName'.tr,
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('screens_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isEmpty) {
-                toastService.showToast('screens_pleaseEnterLayoutName'.tr);
-                return;
-              }
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                // 对应原 TextField 的 autofocus
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (focus.canRequestFocus) focus.requestFocus();
+                });
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'screens_renameLayout'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: controller,
+                        focusNode: focus,
+                        label: 'screens_layoutName'.tr,
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'screens_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(dialogContext),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'screens_confirm'.tr,
+                              onPressed: () async {
+                                final newName = controller.text.trim();
+                                if (newName.isEmpty) {
+                                  toastService.showToast(
+                                    'screens_pleaseEnterLayoutName'.tr,
+                                  );
+                                  return;
+                                }
 
-              Navigator.pop(context);
+                                Navigator.pop(dialogContext);
 
-              try {
-                await _layoutManager.renameLayoutConfig(layout.id, newName);
-                await _loadLayouts();
-                if (mounted) {
-                  toastService.showToast('screens_renameSuccess'.tr);
-                }
-              } catch (e) {
-                if (mounted) {
-                  toastService.showToast('screens_saveFailed'.tr);
-                }
-              }
-            },
-            child: Text('screens_confirm'.tr),
+                                try {
+                                  await _layoutManager.renameLayoutConfig(
+                                    layout.id,
+                                    newName,
+                                  );
+                                  await _loadLayouts();
+                                  if (mounted) {
+                                    toastService.showToast(
+                                      'screens_renameSuccess'.tr,
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    toastService.showToast(
+                                      'screens_saveFailed'.tr,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-        ],
-      ),
-    );
+    ).then((_) {
+      controller.dispose();
+      focus.dispose();
+    });
   }
 
   /// 确认删除布局
   void _confirmDelete(LayoutConfig layout) {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('screens_confirmDelete'.tr),
-        content: Text('screens_confirmDeleteLayout'.trParams({'layoutName': layout.name})),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('screens_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () async {
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSDialog(
+            title: 'screens_confirmDelete'.tr,
+            message: 'screens_confirmDeleteLayout'.trParams({
+              'layoutName': layout.name,
+            }),
+            cancelText: 'screens_cancel'.tr,
+            confirmText: 'screens_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () async {
               Navigator.pop(context);
 
               try {
                 await _layoutManager.deleteLayoutConfig(layout.id);
                 await _loadLayouts();
-                    // 通知外部重新加载布局列表
-                    widget.onLayoutChanged?.call();
+                // 通知外部重新加载布局列表
+                widget.onLayoutChanged?.call();
                 if (mounted) {
                   toastService.showToast('screens_deleteSuccess'.tr);
                 }
@@ -147,156 +202,274 @@ class _LayoutManagerDialogState extends State<LayoutManagerDialog> {
                 }
               }
             },
-            child: Text('screens_delete'.tr, style: const TextStyle(color: Colors.red)),
           ),
-        ],
-      ),
     );
   }
 
   /// 显示新建布局对话框
   void _showCreateLayoutDialog() {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => _CreateLayoutDialog(
-        onLayoutCreated: (newLayoutId) {
-          _loadLayouts();
-          // 通知外部切换到新布局
-          widget.onLayoutChanged?.call();
-          Navigator.pop(context); // 关闭布局管理对话框
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => _CreateLayoutDialog(
+            onLayoutCreated: (newLayoutId) {
+              _loadLayouts();
+              // 通知外部切换到新布局
+              widget.onLayoutChanged?.call();
+              Navigator.pop(context); // 关闭布局管理对话框
+            },
+          ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'screens_layoutManagement'.tr,
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  Flexible(
+                    child:
+                        _isLoading
+                            ? const Center(child: DSLoadingDots())
+                            : _layouts.isEmpty
+                            ? Center(
+                              child: DSEmptyState(
+                                emoji: '🗂️',
+                                title: 'screens_noSavedLayouts'.tr,
+                                message: 'screens_saveFirstLayoutHint'.tr,
+                              ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _layouts.length,
+                              itemBuilder: (context, index) {
+                                return _buildLayoutRow(
+                                  context,
+                                  theme,
+                                  _layouts[index],
+                                );
+                              },
+                            ),
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'screens_newLayout'.tr,
+                          icon: DsIconKind.plus,
+                          onPressed: _showCreateLayoutDialog,
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          label: 'screens_close'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {    return AlertDialog(
-      title: Text('screens_layoutManagement'.tr),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _layouts.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.layers_outlined, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(
-                            'screens_noSavedLayouts'.tr,
-                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+  /// 构建单个布局行
+  Widget _buildLayoutRow(
+    BuildContext context,
+    AppThemeData theme,
+    LayoutConfig layout,
+  ) {
+    final isActive = layout.id == _currentLayoutId;
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.sm),
+      child: Pressable(
+        onPressed: isActive ? null : () => _switchLayout(layout),
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.lg,
+            raised: false,
+            color:
+                isActive
+                    ? theme.primary.mixWhite(0.9)
+                    : (pressed
+                        ? theme.surfaceAlt.withValues(alpha: 0.6)
+                        : null),
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm,
+            ),
+            child: Row(
+              children: [
+                DsIcon(
+                  isActive ? DsIconKind.check : DsIconKind.layers,
+                  size: 22,
+                  color: isActive ? theme.primary : theme.textSub,
+                ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        layout.name,
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
+                          fontWeight: isActive ? FontWeight.bold : null,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${layout.items.length} 个组件 · ${layout.gridCrossAxisCount} 列网格',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      Text(
+                        '更新：${dateFormat.format(layout.updatedAt)}',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: theme.spacing.sm),
+                // DSPopover 自带点击触发，child 须为纯视觉组件
+                DSPopover(
+                  width: 190,
+                  contentBuilder: (popoverContext, close) {
+                    final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (!isActive)
+                          _MenuAction(
+                            icon: DsIconKind.refresh,
+                            label: 'screens_switchToThisLayout'.tr,
+                            theme: popoverTheme,
+                            onTap: () {
+                              close();
+                              _switchLayout(layout);
+                            },
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'screens_saveFirstLayoutHint'.tr,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                        _MenuAction(
+                          icon: DsIconKind.edit,
+                          label: 'screens_rename'.tr,
+                          theme: popoverTheme,
+                          onTap: () {
+                            close();
+                            _showRenameDialog(layout);
+                          },
+                        ),
+                        _MenuAction(
+                          icon: DsIconKind.trash,
+                          label: 'screens_delete'.tr,
+                          theme: popoverTheme,
+                          danger: true,
+                          onTap: () {
+                            close();
+                            _confirmDelete(layout);
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                  child: JellyBox(
+                    width: 36,
+                    height: 36,
+                    radius: theme.radii.md,
+                    raised: false,
+                    color: theme.surfaceAlt,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.more,
+                        size: 18,
+                        color: theme.textSub,
                       ),
                     ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _layouts.length,
-                    itemBuilder: (context, index) {
-                      final layout = _layouts[index];
-                      final isActive = layout.id == _currentLayoutId;
-                      final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
-
-                      return Card(
-                        elevation: isActive ? 4 : 1,
-                        color: isActive ? Theme.of(context).colorScheme.primaryContainer : null,
-                        child: ListTile(
-                          leading: Icon(
-                            isActive ? Icons.check_circle : Icons.layers,
-                            color: isActive ? Theme.of(context).colorScheme.primary : null,
-                          ),
-                          title: Text(
-                            layout.name,
-                            style: TextStyle(
-                              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('${layout.items.length} 个组件 · ${layout.gridCrossAxisCount} 列网格'),
-                              Text(
-                                '更新：${dateFormat.format(layout.updatedAt)}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert),
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'switch':
-                                  _switchLayout(layout);
-                                  break;
-                                case 'rename':
-                                  _showRenameDialog(layout);
-                                  break;
-                                case 'delete':
-                                  _confirmDelete(layout);
-                                  break;
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              if (!isActive)
-                                PopupMenuItem(
-                                  value: 'switch',
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.swap_horiz),
-                                      const SizedBox(width: 8),
-                                      Text('screens_switchToThisLayout'.tr),
-                                    ],
-                                  ),
-                                ),
-                              PopupMenuItem(
-                                value: 'rename',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.edit),
-                                    const SizedBox(width: 8),
-                                    Text('screens_rename'.tr),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.delete, color: Colors.red),
-                                    const SizedBox(width: 8),
-                                    Text('screens_delete'.tr, style: const TextStyle(color: Colors.red)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          onTap: isActive ? null : () => _switchLayout(layout),
-                        ),
-                      );
-                    },
                   ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
-      actions: [
-        TextButton.icon(
-          onPressed: _showCreateLayoutDialog,
-          icon: const Icon(Icons.add),
-          label: Text('screens_newLayout'.tr),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('screens_close'.tr),
-        ),
-      ],
+    );
+  }
+}
+
+/// 气泡菜单行
+class _MenuAction extends StatelessWidget {
+  const _MenuAction({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.sm,
+            vertical: theme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.sm,
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 16, color: accent),
+              SizedBox(width: theme.spacing.sm),
+              Text(label, style: DsTypography.caption.copyWith(color: accent)),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -313,11 +486,22 @@ class _CreateLayoutDialog extends StatefulWidget {
 
 class _CreateLayoutDialogState extends State<_CreateLayoutDialog> {
   final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocus = FocusNode();
   final HomeLayoutManager _layoutManager = HomeLayoutManager();
+
+  @override
+  void initState() {
+    super.initState();
+    // 对应原 TextField 的 autofocus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nameFocus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -353,28 +537,55 @@ class _CreateLayoutDialogState extends State<_CreateLayoutDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {    return AlertDialog(
-      title: Text('screens_newLayout'.tr),
-      content: SingleChildScrollView(
-        child: TextField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            labelText: 'screens_layoutName'.tr,
-            hintText: 'screens_layoutNameHint'.tr,
-          ),
-          autofocus: true,
-        ),
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'screens_newLayout'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                DSInput(
+                  controller: _nameController,
+                  focusNode: _nameFocus,
+                  label: 'screens_layoutName'.tr,
+                  hint: 'screens_layoutNameHint'.tr,
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'screens_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'screens_create'.tr,
+                        onPressed: _createLayout,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('screens_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: _createLayout,
-          child: Text('screens_create'.tr),
-        ),
-      ],
     );
   }
 }

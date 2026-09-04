@@ -4,6 +4,8 @@ import 'package:aboutme/core/services/plugin_data_selector/models/selectable_ite
 import 'package:extended_tabs/extended_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
@@ -305,36 +307,51 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('选择公共组件样式'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.close,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => Navigator.of(context).pop(),
+              );
+            },
+          ),
         ),
       ),
-      body: Column(
-        children: [
-          // 数据选择器区域
-          _buildDataSelectorSection(),
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Column(
+              children: [
+                // 数据选择器区域
+                _buildDataSelectorSection(context, theme),
 
-          const Divider(height: 1),
+                Divider(height: 1, color: theme.stroke),
 
-          // 公共小组件预览区域 - 占据剩余空间
-          Expanded(child: _buildCommonWidgetsSection()),
+                // 公共小组件预览区域 - 占据剩余空间
+                Expanded(child: _buildCommonWidgetsSection(context, theme)),
 
-          // 底部操作按钮
-          _buildActions(),
-        ],
+                // 底部操作按钮
+                _buildActions(theme),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   /// 构建数据选择器区域
-  Widget _buildDataSelectorSection() {
+  Widget _buildDataSelectorSection(BuildContext context, AppThemeData theme) {
     // 如果不需要选择数据，隐藏此区域
     if (widget.pluginWidget.selectorId == null) {
       return const SizedBox.shrink();
     }
-
-    final theme = Theme.of(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -348,35 +365,31 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: _selectedData != null ? Colors.green : Colors.grey,
+                  color: _selectedData != null ? theme.success : theme.textSub,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   '1',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.onSuccess,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text('选择数据', style: theme.textTheme.titleMedium),
+              Text(
+                '选择数据',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Center(
-            child: ElevatedButton.icon(
+            child: DSButton(
+              label: '点击选择数据',
               onPressed: _selectedData == null ? _openDataSelector : null,
-              icon: const Icon(Icons.touch_app),
-              label: const Text('点击选择数据'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-              ),
             ),
           ),
           if (_selectedData != null) ...[
@@ -384,8 +397,8 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: theme.success.withValues(alpha: 0.1),
+                borderRadius: theme.radii.sm,
               ),
               child: Row(
                 children: [
@@ -397,20 +410,20 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                           const JsonEncoder.withIndent(
                             '  ',
                           ).convert(_selectedData),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: theme.textSub,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  IconButton(
-                    iconSize: 16,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.close, size: 14),
+                  DSIconButton(
+                    icon: DsIconKind.close,
+                    size: 28,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
                     onPressed: () {
                       setState(() {
                         _selectedData = null;
@@ -429,16 +442,19 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
   }
 
   /// 构建公共小组件区域
-  Widget _buildCommonWidgetsSection() {
+  Widget _buildCommonWidgetsSection(BuildContext context, AppThemeData theme) {
     // 如果需要选择数据但还没有选择，显示提示
     if (_selectedData == null && widget.pluginWidget.selectorId != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.arrow_upward, size: 48, color: Colors.grey.shade400),
+            DsIcon(DsIconKind.chevronUp, size: 48, color: theme.disabled),
             const SizedBox(height: 16),
-            Text('请先在上方选择数据', style: TextStyle(color: Colors.grey.shade600)),
+            Text(
+              '请先在上方选择数据',
+              style: DsTypography.body.copyWith(color: theme.textSub),
+            ),
           ],
         ),
       );
@@ -449,11 +465,11 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.warning, size: 48, color: Colors.orange),
+            DsIcon(DsIconKind.block, size: 48, color: theme.warning),
             const SizedBox(height: 16),
             Text(
               '当前数据没有可用的公共组件',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -470,15 +486,15 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               Container(
                 width: 24,
                 height: 24,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
+                decoration: BoxDecoration(
+                  color: theme.success,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   '2',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: theme.onSuccess,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -487,7 +503,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               const SizedBox(width: 8),
               Text(
                 '选择组件样式 (${_availableCommonWidgets.length}个可用)',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -501,9 +517,8 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                   scrollDirection: Axis.horizontal,
                   isScrollable: true,
                   indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor:
-                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  labelColor: theme.primary,
+                  unselectedLabelColor: theme.textSub,
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -549,7 +564,11 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                           final metadata = CommonWidgetsRegistry.getMetadata(
                             matchingWidget,
                           );
-                          return _buildCommonWidgetPreviews(metadata, widgetId);
+                          return _buildCommonWidgetPreviews(
+                            theme,
+                            metadata,
+                            widgetId,
+                          );
                         }).toList(),
                   ),
                 ),
@@ -563,6 +582,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
 
   /// 构建公共小组件预览（多个尺寸）
   Widget _buildCommonWidgetPreviews(
+    AppThemeData theme,
     CommonWidgetMetadata metadata,
     String widgetId,
   ) {
@@ -617,7 +637,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('小尺寸 (1x1)'),
+            _buildSectionTitle(theme, '小尺寸 (1x1)'),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -627,7 +647,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('中尺寸 (2x1)'),
+            _buildSectionTitle(theme, '中尺寸 (2x1)'),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -637,7 +657,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('大尺寸 (2x2)'),
+            _buildSectionTitle(theme, '大尺寸 (2x2)'),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -647,7 +667,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('中宽尺寸 (4x1)'),
+            _buildSectionTitle(theme, '中宽尺寸 (4x1)'),
             const SizedBox(height: 8),
             SizedBox(
               width: MediaQuery.of(context).size.width - 32,
@@ -655,7 +675,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               child: buildWidgetPreview(const WideSize()),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('大宽尺寸 (4x2)'),
+            _buildSectionTitle(theme, '大宽尺寸 (4x2)'),
             const SizedBox(height: 8),
             SizedBox(
               width: MediaQuery.of(context).size.width - 32,
@@ -669,33 +689,30 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
   }
 
   /// 构建章节标题
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(AppThemeData theme, String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Colors.grey,
-      ),
+      style: DsTypography.caption.copyWith(color: theme.textSub),
     );
   }
 
   /// 构建底部操作按钮
-  Widget _buildActions() {
+  Widget _buildActions(AppThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          TextButton(
+          DSButton(
+            label: '取消',
+            variant: DSButtonVariant.outline,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
           ),
           const SizedBox(width: 8),
-          ElevatedButton(
+          DSButton(
+            label: '确认',
             onPressed:
                 _availableCommonWidgets.isNotEmpty ? _confirmSelection : null,
-            child: const Text('确认'),
           ),
         ],
       ),

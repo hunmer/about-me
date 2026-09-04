@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
-import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'chat_config_service.dart';
@@ -27,7 +27,7 @@ class UIService {
   }
 
   Widget buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final channels = _plugin.channelService.channels;
 
     return Padding(
@@ -50,9 +50,7 @@ class UIService {
               const SizedBox(width: 12),
               Text(
                 'chat_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -69,11 +67,12 @@ class UIService {
                     children: [
                       Text(
                         'chat_channelCount'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '${channels.length}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -84,11 +83,12 @@ class UIService {
                     children: [
                       Text(
                         'chat_totalMessages'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '${_plugin.channelService.getTotalMessageCount()}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -106,16 +106,16 @@ class UIService {
                     children: [
                       Text(
                         'chat_totalMessages'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '${_plugin.channelService.getTodayMessageCount()}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: DsTypography.body.copyWith(
                           color:
                               _plugin.channelService.getTodayMessageCount() > 0
-                                  ? theme.colorScheme.primary
-                                  : null,
+                                  ? theme.primary
+                                  : theme.text,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -130,7 +130,6 @@ class UIService {
   }
 
   Widget buildMainView(BuildContext context) {
-    final theme = Theme.of(context);
     final channels = _plugin.channelService.channels;
 
     return DefaultTabController(
@@ -144,31 +143,52 @@ class UIService {
             TimelineScreen(chatPlugin: _plugin),
           ],
         ),
-        bottomNavigationBar: TabBar(
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          tabs: [
-            Tab(
-              icon: const Icon(Icons.chat_bubble_outline),
-              text: 'chat_channelsTab'.tr,
-            ),
-            Tab(icon: const Icon(Icons.timeline), text: 'chat_timelineTab'.tr),
-          ],
+        bottomNavigationBar: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return TabBar(
+                labelColor: theme.primary,
+                unselectedLabelColor: theme.textSub,
+                tabs: [
+                  Tab(
+                    icon: DsIcon(
+                      DsIconKind.chat,
+                      size: 22,
+                      color: theme.primary,
+                    ),
+                    text: 'chat_channelsTab'.tr,
+                  ),
+                  Tab(
+                    icon: DsIcon(
+                      DsIconKind.list,
+                      size: 22,
+                      color: theme.textSub,
+                    ),
+                    text: 'chat_timelineTab'.tr,
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget buildUserProfileCard(BuildContext context, StateSetter setState) {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: JellyBox(
+        radius: theme.radii.lg,
+        raised: false,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Text(
               'chat_profileTitle'.tr,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
             const SizedBox(height: 16),
             Row(
@@ -179,7 +199,7 @@ class UIService {
                   height: 60,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.primaryContainer,
+                    color: theme.primary.mixWhite(0.85),
                   ),
                   child: _buildUserAvatar(context),
                 ),
@@ -191,21 +211,18 @@ class UIService {
                     children: [
                       Text(
                         _configService.currentUser.username,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
                       Text(
                         'ID: ${_configService.currentUser.id}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                     ],
                   ),
                 ),
                 // 编辑按钮
-                IconButton(
-                  icon: const Icon(Icons.edit),
+                DSIconButton(
+                  icon: DsIconKind.edit,
                   onPressed: () async {
                     final updatedUser = await showDSDialog<User>(
                       context: context,
@@ -256,60 +273,91 @@ class UIService {
   }
 
   Widget _buildDefaultAvatar(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Text(
         _configService.currentUser.username.isNotEmpty
             ? _configService.currentUser.username[0].toUpperCase()
             : '?',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
-        ),
+        style: DsTypography.title.copyWith(color: theme.text),
       ),
     );
   }
 
   Widget buildChatSettingsCard(BuildContext context, StateSetter setState) {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return JellyBox(
+              radius: theme.radii.lg,
+              raised: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'chat_chatSettings'.tr,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                  ),
+                  _buildSwitchRow(
+                    theme,
+                    label: 'chat_showAvatarInChat'.tr,
+                    value: _configService.showAvatarInChat,
+                    onChanged:
+                        (value) => setState(() {
+                          _configService.setShowAvatarInChat(value);
+                        }),
+                  ),
+                  _buildSwitchRow(
+                    theme,
+                    label: 'chat_playSoundOnSend'.tr,
+                    value: _configService.playSoundOnSend,
+                    onChanged:
+                        (value) => setState(() {
+                          _configService.setPlaySoundOnSend(value);
+                        }),
+                  ),
+                  _buildSwitchRow(
+                    theme,
+                    label: 'chat_showAvatarInTimeline'.tr,
+                    value: _configService.showAvatarInTimeline,
+                    onChanged:
+                        (value) => setState(() {
+                          _configService.setShowAvatarInTimeline(value);
+                        }),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 设置开关行
+  Widget _buildSwitchRow(
+    AppThemeData theme, {
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: Row(
         children: [
-          Padding(
-            padding: EdgeInsets.all(16.0),
+          Expanded(
             child: Text(
-              'chat_chatSettings'.tr,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              label,
+              style: DsTypography.body.copyWith(color: theme.text),
             ),
           ),
-          SwitchListTile(
-            title: Text('chat_showAvatarInChat'.tr),
-            value: _configService.showAvatarInChat,
-            onChanged: (bool value) {
-              setState(() {
-                _configService.setShowAvatarInChat(value);
-              });
-            },
-          ),
-          SwitchListTile(
-            title: Text('chat_playSoundOnSend'.tr),
-            value: _configService.playSoundOnSend,
-            onChanged: (bool value) {
-              setState(() {
-                _configService.setPlaySoundOnSend(value);
-              });
-            },
-          ),
-          SwitchListTile(
-            title: Text('chat_showAvatarInTimeline'.tr),
-            value: _configService.showAvatarInTimeline,
-            onChanged: (bool value) {
-              setState(() {
-                _configService.setShowAvatarInTimeline(value);
-              });
-            },
-          ),
+          DSSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

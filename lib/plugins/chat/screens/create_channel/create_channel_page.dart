@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -11,41 +13,49 @@ import 'package:aboutme/core/services/toast_service.dart';
 class CreateChannelSheet extends StatefulWidget {
   final ChatPlugin plugin;
 
-  const CreateChannelSheet({
-    super.key,
-    required this.plugin,
-  });
+  const CreateChannelSheet({super.key, required this.plugin});
 
   @override
   State<CreateChannelSheet> createState() => _CreateChannelSheetState();
 }
 
 class _CreateChannelSheetState extends State<CreateChannelSheet> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _nameFocus = FocusNode();
   bool _isCreating = false;
+  String? _nameError;
+
+  @override
+  void initState() {
+    super.initState();
+    // 对应原 TextFormField 的 autofocus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nameFocus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
   /// 创建频道
   Future<void> _createChannel() async {
-    if (!_formKey.currentState!.validate()) {
+    final channelName = _nameController.text.trim();
+    if (channelName.isEmpty) {
+      setState(() => _nameError = '请输入频道名称');
       return;
     }
 
     setState(() {
       _isCreating = true;
+      _nameError = null;
     });
 
     try {
-
-      final channelName = _nameController.text.trim();
-
-      // 创建频道对象
+      // 创建频道对象（icon 为持久化的 Material IconData）
       final channel = Channel(
         id: const Uuid().v4(),
         title: channelName,
@@ -63,7 +73,6 @@ class _CreateChannelSheetState extends State<CreateChannelSheet> {
       }
     } catch (e) {
       if (mounted) {
-
         toastService.showToast('${'chat_createChannelFailed'.tr}: $e');
         setState(() {
           _isCreating = false;
@@ -74,105 +83,89 @@ class _CreateChannelSheetState extends State<CreateChannelSheet> {
 
   @override
   Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
 
-    final theme = Theme.of(context);
-
-    // 使用简单的 Column 布局，不使用 SheetContentScaffold
-    return Material(
-      color: theme.scaffoldBackgroundColor,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // 关键：让 Column 根据内容收缩
-        children: [
-          // 顶部栏
-          SheetTopBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: Text('chat_createChannel'.tr),
-            actions: [
-              if (_isCreating)
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+          // 使用简单的 Column 布局，不使用 SheetContentScaffold
+          return Material(
+            color: theme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // 关键：让 Column 根据内容收缩
+              children: [
+                // 顶部栏
+                SheetTopBar(
+                  leading: DSIconButton(
+                    icon: DsIconKind.close,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                )
-              else
-                TextButton(
-                  onPressed: _createChannel,
-                  child: Text(
-                    'chat_create'.tr,
-                    style: TextStyle(
-                      color: widget.plugin.color,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  title: Text('chat_createChannel'.tr),
+                  actions: [
+                    if (_isCreating)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Center(
+                          child: DSLoadingDots(color: theme.textSub),
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DSButton(
+                          label: 'chat_create'.tr,
+                          variant: DSButtonVariant.ghost,
+                          size: DSButtonSize.sm,
+                          onPressed: _createChannel,
+                        ),
+                      ),
+                  ],
+                ),
+                // 内容区域
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 频道名称输入
+                      DSInput(
+                        controller: _nameController,
+                        focusNode: _nameFocus,
+                        label: 'chat_channelName'.tr,
+                        hint: '例如：工作、学习、随笔...',
+                        errorText: _nameError,
+                        enabled: !_isCreating,
+                        prefix: DsIcon(
+                          DsIconKind.tag,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                        onSubmitted: (_) => _createChannel(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 创建按钮
+                      DSButton(
+                        label: _isCreating ? '创建中...' : 'chat_create'.tr,
+                        icon: DsIconKind.plus,
+                        expand: true,
+                        onPressed: _isCreating ? null : _createChannel,
+                      ),
+                      // 底部安全区域
+                      SizedBox(
+                        height: MediaQuery.of(context).viewPadding.bottom + 16,
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
-          // 内容区域
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 频道名称输入
-                  TextFormField(
-                    controller: _nameController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'chat_channelName'.tr,
-                      hintText: '例如：工作、学习、随笔...',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.label),
-                    ),
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _createChannel(),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请输入频道名称';
-                      }
-                      return null;
-                    },
-                    enabled: !_isCreating,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 创建按钮
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _isCreating ? null : _createChannel,
-                      icon: _isCreating
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.add),
-                      label: Text(_isCreating ? '创建中...' : 'chat_create'.tr),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: widget.plugin.color,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-                  // 底部安全区域
-                  SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 16),
-                ],
-              ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -186,24 +179,15 @@ class SheetTopBar extends StatelessWidget {
   final Widget? title;
   final List<Widget>? actions;
 
-  const SheetTopBar({
-    super.key,
-    this.leading,
-    this.title,
-    this.actions,
-  });
+  const SheetTopBar({super.key, this.leading, this.title, this.actions});
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 0.5,
-          ),
-        ),
+        color: theme.surface,
+        border: Border(bottom: BorderSide(color: theme.stroke, width: 0.5)),
       ),
       child: SafeArea(
         bottom: false,
@@ -215,7 +199,7 @@ class SheetTopBar extends StatelessWidget {
               if (title != null)
                 Center(
                   child: DefaultTextStyle(
-                    style: Theme.of(context).textTheme.titleLarge!,
+                    style: DsTypography.title.copyWith(color: theme.text),
                     textAlign: TextAlign.center,
                     child: title!,
                   ),
@@ -238,4 +222,3 @@ class SheetTopBar extends StatelessWidget {
     );
   }
 }
-

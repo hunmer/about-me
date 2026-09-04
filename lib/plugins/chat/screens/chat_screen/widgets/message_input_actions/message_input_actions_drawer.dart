@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'types.dart';
 
 /// 消息输入动作抽屉组件
@@ -16,12 +18,11 @@ class MessageInputActionsDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     // 计算网格高度:根据 actions 数量动态计算
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-      ),
+      decoration: BoxDecoration(color: theme.surface),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -53,47 +54,39 @@ class MessageInputActionsDrawer extends StatelessWidget {
   }
 
   Widget _buildActionItem(BuildContext context, MessageInputAction action) {
-    return InkWell(
-      onTap: () {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: () {
         Navigator.pop(context); // 关闭抽屉
         action.onTap();
       },
-      borderRadius: BorderRadius.circular(12.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60.0,
-            height: 60.0,
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[800]
-                      : Colors.grey[200],
-              borderRadius: BorderRadius.circular(16.0),
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60.0,
+              height: 60.0,
+              decoration: BoxDecoration(
+                color: pressed ? theme.primary.mixWhite(0.8) : theme.surfaceAlt,
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              child: Center(
+                child: DsIcon(action.icon, size: 28.0, color: theme.primary),
+              ),
             ),
-            child: Icon(
-              action.icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 28.0,
+            const SizedBox(height: 12.0),
+            Text(
+              action.title,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 12.0),
-          Text(
-            action.title,
-            style: TextStyle(
-              fontSize: 14.0,
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[300]
-                      : Colors.grey[700],
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }

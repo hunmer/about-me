@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 左上角用户资料卡：头像 + 昵称 + 等级 + 经验进度
 class JellyProfileCard extends StatelessWidget {
@@ -24,7 +25,7 @@ class JellyProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     final card = JellyBox(
       radius: theme.radii.xl,
@@ -82,9 +83,11 @@ class JellyProfileCard extends StatelessWidget {
     if (onTap == null) return card;
     return Pressable(
       onPressed: onTap,
-      builder: (context, states) => states.contains(WidgetState.pressed)
-          ? Opacity(opacity: 0.85, child: card)
-          : card,
+      builder:
+          (context, states) =>
+              states.contains(WidgetState.pressed)
+                  ? Opacity(opacity: 0.85, child: card)
+                  : card,
     );
   }
 }

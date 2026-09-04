@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -41,10 +43,11 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     final date = HomeDateController().date;
     _checkingFor = date;
 
-    final candidates = HomeWidgetRegistry()
-        .getAllWidgets()
-        .where((w) => w.isDateDriven)
-        .toList();
+    final candidates =
+        HomeWidgetRegistry()
+            .getAllWidgets()
+            .where((w) => w.isDateDriven)
+            .toList();
 
     final results = await Future.wait(
       candidates.map((w) async {
@@ -127,37 +130,38 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
       onEvent: _checkVisibleWidgets,
       child: _DateControllerListener(
         onChanged: _checkVisibleWidgets,
-        child: _buildContent(context),
+        child: DSThemeBridge(child: Builder(builder: _buildContent)),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final dateWidgets = HomeWidgetRegistry()
-        .getAllWidgets()
-        .where((w) => w.isDateDriven)
-        .toList();
+    final theme = DSThemeBridge.resolve(context);
+    final dateWidgets =
+        HomeWidgetRegistry()
+            .getAllWidgets()
+            .where((w) => w.isDateDriven)
+            .toList();
 
     // 未注册任何日期卡片
     if (dateWidgets.isEmpty) {
       return _buildHint(
         theme,
-        icon: Icons.calendar_view_day_outlined,
+        icon: DsIconKind.calendar,
         message: 'home_dateViewEmpty'.tr,
       );
     }
 
     final visible = _visibleWidgets;
     if (visible == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: DSLoadingDots(color: theme.textSub));
     }
 
     // 该日期没有可展示的数据
     if (visible.isEmpty) {
       return _buildHint(
         theme,
-        icon: Icons.event_busy,
+        icon: DsIconKind.block,
         message: 'home_dateViewNoData'.tr,
       );
     }
@@ -168,33 +172,32 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
         crossAxisCount: widget.crossAxisCount,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        children: visible.map((widgetDef) {
-          return StaggeredGridTile.count(
-            crossAxisCellCount: _clampCells(widgetDef.defaultSize.width, 2),
-            mainAxisCellCount: _clampCells(widgetDef.defaultSize.height, 2),
-            child: _buildCard(context, theme, widgetDef),
-          );
-        }).toList(),
+        children:
+            visible.map((widgetDef) {
+              return StaggeredGridTile.count(
+                crossAxisCellCount: _clampCells(widgetDef.defaultSize.width, 2),
+                mainAxisCellCount: _clampCells(widgetDef.defaultSize.height, 2),
+                child: _buildCard(context, theme, widgetDef),
+              );
+            }).toList(),
       ),
     );
   }
 
-  Widget _buildHint(ThemeData theme, {required IconData icon, required String message}) {
+  Widget _buildHint(
+    AppThemeData theme, {
+    required DsIconKind icon,
+    required String message,
+  }) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 48,
-            color: theme.disabledColor.withValues(alpha: 0.4),
-          ),
+          DsIcon(icon, size: 48, color: theme.disabled.withValues(alpha: 0.4)),
           const SizedBox(height: 8),
           Text(
             message,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.disabledColor,
-            ),
+            style: DsTypography.body.copyWith(color: theme.disabled),
           ),
         ],
       ),
@@ -211,13 +214,13 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
   /// 构建单个日期卡片（带与主页卡片一致的圆角外观）
   Widget _buildCard(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     HomeWidget widgetDef,
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.surfaceAlt,
+        borderRadius: theme.radii.md,
       ),
       clipBehavior: Clip.antiAlias,
       child: widgetDef.build(context, const {}, widgetDef.defaultSize),
@@ -230,10 +233,7 @@ class _DateControllerListener extends StatefulWidget {
   final VoidCallback onChanged;
   final Widget child;
 
-  const _DateControllerListener({
-    required this.onChanged,
-    required this.child,
-  });
+  const _DateControllerListener({required this.onChanged, required this.child});
 
   @override
   State<_DateControllerListener> createState() =>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 class InputField extends StatelessWidget {
   final TextEditingController controller;
@@ -23,11 +24,14 @@ class InputField extends StatelessWidget {
     // 获取屏幕高度，用于计算输入框的最大高度
     final screenHeight = MediaQuery.of(context).size.height;
     final maxHeight = screenHeight / 2; // 最大高度为屏幕高度的一半
+    final theme = DSThemeBridge.resolve(context);
 
     return KeyboardListener(
       focusNode: keyboardListenerFocusNode,
       onKeyEvent:
-          UniversalPlatform.isMacOS || UniversalPlatform.isWindows || UniversalPlatform.isLinux
+          UniversalPlatform.isMacOS ||
+                  UniversalPlatform.isWindows ||
+                  UniversalPlatform.isLinux
               ? onKeyEvent
               : null,
       child: ConstrainedBox(
@@ -37,20 +41,10 @@ class InputField extends StatelessWidget {
         child: TextField(
           controller: controller,
           onChanged: onChanged,
-          style: TextStyle(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black87,
-          ),
+          style: TextStyle(color: theme.text),
           decoration: InputDecoration(
             hintText: 'chat_enterMessage'.tr,
-            hintStyle: TextStyle(
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
-            ),
+            hintStyle: TextStyle(color: theme.textSub),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

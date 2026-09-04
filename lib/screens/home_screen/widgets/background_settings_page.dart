@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
 import 'package:aboutme/screens/home_screen/models/layout_config.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -151,193 +153,218 @@ class _BackgroundSettingsPageState extends State<BackgroundSettingsPage> {
     }
   }
 
+  /// 填充方式选项
+  static final List<DSSelectItem<BoxFit>> _fitItems = [
+    DSSelectItem(value: BoxFit.cover, label: 'screens_cover'.tr),
+    DSSelectItem(value: BoxFit.contain, label: 'screens_contain'.tr),
+    DSSelectItem(value: BoxFit.fill, label: 'screens_fill'.tr),
+    DSSelectItem(value: BoxFit.fitWidth, label: 'screens_fitWidth'.tr),
+    DSSelectItem(value: BoxFit.fitHeight, label: 'screens_fitHeight'.tr),
+    DSSelectItem(value: BoxFit.none, label: 'screens_none'.tr),
+    DSSelectItem(value: BoxFit.scaleDown, label: 'screens_scaleDown'.tr),
+  ];
+
   /// 显示全局背景设置对话框
   void _showGlobalBackgroundDialog() {
     String? tempPath = _globalBackgroundPath;
     BoxFit tempFit = _globalBackgroundFit;
     double tempBlur = _globalBackgroundBlur;
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                title: Text('screens_globalBackgroundSettings'.tr),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 背景图预览
-                      if (tempPath != null)
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.file(File(tempPath!), fit: tempFit),
-                                if (tempBlur > 0)
-                                  BackdropFilter(
-                                    filter: ImageFilter.blur(
-                                      sigmaX: tempBlur,
-                                      sigmaY: tempBlur,
+            builder:
+                (context, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'screens_globalBackgroundSettings'.tr,
+                                textAlign: TextAlign.center,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 背景图预览
+                              if (tempPath != null)
+                                _buildPreview(
+                                  theme,
+                                  tempPath!,
+                                  tempFit,
+                                  tempBlur,
+                                ),
+
+                              // 选择图片按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_selectImage'.tr,
+                                      icon: DsIconKind.image,
+                                      onPressed: () async {
+                                        final path = await _pickImage();
+                                        if (path != null) {
+                                          setDialogState(() {
+                                            tempPath = path;
+                                          });
+                                        }
+                                      },
                                     ),
-                                    child: Container(color: Colors.transparent),
                                   ),
-                              ],
-                            ),
+                                  if (tempPath != null) ...[
+                                    SizedBox(width: theme.spacing.sm),
+                                    DSIconButton(
+                                      icon: DsIconKind.close,
+                                      size: 40,
+                                      color: theme.surfaceAlt,
+                                      iconColor: theme.textSub,
+                                      onPressed: () {
+                                        setDialogState(() {
+                                          tempPath = null;
+                                        });
+                                      },
+                                      tooltip: 'screens_clear'.tr,
+                                    ),
+                                  ],
+                                ],
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 填充方式
+                              Text(
+                                'screens_fillMode'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              DSSelect<BoxFit>(
+                                items: _fitItems,
+                                value: tempFit,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    tempFit = value;
+                                  });
+                                },
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 模糊程度
+                              Text(
+                                'screens_blurLevel'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSSlider(
+                                      value: tempBlur / 10,
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          tempBlur = value * 10;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: Text(
+                                      tempBlur.toStringAsFixed(1),
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 操作按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_cancel'.tr,
+                                      variant: DSButtonVariant.outline,
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ),
+                                  SizedBox(width: theme.spacing.md),
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_save'.tr,
+                                      onPressed: () {
+                                        setState(() {
+                                          _globalBackgroundPath = tempPath;
+                                          _globalBackgroundFit = tempFit;
+                                          _globalBackgroundBlur = tempBlur;
+                                        });
+                                        _saveGlobalBackground();
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-
-                      // 选择图片按钮
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final path = await _pickImage();
-                                if (path != null) {
-                                  setDialogState(() {
-                                    tempPath = path;
-                                  });
-                                }
-                              },
-                              icon: const Icon(Icons.image),
-                              label: Text('screens_selectImage'.tr),
-                            ),
-                          ),
-                          if (tempPath != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                setDialogState(() {
-                                  tempPath = null;
-                                });
-                              },
-                              icon: const Icon(Icons.clear),
-                              tooltip: 'screens_clear'.tr,
-                            ),
-                          ],
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 填充方式
-                      Text(
-                        'screens_fillMode'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButton<BoxFit>(
-                        value: tempFit,
-                        isExpanded: true,
-                        items: [
-                          DropdownMenuItem(
-                            value: BoxFit.cover,
-                            child: Text('screens_cover'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.contain,
-                            child: Text('screens_contain'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fill,
-                            child: Text('screens_fill'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fitWidth,
-                            child: Text('screens_fitWidth'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fitHeight,
-                            child: Text('screens_fitHeight'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.none,
-                            child: Text('screens_none'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.scaleDown,
-                            child: Text('screens_scaleDown'.tr),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setDialogState(() {
-                              tempFit = value;
-                            });
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 模糊程度
-                      Text(
-                        'screens_blurLevel'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Slider(
-                              value: tempBlur,
-                              min: 0,
-                              max: 10,
-                              divisions: 20,
-                              label: tempBlur.toStringAsFixed(1),
-                              onChanged: (value) {
-                                setDialogState(() {
-                                  tempBlur = value;
-                                });
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 50,
-                            child: Text(
-                              tempBlur.toStringAsFixed(1),
-                              style: const TextStyle(fontSize: 16),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('screens_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _globalBackgroundPath = tempPath;
-                        _globalBackgroundFit = tempFit;
-                        _globalBackgroundBlur = tempBlur;
-                      });
-                      _saveGlobalBackground();
-                      Navigator.pop(context);
-                    },
-                    child: Text('screens_save'.tr),
-                  ),
-                ],
-              );
-            },
           ),
+    );
+  }
+
+  /// 背景图预览（带模糊叠层）
+  Widget _buildPreview(
+    AppThemeData theme,
+    String path,
+    BoxFit fit,
+    double blur,
+  ) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: theme.spacing.lg),
+      decoration: BoxDecoration(
+        borderRadius: theme.radii.sm,
+        border: Border.all(color: theme.stroke),
+      ),
+      child: ClipRRect(
+        borderRadius: theme.radii.sm,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(File(path), fit: fit),
+            if (blur > 0)
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+                child: Container(color: const Color(0x00000000)),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -347,217 +374,201 @@ class _BackgroundSettingsPageState extends State<BackgroundSettingsPage> {
     BoxFit tempFit = layout.backgroundFit;
     double tempBlur = layout.backgroundBlur;
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                title: Text(
-                  'screens_layoutBackgroundSettings'.trParams({
-                    'layoutName': layout.name,
-                  }),
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 提示信息
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              size: 20,
-                              color: Colors.blue,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'screens_customBackgroundHasPriority'.tr,
-                                style: const TextStyle(fontSize: 12),
+            builder:
+                (context, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'screens_layoutBackgroundSettings'.trParams({
+                                  'layoutName': layout.name,
+                                }),
+                                textAlign: TextAlign.center,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
+                              SizedBox(height: theme.spacing.lg),
 
-                      const SizedBox(height: 16),
-
-                      // 背景图预览
-                      if (tempPath != null)
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.file(File(tempPath!), fit: tempFit),
-                                if (tempBlur > 0)
-                                  BackdropFilter(
-                                    filter: ImageFilter.blur(
-                                      sigmaX: tempBlur,
-                                      sigmaY: tempBlur,
+                              // 提示信息
+                              Container(
+                                padding: EdgeInsets.all(theme.spacing.md),
+                                decoration: BoxDecoration(
+                                  color: theme.primary.withValues(alpha: 0.08),
+                                  borderRadius: theme.radii.sm,
+                                ),
+                                child: Row(
+                                  children: [
+                                    DsIcon(
+                                      DsIconKind.info,
+                                      size: 20,
+                                      color: theme.primary,
                                     ),
-                                    child: Container(color: Colors.transparent),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'screens_customBackgroundHasPriority'
+                                            .tr,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 背景图预览
+                              if (tempPath != null)
+                                _buildPreview(
+                                  theme,
+                                  tempPath!,
+                                  tempFit,
+                                  tempBlur,
+                                ),
+
+                              // 选择图片按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_selectImage'.tr,
+                                      icon: DsIconKind.image,
+                                      onPressed: () async {
+                                        final path = await _pickImage();
+                                        if (path != null) {
+                                          setDialogState(() {
+                                            tempPath = path;
+                                          });
+                                        }
+                                      },
+                                    ),
                                   ),
-                              ],
-                            ),
+                                  if (tempPath != null) ...[
+                                    SizedBox(width: theme.spacing.sm),
+                                    DSIconButton(
+                                      icon: DsIconKind.close,
+                                      size: 40,
+                                      color: theme.surfaceAlt,
+                                      iconColor: theme.textSub,
+                                      onPressed: () {
+                                        setDialogState(() {
+                                          tempPath = null;
+                                        });
+                                      },
+                                      tooltip:
+                                          'screens_clearUseGlobalBackground'.tr,
+                                    ),
+                                  ],
+                                ],
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 填充方式
+                              Text(
+                                'screens_fillMode'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              DSSelect<BoxFit>(
+                                items: _fitItems,
+                                value: tempFit,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    tempFit = value;
+                                  });
+                                },
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 模糊程度
+                              Text(
+                                'screens_blurLevel'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSSlider(
+                                      value: tempBlur / 10,
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          tempBlur = value * 10;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: Text(
+                                      tempBlur.toStringAsFixed(1),
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 操作按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_cancel'.tr,
+                                      variant: DSButtonVariant.outline,
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ),
+                                  SizedBox(width: theme.spacing.md),
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_save'.tr,
+                                      onPressed: () {
+                                        _updateLayoutBackground(
+                                          layout,
+                                          tempPath,
+                                          tempFit,
+                                          tempBlur,
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-
-                      // 选择图片按钮
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final path = await _pickImage();
-                                if (path != null) {
-                                  setDialogState(() {
-                                    tempPath = path;
-                                  });
-                                }
-                              },
-                              icon: const Icon(Icons.image),
-                              label: Text('screens_selectImage'.tr),
-                            ),
-                          ),
-                          if (tempPath != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                setDialogState(() {
-                                  tempPath = null;
-                                });
-                              },
-                              icon: const Icon(Icons.clear),
-                              tooltip: 'screens_clearUseGlobalBackground'.tr,
-                            ),
-                          ],
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 填充方式
-                      Text(
-                        'screens_fillMode'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButton<BoxFit>(
-                        value: tempFit,
-                        isExpanded: true,
-                        items: [
-                          DropdownMenuItem(
-                            value: BoxFit.cover,
-                            child: Text('screens_cover'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.contain,
-                            child: Text('screens_contain'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fill,
-                            child: Text('screens_fill'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fitWidth,
-                            child: Text('screens_fitWidth'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.fitHeight,
-                            child: Text('screens_fitHeight'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.none,
-                            child: Text('screens_none'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: BoxFit.scaleDown,
-                            child: Text('screens_scaleDown'.tr),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setDialogState(() {
-                              tempFit = value;
-                            });
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 模糊程度
-                      Text(
-                        'screens_blurLevel'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Slider(
-                              value: tempBlur,
-                              min: 0,
-                              max: 10,
-                              divisions: 20,
-                              label: tempBlur.toStringAsFixed(1),
-                              onChanged: (value) {
-                                setDialogState(() {
-                                  tempBlur = value;
-                                });
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 50,
-                            child: Text(
-                              tempBlur.toStringAsFixed(1),
-                              style: const TextStyle(fontSize: 16),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('screens_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _updateLayoutBackground(
-                        layout,
-                        tempPath,
-                        tempFit,
-                        tempBlur,
-                      );
-                      Navigator.pop(context);
-                    },
-                    child: Text('screens_save'.tr),
-                  ),
-                ],
-              );
-            },
           ),
     );
   }
@@ -565,268 +576,201 @@ class _BackgroundSettingsPageState extends State<BackgroundSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('screens_themeSettings'.tr),
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // 全局背景设置卡片
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.wallpaper),
-                      title: Text(
-                        'screens_globalBackgroundImage'.tr,
+      appBar: AppBar(title: Text('screens_themeSettings'.tr)),
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return _isLoading
+                ? Center(child: DSLoadingDots(color: theme.textSub))
+                : ListView(
+                  padding: EdgeInsets.all(theme.spacing.lg),
+                  children: [
+                    // 全局背景设置卡片
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.image,
+                        size: 22,
+                        color: theme.primary,
                       ),
-                      subtitle: Text(
-                        _globalBackgroundPath != null
-                            ? 'screens_backgroundImageSet'.tr
-                            : 'screens_backgroundImageNotSet'.tr,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
+                      title: 'screens_globalBackgroundImage'.tr,
+                      subtitle:
+                          _globalBackgroundPath != null
+                              ? 'screens_backgroundImageSet'.tr
+                              : 'screens_backgroundImageNotSet'.tr,
+                      showChevron: true,
                       onTap: _showGlobalBackgroundDialog,
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    SizedBox(height: theme.spacing.lg),
 
-                  // 全局小组件透明度设置卡片
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.opacity),
-                              const SizedBox(width: 12),
-                              Text(
-                                'screens_widgetOverallOpacity'.tr,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '${(_globalWidgetOpacity * 100).toInt()}%',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'screens_widgetOverallOpacityDescription'.tr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).hintColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Slider(
-                            value: _globalWidgetOpacity,
-                            min: 0.0,
-                            max: 1.0,
-                            divisions: 20,
-                            label: '${(_globalWidgetOpacity * 100).toInt()}%',
-                            onChanged: (value) {
-                              setState(() {
-                                _globalWidgetOpacity = value;
-                              });
-                            },
-                            onChangeEnd: (value) {
-                              _saveGlobalBackground();
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'screens_zeroPercentFullyTransparent'.tr,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
-                              Text(
-                                'screens_oneHundredPercentOpaque'.tr,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                    // 全局小组件透明度设置卡片
+                    _buildOpacityCard(
+                      theme,
+                      icon: DsIconKind.drop,
+                      title: 'screens_widgetOverallOpacity'.tr,
+                      description: 'screens_widgetOverallOpacityDescription'.tr,
+                      value: _globalWidgetOpacity,
+                      onChanged: (value) {
+                        setState(() {
+                          _globalWidgetOpacity = value;
+                        });
+                      },
+                      onChangeEnd: (_) => _saveGlobalBackground(),
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 全局小组件背景颜色透明度设置卡片
+                    _buildOpacityCard(
+                      theme,
+                      icon: DsIconKind.palette,
+                      title: 'screens_backgroundColorOpacity'.tr,
+                      description:
+                          'screens_backgroundColorOpacityDescription'.tr,
+                      value: _globalWidgetBackgroundOpacity,
+                      onChanged: (value) {
+                        setState(() {
+                          _globalWidgetBackgroundOpacity = value;
+                        });
+                      },
+                      onChangeEnd: (_) => _saveGlobalBackground(),
+                    ),
+
+                    SizedBox(height: theme.spacing.xxl),
+
+                    // 布局背景设置标题
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'screens_layoutBackgroundSettingsTitle'.tr,
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 8),
 
-                  // 全局小组件背景颜色透明度设置卡片
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.format_color_fill),
-                              const SizedBox(width: 12),
-                              Text(
-                                'screens_backgroundColorOpacity'.tr,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '${(_globalWidgetBackgroundOpacity * 100).toInt()}%',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'screens_backgroundColorOpacityDescription'.tr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).hintColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Slider(
-                            value: _globalWidgetBackgroundOpacity,
-                            min: 0.0,
-                            max: 1.0,
-                            divisions: 20,
-                            label:
-                                '${(_globalWidgetBackgroundOpacity * 100).toInt()}%',
-                            onChanged: (value) {
-                              setState(() {
-                                _globalWidgetBackgroundOpacity = value;
-                              });
-                            },
-                            onChangeEnd: (value) {
-                              _saveGlobalBackground();
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'screens_zeroPercentFullyTransparent'.tr,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
-                              Text(
-                                'screens_oneHundredPercentOpaque'.tr,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 布局背景设置标题
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'screens_layoutBackgroundSettingsTitle'.tr,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 提示信息
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'screens_layoutBackgroundSettingsDescription'.tr,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).hintColor,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 布局列表
-                  if (_layouts.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.layers_outlined,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'screens_noSavedLayouts'.tr,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'screens_saveLayoutFirst'.tr,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                    // 提示信息
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'screens_layoutBackgroundSettingsDescription'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
                         ),
                       ),
-                    )
-                  else
-                    ...List.generate(_layouts.length, (index) {
-                      final layout = _layouts[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(child: Text('${index + 1}')),
-                          title: Text(layout.name),
-                          subtitle: Text(
-                            layout.backgroundImagePath != null
-                                ? 'screens_customBackgroundImage'.tr
-                                : 'screens_useGlobalBackgroundImage'.tr,
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 布局列表
+                    if (_layouts.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: DSEmptyState(
+                            emoji: '🗂️',
+                            title: 'screens_noSavedLayouts'.tr,
+                            message: 'screens_saveLayoutFirst'.tr,
                           ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLayoutBackgroundDialog(layout),
                         ),
-                      );
-                    }),
-                ],
+                      )
+                    else
+                      ...List.generate(_layouts.length, (index) {
+                        final layout = _layouts[index];
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: theme.spacing.sm),
+                          child: DSListItem(
+                            leading: JellyBox(
+                              width: 36,
+                              height: 36,
+                              radius: theme.radii.circle,
+                              color: theme.primary,
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${index + 1}',
+                                style: DsTypography.label.copyWith(
+                                  color: theme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            title: layout.name,
+                            subtitle:
+                                layout.backgroundImagePath != null
+                                    ? 'screens_customBackgroundImage'.tr
+                                    : 'screens_useGlobalBackgroundImage'.tr,
+                            showChevron: true,
+                            onTap: () => _showLayoutBackgroundDialog(layout),
+                          ),
+                        );
+                      }),
+                  ],
+                );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 构建透明度设置卡片
+  Widget _buildOpacityCard(
+    AppThemeData theme, {
+    required DsIconKind icon,
+    required String title,
+    required String description,
+    required double value,
+    required ValueChanged<double> onChanged,
+    required ValueChanged<double> onChangeEnd,
+  }) {
+    return JellyBox(
+      radius: theme.radii.lg,
+      raised: false,
+      padding: EdgeInsets.all(theme.spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              DsIcon(icon, size: 22, color: theme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                ),
               ),
+              Text(
+                '${(value * 100).toInt()}%',
+                style: DsTypography.heading.copyWith(color: theme.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          const SizedBox(height: 16),
+          DSSlider(
+            value: value,
+            onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'screens_zeroPercentFullyTransparent'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              Text(
+                'screens_oneHundredPercentOpaque'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

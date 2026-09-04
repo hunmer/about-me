@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class CalendarDatePickerDialog extends StatefulWidget {
   final List<DateTime> availableDates;
@@ -68,6 +70,7 @@ class _CalendarDatePickerDialogState extends State<CalendarDatePickerDialog> {
   }
 
   Widget _monthCellBuilder(BuildContext context, MonthCellDetails details) {
+    final theme = DSThemeBridge.resolve(context);
     final date = details.date;
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final isAvailable = _isDateAvailable(date);
@@ -80,8 +83,8 @@ class _CalendarDatePickerDialogState extends State<CalendarDatePickerDialog> {
         shape: BoxShape.circle,
         color:
             isSelected
-                ? Colors.blue
-                : (isToday ? Colors.blue.withValues(alpha: 0.3) : null),
+                ? theme.primary
+                : (isToday ? theme.primary.withValues(alpha: 0.3) : null),
       ),
       child: Stack(
         children: [
@@ -91,13 +94,13 @@ class _CalendarDatePickerDialogState extends State<CalendarDatePickerDialog> {
               style: TextStyle(
                 color:
                     !isAvailable
-                        ? Colors.grey[400]
+                        ? theme.disabled
                         : (isSelected
-                            ? Colors.white
+                            ? theme.onPrimary
                             : (date.weekday == DateTime.saturday ||
                                     date.weekday == DateTime.sunday
-                                ? Colors.red[300]
-                                : Colors.black)),
+                                ? theme.danger.withValues(alpha: 0.8)
+                                : theme.text)),
                 fontWeight:
                     (date.weekday == DateTime.saturday ||
                                 date.weekday == DateTime.sunday) &&
@@ -113,16 +116,16 @@ class _CalendarDatePickerDialogState extends State<CalendarDatePickerDialog> {
               top: 1,
               child: Container(
                 padding: const EdgeInsets.all(2.0),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
+                decoration: BoxDecoration(
+                  color: theme.danger,
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 alignment: Alignment.center,
                 child: Text(
                   '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.onDanger,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -136,83 +139,93 @@ class _CalendarDatePickerDialogState extends State<CalendarDatePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 10.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.lg),
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'app_selectDate'.tr,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4.0,
+                    vertical: 4.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'app_selectDate'.tr,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      DSButton(
+                        label: 'app_showAll'.tr,
+                        variant: DSButtonVariant.ghost,
+                        size: DSButtonSize.sm,
+                        onPressed: () {
+                          widget.onDateSelected(null);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    widget.onDateSelected(null);
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('app_showAll'.tr),
+                SizedBox(
+                  height: 350,
+                  child: SfCalendar(
+                    controller: _calendarController,
+                    view: CalendarView.month,
+                    initialDisplayDate:
+                        widget.selectedDate ?? widget.availableDates.first,
+                    minDate: widget.availableDates.last,
+                    maxDate: widget.availableDates.first,
+                    headerStyle: const CalendarHeaderStyle(
+                      textAlign: TextAlign.center,
+                      textStyle: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    monthViewSettings: const MonthViewSettings(
+                      showTrailingAndLeadingDates: false,
+                      dayFormat: 'EEE',
+                    ),
+                    cellBorderColor: const Color(0x00000000),
+                    selectionDecoration: const BoxDecoration(),
+                    monthCellBuilder: _monthCellBuilder,
+                    onTap: (CalendarTapDetails details) {
+                      if (details.date != null &&
+                          _isDateAvailable(details.date!)) {
+                        setState(() {
+                          _selectedDay = details.date;
+                          _calendarController.selectedDate = details.date;
+                        });
+                        widget.onDateSelected(details.date);
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: DSButton(
+                      label: 'app_cancel'.tr,
+                      variant: DSButtonVariant.ghost,
+                      size: DSButtonSize.sm,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-          SizedBox(
-            height: 350,
-            child: SfCalendar(
-              controller: _calendarController,
-              view: CalendarView.month,
-              initialDisplayDate:
-                  widget.selectedDate ?? widget.availableDates.first,
-              minDate: widget.availableDates.last,
-              maxDate: widget.availableDates.first,
-              headerStyle: const CalendarHeaderStyle(
-                textAlign: TextAlign.center,
-                textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-              monthViewSettings: const MonthViewSettings(
-                showTrailingAndLeadingDates: false,
-                dayFormat: 'EEE',
-              ),
-              cellBorderColor: Colors.transparent,
-              selectionDecoration: const BoxDecoration(),
-              monthCellBuilder: _monthCellBuilder,
-              onTap: (CalendarTapDetails details) {
-                if (details.date != null && _isDateAvailable(details.date!)) {
-                  setState(() {
-                    _selectedDay = details.date;
-                    _calendarController.selectedDate = details.date;
-                  });
-                  widget.onDateSelected(details.date);
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('app_cancel'.tr),
-                ),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 「成长」卡：经验值进度 + 下一级解锁提示 + 礼盒插画位
 class JellyGrowthCard extends StatelessWidget {
@@ -16,7 +17,7 @@ class JellyGrowthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return JellyBox(
       radius: theme.radii.xl,

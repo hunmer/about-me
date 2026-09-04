@@ -4,6 +4,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -22,24 +24,22 @@ import 'utils.dart';
 
 /// 构建未配置状态的占位小组件
 Widget buildUnconfiguredWidget(BuildContext context) {
-  final theme = Theme.of(context);
+  final theme = DSThemeBridge.resolve(context);
   return SizedBox.expand(
     child: Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        color: theme.surfaceAlt,
+        borderRadius: theme.radii.lg,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat, size: 32, color: theme.colorScheme.onSurfaceVariant),
+          DsIcon(DsIconKind.chat, size: 32, color: theme.textSub),
           const SizedBox(height: 8),
           Text(
             '点击配置频道',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: DsTypography.body.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -236,108 +236,96 @@ Widget _buildChannelWidget(BuildContext context, String channelId) {
   final channelIcon = channel.icon;
   final channelColor = channel.backgroundColor;
 
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  final theme = DSThemeBridge.resolve(context);
+  return Container(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 标题行
+        Row(
           children: [
-            // 标题行
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: channelColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(channelIcon, size: 20, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // 最后一条消息预览
-            if (lastMessage.isNotEmpty)
-              Expanded(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      lastMessage,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Center(
-                    child: Text(
-                      'chat_noMessages'.tr,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurfaceVariant.withOpacity(0.6),
-                      ),
-                    ),
-                  ),
-                ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: channelColor,
+                borderRadius: BorderRadius.circular(8),
               ),
-
-            const SizedBox(height: 12),
-
-            // 底部信息栏
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 左侧：消息数
-                Text(
-                  'chat_messageCount'.trParams({'count': '$messageCount'}),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                // 右侧：时间
-                Text(
-                  formatDateTime(lastMessageTime),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+              // 频道图标为持久化 IconData，保留 Material Icon
+              child: Icon(
+                channelIcon,
+                size: 20,
+                color: const Color(0xFFFFFFFF),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: DsTypography.title.copyWith(color: theme.text),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        // 最后一条消息预览
+        if (lastMessage.isNotEmpty)
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.surfaceAlt.withValues(alpha: 0.5),
+                  borderRadius: theme.radii.sm,
+                ),
+                child: Text(
+                  lastMessage,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: Center(
+                child: Text(
+                  'chat_noMessages'.tr,
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 12),
+
+        // 底部信息栏
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 左侧：消息数
+            Text(
+              'chat_messageCount'.trParams({'count': '$messageCount'}),
+              style: DsTypography.label.copyWith(color: theme.textSub),
+            ),
+            // 右侧：时间
+            Text(
+              formatDateTime(lastMessageTime),
+              style: DsTypography.label.copyWith(color: theme.textSub),
+            ),
+          ],
+        ),
+      ],
     ),
   );
 }

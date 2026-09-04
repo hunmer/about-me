@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -17,10 +18,7 @@ class ButtonsSection extends StatelessWidget {
           children: [
             DemoBlock(
               label: '主按钮',
-              child: DSButton(
-                label: '开始游戏',
-                onPressed: () {},
-              ),
+              child: DSButton(label: '开始游戏', onPressed: () {}),
             ),
             DemoBlock(
               label: '次要按钮',
@@ -56,7 +54,7 @@ class ButtonsSection extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: AppTheme.of(context).spacing.lg),
+        SizedBox(height: DSThemeBridge.resolve(context).spacing.lg),
         DemoFlow(
           children: [
             DemoBlock(
@@ -67,21 +65,15 @@ class ButtonsSection extends StatelessWidget {
               label: '图标按钮',
               child: DSIconButton(icon: DsIconKind.gear, onPressed: () {}),
             ),
-            DemoBlock(
-              label: '悬浮按钮',
-              child: DSFab(onPressed: () {}),
-            ),
+            DemoBlock(label: '悬浮按钮', child: DSFab(onPressed: () {})),
           ],
         ),
-        SizedBox(height: AppTheme.of(context).spacing.lg),
+        SizedBox(height: DSThemeBridge.resolve(context).spacing.lg),
         DemoFlow(
           children: [
             DemoBlock(
               label: '禁用态',
-              child: DSButton(
-                label: '开始游戏',
-                onPressed: null,
-              ),
+              child: DSButton(label: '开始游戏', onPressed: null),
             ),
             DemoBlock(
               label: '禁用态',
@@ -95,10 +87,7 @@ class ButtonsSection extends StatelessWidget {
               label: '禁用态',
               child: DSIconButton(icon: DsIconKind.heart, onPressed: null),
             ),
-            DemoBlock(
-              label: '禁用态',
-              child: DSFab(onPressed: null),
-            ),
+            DemoBlock(label: '禁用态', child: DSFab(onPressed: null)),
           ],
         ),
       ],

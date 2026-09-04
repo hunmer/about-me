@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -16,7 +17,7 @@ class _DataSectionState extends State<DataSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '05',
       title: '数据展示',
@@ -37,30 +38,32 @@ class _DataSectionState extends State<DataSection> {
                   child: DSCard(
                     onTap: () {},
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('🐰', style: TextStyle(fontSize: 30)),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: Text(
-                              '每日心情',
-                              style: DsTypography.heading
-                                  .copyWith(color: theme.text),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text('🐰', style: TextStyle(fontSize: 30)),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: Text(
+                                '每日心情',
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                        Text(
+                          '记录今天的美好瞬间',
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
                           ),
-                        ],
-                      ),
-                      SizedBox(height: theme.spacing.sm),
-                      Text(
-                        '记录今天的美好瞬间',
-                        style: DsTypography.caption
-                            .copyWith(color: theme.textSub),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -123,8 +126,9 @@ class _DataSectionState extends State<DataSection> {
                             SizedBox(height: theme.spacing.xs),
                             Text(
                               '${size.round()}px',
-                              style: DsTypography.label
-                                  .copyWith(color: theme.textSub),
+                              style: DsTypography.label.copyWith(
+                                color: theme.textSub,
+                              ),
                             ),
                           ],
                         ),
@@ -148,11 +152,7 @@ class _DataSectionState extends State<DataSection> {
                 const DemoSubHeader('徽标与角标'),
                 Row(
                   children: [
-                    DSIconBadge(
-                      icon: DsIconKind.bell,
-                      count: 3,
-                      size: 26,
-                    ),
+                    DSIconBadge(icon: DsIconKind.bell, count: 3, size: 26),
                     SizedBox(width: theme.spacing.lg),
                     DSBadge(label: '新功能'),
                   ],
@@ -182,8 +182,9 @@ class _DataSectionState extends State<DataSection> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       '75%',
-                      style: DsTypography.caption
-                          .copyWith(color: theme.textSub),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                   ),
                 ),

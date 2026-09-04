@@ -1,7 +1,9 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
@@ -22,7 +24,7 @@ class GenericIconWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -36,15 +38,16 @@ class GenericIconWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 插件图标为持久化 IconData，保留 Material Icon
               Icon(icon, size: iconSize, color: color),
               if (name != null) ...[
                 SizedBox(height: size * 0.05),
                 Text(
                   name!,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: DsTypography.caption.copyWith(
                     fontSize: fontSize,
                     fontWeight: FontWeight.w500,
-                    color: theme.textTheme.bodyMedium?.color,
+                    color: theme.text,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
@@ -98,7 +101,7 @@ class GenericPluginWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final bool enabledByConfig = globalConfigManager.isPluginEnabled(pluginId);
     final bool pluginRegistered =
         globalPluginManager.getPlugin(pluginId) != null;
@@ -106,7 +109,7 @@ class GenericPluginWidget extends StatelessWidget {
 
     // 计算最终的图标颜色和背景颜色
     final finalIconColor = config.iconColor ?? pluginDefaultColor;
-    final finalBackgroundColor = config.backgroundColor ?? theme.cardColor;
+    final finalBackgroundColor = config.backgroundColor ?? theme.surface;
 
     // 使用 LayoutBuilder 获取小组件的实际大小，实现响应式设计
     return LayoutBuilder(
@@ -135,7 +138,7 @@ class GenericPluginWidget extends StatelessWidget {
             color:
                 config.backgroundImagePath == null
                     ? finalBackgroundColor
-                    : Colors.transparent,
+                    : const Color(0x00000000),
             borderRadius: BorderRadius.circular(16),
             image:
                 config.backgroundImagePath != null
@@ -203,7 +206,7 @@ class GenericPluginWidget extends StatelessWidget {
 
   /// 构建头部（图标和标题）
   Widget _buildHeader(
-    ThemeData theme,
+    AppThemeData theme,
     Color iconColor,
     double iconSize,
     double fontSize,
@@ -229,14 +232,10 @@ class GenericPluginWidget extends StatelessWidget {
         Expanded(
           child: Text(
             pluginName,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: DsTypography.heading.copyWith(
               fontSize: fontSize,
               // 如果有背景图片，增强文字对比度
-              color:
-                  config.backgroundImagePath != null
-                      ? theme.colorScheme.onSurface
-                      : null,
+              color: config.backgroundImagePath != null ? theme.text : null,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -246,7 +245,7 @@ class GenericPluginWidget extends StatelessWidget {
   }
 
   /// 构建统计项
-  Widget _buildStatItems(ThemeData theme, Color iconColor, double fontSize) {
+  Widget _buildStatItems(AppThemeData theme, Color iconColor, double fontSize) {
     // 过滤出选中的统计项
     final selectedItems =
         availableItems.where((item) {
@@ -258,8 +257,8 @@ class GenericPluginWidget extends StatelessWidget {
       return Center(
         child: Text(
           '暂无数据',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.textTheme.bodySmall?.color,
+          style: DsTypography.body.copyWith(
+            color: theme.textSub,
             fontSize: fontSize,
           ),
         ),
@@ -275,7 +274,7 @@ class GenericPluginWidget extends StatelessWidget {
   /// 一列布局
   Widget _buildOneColumnLayout(
     List<StatItemData> items,
-    ThemeData theme,
+    AppThemeData theme,
     Color iconColor,
     double fontSize,
   ) {
@@ -303,7 +302,7 @@ class GenericPluginWidget extends StatelessWidget {
   /// 两列布局
   Widget _buildTwoColumnsLayout(
     List<StatItemData> items,
-    ThemeData theme,
+    AppThemeData theme,
     Color iconColor,
     double fontSize,
   ) {
@@ -327,11 +326,7 @@ class GenericPluginWidget extends StatelessWidget {
               ),
             ),
             if (secondItem != null) ...[
-              Container(
-                width: 1,
-                height: fontSize * 2,
-                color: theme.dividerColor,
-              ),
+              Container(width: 1, height: fontSize * 2, color: theme.stroke),
               Expanded(
                 child: _StatItem(
                   data: secondItem,
@@ -361,7 +356,7 @@ class GenericPluginWidget extends StatelessWidget {
 
   /// 插件被禁用时的占位内容
   Widget _buildDisabledContent(
-    ThemeData theme,
+    AppThemeData theme,
     Color iconColor,
     double iconSize,
   ) {
@@ -369,11 +364,16 @@ class GenericPluginWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.block, size: iconSize, color: iconColor.withOpacity(0.6)),
+          DsIcon(
+            DsIconKind.block,
+            size: iconSize,
+            color: iconColor.withOpacity(0.6),
+          ),
           const SizedBox(height: 12),
           Text(
             'screens_pluginDisabled'.tr,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: DsTypography.body.copyWith(
+              color: theme.text,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -386,7 +386,7 @@ class GenericPluginWidget extends StatelessWidget {
 /// 统计项组件
 class _StatItem extends StatelessWidget {
   final StatItemData data;
-  final ThemeData theme;
+  final AppThemeData theme;
   final Color defaultColor;
   final double fontSize;
 
@@ -408,8 +408,8 @@ class _StatItem extends StatelessWidget {
           flex: 3,
           child: Text(
             data.label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color,
+            style: DsTypography.body.copyWith(
+              color: theme.textSub,
               fontSize: fontSize * 0.875, // 标签字体稍小
             ),
             textAlign: TextAlign.left,
@@ -422,8 +422,7 @@ class _StatItem extends StatelessWidget {
           flex: 2,
           child: Text(
             data.value,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: DsTypography.title.copyWith(
               fontSize: fontSize, // 数值字体较大
               color: displayColor,
             ),

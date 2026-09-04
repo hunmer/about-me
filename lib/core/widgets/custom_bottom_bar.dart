@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// CustomBottomBar - 封装 flutter_floating_bottom_bar 的 BottomBar 组件
 ///
@@ -168,8 +169,8 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
 
   /// 构建 TabBar
   Widget _buildTabBar() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final unselectedColor = colorScheme.onSurface.withOpacity(0.6);
+    final theme = DSThemeBridge.resolve(context);
+    final unselectedColor = theme.text.withValues(alpha: 0.6);
     final color = widget.colors[widget.currentIndex % widget.colors.length];
 
     return TabBar(
@@ -193,7 +194,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   @override
   Widget build(BuildContext context) {
     _scheduleBottomBarHeightMeasurement();
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = DSThemeBridge.resolve(context);
     final mediaQuery = MediaQuery.of(context);
 
     return Stack(
@@ -207,7 +208,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
           curve: Curves.decelerate,
           showIcon: true,
           width: mediaQuery.size.width * widget.widthRatio,
-          barColor: colorScheme.surface,
+          barColor: theme.surface,
           start: 2,
           end: 0,
           offset: widget.offset,
@@ -241,7 +242,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                     bottom: 0,
                     child: Container(
                       height: _bottomBarHeight,
-                      color: colorScheme.surface,
+                      color: theme.surface,
                     ),
                   ),
                 ],

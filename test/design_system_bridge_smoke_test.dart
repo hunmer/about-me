@@ -246,6 +246,19 @@ void main() {
         DsIconKind.video,
         DsIconKind.columns,
         DsIconKind.rows,
+        DsIconKind.image,
+        DsIconKind.palette,
+        DsIconKind.info,
+        DsIconKind.copy,
+        DsIconKind.send,
+        DsIconKind.mic,
+        DsIconKind.bot,
+        DsIconKind.camera,
+        DsIconKind.pin,
+        DsIconKind.reply,
+        DsIconKind.stop,
+        DsIconKind.play,
+        DsIconKind.pause,
       ];
       await tester.pumpWidget(
         MaterialApp(

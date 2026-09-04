@@ -11,8 +11,10 @@ class DSPopover extends StatefulWidget {
     this.width = 220,
   });
 
-  /// 气泡内容（按钮、列表等可交互元素均可）
-  final WidgetBuilder contentBuilder;
+  /// 气泡内容（按钮、列表等可交互元素均可）；
+  /// [close] 供内容主动关闭气泡（如点击菜单项触发跳转/弹窗时）
+  final Widget Function(BuildContext context, VoidCallback close)
+  contentBuilder;
   final Widget child;
   final double width;
 
@@ -37,46 +39,55 @@ class _DSPopoverState extends State<DSPopover> {
     if (mounted) setState(() {});
   }
 
+  /// 供气泡内容主动关闭自己
+  void _close() {
+    _removeEntry();
+    if (mounted) setState(() {});
+  }
+
   void _insertEntry() {
     final theme = AppTheme.of(context);
     _entry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          // 外部点击关闭
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _removeEntry,
-            ),
-          ),
-          CompositedTransformFollower(
-            link: _link,
-            targetAnchor: Alignment.bottomCenter,
-            followerAnchor: Alignment.topCenter,
-            offset: const Offset(0, 10),
-            child: AppTheme(
-              data: theme,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.85, end: 1),
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOutBack,
-                builder: (context, t, child) => Opacity(
-                  opacity: t.clamp(0, 1),
-                  child: Transform.scale(
-                    scale: t,
-                    alignment: Alignment.topCenter,
-                    child: child,
-                  ),
-                ),
-                child: _PopoverCard(
-                  width: widget.width,
-                  contentBuilder: widget.contentBuilder,
+      builder:
+          (context) => Stack(
+            children: [
+              // 外部点击关闭
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _removeEntry,
                 ),
               ),
-            ),
+              CompositedTransformFollower(
+                link: _link,
+                targetAnchor: Alignment.bottomCenter,
+                followerAnchor: Alignment.topCenter,
+                offset: const Offset(0, 10),
+                child: AppTheme(
+                  data: theme,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.85, end: 1),
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOutBack,
+                    builder:
+                        (context, t, child) => Opacity(
+                          opacity: t.clamp(0, 1),
+                          child: Transform.scale(
+                            scale: t,
+                            alignment: Alignment.topCenter,
+                            child: child,
+                          ),
+                        ),
+                    child: _PopoverCard(
+                      width: widget.width,
+                      contentBuilder: widget.contentBuilder,
+                      close: _close,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     Overlay.of(context, rootOverlay: true).insert(_entry!);
   }
@@ -90,19 +101,22 @@ class _DSPopoverState extends State<DSPopover> {
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _link,
-      child: GestureDetector(
-        onTap: _toggle,
-        child: widget.child,
-      ),
+      child: GestureDetector(onTap: _toggle, child: widget.child),
     );
   }
 }
 
 class _PopoverCard extends StatelessWidget {
-  const _PopoverCard({required this.width, required this.contentBuilder});
+  const _PopoverCard({
+    required this.width,
+    required this.contentBuilder,
+    required this.close,
+  });
 
   final double width;
-  final WidgetBuilder contentBuilder;
+  final Widget Function(BuildContext context, VoidCallback close)
+  contentBuilder;
+  final VoidCallback close;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +135,7 @@ class _PopoverCard extends StatelessWidget {
             border: Border.all(color: theme.stroke, width: 1.4),
             boxShadow: theme.shadows.float,
           ),
-          child: contentBuilder(context),
+          child: contentBuilder(context, close),
         ),
         // 小三角
         Transform.translate(

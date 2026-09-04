@@ -250,7 +250,7 @@ class _HomeGridState extends State<HomeGrid> {
   /// 构建带有网格尺寸信息的网格组件
   ///
   /// [context] 必须来自主题桥之下的构建器（LayoutBuilder 的 builder），
-  /// 内部瓦片依赖 AppTheme.of(context) 读取设计令牌。
+  /// 内部瓦片依赖 DSThemeBridge.resolve(context) 读取设计令牌。
   Widget _buildGridWithMetrics(
     BuildContext context,
     List<HomeItem> orderedItems,
@@ -356,7 +356,7 @@ class _HomeGridState extends State<HomeGrid> {
       );
     }
 
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final dragHandleWidget = Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -528,7 +528,7 @@ class _HomeGridState extends State<HomeGrid> {
   }
 
   Widget _buildDropIndicator(BuildContext context, _DropDirection? direction) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     // 中心区域：显示合并/堆叠指示器
     if (direction == null) {
@@ -1093,7 +1093,7 @@ class _HomeGridState extends State<HomeGrid> {
 
   /// 构建骨架卡片
   Widget _buildSkeletonCard(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Padding(
       padding: const EdgeInsets.all(4),
       child: DSSkeleton(
@@ -1164,7 +1164,7 @@ Future<_DragToFolderAction?> _showDragToFolderDialog(
 
   // 在调用点（主题桥之下）预先捕获设计令牌：
   // 对话框路由的 builder context 在 AppTheme 包裹生效前执行，不能直接取
-  final theme = AppTheme.of(context);
+  final theme = DSThemeBridge.resolve(context);
 
   return showDSDialog<_DragToFolderAction>(
     context: context,

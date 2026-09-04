@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -68,13 +70,14 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
     // 应用搜索过滤
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      widgets = widgets.where((widget) {
-        final matchesName = widget.name.toLowerCase().contains(query);
-        final matchesDescription =
-            widget.description?.toLowerCase().contains(query) ?? false;
-        final matchesPlugin = widget.pluginId.toLowerCase().contains(query);
-        return matchesName || matchesDescription || matchesPlugin;
-      }).toList();
+      widgets =
+          widgets.where((widget) {
+            final matchesName = widget.name.toLowerCase().contains(query);
+            final matchesDescription =
+                widget.description?.toLowerCase().contains(query) ?? false;
+            final matchesPlugin = widget.pluginId.toLowerCase().contains(query);
+            return matchesName || matchesDescription || matchesPlugin;
+          }).toList();
     }
 
     // 应用插件过滤（从 _filterValues 中获取）
@@ -96,12 +99,13 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
     // 应用尺寸过滤（从 _filterValues 中获取）
     final selectedSizes = _filterValues['sizes'] as List<String>?;
     if (selectedSizes != null && selectedSizes.isNotEmpty) {
-      widgets = widgets.where((widget) {
-        return widget.effectiveSupportedSizes.any((size) {
-          final sizeKey = '${size.width}×${size.height}';
-          return selectedSizes.contains(sizeKey);
-        });
-      }).toList();
+      widgets =
+          widgets.where((widget) {
+            return widget.effectiveSupportedSizes.any((size) {
+              final sizeKey = '${size.width}×${size.height}';
+              return selectedSizes.contains(sizeKey);
+            });
+          }).toList();
     }
 
     return widgets;
@@ -110,11 +114,8 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
   /// 构建分类过滤器
   List<FilterItem> _buildFilterItems() {
     // 获取所有插件ID列表
-    final allPlugins = _allWidgets
-        .map((w) => w.pluginId)
-        .toSet()
-        .toList()
-      ..sort();
+    final allPlugins =
+        _allWidgets.map((w) => w.pluginId).toSet().toList()..sort();
 
     return [
       // 插件过滤器
@@ -179,30 +180,29 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
   ) {
     final allOptions = ['全部插件', ...allPlugins];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: allOptions.map((plugin) {
-        final isSelected =
-            (selectedPlugin ?? '全部插件') == plugin ||
-            (plugin == '全部插件' && selectedPlugin == null);
+    // 过滤面板可能经 Overlay 展示在主题树外，包桥保证取到 AppTheme
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Wrap(
+            spacing: theme.spacing.sm,
+            runSpacing: theme.spacing.sm,
+            children:
+                allOptions.map((plugin) {
+                  final isSelected = (selectedPlugin ?? '全部插件') == plugin;
 
-        return ChoiceChip(
-          label: Text(plugin),
-          selected: isSelected,
-          onSelected: (_) {
-            onChanged(plugin == '全部插件' ? null : plugin);
-          },
-          showCheckmark: false,
-          selectedColor: Theme.of(context).colorScheme.primaryContainer,
-          labelStyle: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimaryContainer
-                : Theme.of(context).colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        );
-      }).toList(),
+                  return DSChip(
+                    label: plugin,
+                    selected: isSelected,
+                    onSelected: (_) {
+                      onChanged(plugin == '全部插件' ? null : plugin);
+                    },
+                  );
+                }).toList(),
+          );
+        },
+      ),
     );
   }
 
@@ -213,30 +213,28 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
   ) {
     final allCategories = ['全部分类', ..._categories];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: allCategories.map((category) {
-        final isSelected =
-            (selectedCategory ?? '全部分类') == category ||
-            (category == '全部分类' && selectedCategory == null);
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Wrap(
+            spacing: theme.spacing.sm,
+            runSpacing: theme.spacing.sm,
+            children:
+                allCategories.map((category) {
+                  final isSelected = (selectedCategory ?? '全部分类') == category;
 
-        return ChoiceChip(
-          label: Text(category),
-          selected: isSelected,
-          onSelected: (_) {
-            onChanged(category == '全部分类' ? null : category);
-          },
-          showCheckmark: false,
-          selectedColor: Theme.of(context).colorScheme.primaryContainer,
-          labelStyle: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimaryContainer
-                : Theme.of(context).colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        );
-      }).toList(),
+                  return DSChip(
+                    label: category,
+                    selected: isSelected,
+                    onSelected: (_) {
+                      onChanged(category == '全部分类' ? null : category);
+                    },
+                  );
+                }).toList(),
+          );
+        },
+      ),
     );
   }
 
@@ -253,30 +251,35 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
 
     final selected = selectedSizes ?? [];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: sizes.map((item) {
-        final label = item['label'] as String;
-        final isSelected = selected.contains(label);
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Wrap(
+            spacing: theme.spacing.sm,
+            runSpacing: theme.spacing.sm,
+            children:
+                sizes.map((item) {
+                  final label = item['label'] as String;
+                  final isSelected = selected.contains(label);
 
-        return FilterChip(
-          label: Text(label),
-          selected: isSelected,
-          onSelected: (value) {
-            final newSelected = List<String>.from(selected);
-            if (value) {
-              newSelected.add(label);
-            } else {
-              newSelected.remove(label);
-            }
-            onChanged(newSelected);
-          },
-          showCheckmark: true,
-          selectedColor: Theme.of(context).colorScheme.primaryContainer,
-          checkmarkColor: Theme.of(context).colorScheme.onPrimaryContainer,
-        );
-      }).toList(),
+                  return DSChip(
+                    label: label,
+                    selected: isSelected,
+                    onSelected: (value) {
+                      final newSelected = List<String>.from(selected);
+                      if (value) {
+                        newSelected.add(label);
+                      } else {
+                        newSelected.remove(label);
+                      }
+                      onChanged(newSelected);
+                    },
+                  );
+                }).toList(),
+          );
+        },
+      ),
     );
   }
 
@@ -287,11 +290,12 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => CommonWidgetSelectorPage(
-            pluginWidget: widget,
-            folderId: this.widget.folderId,
-            replaceWidgetItemId: this.widget.replaceWidgetItemId,
-          ),
+          builder:
+              (context) => CommonWidgetSelectorPage(
+                pluginWidget: widget,
+                folderId: this.widget.folderId,
+                replaceWidgetItemId: this.widget.replaceWidgetItemId,
+              ),
         ),
       );
     } else {
@@ -357,33 +361,22 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
   Widget _buildWidgetGrid(List<HomeWidget> widgets) {
     if (widgets.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Theme.of(context).disabledColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '没有找到匹配的组件',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _searchQuery = '';
-                  _filterValues.clear();
-                });
-              },
-              icon: const Icon(Icons.clear_all),
-              label: Text('screens_clearFilterConditions'.tr),
-            ),
-          ],
+        child: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return DSEmptyState(
+                emoji: '🔍',
+                title: '没有找到匹配的组件',
+                actionLabel: 'screens_clearFilterConditions'.tr,
+                onAction: () {
+                  setState(() {
+                    _searchQuery = '';
+                    _filterValues.clear();
+                  });
+                },
+              );
+            },
+          ),
         ),
       );
     }
@@ -408,135 +401,157 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
 
   /// 构建小组件预览卡片
   Widget _buildWidgetPreviewCard(HomeWidget widget) {
-    final theme = Theme.of(context);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _handleWidgetTap(widget),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 图标和标题
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: widget.color?.withValues(alpha: 0.1),
-                  child: Column(
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Pressable(
+            onPressed: () => _handleWidgetTap(widget),
+            builder: (context, states) {
+              final pressed = states.contains(WidgetState.pressed);
+              return JellyBox(
+                radius: theme.radii.lg,
+                raised: false,
+                color: pressed ? theme.surfaceAlt : theme.surface,
+                child: ClipRRect(
+                  borderRadius: theme.radii.lg,
+                  child: Stack(
                     children: [
-                      Icon(widget.icon, size: 48, color: widget.color),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 描述文本
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child:
-                        widget.description != null
-                            ? Text(
-                              widget.description!,
-                              style: theme.textTheme.bodySmall,
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                            : const SizedBox.shrink(),
-                  ),
-                ),
-              ],
-            ),
-
-            // 尺寸标签 - 右上角
-            Positioned(
-              top: 4,
-              right: 4,
-              child: widget.effectiveSupportedSizes.length > 2
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${widget.effectiveSupportedSizes.length}个可用大小',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  : Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: widget.effectiveSupportedSizes
-                          .map(
-                            (size) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${size.width}×${size.height}',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.bold,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 图标和标题
+                          Container(
+                            padding: EdgeInsets.all(theme.spacing.lg),
+                            color: widget.color?.withValues(alpha: 0.1),
+                            child: Column(
+                              children: [
+                                // 注册表图标为持久化 IconData，保留 Material Icon
+                                Icon(
+                                  widget.icon,
+                                  size: 48,
+                                  color: widget.color,
                                 ),
-                              ),
+                                SizedBox(height: theme.spacing.sm),
+                                Text(
+                                  widget.name,
+                                  style: DsTypography.heading.copyWith(
+                                    color: theme.text,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                          )
-                          .toList(),
-                    ),
-            ),
+                          ),
 
-            // 公共小组件适配标签 - 左上角
-            if (widget.supportsCommonWidgets)
-              Positioned(
-                top: 4,
-                left: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.apps, size: 12, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Text(
-                        '适配公共组件',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
+                          // 描述文本
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.all(theme.spacing.md),
+                              child:
+                                  widget.description != null
+                                      ? Text(
+                                        widget.description!,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                      : const SizedBox.shrink(),
+                            ),
+                          ),
+                        ],
                       ),
+
+                      // 尺寸标签 - 右上角
+                      Positioned(
+                        top: theme.spacing.xs,
+                        right: theme.spacing.xs,
+                        child:
+                            widget.effectiveSupportedSizes.length > 2
+                                ? _buildBadge(
+                                  theme,
+                                  '${widget.effectiveSupportedSizes.length}个可用大小',
+                                )
+                                : Wrap(
+                                  spacing: 4,
+                                  runSpacing: 4,
+                                  children:
+                                      widget.effectiveSupportedSizes
+                                          .map(
+                                            (size) => _buildBadge(
+                                              theme,
+                                              '${size.width}×${size.height}',
+                                            ),
+                                          )
+                                          .toList(),
+                                ),
+                      ),
+
+                      // 公共小组件适配标签 - 左上角
+                      if (widget.supportsCommonWidgets)
+                        Positioned(
+                          top: theme.spacing.xs,
+                          left: theme.spacing.xs,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.success,
+                              borderRadius: theme.radii.pill,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DsIcon(
+                                  DsIconKind.grid,
+                                  size: 10,
+                                  color: theme.onSuccess,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '适配公共组件',
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.onSuccess,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ),
-          ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  /// 尺寸角标
+  Widget _buildBadge(AppThemeData theme, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.primary.mixWhite(0.86),
+        borderRadius: theme.radii.sm,
+      ),
+      child: Text(
+        text,
+        style: DsTypography.caption.copyWith(
+          color: theme.primary,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -547,18 +562,29 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
     final screenSize = MediaQuery.of(context).size;
     final dialogHeight = screenSize.height * 0.8;
     // 在小屏幕下使用全宽，否则限制为600
-    final dialogWidth = screenSize.width < 600 ? screenSize.width * 0.95 : 600.0;
+    final dialogWidth =
+        screenSize.width < 600 ? screenSize.width * 0.95 : 600.0;
 
     final filteredWidgets = _getFilteredWidgets();
+    // State 的 context 在内部主题桥之上，用 resolve 安全取令牌
+    final theme = DSThemeBridge.resolve(context);
 
-    return Dialog(
-      child: SizedBox(
+    return DSThemeBridge(
+      child: JellyBox(
         width: dialogWidth,
         height: dialogHeight,
+        radius: theme.radii.xxl,
         child: SuperCupertinoNavigationWrapper(
           // 基本配置
-          title: Text(widget.replaceWidgetItemId != null ? 'screens_replaceWidget'.tr : 'screens_addWidget'.tr),
-          largeTitle: widget.replaceWidgetItemId != null ? 'screens_replaceWidget'.tr : 'screens_addWidget'.tr,
+          title: Text(
+            widget.replaceWidgetItemId != null
+                ? 'screens_replaceWidget'.tr
+                : 'screens_addWidget'.tr,
+          ),
+          largeTitle:
+              widget.replaceWidgetItemId != null
+                  ? 'screens_replaceWidget'.tr
+                  : 'screens_addWidget'.tr,
           enableLargeTitle: true,
 
           // 主体内容 - 使用相同的过滤后的组件列表
@@ -581,9 +607,10 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
           multiFilterBarHeight: 50,
           multiFilterToggleable: true,
           // 设置初始过滤值（替换模式下自动过滤插件）
-          initialMultiFilters: widget.initialSearchQuery != null
-              ? {'plugin': widget.initialSearchQuery}
-              : null,
+          initialMultiFilters:
+              widget.initialSearchQuery != null
+                  ? {'plugin': widget.initialSearchQuery}
+                  : null,
           onMultiFilterChanged: (filters) {
             // 保存过滤值并刷新UI
             setState(() {
@@ -591,12 +618,23 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
             });
           },
 
-          // 操作按钮
+          // 操作按钮：actions 经 Overlay/Hero 重挂载到主题树之外，
+          // 每个组件各自包一层 DSThemeBridge
           actions: [
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).pop(),
-              tooltip: '关闭',
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.close,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: '关闭',
+                  );
+                },
+              ),
             ),
           ],
 

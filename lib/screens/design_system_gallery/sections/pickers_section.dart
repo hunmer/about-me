@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -21,7 +22,7 @@ class _PickersSectionState extends State<PickersSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '04',
       title: '选择器与滑杆',
@@ -78,10 +79,7 @@ class _PickersSectionState extends State<PickersSection> {
           thumb: DsIcon(DsIconKind.star, size: 26, color: theme.warning),
         ),
         SizedBox(height: theme.spacing.sm),
-        DSSlider(
-          value: _slider,
-          onChanged: (v) => setState(() => _slider = v),
-        ),
+        DSSlider(value: _slider, onChanged: (v) => setState(() => _slider = v)),
         SizedBox(height: theme.spacing.lg),
         const DemoSubHeader('标签组（Chips）'),
         Wrap(
@@ -91,23 +89,28 @@ class _PickersSectionState extends State<PickersSection> {
             DSChip(
               label: '默认标签',
               selected: _chips.contains('默认标签'),
-              onSelected: (v) => setState(() =>
-                  v ? _chips.add('默认标签') : _chips.remove('默认标签')),
+              onSelected:
+                  (v) => setState(
+                    () => v ? _chips.add('默认标签') : _chips.remove('默认标签'),
+                  ),
             ),
             DSChip(
               label: '选中标签',
               selected: _chips.contains('选中标签'),
-              onSelected: (v) => setState(() =>
-                  v ? _chips.add('选中标签') : _chips.remove('选中标签')),
+              onSelected:
+                  (v) => setState(
+                    () => v ? _chips.add('选中标签') : _chips.remove('选中标签'),
+                  ),
             ),
             DSChip(
               label: '可删除',
               selected: false,
-              onDeleted: () => showDSToast(
-                context,
-                message: '标签已删除',
-                type: DSToastType.info,
-              ),
+              onDeleted:
+                  () => showDSToast(
+                    context,
+                    message: '标签已删除',
+                    type: DSToastType.info,
+                  ),
             ),
           ],
         ),

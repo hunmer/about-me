@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class RecordAudioDialog extends StatefulWidget {
   final Function(File audioFile, Duration duration) onStop;
@@ -57,18 +59,19 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
     } catch (e) {
       if (mounted) {
         // 显示错误提示对话框
-        await showDialog(
+        await showDSDialog(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('chat_recordingFailed'.tr),
-                content: Text(e.toString()),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text('app_ok'.tr),
-                  ),
-                ],
+              (context) => DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (context) => DSDialog(
+                        title: 'chat_recordingFailed'.tr,
+                        message: e.toString(),
+                        confirmText: 'app_ok'.tr,
+                      ),
+                ),
               ),
         );
         // 关闭录音对话框
@@ -131,20 +134,19 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
     } catch (e) {
       if (mounted) {
         // 显示错误提示对话框
-        await showDialog(
+        await showDSDialog(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('chat_recordingFailed'.tr),
-                content: Text(
-                  'chat_recordingStopError'.tr,
+              (context) => DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (context) => DSDialog(
+                        title: 'chat_recordingFailed'.tr,
+                        message: 'chat_recordingStopError'.tr,
+                        confirmText: 'app_ok'.tr,
+                      ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text('app_ok'.tr),
-                  ),
-                ],
               ),
         );
       }
@@ -164,44 +166,45 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'chat_audioRecording'.tr,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _formatDuration(_duration),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Text(
+                  'chat_audioRecording'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Text(
+                  _formatDuration(_duration),
+                  style: DsTypography.display.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
                 // 停止录音按钮
-                IconButton.filled(
+                DSIconButton(
+                  icon: DsIconKind.stop,
+                  size: 64,
+                  color: theme.danger,
+                  iconColor: theme.onDanger,
                   onPressed: _stopRecording,
-                  icon: const Icon(Icons.stop),
-                  color: Colors.white,
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    minimumSize: const Size(64, 64),
-                  ),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Text(
+                  'chat_stopRecordingHint'.tr,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'chat_stopRecordingHint'.tr,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

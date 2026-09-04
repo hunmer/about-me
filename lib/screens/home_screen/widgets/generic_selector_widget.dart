@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
@@ -191,22 +193,20 @@ class GenericSelectorWidget extends StatelessWidget {
 
   /// 构建未配置状态的占位小组件
   Widget _buildUnconfiguredWidget(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.surfaceAlt,
+          borderRadius: theme.radii.lg,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               '点击配置',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -219,8 +219,8 @@ class GenericSelectorWidget extends StatelessWidget {
     BuildContext context,
     SelectorResult result,
   ) {
-    final theme = Theme.of(context);
-    final color = widgetDefinition.color ?? theme.colorScheme.primary;
+    final theme = DSThemeBridge.resolve(context);
+    final color = widgetDefinition.color ?? theme.primary;
 
     // 尝试从 result.data 获取标题
     String title = '已配置';
@@ -239,22 +239,21 @@ class GenericSelectorWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.surfaceAlt,
+          borderRadius: theme.radii.lg,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                // 注册表图标为持久化 IconData，保留 Material Icon
                 Icon(widgetDefinition.icon, size: 24, color: color),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widgetDefinition.name,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
+                    style: DsTypography.label.copyWith(color: theme.textSub),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -263,9 +262,7 @@ class GenericSelectorWidget extends StatelessWidget {
             const Spacer(),
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: DsTypography.heading.copyWith(color: theme.text),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -273,9 +270,7 @@ class GenericSelectorWidget extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
-                ),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -288,25 +283,23 @@ class GenericSelectorWidget extends StatelessWidget {
 
   /// 构建错误状态的小组件
   Widget _buildErrorWidget(BuildContext context, String message) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.danger.mixWhite(0.9),
+          borderRadius: theme.radii.lg,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 32, color: theme.colorScheme.error),
+            DsIcon(DsIconKind.block, size: 32, color: theme.danger),
             const SizedBox(height: 8),
             Text(
               message,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onErrorContainer,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.text),
               textAlign: TextAlign.center,
             ),
           ],

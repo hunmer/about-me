@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
@@ -254,15 +256,16 @@ class HomeWidget {
   /// 构建错误提示组件
   static Widget buildErrorWidget(BuildContext context, String error) {
     debugPrint('Error loading widget: $error');
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 32, color: Colors.red),
+          DsIcon(DsIconKind.block, size: 32, color: theme.danger),
           const SizedBox(height: 8),
           Text(
             'home_loadFailed'.tr,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -271,22 +274,20 @@ class HomeWidget {
 
   /// 构建未配置状态的占位小组件
   static Widget buildUnconfiguredWidget(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.surfaceAlt,
+          borderRadius: theme.radii.lg,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               '点击配置',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -300,8 +301,8 @@ class HomeWidget {
     SelectorResult result,
     HomeWidget widgetDefinition,
   ) {
-    final theme = Theme.of(context);
-    final color = widgetDefinition.color ?? theme.colorScheme.primary;
+    final theme = DSThemeBridge.resolve(context);
+    final color = widgetDefinition.color ?? theme.primary;
 
     // 尝试从 result.data 获取标题
     String title = '已配置';
@@ -320,22 +321,21 @@ class HomeWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.surfaceAlt,
+          borderRadius: theme.radii.lg,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                // 注册表图标为持久化 IconData，保留 Material Icon
                 Icon(widgetDefinition.icon, size: 24, color: color),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widgetDefinition.name,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
+                    style: DsTypography.label.copyWith(color: theme.textSub),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -344,9 +344,7 @@ class HomeWidget {
             const Spacer(),
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: DsTypography.heading.copyWith(color: theme.text),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -354,9 +352,7 @@ class HomeWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
-                ),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -439,7 +435,11 @@ class HomeWidget {
           future: widgetDefinition.commonWidgetsProvider!(data),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: DSLoadingDots(
+                  color: DSThemeBridge.resolve(context).textSub,
+                ),
+              );
             }
 
             if (snapshot.hasError) {

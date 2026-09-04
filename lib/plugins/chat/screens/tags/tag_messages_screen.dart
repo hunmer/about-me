@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
@@ -76,12 +78,13 @@ class _TagMessagesScreenState extends State<TagMessagesScreen> {
       // 使用 initialMessage 和 autoScroll 来定位到消息
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            channel: channel,
-            initialMessage: message,
-            highlightMessage: message,
-            autoScroll: true,
-          ),
+          builder:
+              (_) => ChatScreen(
+                channel: channel,
+                initialMessage: message,
+                highlightMessage: message,
+                autoScroll: true,
+              ),
         ),
       );
     } catch (e) {
@@ -124,144 +127,136 @@ class _TagMessagesScreenState extends State<TagMessagesScreen> {
 
   /// 构建消息项
   Widget _buildMessageItem(Message message) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = DSThemeBridge.resolve(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        onTap: () => _navigateToOriginalMessage(message),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 用户信息和时间
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: colorScheme.primaryContainer,
-                    child: Text(
-                      message.user.username.isNotEmpty
-                          ? message.user.username[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        color: colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          message.user.username,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          _formatDate(message.date),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 频道标识
-                  if (message.channelId != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Pressable(
+        onPressed: () => _navigateToOriginalMessage(message),
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.lg,
+            raised: false,
+            color: pressed ? theme.surfaceAlt : theme.surface,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 用户信息和时间
+                Row(
+                  children: [
+                    JellyBox(
+                      width: 32,
+                      height: 32,
+                      radius: theme.radii.circle,
+                      color: theme.primary.mixWhite(0.85),
+                      alignment: Alignment.center,
                       child: Text(
-                        _getChannelName(message.channelId!),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: colorScheme.onSecondaryContainer,
+                        message.user.username.isNotEmpty
+                            ? message.user.username[0].toUpperCase()
+                            : '?',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // 消息内容
-              Text(
-                message.content,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colorScheme.onSurface,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            message.user.username,
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _formatDate(message.date),
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 频道标识
+                    if (message.channelId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.secondary.mixWhite(0.85),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _getChannelName(message.channelId!),
+                          style: DsTypography.label.copyWith(color: theme.text),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 8),
+                // 消息内容
+                Text(
+                  message.content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.body.copyWith(color: theme.text),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 64,
-            color: colorScheme.onSurface.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'chat_noMatchingMessages'.tr,
-            style: TextStyle(
-              fontSize: 16,
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    );
+    return Center(child: DSThemeBridge(child: _EmptyStateBody()));
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'chat_searchMessages'.tr,
-                  border: InputBorder.none,
-                ),
-                style: const TextStyle(fontSize: 16),
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                },
-              )
-            : Text('#${widget.tagName}'),
+        title:
+            _isSearching
+                ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'chat_searchMessages'.tr,
+                    border: InputBorder.none,
+                  ),
+                  style: const TextStyle(fontSize: 16),
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
+                )
+                : Text('#${widget.tagName}'),
         actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: _toggleSearch,
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: _isSearching ? DsIconKind.close : DsIconKind.search,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _toggleSearch,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -274,25 +269,34 @@ class _TagMessagesScreenState extends State<TagMessagesScreen> {
               'chat_totalMessages'.trParams({
                 'count': _filteredMessages.length.toString(),
               }),
-              style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ),
 
           // 消息列表
           Expanded(
-            child: _filteredMessages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    itemCount: _filteredMessages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageItem(_filteredMessages[index]);
-                    },
-                  ),
+            child:
+                _filteredMessages.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                      itemCount: _filteredMessages.length,
+                      itemBuilder: (context, index) {
+                        return _buildMessageItem(_filteredMessages[index]);
+                      },
+                    ),
           ),
         ],
       ),
     );
+  }
+}
+
+/// 空状态主体（需在主题桥内构建）
+class _EmptyStateBody extends StatelessWidget {
+  const _EmptyStateBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return DSEmptyState(emoji: '🔍', title: 'chat_noMatchingMessages'.tr);
   }
 }

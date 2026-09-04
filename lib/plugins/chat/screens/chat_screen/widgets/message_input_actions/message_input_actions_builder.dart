@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'handlers/index.dart';
@@ -49,7 +50,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_advancedEditor'.tr,
-        icon: Icons.edit_note,
+        icon: DsIconKind.edit,
         onTap:
             () => handleAdvancedEditor(
               context: context,
@@ -62,7 +63,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_photo'.tr,
-        icon: Icons.photo,
+        icon: DsIconKind.image,
         onTap:
             () => handleImageSelection(
               context: context,
@@ -77,7 +78,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_takePhoto'.tr,
-        icon: Icons.camera_alt,
+        icon: DsIconKind.camera,
         onTap:
             () => handleImageSelection(
               context: context,
@@ -93,7 +94,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_recordVideo'.tr,
-        icon: Icons.videocam,
+        icon: DsIconKind.video,
         onTap:
             () => handleVideoSelection(
               context: context,
@@ -107,7 +108,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_video'.tr,
-        icon: Icons.video_library,
+        icon: DsIconKind.list,
         onTap:
             () => handleLocalVideoSelection(
               context: context,
@@ -121,7 +122,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_file'.tr,
-        icon: Icons.attach_file,
+        icon: DsIconKind.copy,
         onTap:
             () => handleFileSelection(
               context: context,
@@ -137,7 +138,7 @@ class MessageInputActionsBuilder {
       actions.add(
         MessageInputAction(
           title: 'chat_audioRecording'.tr,
-          icon: Icons.mic,
+          icon: DsIconKind.mic,
           onTap:
               () => handleAudioRecording(
                 context: context,
@@ -152,7 +153,7 @@ class MessageInputActionsBuilder {
     actions.add(
       MessageInputAction(
         title: 'chat_smartAgent'.tr,
-        icon: Icons.smart_toy,
+        icon: DsIconKind.bot,
         onTap: () {
           // 直接在文本框末尾添加 @ 符号，这会触发 MessageInput 中的处理逻辑
           if (textController != null) {

@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import '../../../../utils/image_utils.dart';
 
@@ -27,7 +29,9 @@ class ImageMessageWidget extends StatelessWidget {
       future: _buildImageWidget(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: DSLoadingDots(color: DSThemeBridge.resolve(context).textSub),
+          );
         }
         return snapshot.data ?? _buildErrorWidget(context, '未命名文件');
       },
@@ -41,7 +45,7 @@ class ImageMessageWidget extends StatelessWidget {
 
     final filePath = fileInfo!['path'] as String? ?? '';
     final fileName = fileInfo!['name'] as String? ?? '未命名文件';
-    
+
     if (filePath.isEmpty) {
       return _buildErrorWidget(context, fileName);
     }
@@ -59,6 +63,7 @@ class ImageMessageWidget extends StatelessWidget {
       return _buildErrorWidget(context, fileName);
     }
 
+    final theme = _resolveTheme(context);
     return Container(
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.7,
@@ -66,13 +71,9 @@ class ImageMessageWidget extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color:
-            isOutgoing
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                : Theme.of(context).cardColor,
+            isOutgoing ? theme.primary.withValues(alpha: 0.1) : theme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: theme.stroke.withValues(alpha: 0.1)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -87,18 +88,22 @@ class ImageMessageWidget extends StatelessWidget {
     );
   }
 
+  AppThemeData _resolveTheme(BuildContext context) =>
+      DSThemeBridge.resolve(context);
+
   Widget _buildErrorWidget(BuildContext context, String fileName) {
+    final theme = _resolveTheme(context);
     return Container(
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.broken_image, size: 32, color: Colors.grey),
+          DsIcon(DsIconKind.image, size: 32, color: theme.disabled),
           const SizedBox(height: 8),
           Text(
             '无法加载图片\n$fileName',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),

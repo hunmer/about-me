@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
+import 'button.dart';
+import 'dialog.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
@@ -96,9 +98,7 @@ class _DSDatePickerState extends State<DSDatePicker> {
                 child: Center(
                   child: Text(
                     label,
-                    style: DsTypography.caption.copyWith(
-                      color: theme.textSub,
-                    ),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 ),
               ),
@@ -153,9 +153,7 @@ class _DSDatePickerState extends State<DSDatePicker> {
 
     final decoration = BoxDecoration(
       shape: BoxShape.circle,
-      border: today
-          ? Border.all(color: theme.primary, width: 1.6)
-          : null,
+      border: today ? Border.all(color: theme.primary, width: 1.6) : null,
       color: today ? theme.primary.mixWhite(0.92) : null,
     );
 
@@ -201,4 +199,54 @@ class _NavButton extends StatelessWidget {
       },
     );
   }
+}
+
+/// 便捷日期选择对话框：DSDatePicker + 取消/确认
+Future<DateTime?> showDSDatePickerDialog({
+  required BuildContext context,
+  DateTime? initial,
+  AppThemeData? theme,
+}) {
+  final effectiveTheme = theme ?? AppTheme.of(context);
+  final initialValue = initial ?? DateTime.now();
+  DateTime selected = initialValue;
+  return showDSDialog<DateTime>(
+    context: context,
+    theme: effectiveTheme,
+    builder:
+        (context) => JellyBox(
+          radius: effectiveTheme.radii.xxl,
+          padding: EdgeInsets.all(effectiveTheme.spacing.xl),
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DSDatePicker(
+                value: initialValue,
+                initialMonth: initialValue,
+                onChanged: (date) => selected = date,
+              ),
+              SizedBox(height: effectiveTheme.spacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: DSButton(
+                      label: '取消',
+                      variant: DSButtonVariant.outline,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  SizedBox(width: effectiveTheme.spacing.md),
+                  Expanded(
+                    child: DSButton(
+                      label: '确定',
+                      onPressed: () => Navigator.of(context).pop(selected),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+  );
 }

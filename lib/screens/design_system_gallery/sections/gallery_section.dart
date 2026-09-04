@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 展示页分区面板：星标 + 序号标题 + 演示内容
 class SectionCard extends StatelessWidget {
@@ -16,7 +17,7 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return DSCard(
       radius: theme.radii.xxl,
       child: Column(
@@ -49,17 +50,14 @@ class DemoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         child,
         SizedBox(height: theme.spacing.sm),
-        Text(
-          label,
-          style: DsTypography.caption.copyWith(color: theme.textSub),
-        ),
+        Text(label, style: DsTypography.caption.copyWith(color: theme.textSub)),
       ],
     );
   }
@@ -99,7 +97,7 @@ class DemoSubHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Padding(
       padding: EdgeInsets.only(bottom: theme.spacing.md),
       child: Text(

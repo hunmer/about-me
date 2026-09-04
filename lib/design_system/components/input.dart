@@ -20,6 +20,7 @@ class DSInput extends StatefulWidget {
     this.enabled = true,
     this.maxLines = 1,
     this.minLines,
+    this.maxLength,
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
@@ -41,14 +42,15 @@ class DSInput extends StatefulWidget {
     this.enabled = true,
     this.onChanged,
     this.onSubmitted,
-  })  : maxLines = 1,
-        minLines = 1,
-        obscureText = false,
-        keyboardType = TextInputType.text,
-        textInputAction = TextInputAction.search,
-        prefix = const _SearchPrefix(),
-        suffix = null,
-        pill = true;
+  }) : maxLines = 1,
+       minLines = 1,
+       maxLength = null,
+       obscureText = false,
+       keyboardType = TextInputType.text,
+       textInputAction = TextInputAction.search,
+       prefix = const _SearchPrefix(),
+       suffix = null,
+       pill = true;
 
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -58,6 +60,9 @@ class DSInput extends StatefulWidget {
   final bool enabled;
   final int? maxLines;
   final int? minLines;
+
+  /// 最大字符数（超出截断，不显示计数）
+  final int? maxLength;
   final bool obscureText;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -114,30 +119,33 @@ class _DSInputState extends State<DSInput> {
           ),
           constraints: BoxConstraints(minHeight: widget.maxLines == 1 ? 44 : 0),
           decoration: BoxDecoration(
-            color: widget.enabled
-                ? (hasError
-                    ? theme.danger.mixWhite(0.92)
-                    : _focused
+            color:
+                widget.enabled
+                    ? (hasError
+                        ? theme.danger.mixWhite(0.92)
+                        : _focused
                         ? theme.primary.mixWhite(0.94)
                         : theme.surface)
-                : theme.disabled,
+                    : theme.disabled,
             borderRadius: widget.pill ? theme.radii.pill : theme.radii.lg,
             border: Border.all(
-              color: !widget.enabled
-                  ? DsColors.transparent
-                  : hasError
+              color:
+                  !widget.enabled
+                      ? DsColors.transparent
+                      : hasError
                       ? theme.danger
                       : _focused
-                          ? theme.primary
-                          : theme.textSub.withValues(alpha: 0.45),
+                      ? theme.primary
+                      : theme.textSub.withValues(alpha: 0.45),
               width: 1.6,
             ),
             boxShadow: widget.enabled ? theme.shadows.soft : null,
           ),
           child: Row(
-            crossAxisAlignment: widget.maxLines == 1
-                ? CrossAxisAlignment.center
-                : CrossAxisAlignment.start,
+            crossAxisAlignment:
+                widget.maxLines == 1
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
             children: [
               if (widget.prefix != null)
                 Padding(
@@ -149,8 +157,7 @@ class _DSInputState extends State<DSInput> {
                 child: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _effectiveController,
                   builder: (context, value, _) {
-                    final showHint =
-                        value.text.isEmpty && widget.hint != null;
+                    final showHint = value.text.isEmpty && widget.hint != null;
                     return Stack(
                       children: [
                         // 占位提示（widgets 层的 EditableText 没有 decoration）
@@ -162,8 +169,7 @@ class _DSInputState extends State<DSInput> {
                               widget.hint!,
                               maxLines: 1,
                               style: DsTypography.body.copyWith(
-                                color:
-                                    theme.textSub.withValues(alpha: 0.75),
+                                color: theme.textSub.withValues(alpha: 0.75),
                               ),
                             ),
                           ),
@@ -175,6 +181,14 @@ class _DSInputState extends State<DSInput> {
                             readOnly: !widget.enabled,
                             maxLines: widget.maxLines,
                             minLines: widget.minLines,
+                            inputFormatters:
+                                widget.maxLength == null
+                                    ? null
+                                    : [
+                                      LengthLimitingTextInputFormatter(
+                                        widget.maxLength,
+                                      ),
+                                    ],
                             obscureText: widget.obscureText,
                             keyboardType: widget.keyboardType,
                             textInputAction: widget.textInputAction,
@@ -186,12 +200,13 @@ class _DSInputState extends State<DSInput> {
                             cursorRadius: const Radius.circular(2),
                             autocorrect: false,
                             style: DsTypography.body.copyWith(
-                              color: widget.enabled
-                                  ? theme.text
-                                  : theme.textSub,
+                              color:
+                                  widget.enabled ? theme.text : theme.textSub,
                             ),
                             strutStyle: const StrutStyle(
-                                fontSize: 14, forceStrutHeight: true),
+                              fontSize: 14,
+                              forceStrutHeight: true,
+                            ),
                           ),
                         ),
                       ],
@@ -238,10 +253,6 @@ class _SearchPrefix extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    return DsIcon(
-      DsIconKind.search,
-      size: 20,
-      color: theme.textSub,
-    );
+    return DsIcon(DsIconKind.search, size: 20, color: theme.textSub);
   }
 }

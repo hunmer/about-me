@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 顶部统计小卡：彩色图标 + 标签 + 数值 + 右下角「+」按钮
 class JellyStatCard extends StatelessWidget {
@@ -24,7 +25,7 @@ class JellyStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     final card = JellyBox(
       radius: theme.radii.lg,
@@ -83,9 +84,11 @@ class JellyStatCard extends StatelessWidget {
     if (onTap == null) return card;
     return Pressable(
       onPressed: onTap,
-      builder: (context, states) => states.contains(WidgetState.pressed)
-          ? Opacity(opacity: 0.85, child: card)
-          : card,
+      builder:
+          (context, states) =>
+              states.contains(WidgetState.pressed)
+                  ? Opacity(opacity: 0.85, child: card)
+                  : card,
     );
   }
 }
@@ -98,7 +101,7 @@ class _MiniPlusButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Pressable(
       onPressed: onTap,
       semanticLabel: '添加',
@@ -115,16 +118,9 @@ class _MiniPlusButton extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: theme.surfaceAlt,
-              border: Border.all(
-                color: theme.stroke,
-                width: 1.2,
-              ),
+              border: Border.all(color: theme.stroke, width: 1.2),
             ),
-            child: DsIcon(
-              DsIconKind.plus,
-              size: 10,
-              color: theme.textSub,
-            ),
+            child: DsIcon(DsIconKind.plus, size: 10, color: theme.textSub),
           ),
         );
       },

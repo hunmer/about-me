@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 
 /// 消息输入动作的基础类
 class MessageInputAction {
   final String title;
-  final IconData icon;
+  final DsIconKind icon;
   final VoidCallback onTap;
 
   MessageInputAction({
@@ -18,9 +19,10 @@ class MessageInputAction {
 typedef OnFileSelected = void Function(Map<String, dynamic> fileInfo);
 
 /// 发送消息回调
-typedef OnSendMessage = void Function(
-  String content, {
-  Map<String, dynamic>? metadata,
-  String type,
-  Message? replyTo,
-});
+typedef OnSendMessage =
+    void Function(
+      String content, {
+      Map<String, dynamic>? metadata,
+      String type,
+      Message? replyTo,
+    });

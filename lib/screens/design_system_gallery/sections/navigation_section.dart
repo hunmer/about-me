@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
@@ -25,7 +26,7 @@ class _NavigationSectionState extends State<NavigationSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '07',
       title: '导航',
@@ -44,8 +45,7 @@ class _NavigationSectionState extends State<NavigationSection> {
         Center(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () =>
-                setState(() => _pageIndex = (_pageIndex + 1) % 4),
+            onTap: () => setState(() => _pageIndex = (_pageIndex + 1) % 4),
             child: DSPageIndicator(count: 4, index: _pageIndex),
           ),
         ),

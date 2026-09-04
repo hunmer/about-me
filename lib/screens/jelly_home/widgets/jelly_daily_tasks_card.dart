@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 单条每日任务数据
 class JellyDailyTask {
@@ -30,18 +31,14 @@ class JellyDailyTask {
 
 /// 「每日任务」卡：标题 + 任务清单（名称/进度/星星奖励/跳转）
 class JellyDailyTasksCard extends StatelessWidget {
-  const JellyDailyTasksCard({
-    super.key,
-    required this.tasks,
-    this.onTaskTap,
-  });
+  const JellyDailyTasksCard({super.key, required this.tasks, this.onTaskTap});
 
   final List<JellyDailyTask> tasks;
   final ValueChanged<int>? onTaskTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return JellyBox(
       radius: theme.radii.xl,
@@ -85,7 +82,7 @@ class _TaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Pressable(
       onPressed: onTap,
@@ -152,7 +149,7 @@ class _LeadingMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     if (task.done) {
       return Container(
         width: 20,
@@ -188,7 +185,7 @@ class _LeadingMark extends StatelessWidget {
 class _ArrowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       width: 18,
       height: 18,
@@ -198,11 +195,7 @@ class _ArrowButton extends StatelessWidget {
         color: theme.surfaceAlt,
         border: Border.all(color: theme.stroke, width: 1.2),
       ),
-      child: DsIcon(
-        DsIconKind.chevronRight,
-        size: 10,
-        color: theme.textSub,
-      ),
+      child: DsIcon(DsIconKind.chevronRight, size: 10, color: theme.textSub),
     );
   }
 }

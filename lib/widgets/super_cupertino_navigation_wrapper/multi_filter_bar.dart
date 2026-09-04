@@ -40,13 +40,17 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
     // 监听过滤状态变化
     widget.filterState.addListener(_onFilterStateChanged);
 
-    // 初始化过滤值
-    for (var item in widget.filterItems) {
-      if (item.initialValue != null &&
-          !widget.filterState.hasFilter(item.id)) {
-        widget.filterState.setValue(item.id, item.initialValue);
+    // 初始化过滤值：推迟到首帧之后，避免 notifyListeners
+    // 在 build 阶段触发父级 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (var item in widget.filterItems) {
+        if (item.initialValue != null &&
+            !widget.filterState.hasFilter(item.id)) {
+          widget.filterState.setValue(item.id, item.initialValue);
+        }
       }
-    }
+    });
   }
 
   @override
@@ -189,14 +193,12 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(right: 12),
-            child: item.builder(
-              context,
-              widget.filterState.getValue(item.id),
-              (value) {
-                widget.filterState.setValue(item.id, value);
-                setState(() {}); // 更新UI
-              },
-            ),
+            child: item.builder(context, widget.filterState.getValue(item.id), (
+              value,
+            ) {
+              widget.filterState.setValue(item.id, value);
+              setState(() {}); // 更新UI
+            }),
           ),
         ),
       ],
@@ -210,11 +212,7 @@ class _FilterChip extends StatelessWidget {
   final String? badge;
   final VoidCallback onTap;
 
-  const _FilterChip({
-    required this.label,
-    this.badge,
-    required this.onTap,
-  });
+  const _FilterChip({required this.label, this.badge, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

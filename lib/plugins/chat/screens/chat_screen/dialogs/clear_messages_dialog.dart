@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class ClearMessagesDialog extends StatelessWidget {
   final Function() onConfirm;
@@ -13,19 +15,20 @@ class ClearMessagesDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('chat_clearAllMessages'.tr),
-      content: Text('chat_confirmClearAllMessages'.tr),
-      actions: [
-        TextButton(
-          onPressed: onCancel,
-          child: Text('app_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: onConfirm,
-          child: Text('app_save'.tr),
-        ),
-      ],
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return DSDialog(
+            title: 'chat_clearAllMessages'.tr,
+            message: 'chat_confirmClearAllMessages'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'app_save'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onCancel: onCancel,
+            onConfirm: onConfirm,
+          );
+        },
+      ),
     );
   }
 }

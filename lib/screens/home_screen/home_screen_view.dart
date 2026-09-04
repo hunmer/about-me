@@ -565,7 +565,11 @@ class HomeScreenView extends StatelessWidget {
   // ==================== 对话框方法 ====================
 
   void _showAddWidgetDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => const AddWidgetDialog());
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => const AddWidgetDialog(),
+    );
   }
 
   void _showCreateFolderDialog(BuildContext context) {
@@ -695,8 +699,9 @@ class HomeScreenView extends StatelessWidget {
   }
 
   Future<void> _showLayoutManagerDialog(BuildContext context) async {
-    await showDialog(
+    await showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => LayoutManagerDialog(
             onLayoutChanged: () async {
@@ -896,8 +901,9 @@ class HomeScreenView extends StatelessWidget {
     }
 
     // 使用插件名称作为初始搜索关键词，过滤出同插件的其他小组件
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => AddWidgetDialog(
             replaceWidgetItemId: item.id,
@@ -1014,8 +1020,9 @@ class HomeScreenView extends StatelessWidget {
       currentConfig = PluginWidgetConfig();
     }
 
-    final result = await showDialog<PluginWidgetConfig>(
+    final result = await showDSDialog<PluginWidgetConfig>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => WidgetSettingsDialog(
             initialConfig: currentConfig,
