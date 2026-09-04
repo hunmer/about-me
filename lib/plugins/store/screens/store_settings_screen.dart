@@ -1,3 +1,5 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -25,6 +27,8 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   // 积分奖励设置
   final Map<String, int> _pointAwards = {};
   final Map<String, TextEditingController> _controllers = {};
+  // 各事件输入框的校验错误文案（DSInput 经 errorText 展示）
+  final Map<String, String?> _inputErrors = {};
 
   // 其他设置
   bool _enablePointsNotification = true; // 积分变动通知
@@ -107,7 +111,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         newPointAwards[eventKey] = value;
       }
 
-      debugPrint('🔧 [Store设置页面] 实时保存积分奖励配置');
       await widget.plugin.updateSettings({
         'point_awards': newPointAwards,
         'enablePointsNotification': _enablePointsNotification,
@@ -185,24 +188,23 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
   /// 重置为默认设置
   Future<void> _resetToDefault() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('重置设置'),
-          content: const Text('确定要重置为默认设置吗？此操作不可撤销。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: '重置设置',
+                    message: '确定要重置为默认设置吗？此操作不可撤销。',
+                    cancelText: '取消',
+                    confirmText: '确定',
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('确定'),
-            ),
-          ],
-        );
-      },
+          ),
     );
 
     if (confirmed == true) {
@@ -224,6 +226,18 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     toastService.showToast(message);
   }
 
+  /// 校验积分输入，返回错误文案（null 表示通过）
+  String? _validatePoints(String? value) {
+    if (value == null || value.isEmpty) {
+      return '请输入积分值';
+    }
+    final points = int.tryParse(value);
+    if (points == null || points < 0) {
+      return '必须为非负整数';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,204 +245,279 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         title: Text('store_storeSettings'.tr),
         actions: [
           // 重置按钮
-          IconButton(
-            icon: const Icon(Icons.restore),
-            onPressed: _resetToDefault,
-            tooltip: '重置为默认设置',
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.refresh,
+                  size: 38,
+                  color: theme.surface,
+                  iconColor: theme.text,
+                  tooltip: '重置为默认设置',
+                  onPressed: _resetToDefault,
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 通知设置 - 仅在移动端平台显示
-            if (UniversalPlatform.isIOS || UniversalPlatform.isAndroid) ...[
-              // 通知设置标题
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  '通知设置',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-
-              // 积分变动通知开关
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Card(
-                  child: SwitchListTile(
-                    title: Text('store_enablePointsNotification'.tr),
-                    subtitle: Text(
-                      'store_enablePointsNotificationDescription'.tr,
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 通知设置 - 仅在移动端平台显示
+                  if (UniversalPlatform.isIOS ||
+                      UniversalPlatform.isAndroid) ...[
+                    // 通知设置标题
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        '通知设置',
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
                     ),
-                    value: _enablePointsNotification,
-                    onChanged: (value) {
-                      setState(() {
-                        _enablePointsNotification = value;
-                      });
-                      _saveSwitchSettings(); // 自动保存
-                    },
-                  ),
-                ),
-              ),
 
-              // 到期提醒开关
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Card(
-                  child: SwitchListTile(
-                    title: Text('store_enableExpiringReminder'.tr),
-                    subtitle: Text(
-                      'store_enableExpiringReminderDescription'.tr,
-                    ),
-                    value: _enableExpiringReminder,
-                    onChanged: (value) {
-                      setState(() {
-                        _enableExpiringReminder = value;
-                      });
-                      _saveSwitchSettings(); // 自动保存
-                    },
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 8),
-            ],
-
-            // 积分奖励设置标题
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                '积分奖励设置',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            // 说明文本
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                '选择要启用积分奖励的事件，并配置各项行为的积分奖励值。',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 事件选择器
-            EventMultiSelectField(
-              name: 'selected_events',
-              availableEvents: kDefaultAvailableEvents,
-              dialogTitle: '选择启用积分奖励的事件',
-              initialValue: _selectedEvents,
-              prefixIcon: Icons.event_available,
-              onChanged: (events) {
-                if (events is List<String>) {
-                  _onSelectedEventsChanged(events);
-                }
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // 积分奖励表单
-            if (_isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (_selectedEvents.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Center(
-                  child: Text(
-                    '未选择任何事件\n请点击上方选择需要启用积分奖励的事件',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Form(
-                key: _formKey,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    children:
-                        _selectedEvents.map((eventKey) {
-                          final displayName = _getEventDisplayName(eventKey);
-                          final controller = _controllers[eventKey];
-
-                          // 如果没有控制器，创建一个默认的
-                          if (controller == null) {
-                            _controllers[eventKey] = TextEditingController(
-                              text:
-                                  getDefaultPointsForEvent(eventKey).toString(),
-                            );
-                            _controllers[eventKey]?.addListener(
-                              () => _onTextChanged(eventKey),
-                            );
-                          }
-
-                          final effectiveController = _controllers[eventKey]!;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    displayName,
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: effectiveController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      labelText: '积分',
-                                      hintText: '0',
-                                      suffix: Text('store_points'.tr),
-                                      border: const OutlineInputBorder(),
+                    // 积分变动通知开关
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: DSCard(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'store_enablePointsNotification'.tr,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return '请输入积分值';
-                                      }
-                                      final points = int.tryParse(value);
-                                      if (points == null || points < 0) {
-                                        return '必须为非负整数';
-                                      }
-                                      return null;
-                                    },
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    'store_enablePointsNotificationDescription'
+                                        .tr,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                        }).toList(),
-                  ),
-                ),
-              ),
+                            DSSwitch(
+                              value: _enablePointsNotification,
+                              onChanged: (value) {
+                                setState(() {
+                                  _enablePointsNotification = value;
+                                });
+                                _saveSwitchSettings(); // 自动保存
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
-            const SizedBox(height: 16),
-          ],
+                    const SizedBox(height: 8),
+
+                    // 到期提醒开关
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: DSCard(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'store_enableExpiringReminder'.tr,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                  Text(
+                                    'store_enableExpiringReminderDescription'
+                                        .tr,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            DSSwitch(
+                              value: _enableExpiringReminder,
+                              onChanged: (value) {
+                                setState(() {
+                                  _enableExpiringReminder = value;
+                                });
+                                _saveSwitchSettings(); // 自动保存
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 1,
+                      color: theme.stroke.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // 积分奖励设置标题
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      '积分奖励设置',
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                  ),
+
+                  // 说明文本
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      '选择要启用积分奖励的事件，并配置各项行为的积分奖励值。',
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 事件选择器（prefixIcon 为共享表单字段的 IconData 配置，保留 Material Icons）
+                  EventMultiSelectField(
+                    name: 'selected_events',
+                    availableEvents: kDefaultAvailableEvents,
+                    dialogTitle: '选择启用积分奖励的事件',
+                    initialValue: _selectedEvents,
+                    prefixIcon: Icons.event_available,
+                    onChanged: (events) {
+                      if (events is List<String>) {
+                        _onSelectedEventsChanged(events);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 积分奖励表单
+                  if (_isLoading)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: DSLoadingDots(),
+                      ),
+                    )
+                  else if (_selectedEvents.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Center(
+                        child: Text(
+                          '未选择任何事件\n请点击上方选择需要启用积分奖励的事件',
+                          textAlign: TextAlign.center,
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Form(
+                      key: _formKey,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          children:
+                              _selectedEvents.map((eventKey) {
+                                final displayName = _getEventDisplayName(
+                                  eventKey,
+                                );
+                                final controller = _controllers[eventKey];
+
+                                // 如果没有控制器，创建一个默认的
+                                if (controller == null) {
+                                  _controllers[eventKey] =
+                                      TextEditingController(
+                                        text:
+                                            getDefaultPointsForEvent(
+                                              eventKey,
+                                            ).toString(),
+                                      );
+                                  _controllers[eventKey]?.addListener(
+                                    () => _onTextChanged(eventKey),
+                                  );
+                                }
+
+                                final effectiveController =
+                                    _controllers[eventKey]!;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          displayName,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.text,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: DSInput(
+                                          controller: effectiveController,
+                                          keyboardType: TextInputType.number,
+                                          hint: '0',
+                                          errorText: _inputErrors[eventKey],
+                                          suffix: Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 4,
+                                            ),
+                                            child: Text(
+                                              'store_points'.tr,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: theme.textSub,
+                                                  ),
+                                            ),
+                                          ),
+                                          onChanged: (value) {
+                                            // DSInput 无 Form 校验，手动校验并展示错误
+                                            final error = _validatePoints(
+                                              value,
+                                            );
+                                            if (_inputErrors[eventKey] !=
+                                                error) {
+                                              setState(() {
+                                                _inputErrors[eventKey] = error;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

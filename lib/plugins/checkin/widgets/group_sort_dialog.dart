@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 
 class GroupSortDialog extends StatefulWidget {
@@ -31,43 +33,99 @@ class _GroupSortDialogState extends State<GroupSortDialog> {
 
   @override
   Widget build(BuildContext context) {
-
-    return AlertDialog(
-      title: Text('checkin_groupSortTitle'.tr),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ...GroupSortType.values.map(
-            (type) => RadioListTile<GroupSortType>(
-              title: Text(GroupSortService.getSortTypeName(type, context)),
-              value: type,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'checkin_groupSortTitle'.tr,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  ...GroupSortType.values.map(
+                    (type) => Row(
+                      children: [
+                        DSRadio<GroupSortType>(
+                          value: type,
+                          groupValue: _selectedSortType,
+                          onChanged:
+                              (value) =>
+                                  setState(() => _selectedSortType = value!),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap:
+                                () => setState(() => _selectedSortType = type),
+                            child: Text(
+                              GroupSortService.getSortTypeName(type, context),
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'checkin_reverseSort'.tr,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                      ),
+                      DSSwitch(
+                        value: _isReversed,
+                        onChanged: (value) {
+                          setState(() {
+                            _isReversed = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'checkin_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DSButton(
+                          label: 'checkin_confirm'.tr,
+                          onPressed: () {
+                            widget.onSortChanged(
+                              _selectedSortType,
+                              _isReversed,
+                            );
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Divider(),
-          SwitchListTile(
-            title: Text('checkin_reverseSort'.tr),
-            value: _isReversed,
-            onChanged: (value) {
-              setState(() {
-                _isReversed = value;
-              });
-            },
-          ),
-        ],
+          );
+        },
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('checkin_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () {
-            widget.onSortChanged(_selectedSortType, _isReversed);
-            Navigator.of(context).pop();
-          },
-          child: Text('checkin_confirm'.tr),
-        ),
-      ],
     );
   }
 }

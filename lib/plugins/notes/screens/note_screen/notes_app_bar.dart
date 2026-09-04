@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
 
 class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -26,11 +28,12 @@ class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return AppBar(
       leading:
           currentFolder?.parentId != null
               ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: DsIcon(DsIconKind.chevronLeft, color: theme.text),
                 onPressed: onNavigateBack,
               )
               : null,
@@ -47,37 +50,47 @@ class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
               : Text(currentFolder?.name ?? 'Notes'),
       actions: [
         IconButton(
-          icon: Icon(isSearching ? Icons.close : Icons.search),
+          icon: DsIcon(
+            isSearching ? DsIconKind.close : DsIconKind.search,
+            color: theme.text,
+          ),
           onPressed: onSearchToggle,
         ),
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'new_note':
-                onCreateNewNote();
-                break;
-              case 'new_folder':
-                onCreateNewFolder();
-                break;
-            }
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'new_note',
-                  child: ListTile(
-                    leading: const Icon(Icons.note_add),
-                    title: Text('notes_newNote'.tr),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'new_folder',
-                  child: ListTile(
-                    leading: const Icon(Icons.create_new_folder),
-                    title: Text('notes_newFolder'.tr),
-                  ),
-                ),
-              ],
+        // 菜单气泡经根 Overlay 展示，需包主题桥
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSPopover(
+                width: 180,
+                contentBuilder: (context, close) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DSSheetAction(
+                        icon: DsIconKind.book,
+                        label: 'notes_newNote'.tr,
+                        onTap: () {
+                          close();
+                          onCreateNewNote();
+                        },
+                      ),
+                      DSSheetAction(
+                        icon: DsIconKind.layers,
+                        label: 'notes_newFolder'.tr,
+                        onTap: () {
+                          close();
+                          onCreateNewFolder();
+                        },
+                      ),
+                    ],
+                  );
+                },
+                child: DsIcon(DsIconKind.more, color: theme.text),
+              );
+            },
+          ),
         ),
       ],
     );

@@ -318,48 +318,123 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
           ],
         ),
         actions: [
-          // 视图切换按钮
-          IconButton(
-            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
+          // 视图切换按钮(DS 按钮自带 DSThemeBridge 提供 AppTheme)
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: () {
+                    setState(() {
+                      _isGridView = !_isGridView;
+                    });
+                  },
+                  tooltip: '切换视图',
+                );
+              },
+            ),
           ),
-          // 排序按钮
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
-            onSelected: (value) async {
-              setState(() {
-                _sortBy = value;
-              });
-              // 保存排序偏好
-              await GoodsPlugin.instance.saveSortPreference(
-                _warehouse.id,
-                value,
-              );
-            },
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    value: 'none',
-                    child: Text('goods_sortByDefault'.tr),
+          // 排序按钮(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSPopover(
+                  width: 190,
+                  contentBuilder: (popoverContext, close) {
+                    final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                    Widget menuRow(String value, String label) {
+                      return Pressable(
+                        onPressed: () async {
+                          close();
+                          setState(() {
+                            _sortBy = value;
+                          });
+                          // 保存排序偏好
+                          await GoodsPlugin.instance.saveSortPreference(
+                            _warehouse.id,
+                            value,
+                          );
+                        },
+                        builder: (context, states) {
+                          final pressed = states.contains(WidgetState.pressed);
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: popoverTheme.spacing.sm,
+                              vertical: popoverTheme.spacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: pressed ? popoverTheme.surfaceAlt : null,
+                              borderRadius: popoverTheme.radii.sm,
+                            ),
+                            child: Row(
+                              children: [
+                                DsIcon(
+                                  _sortBy == value
+                                      ? DsIconKind.check
+                                      : DsIconKind.sort,
+                                  size: 18,
+                                  color: popoverTheme.text,
+                                ),
+                                SizedBox(width: popoverTheme.spacing.sm),
+                                Text(
+                                  label,
+                                  style: DsTypography.body.copyWith(
+                                    color: popoverTheme.text,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        menuRow('none', 'goods_sortByDefault'.tr),
+                        menuRow('price', 'goods_sortByPrice'.tr),
+                        menuRow('lastUsed', 'goods_sortByLastUsedTime'.tr),
+                      ],
+                    );
+                  },
+                  child: JellyBox(
+                    width: 40,
+                    height: 40,
+                    radius: theme.radii.circle,
+                    color: theme.surfaceAlt,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.sort,
+                        size: 20,
+                        color: theme.textSub,
+                      ),
+                    ),
                   ),
-                  PopupMenuItem(
-                    value: 'price',
-                    child: Text('goods_sortByPrice'.tr),
-                  ),
-                  PopupMenuItem(
-                    value: 'lastUsed',
-                    child: Text('goods_sortByLastUsedTime'.tr),
-                  ),
-                ],
+                );
+              },
+            ),
           ),
           // 更多选项按钮
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: _showMoreOptions,
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.more,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _showMoreOptions,
+                );
+              },
+            ),
           ),
         ],
       ),

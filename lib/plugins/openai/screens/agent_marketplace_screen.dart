@@ -259,26 +259,57 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
         filterLabels: const {'name': '名称', 'description': '描述', 'tags': '标签'},
         onSearchFilterChanged: _onSearchFilterChanged,
 
-        // DS 暂无"筛选漏斗"图标,整组 actions 保留 Material 保持一致
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
+        // (DS 暂无"筛选漏斗"图标,filter_list 用 sort 近似)
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadMarketplaceData,
-            tooltip: '刷新',
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.refresh,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _loadMarketplaceData,
+                  tooltip: '刷新',
+                );
+              },
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-            tooltip: '筛选',
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.sort,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _showFilterDialog,
+                  tooltip: '筛选',
+                );
+              },
+            ),
           ),
-          IconButton(
-            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
-            tooltip: '切换视图',
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: () {
+                    setState(() {
+                      _isGridView = !_isGridView;
+                    });
+                  },
+                  tooltip: '切换视图',
+                );
+              },
+            ),
           ),
         ],
       ),

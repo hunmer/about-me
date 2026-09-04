@@ -289,16 +289,10 @@ class _AgentListDrawerState extends State<AgentListDrawer>
             final agentData = {'id': agent.id, 'name': agent.name};
             final isSelected = _isAgentSelected(agent.id);
 
-            return ListTile(
+            return DSListItem(
               leading: _buildAgentIcon(agent),
-              title: Text(
-                agent.name,
-                style: DsTypography.body.copyWith(color: theme.text),
-              ),
-              subtitle: Text(
-                agent.description,
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+              title: agent.name,
+              subtitle: agent.description,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

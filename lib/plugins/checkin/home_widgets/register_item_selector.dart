@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
@@ -45,10 +47,7 @@ void registerItemSelectorWidget(HomeWidgetRegistry registry) {
 }
 
 /// 导航到签到项目详情
-void _navigateToCheckinItem(
-  BuildContext context,
-  SelectorResult result,
-) {
+void _navigateToCheckinItem(BuildContext context, SelectorResult result) {
   // 从 result.data 获取已转换的数据（由 dataSelector 处理）
   final data =
       result.data is Map<String, dynamic>
@@ -93,9 +92,11 @@ class _CheckinItemSelectorWidget extends LiveSelectorWidget {
   /// 从配置中提取签到项目数据
   Map<String, dynamic> _extractCheckinItemData(Map<String, dynamic> config) {
     try {
-      final selectorConfig = config['selectorWidgetConfig'] as Map<String, dynamic>?;
+      final selectorConfig =
+          config['selectorWidgetConfig'] as Map<String, dynamic>?;
       if (selectorConfig != null) {
-        final selectedData = selectorConfig['selectedData'] as Map<String, dynamic>?;
+        final selectedData =
+            selectorConfig['selectedData'] as Map<String, dynamic>?;
         if (selectedData != null && selectedData.containsKey('data')) {
           final dataArray = selectedData['data'] as List<dynamic>?;
           if (dataArray != null && dataArray.isNotEmpty) {
@@ -112,28 +113,22 @@ class _CheckinItemSelectorWidget extends LiveSelectorWidget {
   /// 自定义空状态（显示"暂无签到项目"）
   @override
   Widget buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.surfaceAlt,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.access_time,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.clock, size: 48, color: theme.textSub),
             const SizedBox(height: 8),
             Text(
               '暂无签到项目',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),

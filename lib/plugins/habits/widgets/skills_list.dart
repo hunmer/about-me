@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
 import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
@@ -134,8 +136,22 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
       onSearchSubmitted: _filterSkills,
       searchBody: _buildSearchResults(),
 
+      // SuperCupertino 导航栏的 actions 位于主题桥之外，
+      // DS 组件需外包 DSThemeBridge（陷阱 2）
       actions: [
-        IconButton(icon: const Icon(Icons.sort), onPressed: _showSortMenu),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return DSIconButton(
+                icon: DsIconKind.sort,
+                size: 40,
+                color: DSThemeBridge.resolve(context).surfaceAlt,
+                iconColor: DSThemeBridge.resolve(context).text,
+                onPressed: _showSortMenu,
+              );
+            },
+          ),
+        ),
       ],
       body: _buildCardView(_skills),
     );
@@ -143,16 +159,18 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
 
   /// 构建搜索结果页面
   Widget _buildSearchResults() {
+    final theme = DSThemeBridge.resolve(context);
+
     if (_searchQuery.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 64, color: Colors.grey[400]),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               '输入关键词搜索技能',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -164,16 +182,16 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+            Icon(Icons.inbox, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               '未找到匹配的技能',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
               '搜索词: $_searchQuery',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -188,64 +206,73 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.sort_by_alpha),
-                title: Text('habits_sortByName'.tr),
-                onTap: () {
-                  setState(() {
-                    _skills.sort((a, b) => a.title.compareTo(b.title));
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.format_list_numbered),
-                title: Text('habits_sortByCompletions'.tr),
-                onTap: () async {
-                  final counts = await Future.wait(
-                    _skills.map(
-                      (s) => widget.recordController.getCompletionCount(s.id),
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DSSheetAction(
+                      icon: DsIconKind.sort,
+                      label: 'habits_sortByName'.tr,
+                      onTap: () {
+                        setState(() {
+                          _skills.sort((a, b) => a.title.compareTo(b.title));
+                        });
+                        Navigator.pop(context);
+                      },
                     ),
-                  );
-                  final sortedSkills =
-                      _skills
-                          .asMap()
-                          .entries
-                          .map((e) => (e.value, counts[e.key]))
-                          .toList()
-                        ..sort((a, b) => b.$2.compareTo(a.$2));
-                  setState(() {
-                    _skills = sortedSkills.map((e) => e.$1).toList();
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.timer),
-                title: Text('habits_sortByDuration'.tr),
-                onTap: () async {
-                  final durations = await Future.wait(
-                    _skills.map(
-                      (s) => widget.recordController.getTotalDuration(s.id),
+                    DSSheetAction(
+                      icon: DsIconKind.hash,
+                      label: 'habits_sortByCompletions'.tr,
+                      onTap: () async {
+                        final counts = await Future.wait(
+                          _skills.map(
+                            (s) => widget.recordController.getCompletionCount(
+                              s.id,
+                            ),
+                          ),
+                        );
+                        final sortedSkills =
+                            _skills
+                                .asMap()
+                                .entries
+                                .map((e) => (e.value, counts[e.key]))
+                                .toList()
+                              ..sort((a, b) => b.$2.compareTo(a.$2));
+                        setState(() {
+                          _skills = sortedSkills.map((e) => e.$1).toList();
+                        });
+                        Navigator.pop(context);
+                      },
                     ),
-                  );
-                  final sortedSkills =
-                      _skills
-                          .asMap()
-                          .entries
-                          .map((e) => (e.value, durations[e.key]))
-                          .toList()
-                        ..sort((a, b) => b.$2.compareTo(a.$2));
-                  setState(() {
-                    _skills = sortedSkills.map((e) => e.$1).toList();
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+                    DSSheetAction(
+                      icon: DsIconKind.clock,
+                      label: 'habits_sortByDuration'.tr,
+                      onTap: () async {
+                        final durations = await Future.wait(
+                          _skills.map(
+                            (s) =>
+                                widget.recordController.getTotalDuration(s.id),
+                          ),
+                        );
+                        final sortedSkills =
+                            _skills
+                                .asMap()
+                                .entries
+                                .map((e) => (e.value, durations[e.key]))
+                                .toList()
+                              ..sort((a, b) => b.$2.compareTo(a.$2));
+                        setState(() {
+                          _skills = sortedSkills.map((e) => e.$1).toList();
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
     );
   }
@@ -258,197 +285,228 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
       groupedSkills.putIfAbsent(group, () => []).add(skill);
     }
 
-    return ListView(
-      children:
-          groupedSkills.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: Text(
-                    entry.key,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: entry.value.length,
-                  itemBuilder: (context, index) {
-                    final skill = entry.value[index];
-                    return FutureBuilder(
-                      key: ValueKey('card_${skill.id}_$_refreshKey'),
-                      future: Future.wait([
-                        widget.recordController.getCompletionCount(skill.id),
-                        widget.recordController.getTotalDuration(skill.id),
-                      ]),
-                      builder: (context, snapshot) {
-                        final count = snapshot.data?[0] ?? 0;
-                        final duration = snapshot.data?[1] ?? 0;
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
 
-                        return Card(
-                          child: InkWell(
-                            onTap: () async {
-                              await NavigationHelper.push(
-                                context,
-                                SkillDetailPage(
-                                  skill: skill,
-                                  skillController: widget.skillController,
-                                  recordController: widget.recordController,
+          return ListView(
+            children:
+                groupedSkills.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        child: Text(
+                          entry.key,
+                          style: DsTypography.title.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.8,
+                            ),
+                        itemCount: entry.value.length,
+                        itemBuilder: (context, index) {
+                          final skill = entry.value[index];
+                          return FutureBuilder(
+                            key: ValueKey('card_${skill.id}_$_refreshKey'),
+                            future: Future.wait([
+                              widget.recordController.getCompletionCount(
+                                skill.id,
+                              ),
+                              widget.recordController.getTotalDuration(
+                                skill.id,
+                              ),
+                            ]),
+                            builder: (context, snapshot) {
+                              final count = snapshot.data?[0] ?? 0;
+                              final duration = snapshot.data?[1] ?? 0;
+
+                              return DSCard(
+                                onTap: () async {
+                                  await NavigationHelper.push(
+                                    context,
+                                    SkillDetailPage(
+                                      skill: skill,
+                                      skillController: widget.skillController,
+                                      recordController: widget.recordController,
+                                    ),
+                                  );
+                                  if (mounted) _loadSkills();
+                                },
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child:
+                                          skill.image != null &&
+                                                  skill.image!.isNotEmpty
+                                              ? FutureBuilder<String>(
+                                                future:
+                                                    skill.image!.startsWith(
+                                                          'http',
+                                                        )
+                                                        ? Future.value(
+                                                          skill.image!,
+                                                        )
+                                                        : ImageUtils.getAbsolutePath(
+                                                          skill.image!,
+                                                        ),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot.hasData) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        image: DecorationImage(
+                                                          image:
+                                                              skill.image!
+                                                                      .startsWith(
+                                                                        'http',
+                                                                      )
+                                                                  ? NetworkImage(
+                                                                    snapshot
+                                                                        .data!,
+                                                                  )
+                                                                  : FileImage(
+                                                                        File(
+                                                                          snapshot
+                                                                              .data!,
+                                                                        ),
+                                                                      )
+                                                                      as ImageProvider,
+                                                          fit: BoxFit.cover,
+                                                          colorFilter:
+                                                              ColorFilter.mode(
+                                                                DsColors.black
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.3,
+                                                                    ),
+                                                                BlendMode
+                                                                    .darken,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      child: Center(
+                                                        child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Text(
+                                                              skill.title,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    DsColors
+                                                                        .white,
+                                                                fontSize: 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              '$count completions',
+                                                              style: TextStyle(
+                                                                color:
+                                                                    DsColors
+                                                                        .white,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              HabitsUtils.formatDuration(
+                                                                duration,
+                                                              ),
+                                                              style: TextStyle(
+                                                                color:
+                                                                    DsColors
+                                                                        .white,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } else if (snapshot
+                                                      .hasError) {
+                                                    return Container(
+                                                      color: theme.surfaceAlt,
+                                                      child: DsIcon(
+                                                        DsIconKind.image,
+                                                        color: theme.textSub,
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    return const Center(
+                                                      child: DSLoadingDots(),
+                                                    );
+                                                  }
+                                                },
+                                              )
+                                              : skill.icon != null
+                                              ? CircleAvatar(
+                                                radius: 24,
+                                                backgroundColor: theme.primary,
+                                                child: Icon(
+                                                  IconData(
+                                                    int.parse(skill.icon!),
+                                                    fontFamily: 'MaterialIcons',
+                                                  ),
+                                                  size: 24,
+                                                  color: DsColors.white,
+                                                ),
+                                              )
+                                              : Icon(
+                                                Icons.auto_awesome,
+                                                size: 48,
+                                                color: theme.primary,
+                                              ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        skill.title,
+                                        style: DsTypography.heading.copyWith(
+                                          color: theme.text,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 8.0,
+                                      ),
+                                      child: Text(
+                                        '$count completions',
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
-                              if (mounted) _loadSkills();
                             },
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child:
-                                      skill.image != null &&
-                                              skill.image!.isNotEmpty
-                                          ? FutureBuilder<String>(
-                                            future:
-                                                skill.image!.startsWith('http')
-                                                    ? Future.value(skill.image!)
-                                                    : ImageUtils.getAbsolutePath(
-                                                      skill.image!,
-                                                    ),
-                                            builder: (context, snapshot) {
-                                              if (snapshot.hasData) {
-                                                return Container(
-                                                  decoration: BoxDecoration(
-                                                    image: DecorationImage(
-                                                      image:
-                                                          skill.image!
-                                                                  .startsWith(
-                                                                    'http',
-                                                                  )
-                                                              ? NetworkImage(
-                                                                snapshot.data!,
-                                                              )
-                                                              : FileImage(
-                                                                    File(
-                                                                      snapshot
-                                                                          .data!,
-                                                                    ),
-                                                                  )
-                                                                  as ImageProvider,
-                                                      fit: BoxFit.cover,
-                                                      colorFilter:
-                                                          ColorFilter.mode(
-                                                            Colors.black
-                                                                .withValues(
-                                                                  alpha: 0.3,
-                                                                ),
-                                                            BlendMode.darken,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  child: Center(
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Text(
-                                                          skill.title,
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 18,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          '$count completions',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          HabitsUtils.formatDuration(
-                                                            duration,
-                                                          ),
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              } else if (snapshot.hasError) {
-                                                return Container(
-                                                  color: Colors.grey[200],
-                                                  child: const Icon(
-                                                    Icons.broken_image,
-                                                  ),
-                                                );
-                                              } else {
-                                                return const Center(
-                                                  child:
-                                                      CircularProgressIndicator(),
-                                                );
-                                              }
-                                            },
-                                          )
-                                          : skill.icon != null
-                                          ? CircleAvatar(
-                                            radius: 24,
-                                            backgroundColor:
-                                                Theme.of(context).primaryColor,
-                                            child: Icon(
-                                              IconData(
-                                                int.parse(skill.icon!),
-                                                fontFamily: 'MaterialIcons',
-                                              ),
-                                              size: 24,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                          : const Icon(
-                                            Icons.auto_awesome,
-                                            size: 48,
-                                          ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    skill.title,
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
-                                  child: Text(
-                                    '$count completions',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-            );
-          }).toList(),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                }).toList(),
+          );
+        },
+      ),
     );
   }
 }

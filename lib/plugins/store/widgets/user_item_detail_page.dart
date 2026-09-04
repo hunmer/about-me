@@ -2,6 +2,8 @@
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/models/user_item.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -71,71 +73,57 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
     }
 
     debugPrint('[UserItemDetailPage] 显示使用确认对话框');
-    showDialog(
+    _showUseConfirmDialog();
+  }
+
+  /// 使用确认对话框（复用于顶部按钮与自动使用）
+  void _showUseConfirmDialog() {
+    final currentItem = widget.items[_currentIndex];
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('store_useConfirmationTitle'.tr),
-            content: Text(
-              'store_useConfirmationMessage'.tr.replaceFirst(
-                '%s',
-                currentItem.productName,
-              ),
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'store_useConfirmationTitle'.tr,
+                    message: 'store_useConfirmationMessage'.tr.replaceFirst(
+                      '%s',
+                      currentItem.productName,
+                    ),
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_ok'.tr,
+                    onCancel: () => Navigator.pop(context),
+                    onConfirm: () {
+                      Navigator.pop(context);
+                      _useCurrentItem();
+                    },
+                  ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _useCurrentItem();
-                },
-                child: Text('app_ok'.tr),
-              ),
-            ],
           ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('store_itemDetailsTitle'.tr),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.redeem),
-            onPressed: () {
-              final currentItem = widget.items[_currentIndex];
-              showDialog(
-                context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: Text('store_useConfirmationTitle'.tr),
-                      content: Text(
-                        'store_useConfirmationMessage'.tr.replaceFirst(
-                          '%s',
-                          currentItem.productName,
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('app_cancel'.tr),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _useCurrentItem();
-                          },
-                          child: Text('app_ok'.tr),
-                        ),
-                      ],
-                    ),
-              );
-            },
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.gift,
+                  size: 38,
+                  color: theme.primary,
+                  onPressed: _showUseConfirmDialog,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -164,26 +152,25 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
                         shape: BoxShape.circle,
                         color:
                             _currentIndex == i
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey.withValues(alpha: 0.3),
+                                ? theme.primary
+                                : theme.textSub.withValues(alpha: 0.3),
                         border: Border.all(
                           color:
                               _currentIndex == i
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey,
+                                  ? theme.primary
+                                  : theme.textSub,
                           width: 1,
                         ),
                       ),
                       child: Center(
                         child: Text(
                           '${i + 1}',
-                          style: TextStyle(
+                          style: DsTypography.label.copyWith(
                             color:
                                 _currentIndex == i
-                                    ? Colors.white
-                                    : Colors.grey[700],
+                                    ? theme.onPrimary
+                                    : theme.textSub,
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -212,6 +199,7 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
   }
 
   Widget _buildItemDetail(UserItem item) {
+    final theme = DSThemeBridge.resolve(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -229,27 +217,32 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
           const SizedBox(height: 20),
           // 物品信息
           _buildDetailRow(
-            icon: Icons.shopping_bag,
+            theme: theme,
+            icon: DsIconKind.cart,
             label: 'store_productNameLabel'.tr,
             value: item.productName,
           ),
           _buildDetailRow(
-            icon: Icons.calendar_today,
+            theme: theme,
+            icon: DsIconKind.calendar,
             label: 'store_purchaseDateLabel'.tr,
             value: _formatDate(item.purchaseDate),
           ),
           _buildDetailRow(
-            icon: Icons.calendar_today,
+            theme: theme,
+            icon: DsIconKind.calendar,
             label: 'store_expiryDateLabel'.tr,
             value: _formatDate(item.expireDate),
           ),
           _buildDetailRow(
-            icon: Icons.attach_money,
+            theme: theme,
+            icon: DsIconKind.piggy,
             label: 'store_purchasePriceLabel'.tr,
             value: '${item.purchasePrice}${'store_points'.tr}',
           ),
           _buildDetailRow(
-            icon: Icons.layers,
+            theme: theme,
+            icon: DsIconKind.layers,
             label: 'store_remainingQuantityLabel'.tr,
             value: '${item.remaining}',
           ),
@@ -261,13 +254,13 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
               children: [
                 Text(
                   'store_descriptionLabel'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: DsTypography.heading.copyWith(color: theme.text),
                 ),
                 const SizedBox(height: 8),
-                Text(item.productSnapshot['description']),
+                Text(
+                  item.productSnapshot['description'],
+                  style: DsTypography.body.copyWith(color: theme.text),
+                ),
               ],
             ),
         ],
@@ -276,7 +269,8 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
   }
 
   Widget _buildDetailRow({
-    required IconData icon,
+    required AppThemeData theme,
+    required DsIconKind icon,
     required String label,
     required String value,
   }) {
@@ -284,13 +278,16 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          DsIcon(icon, size: 20, color: theme.primary),
           const SizedBox(width: 12),
           Text(
             'store_labelColon'.trParams({'label': label}),
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: DsTypography.body.copyWith(
+              color: theme.text,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          Text(value),
+          Text(value, style: DsTypography.body.copyWith(color: theme.text)),
         ],
       ),
     );

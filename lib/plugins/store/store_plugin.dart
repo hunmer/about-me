@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/store/widgets/store_bottom_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
@@ -36,9 +38,7 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
   }
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'store/',
-  ];
+  static const List<String> _refreshableFiles = ['store/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -194,14 +194,14 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部图标和标题
+          // 顶部图标和标题（icon 为插件注册的持久化 IconData，保留 Material Icons）
           Row(
             children: [
               Container(
@@ -216,9 +216,7 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'store_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -236,11 +234,12 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'store_productQuantity'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         controller.getGoodsCount().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -252,11 +251,12 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'store_itemQuantity'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         controller.getItemsCount().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -275,13 +275,13 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'store_myPoints'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         controller.currentPoints.toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.warning,
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange,
                         ),
                       ),
                     ],
@@ -292,13 +292,13 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'store_expiringIn7Days'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         controller.getExpiringItemsCount().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.danger,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red,
                         ),
                       ),
                     ],

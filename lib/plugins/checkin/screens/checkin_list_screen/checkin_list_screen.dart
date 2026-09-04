@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
@@ -143,17 +145,37 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
       enableFilterBar: true,
       filterBarChild: _buildFilterBar(),
       actions: [
-        // 排序按钮
-        IconButton(
-          icon: const Icon(Icons.sort),
-          onPressed: () async {
-            await controller.showGroupSortDialog();
-            if (mounted) setState(() {});
-          },
+        // 排序按钮（SuperCupertino actions 需外包 DSThemeBridge，陷阱 2）
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.sort,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.text,
+                onPressed: () async {
+                  await controller.showGroupSortDialog();
+                  if (mounted) setState(() {});
+                },
+              );
+            },
+          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.folder),
-          onPressed: controller.showGroupManagementDialog,
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.layers,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.text,
+                onPressed: controller.showGroupManagementDialog,
+              );
+            },
+          ),
         ),
       ],
       enableLargeTitle: false,
@@ -163,20 +185,21 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
   /// 构建搜索结果视图
   Widget _buildSearchResults(List<CheckinItem> searchResults) {
     if (controller.isSearching && searchResults.isEmpty) {
+      final theme = DSThemeBridge.resolve(context);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               '未找到相关打卡项目',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
               '尝试使用其他关键词搜索',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -230,25 +253,18 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
         itemBuilder: (context, index) {
           final group = groups[index];
           final isSelected = group == controller.selectedGroup;
-          return ChoiceChip(
-            label: Text(group),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (selected) {
-                controller.selectGroup(group);
-                // 更新路由上下文
-                _updateRouteContext();
-              }
-            },
-            showCheckmark: false,
-            labelStyle: TextStyle(
-              color:
-                  isSelected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).textTheme.bodyMedium?.color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          return DSThemeBridge(
+            child: DSChip(
+              label: group,
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  controller.selectGroup(group);
+                  // 更新路由上下文
+                  _updateRouteContext();
+                }
+              },
             ),
-            selectedColor: Theme.of(context).primaryColor,
           );
         },
       ),
@@ -286,8 +302,9 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
 
-      showDialog(
+      showDSDialog(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
             (context) => CheckinRecordDialog(
               item: item,

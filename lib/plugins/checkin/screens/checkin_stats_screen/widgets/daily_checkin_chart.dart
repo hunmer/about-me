@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
@@ -14,7 +16,7 @@ class DailyCheckinChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final data = _prepareData();
 
     return LineChart(
@@ -28,7 +30,7 @@ class DailyCheckinChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 return Text(
                   value.toInt().toString(),
-                  style: theme.textTheme.bodySmall,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 );
               },
             ),
@@ -49,7 +51,9 @@ class DailyCheckinChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       isMonthly ? '${index + 1}日' : _getWeekday(index),
-                      style: theme.textTheme.bodySmall,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                   );
                 }
@@ -61,17 +65,18 @@ class DailyCheckinChart extends StatelessWidget {
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: data.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.toDouble());
-            }).toList(),
+            spots:
+                data.asMap().entries.map((entry) {
+                  return FlSpot(entry.key.toDouble(), entry.value.toDouble());
+                }).toList(),
             isCurved: true,
-            color: theme.colorScheme.primary,
+            color: theme.primary,
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              color: theme.primary.withValues(alpha: 0.2),
             ),
           ),
         ],

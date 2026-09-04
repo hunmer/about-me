@@ -177,6 +177,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
   /// 构建基础信息 Tab
   Widget _buildBasicInfoTab() {
+    final theme = DSThemeBridge.resolve(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
@@ -187,11 +188,15 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           TextFormField(
             controller: _nameController,
             autofocus: true,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '工具名称 *',
               hintText: '例如:导出数据',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.label),
+              border: const OutlineInputBorder(),
+              prefixIcon: DsIcon(
+                DsIconKind.tag,
+                size: 20,
+                color: theme.textSub,
+              ),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -224,11 +229,15 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           TextFormField(
             controller: _descriptionController,
             maxLines: 3,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '描述(可选)',
               hintText: '描述这个工具的用途...',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.description),
+              border: const OutlineInputBorder(),
+              prefixIcon: DsIcon(
+                DsIconKind.book,
+                size: 20,
+                color: theme.textSub,
+              ),
             ),
             validator: (value) {
               if (value != null && value.trim().length > 200) {
@@ -296,11 +305,23 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                           decoration: InputDecoration(
                             hintText: '输入标签后按回车添加',
                             border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.label),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.add),
+                            prefixIcon: DsIcon(
+                              DsIconKind.tag,
+                              size: 20,
+                              color: theme.textSub,
+                            ),
+                            suffixIcon: Pressable(
                               onPressed: _addTag,
-                              tooltip: '添加标签',
+                              semanticLabel: '添加标签',
+                              builder:
+                                  (context, states) => Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: DsIcon(
+                                      DsIconKind.plus,
+                                      size: 20,
+                                      color: theme.primaryText,
+                                    ),
+                                  ),
                             ),
                           ),
                           onSubmitted: (_) => _addTag(),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/routing/plugin_route_handler.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:aboutme/plugins/checkin/screens/checkin_item_selector_screen.dart';
@@ -190,6 +192,8 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('NFC 签到'),
@@ -209,28 +213,23 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
                 decoration: BoxDecoration(
                   color:
                       _isProcessing
-                          ? Colors.teal.withOpacity(0.1)
+                          ? theme.primary.withValues(alpha: 0.1)
                           : (_success
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1)),
+                              ? theme.success.withValues(alpha: 0.1)
+                              : theme.danger.withValues(alpha: 0.1)),
                   shape: BoxShape.circle,
                 ),
                 child:
                     _isProcessing
                         ? const Center(
-                          child: SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 4,
-                              color: Colors.teal,
-                            ),
+                          child: DSThemeBridge(
+                            child: Center(child: DSLoadingDots(size: 20)),
                           ),
                         )
-                        : Icon(
-                          _success ? Icons.check_circle : Icons.error,
+                        : DsIcon(
+                          _success ? DsIconKind.check : DsIconKind.close,
                           size: 64,
-                          color: _success ? Colors.green : Colors.red,
+                          color: _success ? theme.success : theme.danger,
                         ),
               ),
               const SizedBox(height: 32),
@@ -248,10 +247,7 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _checkinItem!.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: DsTypography.display.copyWith(color: theme.text),
                     ),
                   ],
                 ),
@@ -261,12 +257,11 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
               // 状态消息
               Text(
                 _message,
-                style: TextStyle(
-                  fontSize: 18,
+                style: DsTypography.title.copyWith(
                   color:
                       _isProcessing
-                          ? Colors.grey[700]
-                          : (_success ? Colors.green[700] : Colors.red[700]),
+                          ? theme.textSub
+                          : (_success ? theme.success : theme.danger),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -280,24 +275,22 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: theme.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(
+                      color: theme.warning.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.local_fire_department,
-                        color: Colors.orange,
-                      ),
+                      Icon(Icons.local_fire_department, color: theme.warning),
                       const SizedBox(width: 8),
                       Text(
                         '连续签到 ${_checkinItem!.getConsecutiveDays()} 天',
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Colors.orange,
+                          color: theme.warning,
                         ),
                       ),
                     ],
@@ -309,30 +302,36 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
 
               // 操作按钮
               if (!_isProcessing) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder:
-                            (context) => CheckinMainView(itemId: widget.itemId),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.checklist),
-                  label: const Text('查看签到记录'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      return DSButton(
+                        label: '查看签到记录',
+                        icon: DsIconKind.calendarCheck,
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      CheckinMainView(itemId: widget.itemId),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('返回'),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      return DSButton(
+                        label: '返回',
+                        variant: DSButtonVariant.ghost,
+                        onPressed: () => Navigator.of(context).pop(),
+                      );
+                    },
+                  ),
                 ),
               ],
             ],

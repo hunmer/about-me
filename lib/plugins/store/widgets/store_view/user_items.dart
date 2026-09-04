@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/store/models/user_item.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/store/widgets/user_item_card.dart';
 import 'package:aboutme/plugins/store/widgets/user_item_detail_page.dart';
@@ -65,7 +67,8 @@ class _UserItemsState extends State<UserItems> {
     final query = _searchQuery.toLowerCase();
     return items.where((item) {
       final name = item.productName.toLowerCase();
-      final description = (item.productSnapshot['description'] ?? '').toLowerCase();
+      final description =
+          (item.productSnapshot['description'] ?? '').toLowerCase();
       return name.contains(query) || description.contains(query);
     }).toList();
   }
@@ -80,38 +83,34 @@ class _UserItemsState extends State<UserItems> {
   }
 
   Widget _buildEmptyView() {
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      title: Icon(
-        Icons.inventory,
-        color: Colors.blue.shade600,
-        size: 24,
-      ),
+      title: DsIcon(DsIconKind.gift, color: theme.primary, size: 24),
       largeTitle: 'store_myItems'.tr,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inventory_outlined,
-              size: 64,
-              color: Colors.grey[400],
+      body: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DsIcon(DsIconKind.gift, size: 64, color: theme.textSub),
+                const SizedBox(height: 16),
+                Text(
+                  'store_noItems'.tr,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '前往商品列表兑换物品',
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'store_noItems'.tr,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '前往商品列表兑换物品',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
       enableLargeTitle: true,
       // 即使没有物品也启用搜索栏，让用户可以搜索（虽然不会有结果）
@@ -128,102 +127,115 @@ class _UserItemsState extends State<UserItems> {
     final groupedItems = _groupItems(items);
 
     return SuperCupertinoNavigationWrapper(
-      title: Icon(
-        Icons.inventory,
-        color: Colors.blue.shade600,
-        size: 24,
+      title: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DsIcon(DsIconKind.gift, color: theme.primary, size: 24);
+        },
       ),
       largeTitle: 'store_myItems'.tr,
-      body: groupedItems.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.filter_alt_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '该筛选条件下暂无物品',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : MasonryGridView.count(
-              padding: const EdgeInsets.all(8),
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              itemCount: groupedItems.length,
-              itemBuilder: (context, index) {
-                final group = groupedItems[index];
-                return GestureDetector(
-                  onTap: () {
-                    // 获取同类型的所有物品
-                    final sameTypeItems = widget.controller.userItems
-                        .where((item) => item.productId == group.item.productId)
-                        .toList();
-
-                    NavigationHelper.push(context, UserItemDetailPage(
-                          controller: widget.controller,
-                          items: sameTypeItems,),
-                    ).then((_) {
-                      if (mounted) setState(() {});
-                    });
-                  },
-                  child: UserItemCard(
-                    item: group.item,
-                    count: group.count,
-                    onUse: () async {
-                      // 优先使用最早过期的物品
-                      final itemToUse = widget.controller.sortedUserItems.firstWhere(
-                        (item) => item.productId == group.item.productId,
-                      );
-
-                      if (await widget.controller.useItem(itemToUse)) {
-                        setState(() {});
-                        Toast.success('store_useSuccess'.tr);
-                      } else {
-                        Toast.error('store_itemExpired'.tr);
-                      }
-                    },
-                    onDelete: () async {
-                      // 删除同类型最早过期的物品
-                      final itemToDelete = widget.controller.sortedUserItems.firstWhere(
-                        (item) => item.productId == group.item.productId,
-                      );
-                      await widget.controller.deleteUserItem(itemToDelete);
-                      setState(() {});
-                      Toast.success('app_deleteSuccess'.tr);
-                    },
-                    onViewProduct: () {
-                      // 从商品快照恢复 Product 对象查看信息
-                      final product = widget.controller.products.firstWhereOrNull(
-                        (p) => p.id == group.item.productId,
-                      );
-                      if (product != null) {
-                        NavigationHelper.push(
-                          context,
-                          AddProductPage(
-                            controller: widget.controller,
-                            product: product,
+      body:
+          groupedItems.isEmpty
+              ? Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        DsIcon(DsIconKind.grid, size: 64, color: theme.textSub),
+                        const SizedBox(height: 16),
+                        Text(
+                          '该筛选条件下暂无物品',
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
                           ),
-                        ).then((_) {
-                          if (mounted) setState(() {});
-                        });
-                      } else {
-                        Toast.warning('store_productNotFound'.tr);
-                      }
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
+              : MasonryGridView.count(
+                padding: const EdgeInsets.all(8),
+                crossAxisCount: 2,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                itemCount: groupedItems.length,
+                itemBuilder: (context, index) {
+                  final group = groupedItems[index];
+                  return GestureDetector(
+                    onTap: () {
+                      // 获取同类型的所有物品
+                      final sameTypeItems =
+                          widget.controller.userItems
+                              .where(
+                                (item) =>
+                                    item.productId == group.item.productId,
+                              )
+                              .toList();
+
+                      NavigationHelper.push(
+                        context,
+                        UserItemDetailPage(
+                          controller: widget.controller,
+                          items: sameTypeItems,
+                        ),
+                      ).then((_) {
+                        if (mounted) setState(() {});
+                      });
                     },
-                  ),
-                );
-              },
-            ),
+                    child: UserItemCard(
+                      item: group.item,
+                      count: group.count,
+                      onUse: () async {
+                        // 优先使用最早过期的物品
+                        final itemToUse = widget.controller.sortedUserItems
+                            .firstWhere(
+                              (item) => item.productId == group.item.productId,
+                            );
+
+                        if (await widget.controller.useItem(itemToUse)) {
+                          setState(() {});
+                          Toast.success('store_useSuccess'.tr);
+                        } else {
+                          Toast.error('store_itemExpired'.tr);
+                        }
+                      },
+                      onDelete: () async {
+                        // 删除同类型最早过期的物品
+                        final itemToDelete = widget.controller.sortedUserItems
+                            .firstWhere(
+                              (item) => item.productId == group.item.productId,
+                            );
+                        await widget.controller.deleteUserItem(itemToDelete);
+                        setState(() {});
+                        Toast.success('app_deleteSuccess'.tr);
+                      },
+                      onViewProduct: () {
+                        // 从商品快照恢复 Product 对象查看信息
+                        final product = widget.controller.products
+                            .firstWhereOrNull(
+                              (p) => p.id == group.item.productId,
+                            );
+                        if (product != null) {
+                          NavigationHelper.push(
+                            context,
+                            AddProductPage(
+                              controller: widget.controller,
+                              product: product,
+                            ),
+                          ).then((_) {
+                            if (mounted) setState(() {});
+                          });
+                        } else {
+                          Toast.warning('store_productNotFound'.tr);
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
       // 启用搜索栏
       enableSearchBar: true,
       searchPlaceholder: 'store_searchItemPlaceholder'.tr,
@@ -232,19 +244,41 @@ class _UserItemsState extends State<UserItems> {
       searchBody: _buildSearchResultsView(),
       enableLargeTitle: true,
       actions: [
-        PopupMenuButton<int>(
-          icon: const Icon(Icons.filter_list),
-          tooltip: '筛选方式',
-          onSelected: (index) {
-            setState(() {
-              _statusIndex = index;
-            });
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(value: 0, child: Text('store_allItems'.tr)),
-            PopupMenuItem(value: 1, child: Text('store_usable'.tr)),
-            PopupMenuItem(value: 2, child: Text('store_expired'.tr)),
-          ],
+        // 第三方导航栏回调：气泡经根 Overlay 展示，需包主题桥
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSPopover(
+                width: 160,
+                contentBuilder: (context, close) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final (index, label) in [
+                        (0, 'store_allItems'.tr),
+                        (1, 'store_usable'.tr),
+                        (2, 'store_expired'.tr),
+                      ])
+                        DSSheetAction(
+                          icon:
+                              index == 2 ? DsIconKind.block : DsIconKind.check,
+                          label: label,
+                          onTap: () {
+                            close();
+                            setState(() {
+                              _statusIndex = index;
+                            });
+                          },
+                        ),
+                    ],
+                  );
+                },
+                child: DsIcon(DsIconKind.sort, size: 22, color: theme.text),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -288,54 +322,52 @@ class _UserItemsState extends State<UserItems> {
 
     // 如果没有搜索查询，显示提示
     if (_searchQuery.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: Colors.grey[400],
+      return Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
+                const SizedBox(height: 16),
+                Text(
+                  '输入关键词搜索物品',
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              '输入关键词搜索物品',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
 
     // 如果搜索结果为空，显示空状态
     if (groupedItems.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey[400],
+      return Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
+                const SizedBox(height: 16),
+                Text(
+                  '未找到相关物品',
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '尝试使用其他关键词',
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              '未找到相关物品',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '尝试使用其他关键词',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
 
@@ -351,13 +383,17 @@ class _UserItemsState extends State<UserItems> {
         return GestureDetector(
           onTap: () {
             // 获取同类型的所有物品
-            final sameTypeItems = widget.controller.userItems
-                .where((item) => item.productId == group.item.productId)
-                .toList();
+            final sameTypeItems =
+                widget.controller.userItems
+                    .where((item) => item.productId == group.item.productId)
+                    .toList();
 
-            NavigationHelper.push(context, UserItemDetailPage(
-                  controller: widget.controller,
-                  items: sameTypeItems,),
+            NavigationHelper.push(
+              context,
+              UserItemDetailPage(
+                controller: widget.controller,
+                items: sameTypeItems,
+              ),
             ).then((_) {
               if (mounted) setState(() {});
             });

@@ -252,102 +252,118 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return DSThemeBridge(
+        child: Builder(
+          builder:
+              (context) => Center(
+                child: DSLoadingDots(color: NotesPlugin.instance.color),
+              ),
+        ),
+      );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 标题
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            body: SafeArea(
+              child: Column(
                 children: [
-                  Icon(Icons.tune, color: NotesPlugin.instance.color),
-                  const SizedBox(width: 8),
+                  // 标题
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        DsIcon(
+                          DsIconKind.sort,
+                          color: NotesPlugin.instance.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'notes_listConfigSelectorName'.tr,
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: 1,
+                    color: theme.stroke.withValues(alpha: 0.4),
+                  ),
+                  // 配置选项
                   Expanded(
-                    child: Text(
-                      'notes_listConfigSelectorName'.tr,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // 文件夹选择
+                        _buildFolderSelector(theme),
+                        const SizedBox(height: 16),
+                        // 标签选择
+                        _buildTagSelector(theme),
+                        const SizedBox(height: 16),
+                        // 日期范围选择
+                        _buildDateRangeSelector(theme),
+                      ],
+                    ),
+                  ),
+                  // 底部按钮
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'notes_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DSButton(
+                            label: 'notes_confirm'.tr,
+                            onPressed: _confirm,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
-            // 配置选项
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // 文件夹选择
-                  _buildFolderSelector(),
-                  const SizedBox(height: 16),
-                  // 标签选择
-                  _buildTagSelector(),
-                  const SizedBox(height: 16),
-                  // 日期范围选择
-                  _buildDateRangeSelector(),
-                ],
-              ),
-            ),
-            // 底部按钮
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('notes_cancel'.tr),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _confirm,
-                      child: Text('notes_confirm'.tr),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFolderSelector() {
+  Widget _buildFolderSelector(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'notes_selectFolderTitle'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.heading.copyWith(color: theme.text),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
+        DSSelect<String>(
           value: _selectedFolderId ?? 'all',
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-          ),
           items: [
-            DropdownMenuItem(value: 'all', child: Text('notes_allNotes'.tr)),
+            DSSelectItem(value: 'all', label: 'notes_allNotes'.tr),
             ..._folders.map((folder) {
               final notesCount =
                   NotesPlugin.instance.controller
                       .getFolderNotes(folder.id)
                       .length;
               final folderPath = _buildFolderPath(folder.id);
-              return DropdownMenuItem(
+              return DSSelectItem(
                 value: folder.id,
-                child: Text(
-                  '$folderPath • $notesCount ${'notes_notesCount'.tr}',
-                ),
+                label: '$folderPath • $notesCount ${'notes_notesCount'.tr}',
               );
             }),
           ],
@@ -368,19 +384,19 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
     );
   }
 
-  Widget _buildTagSelector() {
+  Widget _buildTagSelector(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '${'notes_selectTagsTitle'.tr} (${'notes_optional'.tr})',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.heading.copyWith(color: theme.text),
         ),
         const SizedBox(height: 8),
         if (_allTags.isEmpty)
           Text(
             'notes_noTags'.tr,
-            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           )
         else
           Wrap(
@@ -389,8 +405,8 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
             children:
                 _allTags.map((tag) {
                   final isSelected = _selectedTags.contains(tag);
-                  return FilterChip(
-                    label: Text(tag),
+                  return DSChip(
+                    label: tag,
                     selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
@@ -401,8 +417,6 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
                         }
                       });
                     },
-                    selectedColor: NotesPlugin.instance.color.withOpacity(0.3),
-                    checkmarkColor: NotesPlugin.instance.color,
                   );
                 }).toList(),
           ),
@@ -410,58 +424,58 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
     );
   }
 
-  Widget _buildDateRangeSelector() {
+  Widget _buildDateRangeSelector(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '${'notes_selectDateRangeTitle'.tr} (${'notes_optional'.tr})',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.heading.copyWith(color: theme.text),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: DSButton(
+                label:
+                    _startDate == null
+                        ? 'notes_startDate'.tr
+                        : DateFormat('yyyy-MM-dd').format(_startDate!),
+                icon: DsIconKind.calendar,
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
                 onPressed: () async {
-                  final date = await showDatePicker(
+                  final date = await showDSDatePickerDialog(
                     context: context,
-                    initialDate: _startDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    initial: _startDate ?? DateTime.now(),
+                    theme: DSThemeBridge.resolve(context),
                   );
                   if (date != null) {
                     setState(() => _startDate = date);
                   }
                 },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  _startDate == null
-                      ? 'notes_startDate'.tr
-                      : DateFormat('yyyy-MM-dd').format(_startDate!),
-                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: OutlinedButton.icon(
+              child: DSButton(
+                label:
+                    _endDate == null
+                        ? 'notes_endDate'.tr
+                        : DateFormat('yyyy-MM-dd').format(_endDate!),
+                icon: DsIconKind.calendar,
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
                 onPressed: () async {
-                  final date = await showDatePicker(
+                  final date = await showDSDatePickerDialog(
                     context: context,
-                    initialDate: _endDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    initial: _endDate ?? DateTime.now(),
+                    theme: DSThemeBridge.resolve(context),
                   );
                   if (date != null) {
                     setState(() => _endDate = date);
                   }
                 },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  _endDate == null
-                      ? 'notes_endDate'.tr
-                      : DateFormat('yyyy-MM-dd').format(_endDate!),
-                ),
               ),
             ),
           ],
@@ -469,15 +483,17 @@ class _NotesListConfigFormState extends State<_NotesListConfigForm> {
         if (_startDate != null || _endDate != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: TextButton.icon(
+            child: DSButton(
+              label: 'notes_clearDateFilter'.tr,
+              icon: DsIconKind.close,
+              variant: DSButtonVariant.ghost,
+              size: DSButtonSize.sm,
               onPressed: () {
                 setState(() {
                   _startDate = null;
                   _endDate = null;
                 });
               },
-              icon: const Icon(Icons.clear, size: 16),
-              label: Text('notes_clearDateFilter'.tr),
             ),
           ),
       ],

@@ -368,54 +368,88 @@ class _BillListScreenSupercupertinoState
       body: _buildMainBody(),
       enableLargeTitle: true,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.account_balance_wallet),
-          tooltip: 'bill_accountManagement'.tr,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) =>
-                        AccountListScreen(billPlugin: widget.billPlugin),
-              ),
-            );
-          },
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
+        // (DS 暂无钱包图标,account_balance_wallet 用 piggy 近似)
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.piggy,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'bill_accountManagement'.tr,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              AccountListScreen(billPlugin: widget.billPlugin),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.subscriptions),
-          tooltip: '订阅服务',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) =>
-                        SubscriptionListScreen(billPlugin: widget.billPlugin),
-              ),
-            );
-          },
+        // 订阅服务(周期性扣款,用 refresh 环形箭头近似)
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.refresh,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: '订阅服务',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => SubscriptionListScreen(
+                            billPlugin: widget.billPlugin,
+                          ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () {
-            NavigationHelper.openContainer<bool>(
-              context,
-              (BuildContext context) {
-                return BillEditScreen(
-                  billPlugin: widget.billPlugin,
-                  accountId: widget.accountId,
-                  initialDate: _selectedDay ?? DateTime.now(),
-                  onSaved: () {
-                    _loadMonthBills();
-                  },
-                );
-              },
-              closedColor: Colors.transparent,
-              closedElevation: 0.0,
-              closedShape: const RoundedRectangleBorder(),
-            );
-          },
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () {
+                  NavigationHelper.openContainer<bool>(
+                    context,
+                    (BuildContext context) {
+                      return BillEditScreen(
+                        billPlugin: widget.billPlugin,
+                        accountId: widget.accountId,
+                        initialDate: _selectedDay ?? DateTime.now(),
+                        onSaved: () {
+                          _loadMonthBills();
+                        },
+                      );
+                    },
+                    closedColor: Colors.transparent,
+                    closedElevation: 0.0,
+                    closedShape: const RoundedRectangleBorder(),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
 
@@ -10,39 +12,66 @@ Future<void> createNewFolder(
   String currentFolderId,
   VoidCallback onReload,
 ) async {
-  String? result = await showDialog<String>(
-    context: context,
-    builder: (BuildContext context) {
-      final TextEditingController folderNameController =
-          TextEditingController();
+  final TextEditingController folderNameController = TextEditingController();
 
-      return AlertDialog(
-        title: Text('notes_newFolder'.tr),
-        content: TextField(
-          controller: folderNameController,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: '文件夹名称'),
-          onSubmitted: (value) {
-            Navigator.pop(context, value);
-          },
+  String? result = await showDSDialog<String>(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (_) => DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'notes_newFolder'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSInput(
+                      controller: folderNameController,
+                      hint: '文件夹名称',
+                      onSubmitted: (value) => Navigator.pop(context, value),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_ok'.tr,
+                            onPressed:
+                                () => Navigator.pop(
+                                  context,
+                                  folderNameController.text,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('app_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, folderNameController.text);
-            },
-            child: Text('app_ok'.tr),
-          ),
-        ],
-      );
-    },
   );
+  folderNameController.dispose();
 
   if (result != null && result.isNotEmpty) {
     await controller.createFolder(result, currentFolderId);
@@ -57,37 +86,64 @@ Future<void> renameFolderDialog(
   Folder folder,
   VoidCallback onReload,
 ) async {
-  String? result = await showDialog<String>(
-    context: context,
-    builder: (BuildContext context) {
-      final TextEditingController renameController = TextEditingController(
-        text: folder.name,
-      );
-
-      return AlertDialog(
-        title: Text('notes_renameFolder'.tr),
-        content: TextField(
-          controller: renameController,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: '文件夹名称'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('app_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, renameController.text);
-            },
-            child: Text('app_ok'.tr),
-          ),
-        ],
-      );
-    },
+  final TextEditingController renameController = TextEditingController(
+    text: folder.name,
   );
+
+  String? result = await showDSDialog<String>(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (_) => DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'notes_renameFolder'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSInput(controller: renameController, hint: '文件夹名称'),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_ok'.tr,
+                            onPressed:
+                                () => Navigator.pop(
+                                  context,
+                                  renameController.text,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+  );
+  renameController.dispose();
 
   if (result != null && result.isNotEmpty) {
     await controller.renameFolder(folder.id, result);
@@ -102,25 +158,23 @@ Future<void> deleteFolderDialog(
   Folder folder,
   VoidCallback onReload,
 ) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showDSDialog<bool>(
     context: context,
+    theme: DSThemeBridge.resolve(context),
     builder:
-        (context) => AlertDialog(
-          title: Text('notes_deleteFolder'.tr),
-          content: Text('notes_deleteFolderConfirm'.tr),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('app_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                'app_delete'.tr,
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
+        (_) => DSThemeBridge(
+          child: Builder(
+            builder:
+                (context) => DSDialog(
+                  title: 'notes_deleteFolder'.tr,
+                  message: 'notes_deleteFolderConfirm'.tr,
+                  cancelText: 'app_cancel'.tr,
+                  confirmText: 'app_delete'.tr,
+                  confirmVariant: DSButtonVariant.destructive,
+                  onCancel: () => Navigator.of(context).pop(false),
+                  onConfirm: () => Navigator.of(context).pop(true),
+                ),
+          ),
         ),
   );
 

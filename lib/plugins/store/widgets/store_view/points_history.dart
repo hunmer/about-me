@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/plugins/store/models/points_log.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -7,10 +9,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models
 import 'package:aboutme/core/services/toast_service.dart';
 
 /// 排序顺序枚举
-enum SortOrder {
-  newestFirst,
-  oldestFirst,
-}
+enum SortOrder { newestFirst, oldestFirst }
 
 class PointsHistory extends StatefulWidget {
   final StoreController controller;
@@ -80,9 +79,14 @@ class _PointsHistoryState extends State<PointsHistory> {
 
     // 搜索过滤（按理由）
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered
-          .where((log) => log.reason.toLowerCase().contains(_searchQuery.toLowerCase()))
-          .toList();
+      filtered =
+          filtered
+              .where(
+                (log) => log.reason.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
     }
 
     // 类型过滤（获得/消耗）
@@ -94,11 +98,14 @@ class _PointsHistoryState extends State<PointsHistory> {
     // 日期范围过滤
     final dateRange = _filters['dateRange'] as DateTimeRange?;
     if (dateRange != null) {
-      filtered = filtered
-          .where((log) =>
-              !log.timestamp.isBefore(dateRange.start) &&
-              !log.timestamp.isAfter(dateRange.end))
-          .toList();
+      filtered =
+          filtered
+              .where(
+                (log) =>
+                    !log.timestamp.isBefore(dateRange.start) &&
+                    !log.timestamp.isAfter(dateRange.end),
+              )
+              .toList();
     }
 
     // 排序
@@ -127,16 +134,15 @@ class _PointsHistoryState extends State<PointsHistory> {
       if (mounted) {
         setState(() {
           final start = _currentPage * _pageSize;
-          final end = (start + _pageSize <= _filteredLogs.length)
-              ? start + _pageSize
-              : _filteredLogs.length;
+          final end =
+              (start + _pageSize <= _filteredLogs.length)
+                  ? start + _pageSize
+                  : _filteredLogs.length;
 
           if (_currentPage == 0) {
             _displayedLogs = _filteredLogs.sublist(start, end);
           } else {
-            _displayedLogs.addAll(
-              _filteredLogs.sublist(start, end),
-            );
+            _displayedLogs.addAll(_filteredLogs.sublist(start, end));
           }
 
           _currentPage++;
@@ -188,26 +194,30 @@ class _PointsHistoryState extends State<PointsHistory> {
         initialValue: const ['获得', '消耗'],
         builder: (context, value, onChanged) {
           final selected = value as List<String>? ?? ['获得', '消耗'];
-          return Wrap(
-            spacing: 8,
-            children: ['获得', '消耗'].map((type) {
-              final isSelected = selected.contains(type);
-              return FilterChip(
-                label: Text(type),
-                selected: isSelected,
-                onSelected: (bool isCurrentlySelected) {
-                  final newSelected = List<String>.from(selected);
-                  if (isCurrentlySelected) {
-                    if (!newSelected.contains(type)) newSelected.add(type);
-                  } else {
-                    newSelected.remove(type);
-                  }
-                  onChanged(newSelected);
-                },
-                selectedColor: Colors.green.withValues(alpha: 0.3),
-                checkmarkColor: Colors.green,
-              );
-            }).toList(),
+          // 第三方过滤栏回调：DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Wrap(
+              spacing: 8,
+              children:
+                  ['获得', '消耗'].map((type) {
+                    final isSelected = selected.contains(type);
+                    return DSChip(
+                      label: type,
+                      selected: isSelected,
+                      onSelected: (bool isCurrentlySelected) {
+                        final newSelected = List<String>.from(selected);
+                        if (isCurrentlySelected) {
+                          if (!newSelected.contains(type)) {
+                            newSelected.add(type);
+                          }
+                        } else {
+                          newSelected.remove(type);
+                        }
+                        onChanged(newSelected);
+                      },
+                    );
+                  }).toList(),
+            ),
           );
         },
         getBadge: (value) {
@@ -224,24 +234,32 @@ class _PointsHistoryState extends State<PointsHistory> {
         initialValue: null,
         builder: (context, value, onChanged) {
           final range = value as DateTimeRange?;
-          return TextButton.icon(
-            onPressed: () async {
-              final picked = await showDateRangePicker(
-                context: context,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now().add(const Duration(days: 30)),
-                initialDateRange: range,
-                locale: const Locale('zh', 'CN'),
-              );
-              if (picked != null) {
-                onChanged(picked);
-              }
-            },
-            icon: const Icon(Icons.calendar_today),
-            label: Text(
-              range == null
-                  ? 'store_selectDateRange'.tr
-                  : '${range.start.month}/${range.start.day} - ${range.end.month}/${range.end.day}',
+          // 第三方过滤栏回调：DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSButton(
+                    label:
+                        range == null
+                            ? 'store_selectDateRange'.tr
+                            : '${range.start.month}/${range.start.day} - ${range.end.month}/${range.end.day}',
+                    icon: DsIconKind.calendar,
+                    variant: DSButtonVariant.outline,
+                    size: DSButtonSize.sm,
+                    onPressed: () async {
+                      // DS 暂无日期范围选择器，保留 Material showDateRangePicker
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 30)),
+                        initialDateRange: range,
+                        locale: const Locale('zh', 'CN'),
+                      );
+                      if (picked != null) {
+                        onChanged(picked);
+                      }
+                    },
+                  ),
             ),
           );
         },
@@ -255,22 +273,23 @@ class _PointsHistoryState extends State<PointsHistory> {
         initialValue: 'newestFirst',
         builder: (context, value, onChanged) {
           final selected = value as String? ?? 'newestFirst';
-          return Wrap(
-            spacing: 8,
-            children: [
-              FilterChip(
-                label: Text('store_newestFirst'.tr),
-                selected: selected == 'newestFirst',
-                onSelected: (_) => onChanged('newestFirst'),
-                selectedColor: Colors.blue.withValues(alpha: 0.3),
-              ),
-              FilterChip(
-                label: Text('store_oldestFirst'.tr),
-                selected: selected == 'oldestFirst',
-                onSelected: (_) => onChanged('oldestFirst'),
-                selectedColor: Colors.blue.withValues(alpha: 0.3),
-              ),
-            ],
+          // 第三方过滤栏回调：DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Wrap(
+              spacing: 8,
+              children: [
+                DSChip(
+                  label: 'store_newestFirst'.tr,
+                  selected: selected == 'newestFirst',
+                  onSelected: (_) => onChanged('newestFirst'),
+                ),
+                DSChip(
+                  label: 'store_oldestFirst'.tr,
+                  selected: selected == 'oldestFirst',
+                  onSelected: (_) => onChanged('oldestFirst'),
+                ),
+              ],
+            ),
           );
         },
         getBadge: (value) => null,
@@ -288,38 +307,34 @@ class _PointsHistoryState extends State<PointsHistory> {
   }
 
   Widget _buildEmptyView() {
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      title: Icon(
-        Icons.history,
-        color: Colors.green.shade600,
-        size: 24,
-      ),
+      title: DsIcon(DsIconKind.clock, color: theme.success, size: 24),
       largeTitle: 'store_pointsHistory'.tr,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history_outlined,
-              size: 64,
-              color: Colors.grey[400],
+      body: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DsIcon(DsIconKind.clock, size: 64, color: theme.textSub),
+                const SizedBox(height: 16),
+                Text(
+                  'store_noRecords'.tr,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'store_earnPointsTip'.tr,
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'store_noRecords'.tr,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'store_earnPointsTip'.tr,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
       enableLargeTitle: true,
       enableSearchBar: false,
@@ -335,116 +350,164 @@ class _PointsHistoryState extends State<PointsHistory> {
         .fold<int>(0, (sum, log) => sum + log.value);
 
     return SuperCupertinoNavigationWrapper(
-      title: Icon(
-        Icons.history,
-        color: Colors.green.shade600,
-        size: 24,
+      title: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DsIcon(DsIconKind.clock, color: theme.success, size: 24);
+        },
       ),
       largeTitle: 'store_pointsHistory'.tr,
-      body: Column(
-        children: [
-          // 统计信息
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        '当前积分',
-                        widget.controller.currentPoints.toString(),
-                        Colors.purple,
-                        Icons.account_balance_wallet,
+                // 统计信息
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              '当前积分',
+                              widget.controller.currentPoints.toString(),
+                              theme.primary,
+                              DsIconKind.piggy,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              '总获得',
+                              '+$totalEarned',
+                              theme.success,
+                              DsIconKind.plus,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              '总消耗',
+                              '-$totalSpent',
+                              theme.danger,
+                              DsIconKind.minus,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatCard(
-                        '总获得',
-                        '+$totalEarned',
-                        Colors.green,
-                        Icons.add_circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatCard(
-                        '总消耗',
-                        '-$totalSpent',
-                        Colors.red,
-                        Icons.remove_circle,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-          // 积分历史列表
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(8),
-              itemCount: _displayedLogs.length +
-                  (_currentPage * _pageSize < _filteredLogs.length ? 1 : 0),
-              itemBuilder: (context, index) {
-                // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
-                if (index == _displayedLogs.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
+                // 积分历史列表
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(8),
+                    itemCount:
+                        _displayedLogs.length +
+                        (_currentPage * _pageSize < _filteredLogs.length
+                            ? 1
+                            : 0),
+                    itemBuilder: (context, index) {
+                      // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
+                      if (index == _displayedLogs.length) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DSLoadingDots(),
+                          ),
+                        );
+                      }
 
-                final log = _displayedLogs[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: log.type == '获得' ? Colors.green.shade100 : Colors.red.shade100,
-                      child: Icon(
-                        log.type == '获得' ? Icons.add : Icons.remove,
-                        color: log.type == '获得' ? Colors.green : Colors.red,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      'store_pointsHistoryEntry'.tr
-                          .replaceFirst('{value}', log.value.toString())
-                          .replaceFirst('{type}', log.type),
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    subtitle: Text(
-                      log.reason,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        Text(
-                          '${log.timestamp.month}/${log.timestamp.day}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
+                      final log = _displayedLogs[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        child: DSCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              DSAvatar(
+                                size: 36,
+                                color:
+                                    log.type == '获得'
+                                        ? theme.success
+                                        : theme.danger,
+                                child: DsIcon(
+                                  log.type == '获得'
+                                      ? DsIconKind.plus
+                                      : DsIconKind.minus,
+                                  size: 18,
+                                  color: theme.onPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'store_pointsHistoryEntry'.tr
+                                          .replaceFirst(
+                                            '{value}',
+                                            log.value.toString(),
+                                          )
+                                          .replaceFirst('{type}', log.type),
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
+                                    ),
+                                    Text(
+                                      log.reason,
+                                      style: DsTypography.caption.copyWith(
+                                        color: theme.textSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}',
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${log.timestamp.month}/${log.timestamp.day}',
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
       enableLargeTitle: true,
       enableSearchBar: true,
@@ -454,22 +517,31 @@ class _PointsHistoryState extends State<PointsHistory> {
       onSearchChanged: _onSearchChanged,
       onMultiFilterChanged: _onMultiFilterChanged,
       actions: [
-        TextButton(
-          onPressed: () {
-            _showClearLogsDialog(context);
-          },
-          child: Text(
-            '清空',
-            style: TextStyle(
-              color: Colors.red[400],
-            ),
+        // 第三方导航栏回调：DS 组件需包 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder:
+                (context) => DSButton(
+                  label: '清空',
+                  variant: DSButtonVariant.destructive,
+                  size: DSButtonSize.sm,
+                  onPressed: () {
+                    _showClearLogsDialog(context);
+                  },
+                ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String title,
+    String value,
+    Color color,
+    DsIconKind icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -482,12 +554,12 @@ class _PointsHistoryState extends State<PointsHistory> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 16),
+              DsIcon(icon, color: color, size: 16),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: DsTypography.caption.copyWith(
                     color: color,
                     fontWeight: FontWeight.w500,
                   ),
@@ -496,45 +568,37 @@ class _PointsHistoryState extends State<PointsHistory> {
             ],
           ),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(value, style: DsTypography.title.copyWith(color: color)),
         ],
       ),
     );
   }
 
   void _showClearLogsDialog(BuildContext context) {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('store_clearPointsHistory'.tr),
-        content: Text('store_confirmClearPointsHistory'.tr),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('store_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await widget.controller.clearPointsLogs();
-              _loadInitialData();
-              if (mounted) {
-                Toast.success('积分记录已清空');
-              }
-            },
-            child: Text(
-              '确定',
-              style: TextStyle(color: Colors.red[400]),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'store_clearPointsHistory'.tr,
+                    message: 'store_confirmClearPointsHistory'.tr,
+                    cancelText: 'store_cancel'.tr,
+                    confirmText: '确定',
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () async {
+                      Navigator.pop(context);
+                      await widget.controller.clearPointsLogs();
+                      _loadInitialData();
+                      if (mounted) {
+                        Toast.success('积分记录已清空');
+                      }
+                    },
+                  ),
             ),
           ),
-        ],
-      ),
     );
   }
 }

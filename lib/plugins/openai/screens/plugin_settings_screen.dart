@@ -12,68 +12,78 @@ class PluginSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold/AppBar 属结构性组件,刻意保留 Material;列表项前导图标
-    // (cloud/model_training/text_snippet)在 DS 暂无等价图标,一并保留 Material
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material;列表项已换 DSListItem
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
           return Scaffold(
             appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
+              leading: DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
                 onPressed: () => Navigator.maybePop(context),
               ),
               title: Text('openai_pluginSettingsTitle'.tr),
             ),
-            body: ListView(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud),
-                  title: Text('openai_providerSettingsTitle'.tr),
-                  subtitle: Text('openai_pluginDescription'.tr),
-                  trailing: DsIcon(
-                    DsIconKind.chevronRight,
-                    size: 20,
-                    color: theme.textSub,
-                  ),
-                  onTap: () {
-                    NavigationHelper.push(
-                      context,
-                      const ProviderSettingsScreen(),
-                    );
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.model_training),
-                  title: Text('openai_modelManagement'.tr),
-                  subtitle: Text('openai_modelManagementDescription'.tr),
-                  trailing: DsIcon(
-                    DsIconKind.chevronRight,
-                    size: 20,
-                    color: theme.textSub,
-                  ),
-                  onTap: () {
-                    NavigationHelper.push(context, const ModelListScreen());
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.text_snippet),
-                  title: Text('openai_promptPresetManagement'.tr),
-                  subtitle: Text('openai_promptPresetManagementDescription'.tr),
-                  trailing: DsIcon(
-                    DsIconKind.chevronRight,
-                    size: 20,
-                    color: theme.textSub,
-                  ),
-                  onTap: () {
-                    NavigationHelper.push(context, const PromptPresetScreen());
-                  },
-                ),
-                const Divider(),
-              ],
+            body: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return ListView(
+                  padding: EdgeInsets.all(theme.spacing.lg),
+                  children: [
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.gear,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'openai_providerSettingsTitle'.tr,
+                      subtitle: 'openai_pluginDescription'.tr,
+                      showChevron: true,
+                      onTap: () {
+                        NavigationHelper.push(
+                          context,
+                          const ProviderSettingsScreen(),
+                        );
+                      },
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.bot,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'openai_modelManagement'.tr,
+                      subtitle: 'openai_modelManagementDescription'.tr,
+                      showChevron: true,
+                      onTap: () {
+                        NavigationHelper.push(context, const ModelListScreen());
+                      },
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.book,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'openai_promptPresetManagement'.tr,
+                      subtitle: 'openai_promptPresetManagementDescription'.tr,
+                      showChevron: true,
+                      onTap: () {
+                        NavigationHelper.push(
+                          context,
+                          const PromptPresetScreen(),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           );
         },

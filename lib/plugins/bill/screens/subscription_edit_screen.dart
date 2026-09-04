@@ -149,15 +149,12 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
         elevation: 0,
         leading: Container(
           margin: const EdgeInsets.symmetric(horizontal: 8),
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: EdgeInsets.zero,
-            ),
-            child: Text(
-              'bill_cancel'.tr,
-              style: TextStyle(fontSize: 16, color: theme.primary),
+          child: DSThemeBridge(
+            child: DSButton(
+              label: 'bill_cancel'.tr,
+              variant: DSButtonVariant.ghost,
+              size: DSButtonSize.sm,
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ),
         ),
@@ -282,27 +279,18 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 children: [
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 8),
-                    child: TextButton(
-                      onPressed: () {
-                        // 触发表单提交
-                        final wrapper =
-                            context
-                                .findAncestorStateOfType<
-                                  FormBuilderWrapperState
-                                >();
-                        wrapper?.submitForm();
-                      },
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Text(
-                        'bill_save'.tr,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: DSThemeBridge.resolve(context).primary,
-                        ),
+                    child: DSThemeBridge(
+                      child: DSButton(
+                        label: 'bill_save'.tr,
+                        onPressed: () {
+                          // 触发表单提交
+                          final wrapper =
+                              context
+                                  .findAncestorStateOfType<
+                                    FormBuilderWrapperState
+                                  >();
+                          wrapper?.submitForm();
+                        },
                       ),
                     ),
                   ),

@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
@@ -39,9 +41,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   late NotesController controller;
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'notes/',
-  ];
+  static const List<String> _refreshableFiles = ['notes/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -60,6 +60,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       return false;
     }
   }
+
   late ClientNotesRepository _repository;
   late NotesUseCase _useCase;
   bool _isInitialized = false;
@@ -138,7 +139,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   Widget? buildCardView(BuildContext context) {
     if (!_isInitialized) return null;
 
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final totalNotes = getTotalNotesCount();
     final recentNotes = getRecentNotesCount();
 
@@ -147,7 +148,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部图标和标题
+          // 顶部图标和标题（icon 为插件注册的持久化 IconData，保留 Material Icons）
           Row(
             children: [
               Container(
@@ -163,9 +164,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
               Text(
                 'notes_name'.tr,
 
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -183,11 +182,12 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'notes_totalNotes'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '$totalNotes',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -199,11 +199,12 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'notes_recentNotes'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '$recentNotes',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -224,8 +225,7 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   }
 
   @override
-  Future<void> registerToApp(
-    pluginManager, configManager) async {
+  Future<void> registerToApp(pluginManager, configManager) async {
     // 注册插件到应用
     // 插件已在 initialize() 中完成初始化
     // 这里可以添加额外的应用级注册逻辑

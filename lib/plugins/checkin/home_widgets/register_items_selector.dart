@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
@@ -99,28 +101,22 @@ class _CheckinItemsSelectorWidget extends LiveSelectorWidget {
   /// 自定义空状态（显示"暂无签到项目"）
   @override
   Widget buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.surfaceAlt,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.dashboard,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.grid, size: 48, color: theme.textSub),
             const SizedBox(height: 8),
             Text(
               '暂无签到项目',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),

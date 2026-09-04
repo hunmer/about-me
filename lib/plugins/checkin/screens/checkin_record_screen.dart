@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
@@ -64,9 +66,7 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
         recordsByDate.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('checkin_checkinRecordsTitle'.tr),
-      ),
+      appBar: AppBar(title: Text('checkin_checkinRecordsTitle'.tr)),
       body:
           sortedDates.isEmpty
               ? _buildEmptyState()
@@ -79,82 +79,106 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
                     (a, b) => b.checkinTime.compareTo(a.checkinTime),
                   ); // 按打卡时间降序排序
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 日期标题
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withValues(alpha: 0.5),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                _dateFormat.format(date),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${records.length}次打卡',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // 打卡记录列表
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: records.length,
-                          itemBuilder: (context, recordIndex) {
-                            final record = records[recordIndex];
-                            return ListTile(
-                              title: Row(
-                                children: [
-                                  Text(
-                                    '${_timeFormat.format(record.startTime)} - ${_timeFormat.format(record.endTime)}',
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '打卡时间：${_timeFormat.format(record.checkinTime)}',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                              subtitle:
-                                  record.note != null
-                                      ? Text(
-                                        record.note!,
-                                        style:
-                                            Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall,
-                                      )
-                                      : null,
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed:
-                                    () => _showDeleteConfirmDialog(
-                                      records[recordIndex].checkinTime,
+                    child: DSThemeBridge(
+                      child: Builder(
+                        builder: (context) {
+                          final theme = DSThemeBridge.resolve(context);
+                          return DSCard(
+                            padding: EdgeInsets.zero,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 日期标题
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: theme.surfaceAlt,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12),
                                     ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _dateFormat.format(date),
+                                        style: DsTypography.heading.copyWith(
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${records.length}次打卡',
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // 打卡记录列表
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: records.length,
+                                  itemBuilder: (context, recordIndex) {
+                                    final record = records[recordIndex];
+                                    return Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${_timeFormat.format(record.startTime)} - ${_timeFormat.format(record.endTime)}',
+                                                style: DsTypography.body
+                                                    .copyWith(
+                                                      color: theme.text,
+                                                    ),
+                                              ),
+                                              Text(
+                                                '打卡时间：${_timeFormat.format(record.checkinTime)}',
+                                                style: DsTypography.caption
+                                                    .copyWith(
+                                                      color: theme.textSub,
+                                                    ),
+                                              ),
+                                              if (record.note != null)
+                                                Text(
+                                                  record.note!,
+                                                  style: DsTypography.caption
+                                                      .copyWith(
+                                                        color: theme.textSub,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        DSIconButton(
+                                          icon: DsIconKind.trash,
+                                          size: 36,
+                                          color: theme.surfaceAlt,
+                                          iconColor: theme.danger,
+                                          onPressed:
+                                              () => _showDeleteConfirmDialog(
+                                                records[recordIndex]
+                                                    .checkinTime,
+                                              ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   );
                 },
@@ -163,26 +187,21 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
   }
 
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.event_busy,
-            size: 64,
-            color: Theme.of(context).disabledColor,
-          ),
+          Icon(Icons.event_busy, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
             'checkin_noRecords'.tr,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: DsTypography.heading.copyWith(color: theme.text),
           ),
           const SizedBox(height: 8),
           Text(
             '点击打卡按钮开始记录',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).hintColor,
-            ),
+            style: DsTypography.body.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -190,36 +209,27 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
   }
 
   void _showDeleteConfirmDialog(DateTime recordTime) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(
-              'checkin_deleteCheckinRecordTitle'.tr,
-            ),
-            content: Text(
-              'checkin_deleteCheckinRecordMessage'.tr,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  // 使用 controller 处理取消打卡记录
-                  await widget.controller.cancelCheckinRecord(widget.checkinItem, recordTime);
-                  if (mounted) {
-                    setState(() {});
-                  }
-                },
-                child: Text(
-                  'app_delete'.tr,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+          (context) => DSDialog(
+            title: 'checkin_deleteCheckinRecordTitle'.tr,
+            message: 'checkin_deleteCheckinRecordMessage'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'app_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () async {
+              Navigator.pop(context);
+              // 使用 controller 处理取消打卡记录
+              await widget.controller.cancelCheckinRecord(
+                widget.checkinItem,
+                recordTime,
+              );
+              if (mounted) {
+                setState(() {});
+              }
+            },
           ),
     );
   }

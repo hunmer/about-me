@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/widgets/store_view/product_list.dart';
 import 'package:aboutme/plugins/store/widgets/store_view/user_items.dart';
 import 'package:aboutme/plugins/store/widgets/store_view/points_history.dart';
@@ -58,89 +60,131 @@ class _StoreBottomBarState extends State<StoreBottomBar>
   /// 显示添加积分对话框
   void _showAddPointsDialog() {
     final TextEditingController pointsController = TextEditingController();
-    final TextEditingController reasonController = TextEditingController(text: 'store_pointsAdjustmentDefaultReason'.tr);
+    final TextEditingController reasonController = TextEditingController(
+      text: 'store_pointsAdjustmentDefaultReason'.tr,
+    );
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('store_addPointsDialogTitle'.tr),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: pointsController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'store_pointsAmountLabel'.tr,
-                hintText: '请输入积分数量',
-                prefixIcon: const Icon(Icons.add),
-              ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'store_addPointsDialogTitle'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: pointsController,
+                        keyboardType: TextInputType.number,
+                        label: 'store_pointsAmountLabel'.tr,
+                        hint: '请输入积分数量',
+                        prefix: DsIcon(
+                          DsIconKind.plus,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSInput(
+                        controller: reasonController,
+                        label: 'store_reasonLabel'.tr,
+                        hint: '请输入添加原因',
+                        prefix: DsIcon(
+                          DsIconKind.book,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'store_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'store_add'.tr,
+                              onPressed: () async {
+                                final points = int.tryParse(
+                                  pointsController.text,
+                                );
+                                if (points == null || points <= 0) {
+                                  Toast.error('store_priceInvalid'.tr);
+                                  return;
+                                }
+
+                                final reason =
+                                    reasonController.text.isEmpty
+                                        ? 'store_pointsAdjustmentDefaultReason'
+                                            .tr
+                                        : reasonController.text;
+
+                                Navigator.pop(context);
+                                await widget.plugin.controller.addPoints(
+                                  points,
+                                  reason,
+                                );
+
+                                if (mounted) {
+                                  Toast.success(
+                                    '${'store_pointsAdded'.tr}: +$points',
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                labelText: 'store_reasonLabel'.tr,
-                hintText: '请输入添加原因',
-                prefixIcon: const Icon(Icons.note_alt_outlined),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('store_cancel'.tr),
           ),
-          TextButton(
-            onPressed: () async {
-              final points = int.tryParse(pointsController.text);
-              if (points == null || points <= 0) {
-                Toast.error('store_priceInvalid'.tr);
-                return;
-              }
-
-              final reason = reasonController.text.isEmpty
-                  ? 'store_pointsAdjustmentDefaultReason'.tr
-                  : reasonController.text;
-
-              Navigator.pop(context);
-              await widget.plugin.controller.addPoints(points, reason);
-
-              if (mounted) {
-                Toast.success('${'store_pointsAdded'.tr}: +$points');
-              }
-            },
-            child: Text('store_add'.tr),
-          ),
-        ],
-      ),
     );
   }
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      backgroundColor: widget.plugin.color,
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: Icon(
-        _currentPage == 0 ? Icons.add_shopping_cart : Icons.add_chart,
-        color: widget.plugin.color.computeLuminance() < 0.5
-            ? Colors.white
-            : Colors.black,
-        size: 32,
+    // DSFab 需 AppTheme 祖先，包一层主题桥
+    return DSThemeBridge(
+      child: DSFab(
+        size: 56,
+        color: widget.plugin.color,
+        iconColor:
+            widget.plugin.color.computeLuminance() < 0.5
+                ? const Color(0xFFFFFFFF)
+                : const Color(0xFF000000),
+        icon: _currentPage == 0 ? DsIconKind.cart : DsIconKind.plus,
+        onPressed: () {
+          if (_currentPage == 0) {
+            NavigationHelper.push(
+              context,
+              AddProductPage(controller: widget.plugin.controller),
+            );
+          } else if (_currentPage == 2) {
+            _showAddPointsDialog();
+          }
+        },
       ),
-      onPressed: () {
-        if (_currentPage == 0) {
-          NavigationHelper.push(
-            context,
-            AddProductPage(controller: widget.plugin.controller),
-          );
-        } else if (_currentPage == 2) {
-          _showAddPointsDialog();
-        }
-      },
     );
   }
 
@@ -151,30 +195,22 @@ class _StoreBottomBarState extends State<StoreBottomBar>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          ProductList(controller: widget.plugin.controller),
-          UserItems(controller: widget.plugin.controller),
-          PointsHistory(controller: widget.plugin.controller),
-        ],
-      ),
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              ProductList(controller: widget.plugin.controller),
+              UserItems(controller: widget.plugin.controller),
+              PointsHistory(controller: widget.plugin.controller),
+            ],
+          ),
       fab: _buildFab(),
       children: [
-        Tab(
-          icon: Icon(Icons.shopping_bag),
-          text: 'store_productList'.tr,
-        ),
-        Tab(
-          icon: Icon(Icons.inventory),
-          text: 'store_myItems'.tr,
-        ),
-        Tab(
-          icon: Icon(Icons.history),
-          text: 'store_pointsHistory'.tr,
-        ),
+        Tab(icon: Icon(Icons.shopping_bag), text: 'store_productList'.tr),
+        Tab(icon: Icon(Icons.inventory), text: 'store_myItems'.tr),
+        Tab(icon: Icon(Icons.history), text: 'store_pointsHistory'.tr),
       ],
     );
   }

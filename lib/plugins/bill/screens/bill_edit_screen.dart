@@ -250,9 +250,19 @@ class _BillEditScreenState extends State<BillEditScreen> {
             fontSize: 18,
           ),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: theme.text),
-          onPressed: widget.onCancel ?? () => Navigator.of(context).pop(),
+        leading: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 40,
+                color: theme.surface,
+                iconColor: theme.text,
+                onPressed: widget.onCancel ?? () => Navigator.of(context).pop(),
+              );
+            },
+          ),
         ),
       ),
       body: Column(
@@ -573,7 +583,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.calculate, color: primaryColor),
+              DsIcon(DsIconKind.piggy, color: primaryColor),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

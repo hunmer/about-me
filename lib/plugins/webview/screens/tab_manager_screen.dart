@@ -27,14 +27,20 @@ class TabManagerScreen extends StatelessWidget {
               appBar: AppBar(
                 title: Text('webview_tab_manager'.tr),
                 actions: [
-                  // 关闭所有标签页
+                  // 关闭所有标签页(DS 按钮自带 DSThemeBridge 提供 AppTheme)
                   Consumer<TabManager>(
                     builder: (context, tabManager, _) {
                       if (tabManager.tabs.isEmpty) return const SizedBox();
-                      return IconButton(
-                        icon: const Icon(Icons.close_fullscreen),
-                        onPressed: () => _confirmCloseAll(context),
-                        tooltip: 'webview_close_all_tabs'.tr,
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSThemeBridge(
+                        child: DSIconButton(
+                          icon: DsIconKind.close,
+                          size: 40,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          onPressed: () => _confirmCloseAll(context),
+                          tooltip: 'webview_close_all_tabs'.tr,
+                        ),
                       );
                     },
                   ),

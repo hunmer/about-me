@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
@@ -30,12 +32,12 @@ class CheckinDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final checkedCount = items.where(_isChecked).length;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -55,19 +57,16 @@ class CheckinDayCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.check_circle_outline,
+                          DsIcon(
+                            DsIconKind.check,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.textSub.withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'checkin_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                           ),
                         ],
@@ -96,7 +95,7 @@ class CheckinDayCard extends StatelessWidget {
 
   /// 单条签到项行：图标 + 名称 + 签到状态
   Widget _buildItemRow(BuildContext context, CheckinItem item) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final checked = _isChecked(item);
     final recordCount = item.getDateRecords(date).length;
 
@@ -116,9 +115,9 @@ class CheckinDayCard extends StatelessWidget {
             Expanded(
               child: Text(
                 item.name,
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: DsTypography.caption.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: checked ? null : theme.disabledColor,
+                  color: checked ? theme.text : theme.textSub,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -135,13 +134,13 @@ class CheckinDayCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check, size: 12, color: item.color),
+                    DsIcon(DsIconKind.check, size: 12, color: item.color),
                     if (recordCount > 1)
                       Padding(
                         padding: const EdgeInsets.only(left: 2),
                         child: Text(
                           '$recordCount',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: DsTypography.caption.copyWith(
                             fontSize: 11,
                             color: item.color,
                             fontWeight: FontWeight.bold,
@@ -155,7 +154,7 @@ class CheckinDayCard extends StatelessWidget {
               Icon(
                 Icons.radio_button_unchecked,
                 size: 16,
-                color: theme.disabledColor.withValues(alpha: 0.5),
+                color: theme.textSub.withValues(alpha: 0.5),
               ),
           ],
         ),

@@ -247,15 +247,20 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                       ),
                       suffixIcon:
                           _isUrlBarFocused
-                              ? IconButton(
-                                icon: DsIcon(
-                                  DsIconKind.close,
-                                  size: 18,
-                                  color: theme.textSub,
-                                ),
+                              ? Pressable(
                                 onPressed: () {
                                   _urlController.clear();
                                 },
+                                semanticLabel: '清空地址栏',
+                                builder:
+                                    (context, states) => Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: DsIcon(
+                                        DsIconKind.close,
+                                        size: 18,
+                                        color: theme.textSub,
+                                      ),
+                                    ),
                               )
                               : null,
                     ),

@@ -117,7 +117,7 @@ class WebViewCardItem extends StatelessWidget {
 
   Widget _buildIcon(BuildContext context) {
     // isDark 用于持久化图标配色（刻意保留 Material 图标与配色逻辑）
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = DSThemeBridge.resolve(context).isDark;
 
     // 如果有自定义图标（Material Icons）
     if (card.icon != null) {

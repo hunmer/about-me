@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
@@ -53,22 +56,22 @@ class _AddProductPageState extends State<AddProductPage> {
   }
 
   Future<void> _confirmArchive() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('store_confirmArchiveTitle'.tr),
-            content: Text('store_confirmArchiveMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('store_archiveButton'.tr),
-              ),
-            ],
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'store_confirmArchiveTitle'.tr,
+                    message: 'store_confirmArchiveMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'store_archiveButton'.tr,
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
+            ),
           ),
     );
 
@@ -79,25 +82,23 @@ class _AddProductPageState extends State<AddProductPage> {
   }
 
   Future<void> _confirmDelete() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('store_confirmDeleteTitle'.tr),
-            content: Text('store_confirmDeleteMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'store_deleteButton'.tr,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'store_confirmDeleteTitle'.tr,
+                    message: 'store_confirmDeleteMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'store_deleteButton'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
+            ),
           ),
     );
 
@@ -112,7 +113,10 @@ class _AddProductPageState extends State<AddProductPage> {
 
   Future<void> _submit(Map<String, dynamic> values) async {
     final imageValue = values['image'];
-    final imageUrl = imageValue is Map ? (imageValue['url'] as String?) ?? '' : (imageValue as String? ?? '');
+    final imageUrl =
+        imageValue is Map
+            ? (imageValue['url'] as String?) ?? ''
+            : (imageValue as String? ?? '');
     final priceValue = values['price'];
     final stockValue = values['stock'];
 
@@ -155,68 +159,111 @@ class _AddProductPageState extends State<AddProductPage> {
     _pointsRatioController.text = ratio.toString();
     _targetPriceController.clear();
 
-    showDialog(
+    showDSDialog(
       context: context,
+      barrierDismissible: true,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: const Text('积分计算器'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 积分与人民币比率
-                TextFormField(
-                  controller: _pointsRatioController,
-                  decoration: const InputDecoration(
-                    labelText: '积分 : 人民币 比率',
-                    hintText: '例如: 100 表示 100积分=1元',
-                    prefixIcon: Icon(Icons.calculate),
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '积分计算器',
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      // 积分与人民币比率
+                      DSInput(
+                        controller: _pointsRatioController,
+                        label: '积分 : 人民币 比率',
+                        hint: '例如: 100 表示 100积分=1元',
+                        prefix: DsIcon(
+                          DsIconKind.hash,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      // 目标商品价格
+                      DSInput(
+                        controller: _targetPriceController,
+                        label: '目标商品价格 (元)',
+                        hint: '输入商品价格',
+                        prefix: DsIcon(
+                          DsIconKind.piggy,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'app_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: '计算并填入',
+                              onPressed: () {
+                                final ratio =
+                                    double.tryParse(
+                                      _pointsRatioController.text,
+                                    ) ??
+                                    100.0;
+                                final targetPrice =
+                                    double.tryParse(
+                                      _targetPriceController.text,
+                                    ) ??
+                                    0.0;
+
+                                if (targetPrice <= 0) {
+                                  Toast.warning('请输入有效的价格');
+                                  return;
+                                }
+
+                                // 计算积分 = 价格 * 比率
+                                final points = (targetPrice * ratio).round();
+
+                                // 保存比率配置
+                                _savePointsRatio(ratio);
+
+                                // 更新表单中的 price 字段
+                                _formWrapperState?.patchValue({
+                                  'price': points.toString(),
+                                });
+
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 16),
-                // 目标商品价格
-                TextFormField(
-                  controller: _targetPriceController,
-                  decoration: const InputDecoration(
-                    labelText: '目标商品价格 (元)',
-                    hintText: '输入商品价格',
-                    prefixIcon: Icon(Icons.attach_money),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final ratio = double.tryParse(_pointsRatioController.text) ?? 100.0;
-                  final targetPrice = double.tryParse(_targetPriceController.text) ?? 0.0;
-
-                  if (targetPrice <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('请输入有效的价格')),
-                    );
-                    return;
-                  }
-
-                  // 计算积分 = 价格 * 比率
-                  final points = (targetPrice * ratio).round();
-
-                  // 保存比率配置
-                  _savePointsRatio(ratio);
-
-                  // 更新表单中的 price 字段
-                  _formWrapperState?.patchValue({'price': points.toString()});
-
-                  Navigator.pop(context);
-                },
-                child: const Text('计算并填入'),
-              ),
-            ],
           ),
     );
   }
@@ -228,21 +275,50 @@ class _AddProductPageState extends State<AddProductPage> {
         title: Text('store_addProductTitle'.tr),
         actions: [
           if (widget.product != null) ...[
-            IconButton(
-              icon: const Icon(Icons.archive),
-              onPressed: _confirmArchive,
-              tooltip: 'store_archiveButton'.tr,
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.download,
+                    size: 38,
+                    color: theme.surface,
+                    iconColor: theme.text,
+                    tooltip: 'store_archiveButton'.tr,
+                    onPressed: _confirmArchive,
+                  );
+                },
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: _confirmDelete,
-              tooltip: 'store_deleteButton'.tr,
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.trash,
+                    size: 38,
+                    color: theme.surface,
+                    iconColor: theme.danger,
+                    tooltip: 'store_deleteButton'.tr,
+                    onPressed: _confirmDelete,
+                  );
+                },
+              ),
             ),
           ],
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () => _formWrapperState?.submitForm(),
-            tooltip: 'store_saveButton'.tr,
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.check,
+                  size: 38,
+                  color: theme.primary,
+                  tooltip: 'store_saveButton'.tr,
+                  onPressed: () => _formWrapperState?.submitForm(),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -251,7 +327,9 @@ class _AddProductPageState extends State<AddProductPage> {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 32,
+              ),
               child: FormBuilderWrapper(
                 key: _formKey,
                 config: FormConfig(

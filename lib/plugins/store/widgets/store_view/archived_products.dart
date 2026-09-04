@@ -2,6 +2,8 @@
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
 import 'package:aboutme/plugins/store/widgets/product_card.dart';
@@ -18,11 +20,17 @@ class ArchivedProductsPage extends StatefulWidget {
 class _ArchivedProductsPageState extends State<ArchivedProductsPage> {
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
       appBar: AppBar(title: Text('store_archivedProductsTitle'.tr)),
       body:
           widget.controller.archivedProducts.isEmpty
-              ? Center(child: Text('store_noArchivedProducts'.tr))
+              ? Center(
+                child: Text(
+                  'store_noArchivedProducts'.tr,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+              )
               : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: widget.controller.archivedProducts.length,
@@ -38,68 +46,82 @@ class _ArchivedProductsPageState extends State<ArchivedProductsPage> {
   }
 
   Widget _buildArchivedProductCard(Product product) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          ProductCard(
-            product: product,
-            onExchange: () => _showRestoreConfirmation(product),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return Stack(
+            children: [
+              DSCard(
+                padding: EdgeInsets.zero,
+                child: ProductCard(
+                  product: product,
+                  onExchange: () => _showRestoreConfirmation(product),
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.archive, color: Colors.white, size: 16),
-                  SizedBox(width: 4),
-                  Text(
-                    'store_archivedLabel'.tr,
-                    style: TextStyle(color: Colors.white),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                ],
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DsIcon(
+                        DsIconKind.download,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'store_archivedLabel'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          Positioned(
-            bottom: 8,
-            right: 8,
-            child: FloatingActionButton.small(
-              heroTag: 'restore_${product.id}',
-              onPressed: () => _showRestoreConfirmation(product),
-              child: const Icon(Icons.unarchive),
-            ),
-          ),
-        ],
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: DSFab(
+                  size: 44,
+                  icon: DsIconKind.refresh,
+                  onPressed: () => _showRestoreConfirmation(product),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Future<void> _showRestoreConfirmation(Product product) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('store_confirmRestoreTitle'.tr),
-            content: Text('store_confirmRestoreMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('store_restore'.tr),
-              ),
-            ],
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'store_confirmRestoreTitle'.tr,
+                    message: 'store_confirmRestoreMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'store_restore'.tr,
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
+            ),
           ),
     );
 

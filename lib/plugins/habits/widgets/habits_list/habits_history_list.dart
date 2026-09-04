@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
 import 'package:aboutme/plugins/habits/widgets/common_record_list.dart';
@@ -39,7 +41,6 @@ class _HabitsHistoryListState extends State<HabitsHistoryList> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text('habits_history'.tr),
@@ -66,50 +67,38 @@ class _HabitsHistoryListState extends State<HabitsHistoryList> {
     BuildContext context,
     CompletionRecord record,
   ) async {
-
-    return await showDialog<bool>(
+    return await showDSDialog<bool>(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('habits_deleteRecord'.tr),
-                content: Text('habits_deleteRecordMessage'.tr),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text('habits_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      await widget.controller.deleteCompletionRecord(record.id);
-                      Navigator.pop(context, true);
-                    },
-                    child: Text('habits_delete'.tr),
-                  ),
-                ],
+              (context) => DSDialog(
+                title: 'habits_deleteRecord'.tr,
+                message: 'habits_deleteRecordMessage'.tr,
+                cancelText: 'habits_cancel'.tr,
+                confirmText: 'habits_delete'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onConfirm: () async {
+                  await widget.controller.deleteCompletionRecord(record.id);
+                  Navigator.pop(context, true);
+                },
               ),
         ) ??
         false;
   }
 
   Future<void> _showClearAllDialog(BuildContext context) async {
-
     final shouldClear =
-        await showDialog<bool>(
+        await showDSDialog<bool>(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('habits_clearAllRecords'.tr),
-                content: Text('habits_deleteRecordMessage'.tr),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text('habits_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text('habits_clearAllRecords'.tr),
-                  ),
-                ],
+              (context) => DSDialog(
+                title: 'habits_clearAllRecords'.tr,
+                message: 'habits_deleteRecordMessage'.tr,
+                cancelText: 'habits_cancel'.tr,
+                confirmText: 'habits_clearAllRecords'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onConfirm: () => Navigator.pop(context, true),
               ),
         ) ??
         false;

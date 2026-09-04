@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
@@ -18,10 +20,7 @@ class HabitTimerSelectorScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int? widgetId;
 
-  const HabitTimerSelectorScreen({
-    super.key,
-    this.widgetId,
-  });
+  const HabitTimerSelectorScreen({super.key, this.widgetId});
 
   @override
   State<HabitTimerSelectorScreen> createState() =>
@@ -87,8 +86,10 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
       if (primaryColorStr != null) {
         final colorValue = int.tryParse(primaryColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('primary', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'primary',
+            Color(colorValue),
+          );
         }
       }
 
@@ -99,8 +100,10 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
       if (accentColorStr != null) {
         final colorValue = int.tryParse(accentColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -111,8 +114,10 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
       if (buttonColorStr != null) {
         final colorValue = int.tryParse(buttonColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('button', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'button',
+            Color(colorValue),
+          );
         }
       }
 
@@ -137,10 +142,9 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
   Habit? _getSelectedHabit() {
     if (_selectedHabitId == null) return null;
     try {
-      return _habitsPlugin
-          .getHabitController()
-          .getHabits()
-          .firstWhere((habit) => habit.id == _selectedHabitId);
+      return _habitsPlugin.getHabitController().getHabits().firstWhere(
+        (habit) => habit.id == _selectedHabitId,
+      );
     } catch (_) {
       return null;
     }
@@ -150,7 +154,9 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+        ),
       );
     }
 
@@ -164,69 +170,52 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: habits.isEmpty
-          ? _buildEmptyState()
-          : WidgetConfigEditor(
+      body:
+          habits.isEmpty
+              ? _buildEmptyState()
+              : WidgetConfigEditor(
                 widgetSize: WidgetSize.large,
-              initialConfig: _widgetConfig,
-              previewTitle: '计时器预览',
-              onConfigChanged: (config) {
-                setState(() => _widgetConfig = config);
-              },
-              previewBuilder: _buildPreview,
-              customConfigWidgets: [
-                _buildHabitSelector(),
-              ],
-            ),
-      bottomNavigationBar: _selectedHabitId != null
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: _saveAndFinish,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                initialConfig: _widgetConfig,
+                previewTitle: '计时器预览',
+                onConfigChanged: (config) {
+                  setState(() => _widgetConfig = config);
+                },
+                previewBuilder: _buildPreview,
+                customConfigWidgets: [_buildHabitSelector()],
+              ),
+      bottomNavigationBar:
+          _selectedHabitId != null
+              ? SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DSThemeBridge(
+                    child: DSButton(
+                      label: '确认配置',
+                      size: DSButtonSize.lg,
+                      expand: true,
+                      onPressed: _saveAndFinish,
                     ),
                   ),
-                  child: const Text(
-                    '确认配置',
-                    style: TextStyle(fontSize: 16),
-                  ),
                 ),
-              ),
-            )
-          : null,
+              )
+              : null,
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.auto_awesome,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.auto_awesome, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
-          Text(
-            '暂无习惯',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('暂无习惯', style: DsTypography.body.copyWith(color: theme.textSub)),
           const SizedBox(height: 8),
           Text(
             '请先在习惯插件中创建习惯',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -235,19 +224,17 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
 
   /// 构建习惯选择器
   Widget _buildHabitSelector() {
+    final theme = DSThemeBridge.resolve(context);
     final habits = _habitsPlugin.getHabitController().getHabits();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
             '选择习惯',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: DsTypography.heading.copyWith(color: theme.text),
           ),
         ),
         SizedBox(
@@ -270,14 +257,13 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                   width: 100,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Colors.grey[200],
+                    color:
+                        isSelected
+                            ? theme.primary.mixWhite(0.88)
+                            : theme.surfaceAlt,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.transparent,
+                      color: isSelected ? theme.primary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -292,17 +278,13 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                             fontFamily: 'MaterialIcons',
                           ),
                           size: 32,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[600],
+                          color: isSelected ? theme.primary : theme.textSub,
                         )
                       else
                         Icon(
                           Icons.auto_awesome,
                           size: 32,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[600],
+                          color: isSelected ? theme.primary : theme.textSub,
                         ),
                       const SizedBox(height: 8),
                       // 习惯名称
@@ -316,10 +298,10 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.grey[800],
+                                isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                            color: isSelected ? theme.primary : theme.text,
                           ),
                         ),
                       ),
@@ -367,20 +349,21 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: selectedHabit?.icon != null
-                      ? Icon(
-                          IconData(
-                            int.parse(selectedHabit!.icon!),
-                            fontFamily: 'MaterialIcons',
+                  child:
+                      selectedHabit?.icon != null
+                          ? Icon(
+                            IconData(
+                              int.parse(selectedHabit!.icon!),
+                              fontFamily: 'MaterialIcons',
+                            ),
+                            size: 16,
+                            color: accentColor,
+                          )
+                          : Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: accentColor,
                           ),
-                          size: 16,
-                          color: accentColor,
-                        )
-                      : Icon(
-                          Icons.auto_awesome,
-                          size: 16,
-                          color: accentColor,
-                        ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -455,9 +438,12 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
       if (selectedHabit == null) return;
 
       // 1. 获取配置值
-      final primaryColor = _widgetConfig.getColor('primary') ?? const Color(0xFFF3F4F6);
-      final accentColor = _widgetConfig.getColor('accent') ?? const Color(0xFF1F2937);
-      final buttonColor = _widgetConfig.getColor('button') ?? const Color(0xFF10B981);
+      final primaryColor =
+          _widgetConfig.getColor('primary') ?? const Color(0xFFF3F4F6);
+      final accentColor =
+          _widgetConfig.getColor('accent') ?? const Color(0xFF1F2937);
+      final buttonColor =
+          _widgetConfig.getColor('button') ?? const Color(0xFF10B981);
       final opacity = _widgetConfig.opacity;
 
       // 2. 保存习惯信息
@@ -534,23 +520,26 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
       final habits = _habitsPlugin.getHabitController().getHabits();
 
       // 构建习惯数据（包含所有习惯，供Android端查找）
-      final habitsData = habits.map((habit) {
-        // 获取计时器状态
-        final timerData =
-            _habitsPlugin.timerController.getTimerData(habit.id);
-        final isRunning =
-            _habitsPlugin.timerController.isHabitTiming(habit.id);
+      final habitsData =
+          habits.map((habit) {
+            // 获取计时器状态
+            final timerData = _habitsPlugin.timerController.getTimerData(
+              habit.id,
+            );
+            final isRunning = _habitsPlugin.timerController.isHabitTiming(
+              habit.id,
+            );
 
-        return {
-          'id': habit.id,
-          'title': habit.title,
-          'durationMinutes': habit.durationMinutes,
-          'icon': habit.icon,
-          'isRunning': isRunning,
-          'elapsedSeconds': timerData?['elapsedSeconds'] ?? 0,
-          'isCountdown': timerData?['isCountdown'] ?? true,
-        };
-      }).toList();
+            return {
+              'id': habit.id,
+              'title': habit.title,
+              'durationMinutes': habit.durationMinutes,
+              'icon': habit.icon,
+              'isRunning': isRunning,
+              'elapsedSeconds': timerData?['elapsedSeconds'] ?? 0,
+              'isCountdown': timerData?['isCountdown'] ?? true,
+            };
+          }).toList();
 
       // 保存为 JSON 字符串
       await HomeWidget.saveWidgetData<String>(

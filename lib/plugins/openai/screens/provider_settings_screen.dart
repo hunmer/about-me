@@ -150,10 +150,21 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
         appBar: AppBar(
           title: Text('openai_providerSettingsTitle'.tr),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: _addProvider,
-              tooltip: 'openai_addProviderTooltip'.tr,
+            // DS 按钮自带 DSThemeBridge 提供 AppTheme
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.plus,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _addProvider,
+                    tooltip: 'openai_addProviderTooltip'.tr,
+                  );
+                },
+              ),
             ),
           ],
         ),

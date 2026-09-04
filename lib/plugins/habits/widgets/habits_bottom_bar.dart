@@ -12,6 +12,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// Habits 插件的底部栏组件
 /// 提供习惯列表和技能列表两个 Tab 的切换功能
@@ -84,7 +85,7 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
                 title: Text('habits_newHabit'.tr),
                 backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
               ),
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor: DSThemeBridge.resolve(context).background,
               body: HabitForm(
                 onSave: (habit) async {
                   await _habitController.saveHabit(habit);
@@ -103,7 +104,7 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
                 title: Text('habits_createSkill'.tr),
                 backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
               ),
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor: DSThemeBridge.resolve(context).background,
               body: SkillForm(
                 onSave: (skill) async {
                   await _skillController.saveSkill(skill);
@@ -118,9 +119,10 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
       },
       child: Icon(
         _currentPage == 0 ? Icons.add_task : Icons.add_reaction,
-        color: widget.plugin.color.computeLuminance() < 0.5
-            ? Colors.white
-            : Colors.black,
+        color:
+            widget.plugin.color.computeLuminance() < 0.5
+                ? Colors.white
+                : Colors.black,
         size: 32,
       ),
     );
@@ -133,32 +135,30 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          KeepAliveWrapper(
-            child: CombinedHabitsView(controller: _habitController, habitId: widget.habitId),
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              KeepAliveWrapper(
+                child: CombinedHabitsView(
+                  controller: _habitController,
+                  habitId: widget.habitId,
+                ),
+              ),
+              KeepAliveWrapper(
+                child: SkillsList(
+                  skillController: _skillController,
+                  recordController: _recordController,
+                ),
+              ),
+            ],
           ),
-          KeepAliveWrapper(
-            child: SkillsList(
-              skillController: _skillController,
-              recordController: _recordController,
-            ),
-          ),
-        ],
-      ),
       fab: _buildFab(),
       children: [
-        Tab(
-          icon: Icon(Icons.check_circle),
-          text: 'habits_habits'.tr,
-        ),
-        Tab(
-          icon: Icon(Icons.star),
-          text: 'habits_skills'.tr,
-        ),
+        Tab(icon: Icon(Icons.check_circle), text: 'habits_habits'.tr),
+        Tab(icon: Icon(Icons.star), text: 'habits_skills'.tr),
       ],
     );
   }

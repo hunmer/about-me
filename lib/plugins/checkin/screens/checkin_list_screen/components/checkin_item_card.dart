@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
@@ -37,10 +39,8 @@ class CheckinItemCard extends StatelessWidget {
         // 导航到打卡历史页面
         NavigationHelper.openContainer<bool>(
           context,
-          (context) => CheckinRecordScreen(
-            checkinItem: item,
-            controller: controller,
-          ),
+          (context) =>
+              CheckinRecordScreen(checkinItem: item, controller: controller),
         ).then((result) {
           onStateChanged();
         });
@@ -58,14 +58,16 @@ class CheckinItemCard extends StatelessWidget {
 
   // 显示打卡对话框
   void _showCheckinDialog(BuildContext context, DateTime date) {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (dialogContext) => CheckinRecordDialog(
-        item: item,
-        controller: controller,
-        onCheckinCompleted: onStateChanged,
-        selectedDate: date,
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => CheckinRecordDialog(
+            item: item,
+            controller: controller,
+            onCheckinCompleted: onStateChanged,
+            selectedDate: date,
+          ),
     );
   }
 }

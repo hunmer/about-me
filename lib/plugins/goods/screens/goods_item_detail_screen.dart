@@ -122,7 +122,21 @@ class _GoodsItemDetailScreenState extends State<GoodsItemDetailScreen> {
       appBar: AppBar(
         title: Text(_item.title),
         actions: [
-          IconButton(icon: const Icon(Icons.edit), onPressed: _showEditDialog),
+          // DS 按钮自带 DSThemeBridge 提供 AppTheme
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.edit,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _showEditDialog,
+                );
+              },
+            ),
+          ),
         ],
       ),
       body: DSThemeBridge(

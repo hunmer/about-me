@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
@@ -18,7 +19,6 @@ class HabitsList extends StatefulWidget {
 }
 
 class _HabitsListState extends State<HabitsList> {
-
   @override
   void initState() {
     super.initState();
@@ -40,36 +40,40 @@ class _HabitsListState extends State<HabitsList> {
   Future<void> _showHabitForm(BuildContext context, [Habit? habit]) async {
     FormBuilderWrapperState? wrapperState;
 
-    await NavigationHelper.push(context, Scaffold(
-              appBar: AppBar(
-                title: Text(habit == null ? 'habits_createHabit'.tr : 'habits_editHabit'.tr),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: () => wrapperState?.submitForm(),
-                  ),
-                  if (habit != null)
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () async {
-                        await widget.controller.deleteHabit(habit.id);
-                        Navigator.pop(context);
-                        _loadHabits();
-                      },
-                    ),
-                ],
-              ),
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: HabitForm(
-                initialHabit: habit,
-                showSubmitButton: false,
-                onSave: (habit) async {
-                  await widget.controller.saveHabit(habit);
+    await NavigationHelper.push(
+      context,
+      Scaffold(
+        appBar: AppBar(
+          title: Text(
+            habit == null ? 'habits_createHabit'.tr : 'habits_editHabit'.tr,
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: () => wrapperState?.submitForm(),
+            ),
+            if (habit != null)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  await widget.controller.deleteHabit(habit.id);
                   Navigator.pop(context);
                   _loadHabits();
                 },
-                onStateReady: (state) => wrapperState = state,
               ),
+          ],
+        ),
+        backgroundColor: DSThemeBridge.resolve(context).background,
+        body: HabitForm(
+          initialHabit: habit,
+          showSubmitButton: false,
+          onSave: (habit) async {
+            await widget.controller.saveHabit(habit);
+            Navigator.pop(context);
+            _loadHabits();
+          },
+          onStateReady: (state) => wrapperState = state,
+        ),
       ),
     );
   }

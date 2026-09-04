@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -69,10 +71,7 @@ class _TimerDialogState extends State<TimerDialog> {
     RouteHistoryManager.updateCurrentContext(
       pageId: '/habit_timer',
       title: '习惯计时器 - ${widget.habit.title}',
-      params: {
-        'habitId': widget.habit.id,
-        'habitTitle': widget.habit.title,
-      },
+      params: {'habitId': widget.habit.id, 'habitTitle': widget.habit.title},
     );
   }
 
@@ -90,296 +89,216 @@ class _TimerDialogState extends State<TimerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0F1323) : const Color(0xFFF5F6F8);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final subTextColor = isDark ? Colors.white60 : const Color(0xFF64748B);
+    return DSThemeBridge(
+      // 对话框路由在主题树之外，内部组件先过桥再取令牌
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
 
-    return Dialog(
-      backgroundColor: bgColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      insetPadding: const EdgeInsets.all(16),
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(maxWidth: 400),
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header: Close Button (Top Right)
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: Icon(Icons.close, color: subTextColor),
-                  onPressed: () => _closeDialog(context), // 仅关闭对话框，保持计时器运行
-                ),
-              ),
-
-              // Habit Icon
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: _themeColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  widget.habit.icon != null
-                      ? IconData(
-                        int.parse(widget.habit.icon!),
-                        fontFamily: 'MaterialIcons',
-                      )
-                      : Icons.auto_stories, // Fallback
-                  color: _themeColor,
-                  size: 48,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Habit Title
-              Text(
-                widget.habit.title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 32),
-
-              // Timer Display
-              GestureDetector(
-                onTap: _toggleTimerMode,
-                child: Text(
-                  _formatDuration(
-                    _isCountdown ? _duration - _elapsed : _elapsed,
-                  ),
-                  style: TextStyle(
-                    fontSize: 64,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                    height: 1,
-                    letterSpacing: -2,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Controls
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          return JellyBox(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Pause/Play Button
-                  SizedBox(
-                    height: 64,
-                    width: 160,
-                    child: ElevatedButton(
-                      onPressed: _toggleTimer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _themeColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32),
-                        ),
-                        padding: EdgeInsets.zero,
+                  // Header: Close Button (Top Right)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: DSIconButton(
+                      icon: DsIconKind.close,
+                      size: 36,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: () => _closeDialog(context), // 仅关闭对话框，保持计时器运行
+                    ),
+                  ),
+
+                  // Habit Icon
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: _themeColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Icon(
+                      widget.habit.icon != null
+                          ? IconData(
+                            int.parse(widget.habit.icon!),
+                            fontFamily: 'MaterialIcons',
+                          )
+                          : Icons.auto_stories, // Fallback
+                      color: _themeColor,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Habit Title
+                  Text(
+                    widget.habit.title,
+                    style: DsTypography.display.copyWith(color: theme.text),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Timer Display
+                  GestureDetector(
+                    onTap: _toggleTimerMode,
+                    child: Text(
+                      _formatDuration(
+                        _isCountdown ? _duration - _elapsed : _elapsed,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _isRunning ? Icons.pause : Icons.play_arrow,
-                            size: 32,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _isRunning ? 'Pause' : 'Start',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      style: TextStyle(
+                        fontSize: 64,
+                        fontWeight: FontWeight.w600,
+                        color: theme.text,
+                        height: 1,
+                        letterSpacing: -2,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // Restart Button
-                  SizedBox(
-                    height: 64,
-                    width: 64,
-                    child: ElevatedButton(
-                      onPressed: _resetTimer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : Colors.grey[200],
-                        foregroundColor: subTextColor,
-                        elevation: 0,
-                        shape: const CircleBorder(),
-                        padding: EdgeInsets.zero,
+
+                  const SizedBox(height: 32),
+
+                  // Controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Pause/Play Button
+                      Pressable(
+                        onPressed: _toggleTimer,
+                        builder: (context, states) {
+                          final pressed = states.contains(WidgetState.pressed);
+                          return AnimatedScale(
+                            scale: pressed ? 0.96 : 1.0,
+                            duration: const Duration(milliseconds: 120),
+                            child: JellyBox(
+                              width: 160,
+                              height: 64,
+                              radius: BorderRadius.circular(32),
+                              color: _themeColor,
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  DsIcon(
+                                    _isRunning
+                                        ? DsIconKind.pause
+                                        : DsIconKind.play,
+                                    size: 28,
+                                    color: DsColors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isRunning ? 'Pause' : 'Start',
+                                    style: DsTypography.button.copyWith(
+                                      fontSize: 18,
+                                      color: DsColors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      child: const Icon(Icons.refresh, size: 32),
+                      const SizedBox(width: 16),
+                      // Restart Button
+                      DSIconButton(
+                        icon: DsIconKind.refresh,
+                        size: 64,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _resetTimer,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Quick Notes Section
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Quick Notes',
+                      style: DsTypography.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.textSub,
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  DSInput(
+                    controller: _notesController,
+                    hint: 'Add a quick note...',
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Action Buttons Row
+                  Row(
+                    children: [
+                      // Cancel Button
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: DSButton(
+                            label: 'Cancel',
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => _cancelTimer(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Complete Button
+                      Expanded(
+                        child: Pressable(
+                          onPressed: () => _completeTimer(context),
+                          builder: (context, states) {
+                            final pressed = states.contains(
+                              WidgetState.pressed,
+                            );
+                            return AnimatedScale(
+                              scale: pressed ? 0.96 : 1.0,
+                              duration: const Duration(milliseconds: 120),
+                              child: JellyBox(
+                                height: 48,
+                                radius: theme.radii.lg,
+                                color: _themeColor,
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    DsIcon(
+                                      DsIconKind.check,
+                                      size: 20,
+                                      color: DsColors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Complete',
+                                      style: DsTypography.button.copyWith(
+                                        color: DsColors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              const SizedBox(height: 40),
-
-              // Quick Notes Section
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Quick Notes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: subTextColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.black26 : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow:
-                      isDark
-                          ? null
-                          : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color:
-                            isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.add, size: 20, color: subTextColor),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _notesController,
-                        decoration: InputDecoration(
-                          hintText: 'Add a quick note...',
-                          hintStyle: TextStyle(color: subTextColor),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                        ),
-                        style: TextStyle(color: textColor),
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Action Buttons Row
-              Row(
-                children: [
-                  // Cancel Button
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: () => _cancelTimer(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? Colors.white70 : Colors.grey[700],
-                          side: BorderSide(
-                            color: isDark ? Colors.white24 : Colors.grey[300]!,
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.cancel_outlined,
-                              size: 22,
-                              color: isDark ? Colors.white70 : Colors.grey[700],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Cancel',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    isDark ? Colors.white70 : Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Complete Button
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () => _completeTimer(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _themeColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle, size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'Complete',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -464,27 +383,20 @@ class _TimerDialogState extends State<TimerDialog> {
 
   /// 取消计时器（不保存记录）
   Future<void> _cancelTimer(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('habits_cancelTimer'.tr),
-            content: Text(
-              '确定要取消计时吗？\n'
-              '已计时: ${_formatDuration(_elapsed)}\n\n'
-              '⚠️ 本次计时记录将不会保存',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('habits_continueTimer'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text('habits_confirmCancel'.tr),
-              ),
-            ],
+          (context) => DSDialog(
+            title: 'habits_cancelTimer'.tr,
+            message:
+                '确定要取消计时吗？\n'
+                '已计时: ${_formatDuration(_elapsed)}\n\n'
+                '⚠️ 本次计时记录将不会保存',
+            cancelText: 'habits_continueTimer'.tr,
+            confirmText: 'habits_confirmCancel'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(context, true),
           ),
     );
 
@@ -503,28 +415,20 @@ class _TimerDialogState extends State<TimerDialog> {
 
   /// 完成计时并保存记录
   Future<void> _completeTimer(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('habits_completeTimer'.tr),
-            content: Text(
-              '确定要完成计时并保存记录吗？\n'
-              '已计时: ${_formatDuration(_elapsed)}\n'
-              '${_notesController.text.isNotEmpty ? '备注: ${_notesController.text}\n' : ''}\n'
-              '✅ 本次计时将保存到历史记录',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('habits_continueAdjust'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: _themeColor),
-                child: Text('habits_confirmComplete'.tr),
-              ),
-            ],
+          (context) => DSDialog(
+            title: 'habits_completeTimer'.tr,
+            message:
+                '确定要完成计时并保存记录吗？\n'
+                '已计时: ${_formatDuration(_elapsed)}\n'
+                '${_notesController.text.isNotEmpty ? '备注: ${_notesController.text}\n' : ''}\n'
+                '✅ 本次计时将保存到历史记录',
+            cancelText: 'habits_continueAdjust'.tr,
+            confirmText: 'habits_confirmComplete'.tr,
+            onConfirm: () => Navigator.pop(context, true),
           ),
     );
 

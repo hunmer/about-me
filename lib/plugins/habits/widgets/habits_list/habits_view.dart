@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
@@ -269,7 +271,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
               ),
           ],
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: DSThemeBridge.resolve(context).background,
         body: HabitForm(
           initialHabit: habit,
           showSubmitButton: false,
@@ -304,24 +306,18 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
       context: context,
       onEdit: () => _showHabitForm(context, habit),
       onDelete: () async {
-        final confirmed = await showDialog<bool>(
+        final confirmed = await showDSDialog<bool>(
           context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('habits_confirmDelete'.tr),
-              content: Text('habits_confirmDeleteHabit'.tr),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('habits_cancel'.tr),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text('habits_delete'.tr),
-                ),
-              ],
-            );
-          },
+          theme: DSThemeBridge.resolve(context),
+          builder:
+              (context) => DSDialog(
+                title: 'habits_confirmDelete'.tr,
+                message: 'habits_confirmDeleteHabit'.tr,
+                cancelText: 'habits_cancel'.tr,
+                confirmText: 'habits_delete'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onConfirm: () => Navigator.of(context).pop(true),
+              ),
         );
 
         if (confirmed == true) {
@@ -376,23 +372,16 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
         itemBuilder: (context, index) {
           final group = groups[index];
           final isSelected = group == _selectedGroup;
-          return ChoiceChip(
-            label: Text(group),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (selected) {
-                _selectGroup(group);
-              }
-            },
-            showCheckmark: false,
-            labelStyle: TextStyle(
-              color:
-                  isSelected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).textTheme.bodyMedium?.color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          return DSThemeBridge(
+            child: DSChip(
+              label: group,
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  _selectGroup(group);
+                }
+              },
             ),
-            selectedColor: Theme.of(context).primaryColor,
           );
         },
       ),

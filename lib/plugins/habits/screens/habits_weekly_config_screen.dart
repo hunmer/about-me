@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
@@ -21,10 +23,7 @@ class HabitsWeeklyConfigScreen extends StatefulWidget {
   /// 小组件ID(Android appWidgetId)
   final int widgetId;
 
-  const HabitsWeeklyConfigScreen({
-    required this.widgetId,
-    super.key,
-  });
+  const HabitsWeeklyConfigScreen({required this.widgetId, super.key});
 
   @override
   State<HabitsWeeklyConfigScreen> createState() =>
@@ -85,8 +84,10 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
       if (backgroundColorStr != null) {
         final colorValue = int.tryParse(backgroundColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('background', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'background',
+            Color(colorValue),
+          );
         }
       }
 
@@ -97,8 +98,10 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
       if (accentColorStr != null) {
         final colorValue = int.tryParse(accentColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -148,7 +151,9 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('habits_configureHabitWeeklyWidget'.tr)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(
+          child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+        ),
       );
     }
 
@@ -166,78 +171,59 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                child: DSThemeBridge(
+                  child: Center(child: DSLoadingDots(size: 8)),
                 ),
               ),
             ),
         ],
       ),
-      body: groupedHabits.isEmpty
-          ? _buildEmptyState()
-          : WidgetConfigEditor(
-              widgetSize: WidgetSize.extraLarge,
-              initialConfig: _widgetConfig,
-              previewTitle: '周视图预览',
-              onConfigChanged: (config) {
-                setState(() => _widgetConfig = config);
-              },
-              previewBuilder: _buildPreview,
-              customConfigWidgets: [
-                _buildHabitSelector(groupedHabits),
-              ],
-            ),
-      bottomNavigationBar: _selectedHabitIds.isNotEmpty
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _saveAndFinish,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      body:
+          groupedHabits.isEmpty
+              ? _buildEmptyState()
+              : WidgetConfigEditor(
+                widgetSize: WidgetSize.extraLarge,
+                initialConfig: _widgetConfig,
+                previewTitle: '周视图预览',
+                onConfigChanged: (config) {
+                  setState(() => _widgetConfig = config);
+                },
+                previewBuilder: _buildPreview,
+                customConfigWidgets: [_buildHabitSelector(groupedHabits)],
+              ),
+      bottomNavigationBar:
+          _selectedHabitIds.isNotEmpty
+              ? SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DSThemeBridge(
+                    child: DSButton(
+                      label: _isSaving ? '保存中...' : '保存配置',
+                      size: DSButtonSize.lg,
+                      expand: true,
+                      onPressed: _isSaving ? null : _saveAndFinish,
                     ),
                   ),
-                  child: Text(
-                    _isSaving ? '保存中...' : '保存配置',
-                    style: const TextStyle(fontSize: 16),
-                  ),
                 ),
-              ),
-            )
-          : null,
+              )
+              : null,
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.auto_awesome,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.auto_awesome, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
-          Text(
-            '暂无习惯',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('暂无习惯', style: DsTypography.body.copyWith(color: theme.textSub)),
           const SizedBox(height: 8),
           Text(
             '请先在习惯插件中创建习惯',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -252,24 +238,23 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
         // 标题和已选择数量
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '选择习惯',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '已选择 ${_selectedHabitIds.length} 个',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '选择习惯',
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  Text(
+                    '已选择 ${_selectedHabitIds.length} 个',
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 8),
@@ -290,13 +275,17 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
         // 分组标题
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            skillName,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Text(
+                skillName,
+                style: DsTypography.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.textSub,
+                ),
+              );
+            },
           ),
         ),
         // 习惯列表(横向滚动)
@@ -320,82 +309,27 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
                     }
                   });
                 },
-                child: Container(
-                  width: 80,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 选择指示器
-                      if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                        )
-                      else
-                        const SizedBox(height: 20),
-                      const SizedBox(height: 4),
-                      // 习惯图标
-                      if (habit.icon != null)
-                        Icon(
-                          IconData(
-                            int.parse(habit.icon!),
-                            fontFamily: 'MaterialIcons',
-                          ),
-                          size: 24,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[600],
-                        )
-                      else
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 24,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[600],
-                        ),
-                      const SizedBox(height: 4),
-                      // 习惯名称
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Text(
-                          habit.title,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.grey[800],
-                          ),
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return Container(
+                      width: 80,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? theme.primary.mixWhite(0.88)
+                                : theme.surfaceAlt,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color:
+                              isSelected ? theme.primary : Colors.transparent,
+                          width: 2,
                         ),
                       ),
-                    ],
-                  ),
+                      child: _buildHabitTileContent(context, habit, isSelected),
+                    );
+                  },
                 ),
               );
             },
@@ -406,12 +340,67 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
     );
   }
 
+  /// 习惯选择块内容（在选择容器内构建，主题已过桥）
+  Widget _buildHabitTileContent(
+    BuildContext context,
+    Habit habit,
+    bool isSelected,
+  ) {
+    final theme = DSThemeBridge.resolve(context);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // 选择指示器
+        if (isSelected)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: theme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: DsIcon(DsIconKind.check, size: 12, color: DsColors.white),
+          )
+        else
+          const SizedBox(height: 20),
+        const SizedBox(height: 4),
+        // 习惯图标
+        if (habit.icon != null)
+          Icon(
+            IconData(int.parse(habit.icon!), fontFamily: 'MaterialIcons'),
+            size: 24,
+            color: isSelected ? theme.primary : theme.textSub,
+          )
+        else
+          Icon(
+            Icons.auto_awesome,
+            size: 24,
+            color: isSelected ? theme.primary : theme.textSub,
+          ),
+        const SizedBox(height: 4),
+        // 习惯名称
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            habit.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? theme.primary : theme.text,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   /// 构建预览组件
   Widget _buildPreview(BuildContext context, WidgetConfig config) {
     final backgroundColor =
         config.getColor('background') ?? const Color(0xFFF5F5F5);
-    final accentColor =
-        config.getColor('accent') ?? const Color(0xFF607AFB);
+    final accentColor = config.getColor('accent') ?? const Color(0xFF607AFB);
 
     return Container(
       width: 250,
@@ -447,19 +436,22 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
           // 星期头部
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: ['一', '二', '三', '四', '五', '六', '日']
-                .map((day) => SizedBox(
-                      width: 28,
-                      child: Text(
-                        day,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: accentColor.withOpacity(0.6),
+            children:
+                ['一', '二', '三', '四', '五', '六', '日']
+                    .map(
+                      (day) => SizedBox(
+                        width: 28,
+                        child: Text(
+                          day,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: accentColor.withOpacity(0.6),
+                          ),
                         ),
                       ),
-                    ))
-                .toList(),
+                    )
+                    .toList(),
           ),
           const SizedBox(height: 4),
 
@@ -467,9 +459,25 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
           Expanded(
             child: ListView(
               children: [
-                _buildPreviewHabitItem('阅读', accentColor, [30, 0, 45, 60, 0, 90, 30]),
+                _buildPreviewHabitItem('阅读', accentColor, [
+                  30,
+                  0,
+                  45,
+                  60,
+                  0,
+                  90,
+                  30,
+                ]),
                 const SizedBox(height: 4),
-                _buildPreviewHabitItem('运动', accentColor, [60, 45, 0, 60, 45, 0, 60]),
+                _buildPreviewHabitItem('运动', accentColor, [
+                  60,
+                  45,
+                  0,
+                  60,
+                  45,
+                  0,
+                  60,
+                ]),
               ],
             ),
           ),
@@ -519,18 +527,16 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
               height: 20,
               margin: const EdgeInsets.only(left: 2),
               decoration: BoxDecoration(
-                color: minutes > 0
-                    ? accentColor.withOpacity(0.7)
-                    : Colors.transparent,
+                color:
+                    minutes > 0
+                        ? accentColor.withOpacity(0.7)
+                        : Colors.transparent,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Center(
                 child: Text(
                   minutes > 0 ? '$minutes' : '',
-                  style: const TextStyle(
-                    fontSize: 8,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 8, color: Colors.white),
                 ),
               ),
             );
@@ -582,9 +588,9 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
       );
 
       // 将当前 widgetId 添加到全局列表中
-      final existingWidgetIdsStr = await HomeWidget.getWidgetData<String>(
-        'habits_weekly_widget_ids',
-      ) ?? '[]';
+      final existingWidgetIdsStr =
+          await HomeWidget.getWidgetData<String>('habits_weekly_widget_ids') ??
+          '[]';
       final existingWidgetIds = List<int>.from(
         jsonDecode(existingWidgetIdsStr) as List,
       );
@@ -604,7 +610,9 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
         0, // 本周
       );
 
-      debugPrint('计算周数据完成: year=${weekData.year}, week=${weekData.week}, habitItems=${weekData.habitItems.length}');
+      debugPrint(
+        '计算周数据完成: year=${weekData.year}, week=${weekData.week}, habitItems=${weekData.habitItems.length}',
+      );
 
       // 保存完整配置和数据
       final config = HabitsWeeklyWidgetConfig(

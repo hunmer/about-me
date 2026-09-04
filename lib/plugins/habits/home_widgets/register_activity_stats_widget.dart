@@ -4,6 +4,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
@@ -156,7 +158,9 @@ class _ActivityStatsStatefulWidgetState
       future: _getActivityStatsDataSync(selectorConfig),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(
+            child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+          );
         }
 
         if (snapshot.hasError) {
@@ -225,20 +229,21 @@ class _ActivityStatsStatefulWidgetState
   }
 
   Widget _buildUnconfiguredWidget(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.analytics, size: 48, color: Colors.grey[400]),
+            Icon(Icons.analytics, size: 48, color: theme.textSub),
             const SizedBox(height: 12),
             Text(
               '请配置统计小组件',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),

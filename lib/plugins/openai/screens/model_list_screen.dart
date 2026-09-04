@@ -107,7 +107,21 @@ class _ModelListScreenState extends State<ModelListScreen>
         appBar: AppBar(
           title: Text('openai_modelManagement'.tr),
           actions: [
-            IconButton(icon: const Icon(Icons.add), onPressed: _addNewModel),
+            // DS 按钮自带 DSThemeBridge 提供 AppTheme
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.plus,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _addNewModel,
+                  );
+                },
+              ),
+            ),
           ],
           bottom:
               _isLoading

@@ -72,9 +72,19 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
       appBar: AppBar(
         title: Text('goods_usageHistory'.tr),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+        leading: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => Navigator.pop(context),
+              );
+            },
+          ),
         ),
       ),
       body: ListView.builder(

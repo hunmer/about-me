@@ -35,43 +35,91 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
       appBar: AppBar(
         title: Text(widget.account.title),
         actions: [
-          PopupMenuButton<StatisticRange>(
-            icon: const Icon(Icons.filter_list),
-            onSelected: (StatisticRange range) {
-              setState(() {
-                _selectedRange = range;
-                if (range != StatisticRange.custom) {
-                  _customStartDate = null;
-                  _customEndDate = null;
-                } else {
-                  _showDateRangePicker();
-                }
-              });
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                PopupMenuItem(
-                  value: StatisticRange.week,
-                  child: Text('bill_thisWeek'.tr),
-                ),
-                PopupMenuItem(
-                  value: StatisticRange.month,
-                  child: Text('bill_thisMonth'.tr),
-                ),
-                PopupMenuItem(
-                  value: StatisticRange.year,
-                  child: Text('bill_thisYear'.tr),
-                ),
-                PopupMenuItem(
-                  value: StatisticRange.all,
-                  child: Text('bill_all'.tr),
-                ),
-                PopupMenuItem(
-                  value: StatisticRange.custom,
-                  child: Text('bill_custom'.tr),
-                ),
-              ];
-            },
+          // 统计范围选择(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSPopover(
+                  width: 190,
+                  contentBuilder: (popoverContext, close) {
+                    final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                    Widget menuRow(StatisticRange range, String label) {
+                      return Pressable(
+                        onPressed: () {
+                          close();
+                          setState(() {
+                            _selectedRange = range;
+                            if (range != StatisticRange.custom) {
+                              _customStartDate = null;
+                              _customEndDate = null;
+                            } else {
+                              _showDateRangePicker();
+                            }
+                          });
+                        },
+                        builder: (context, states) {
+                          final pressed = states.contains(WidgetState.pressed);
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: popoverTheme.spacing.sm,
+                              vertical: popoverTheme.spacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: pressed ? popoverTheme.surfaceAlt : null,
+                              borderRadius: popoverTheme.radii.sm,
+                            ),
+                            child: Row(
+                              children: [
+                                DsIcon(
+                                  _selectedRange == range
+                                      ? DsIconKind.check
+                                      : DsIconKind.sort,
+                                  size: 18,
+                                  color: popoverTheme.text,
+                                ),
+                                SizedBox(width: popoverTheme.spacing.sm),
+                                Text(
+                                  label,
+                                  style: DsTypography.body.copyWith(
+                                    color: popoverTheme.text,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        menuRow(StatisticRange.week, 'bill_thisWeek'.tr),
+                        menuRow(StatisticRange.month, 'bill_thisMonth'.tr),
+                        menuRow(StatisticRange.year, 'bill_thisYear'.tr),
+                        menuRow(StatisticRange.all, 'bill_all'.tr),
+                        menuRow(StatisticRange.custom, 'bill_custom'.tr),
+                      ],
+                    );
+                  },
+                  child: JellyBox(
+                    width: 40,
+                    height: 40,
+                    radius: theme.radii.circle,
+                    color: theme.surfaceAlt,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.sort,
+                        size: 20,
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

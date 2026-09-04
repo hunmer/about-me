@@ -470,7 +470,7 @@ class _BillMainViewState extends State<BillMainView>
   Widget build(BuildContext context) {
     // 如果没有账户，显示加载指示器
     if (billPlugin.accounts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: DSThemeBridge(child: DSLoadingDots()));
     }
 
     return CustomBottomBar(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
@@ -61,19 +63,41 @@ class _FolderListScreenState extends State<FolderListScreen> {
       appBar: AppBar(
         leading:
             currentFolder?.parentId != null
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _navigateBack,
+                ? DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 38,
+                        color: theme.surface,
+                        iconColor: theme.text,
+                        onPressed: _navigateBack,
+                      );
+                    },
+                  ),
                 )
                 : null,
         title: Text(currentFolder?.name ?? 'Notes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              NavigationHelper.push(context, SearchScreen(controller: widget.controller),
-              );
-            },
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.search,
+                  size: 38,
+                  color: theme.surface,
+                  iconColor: theme.text,
+                  onPressed: () {
+                    NavigationHelper.push(
+                      context,
+                      SearchScreen(controller: widget.controller),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -94,63 +118,89 @@ class _FolderListScreenState extends State<FolderListScreen> {
               key: ValueKey(note.id),
               note: note,
               onTap: () {
-                NavigationHelper.push(context, NoteEditScreen(
-                          note: note,
-                          onSave: (title, content) {
-                            final updatedNote = note.copyWith(
-                              title: title,
-                              content: content,
+                NavigationHelper.push(
+                  context,
+                  NoteEditScreen(
+                    note: note,
+                    onSave: (title, content) {
+                      final updatedNote = note.copyWith(
+                        title: title,
+                        content: content,
                         updatedAt: DateTime.now(),
                       );
-                            widget.controller.updateNote(updatedNote);
-                          },
+                      widget.controller.updateNote(updatedNote);
+                    },
                   ),
                 ).then((_) => _loadCurrentFolder());
-              }
+              },
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: Text('notes_createNew'.tr),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.folder),
-                        title: Text('notes_newFolder'.tr),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Show folder creation dialog
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.note),
-                        title: Text('notes_newNote'.tr),
-                        onTap: () {
-                          Navigator.pop(context);
-                          NavigationHelper.push(context, NoteEditScreen(
-                                    onSave: (title, content) {
-                                      widget.controller.createNote(
-                                        title,
-                                        content,
-                                        currentFolderId,
-                                      );
-                                    },),
-                          ).then((_) => _loadCurrentFolder());
-                        },
-                      ),
-                    ],
+      floatingActionButton: DSThemeBridge(
+        child: DSFab(
+          icon: DsIconKind.plus,
+          onPressed: () {
+            showDSDialog(
+              context: context,
+              theme: DSThemeBridge.resolve(context),
+              builder:
+                  (_) => DSThemeBridge(
+                    child: Builder(
+                      builder: (context) {
+                        final theme = DSThemeBridge.resolve(context);
+                        return JellyBox(
+                          radius: theme.radii.xxl,
+                          padding: EdgeInsets.all(theme.spacing.xl),
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'notes_createNew'.tr,
+                                textAlign: TextAlign.center,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+                              DSSheetAction(
+                                icon: DsIconKind.layers,
+                                label: 'notes_newFolder'.tr,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  // Show folder creation dialog
+                                },
+                              ),
+                              DSSheetAction(
+                                icon: DsIconKind.book,
+                                label: 'notes_newNote'.tr,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  NavigationHelper.push(
+                                    context,
+                                    NoteEditScreen(
+                                      onSave: (title, content) {
+                                        widget.controller.createNote(
+                                          title,
+                                          content,
+                                          currentFolderId,
+                                        );
+                                      },
+                                    ),
+                                  ).then((_) => _loadCurrentFolder());
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-          );
-        },
-        child: const Icon(Icons.add),
+            );
+          },
+        ),
       ),
     );
   }

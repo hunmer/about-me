@@ -193,10 +193,21 @@ class _BillShortcutsSelectorScreenState
       appBar: AppBar(
         title: Text('bill_quickBookkeepingConfig'.tr),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveConfig,
-            tooltip: 'bill_saveConfig'.tr,
+          // DS 按钮自带 DSThemeBridge 提供 AppTheme
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.check,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: _saveConfig,
+                  tooltip: 'bill_saveConfig'.tr,
+                );
+              },
+            ),
           ),
         ],
       ),

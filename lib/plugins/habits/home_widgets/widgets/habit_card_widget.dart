@@ -4,6 +4,8 @@ library;
 import 'dart:async';
 import 'package:aboutme/core/event/event_args.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/skill.dart';
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
@@ -51,9 +53,10 @@ class HabitCardData {
 
   /// 从 JSON 创建
   factory HabitCardData.fromJson(Map<String, dynamic> json) {
-    final last7Days = (json['last7DaysStatus'] as List<dynamic>?)
-        ?.map((e) => e as bool)
-        .toList() ??
+    final last7Days =
+        (json['last7DaysStatus'] as List<dynamic>?)
+            ?.map((e) => e as bool)
+            .toList() ??
         List.filled(7, false);
 
     return HabitCardData(
@@ -68,7 +71,8 @@ class HabitCardData {
       totalDurationMinutes: json['totalDurationMinutes'] as int? ?? 0,
       last7DaysStatus: last7Days,
       durationMinutes: json['durationMinutes'] as int? ?? 0,
-      currentTotalDurationMinutes: json['currentTotalDurationMinutes'] as int? ?? 0,
+      currentTotalDurationMinutes:
+          json['currentTotalDurationMinutes'] as int? ?? 0,
       isTiming: json['isTiming'] as bool? ?? false,
       timerText: json['timerText'] as String? ?? '00:00',
     );
@@ -114,13 +118,11 @@ class HabitCard extends StatefulWidget {
   }) : assert(habit != null || data != null);
 
   /// 从 props 创建实例（用于公共小组件系统）
-  factory HabitCard.fromProps(
-    Map<String, dynamic> props,
-    HomeWidgetSize size,
-  ) {
-    final data = props['data'] != null
-        ? HabitCardData.fromJson(props['data'] as Map<String, dynamic>)
-        : null;
+  factory HabitCard.fromProps(Map<String, dynamic> props, HomeWidgetSize size) {
+    final data =
+        props['data'] != null
+            ? HabitCardData.fromJson(props['data'] as Map<String, dynamic>)
+            : null;
 
     return HabitCard(
       data: data,
@@ -231,8 +233,7 @@ class _HabitCardState extends State<HabitCard> {
   }
 
   void _onTimerStateChanged(EventArgs args) {
-    if (args is HabitTimerEventArgs &&
-        args.habitId == widget.habit?.id) {
+    if (args is HabitTimerEventArgs && args.habitId == widget.habit?.id) {
       if (mounted) {
         setState(() {
           _isTiming = args.isRunning;
@@ -316,7 +317,9 @@ class _HabitCardState extends State<HabitCard> {
 
     try {
       final count = await recordController.getCompletionCount(widget.habit!.id);
-      final duration = await recordController.getTotalDuration(widget.habit!.id);
+      final duration = await recordController.getTotalDuration(
+        widget.habit!.id,
+      );
 
       final records = await recordController.getHabitCompletionRecords(
         widget.habit!.id,
@@ -393,271 +396,261 @@ class _HabitCardState extends State<HabitCard> {
     }
 
     // Habit 模式：使用原有的交互式渲染
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white;
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: Container(
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05),
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _themeColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    _icon,
-                    color: _themeColor,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          return GestureDetector(
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            child: JellyBox(
+              padding: const EdgeInsets.all(12),
+              radius: BorderRadius.circular(12),
+              raised: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
                     children: [
-                      Text(
-                        _title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.grey[800],
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _themeColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        child: Icon(_icon, color: _themeColor, size: 24),
                       ),
-                      Text(
-                        _skillTitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.grey[600],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _title,
+                              style: DsTypography.heading.copyWith(
+                                color: theme.text,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              _skillTitle,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-            // Heatmap
-            SizedBox(
-              height: 24,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                clipBehavior: Clip.none,
-                children: [
-                  Row(
-                    children: _last7DaysStatus.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final isActive = entry.value;
-                      final date = DateTime.now().subtract(
-                        Duration(days: 6 - index),
-                      );
+                  // Heatmap
+                  SizedBox(
+                    height: 24,
+                    child: Stack(
+                      alignment: Alignment.bottomCenter,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Row(
+                          children:
+                              _last7DaysStatus.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final isActive = entry.value;
+                                final date = DateTime.now().subtract(
+                                  Duration(days: 6 - index),
+                                );
 
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 1),
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? _themeColor
-                                : (isDark
-                                    ? Colors.white.withValues(alpha: 0.1)
-                                    : Colors.grey[200]),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${date.day}',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: isActive
-                                    ? Colors.white
-                                    : (isDark
-                                        ? Colors.white30
-                                        : Colors.grey[400]),
+                                return Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 1,
+                                    ),
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          isActive
+                                              ? _themeColor
+                                              : theme.surfaceAlt,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${date.day}',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              isActive
+                                                  ? DsColors.white
+                                                  : theme.textSub,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                        if (_todayCount > 0)
+                          Positioned(
+                            right: -4,
+                            top: -8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _themeColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.background,
+                                  width: 1.5,
+                                ),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$_todayCount',
+                                  style: const TextStyle(
+                                    color: DsColors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  if (_todayCount > 0)
-                    Positioned(
-                      right: -4,
-                      top: -8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _themeColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            width: 1.5,
-                          ),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$_todayCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
 
-            const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-            // Stats
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color:
-                    isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.grey[100],
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Column(
-                children: [
-                  // 文本
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${_formatTotalDuration(_totalDurationMinutes)}($_completionCount)',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white70 : Colors.grey[700],
+                  // Stats
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.surfaceAlt,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      children: [
+                        // 文本
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${_formatTotalDuration(_totalDurationMinutes)}($_completionCount)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: theme.text,
+                              ),
+                            ),
+                            Text(
+                              ' / $_durationMinutes m',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.textSub,
+                              ),
+                            ),
+                            if (_currentTotalDurationMinutes > 0) ...[
+                              Text(
+                                ' | ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.textSub,
+                                ),
+                              ),
+                              Text(
+                                '总${_formatTotalDuration(_currentTotalDurationMinutes)}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ),
-                      Text(
-                        ' / $_durationMinutes m',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? Colors.white38 : Colors.grey[500],
-                        ),
-                      ),
-                      if (_currentTotalDurationMinutes > 0) ...[
-                        Text(
-                          ' | ',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.white24 : Colors.grey[400],
-                          ),
-                        ),
-                        Text(
-                          '总${_formatTotalDuration(_currentTotalDurationMinutes)}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white54 : Colors.grey[600],
-                          ),
+                        const SizedBox(height: 4),
+                        // 进度条
+                        DSLinearProgress(
+                          value:
+                              _durationMinutes > 0
+                                  ? (_totalDurationMinutes / _durationMinutes)
+                                  : 0.0,
+                          height: 3,
+                          color: _themeColor,
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  // 进度条
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: _durationMinutes > 0
-                          ? (_totalDurationMinutes / _durationMinutes).clamp(0.0, 1.0)
-                          : 0.0,
-                      backgroundColor:
-                          isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(_themeColor),
-                      minHeight: 3,
+
+                  const SizedBox(height: 12),
+
+                  // Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 36,
+                    child: Pressable(
+                      onPressed: _handleTimerAction,
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return AnimatedScale(
+                          scale: pressed ? 0.97 : 1.0,
+                          duration: const Duration(milliseconds: 120),
+                          child: JellyBox(
+                            height: 36,
+                            radius: BorderRadius.circular(8),
+                            color:
+                                _isTiming
+                                    ? _themeColor
+                                    : _themeColor.withValues(alpha: 0.2),
+                            alignment: Alignment.center,
+                            raised: _isTiming,
+                            child: Center(
+                              child:
+                                  _isTiming
+                                      ? Text(
+                                        _timerText,
+                                        style: const TextStyle(
+                                          color: DsColors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      )
+                                      : DsIcon(
+                                        DsIconKind.play,
+                                        color: _themeColor,
+                                        size: 24,
+                                      ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Button
-            SizedBox(
-              width: double.infinity,
-              height: 36,
-              child: Material(
-                color: _isTiming
-                    ? _themeColor
-                    : _themeColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  onTap: _handleTimerAction,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Center(
-                    child: _isTiming
-                        ? Text(
-                            _timerText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          )
-                        : Icon(
-                            Icons.play_arrow,
-                            color: _themeColor,
-                            size: 24,
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -680,7 +673,10 @@ class _HabitCardState extends State<HabitCard> {
 
   /// 获取技能标题
   String get _skillTitle =>
-      widget.data?.skillTitle ?? widget.skill?.title ?? widget.habit?.group ?? 'Uncategorized';
+      widget.data?.skillTitle ??
+      widget.skill?.title ??
+      widget.habit?.group ??
+      'Uncategorized';
 
   /// 获取目标时长
   int get _durationMinutes =>
@@ -688,13 +684,16 @@ class _HabitCardState extends State<HabitCard> {
 
   /// 获取当前总累计时长
   int get _currentTotalDurationMinutes =>
-      widget.data?.currentTotalDurationMinutes ?? _currentHabit?.totalDurationMinutes ?? 0;
+      widget.data?.currentTotalDurationMinutes ??
+      _currentHabit?.totalDurationMinutes ??
+      0;
 
   Future<void> _handleTimerAction() async {
     if (widget.habit == null || widget.controller == null) return;
 
-    final result = await showDialog<bool>(
+    final result = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => _TimerDialogWrapper(
             habit: widget.habit!,

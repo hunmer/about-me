@@ -104,6 +104,14 @@ class _CustomFieldsListState extends State<CustomFieldsList> {
                         ),
                       ),
                       DSIconButton(
+                        icon: DsIconKind.edit,
+                        size: 36,
+                        color: theme.primary.withValues(alpha: 0.12),
+                        iconColor: theme.primary,
+                        onPressed: () => _editField(index),
+                      ),
+                      const SizedBox(width: 4),
+                      DSIconButton(
                         icon: DsIconKind.trash,
                         size: 36,
                         color: theme.danger.withValues(alpha: 0.12),

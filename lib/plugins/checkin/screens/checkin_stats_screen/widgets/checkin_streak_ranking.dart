@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
@@ -9,14 +11,17 @@ class CheckinStreakRanking extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final rankedItems = _calculateStreaks();
 
     if (rankedItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text('checkin_emptyData'.tr, style: theme.textTheme.bodyMedium),
+          child: Text(
+            'checkin_emptyData'.tr,
+            style: DsTypography.body.copyWith(color: theme.textSub),
+          ),
         ),
       );
     }
@@ -29,21 +34,38 @@ class CheckinStreakRanking extends StatelessWidget {
             final rank = index + 1;
             final streakDays = item.streak;
 
-            return ListTile(
-              leading: _buildRankBadge(rank, theme),
-              title: Text(item.name),
-              subtitle: Text(item.group),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: theme.spacing.md,
+                vertical: 6,
+              ),
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.local_fire_department,
-                    color: theme.colorScheme.error,
+                  _buildRankBadge(rank, theme),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                        Text(
+                          item.group,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  Icon(Icons.local_fire_department, color: theme.danger),
                   const SizedBox(width: 4),
                   Text(
                     '$streakDays天',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -54,7 +76,7 @@ class CheckinStreakRanking extends StatelessWidget {
     );
   }
 
-  Widget _buildRankBadge(int rank, ThemeData theme) {
+  Widget _buildRankBadge(int rank, AppThemeData theme) {
     Color badgeColor;
     if (rank == 1) {
       badgeColor = Colors.amber;
@@ -63,7 +85,7 @@ class CheckinStreakRanking extends StatelessWidget {
     } else if (rank == 3) {
       badgeColor = Colors.brown.shade300;
     } else {
-      badgeColor = theme.colorScheme.surfaceContainerHighest;
+      badgeColor = theme.surfaceAlt;
     }
 
     return CircleAvatar(
@@ -71,10 +93,9 @@ class CheckinStreakRanking extends StatelessWidget {
       backgroundColor: badgeColor,
       child: Text(
         '$rank',
-        style: TextStyle(
-          color: rank <= 3 ? Colors.white : theme.colorScheme.onSurface,
+        style: DsTypography.caption.copyWith(
+          color: rank <= 3 ? DsColors.white : theme.text,
           fontWeight: FontWeight.bold,
-          fontSize: 12,
         ),
       ),
     );

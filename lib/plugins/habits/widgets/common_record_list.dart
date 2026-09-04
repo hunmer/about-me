@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class CommonRecordList<T> extends StatelessWidget {
   final List<T> records;
@@ -24,18 +26,24 @@ class CommonRecordList<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return ListView.separated(
       itemCount: records.length,
-      separatorBuilder: (context, index) => const Divider(height: 1),
+      separatorBuilder:
+          (context, index) => Divider(
+            height: 1,
+            color: theme.stroke.withValues(alpha: theme.isDark ? 0.2 : 0.8),
+          ),
       itemBuilder: (context, index) {
         final record = records[index];
         return Dismissible(
           key: itemKey(record),
           background: Container(
-            color: Colors.red,
+            color: theme.danger,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: DsIcon(DsIconKind.trash, color: DsColors.white),
           ),
           direction: DismissDirection.endToStart,
           confirmDismiss:
@@ -44,10 +52,12 @@ class CommonRecordList<T> extends StatelessWidget {
             await onDelete(itemKey(record).toString());
             Toast.success(getDeleteMessage());
           },
-          child: ListTile(
-            title: Text(getDate(record).split('.').first),
-            subtitle: Text(getNotes(record)),
-            onTap: () => _showDetailDialog(context, record),
+          child: DSThemeBridge(
+            child: DSListItem(
+              title: getDate(record).split('.').first,
+              subtitle: getNotes(record),
+              onTap: () => _showDetailDialog(context, record),
+            ),
           ),
         );
       },
@@ -55,18 +65,14 @@ class CommonRecordList<T> extends StatelessWidget {
   }
 
   void _showDetailDialog(BuildContext context, T record) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(getDate(record).split('.').first),
-            content: Text(getNotes(record)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_close'.tr),
-              ),
-            ],
+          (context) => DSDialog(
+            title: getDate(record).split('.').first,
+            message: getNotes(record),
+            confirmText: 'app_close'.tr,
           ),
     );
   }

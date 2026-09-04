@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -67,7 +69,7 @@ class ProductSelectorWidgetState extends State<ProductSelectorWidget> {
     final stock = productData['stock'] as int? ?? 0;
     final imagePath = productData['image'] as String?;
 
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return FutureBuilder<String?>(
       future: _getProductImagePath(imagePath),
@@ -124,12 +126,8 @@ class ProductSelectorWidgetState extends State<ProductSelectorWidget> {
                       children: [
                         Text(
                           name,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                hasImage
-                                    ? Colors.white
-                                    : theme.colorScheme.onSurface,
+                          style: DsTypography.title.copyWith(
+                            color: hasImage ? Colors.white : theme.text,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -138,11 +136,8 @@ class ProductSelectorWidgetState extends State<ProductSelectorWidget> {
                         if (description.isNotEmpty) ...[
                           Text(
                             description,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  hasImage
-                                      ? Colors.white70
-                                      : theme.colorScheme.onSurfaceVariant,
+                            style: DsTypography.caption.copyWith(
+                              color: hasImage ? Colors.white70 : theme.textSub,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -152,16 +147,16 @@ class ProductSelectorWidgetState extends State<ProductSelectorWidget> {
                         const Spacer(),
                         Row(
                           children: [
-                            Icon(
-                              Icons.monetization_on,
+                            DsIcon(
+                              DsIconKind.piggy,
                               size: 16,
-                              color: Colors.orange,
+                              color: theme.warning,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '$price ${'store_points'.tr}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.orange,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.warning,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -170,15 +165,9 @@ class ProductSelectorWidgetState extends State<ProductSelectorWidget> {
                               stock > 0
                                   ? '${'store_stockLabel'.tr}: $stock'
                                   : 'store_outOfStock'.tr,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: DsTypography.caption.copyWith(
                                 color:
-                                    hasImage
-                                        ? (stock > 0
-                                            ? Colors.green
-                                            : Colors.grey)
-                                        : (stock > 0
-                                            ? Colors.green
-                                            : Colors.grey),
+                                    stock > 0 ? theme.success : theme.textSub,
                                 fontSize: 11,
                               ),
                             ),

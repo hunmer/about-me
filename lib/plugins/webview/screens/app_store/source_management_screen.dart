@@ -24,10 +24,21 @@ class SourceManagementScreen extends StatelessWidget {
             appBar: AppBar(
               title: Text('webview_manage_sources'.tr),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: 'webview_add_source'.tr,
-                  onPressed: () => _showAddSourceDialog(context),
+                // DS 按钮自带 DSThemeBridge 提供 AppTheme
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.plus,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        tooltip: 'webview_add_source'.tr,
+                        onPressed: () => _showAddSourceDialog(context),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

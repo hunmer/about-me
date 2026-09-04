@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/folder_breadcrumbs.dart';
@@ -106,15 +108,15 @@ class _NotesMainViewState extends NotesMainViewState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
       title: Text(
         currentFolder?.name ?? 'notes_defaultFolderName'.tr,
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
+        style: DsTypography.title.copyWith(color: theme.text, fontSize: 16),
       ),
       largeTitle: 'notes_myNotes'.tr,
 
-      body: _buildBody(),
+      body: DSThemeBridge(child: _buildBody()),
       enableLargeTitle: true,
       enableSearchBar: true,
       enableMultiFilter: true,
@@ -125,22 +127,30 @@ class _NotesMainViewState extends NotesMainViewState
       onSearchChanged: _handleSearchChanged,
       onSearchSubmitted: _handleSearchSubmitted,
       actions: [
-        IconButton(
-          icon: Icon(
-            isSearching ? Icons.close : Icons.more_vert,
-            color: theme.iconTheme.color,
+        // 第三方导航栏回调：DS 组件需包 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: isSearching ? DsIconKind.close : DsIconKind.more,
+                size: 38,
+                color: theme.surface,
+                iconColor: theme.text,
+                onPressed: () {
+                  if (isSearching) {
+                    setState(() {
+                      searchController.clear();
+                      loadCurrentFolder();
+                      isSearching = false;
+                    });
+                  } else {
+                    _showMoreOptions();
+                  }
+                },
+              );
+            },
           ),
-          onPressed: () {
-            if (isSearching) {
-              setState(() {
-                searchController.clear();
-                loadCurrentFolder();
-                isSearching = false;
-              });
-            } else {
-              _showMoreOptions();
-            }
-          },
         ),
       ],
       largeTitleActions: [],
@@ -214,7 +224,7 @@ class _NotesMainViewState extends NotesMainViewState
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildFabChild(
-                  icon: Icons.create_new_folder,
+                  icon: DsIconKind.layers,
                   label: 'notes_newFolder'.tr,
                   onPressed: () {
                     setState(() {
@@ -225,7 +235,7 @@ class _NotesMainViewState extends NotesMainViewState
                 ),
                 const SizedBox(height: 16),
                 _buildFabChild(
-                  icon: Icons.note_add,
+                  icon: DsIconKind.book,
                   label: 'notes_newNote'.tr,
                   onPressed: () {
                     setState(() {
@@ -252,17 +262,16 @@ class _NotesMainViewState extends NotesMainViewState
           ),
         ),
         // 主按钮
-        FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              _fabExpanded = !_fabExpanded;
-            });
-          },
-          backgroundColor: const Color(0xFF607AFB),
-          child: AnimatedRotation(
-            turns: _fabExpanded ? 0.45 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: const Icon(Icons.add, color: Colors.white),
+        AnimatedRotation(
+          turns: _fabExpanded ? 0.125 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: DSFab(
+            icon: DsIconKind.plus,
+            onPressed: () {
+              setState(() {
+                _fabExpanded = !_fabExpanded;
+              });
+            },
           ),
         ),
       ],
@@ -270,18 +279,16 @@ class _NotesMainViewState extends NotesMainViewState
   }
 
   Widget _buildFabChild({
-    required IconData icon,
+    required DsIconKind icon,
     required String label,
     required VoidCallback onPressed,
   }) {
-    return FloatingActionButton.extended(
+    return DSButton(
+      label: label,
+      icon: icon,
+      variant: DSButtonVariant.outline,
+      size: DSButtonSize.sm,
       onPressed: onPressed,
-      icon: Icon(icon, size: 20),
-      label: Text(label, style: const TextStyle(fontSize: 14)),
-      backgroundColor: Colors.white,
-      foregroundColor: const Color(0xFF607AFB),
-      elevation: 4,
-      heroTag: null, // 避免多个Fab的heroTag冲突
     );
   }
 
@@ -294,110 +301,111 @@ class _NotesMainViewState extends NotesMainViewState
   }
 
   Widget _buildBody() {
-    return Stack(
-      children: [
-        CustomScrollView(
-          slivers: [
-            // Folder Breadcrumbs (显示当前文件夹路径)
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 16, top: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: FolderBreadcrumbs(
-                  folders: _buildBreadcrumbItems(),
-                  onFolderTap: (folderId) {
-                    // 点击面包屑导航到对应文件夹
-                    setState(() {
-                      currentFolderId = folderId;
-                      loadCurrentFolder();
-                    });
-                  },
-                ),
-              ),
-            ),
-
-            // Subfolders Horizontal List (子文件夹列表)
-            if (subFolders.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Container(
-                  height: 50,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListView.separated(
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                // Folder Breadcrumbs (显示当前文件夹路径)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16, top: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: subFolders.length,
-                    separatorBuilder:
-                        (context, index) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final folder = subFolders[index];
-                      return ActionChip(
-                        avatar: const Icon(Icons.folder, size: 18),
-                        label: Text(folder.name),
-                        onPressed: () => navigateToFolder(folder),
-                        backgroundColor: Theme.of(context).cardColor,
-                        side: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).dividerColor.withOpacity(0.1),
-                        ),
-                      );
-                    },
+                    child: FolderBreadcrumbs(
+                      folders: _buildBreadcrumbItems(),
+                      onFolderTap: (folderId) {
+                        // 点击面包屑导航到对应文件夹
+                        setState(() {
+                          currentFolderId = folderId;
+                          loadCurrentFolder();
+                        });
+                      },
+                    ),
                   ),
                 ),
-              ),
 
-            // Notes Grid
-            if (notes.isNotEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childCount: notes.length,
-                  itemBuilder: (context, index) {
-                    return NoteCard(
-                      note: notes[index],
-                      onTap: () => editNote(notes[index]),
-                      onDelete: () => deleteNote(notes[index]),
-                    );
-                  },
-                ),
-              ),
-
-            // Empty State
-            if (subFolders.isEmpty && notes.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.note_outlined,
-                        size: 64,
-                        color: Theme.of(context).disabledColor,
+                // Subfolders Horizontal List (子文件夹列表)
+                if (subFolders.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      height: 50,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: subFolders.length,
+                        separatorBuilder:
+                            (context, index) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final folder = subFolders[index];
+                          return Center(
+                            child: DSChip(
+                              label: folder.name,
+                              icon: DsIconKind.layers,
+                              onSelected: (_) => navigateToFolder(folder),
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        isSearching
-                            ? 'notes_noSearchResults'.tr
-                            : 'notes_emptyFolder'.tr,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).disabledColor,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
 
-            // Bottom padding
-            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                // Notes Grid
+                if (notes.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverMasonryGrid.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childCount: notes.length,
+                      itemBuilder: (context, index) {
+                        return NoteCard(
+                          note: notes[index],
+                          onTap: () => editNote(notes[index]),
+                          onDelete: () => deleteNote(notes[index]),
+                        );
+                      },
+                    ),
+                  ),
+
+                // Empty State
+                if (subFolders.isEmpty && notes.isEmpty)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DsIcon(
+                            DsIconKind.book,
+                            size: 64,
+                            color: theme.disabled,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            isSearching
+                                ? 'notes_noSearchResults'.tr
+                                : 'notes_emptyFolder'.tr,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Bottom padding
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
+            // FAB
+            Positioned(bottom: 16, right: 16, child: _buildExpandableFab()),
           ],
-        ),
-        // FAB
-        Positioned(bottom: 16, right: 16, child: _buildExpandableFab()),
-      ],
+        );
+      },
     );
   }
 
@@ -448,33 +456,40 @@ class _NotesMainViewState extends NotesMainViewState
         type: FilterType.custom,
         builder: (context, currentValue, onChanged) {
           final selectedFolder = currentValue as Folder?;
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.folder_outlined, size: 16),
-                label: Text(
-                  selectedFolder?.name ?? 'notes_selectFolder'.tr,
-                  style: const TextStyle(fontSize: 13),
-                ),
-                onPressed: () async {
-                  final folder = await _showFolderPicker();
-                  if (folder != null) {
-                    onChanged(folder);
-                  }
-                },
-              ),
-              if (selectedFolder != null)
-                IconButton(
-                  icon: const Icon(Icons.clear, size: 16),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 24,
-                    minHeight: 24,
-                  ),
-                  onPressed: () => onChanged(null),
-                ),
-            ],
+          // 第三方过滤栏回调：DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DSButton(
+                      label: selectedFolder?.name ?? 'notes_selectFolder'.tr,
+                      icon: DsIconKind.layers,
+                      variant: DSButtonVariant.outline,
+                      size: DSButtonSize.sm,
+                      onPressed: () async {
+                        final folder = await _showFolderPicker();
+                        if (folder != null) {
+                          onChanged(folder);
+                        }
+                      },
+                    ),
+                    if (selectedFolder != null)
+                      Pressable(
+                        onPressed: () => onChanged(null),
+                        builder:
+                            (context, states) => DsIcon(
+                              DsIconKind.close,
+                              size: 16,
+                              color: theme.textSub,
+                            ),
+                      ),
+                  ],
+                );
+              },
+            ),
           );
         },
         getBadge: (value) {

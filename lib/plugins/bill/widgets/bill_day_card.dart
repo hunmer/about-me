@@ -65,8 +65,8 @@ class BillDayCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
+                          DsIcon(
+                            DsIconKind.piggy,
                             size: 32,
                             color: theme.disabled.withValues(alpha: 0.4),
                           ),

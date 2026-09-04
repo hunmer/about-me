@@ -72,9 +72,19 @@ class _AccountListScreenState extends State<AccountListScreen> {
         leading:
             (UniversalPlatform.isAndroid || UniversalPlatform.isIOS)
                 ? null
-                : IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new, color: theme.text),
-                  onPressed: () => Navigator.of(context).pop(),
+                : DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 40,
+                        color: theme.surface,
+                        iconColor: theme.text,
+                        onPressed: () => Navigator.of(context).pop(),
+                      );
+                    },
+                  ),
                 ),
       ),
       body: _buildAccountList(),

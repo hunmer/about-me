@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'package:aboutme/plugins/notes/models/folder_tree_node.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
@@ -34,11 +36,12 @@ class FolderSelectionSheet extends StatefulWidget {
     return SmoothBottomSheet.show<Folder>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => FolderSelectionSheet(
-        rootNode: rootNode,
-        note: note,
-        parentFolder: parentFolder,
-      ),
+      builder:
+          (context) => FolderSelectionSheet(
+            rootNode: rootNode,
+            note: note,
+            parentFolder: parentFolder,
+          ),
     );
   }
 
@@ -59,7 +62,7 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
     if (widget.parentFolder != null) {
       _displayRootNode =
           _findNodeById(widget.rootNode, widget.parentFolder!.id) ??
-              widget.rootNode;
+          widget.rootNode;
     } else {
       _displayRootNode = widget.rootNode;
     }
@@ -86,54 +89,65 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 计算 bottom sheet 的高度（屏幕高度的 80%）
-    final maxHeight = MediaQuery.of(context).size.height * 0.8;
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          // 计算 bottom sheet 的高度（屏幕高度的 80%）
+          final maxHeight = MediaQuery.of(context).size.height * 0.8;
 
-    return SizedBox(
-      height: maxHeight,
-      child: Column(
-        children: [
-          // 标题栏
-          _buildHeader(),
+          return SizedBox(
+            height: maxHeight,
+            child: Column(
+              children: [
+                // 标题栏
+                _buildHeader(theme),
 
-          const Divider(height: 1),
+                Container(
+                  height: 1,
+                  color: theme.stroke.withValues(alpha: 0.4),
+                ),
 
-          // 文件夹树
-          Expanded(
-            child: TreeView.simple(
-              tree: _displayRootNode,
-              showRootNode: _displayRootNode.key != 'root',
-              expansionIndicatorBuilder: (context, node) {
-                return ChevronIndicator.rightDown(
-                  tree: node,
-                  color: Theme.of(context).iconTheme.color,
-                  padding: const EdgeInsets.all(8),
-                );
-              },
-              indentation: const Indentation(width: 24),
-              // 树准备就绪时展开所有节点
-              onTreeReady: (controller) {
-                controller.expandAllChildren(_displayRootNode);
-              },
-              builder: (context, node) {
-                final folderNode = node as FolderTreeNode;
-                return _buildFolderItem(
-                  folderNode.folder,
-                  folderNode.childrenAsList.isNotEmpty,
-                );
-              },
+                // 文件夹树
+                Expanded(
+                  child: TreeView.simple(
+                    tree: _displayRootNode,
+                    showRootNode: _displayRootNode.key != 'root',
+                    expansionIndicatorBuilder: (context, node) {
+                      return ChevronIndicator.rightDown(
+                        tree: node,
+                        color: theme.textSub,
+                        padding: const EdgeInsets.all(8),
+                      );
+                    },
+                    indentation: const Indentation(width: 24),
+                    // 树准备就绪时展开所有节点
+                    onTreeReady: (controller) {
+                      controller.expandAllChildren(_displayRootNode);
+                    },
+                    builder: (context, node) {
+                      final folderNode = node as FolderTreeNode;
+                      return _buildFolderItem(
+                        theme,
+                        folderNode.folder,
+                        folderNode.childrenAsList.isNotEmpty,
+                      );
+                    },
+                  ),
+                ),
+
+                // 底部操作栏
+                _buildBottomActions(theme),
+              ],
             ),
-          ),
-
-          // 底部操作栏
-          _buildBottomActions(),
-        ],
+          );
+        },
       ),
     );
   }
 
   /// 构建标题栏
-  Widget _buildHeader() {
+  Widget _buildHeader(AppThemeData theme) {
     // 根据不同场景显示不同的标题
     String title;
     if (widget.parentFolder != null) {
@@ -151,14 +165,14 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
           Expanded(
             child: Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close),
+          Pressable(
             onPressed: () => Navigator.pop(context),
+            builder:
+                (context, states) =>
+                    DsIcon(DsIconKind.close, size: 20, color: theme.textSub),
           ),
         ],
       ),
@@ -166,15 +180,13 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
   }
 
   /// 构建文件夹项
-  Widget _buildFolderItem(Folder folder, bool hasChildren) {
+  Widget _buildFolderItem(AppThemeData theme, Folder folder, bool hasChildren) {
     final isCurrentFolder = folder.id == _currentFolderId;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isCurrentFolder
-            ? Theme.of(context).primaryColor.withOpacity(0.1)
-            : null,
+        color: isCurrentFolder ? theme.primary.withValues(alpha: 0.1) : null,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
@@ -186,33 +198,23 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // 文件夹图标
-                Icon(
-                  folder.icon,
-                  color: folder.color,
-                  size: 24,
-                ),
+                // 文件夹图标（持久化 IconData，保留 Material Icons 定义）
+                Icon(folder.icon, color: folder.color, size: 24),
                 const SizedBox(width: 16),
                 // 文件夹名称
                 Expanded(
                   child: Text(
                     folder.name,
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: DsTypography.body.copyWith(
+                      color: isCurrentFolder ? theme.primaryText : theme.text,
                       fontWeight:
-                          isCurrentFolder ? FontWeight.bold : FontWeight.normal,
-                      color:
-                          isCurrentFolder ? Theme.of(context).primaryColor : null,
+                          isCurrentFolder ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
                 ),
                 // 当前文件夹标记
                 if (isCurrentFolder)
-                  Icon(
-                    Icons.check_circle,
-                    color: Theme.of(context).primaryColor,
-                    size: 20,
-                  ),
+                  DsIcon(DsIconKind.check, size: 20, color: theme.primary),
               ],
             ),
           ),
@@ -222,7 +224,7 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
   }
 
   /// 构建底部操作栏
-  Widget _buildBottomActions() {
+  Widget _buildBottomActions(AppThemeData theme) {
     // 检查是否可以选择父文件夹
     final parentFolder = widget.parentFolder;
     final canSelectParent =
@@ -230,17 +232,15 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
 
     // 获取根文件夹
     final rootFolder = widget.rootNode.folder;
-    final canSelectRoot = rootFolder.id != _currentFolderId && rootFolder.id == 'root';
+    final canSelectRoot =
+        rootFolder.id != _currentFolderId && rootFolder.id == 'root';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: theme.surface,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          top: BorderSide(color: theme.stroke.withValues(alpha: 0.4), width: 1),
         ),
       ),
       child: SafeArea(
@@ -248,9 +248,10 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
           children: [
             // 取消按钮
             Expanded(
-              child: OutlinedButton(
+              child: DSButton(
+                label: 'app_cancel'.tr,
+                variant: DSButtonVariant.outline,
                 onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
               ),
             ),
 
@@ -259,10 +260,10 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
-                child: FilledButton.icon(
+                child: DSButton(
+                  label: 'notes_selectRoot'.tr,
+                  icon: DsIconKind.home,
                   onPressed: () => Navigator.pop(context, rootFolder),
-                  icon: const Icon(Icons.home),
-                  label: Text('notes_selectRoot'.tr),
                 ),
               ),
             ]
@@ -271,10 +272,10 @@ class _FolderSelectionSheetState extends State<FolderSelectionSheet> {
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
-                child: FilledButton.icon(
+                child: DSButton(
+                  label: 'notes_selectCurrentFolder'.tr,
+                  icon: DsIconKind.check,
                   onPressed: () => Navigator.pop(context, parentFolder),
-                  icon: const Icon(Icons.check),
-                  label: Text('notes_selectCurrentFolder'.tr),
                 ),
               ),
             ],

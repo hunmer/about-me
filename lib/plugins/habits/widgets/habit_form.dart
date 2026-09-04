@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +40,8 @@ class HabitForm extends StatefulWidget {
 
 class _HabitFormState extends State<HabitForm> {
   GlobalKey<FormBuilderState> get _formKey => _internalFormKey;
-  final GlobalKey<FormBuilderState> _internalFormKey = GlobalKey<FormBuilderState>();
+  final GlobalKey<FormBuilderState> _internalFormKey =
+      GlobalKey<FormBuilderState>();
   List<Skill> _skills = [];
 
   @override
@@ -72,18 +76,17 @@ class _HabitFormState extends State<HabitForm> {
           FormFieldConfig(
             name: 'icon',
             type: FormFieldType.circleIconPicker,
-            initialValue: habit?.icon != null
-                ? {
-                    'icon': IconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons'),
-                    'color': Colors.blue,
-                  }
-                : {
-                    'icon': Icons.check_rounded,
-                    'color': Colors.blue,
-                  },
-            extra: {
-              'initialBackgroundColor': Colors.blue,
-            },
+            initialValue:
+                habit?.icon != null
+                    ? {
+                      'icon': IconData(
+                        int.parse(habit!.icon!),
+                        fontFamily: 'MaterialIcons',
+                      ),
+                      'color': Colors.blue,
+                    }
+                    : {'icon': Icons.check_rounded, 'color': Colors.blue},
+            extra: {'initialBackgroundColor': Colors.blue},
           ),
           // 标题
           FormFieldConfig(
@@ -100,10 +103,7 @@ class _HabitFormState extends State<HabitForm> {
             type: FormFieldType.textArea,
             labelText: 'habits_notes'.tr,
             initialValue: habit?.notes ?? '',
-            extra: {
-              'minLines': 3,
-              'maxLines': 5,
-            },
+            extra: {'minLines': 3, 'maxLines': 5},
           ),
           // 分组
           FormFieldConfig(
@@ -124,7 +124,10 @@ class _HabitFormState extends State<HabitForm> {
             name: 'skillId',
             type: FormFieldType.select,
             labelText: 'habits_skill'.tr,
-            initialValue: _skills.any((s) => s.id == habit?.skillId) ? habit?.skillId : null,
+            initialValue:
+                _skills.any((s) => s.id == habit?.skillId)
+                    ? habit?.skillId
+                    : null,
             required: true,
             validationMessage: 'habits_selectSkill'.tr,
             items: _buildSkillItems(),
@@ -136,9 +139,7 @@ class _HabitFormState extends State<HabitForm> {
         fieldSpacing: 20,
         onSubmit: _handleSubmit,
         onValidationFailed: (errors) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('请检查输入：${errors.values.join(", ")}')),
-          );
+          Toast.error('请检查输入：${errors.values.join(", ")}');
         },
       ),
       contentBuilder: (context, fields) {
@@ -159,12 +160,12 @@ class _HabitFormState extends State<HabitForm> {
               ),
               const SizedBox(height: 24),
               // 图片/图标与标题之间的间距
-              ...fields.skip(2).map((field) => Column(
-                children: [
-                  field,
-                  const SizedBox(height: 20),
-                ],
-              )),
+              ...fields
+                  .skip(2)
+                  .map(
+                    (field) =>
+                        Column(children: [field, const SizedBox(height: 20)]),
+                  ),
             ],
           ),
         );
@@ -184,9 +185,10 @@ class _HabitFormState extends State<HabitForm> {
 
   /// 构建图标选择器
   Widget _buildIconPicker(Habit? habit) {
-    IconData? icon = habit?.icon != null
-        ? IconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons')
-        : Icons.check_rounded;
+    IconData? icon =
+        habit?.icon != null
+            ? IconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons')
+            : Icons.check_rounded;
     Color color = Colors.blue;
 
     return _CircleIconPickerWidget(
@@ -203,15 +205,18 @@ class _HabitFormState extends State<HabitForm> {
     final habit = Habit(
       id: widget.initialHabit?.id ?? HabitsUtils.generateId(),
       title: values['title'] as String? ?? '',
-      notes: (values['notes'] as String?)?.isEmpty ?? true
-          ? null
-          : values['notes'] as String?,
-      group: (values['group'] as String?)?.isEmpty ?? true
-          ? null
-          : values['group'] as String?,
+      notes:
+          (values['notes'] as String?)?.isEmpty ?? true
+              ? null
+              : values['notes'] as String?,
+      group:
+          (values['group'] as String?)?.isEmpty ?? true
+              ? null
+              : values['group'] as String?,
       icon: (iconData?['icon'] as IconData?)?.codePoint.toString(),
       image: values['image'] as String?,
-      durationMinutes: int.tryParse(values['durationMinutes']?.toString() ?? '30') ?? 30,
+      durationMinutes:
+          int.tryParse(values['durationMinutes']?.toString() ?? '30') ?? 30,
       skillId: values['skillId'] as String?,
       tags: const [],
     );
@@ -294,16 +299,18 @@ class _ImagePickerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return GestureDetector(
       onTap: () async {
         final result = await showDialog<Map<String, dynamic>>(
           context: context,
-          builder: (context) => ImagePickerDialog(
-            initialUrl: initialImage,
-            saveDirectory: 'habits/habit_images',
-            enableCrop: true,
-            cropAspectRatio: 1.0,
-          ),
+          builder:
+              (context) => ImagePickerDialog(
+                initialUrl: initialImage,
+                saveDirectory: 'habits/habit_images',
+                enableCrop: true,
+                cropAspectRatio: 1.0,
+              ),
         );
         if (result != null && result['url'] != null) {
           onImageChanged(result['url'] as String?);
@@ -316,7 +323,7 @@ class _ImagePickerWidget extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: theme.primary.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -332,30 +339,41 @@ class _ImagePickerWidget extends StatelessWidget {
                         child: AspectRatio(
                           aspectRatio: 1.0,
                           child: ClipOval(
-                            child: image.startsWith('http')
-                                ? Image.network(
-                                    snapshot.data!,
-                                    width: 64,
-                                    height: 64,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        const Icon(Icons.broken_image),
-                                  )
-                                : Image.file(
-                                    File(snapshot.data!),
-                                    width: 64,
-                                    height: 64,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        const Icon(Icons.broken_image),
-                                  ),
+                            child:
+                                image.startsWith('http')
+                                    ? Image.network(
+                                      snapshot.data!,
+                                      width: 64,
+                                      height: 64,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              DsIcon(
+                                                DsIconKind.image,
+                                                color: theme.textSub,
+                                              ),
+                                    )
+                                    : Image.file(
+                                      File(snapshot.data!),
+                                      width: 64,
+                                      height: 64,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              DsIcon(
+                                                DsIconKind.image,
+                                                color: theme.textSub,
+                                              ),
+                                    ),
                           ),
                         ),
                       );
                     } else if (snapshot.hasError) {
-                      return const Icon(Icons.broken_image);
+                      return DsIcon(DsIconKind.image, color: theme.textSub);
                     } else {
-                      return const CircularProgressIndicator();
+                      return const DSThemeBridge(
+                        child: Center(child: DSLoadingDots(size: 10)),
+                      );
                     }
                   },
                 );
@@ -364,9 +382,14 @@ class _ImagePickerWidget extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.add_photo_alternate_outlined, size: 24),
+                      DsIcon(DsIconKind.camera, size: 24, color: theme.textSub),
                       const SizedBox(height: 2),
-                      Text('选择图片', style: const TextStyle(fontSize: 12)),
+                      Text(
+                        '选择图片',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -392,7 +415,8 @@ class _CircleIconPickerWidget extends StatefulWidget {
   });
 
   @override
-  State<_CircleIconPickerWidget> createState() => _CircleIconPickerWidgetState();
+  State<_CircleIconPickerWidget> createState() =>
+      _CircleIconPickerWidgetState();
 }
 
 class _CircleIconPickerWidgetState extends State<_CircleIconPickerWidget> {

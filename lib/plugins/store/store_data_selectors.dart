@@ -29,9 +29,7 @@ void _registerDataSelectors() {
             return [];
           },
           customFormBuilder: (context, previousSelections, onComplete) {
-            return _CustomGoalInputForm(
-              onComplete: onComplete,
-            );
+            return _CustomGoalInputForm(onComplete: onComplete);
           },
         ),
       ],
@@ -110,8 +108,7 @@ void _registerDataSelectors() {
           dataLoader: (_) async {
             return StorePlugin.instance.controller.userItems.map((item) {
               final productSnapshot = item.productSnapshot;
-              final productName =
-                  productSnapshot['name'] as String? ?? '未知物品';
+              final productName = productSnapshot['name'] as String? ?? '未知物品';
               final remaining = item.remaining;
               final expireDate = item.expireDate;
               final remainingDays =
@@ -165,9 +162,7 @@ void _registerDataSelectors() {
 class _CustomGoalInputForm extends StatefulWidget {
   final Function(dynamic) onComplete;
 
-  const _CustomGoalInputForm({
-    required this.onComplete,
-  });
+  const _CustomGoalInputForm({required this.onComplete});
 
   @override
   State<_CustomGoalInputForm> createState() => _CustomGoalInputFormState();
@@ -175,17 +170,54 @@ class _CustomGoalInputForm extends StatefulWidget {
 
 class _CustomGoalInputFormState extends State<_CustomGoalInputForm> {
   final TextEditingController _controller = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final FocusNode _focusNode = FocusNode();
   bool _isValid = false;
+  // DSInput 无 Form 校验，手动维护错误文案
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    // 原 TextFormField 的 autofocus 行为：首帧后聚焦
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _focusNode.canRequestFocus) _focusNode.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
+  /// 校验输入（返回错误文案，null 表示通过）
+  String? _validate(String value) {
+    if (value.isEmpty) {
+      return '请输入目标值';
+    }
+    final number = int.tryParse(value);
+    if (number == null) {
+      return '请输入有效的数字';
+    }
+    if (number <= 0) {
+      return '目标值必须大于0';
+    }
+    if (number > 10000) {
+      return '目标值不能超过10000';
+    }
+    return null;
+  }
+
   void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
+    final error = _validate(_controller.text);
+    if (mounted) {
+      setState(() {
+        _errorText = error;
+        _isValid = error == null;
+      });
+    }
+    if (error == null) {
       final value = int.tryParse(_controller.text);
       if (value != null && value > 0) {
         widget.onComplete({'goal': value});
@@ -195,119 +227,95 @@ class _CustomGoalInputFormState extends State<_CustomGoalInputForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 说明文字（DS 暂无旗帜/奖杯图标，用 star 近似）
+              DsIcon(DsIconKind.star, size: 64, color: theme.primary),
+              const SizedBox(height: 24),
+              Text(
+                '设置你的每日积分目标',
+                style: DsTypography.display.copyWith(color: theme.text),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '输入一个正整数作为你的每日目标',
+                style: DsTypography.body.copyWith(color: theme.textSub),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
 
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 说明文字
-          Icon(
-            Icons.flag,
-            size: 64,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '设置你的每日积分目标',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '输入一个正整数作为你的每日目标',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-
-          // 输入框
-          TextFormField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: '目标积分',
-              hintText: '例如：50',
-              prefixIcon: const Icon(Icons.emoji_events),
-              suffixText: '积分',
-              border: const OutlineInputBorder(),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return '请输入目标值';
-              }
-              final number = int.tryParse(value);
-              if (number == null) {
-                return '请输入有效的数字';
-              }
-              if (number <= 0) {
-                return '目标值必须大于0';
-              }
-              if (number > 10000) {
-                return '目标值不能超过10000';
-              }
-              return null;
-            },
-            onChanged: (value) {
-              // 更新按钮状态
-              final isValid = _formKey.currentState?.validate() ?? false;
-              if (_isValid != isValid) {
-                setState(() {
-                  _isValid = isValid;
-                });
-              }
-            },
-            onFieldSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 16),
-
-          // 推荐目标
-          Text(
-            '推荐目标：',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [20, 50, 100, 200].map((value) {
-              return FilledButton.tonal(
-                onPressed: () {
-                  _controller.text = value.toString();
-                  setState(() {
-                    _isValid = true;
-                  });
-                  _submit();
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(60, 36),
+              // 输入框
+              DSInput(
+                controller: _controller,
+                focusNode: _focusNode,
+                keyboardType: TextInputType.number,
+                label: '目标积分',
+                hint: '例如：50',
+                errorText: _errorText,
+                prefix: DsIcon(DsIconKind.star, size: 18, color: theme.textSub),
+                suffix: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    '积分',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
                 ),
-                child: Text('$value'),
-              );
-            }).toList(),
-          ),
-          const Spacer(),
+                onChanged: (value) {
+                  // 更新按钮状态
+                  final isValid = _validate(value) == null;
+                  if (_isValid != isValid) {
+                    setState(() {
+                      _isValid = isValid;
+                    });
+                  }
+                },
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 16),
 
-          // 确定按钮
-          FilledButton(
-            onPressed: _isValid ? _submit : null,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              backgroundColor: theme.colorScheme.primary,
-            ),
-            child: const Text('确定'),
-          ),
-        ],
+              // 推荐目标
+              Text(
+                '推荐目标：',
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    [20, 50, 100, 200].map((value) {
+                      return DSButton(
+                        label: '$value',
+                        variant: DSButtonVariant.secondary,
+                        size: DSButtonSize.sm,
+                        onPressed: () {
+                          _controller.text = value.toString();
+                          setState(() {
+                            _errorText = null;
+                            _isValid = true;
+                          });
+                          _submit();
+                        },
+                      );
+                    }).toList(),
+              ),
+              const Spacer(),
+
+              // 确定按钮
+              DSButton(
+                label: '确定',
+                size: DSButtonSize.lg,
+                onPressed: _isValid ? _submit : null,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

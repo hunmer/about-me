@@ -5,9 +5,12 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/habits/controllers/timer_controller.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
@@ -34,9 +37,13 @@ class HabitsMainView extends StatefulWidget {
 class _HabitsMainViewState extends State<HabitsMainView> {
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: HabitsBottomBar(plugin: HabitsPlugin.instance, habitId: widget.habitId),
+      backgroundColor: theme.background,
+      body: HabitsBottomBar(
+        plugin: HabitsPlugin.instance,
+        habitId: widget.habitId,
+      ),
     );
   }
 }
@@ -60,9 +67,7 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
   }
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'habits/',
-  ];
+  static const List<String> _refreshableFiles = ['habits/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -185,7 +190,10 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
     EventManager.instance.subscribe('habit_timer_started', _onTimerEvent);
     EventManager.instance.subscribe('habit_timer_stopped', _onTimerEvent);
     // 监听完成记录保存事件，同步周视图小组件
-    EventManager.instance.subscribe('habit_completion_record_saved', _onCompletionRecordSaved);
+    EventManager.instance.subscribe(
+      'habit_completion_record_saved',
+      _onCompletionRecordSaved,
+    );
     // 监听习惯数据变更事件，同步习惯分组列表小组件
     EventManager.instance.subscribe('habit_data_changed', _onHabitDataChanged);
     // 监听技能数据变更事件，同步习惯分组列表小组件
@@ -247,14 +255,23 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
     // 取消事件订阅
     EventManager.instance.unsubscribe('habit_timer_started', _onTimerEvent);
     EventManager.instance.unsubscribe('habit_timer_stopped', _onTimerEvent);
-    EventManager.instance.unsubscribe('habit_completion_record_saved', _onCompletionRecordSaved);
-    EventManager.instance.unsubscribe('habit_data_changed', _onHabitDataChanged);
-    EventManager.instance.unsubscribe('skill_data_changed', _onSkillDataChanged);
+    EventManager.instance.unsubscribe(
+      'habit_completion_record_saved',
+      _onCompletionRecordSaved,
+    );
+    EventManager.instance.unsubscribe(
+      'habit_data_changed',
+      _onHabitDataChanged,
+    );
+    EventManager.instance.unsubscribe(
+      'skill_data_changed',
+      _onSkillDataChanged,
+    );
   }
 
   @override
   Widget buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final habitCount = _habitController.getHabits().length;
     final skillCount = _skillController.getSkills().length;
 
@@ -278,9 +295,7 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'habits_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -294,13 +309,14 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
                 children: [
                   Text(
                     '$habitCount',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     'habits_habits'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                 ],
               ),
@@ -308,13 +324,14 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
                 children: [
                   Text(
                     '$skillCount',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     'habits_skills'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                 ],
               ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 
@@ -34,11 +36,11 @@ class NoteDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -58,19 +60,16 @@ class NoteDayCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.note_outlined,
+                          DsIcon(
+                            DsIconKind.book,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.textSub.withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'notes_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub.withValues(alpha: 0.4),
                             ),
                           ),
                         ],
@@ -94,7 +93,7 @@ class NoteDayCard extends StatelessWidget {
 
   /// 单条笔记行：图标 + 标题/标签 + 时间
   Widget _buildNoteItem(BuildContext context, Note note) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return InkWell(
       onTap: () => onNoteTap(note),
@@ -103,16 +102,13 @@ class NoteDayCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
         child: Row(
           children: [
-            Icon(
-              Icons.note_outlined,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
+            DsIcon(DsIconKind.book, size: 18, color: theme.primary),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 note.title.isNotEmpty ? note.title : 'notes_dayCardUntitled'.tr,
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: DsTypography.caption.copyWith(
+                  color: theme.text,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
@@ -125,17 +121,17 @@ class NoteDayCard extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 6),
                 child: Text(
                   '#${note.tags.first}',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: DsTypography.caption.copyWith(
                     fontSize: 10,
-                    color: theme.disabledColor,
+                    color: theme.textSub,
                   ),
                 ),
               ),
             Text(
               _formatTime(note.updatedAt),
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: DsTypography.caption.copyWith(
                 fontSize: 11,
-                color: theme.disabledColor,
+                color: theme.textSub,
               ),
             ),
           ],

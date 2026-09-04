@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
@@ -39,13 +41,13 @@ class HabitDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final completed =
         statuses.where((status) => status.records.isNotEmpty).length;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -68,16 +70,13 @@ class HabitDayCard extends StatelessWidget {
                           Icon(
                             Icons.self_improvement,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.textSub.withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'habits_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                           ),
                         ],
@@ -101,7 +100,7 @@ class HabitDayCard extends StatelessWidget {
 
   /// 单条习惯行：图标 + 名称/完成情况 + 状态
   Widget _buildHabitItem(BuildContext context, HabitDayStatus status) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final habit = status.habit;
     final done = status.records.isNotEmpty;
 
@@ -120,9 +119,9 @@ class HabitDayCard extends StatelessWidget {
                 children: [
                   Text(
                     habit.title,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: done ? null : theme.disabledColor,
+                      color: done ? theme.text : theme.textSub,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -132,22 +131,22 @@ class HabitDayCard extends StatelessWidget {
                     done
                         ? '${status.records.length}次 · ${_formatDuration(status.totalMinutes)}'
                         : 'habits_dayCardNotDone'.tr,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontSize: 11,
-                      color: theme.disabledColor,
+                      color: theme.textSub,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              done ? Icons.check_circle : Icons.radio_button_unchecked,
-              size: 16,
-              color:
-                  done
-                      ? color
-                      : theme.disabledColor.withValues(alpha: 0.5),
-            ),
+            if (done)
+              DsIcon(DsIconKind.check, size: 16, color: color)
+            else
+              Icon(
+                Icons.radio_button_unchecked,
+                size: 16,
+                color: theme.textSub.withValues(alpha: 0.5),
+              ),
           ],
         ),
       ),
@@ -156,18 +155,19 @@ class HabitDayCard extends StatelessWidget {
 
   /// 习惯图标（icon 为 codePoint 字符串）
   Widget _buildHabitIcon(BuildContext context, Habit habit, bool done) {
+    final theme = DSThemeBridge.resolve(context);
     final codePoint = habit.icon == null ? null : int.tryParse(habit.icon!);
     if (codePoint == null) {
       return Icon(
         done ? Icons.check_circle_outline : Icons.circle_outlined,
         size: 18,
-        color: done ? color : Theme.of(context).disabledColor,
+        color: done ? color : theme.textSub,
       );
     }
     return Icon(
       IconData(codePoint, fontFamily: 'MaterialIcons'),
       size: 18,
-      color: done ? color : Theme.of(context).disabledColor,
+      color: done ? color : theme.textSub,
     );
   }
 

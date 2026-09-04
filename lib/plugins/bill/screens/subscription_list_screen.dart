@@ -132,19 +132,38 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
       searchBody: _buildSearchBody(),
       body: _buildMainBody(activeSubscriptions, inactiveSubscriptions),
       actions: [
-        IconButton(
-          icon: Icon(
-            _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip:
+                    _isGridView
+                        ? 'bill_switchToListView'.tr
+                        : 'bill_switchToGridView'.tr,
+                onPressed: _toggleViewMode,
+              );
+            },
           ),
-          tooltip:
-              _isGridView
-                  ? 'bill_switchToListView'.tr
-                  : 'bill_switchToGridView'.tr,
-          onPressed: _toggleViewMode,
         ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () => _navigateToEdit(),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => _navigateToEdit(),
+              );
+            },
+          ),
         ),
       ],
     );

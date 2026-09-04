@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/controllers/completion_record_controller.dart';
 import 'package:aboutme/plugins/habits/models/skill.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
@@ -40,7 +42,6 @@ class _SkillRecordHistoryListState extends State<SkillRecordHistoryList> {
 
   @override
   Widget build(BuildContext context) {
-
     return CommonRecordList<CompletionRecord>(
       records: _records,
       confirmDismiss: (context, record) => _showDeleteDialog(context, record),
@@ -56,26 +57,20 @@ class _SkillRecordHistoryListState extends State<SkillRecordHistoryList> {
     BuildContext context,
     CompletionRecord record,
   ) async {
-
-    return await showDialog<bool>(
+    return await showDSDialog<bool>(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('habits_deleteRecord'.tr),
-                content: Text('habits_deleteRecordMessage'.tr),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text('app_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      await widget.controller.deleteCompletionRecord(record.id);
-                      Navigator.pop(context, true);
-                    },
-                    child: Text('app_delete'.tr),
-                  ),
-                ],
+              (context) => DSDialog(
+                title: 'habits_deleteRecord'.tr,
+                message: 'habits_deleteRecordMessage'.tr,
+                cancelText: 'app_cancel'.tr,
+                confirmText: 'app_delete'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onConfirm: () async {
+                  await widget.controller.deleteCompletionRecord(record.id);
+                  Navigator.pop(context, true);
+                },
               ),
         ) ??
         false;
@@ -94,6 +89,7 @@ class CompletionRecordsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
 
     return FutureBuilder(
       future: Future.wait([
@@ -117,15 +113,18 @@ class CompletionRecordsTab extends StatelessWidget {
                 children: [
                   Text(
                     '${'habits_completions'.tr}: $count',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
                   Text(
                     '${'habits_totalDuration'.tr}: ${HabitsUtils.formatDuration(duration)}',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
                   if (skill.description != null) ...[
                     const SizedBox(height: 16),
-                    Text(skill.description!),
+                    Text(
+                      skill.description!,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
                   ],
                   const SizedBox(height: 24),
                   Flexible(

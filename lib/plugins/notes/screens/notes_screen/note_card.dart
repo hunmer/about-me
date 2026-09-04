@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -24,57 +26,83 @@ class NoteCard extends StatelessWidget {
   // Pastel colors from the HTML reference
   static const List<Map<String, Color>> _colors = [
     // Greenish
-    {'light': Color(0xFFDCFCE7), 'dark': Color(0xFF163A24), 'text': Color(0xFF14532D), 'textDark': Color(0xFFBBF7D0)},
+    {
+      'light': Color(0xFFDCFCE7),
+      'dark': Color(0xFF163A24),
+      'text': Color(0xFF14532D),
+      'textDark': Color(0xFFBBF7D0),
+    },
     // Yellowish
-    {'light': Color(0xFFFEF9C3), 'dark': Color(0xFF423910), 'text': Color(0xFF713F12), 'textDark': Color(0xFFFDE047)},
+    {
+      'light': Color(0xFFFEF9C3),
+      'dark': Color(0xFF423910),
+      'text': Color(0xFF713F12),
+      'textDark': Color(0xFFFDE047),
+    },
     // Pinkish
-    {'light': Color(0xFFFFE4E6), 'dark': Color(0xFF521319), 'text': Color(0xFF881337), 'textDark': Color(0xFFFECDD3)},
+    {
+      'light': Color(0xFFFFE4E6),
+      'dark': Color(0xFF521319),
+      'text': Color(0xFF881337),
+      'textDark': Color(0xFFFECDD3),
+    },
     // Bluish
-    {'light': Color(0xFFE0E7FF), 'dark': Color(0xFF1E284C), 'text': Color(0xFF3730A3), 'textDark': Color(0xFFC7D2FE)},
+    {
+      'light': Color(0xFFE0E7FF),
+      'dark': Color(0xFF1E284C),
+      'text': Color(0xFF3730A3),
+      'textDark': Color(0xFFC7D2FE),
+    },
     // Purpleish
-    {'light': Color(0xFFFAE8FF), 'dark': Color(0xFF43194A), 'text': Color(0xFF701A75), 'textDark': Color(0xFFF5D0FE)},
+    {
+      'light': Color(0xFFFAE8FF),
+      'dark': Color(0xFF43194A),
+      'text': Color(0xFF701A75),
+      'textDark': Color(0xFFF5D0FE),
+    },
   ];
 
   /// 显示底部抽屉菜单
   void _showBottomSheet(BuildContext context) {
     SmoothBottomSheet.show(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.copy),
-            title: Text('app_copy'.tr),
-            onTap: () {
-              Navigator.pop(context);
-              _copyNoteContent();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: Text('app_edit'.tr),
-            onTap: () {
-              Navigator.pop(context);
-              if (onEdit != null) {
-                onEdit!();
-              } else {
-                onTap();
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: Text(
-              'app_delete'.tr,
-              style: const TextStyle(color: Colors.red),
+      builder:
+          (context) => DSThemeBridge(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DSSheetAction(
+                  icon: DsIconKind.copy,
+                  label: 'app_copy'.tr,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _copyNoteContent();
+                  },
+                ),
+                DSSheetAction(
+                  icon: DsIconKind.edit,
+                  label: 'app_edit'.tr,
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (onEdit != null) {
+                      onEdit!();
+                    } else {
+                      onTap();
+                    }
+                  },
+                ),
+                DSSheetAction(
+                  icon: DsIconKind.trash,
+                  label: 'app_delete'.tr,
+                  destructive: true,
+                  onTap: () {
+                    Navigator.pop(context);
+                    onDelete?.call();
+                  },
+                ),
+              ],
             ),
-            onTap: () {
-              Navigator.pop(context);
-              onDelete?.call();
-            },
           ),
-        ],
-      ),
     );
   }
 
@@ -87,8 +115,8 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
+    final isDark = theme.isDark;
 
     // Deterministic color based on note ID hash
     final colorIndex = note.id.hashCode.abs() % _colors.length;
@@ -96,7 +124,10 @@ class NoteCard extends StatelessWidget {
 
     final bgColor = isDark ? colorSet['dark']! : colorSet['light']!;
     final textColor = isDark ? colorSet['textDark']! : colorSet['text']!;
-    final subTextColor = isDark ? colorSet['textDark']!.withOpacity(0.7) : colorSet['text']!.withOpacity(0.7);
+    final subTextColor =
+        isDark
+            ? colorSet['textDark']!.withOpacity(0.7)
+            : colorSet['text']!.withOpacity(0.7);
 
     return GestureDetector(
       onTap: onTap,
@@ -118,7 +149,6 @@ class NoteCard extends StatelessWidget {
           children: [
             // Image placeholder - if we had image support in Note, we'd parse it here.
             // For now, we'll skip the image part unless we parse markdown for image links.
-            
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -158,9 +188,11 @@ class NoteCard extends StatelessWidget {
                     runSpacing: 4,
                     children: [
                       if (note.tags.isNotEmpty)
-                        ...note.tags.take(3).map((tag) => _buildChip(tag, textColor, isDark)),
+                        ...note.tags
+                            .take(3)
+                            .map((tag) => _buildChip(tag, textColor, isDark)),
                       if (note.tags.isEmpty)
-                         _buildDateChip(note.updatedAt, textColor, isDark),
+                        _buildDateChip(note.updatedAt, textColor, isDark),
                     ],
                   ),
                 ],
@@ -176,13 +208,16 @@ class NoteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+        color:
+            isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.label_outline, size: 14, color: textColor),
+          DsIcon(DsIconKind.tag, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
             label,
@@ -201,13 +236,16 @@ class NoteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+        color:
+            isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today, size: 14, color: textColor),
+          DsIcon(DsIconKind.calendar, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
             DateFormat('MMM d').format(date),

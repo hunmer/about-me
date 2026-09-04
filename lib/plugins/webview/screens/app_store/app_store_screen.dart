@@ -68,33 +68,54 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
             }
           });
         },
-        // DS 暂无"源"图标,整组 actions 保留 Material 保持一致
+        // SuperAppBar 的 actions 经 Overlay 渲染,脱离页面主题桥,
+        // DS 按钮需自带 DSThemeBridge 提供 AppTheme
         actions: [
-          // 源切换按钮
-          IconButton(
-            icon: const Icon(Icons.source),
-            tooltip:
-                appStoreManager.currentSource?.name ??
-                'webview_select_source'.tr,
-            onPressed: () => _showSourcePicker(context),
+          // 源切换按钮(DS 暂无"源"图标,用 layers 近似)
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.layers,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip:
+                      appStoreManager.currentSource?.name ??
+                      'webview_select_source'.tr,
+                  onPressed: () => _showSourcePicker(context),
+                );
+              },
+            ),
           ),
           // 源管理按钮
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'webview_manage_sources'.tr,
-            onPressed: () {
-              final appStoreManager = context.read<AppStoreManager>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => ChangeNotifierProvider.value(
-                        value: appStoreManager,
-                        child: const SourceManagementScreen(),
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.gear,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: 'webview_manage_sources'.tr,
+                  onPressed: () {
+                    final appStoreManager = context.read<AppStoreManager>();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) => ChangeNotifierProvider.value(
+                              value: appStoreManager,
+                              child: const SourceManagementScreen(),
+                            ),
                       ),
-                ),
-              );
-            },
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
         body: Builder(

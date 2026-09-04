@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -121,9 +123,9 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
       final habitController = habitsPlugin.getHabitController();
       final habits = habitController.getHabits();
       final habit = habits.cast<dynamic>().firstWhere(
-            (h) => h.id == widget.habitId,
-            orElse: () => null,
-          );
+        (h) => h.id == widget.habitId,
+        orElse: () => null,
+      );
 
       if (habit == null) {
         setState(() {
@@ -157,23 +159,22 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
     }
   }
 
-  Future<void> _showTimerDialog(
-    HabitsPlugin plugin,
-    dynamic controller,
-  ) async {
+  Future<void> _showTimerDialog(HabitsPlugin plugin, dynamic controller) async {
     if (_habit == null) return;
 
     // 显示计时器对话框
-    await showDialog(
+    await showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       barrierDismissible: true,
-      builder: (context) => TimerDialog(
-        habit: _habit,
-        controller: controller,
-        initialTimerData: plugin.timerController.getTimerData(
-          widget.habitId,
-        ),
-      ),
+      builder:
+          (context) => TimerDialog(
+            habit: _habit,
+            controller: controller,
+            initialTimerData: plugin.timerController.getTimerData(
+              widget.habitId,
+            ),
+          ),
     );
 
     // 对话框关闭后返回
@@ -184,6 +185,8 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dsTheme = DSThemeBridge.resolve(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('NFC 启动计时器'),
@@ -201,29 +204,26 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: _isProcessing
-                      ? Colors.amber.withOpacity(0.1)
-                      : (_success
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1)),
+                  color:
+                      _isProcessing
+                          ? dsTheme.primary.withValues(alpha: 0.1)
+                          : (_success
+                              ? dsTheme.success.withValues(alpha: 0.1)
+                              : dsTheme.danger.withValues(alpha: 0.1)),
                   shape: BoxShape.circle,
                 ),
-                child: _isProcessing
-                    ? const Center(
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 4,
-                            color: Colors.amber,
+                child:
+                    _isProcessing
+                        ? const Center(
+                          child: DSThemeBridge(
+                            child: Center(child: DSLoadingDots(size: 20)),
                           ),
+                        )
+                        : DsIcon(
+                          _success ? DsIconKind.check : DsIconKind.close,
+                          size: 64,
+                          color: _success ? dsTheme.success : dsTheme.danger,
                         ),
-                      )
-                    : Icon(
-                        _success ? Icons.check_circle : Icons.error,
-                        size: 64,
-                        color: _success ? Colors.green : Colors.red,
-                      ),
               ),
               const SizedBox(height: 32),
 
@@ -234,8 +234,10 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
                   children: [
                     Icon(
                       _habit.icon != null
-                          ? IconData(int.parse(_habit.icon!),
-                              fontFamily: 'MaterialIcons')
+                          ? IconData(
+                            int.parse(_habit.icon!),
+                            fontFamily: 'MaterialIcons',
+                          )
                           : Icons.auto_awesome,
                       color: Colors.amber,
                       size: 32,
@@ -243,10 +245,7 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _habit.title,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: DsTypography.display.copyWith(color: dsTheme.text),
                     ),
                   ],
                 ),
@@ -256,11 +255,11 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
               // 状态消息
               Text(
                 _message,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: _isProcessing
-                      ? Colors.grey[700]
-                      : (_success ? Colors.green[700] : Colors.red[700]),
+                style: DsTypography.title.copyWith(
+                  color:
+                      _isProcessing
+                          ? dsTheme.textSub
+                          : (_success ? dsTheme.success : dsTheme.danger),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -269,29 +268,34 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
 
               // 操作按钮
               if (!_isProcessing && !_success) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const HabitsMainView(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('查看习惯'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      return DSButton(
+                        label: '查看习惯',
+                        icon: DsIconKind.star,
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const HabitsMainView(),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('返回'),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      return DSButton(
+                        label: '返回',
+                        variant: DSButtonVariant.ghost,
+                        onPressed: () => Navigator.of(context).pop(),
+                      );
+                    },
+                  ),
                 ),
               ],
             ],
@@ -310,8 +314,7 @@ class _ShowTimerDialogScreen extends StatefulWidget {
   const _ShowTimerDialogScreen({required this.habitId});
 
   @override
-  State<_ShowTimerDialogScreen> createState() =>
-      _ShowTimerDialogScreenState();
+  State<_ShowTimerDialogScreen> createState() => _ShowTimerDialogScreenState();
 }
 
 class _ShowTimerDialogScreenState extends State<_ShowTimerDialogScreen> {
@@ -338,9 +341,9 @@ class _ShowTimerDialogScreenState extends State<_ShowTimerDialogScreen> {
       final habitController = habitsPlugin.getHabitController();
       final habits = habitController.getHabits();
       final habit = habits.cast<dynamic>().firstWhere(
-            (h) => h.id == widget.habitId,
-            orElse: () => null,
-          );
+        (h) => h.id == widget.habitId,
+        orElse: () => null,
+      );
 
       if (habit == null) {
         Toast.error('习惯不存在');
@@ -349,16 +352,18 @@ class _ShowTimerDialogScreenState extends State<_ShowTimerDialogScreen> {
 
       // 显示计时器对话框
       if (mounted) {
-        await showDialog(
+        await showDSDialog(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           barrierDismissible: true,
-          builder: (dialogContext) => TimerDialog(
-            habit: habit,
-            controller: habitController,
-            initialTimerData: habitsPlugin.timerController.getTimerData(
-              widget.habitId,
-            ),
-          ),
+          builder:
+              (dialogContext) => TimerDialog(
+                habit: habit,
+                controller: habitController,
+                initialTimerData: habitsPlugin.timerController.getTimerData(
+                  widget.habitId,
+                ),
+              ),
         );
       }
     } catch (e) {

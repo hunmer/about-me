@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
@@ -18,10 +20,7 @@ class HabitGroupListSelectorScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int? widgetId;
 
-  const HabitGroupListSelectorScreen({
-    super.key,
-    this.widgetId,
-  });
+  const HabitGroupListSelectorScreen({super.key, this.widgetId});
 
   @override
   State<HabitGroupListSelectorScreen> createState() =>
@@ -91,8 +90,10 @@ class _HabitGroupListSelectorScreenState
       if (primaryColorStr != null) {
         final colorValue = int.tryParse(primaryColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('primary', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'primary',
+            Color(colorValue),
+          );
         }
       }
 
@@ -103,8 +104,10 @@ class _HabitGroupListSelectorScreenState
       if (accentColorStr != null) {
         final colorValue = int.tryParse(accentColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -115,8 +118,10 @@ class _HabitGroupListSelectorScreenState
       if (bgColorStr != null) {
         final colorValue = int.tryParse(bgColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('background', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'background',
+            Color(colorValue),
+          );
         }
       }
 
@@ -127,8 +132,7 @@ class _HabitGroupListSelectorScreenState
       if (textColorStr != null) {
         final colorValue = int.tryParse(textColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('text', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor('text', Color(colorValue));
         }
       }
 
@@ -153,7 +157,9 @@ class _HabitGroupListSelectorScreenState
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+        ),
       );
     }
 
@@ -168,32 +174,29 @@ class _HabitGroupListSelectorScreenState
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: habits.isEmpty
-          ? _buildEmptyState()
-          : WidgetConfigEditor(
-              widgetSize: WidgetSize.large,
-              initialConfig: _widgetConfig,
-              previewTitle: '小组件预览',
-              onConfigChanged: (config) {
-                setState(() => _widgetConfig = config);
-              },
-              previewBuilder: (context, config) =>
-                  _buildPreview(context, config, habits, skills),
-            ),
+      body:
+          habits.isEmpty
+              ? _buildEmptyState()
+              : WidgetConfigEditor(
+                widgetSize: WidgetSize.large,
+                initialConfig: _widgetConfig,
+                previewTitle: '小组件预览',
+                onConfigChanged: (config) {
+                  setState(() => _widgetConfig = config);
+                },
+                previewBuilder:
+                    (context, config) =>
+                        _buildPreview(context, config, habits, skills),
+              ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: _saveAndFinish,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '确认配置',
-              style: TextStyle(fontSize: 16),
+          child: DSThemeBridge(
+            child: DSButton(
+              label: '确认配置',
+              size: DSButtonSize.lg,
+              expand: true,
+              onPressed: _saveAndFinish,
             ),
           ),
         ),
@@ -203,30 +206,18 @@ class _HabitGroupListSelectorScreenState
 
   /// 构建空状态
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.auto_awesome,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.auto_awesome, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
-          Text(
-            '暂无习惯',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('暂无习惯', style: DsTypography.body.copyWith(color: theme.textSub)),
           const SizedBox(height: 8),
           Text(
             '请先在习惯插件中创建习惯',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -268,10 +259,7 @@ class _HabitGroupListSelectorScreenState
       decoration: BoxDecoration(
         color: bgColor.withOpacity(opacity),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF3A3A5C),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF3A3A5C), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Row(
@@ -283,10 +271,7 @@ class _HabitGroupListSelectorScreenState
             decoration: BoxDecoration(
               color: bgColor.withOpacity(0.8),
               border: Border(
-                right: BorderSide(
-                  color: const Color(0xFF3A3A5C),
-                  width: 1,
-                ),
+                right: BorderSide(color: const Color(0xFF3A3A5C), width: 1),
               ),
             ),
             child: Column(
@@ -322,9 +307,10 @@ class _HabitGroupListSelectorScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? accentColor.withOpacity(0.3)
-                              : Colors.transparent,
+                          color:
+                              isSelected
+                                  ? accentColor.withOpacity(0.3)
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -372,88 +358,91 @@ class _HabitGroupListSelectorScreenState
                 ),
                 // 习惯项
                 Expanded(
-                  child: previewHabits.isEmpty
-                      ? Center(
-                          child: Text(
-                            '暂无习惯',
-                            style: TextStyle(
-                              color: textColor.withOpacity(0.5),
-                              fontSize: 10,
+                  child:
+                      previewHabits.isEmpty
+                          ? Center(
+                            child: Text(
+                              '暂无习惯',
+                              style: TextStyle(
+                                color: textColor.withOpacity(0.5),
+                                fontSize: 10,
+                              ),
                             ),
+                          )
+                          : ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: previewHabits.length,
+                            itemBuilder: (context, index) {
+                              final habit = previewHabits[index];
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Checkbox
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: primaryColor,
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    // Icon
+                                    Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child:
+                                            habit.icon != null
+                                                ? Icon(
+                                                  IconData(
+                                                    int.tryParse(habit.icon!) ??
+                                                        Icons.star.codePoint,
+                                                    fontFamily: 'MaterialIcons',
+                                                  ),
+                                                  size: 10,
+                                                  color: primaryColor,
+                                                )
+                                                : Text(
+                                                  '✨',
+                                                  style: const TextStyle(
+                                                    fontSize: 8,
+                                                  ),
+                                                ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    // Name
+                                    Expanded(
+                                      child: Text(
+                                        habit.title,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 10,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: previewHabits.length,
-                          itemBuilder: (context, index) {
-                            final habit = previewHabits[index];
-                            return Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 4,
-                              ),
-                              child: Row(
-                                children: [
-                                  // Checkbox
-                                  Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: primaryColor,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  // Icon
-                                  Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withOpacity(0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: habit.icon != null
-                                          ? Icon(
-                                              IconData(
-                                                int.tryParse(habit.icon!) ??
-                                                    Icons.star.codePoint,
-                                                fontFamily: 'MaterialIcons',
-                                              ),
-                                              size: 10,
-                                              color: primaryColor,
-                                            )
-                                          : Text(
-                                              '✨',
-                                              style:
-                                                  const TextStyle(fontSize: 8),
-                                            ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  // Name
-                                  Expanded(
-                                    child: Text(
-                                      habit.title,
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontSize: 10,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
                 ),
               ],
             ),
@@ -545,32 +534,31 @@ class _HabitGroupListSelectorScreenState
       final skills = _habitsPlugin.getSkillController().getSkills();
 
       // 构建分组数据
-      final groupsData = skills.map((skill) {
-        return {
-          'id': skill.id,
-          'name': skill.title,
-          'icon': skill.icon ?? '📂',
-        };
-      }).toList();
+      final groupsData =
+          skills.map((skill) {
+            return {
+              'id': skill.id,
+              'name': skill.title,
+              'icon': skill.icon ?? '📂',
+            };
+          }).toList();
 
       // 构建习惯数据
-      final habitsData = habits.map((habit) {
-        return {
-          'id': habit.id,
-          'title': habit.title,
-          'icon': habit.icon,
-          'group': habit.skillId,
-          'completed': false, // TODO: 从完成记录中获取今日完成状态
-        };
-      }).toList();
+      final habitsData =
+          habits.map((habit) {
+            return {
+              'id': habit.id,
+              'title': habit.title,
+              'icon': habit.icon,
+              'group': habit.skillId,
+              'completed': false, // TODO: 从完成记录中获取今日完成状态
+            };
+          }).toList();
 
       // 保存为 JSON 字符串
       await HomeWidget.saveWidgetData<String>(
         'habit_group_list_widget_data',
-        jsonEncode({
-          'groups': groupsData,
-          'habits': habitsData,
-        }),
+        jsonEncode({'groups': groupsData, 'habits': habitsData}),
       );
 
       debugPrint('已同步习惯分组列表数据: ${habits.length} 个习惯, ${skills.length} 个技能');

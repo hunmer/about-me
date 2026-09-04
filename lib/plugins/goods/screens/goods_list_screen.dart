@@ -521,43 +521,106 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
       // 传递初始筛选条件（用于页面跳转时）
       initialMultiFilters: _multiFilters.isNotEmpty ? _multiFilters : null,
       // 将原有的 AppBar actions 移到右上角
+      // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
       actions: [
         // 视图切换按钮
-        IconButton(
-          icon: Icon(
-            _isGridView ? Icons.view_list : Icons.grid_view,
-            semanticLabel:
-                _isGridView ? 'goods_viewAsList'.tr : 'goods_viewAsGrid'.tr,
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip:
+                    _isGridView ? 'goods_viewAsList'.tr : 'goods_viewAsGrid'.tr,
+                onPressed: () {
+                  setState(() {
+                    _isGridView = !_isGridView;
+                  });
+                },
+              );
+            },
           ),
-          onPressed: () {
-            setState(() {
-              _isGridView = !_isGridView;
-            });
-          },
         ),
-        // 排序按钮
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.sort),
-          onSelected: (value) {
-            setState(() {
-              _sortBy = value;
-            });
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'none',
-                  child: Text('goods_defaultSort'.tr),
+        // 排序按钮(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSPopover(
+                width: 190,
+                contentBuilder: (popoverContext, close) {
+                  final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                  Widget menuRow(String value, String label) {
+                    return Pressable(
+                      onPressed: () {
+                        close();
+                        setState(() {
+                          _sortBy = value;
+                        });
+                      },
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: popoverTheme.spacing.sm,
+                            vertical: popoverTheme.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: pressed ? popoverTheme.surfaceAlt : null,
+                            borderRadius: popoverTheme.radii.sm,
+                          ),
+                          child: Row(
+                            children: [
+                              DsIcon(
+                                _sortBy == value
+                                    ? DsIconKind.check
+                                    : DsIconKind.sort,
+                                size: 18,
+                                color: popoverTheme.text,
+                              ),
+                              SizedBox(width: popoverTheme.spacing.sm),
+                              Text(
+                                label,
+                                style: DsTypography.body.copyWith(
+                                  color: popoverTheme.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      menuRow('none', 'goods_defaultSort'.tr),
+                      menuRow('price', 'goods_sortByPrice'.tr),
+                      menuRow('lastUsed', 'goods_sortByLastUsedTime'.tr),
+                    ],
+                  );
+                },
+                child: JellyBox(
+                  width: 36,
+                  height: 36,
+                  radius: theme.radii.circle,
+                  color: theme.surfaceAlt,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.sort,
+                      size: 18,
+                      color: theme.textSub,
+                    ),
+                  ),
                 ),
-                PopupMenuItem(
-                  value: 'price',
-                  child: Text('goods_sortByPrice'.tr),
-                ),
-                PopupMenuItem(
-                  value: 'lastUsed',
-                  child: Text('goods_sortByLastUsedTime'.tr),
-                ),
-              ],
+              );
+            },
+          ),
         ),
       ],
       body:

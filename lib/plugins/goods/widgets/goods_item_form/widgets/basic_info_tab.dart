@@ -98,9 +98,11 @@ class BasicInfoTab extends StatelessWidget {
               controller: controller.nameController,
               labelText: 'goods_productName'.tr,
               hintText: 'goods_enterProductName'.tr,
-              prefixIcon: Icon(
-                Icons.label_outline,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              prefixIcon: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DsIcon(DsIconKind.tag, size: 20, color: theme.textSub);
+                },
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -153,9 +155,15 @@ class BasicInfoTab extends StatelessWidget {
                 labelText: 'goods_price'.tr,
                 hintText: '¥ 0.00',
                 keyboardType: TextInputType.number,
-                prefixIcon: Icon(
-                  Icons.paid,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                prefixIcon: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return DsIcon(
+                      DsIconKind.piggy,
+                      size: 20,
+                      color: theme.textSub,
+                    );
+                  },
                 ),
               ),
             ),
@@ -165,9 +173,15 @@ class BasicInfoTab extends StatelessWidget {
                 controller: controller.stockController,
                 labelText: 'goods_quantity'.tr,
                 keyboardType: TextInputType.number,
-                prefixIcon: Icon(
-                  Icons.pin_invoke,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                prefixIcon: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return DsIcon(
+                      DsIconKind.hash,
+                      size: 20,
+                      color: theme.textSub,
+                    );
+                  },
                 ),
               ),
             ),
@@ -262,7 +276,7 @@ class BasicInfoTab extends StatelessWidget {
             controller.imagePath != null
                 ? ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: _buildImage(),
+                  child: _buildImage(context),
                 )
                 : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -302,21 +316,23 @@ class BasicInfoTab extends StatelessWidget {
     DateTime? initialDate,
     Function(DateTime?) onDateSelected,
   ) async {
-    final picked = await showDatePicker(
+    final picked = await showDSDatePickerDialog(
       context: context,
-      initialDate: initialDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      theme: DSThemeBridge.resolve(context),
+      initial: initialDate ?? DateTime.now(),
     );
     if (picked != null) {
       onDateSelected(picked);
     }
   }
 
-  Widget _buildImage() {
+  Widget _buildImage(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    Widget buildBrokenPlaceholder() =>
+        DsIcon(DsIconKind.image, color: theme.textSub);
     final displayPath = controller.thumbPath ?? controller.imagePath;
     if (displayPath == null) {
-      return const Icon(Icons.broken_image);
+      return buildBrokenPlaceholder();
     }
 
     if (displayPath.startsWith('http://') ||
@@ -326,8 +342,7 @@ class BasicInfoTab extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder:
-            (context, error, stackTrace) => const Icon(Icons.broken_image),
+        errorBuilder: (context, error, stackTrace) => buildBrokenPlaceholder(),
       );
     }
 
@@ -341,10 +356,10 @@ class BasicInfoTab extends StatelessWidget {
             width: double.infinity,
             height: double.infinity,
             errorBuilder:
-                (context, error, stackTrace) => const Icon(Icons.broken_image),
+                (context, error, stackTrace) => buildBrokenPlaceholder(),
           );
         }
-        return const Icon(Icons.broken_image);
+        return buildBrokenPlaceholder();
       },
     );
   }

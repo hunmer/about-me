@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -17,8 +19,7 @@ class UserItemSelectorWidget extends StatefulWidget {
   const UserItemSelectorWidget({required this.config, super.key});
 
   @override
-  State<UserItemSelectorWidget> createState() =>
-      _UserItemSelectorWidgetState();
+  State<UserItemSelectorWidget> createState() => _UserItemSelectorWidgetState();
 }
 
 class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
@@ -68,7 +69,7 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
     final isExpired = remainingDays < 0;
     final isExpiringSoon = remainingDays >= 0 && remainingDays <= 7;
 
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return FutureBuilder<String?>(
       future: _getProductImagePath(productImage),
@@ -125,9 +126,8 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
                             Expanded(
                               child: Text(
                                 productName,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: hasImage ? Colors.white : null,
+                                style: DsTypography.title.copyWith(
+                                  color: hasImage ? Colors.white : theme.text,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -142,17 +142,15 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
                               decoration: BoxDecoration(
                                 color:
                                     (hasImage
-                                        ? Colors.white.withOpacity(0.2)
-                                        : Colors.pinkAccent.withOpacity(0.2)),
+                                        ? Colors.white.withValues(alpha: 0.2)
+                                        : theme.primary.withValues(alpha: 0.2)),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '$remaining ${'store_times'.tr}',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: DsTypography.caption.copyWith(
                                   color:
-                                      hasImage
-                                          ? Colors.white
-                                          : Colors.pinkAccent,
+                                      hasImage ? Colors.white : theme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -164,16 +162,16 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.monetization_on,
+                                DsIcon(
+                                  DsIconKind.piggy,
                                   size: 16,
-                                  color: Colors.orange,
+                                  color: theme.warning,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '$purchasePrice ${'store_points'.tr}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.orange,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.warning,
                                   ),
                                 ),
                               ],
@@ -183,19 +181,13 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
                               isExpired
                                   ? 'store_itemExpired'.tr
                                   : '${'store_expireIn'.tr} $remainingDays ${'store_days'.tr}',
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: DsTypography.caption.copyWith(
                                 color:
-                                    hasImage
-                                        ? (isExpired
-                                            ? Colors.red.shade300
-                                            : (isExpiringSoon
-                                                ? Colors.orange.shade300
-                                                : Colors.green.shade300))
-                                        : (isExpired
-                                            ? Colors.red
-                                            : (isExpiringSoon
-                                                ? Colors.orange
-                                                : Colors.green)),
+                                    isExpired
+                                        ? theme.danger
+                                        : (isExpiringSoon
+                                            ? theme.warning
+                                            : theme.success),
                               ),
                             ),
                           ],

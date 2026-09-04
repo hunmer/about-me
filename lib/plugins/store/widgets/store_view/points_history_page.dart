@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/plugins/store/models/points_log.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -20,10 +22,7 @@ class PointsHistoryPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('store_pointsHistory'.tr),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text('store_pointsHistory'.tr), elevation: 0),
       body: PointsHistoryContent(controller: plugin.controller),
     );
   }
@@ -96,9 +95,10 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
       if (mounted) {
         setState(() {
           final start = _currentPage * _pageSize;
-          final end = (start + _pageSize <= widget.controller.pointsLogs.length)
-              ? start + _pageSize
-              : widget.controller.pointsLogs.length;
+          final end =
+              (start + _pageSize <= widget.controller.pointsLogs.length)
+                  ? start + _pageSize
+                  : widget.controller.pointsLogs.length;
 
           if (_currentPage == 0) {
             _displayedLogs = widget.controller.pointsLogs.sublist(start, end);
@@ -117,47 +117,61 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     if (widget.controller.pointsLogs.isEmpty) {
-      return Center(child: Text('store_noRecords'.tr));
+      return Center(
+        child: Text(
+          'store_noRecords'.tr,
+          style: DsTypography.body.copyWith(color: theme.textSub),
+        ),
+      );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(8),
-      itemCount: _displayedLogs.length +
-          (_currentPage * _pageSize < widget.controller.pointsLogs.length
-              ? 1
-              : 0),
-      itemBuilder: (context, index) {
-        // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
-        if (index == _displayedLogs.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(8),
+            itemCount:
+                _displayedLogs.length +
+                (_currentPage * _pageSize < widget.controller.pointsLogs.length
+                    ? 1
+                    : 0),
+            itemBuilder: (context, index) {
+              // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
+              if (index == _displayedLogs.length) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: DSLoadingDots(),
+                  ),
+                );
+              }
 
-        final log = _displayedLogs[index];
-        return Card(
-          child: ListTile(
-            leading: Icon(
-              log.type == '获得' ? Icons.add : Icons.remove,
-              color: log.type == '获得' ? Colors.green : Colors.red,
-            ),
-            title: Text(
-              'store_pointsHistoryEntry'.tr
-                  .replaceFirst('{value}', log.value.toString())
-                  .replaceFirst('{type}', log.type),
-            ),
-            subtitle: Text(log.reason),
-            trailing: Text(
-              '${log.timestamp.hour}:${log.timestamp.minute.toString().padLeft(2, '0')}',
-            ),
-          ),
-        );
-      },
+              final log = _displayedLogs[index];
+              final isEarn = log.type == '获得';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: DSListItem(
+                  leading: DsIcon(
+                    isEarn ? DsIconKind.plus : DsIconKind.minus,
+                    size: 22,
+                    color: isEarn ? theme.success : theme.danger,
+                  ),
+                  title: 'store_pointsHistoryEntry'.tr
+                      .replaceFirst('{value}', log.value.toString())
+                      .replaceFirst('{type}', log.type),
+                  subtitle: log.reason,
+                  trailingText:
+                      '${log.timestamp.hour}:${log.timestamp.minute.toString().padLeft(2, '0')}',
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

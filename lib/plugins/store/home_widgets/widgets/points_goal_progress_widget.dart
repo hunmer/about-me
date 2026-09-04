@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -62,7 +64,7 @@ class _PointsGoalProgressWidgetState extends State<PointsGoalProgressWidget> {
     final progress = goal > 0 ? (todayPoints / goal).clamp(0.0, 1.0) : 0.0;
     final isCompleted = todayPoints >= goal;
 
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Material(
       color: Colors.transparent,
@@ -79,44 +81,34 @@ class _PointsGoalProgressWidgetState extends State<PointsGoalProgressWidget> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    isCompleted ? Icons.emoji_events : Icons.flag,
-                    color: Colors.black,
+                  // DS 暂无旗帜/奖杯图标：目标用 star，完成用 check 近似
+                  DsIcon(
+                    isCompleted ? DsIconKind.check : DsIconKind.star,
+                    color: theme.text,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '今日积分目标',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
                   const Spacer(),
                   if (isCompleted)
-                    Icon(Icons.check_circle, color: Colors.black, size: 20),
+                    DsIcon(DsIconKind.check, color: theme.text, size: 20),
                 ],
               ),
               const SizedBox(height: 8),
               Stack(
                 children: [
-                  Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress,
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade400,
-                          borderRadius: BorderRadius.circular(12),
+                  // 果冻进度条（轨道 + 渐变填充）
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 17),
+                      child: DSThemeBridge(
+                        child: DSLinearProgress(
+                          value: progress,
+                          height: 14,
+                          color: theme.primary,
                         ),
                       ),
                     ),
@@ -126,10 +118,7 @@ class _PointsGoalProgressWidgetState extends State<PointsGoalProgressWidget> {
                     child: Center(
                       child: Text(
                         '$todayPoints / $goal',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
                     ),
                   ),

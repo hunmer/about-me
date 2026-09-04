@@ -411,9 +411,12 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('返回'),
+                DSThemeBridge(
+                  child: DSButton(
+                    label: '返回',
+                    variant: DSButtonVariant.ghost,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
               ],
             ],

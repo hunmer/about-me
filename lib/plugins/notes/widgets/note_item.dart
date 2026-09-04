@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 
 class NoteItem extends StatelessWidget {
@@ -9,29 +11,19 @@ class NoteItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(note.title),
-      subtitle:
-          note.tags.isNotEmpty
-              ? Wrap(
-                spacing: 4,
-                children:
-                    note.tags
-                        .map(
-                          (tag) => Chip(
-                            label: Text(tag),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        )
-                        .toList(),
-              )
-              : Text(
-                note.content,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-      onTap: onTap,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSListItem(
+            leading: DsIcon(DsIconKind.book, color: theme.primary),
+            title: note.title,
+            subtitle:
+                note.tags.isNotEmpty ? note.tags.join(' · ') : note.content,
+            onTap: onTap,
+          );
+        },
+      ),
     );
   }
 }

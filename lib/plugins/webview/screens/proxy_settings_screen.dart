@@ -43,10 +43,22 @@ class _ProxySettingsScreenState extends State<ProxySettingsScreen> {
             appBar: AppBar(
               title: Text('webview_proxy_settings'.tr),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.save),
-                  onPressed: _saveSettings,
-                  tooltip: MaterialLocalizations.of(context).saveButtonLabel,
+                // DS 按钮自带 DSThemeBridge 提供 AppTheme
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.check,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _saveSettings,
+                        tooltip:
+                            MaterialLocalizations.of(context).saveButtonLabel,
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

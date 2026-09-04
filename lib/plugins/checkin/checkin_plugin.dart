@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:uuid/uuid.dart';
@@ -90,9 +92,10 @@ class _CheckinMainViewState extends State<CheckinMainView>
       },
       child: Icon(
         Icons.add,
-        color: checkinPlugin.color.computeLuminance() > 0.5
-            ? Colors.black
-            : Colors.white,
+        color:
+            checkinPlugin.color.computeLuminance() > 0.5
+                ? Colors.black
+                : Colors.white,
         size: 32,
       ),
     );
@@ -105,39 +108,40 @@ class _CheckinMainViewState extends State<CheckinMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.down,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              final listController = CheckinListController(
-                context: context,
-                onStateChanged: () {
-                  setState(() {});
-                  CheckinPlugin.instance.triggerSave();
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.down,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  final listController = CheckinListController(
+                    context: context,
+                    onStateChanged: () {
+                      setState(() {});
+                      CheckinPlugin.instance.triggerSave();
+                    },
+                  );
+                  return CheckinListScreen(
+                    controller: listController,
+                    initialItemId: widget.itemId,
+                    targetDate: widget.targetDate,
+                  );
                 },
-              );
-              return CheckinListScreen(
-                controller: listController,
-                initialItemId: widget.itemId,
-                targetDate: widget.targetDate,
-              );
-            },
+              ),
+              ValueListenableBuilder(
+                valueListenable: ValueNotifier(
+                  CheckinPlugin.instance.checkinItems,
+                ),
+                builder: (context, _, __) {
+                  return CheckinStatsScreen(
+                    checkinItems: CheckinPlugin.instance.checkinItems,
+                  );
+                },
+              ),
+            ],
           ),
-          ValueListenableBuilder(
-            valueListenable: ValueNotifier(
-              CheckinPlugin.instance.checkinItems,
-            ),
-            builder: (context, _, __) {
-              return CheckinStatsScreen(
-                checkinItems: CheckinPlugin.instance.checkinItems,
-              );
-            },
-          ),
-        ],
-      ),
       fab: _buildFab(),
       children: [
         Tab(
@@ -171,9 +175,7 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
   List<CheckinItem> _checkinItems = [];
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'checkin/',
-  ];
+  static const List<String> _refreshableFiles = ['checkin/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -198,9 +200,12 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items = jsonList
-          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final items =
+          jsonList
+              .map(
+                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
     // 同步到小组件
@@ -245,16 +250,16 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
 
     for (int i = 6; i >= 0; i--) {
       final date = today.subtract(Duration(days: i));
-      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final hasRecord = item.checkInRecords.containsKey(dateStr) && item.checkInRecords[dateStr]!.isNotEmpty;
+      final dateStr =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final hasRecord =
+          item.checkInRecords.containsKey(dateStr) &&
+          item.checkInRecords[dateStr]!.isNotEmpty;
 
       // weekday: 1=Monday, 7=Sunday
       final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
       final dayIndex = date.weekday - 1; // 转换为 0-6
-      weekDays.add({
-        'day': days[dayIndex],
-        'checked': hasRecord,
-      });
+      weekDays.add({'day': days[dayIndex], 'checked': hasRecord});
     }
 
     // 获取最后一次打卡时间
@@ -302,12 +307,13 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items = jsonList
-          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
-          .toList();
-      _checkinItems = items
-          .map((dto) => _dtoToCheckinItem(dto))
-          .toList();
+      final items =
+          jsonList
+              .map(
+                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
+      _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
 
     // 如果没有数据，创建默认的四个打卡项目
@@ -361,7 +367,6 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
   Widget buildMainView(BuildContext context) {
     return const CheckinMainView();
   }
-
 
   // 添加打卡项目
   Future<void> addCheckinItem(CheckinItem item) async {
@@ -451,9 +456,12 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items = jsonList
-          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final items =
+          jsonList
+              .map(
+                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
     // 同步到小组件
@@ -485,9 +493,12 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       group: params['group'] as String? ?? '默认分组',
       description: params['description'] as String? ?? '',
       cardStyle: params['cardStyle'] as int? ?? 0,
-      reminderSettings: params['reminderSettings'] != null
-          ? ReminderSettingsDto.fromJson(params['reminderSettings'] as Map<String, dynamic>)
-          : null,
+      reminderSettings:
+          params['reminderSettings'] != null
+              ? ReminderSettingsDto.fromJson(
+                params['reminderSettings'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 
@@ -501,12 +512,17 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     // 将 checkInRecords 转换
     final records = <String, List<CheckinRecord>>{};
     dto.checkInRecords.forEach((date, recordDtos) {
-      records[date] = recordDtos.map((r) => CheckinRecord(
-        startTime: r.startTime,
-        endTime: r.endTime,
-        checkinTime: r.checkinTime,
-        note: r.note,
-      )).toList();
+      records[date] =
+          recordDtos
+              .map(
+                (r) => CheckinRecord(
+                  startTime: r.startTime,
+                  endTime: r.endTime,
+                  checkinTime: r.checkinTime,
+                  note: r.note,
+                ),
+              )
+              .toList();
     });
 
     // 转换提醒设置
@@ -585,7 +601,6 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -600,7 +615,7 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -622,9 +637,7 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'checkin_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -639,11 +652,12 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
                 children: [
                   Text(
                     'checkin_todayCheckin'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                   Text(
                     '${getTodayCheckins()}/${_checkinItems.length}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -655,11 +669,12 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
                 children: [
                   Text(
                     'checkin_totalCheckinCount'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                   Text(
                     '${getTotalCheckins()}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -671,5 +686,4 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       ),
     );
   }
-
 }

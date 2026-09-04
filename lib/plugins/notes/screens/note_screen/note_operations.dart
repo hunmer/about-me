@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
@@ -14,10 +16,13 @@ Future<void> createNewNote(
   String currentFolderId,
   VoidCallback onReload,
 ) async {
-  await NavigationHelper.push(context, NoteEditScreen(
-            onSave: (title, content) async {
-              await controller.createNote(title, content, currentFolderId);
-            },),
+  await NavigationHelper.push(
+    context,
+    NoteEditScreen(
+      onSave: (title, content) async {
+        await controller.createNote(title, content, currentFolderId);
+      },
+    ),
   );
   onReload();
 }
@@ -29,20 +34,23 @@ Future<void> editNote(
   Note note,
   VoidCallback onReload,
 ) async {
-  await NavigationHelper.push(context, NoteEditScreen(
-            note: note,
-            onSave: (title, content) async {
-              final updatedNote = Note(
-                id: note.id,
-                title: title,
-                content: content,
-                folderId: note.folderId,
-                createdAt: note.createdAt,
-                updatedAt: DateTime.now(),
-                tags: note.tags,
-              );
-              await controller.updateNote(updatedNote);
-            },),
+  await NavigationHelper.push(
+    context,
+    NoteEditScreen(
+      note: note,
+      onSave: (title, content) async {
+        final updatedNote = Note(
+          id: note.id,
+          title: title,
+          content: content,
+          folderId: note.folderId,
+          createdAt: note.createdAt,
+          updatedAt: DateTime.now(),
+          tags: note.tags,
+        );
+        await controller.updateNote(updatedNote);
+      },
+    ),
   );
   onReload();
 }
@@ -75,25 +83,23 @@ Future<void> deleteNoteDialog(
   Note note,
   VoidCallback onReload,
 ) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showDSDialog<bool>(
     context: context,
+    theme: DSThemeBridge.resolve(context),
     builder:
-        (context) => AlertDialog(
-          title: Text('notes_deleteNote'.tr),
-          content: Text('notes_deleteNoteConfirmation'.tr),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('app_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                'notes_delete'.tr,
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
+        (_) => DSThemeBridge(
+          child: Builder(
+            builder:
+                (context) => DSDialog(
+                  title: 'notes_deleteNote'.tr,
+                  message: 'notes_deleteNoteConfirmation'.tr,
+                  cancelText: 'app_cancel'.tr,
+                  confirmText: 'notes_delete'.tr,
+                  confirmVariant: DSButtonVariant.destructive,
+                  onCancel: () => Navigator.of(context).pop(false),
+                  onConfirm: () => Navigator.of(context).pop(true),
+                ),
+          ),
         ),
   );
 

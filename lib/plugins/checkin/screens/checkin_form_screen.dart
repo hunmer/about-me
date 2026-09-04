@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
@@ -71,15 +74,17 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
   void _loadExistingData() {
     final items = CheckinPlugin.shared.checkinItems;
     if (items.isNotEmpty) {
-      _existingGroups = items.map((item) => item.group).whereType<String>().toSet();
+      _existingGroups =
+          items.map((item) => item.group).whereType<String>().toSet();
       if (_existingGroups.isEmpty) {
         _existingGroups.add('默认分组');
       }
 
-      _existingNames = items
-          .where((item) => item.id != widget.initialItem?.id)
-          .map((item) => item.name)
-          .toSet();
+      _existingNames =
+          items
+              .where((item) => item.id != widget.initialItem?.id)
+              .map((item) => item.name)
+              .toSet();
     } else {
       _existingGroups = {'默认分组'};
       _existingNames = {};
@@ -102,9 +107,7 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
     // 图标颜色数据
     final iconColorData = values['iconColor'] as Map<String, dynamic>?;
     if (iconColorData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择图标')),
-      );
+      Toast.error('请选择图标');
       return;
     }
     final icon = iconColorData['icon'] as IconData?;
@@ -112,9 +115,7 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
 
     // 验证必要字段
     if (icon == null || color == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择图标')),
-      );
+      Toast.error('请选择图标');
       return;
     }
 
@@ -151,7 +152,8 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
     // 分组处理
     final groupValue = values['group'] as String?;
     final String? trimmedGroup = groupValue?.trim();
-    final group = (trimmedGroup == null || trimmedGroup.isEmpty) ? null : trimmedGroup;
+    final group =
+        (trimmedGroup == null || trimmedGroup.isEmpty) ? null : trimmedGroup;
 
     // 构建打卡项目
     final item = CheckinItem(
@@ -202,11 +204,7 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
             showResetButton: false,
             fieldSpacing: 16,
             onValidationFailed: (errors) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(errors.values.join(', ')),
-                ),
-              );
+              Toast.error(errors.values.join(', '));
             },
             onSubmit: _handleSubmit,
             fields: [
@@ -257,7 +255,8 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
                       child: Text(switch (type) {
                         ReminderType.weekly => 'checkin_weeklyReminder'.tr,
                         ReminderType.monthly => 'checkin_monthlyReminder'.tr,
-                        ReminderType.specific => 'checkin_specificDateReminder'.tr,
+                        ReminderType.specific =>
+                          'checkin_specificDateReminder'.tr,
                       }),
                     ),
                   ),
@@ -271,7 +270,8 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
                 type: FormFieldType.select,
                 labelText: 'checkin_monthlyReminderDayLabel'.tr,
                 initialValue: widget.initialItem?.reminderSettings?.dayOfMonth,
-                visible: (values) => values['reminderType'] == ReminderType.monthly,
+                visible:
+                    (values) => values['reminderType'] == ReminderType.monthly,
                 items: List.generate(31, (index) {
                   return DropdownMenuItem(
                     value: index + 1,
@@ -285,8 +285,10 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
                 name: 'specificDate',
                 type: FormFieldType.date,
                 labelText: 'checkin_selectDate'.tr,
-                initialValue: widget.initialItem?.reminderSettings?.specificDate,
-                visible: (values) => values['reminderType'] == ReminderType.specific,
+                initialValue:
+                    widget.initialItem?.reminderSettings?.specificDate,
+                visible:
+                    (values) => values['reminderType'] == ReminderType.specific,
                 extra: {
                   'firstDate': DateTime.now(),
                   'lastDate': DateTime.now().add(const Duration(days: 365 * 2)),
@@ -298,7 +300,9 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
                 name: 'reminderTime',
                 type: FormFieldType.time,
                 labelText: 'checkin_selectTime'.tr,
-                initialValue: widget.initialItem?.reminderSettings?.timeOfDay ?? TimeOfDay.now(),
+                initialValue:
+                    widget.initialItem?.reminderSettings?.timeOfDay ??
+                    TimeOfDay.now(),
                 visible: (values) => values['reminderType'] != null,
               ),
             ],
@@ -335,9 +339,7 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
     final nameValue = _formKey.currentState?.fields['name']?.value as String?;
     final nameError = _validateName(nameValue);
     if (nameError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(nameError)),
-      );
+      Toast.error(nameError);
       return;
     }
     // 使用 wrapperState 提交表单
@@ -356,14 +358,13 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
       'checkin_saturday'.tr,
     ];
 
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: theme.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.2)),
       ),
       child: FormBuilderField<List<int>>(
         name: 'weekdays',
@@ -375,40 +376,19 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
             runSpacing: 8,
             children: List.generate(7, (index) {
               final isSelected = selectedWeekdays.contains(index);
-              return InkWell(
-                onTap: () {
-                  final newWeekdays = List<int>.from(selectedWeekdays);
-                  if (isSelected) {
-                    newWeekdays.remove(index);
-                  } else {
-                    newWeekdays.add(index);
-                  }
-                  fieldState.didChange(newWeekdays);
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Text(
-                    weekdays[index],
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+              return DSThemeBridge(
+                child: DSChip(
+                  label: weekdays[index],
+                  selected: isSelected,
+                  onSelected: (_) {
+                    final newWeekdays = List<int>.from(selectedWeekdays);
+                    if (isSelected) {
+                      newWeekdays.remove(index);
+                    } else {
+                      newWeekdays.add(index);
+                    }
+                    fieldState.didChange(newWeekdays);
+                  },
                 ),
               );
             }),

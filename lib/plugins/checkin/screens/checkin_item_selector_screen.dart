@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
@@ -14,10 +16,7 @@ class CheckinItemSelectorScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int? widgetId;
 
-  const CheckinItemSelectorScreen({
-    super.key,
-    this.widgetId,
-  });
+  const CheckinItemSelectorScreen({super.key, this.widgetId});
 
   @override
   State<CheckinItemSelectorScreen> createState() =>
@@ -77,7 +76,10 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       if (savedColorStr != null) {
         final colorValue = int.tryParse(savedColorStr);
         if (colorValue != null) {
-          _widgetConfig = _widgetConfig.updateColor('primary', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'primary',
+            Color(colorValue),
+          );
         }
       }
 
@@ -88,7 +90,10 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       if (savedAccentColorStr != null) {
         final colorValue = int.tryParse(savedAccentColorStr);
         if (colorValue != null) {
-          _widgetConfig = _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -113,8 +118,9 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
   CheckinItem? _getSelectedItem() {
     if (_selectedItemId == null) return null;
     try {
-      return _checkinPlugin.checkinItems
-          .firstWhere((item) => item.id == _selectedItemId);
+      return _checkinPlugin.checkinItems.firstWhere(
+        (item) => item.id == _selectedItemId,
+      );
     } catch (_) {
       return null;
     }
@@ -141,7 +147,9 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+        ),
       );
     }
 
@@ -155,40 +163,35 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: items.isEmpty
-          ? _buildEmptyState()
-          : WidgetConfigEditor(
-              widgetSize: WidgetSize.large,
-              initialConfig: _widgetConfig,
-              previewTitle: '月度打卡预览',
-              onConfigChanged: (config) {
-                setState(() => _widgetConfig = config);
-              },
-              previewBuilder: _buildPreview,
-              customConfigWidgets: [
-                _buildItemSelector(),
-              ],
-            ),
-      bottomNavigationBar: _selectedItemId != null
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: _saveAndFinish,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      body:
+          items.isEmpty
+              ? _buildEmptyState()
+              : WidgetConfigEditor(
+                widgetSize: WidgetSize.large,
+                initialConfig: _widgetConfig,
+                previewTitle: '月度打卡预览',
+                onConfigChanged: (config) {
+                  setState(() => _widgetConfig = config);
+                },
+                previewBuilder: _buildPreview,
+                customConfigWidgets: [_buildItemSelector()],
+              ),
+      bottomNavigationBar:
+          _selectedItemId != null
+              ? SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DSThemeBridge(
+                    child: DSButton(
+                      label: '确认配置',
+                      size: DSButtonSize.lg,
+                      expand: true,
+                      onPressed: _saveAndFinish,
                     ),
                   ),
-                  child: const Text(
-                    '确认配置',
-                    style: TextStyle(fontSize: 16),
-                  ),
                 ),
-              ),
-            )
-          : null,
+              )
+              : null,
     );
   }
 
@@ -198,26 +201,16 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.event_busy,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             '暂无打卡项目',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             '请先在打卡插件中创建打卡项目',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
       ),
@@ -241,10 +234,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
             children: [
               Icon(Icons.event_note, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
-              Text(
-                '请选择打卡项目',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              Text('请选择打卡项目', style: TextStyle(color: Colors.grey[600])),
             ],
           ),
         ),
@@ -293,16 +283,18 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
           const SizedBox(height: 8),
 
           // 日历网格
-          Expanded(
-            child: _buildCalendarGrid(now, monthChecks, primaryColor),
-          ),
+          Expanded(child: _buildCalendarGrid(now, monthChecks, primaryColor)),
         ],
       ),
     );
   }
 
   /// 构建日历网格
-  Widget _buildCalendarGrid(DateTime now, List<int> monthChecks, Color primaryColor) {
+  Widget _buildCalendarGrid(
+    DateTime now,
+    List<int> monthChecks,
+    Color primaryColor,
+  ) {
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
     final firstWeekday = firstDayOfMonth.weekday; // 1-7, 周一为1
@@ -317,19 +309,22 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       children: [
         // 星期标题行
         Row(
-          children: ['一', '二', '三', '四', '五', '六', '日']
-              .map((day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[600],
+          children:
+              ['一', '二', '三', '四', '五', '六', '日']
+                  .map(
+                    (day) => Expanded(
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                     ),
-                  ))
-              .toList(),
+                  )
+                  .toList(),
         ),
         const SizedBox(height: 4),
 
@@ -354,25 +349,31 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
                       child: Container(
                         margin: const EdgeInsets.all(1),
                         decoration: BoxDecoration(
-                          color: isChecked
-                              ? primaryColor.withOpacity(0.8)
-                              : (isToday
-                                  ? primaryColor.withOpacity(0.1)
-                                  : Colors.transparent),
+                          color:
+                              isChecked
+                                  ? primaryColor.withOpacity(0.8)
+                                  : (isToday
+                                      ? primaryColor.withOpacity(0.1)
+                                      : Colors.transparent),
                           borderRadius: BorderRadius.circular(4),
-                          border: isToday && !isChecked
-                              ? Border.all(color: primaryColor, width: 1)
-                              : null,
+                          border:
+                              isToday && !isChecked
+                                  ? Border.all(color: primaryColor, width: 1)
+                                  : null,
                         ),
                         child: Center(
                           child: Text(
                             '$day',
                             style: TextStyle(
                               fontSize: 10,
-                              color: isChecked
-                                  ? Colors.white
-                                  : (isToday ? primaryColor : Colors.black87),
-                              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                              color:
+                                  isChecked
+                                      ? Colors.white
+                                      : (isToday
+                                          ? primaryColor
+                                          : Colors.black87),
+                              fontWeight:
+                                  isToday ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -390,106 +391,126 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
 
   /// 构建打卡项目选择器
   Widget _buildItemSelector() {
-    final theme = Theme.of(context);
     final items = _checkinPlugin.checkinItems;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final dsTheme = DSThemeBridge.resolve(context);
+          return DSCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.check_circle_outline, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '选择打卡项目',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    DsIcon(DsIconKind.calendarCheck, color: dsTheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      '选择打卡项目',
+                      style: DsTypography.heading.copyWith(
+                        color: dsTheme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 12),
+                ...items.map((item) {
+                  final isSelected = _selectedItemId == item.id;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Pressable(
+                      onPressed: () => _onItemSelected(item),
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return AnimatedOpacity(
+                          opacity: pressed ? 0.85 : 1.0,
+                          duration: const Duration(milliseconds: 120),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color:
+                                    isSelected
+                                        ? item.color
+                                        : dsTheme.textSub.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                width: isSelected ? 2 : 1,
+                              ),
+                              color:
+                                  isSelected
+                                      ? item.color.withValues(alpha: 0.05)
+                                      : DsColors.transparent,
+                            ),
+                            child: Row(
+                              children: [
+                                // 图标
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: item.color.withAlpha(30),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    item.icon,
+                                    color: item.color,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // 项目信息
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: DsTypography.body.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: dsTheme.text,
+                                        ),
+                                      ),
+                                      Text(
+                                        '连续 ${item.getConsecutiveDays()} 天',
+                                        style: DsTypography.caption.copyWith(
+                                          color: dsTheme.textSub,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // 选中标记
+                                if (isSelected)
+                                  DsIcon(
+                                    DsIconKind.check,
+                                    color: item.color,
+                                    size: 24,
+                                  )
+                                else
+                                  Icon(
+                                    Icons.radio_button_unchecked,
+                                    color: dsTheme.textSub,
+                                    size: 24,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }),
               ],
             ),
-            const SizedBox(height: 12),
-            ...items.map((item) {
-              final isSelected = _selectedItemId == item.id;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  onTap: () => _onItemSelected(item),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? item.color
-                            : Colors.grey.withOpacity(0.3),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      color: isSelected
-                          ? item.color.withOpacity(0.05)
-                          : Colors.transparent,
-                    ),
-                    child: Row(
-                      children: [
-                        // 图标
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: item.color.withAlpha(30),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            item.icon,
-                            color: item.color,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // 项目信息
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                '连续 ${item.getConsecutiveDays()} 天',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // 选中标记
-                        Icon(
-                          isSelected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: isSelected ? item.color : Colors.grey[400],
-                          size: 24,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -621,7 +642,7 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
             'name': item.name,
             'weekChecks': weekChecksString,
             'monthChecks': monthChecks.join(','),
-          }
+          },
         ],
       });
 
@@ -631,7 +652,8 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
       );
 
       debugPrint(
-          '打卡项目数据已同步: ${item.name}, weekChecks: $weekChecksString, monthChecks: ${monthChecks.join(',')}');
+        '打卡项目数据已同步: ${item.name}, weekChecks: $weekChecksString, monthChecks: ${monthChecks.join(',')}',
+      );
     } catch (e) {
       debugPrint('同步打卡项目数据失败: $e');
     }

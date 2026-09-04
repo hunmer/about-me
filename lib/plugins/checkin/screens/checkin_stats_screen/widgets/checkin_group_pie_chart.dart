@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
@@ -18,11 +20,16 @@ class _CheckinGroupPieChartState extends State<CheckinGroupPieChart> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final groupData = _prepareGroupData();
 
     if (groupData.isEmpty) {
-      return Center(child: Text('checkin_emptyData'.tr, style: theme.textTheme.bodyMedium));
+      return Center(
+        child: Text(
+          'checkin_emptyData'.tr,
+          style: DsTypography.body.copyWith(color: theme.textSub),
+        ),
+      );
     }
 
     return Row(
@@ -85,12 +92,16 @@ class _CheckinGroupPieChartState extends State<CheckinGroupPieChart> {
                           child: Text(
                             group,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.text,
+                            ),
                           ),
                         ),
                         Text(
                           '$count (${(percent * 100).toStringAsFixed(1)}%)',
-                          style: theme.textTheme.bodySmall,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
                         ),
                       ],
                     ),

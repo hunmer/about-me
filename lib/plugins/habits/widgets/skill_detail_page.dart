@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -51,7 +53,6 @@ class _SkillDetailPageState extends State<SkillDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.skill.title),
@@ -63,7 +64,7 @@ class _SkillDetailPageState extends State<SkillDetailPage> {
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () => _confirmDelete(context),
-            color: Theme.of(context).colorScheme.error,
+            color: DSThemeBridge.resolve(context).danger,
           ),
         ],
       ),
@@ -120,26 +121,20 @@ class _SkillDetailPageState extends State<SkillDetailPage> {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-
-    return showDialog(
+    return showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('habits_deleteSkill'.tr),
-            content: Text('habits_deleteSkillConfirmation'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('habits_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await widget.skillController.deleteSkill(widget.skill.id);
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                child: Text('habits_delete'.tr),
-              ),
-            ],
+          (context) => DSDialog(
+            title: 'habits_deleteSkill'.tr,
+            message: 'habits_deleteSkillConfirmation'.tr,
+            cancelText: 'habits_cancel'.tr,
+            confirmText: 'habits_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () async {
+              await widget.skillController.deleteSkill(widget.skill.id);
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
           ),
     );
   }

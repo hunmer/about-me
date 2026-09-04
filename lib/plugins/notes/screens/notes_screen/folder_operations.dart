@@ -1,64 +1,96 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'notes_screen_state.dart';
 
 mixin FolderOperations on NotesMainViewState {
   Future<void> createNewFolder() async {
     final TextEditingController folderNameController = TextEditingController();
+    final FocusNode focusNode = FocusNode();
 
     // 获取当前文件夹名称用于提示
     final parentFolderName = currentFolder?.name ?? 'notes_root'.tr;
 
-    final result = await showDialog<String>(
+    // DSInput 无 autofocus 参数，用 FocusNode 在首帧后聚焦
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (focusNode.canRequestFocus) focusNode.requestFocus();
+    });
+
+    final result = await showDSDialog<String>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(
-              'notes_newFolder'.tr,
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 显示将在哪个文件夹下创建
-                Text(
-                  '${'notes_createIn'.tr}: $parentFolderName',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'notes_newFolder'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.sm),
+                      // 显示将在哪个文件夹下创建
+                      Text(
+                        '${'notes_createIn'.tr}: $parentFolderName',
+                        textAlign: TextAlign.center,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: folderNameController,
+                        focusNode: focusNode,
+                        hint: 'notes_folderNameHint'.tr,
+                        onSubmitted: (value) => Navigator.pop(context, value),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'notes_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'notes_confirm'.tr,
+                              onPressed: () {
+                                if (folderNameController.text.isNotEmpty) {
+                                  Navigator.pop(
+                                    context,
+                                    folderNameController.text,
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: folderNameController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText:
-                        'notes_folderNameHint'.tr,
-                  ),
-                  onSubmitted: (value) => Navigator.pop(context, value),
-                ),
-              ],
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('notes_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () {
-                  if (folderNameController.text.isNotEmpty) {
-                    Navigator.pop(context, folderNameController.text);
-                  }
-                },
-                child: Text(
-                  'notes_confirm'.tr,
-                ),
-              ),
-            ],
           ),
     );
+    focusNode.dispose();
+    folderNameController.dispose();
+
     if (result != null && result.isNotEmpty) {
       // 使用 currentFolderId 作为父文件夹 ID
       await plugin.controller.createFolder(result, currentFolderId);
@@ -70,30 +102,71 @@ mixin FolderOperations on NotesMainViewState {
     final TextEditingController renameController = TextEditingController(
       text: folder.name,
     );
-    final result = await showDialog<String>(
+    final FocusNode focusNode = FocusNode();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (focusNode.canRequestFocus) focusNode.requestFocus();
+    });
+
+    final result = await showDSDialog<String>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(
-              'notes_renameFolder'.tr,
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'notes_renameFolder'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: renameController,
+                        focusNode: focusNode,
+                        hint: '文件夹名称',
+                        onSubmitted: (value) => Navigator.pop(context, value),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'app_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'app_ok'.tr,
+                              onPressed:
+                                  () => Navigator.pop(
+                                    context,
+                                    renameController.text,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            content: TextField(
-              controller: renameController,
-              autofocus: true,
-              decoration: const InputDecoration(hintText: '文件夹名称'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, renameController.text),
-                child: Text('app_ok'.tr),
-              ),
-            ],
           ),
     );
+    focusNode.dispose();
     renameController.dispose();
 
     if (result != null && result.isNotEmpty) {
@@ -103,29 +176,23 @@ mixin FolderOperations on NotesMainViewState {
   }
 
   Future<void> deleteFolder(Folder folder) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(
-              'notes_deleteFolder'.tr,
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'notes_deleteFolder'.tr,
+                    message: 'notes_deleteFolderConfirm'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'notes_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
             ),
-            content: Text(
-              'notes_deleteFolderConfirm'.tr,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'notes_delete'.tr,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
           ),
     );
 

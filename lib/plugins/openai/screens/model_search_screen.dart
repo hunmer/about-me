@@ -112,11 +112,23 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
         title: Text('openai_searchModel'.tr),
         actions: [
           if (_selectedModel != null)
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(_selectedModel);
-              },
-              child: Text('app_ok'.tr),
+            // DS 按钮自带 DSThemeBridge 提供 AppTheme
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: DSButton(
+                      label: 'app_ok'.tr,
+                      variant: DSButtonVariant.ghost,
+                      size: DSButtonSize.sm,
+                      onPressed: () {
+                        Navigator.of(context).pop(_selectedModel);
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
         ],
         bottom:

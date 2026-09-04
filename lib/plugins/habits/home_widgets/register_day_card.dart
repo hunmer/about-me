@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
@@ -25,14 +27,13 @@ Future<List<HabitDayStatus>> _statusesForDate(DateTime date) async {
   final habits = plugin.getHabitController().getHabits() as List<Habit>;
   return Future.wait(
     habits.map((habit) async {
-      final records = await plugin
-          .getRecordController()
-          .getHabitCompletionRecords(habit.id) as List<CompletionRecord>;
+      final records =
+          await plugin.getRecordController().getHabitCompletionRecords(habit.id)
+              as List<CompletionRecord>;
       return HabitDayStatus(
         habit: habit,
-        records: records
-            .where((record) => _isSameDay(record.date, date))
-            .toList(),
+        records:
+            records.where((record) => _isSameDay(record.date, date)).toList(),
       );
     }),
   );
@@ -128,16 +129,19 @@ class _HabitsDayCardHomeWidgetState extends State<_HabitsDayCardHomeWidget> {
 
   Widget _buildContent(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+      );
     }
 
     return HabitDayCard(
       date: HomeDateController().date,
       statuses: _statuses,
-      onHabitTap: (habit) => NavigationHelper.push(
-        context,
-        HabitMonthlyListScreen(habitId: habit.id, habitTitle: habit.title),
-      ),
+      onHabitTap:
+          (habit) => NavigationHelper.push(
+            context,
+            HabitMonthlyListScreen(habitId: habit.id, habitTitle: habit.title),
+          ),
     );
   }
 }

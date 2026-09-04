@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
@@ -219,20 +221,41 @@ class _AgentListScreenState extends State<AgentListScreen> {
       multiFilterBarHeight: 50,
       onMultiFilterChanged: _onMultiFilterChanged,
 
+      // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
       actions: [
-        IconButton(
-          icon: const Icon(Icons.store),
-          onPressed: _openMarketplace,
-          tooltip: '商场',
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.store,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: _openMarketplace,
+                tooltip: '商场',
+              );
+            },
+          ),
         ),
-        IconButton(
-          icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-          onPressed: () {
-            setState(() {
-              _isGridView = !_isGridView;
-            });
-          },
-          tooltip: '切换视图',
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () {
+                  setState(() {
+                    _isGridView = !_isGridView;
+                  });
+                },
+                tooltip: '切换视图',
+              );
+            },
+          ),
         ),
       ],
     );

@@ -465,30 +465,62 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                 : 'openai_editAgent'.tr,
           ),
           actions: [
-            // 只有在非回调模式下才显示删除、分享、克隆按钮
-            if (widget.onSave == null && widget.agent != null) ...[
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: _shareAgent,
-                tooltip: 'openai_shareAgent'.tr,
-              ),
-              IconButton(
-                icon: const Icon(Icons.copy),
-                onPressed: _cloneAgent,
-                tooltip: 'openai_cloneAgent'.tr,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: _deleteAgent,
-                tooltip: 'openai_deleteAgent'.tr,
-              ),
-            ],
-            IconButton(
-              icon: Icon(
-                widget.isFromMarketplace ? Icons.download : Icons.save,
-              ),
-              onPressed: _saveAgent,
-              tooltip: widget.isFromMarketplace ? '安装' : 'openai_save'.tr,
+            // DS 按钮自带 DSThemeBridge 提供 AppTheme
+            Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Row(
+                  children: [
+                    // 只有在非回调模式下才显示删除、分享、克隆按钮
+                    if (widget.onSave == null && widget.agent != null) ...[
+                      DSThemeBridge(
+                        child: DSIconButton(
+                          icon: DsIconKind.share,
+                          size: 40,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          onPressed: _shareAgent,
+                          tooltip: 'openai_shareAgent'.tr,
+                        ),
+                      ),
+                      DSThemeBridge(
+                        child: DSIconButton(
+                          icon: DsIconKind.copy,
+                          size: 40,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          onPressed: _cloneAgent,
+                          tooltip: 'openai_cloneAgent'.tr,
+                        ),
+                      ),
+                      DSThemeBridge(
+                        child: DSIconButton(
+                          icon: DsIconKind.trash,
+                          size: 40,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          onPressed: _deleteAgent,
+                          tooltip: 'openai_deleteAgent'.tr,
+                        ),
+                      ),
+                    ],
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon:
+                            widget.isFromMarketplace
+                                ? DsIconKind.download
+                                : DsIconKind.check,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _saveAgent,
+                        tooltip:
+                            widget.isFromMarketplace ? '安装' : 'openai_save'.tr,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
