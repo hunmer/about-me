@@ -97,7 +97,15 @@ class _HomeGridState extends State<HomeGrid> {
   // 网格配置常量
   static const double _mainAxisSpacing = 8.0;
   static const double _crossAxisSpacing = 8.0;
-  static const EdgeInsets _gridPadding = EdgeInsets.all(8);
+
+  /// 网格内边距；底部叠加 MediaQuery 底部内边距（悬浮导航栏或系统安全区），
+  /// 让最后一行卡片能完整滚动到遮挡物上方
+  EdgeInsets get _gridPadding => EdgeInsets.fromLTRB(
+    8,
+    8,
+    8,
+    8 + MediaQuery.paddingOf(context).bottom,
+  );
 
   @override
   void initState() {

@@ -327,7 +327,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       largeTitle: 'settings_screen_settingsTitle'.tr,
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        // 底部叠加悬浮导航栏/系统安全区高度，避免最后几项被遮挡
+        padding: EdgeInsets.fromLTRB(
+          16.0,
+          16.0,
+          16.0,
+          16.0 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           // 界面设置
           Text(

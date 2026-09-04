@@ -6,18 +6,52 @@ enum JellyTab { cottage, schedule, board, mine }
 
 /// 果冻小屋底部导航（小屋 / 日程 / 看板 / 我的）
 ///
-/// 纯内容切换：点击页签通过 [onTap] 通知宿主切换展示内容，
-/// 不涉及路由跳转。
+/// 漂浮式：[child]（页面内容）铺满全屏并延伸到导航栏下方，
+/// 导航栏悬浮在内容之上，不占用布局高度。点击页签通过 [onTap]
+/// 通知宿主切换内容，不涉及路由跳转。
+///
+/// 通过 Scaffold.extendBody 把导航栏高度注入 body 的
+/// MediaQuery.padding.bottom，页内 SafeArea、网格滚动区等内容
+/// 可读取该内边距避让导航栏；同时同步到 viewPadding.bottom，
+/// 让页内悬浮 FAB（按 viewPadding 定位）也上浮避让。
 class JellyBottomNav extends StatelessWidget {
-  const JellyBottomNav({super.key, required this.current, this.onTap});
+  const JellyBottomNav({
+    super.key,
+    required this.current,
+    required this.child,
+    this.onTap,
+  });
 
   /// 当前所在页签
   final JellyTab current;
+
+  /// 沉在导航栏下方的页面内容（铺满全屏）
+  final Widget child;
 
   final ValueChanged<int>? onTap;
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      extendBody: true,
+      bottomNavigationBar: _buildBar(context),
+      body: Builder(
+        builder: (context) {
+          final mq = MediaQuery.of(context);
+          return MediaQuery(
+            data: mq.copyWith(
+              viewPadding: mq.viewPadding.copyWith(
+                bottom: mq.padding.bottom,
+              ),
+            ),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBar(BuildContext context) {
     final theme = AppTheme.of(context);
 
     return SafeArea(

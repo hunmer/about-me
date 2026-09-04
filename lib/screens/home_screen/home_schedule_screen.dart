@@ -28,12 +28,20 @@ class HomeScheduleScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: Column(
-          children: const [
+          children: [
             // 日期横条：切换当前选中日期，日期卡片跟随刷新
-            HomeDateBar(),
+            const HomeDateBar(),
             // 排序选项条
-            HomeDateSortBar(),
-            Expanded(child: HomeDateViewGrid()),
+            const HomeDateSortBar(),
+            // 底部留出悬浮导航栏的高度，最后一行卡片可完整滚出遮挡区
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom,
+                ),
+                child: const HomeDateViewGrid(),
+              ),
+            ),
           ],
         ),
       ),

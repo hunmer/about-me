@@ -30,25 +30,20 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          // IndexedStack 保活各页签状态（滚动位置、编辑进度等）
-          child: IndexedStack(
-            index: _tabIndex,
-            children: const [
-              _CottageTab(),
-              HomeScheduleScreen(),
-              HomeScreen(asRoot: false),
-              SettingsScreen(),
-            ],
-          ),
-        ),
-        JellyBottomNav(
-          current: JellyTab.values[_tabIndex],
-          onTap: (index) => setState(() => _tabIndex = index),
-        ),
-      ],
+    // IndexedStack 保活各页签状态（滚动位置、编辑进度等）；
+    // 页面内容铺满全屏，底部导航悬浮其上
+    return JellyBottomNav(
+      current: JellyTab.values[_tabIndex],
+      onTap: (index) => setState(() => _tabIndex = index),
+      child: IndexedStack(
+        index: _tabIndex,
+        children: const [
+          _CottageTab(),
+          HomeScheduleScreen(),
+          HomeScreen(asRoot: false),
+          SettingsScreen(),
+        ],
+      ),
     );
   }
 }
@@ -64,6 +59,8 @@ class _CottageTab extends StatelessWidget {
   Widget build(BuildContext context) {
     // 演示页自带浅色主题
     final theme = AppThemeData.light();
+    // 悬浮导航栏的避让高度（JellyBottomNav 通过 extendBody 注入的底部内边距）
+    final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return AppTheme(
       data: theme,
@@ -80,10 +77,11 @@ class _CottageTab extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, viewport) => SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-              // 内容不足一屏时也撑满视口高度，让底部卡片组贴住底部导航
+              // 内容不足一屏时也撑满视口高度，让底部卡片组贴住悬浮导航栏；
+              // 视口高度需减去导航栏避让高度，底部卡片才不会被压在导航栏下面
               child: ConstrainedBox(
                 constraints:
-                    BoxConstraints(minHeight: viewport.maxHeight),
+                    BoxConstraints(minHeight: viewport.maxHeight - bottomInset),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
