@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
@@ -355,535 +357,545 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: Text('设置')),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
+      // DS 组件内部取 AppTheme，整个 body 包一层桥
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+
+            return _buildBody(context, theme);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, AppThemeData theme) {
+    return _isLoading
+        ? Center(child: DSLoadingDots(color: ActivityPlugin.instance.color))
+        : ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            // 通知设置区域 - 仅在移动端平台显示
+            if (UniversalPlatform.isIOS || UniversalPlatform.isAndroid)
+              DSCard(
                 padding: const EdgeInsets.all(16.0),
-                children: [
-                  // 通知设置区域 - 仅在移动端平台显示
-                  if (UniversalPlatform.isIOS || UniversalPlatform.isAndroid)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.notifications_active,
-                                  color: ActivityPlugin.instance.color,
-                                  size: 28,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'activity_notificationSettings'.tr,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '在通知栏常驻显示最后记录的活动、时间和快捷添加按钮',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.textTheme.bodySmall?.color,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'activity_enableNotificationBar'.tr,
-                                  style: theme.textTheme.titleSmall,
-                                ),
-                                AdaptiveSwitch(
-                                  value: _isNotificationEnabled,
-                                  onChanged: _toggleNotification,
-                                  activeColor: ActivityPlugin.instance.color,
-                                ),
-                              ],
-                            ),
-                            // 通知时间设置
-                            if (_isNotificationEnabled &&
-                                UniversalPlatform.isAndroid) ...[
-                              const SizedBox(height: 24),
-                              const Divider(),
-                              const SizedBox(height: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        DsIcon(
+                          DsIconKind.bell,
+                          color: ActivityPlugin.instance.color,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'activity_notificationSettings'.tr,
+                          style: DsTypography.heading.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '在通知栏常驻显示最后记录的活动、时间和快捷添加按钮',
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'activity_enableNotificationBar'.tr,
+                          style: DsTypography.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.text,
+                          ),
+                        ),
+                        AdaptiveSwitch(
+                          value: _isNotificationEnabled,
+                          onChanged: _toggleNotification,
+                          activeColor: ActivityPlugin.instance.color,
+                        ),
+                      ],
+                    ),
+                    // 通知时间设置
+                    if (_isNotificationEnabled &&
+                        UniversalPlatform.isAndroid) ...[
+                      const SizedBox(height: 24),
+                      Divider(height: 1, color: theme.stroke),
+                      const SizedBox(height: 16),
 
-                              // 最小提醒间隔
-                              Text(
-                                'activity_minimumReminderInterval'.tr,
-                                style: theme.textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'activity_minimumReminderIntervalDesc'.tr,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Slider(
-                                      value:
-                                          _minimumReminderInterval.toDouble(),
-                                      min: 5,
-                                      max: 120,
-                                      divisions: 23,
-                                      label: 'activity_minutesUnit'.trParams({
-                                        'minutes': '$_minimumReminderInterval',
-                                      }),
-                                      activeColor:
-                                          ActivityPlugin.instance.color,
-                                      onChanged: (value) {
-                                        _updateMinimumReminderInterval(
-                                          value.round(),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 80,
-                                    child: Text(
-                                      'activity_minutesUnit'.trParams({
-                                        'minutes': '$_minimumReminderInterval',
-                                      }),
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                ActivityPlugin.instance.color,
-                                          ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // 通知更新频率
-                              Text(
-                                'activity_updateInterval'.tr,
-                                style: theme.textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'activity_updateIntervalDesc'.tr,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Slider(
-                                      value: _updateInterval.toDouble(),
-                                      min: 1,
-                                      max: 10,
-                                      divisions: 9,
-                                      label: 'activity_minutesUnit'.trParams({
-                                        'minutes': '$_updateInterval',
-                                      }),
-                                      activeColor:
-                                          ActivityPlugin.instance.color,
-                                      onChanged: (value) {
-                                        _updateUpdateInterval(value.round());
-                                      },
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 80,
-                                    child: Text(
-                                      'activity_minutesUnit'.trParams({
-                                        'minutes': '$_updateInterval',
-                                      }),
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                ActivityPlugin.instance.color,
-                                          ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
+                      // 最小提醒间隔
+                      Text(
+                        'activity_minimumReminderInterval'.tr,
+                        style: DsTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.text,
                         ),
                       ),
-                    ),
-
-                  // TTS 播报设置区域
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 4),
+                      Text(
+                        'activity_minimumReminderIntervalDesc'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.volume_up,
+                          Expanded(
+                            child: DSSlider(
+                              // 5-120 分钟归一化
+                              value: (_minimumReminderInterval - 5) / (120 - 5),
+                              activeColor: ActivityPlugin.instance.color,
+                              onChanged: (value) {
+                                _updateMinimumReminderInterval(
+                                  (value * (120 - 5) + 5).round(),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              'activity_minutesUnit'.trParams({
+                                'minutes': '$_minimumReminderInterval',
+                              }),
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.bold,
                                 color: ActivityPlugin.instance.color,
-                                size: 28,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  '语音播报提醒',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              AdaptiveSwitch(
-                                value: _isTTSAnnouncementEnabled,
-                                onChanged: _toggleTTSAnnouncement,
-                                activeColor: ActivityPlugin.instance.color,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '当超过指定时间未记录活动时，通过语音播报提醒',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodySmall?.color,
+                              textAlign: TextAlign.center,
                             ),
                           ),
-
-                          // 播报设置
-                          if (_isTTSAnnouncementEnabled) ...[
-                            const SizedBox(height: 24),
-                            const Divider(),
-                            const SizedBox(height: 16),
-
-                            // TTS 服务选择
-                            Text('TTS 语音服务', style: theme.textTheme.titleSmall),
-                            const SizedBox(height: 8),
-                            _isLoadingTTSServices
-                                ? const Center(
-                                  child: CircularProgressIndicator(),
-                                )
-                                : _ttsServices.isEmpty
-                                ? const Text('没有可用的 TTS 服务')
-                                : DropdownButtonFormField<String>(
-                                  value: _selectedTTSServiceId,
-                                  decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: '选择 TTS 服务',
-                                  ),
-                                  items:
-                                      _ttsServices.where((s) => s.isEnabled).map((
-                                        service,
-                                      ) {
-                                        final config = service;
-                                        return DropdownMenuItem<String>(
-                                          value: config.id,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                config.type ==
-                                                        TTSServiceType.system
-                                                    ? Icons.record_voice_over
-                                                    : Icons.cloud,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(config.name),
-                                              if (config.isDefault) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                  ),
-                                                  child: const Text(
-                                                    '默认',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                  onChanged: (value) {
-                                    _updateTTSServiceId(value);
-                                  },
-                                ),
-                            const SizedBox(height: 16),
-
-                            // 播报间隔
-                            Text(
-                              '未记录时间间隔（分钟）',
-                              style: theme.textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Slider(
-                                    value: _ttsAnnouncementInterval.toDouble(),
-                                    min: 1,
-                                    max: 60,
-                                    divisions: 59,
-                                    label: '$_ttsAnnouncementInterval 分钟',
-                                    activeColor: ActivityPlugin.instance.color,
-                                    onChanged: (value) {
-                                      _updateTTSAnnouncementInterval(
-                                        value.round(),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 80,
-                                  child: Text(
-                                    '$_ttsAnnouncementInterval 分钟',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: ActivityPlugin.instance.color,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // 播报文本
-                            TextField(
-                              controller: _ttsTextController,
-                              maxLines: 3,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: '输入播报文本模板',
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButton<String>(
-                                    isExpanded: true,
-                                    value: _selectedVariable,
-                                    hint: const Text('插入变量'),
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: '{date}',
-                                        child: Text('{date} - 日期'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: '{last_activity}',
-                                        child: Text('{last_activity} - 上次活动'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: '{unrecorded_time}',
-                                        child: Text(
-                                          '{unrecorded_time} - 未记录时间',
-                                        ),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: '{time}',
-                                        child: Text('{time} - 时间'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: '{weekday}',
-                                        child: Text('{weekday} - 星期'),
-                                      ),
-                                    ],
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        _insertVariable(value);
-                                        setState(() {
-                                          _selectedVariable = null;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton.icon(
-                                  onPressed: _updateTTSText,
-                                  icon: const Icon(Icons.save, size: 18),
-                                  label: const Text('保存'),
-                                ),
-                                const SizedBox(width: 8),
-                                OutlinedButton.icon(
-                                  onPressed: _testTTSSpeak,
-                                  icon: const Icon(Icons.play_arrow, size: 18),
-                                  label: const Text('测试'),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 24),
-                            // 工作时间限制
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '仅在工作时间检查',
-                                  style: theme.textTheme.titleSmall,
-                                ),
-                                AdaptiveSwitch(
-                                  value: _checkOnlyWorkHours,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _checkOnlyWorkHours = value;
-                                    });
-                                    _updateWorkHoursSettings();
-                                  },
-                                  activeColor: ActivityPlugin.instance.color,
-                                ),
-                              ],
-                            ),
-
-                            if (_checkOnlyWorkHours) ...[
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '开始时间',
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        DropdownButton<int>(
-                                          value: _workHoursStart,
-                                          isExpanded: true,
-                                          items:
-                                              List.generate(24, (i) => i).map((
-                                                hour,
-                                              ) {
-                                                return DropdownMenuItem<int>(
-                                                  value: hour,
-                                                  child: Text('$hour:00'),
-                                                );
-                                              }).toList(),
-                                          onChanged: (value) {
-                                            if (value != null) {
-                                              setState(() {
-                                                _workHoursStart = value;
-                                              });
-                                              _updateWorkHoursSettings();
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '结束时间',
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        DropdownButton<int>(
-                                          value: _workHoursEnd,
-                                          isExpanded: true,
-                                          items:
-                                              List.generate(24, (i) => i).map((
-                                                hour,
-                                              ) {
-                                                return DropdownMenuItem<int>(
-                                                  value: hour,
-                                                  child: Text('$hour:00'),
-                                                );
-                                              }).toList(),
-                                          onChanged: (value) {
-                                            if (value != null) {
-                                              setState(() {
-                                                _workHoursEnd = value;
-                                              });
-                                              _updateWorkHoursSettings();
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-
-                            const SizedBox(height: 16),
-
-                            // 震动反馈开关
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.vibration,
-                                      size: 20,
-                                      color: ActivityPlugin.instance.color,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '震动反馈',
-                                      style: theme.textTheme.titleSmall,
-                                    ),
-                                  ],
-                                ),
-                                AdaptiveSwitch(
-                                  value: _enableHapticFeedback,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _enableHapticFeedback = value;
-                                    });
-                                    ActivityPlugin.instance
-                                        .setTTSAnnouncementHapticFeedback(
-                                          value,
-                                        );
-                                  },
-                                  activeColor: ActivityPlugin.instance.color,
-                                ),
-                              ],
-                            ),
-                          ],
                         ],
                       ),
-                    ),
+
+                      const SizedBox(height: 16),
+
+                      // 通知更新频率
+                      Text(
+                        'activity_updateInterval'.tr,
+                        style: DsTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'activity_updateIntervalDesc'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSSlider(
+                              // 1-10 分钟归一化
+                              value: (_updateInterval - 1) / (10 - 1),
+                              activeColor: ActivityPlugin.instance.color,
+                              onChanged: (value) {
+                                _updateUpdateInterval(
+                                  (value * (10 - 1) + 1).round(),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              'activity_minutesUnit'.trParams({
+                                'minutes': '$_updateInterval',
+                              }),
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: ActivityPlugin.instance.color,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+            // TTS 播报设置区域
+            DSCard(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.mic,
+                        color: ActivityPlugin.instance.color,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '语音播报提醒',
+                          style: DsTypography.heading.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.text,
+                          ),
+                        ),
+                      ),
+                      AdaptiveSwitch(
+                        value: _isTTSAnnouncementEnabled,
+                        onChanged: _toggleTTSAnnouncement,
+                        activeColor: ActivityPlugin.instance.color,
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '当超过指定时间未记录活动时，通过语音播报提醒',
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
+
+                  // 播报设置
+                  if (_isTTSAnnouncementEnabled) ...[
+                    const SizedBox(height: 24),
+                    Divider(height: 1, color: theme.stroke),
+                    const SizedBox(height: 16),
+
+                    // TTS 服务选择
+                    Text(
+                      'TTS 语音服务',
+                      style: DsTypography.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _isLoadingTTSServices
+                        ? Center(
+                          child: DSLoadingDots(
+                            color: ActivityPlugin.instance.color,
+                          ),
+                        )
+                        : _ttsServices.isEmpty
+                        ? Text(
+                          '没有可用的 TTS 服务',
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
+                          ),
+                        )
+                        // 选项行带图标/默认角标，DS 暂不支持自定义行选项，保留 Material 下拉
+                        : DropdownButtonFormField<String>(
+                          value: _selectedTTSServiceId,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: '选择 TTS 服务',
+                          ),
+                          items:
+                              _ttsServices.where((s) => s.isEnabled).map((
+                                service,
+                              ) {
+                                final config = service;
+                                return DropdownMenuItem<String>(
+                                  value: config.id,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        config.type == TTSServiceType.system
+                                            ? Icons.record_voice_over
+                                            : Icons.cloud,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(config.name),
+                                      if (config.isDefault) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.success,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '默认',
+                                            style: DsTypography.caption
+                                                .copyWith(
+                                                  color: theme.onSuccess,
+                                                  fontSize: 10,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                          onChanged: (value) {
+                            _updateTTSServiceId(value);
+                          },
+                        ),
+                    const SizedBox(height: 16),
+
+                    // 播报间隔
+                    Text(
+                      '未记录时间间隔（分钟）',
+                      style: DsTypography.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSSlider(
+                            // 1-60 分钟归一化
+                            value: (_ttsAnnouncementInterval - 1) / (60 - 1),
+                            activeColor: ActivityPlugin.instance.color,
+                            onChanged: (value) {
+                              _updateTTSAnnouncementInterval(
+                                (value * (60 - 1) + 1).round(),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            '$_ttsAnnouncementInterval 分钟',
+                            style: DsTypography.body.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: ActivityPlugin.instance.color,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 播报文本
+                    DSInput(
+                      controller: _ttsTextController,
+                      maxLines: 3,
+                      hint: '输入播报文本模板',
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSSelect<String>(
+                            value: _selectedVariable,
+                            hint: '插入变量',
+                            items: const [
+                              DSSelectItem(
+                                value: '{date}',
+                                label: '{date} - 日期',
+                              ),
+                              DSSelectItem(
+                                value: '{last_activity}',
+                                label: '{last_activity} - 上次活动',
+                              ),
+                              DSSelectItem(
+                                value: '{unrecorded_time}',
+                                label: '{unrecorded_time} - 未记录时间',
+                              ),
+                              DSSelectItem(
+                                value: '{time}',
+                                label: '{time} - 时间',
+                              ),
+                              DSSelectItem(
+                                value: '{weekday}',
+                                label: '{weekday} - 星期',
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                _insertVariable(value);
+                                setState(() {
+                                  _selectedVariable = null;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        DSButton(
+                          label: '保存',
+                          icon: DsIconKind.check,
+                          onPressed: _updateTTSText,
+                        ),
+                        const SizedBox(width: 8),
+                        DSButton(
+                          label: '测试',
+                          variant: DSButtonVariant.outline,
+                          icon: DsIconKind.play,
+                          onPressed: _testTTSSpeak,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+                    // 工作时间限制
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '仅在工作时间检查',
+                          style: DsTypography.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.text,
+                          ),
+                        ),
+                        AdaptiveSwitch(
+                          value: _checkOnlyWorkHours,
+                          onChanged: (value) {
+                            setState(() {
+                              _checkOnlyWorkHours = value;
+                            });
+                            _updateWorkHoursSettings();
+                          },
+                          activeColor: ActivityPlugin.instance.color,
+                        ),
+                      ],
+                    ),
+
+                    if (_checkOnlyWorkHours) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '开始时间',
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                DSSelect<int>(
+                                  value: _workHoursStart,
+                                  items:
+                                      List.generate(24, (i) => i)
+                                          .map(
+                                            (hour) => DSSelectItem(
+                                              value: hour,
+                                              label: '$hour:00',
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _workHoursStart = value;
+                                      });
+                                      _updateWorkHoursSettings();
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '结束时间',
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                DSSelect<int>(
+                                  value: _workHoursEnd,
+                                  items:
+                                      List.generate(24, (i) => i)
+                                          .map(
+                                            (hour) => DSSelectItem(
+                                              value: hour,
+                                              label: '$hour:00',
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _workHoursEnd = value;
+                                      });
+                                      _updateWorkHoursSettings();
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    // 震动反馈开关
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            // DS 暂无震动类图标，保留 Material 图标
+                            Icon(
+                              Icons.vibration,
+                              size: 20,
+                              color: ActivityPlugin.instance.color,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '震动反馈',
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                        AdaptiveSwitch(
+                          value: _enableHapticFeedback,
+                          onChanged: (value) {
+                            setState(() {
+                              _enableHapticFeedback = value;
+                            });
+                            ActivityPlugin.instance
+                                .setTTSAnnouncementHapticFeedback(value);
+                          },
+                          activeColor: ActivityPlugin.instance.color,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
-    );
+            ),
+          ],
+        );
   }
 }

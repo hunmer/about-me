@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import '../../models/activity_record.dart';
@@ -63,51 +65,45 @@ class _ActivityLastActivityWidgetState
   }
 
   Widget _buildNoActivityWidget(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _navigateToCreateActivity(context),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.pink.withAlpha(30),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.history, color: Colors.pink, size: 32),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '暂无活动记录',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+    return Pressable(
+      onPressed: () => _navigateToCreateActivity(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.surfaceAlt,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.pink.withAlpha(30), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            // DS 暂无历史记录类图标，用 clock 顶替
+            DsIcon(DsIconKind.clock, color: Colors.pink, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '暂无活动记录',
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: theme.text,
                     ),
-                    Text(
-                      '点击添加第一个活动',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withAlpha(150),
-                      ),
+                  ),
+                  Text(
+                    '点击添加第一个活动',
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub.withAlpha(150),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Icon(Icons.add_circle, color: Colors.pink, size: 24),
-            ],
-          ),
+            ),
+            DsIcon(DsIconKind.plus, color: Colors.pink, size: 24),
+          ],
         ),
       ),
     );
@@ -117,7 +113,7 @@ class _ActivityLastActivityWidgetState
     BuildContext context,
     ActivityRecord activity,
   ) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final now = DateTime.now();
     final endTime = activity.endTime;
     final timeDiff = now.difference(endTime);
@@ -157,60 +153,57 @@ class _ActivityLastActivityWidgetState
     // 添加持续时长
     subtitleParts.add(durationText);
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _navigateToCreateActivity(context),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.pink.withAlpha(30),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '上次活动: $timeAgo',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pink,
-                      ),
+    return Pressable(
+      onPressed: () => _navigateToCreateActivity(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.surfaceAlt,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.pink.withAlpha(30), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '上次活动: $timeAgo',
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.pink,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: theme.text,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitleParts.join(' · '),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withAlpha(180),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub.withAlpha(180),
                     ),
-                  ],
-                ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              Icon(Icons.edit, color: Colors.pink.withAlpha(150), size: 20),
-            ],
-          ),
+            ),
+            DsIcon(
+              DsIconKind.edit,
+              color: Colors.pink.withAlpha(150),
+              size: 20,
+            ),
+          ],
         ),
       ),
     );

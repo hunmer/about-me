@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import '../providers.dart';
@@ -30,7 +32,8 @@ class TodoListWidget extends StatelessWidget {
     Map<String, dynamic> props,
     HomeWidgetSize size,
   ) {
-    final tasksList = (props['tasks'] as List<dynamic>?)
+    final tasksList =
+        (props['tasks'] as List<dynamic>?)
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         const [];
@@ -44,20 +47,14 @@ class TodoListWidget extends StatelessWidget {
 
   /// 转换为 props
   Map<String, dynamic> toProps() {
-    return {
-      'tasks': tasks,
-      'inline': inline,
-    };
+    return {'tasks': tasks, 'inline': inline};
   }
 
   @override
   Widget build(BuildContext context) {
     // 如果是内联模式使用传入的 tasks，否则使用事件监听器
     if (inline) {
-      return _TodoListWidgetContent(
-        tasks: tasks,
-        showEventUpdates: false,
-      );
+      return _TodoListWidgetContent(tasks: tasks, showEventUpdates: false);
     }
 
     // 使用 StatefulBuilder 和 EventListenerContainer 实现动态更新
@@ -88,8 +85,9 @@ class _TodoListWidgetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
+    // Icons.checklist / Colors.blue 为插件注册身份图标与身份色，保留 Material
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -107,8 +105,8 @@ class _TodoListWidgetContent extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'todo_name'.tr,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -136,9 +134,8 @@ class _TodoListWidgetContent extends StatelessWidget {
                           child: Center(
                             child: Text(
                               'empty_todo'.tr,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer
-                                    .withOpacity(0.5),
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -157,29 +154,29 @@ class _TodoListWidgetContent extends StatelessWidget {
   Widget _buildTaskItem(
     BuildContext context,
     Map<String, dynamic> task,
-    ThemeData theme,
+    AppThemeData theme,
   ) {
     final status = task['status'] as int;
     final priority = task['priority'] as int;
 
     return Row(
       children: [
+        // getStatusIcon 返回动态 IconData，保留 Material 图标
         Icon(
           getStatusIcon(status),
           size: 14,
-          color:
-              theme.colorScheme.onPrimaryContainer.withOpacity(0.5),
+          color: theme.textSub.withValues(alpha: 0.5),
         ),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             task['title'] as String,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: status == 2
-                  ? theme.colorScheme.onPrimaryContainer.withOpacity(0.5)
-                  : theme.colorScheme.onPrimaryContainer,
-              decoration:
-                  status == 2 ? TextDecoration.lineThrough : null,
+            style: DsTypography.caption.copyWith(
+              color:
+                  status == 2
+                      ? theme.textSub.withValues(alpha: 0.5)
+                      : theme.text,
+              decoration: status == 2 ? TextDecoration.lineThrough : null,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

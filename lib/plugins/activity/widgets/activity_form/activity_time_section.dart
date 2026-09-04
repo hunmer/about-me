@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/gestures.dart';
 import 'package:wheel_picker/wheel_picker.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 class ActivityTimeSection extends StatelessWidget {
   static const int _maxIntervalMinutes = 24 * 60; // cover full day range
@@ -24,6 +25,7 @@ class ActivityTimeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -32,7 +34,7 @@ class ActivityTimeSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: theme.stroke),
               borderRadius: BorderRadius.circular(8),
             ),
             child: InkWell(
@@ -42,7 +44,7 @@ class ActivityTimeSection extends StatelessWidget {
                 children: [
                   Text(
                     'app_startTime'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: theme.textSub),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
@@ -65,7 +67,7 @@ class ActivityTimeSection extends StatelessWidget {
               children: [
                 Text(
                   'app_interval'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: theme.textSub),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
@@ -73,9 +75,7 @@ class ActivityTimeSection extends StatelessWidget {
                   height: 140,
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withAlpha(50),
-                      ),
+                      border: Border.all(color: theme.primary.withAlpha(50)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: ScrollConfiguration(
@@ -91,7 +91,8 @@ class ActivityTimeSection extends StatelessWidget {
                       child: WheelPicker(
                         controller: WheelPickerController(
                           itemCount: _maxIntervalMinutes,
-                          initialIndex: int.tryParse(durationController.text) ?? 0,
+                          initialIndex:
+                              int.tryParse(durationController.text) ?? 0,
                         ),
                         style: const WheelPickerStyle(
                           itemExtent: 40,
@@ -125,7 +126,7 @@ class ActivityTimeSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: theme.stroke),
               borderRadius: BorderRadius.circular(8),
             ),
             child: InkWell(
@@ -135,7 +136,7 @@ class ActivityTimeSection extends StatelessWidget {
                 children: [
                   Text(
                     'app_endTime'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: theme.textSub),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/models/activity_daily_widget_config.dart';
 import 'package:aboutme/plugins/activity/models/activity_daily_widget_data.dart';
@@ -16,18 +18,14 @@ class ActivityDailyConfigScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int widgetId;
 
-  const ActivityDailyConfigScreen({
-    required this.widgetId,
-    super.key,
-  });
+  const ActivityDailyConfigScreen({required this.widgetId, super.key});
 
   @override
   State<ActivityDailyConfigScreen> createState() =>
       _ActivityDailyConfigScreenState();
 }
 
-class _ActivityDailyConfigScreenState
-    extends State<ActivityDailyConfigScreen> {
+class _ActivityDailyConfigScreenState extends State<ActivityDailyConfigScreen> {
   late WidgetConfig _widgetConfig;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -84,8 +82,10 @@ class _ActivityDailyConfigScreenState
           if (primaryColorStr != null) {
             final colorValue = int.tryParse(primaryColorStr);
             if (colorValue != null) {
-              _widgetConfig =
-                  _widgetConfig.updateColor('primary', Color(colorValue));
+              _widgetConfig = _widgetConfig.updateColor(
+                'primary',
+                Color(colorValue),
+              );
             }
           }
 
@@ -93,8 +93,10 @@ class _ActivityDailyConfigScreenState
           if (accentColorStr != null) {
             final colorValue = int.tryParse(accentColorStr);
             if (colorValue != null) {
-              _widgetConfig =
-                  _widgetConfig.updateColor('accent', Color(colorValue));
+              _widgetConfig = _widgetConfig.updateColor(
+                'accent',
+                Color(colorValue),
+              );
             }
           }
 
@@ -129,7 +131,9 @@ class _ActivityDailyConfigScreenState
       final opacity = _widgetConfig.opacity;
 
       debugPrint('ActivityDailyConfig: 保存配置 widgetId=${widget.widgetId}');
-      debugPrint('ActivityDailyConfig: primaryColor=${primaryColor.value}, accentColor=${accentColor.value}, opacity=$opacity');
+      debugPrint(
+        'ActivityDailyConfig: primaryColor=${primaryColor.value}, accentColor=${accentColor.value}, opacity=$opacity',
+      );
 
       // 保存颜色配置（使用String类型）
       await HomeWidget.saveWidgetData<String>(
@@ -210,14 +214,18 @@ class _ActivityDailyConfigScreenState
       try {
         widgetIds = List<int>.from(jsonDecode(existingIdsJson) as List);
       } catch (e) {
-        debugPrint('Failed to parse existing widget IDs, creating new list: $e');
+        debugPrint(
+          'Failed to parse existing widget IDs, creating new list: $e',
+        );
       }
     }
 
     // 添加新 widgetId（如果不存在）
     if (!widgetIds.contains(widgetId)) {
       widgetIds.add(widgetId);
-      debugPrint('ActivityDailyConfig: Registered widgetId $widgetId (total: ${widgetIds.length})');
+      debugPrint(
+        'ActivityDailyConfig: Registered widgetId $widgetId (total: ${widgetIds.length})',
+      );
     } else {
       debugPrint('ActivityDailyConfig: widgetId $widgetId already registered');
     }
@@ -250,10 +258,8 @@ class _ActivityDailyConfigScreenState
 
   /// 构建预览组件
   Widget _buildPreview(WidgetConfig config) {
-    final primaryColor =
-        config.getColor('primary') ?? const Color(0xFFEFF7F0);
-    final accentColor =
-        config.getColor('accent') ?? const Color(0xFF607afb);
+    final primaryColor = config.getColor('primary') ?? const Color(0xFFEFF7F0);
+    final accentColor = config.getColor('accent') ?? const Color(0xFF607afb);
 
     return Container(
       width: 220,
@@ -274,8 +280,14 @@ class _ActivityDailyConfigScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('activity_morning'.tr, style: TextStyle(fontSize: 10, color: accentColor)),
-                    Text('activity_afternoon'.tr, style: TextStyle(fontSize: 10, color: accentColor)),
+                    Text(
+                      'activity_morning'.tr,
+                      style: TextStyle(fontSize: 10, color: accentColor),
+                    ),
+                    Text(
+                      'activity_afternoon'.tr,
+                      style: TextStyle(fontSize: 10, color: accentColor),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -298,9 +310,10 @@ class _ActivityDailyConfigScreenState
                               child: Container(
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: isWorkHour
-                                      ? accentColor.withOpacity(0.3)
-                                      : accentColor.withOpacity(0.1),
+                                  color:
+                                      isWorkHour
+                                          ? accentColor.withOpacity(0.3)
+                                          : accentColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
@@ -344,7 +357,11 @@ class _ActivityDailyConfigScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.chevron_left, size: 14, color: accentColor),
+                    DsIcon(
+                      DsIconKind.chevronLeft,
+                      size: 14,
+                      color: accentColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '5月28日',
@@ -355,7 +372,11 @@ class _ActivityDailyConfigScreenState
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(Icons.chevron_right, size: 14, color: accentColor),
+                    DsIcon(
+                      DsIconKind.chevronRight,
+                      size: 14,
+                      color: accentColor,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -441,10 +462,7 @@ class _ActivityDailyConfigScreenState
             ),
           ),
           const SizedBox(width: 4),
-          Text(
-            icon,
-            style: const TextStyle(fontSize: 8),
-          ),
+          Text(icon, style: const TextStyle(fontSize: 8)),
           const SizedBox(width: 2),
           Expanded(
             child: Text(
@@ -458,10 +476,7 @@ class _ActivityDailyConfigScreenState
           ),
           Text(
             duration,
-            style: TextStyle(
-              fontSize: 8,
-              color: accentColor.withOpacity(0.6),
-            ),
+            style: TextStyle(fontSize: 8, color: accentColor.withOpacity(0.6)),
           ),
         ],
       ),
@@ -473,7 +488,12 @@ class _ActivityDailyConfigScreenState
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('activity_configDailyWidget'.tr)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          // DSLoadingDots 内部取 AppTheme，需包桥
+          child: DSThemeBridge(
+            child: Builder(builder: (_) => const DSLoadingDots()),
+          ),
+        ),
       );
     }
 
@@ -482,13 +502,12 @@ class _ActivityDailyConfigScreenState
         title: Text('activity_configDailyWidget'.tr),
         actions: [
           if (_isSaving)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: DSThemeBridge(
+                  // DSLoadingDots 内部取 AppTheme，需包桥
+                  child: Builder(builder: (_) => const DSLoadingDots(size: 20)),
                 ),
               ),
             ),
@@ -502,6 +521,7 @@ class _ActivityDailyConfigScreenState
         },
         previewBuilder: (context, config) => _buildPreview(config),
       ),
+      // DS 暂无带文字的 extended FAB，保留 Material
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSaving ? null : _saveConfig,
         icon: const Icon(Icons.check),

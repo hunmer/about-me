@@ -1,9 +1,9 @@
 # Handoff: Material → 设计系统(DS)组件渐进式迁移
 
-- 日期: 2026-09-04(第 4 轮会话末更新)
-- 仓库: `D:\about-me`(Flutter, branch: `main`;第 4 轮上半场已提交 5c072a7,下半场 ~112 文件未提交)
+- 日期: 2026-09-04(第 5 轮会话末更新)
+- 仓库: `D:\about-me`(Flutter, branch: `main`;前 4 轮均已提交,最新 83a316d;本轮 ~44 文件未提交)
 - 验证基线:`flutter analyze` **0 error,123 条 warning/info 与迁移前完全一致**;`flutter test test/design_system_bridge_smoke_test.dart` **10/10 通过**(含 60 个自绘图标回归)。
-- 会话脉络:第 1-2 轮完成 home_grid → /chat 主屏 → /diary → 表单对话框;第 3 轮完成 home_screen 其余 widget、chat 全部深层组件、CustomBottomBar 内部令牌化,并把**全部应用代码的 `AppTheme.of` 换成 `DSThemeBridge.resolve`**;第 4 轮用 3+3 个并行 agent(按插件目录分区,互不重叠)完成 **10 个插件**:agent_chat/webview/openai/goods/bill(主体 + 残留收尾)与 habits/checkin/notes/store。
+- 会话脉络:第 1-2 轮完成 home_grid → /chat 主屏 → /diary → 表单对话框;第 3 轮完成 home_screen 其余 widget、chat 全部深层组件、CustomBottomBar 内部令牌化,并把**全部应用代码的 `AppTheme.of` 换成 `DSThemeBridge.resolve`**;第 4 轮用 3+3 个并行 agent(按插件目录分区,互不重叠)完成 **10 个插件**:agent_chat/webview/openai/goods/bill(主体 + 残留收尾)与 habits/checkin/notes/store;第 5 轮 3 个并行 agent 完成 **todo/tracker/activity**(13/14 个量大插件全部收尾)。
 
 ## 一、项目背景与关键架构
 
@@ -38,8 +38,8 @@
 
 ### 第 4 轮迁移中发现的 DS 缺口(下轮补齐可解锁对应保留项)
 
-- **组件 API**:无时间选择器(等价 showTimePicker,checkin 保留 Material);无日期**范围**选择器(等价 showDateRangePicker,notes 保留);DSButton 无自定义基色(身份色按钮目前用 `Pressable+JellyBox` 组合顶替,timer_dialog/habit_card_widget);DSSelect 不支持带图标/自定义行选项(bill_shortcuts 分类下拉保留);无"选项列表对话框"(等价 SimpleDialog,AgentModeSelectionDialog 保留);DSChip 无自定义选中色/禁用态;DSListItem 的 subtitle 无 maxLines;DSInput 无 autofocus(用 FocusNode+postFrame 变通)
-- **图标缺口**(已用近似图标顶替的:钱包→piggy、订阅→refresh、筛选→sort、源→layers、分类→tag;无替代保留 Material 的:globe/lock/open_in_browser/folder 系(webview)、local_fire_department 火焰(checkin 连续打卡)、radio_button_unchecked 等空心圆未完成态、inventory/archive/trophy/calculate/history/note 系)。新增图标时按画布惯例补 `test/design_system_bridge_smoke_test.dart` 回归,再回头替换顶替处
+- **组件 API**:无时间选择器(等价 showTimePicker,checkin 保留 Material);无日期**范围**选择器(等价 showDateRangePicker,notes/activity 保留);DSButton 无自定义基色(身份色按钮目前用 `Pressable+JellyBox` 组合顶替,timer_dialog/habit_card_widget/todo list_selector);DSSelect 不支持带图标/自定义行选项(bill_shortcuts 分类下拉、activity TTS 服务下拉保留);无"选项列表对话框"(等价 SimpleDialog,AgentModeSelectionDialog 保留);DSChip 无自定义选中色/禁用态;DSListItem 的 subtitle 无 maxLines;DSInput 无 autofocus(用 FocusNode+postFrame 变通);**DSFab 无带文字的 extended 形态**(activity 日/周配置屏保存按钮保留 Material);**`showDSBottomSheet` 无 `theme:` 参数且内部裸调 `AppTheme.of(context)`**——在无 AppTheme 祖树的调用点会抛空检查异常,与 showDSDialog 契约不一致,建议优先补(tracker 轮被迫改用 showDSDialog 顶替)
+- **图标缺口**(已用近似图标顶替的:钱包→piggy、订阅→refresh、筛选→sort、源→layers、分类→tag、计时器→clock、保存→check、旗帜空态→pin、错误→block、周视图→calendar、四象限→grid、清空→trash、语音→mic;无替代保留 Material 的:globe/lock/open_in_browser/folder 系(webview)、local_fire_department 火焰(checkin)、radio_button_unchecked/check_box_outline_blank 等空心圆未完成态(tracker/todo 保持图标对一致)、check_circle 实心圆对、inventory/archive/trophy/calculate/history/note 系、flag 旗帜(track_changes 靶心)、title 文本、音量/震动、timeline、delete_sweep)。新增图标时按画布惯例补 `test/design_system_bridge_smoke_test.dart` 回归,再回头替换顶替处
 
 ## 三、已完成(未提交)
 
@@ -49,6 +49,7 @@
 - **CustomBottomBar**:内部令牌化(surface/未选中色走 DS 令牌);**DSBottomNavigation 骨架替换未做**,见剩余清单
 - **jelly_home**:已令牌化(resolve)
 - **第 4 轮插件 ×10**:agent_chat、webview、openai、goods、bill(含 supercupertino actions、PopupMenuButton→DSPopover、AppBar leading/actions 等残留收尾)、habits(含 habit_monthly_list 的 SfCalendar `monthCellBuilder` 外包 DSThemeBridge——陷阱 2 实例)、checkin、notes、store;覆盖各插件 data_selectors 配置表单、全部对话框、加载/空态、FAB。剩余匹配行均为"刻意保留的 Material"或子串误匹配;行为修复 1 处:checkin 的 GroupSortDialog 单选原本缺 groupValue/onChanged 不可选中,重写时已接通
+- **第 5 轮插件 ×3**:todo(CustomBottomBar 骨架/FAB/TabBarView 按规约保留,仅内部令牌化;actions/对话框/详情页/四象限/日卡迁移)、tracker(对话框/目标卡/详情屏/选择器屏全量;SuperCupertino actions 包桥)、activity(**SfCalendar 陷阱 2 处理**:取令牌走 resolve,appointmentBuilder 内只用 Container/Text+显式色避免未包桥 DS 组件;SuperAppBar actions 逐个包桥)。activity_timeline 的 `_getActivityIcon` 启发式 Material 图标映射属保留项(已补花括号修 lint)
 
 ### 刻意保留的 Material(勿"顺手替换")
 
@@ -69,13 +70,10 @@
 
 ### 插件(按量降序)
 
-> 已完成(第 4 轮,3+3 并行 agent 按目录分区):agent_chat 430、webview 208、openai 167、goods 159、bill 154、habits 149、checkin 126、notes 123、store 116。并行分区经验:每个 agent 只许改自己分配的插件目录、**一律不许动 `lib/design_system/**` 与 `lib/widgets/**`**(防冲突),图标/组件缺口记录后集中补,收尾各自 `dart format` + analyze,主会话最后统一跑 analyze + 冒烟。
+> 已完成(第 4-5 轮,3+3+3 并行 agent 按目录分区):agent_chat 430、webview 208、openai 167、goods 159、bill 154、habits 149、checkin 126、notes 123、store 116、todo 115、tracker 111、activity 104。并行分区经验:每个 agent 只许改自己分配的插件目录、**一律不许动 `lib/design_system/**` 与 `lib/widgets/**`**(防冲突),图标/组件缺口记录后集中补,收尾各自 `dart format` + analyze,主会话最后统一跑 analyze + 冒烟。
 
 | 插件 | 量 | 备注 |
 |---|---|---|
-| `plugins/todo/` | 115 | todo_bottombar_view 用 CustomBottomBar |
-| `plugins/tracker/` | 111 | |
-| `plugins/activity/` | 104 | activity_calendar_screen 用 SfCalendar |
 | `plugins/nodes/` | 78 | |
 | `plugins/nfc/` | 76 | |
 | `plugins/scripts_center/` | 75 | |
@@ -96,7 +94,7 @@
 - **CustomBottomBar → DSBottomNavigation 骨架替换**:10+ 插件共用(flutter_floating_bottom_bar + TabController 驱动 TabBarView + FAB 定位 + 滚动隐藏),需把各插件的 Tab children 换成 DSNavItem,**动静最大,务必单独一轮并逐插件回归**
 - `lib/screens/widgets_gallery/`(728 处):组件示例/演示页,属内部展示,可最后做或永久保留
 - **已迁插件的刻意保留残留**(做共享组件/补缺口时顺手消化):CustomBottomBar+FAB 骨架(habits_bottom_bar、checkin、store_bottom_bar、goods_bottom_bar、openai/bill_plugin);共享表单/组件依赖(FormBuilderWrapper、MonthSelector、WidgetConfigEditor、StatisticsScreen、DayCardHeader、SwipeActionOption 等,属 `lib/widgets/**`);showTimePicker/showDateRangePicker(等 DS 补组件);持久化 IconData 全家(folder/Channel/Habit/Skill/CheckinItem/warehouse/bill 分类图标及注册表)
-- **死代码树**(迁移时已确认无外部引用,建议评估删除):notes 的 `screens/note_screen/**`、`search_screen.dart`、`folder_list_screen.dart`、`widgets/{search_note_item,note_item,folder_item}.dart`;checkin 的 `checkin_card.dart`、`components/{checkin_item_list,group_card,group_list_view,stat_card,weekly_checkin_circles}.dart`;agent_chat 的 `AgentModeSelectionDialog`(死代码,已保留 Material)
+- **死代码树**(迁移时已确认无外部引用,建议评估删除):notes 的 `screens/note_screen/**`、`search_screen.dart`、`folder_list_screen.dart`、`widgets/{search_note_item,note_item,folder_item}.dart`;checkin 的 `checkin_card.dart`、`components/{checkin_item_list,group_card,group_list_view,stat_card,weekly_checkin_circles}.dart`;agent_chat 的 `AgentModeSelectionDialog`;todo 的 `widgets/{filter_dialog,add_task_button,task_action_sheet}.dart`;tracker 的 `widgets/{goal_detail_page,tracker_summary_card}.dart`(前者仅被插件 export);activity 的 `widgets/activity_form/activity_time_section.dart`、`services/activity_notification_test.dart`、`screens/activity_timeline_screen/components/{timeline_app_bar,date_selector}.dart`
 
 ## 五、给下一个 agent 的操作建议
 
@@ -112,4 +110,4 @@
 - 组件 API 全集: `lib/design_system/design_system.dart`(barrel)与 `lib/design_system/components/`
 - 用法示范: `lib/screens/design_system_gallery/sections/*`
 - 回归测试: `test/design_system_bridge_smoke_test.dart`
-- 本轮未提交 diff: `git diff`(基线 5c072a7)
+- 本轮未提交 diff: `git diff`(基线 83a316d)

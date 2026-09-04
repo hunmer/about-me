@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'dart:convert';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
@@ -14,10 +16,7 @@ class TrackerGoalProgressSelectorScreen extends StatefulWidget {
   /// 小组件ID(Android appWidgetId)
   final int? widgetId;
 
-  const TrackerGoalProgressSelectorScreen({
-    super.key,
-    this.widgetId,
-  });
+  const TrackerGoalProgressSelectorScreen({super.key, this.widgetId});
 
   @override
   State<TrackerGoalProgressSelectorScreen> createState() =>
@@ -78,8 +77,10 @@ class _TrackerGoalProgressSelectorScreenState
       if (savedColorStr != null) {
         final colorValue = int.tryParse(savedColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('primary', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'primary',
+            Color(colorValue),
+          );
         }
       }
 
@@ -90,8 +91,10 @@ class _TrackerGoalProgressSelectorScreenState
       if (savedAccentColorStr != null) {
         final colorValue = int.tryParse(savedAccentColorStr);
         if (colorValue != null) {
-          _widgetConfig =
-              _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -116,8 +119,9 @@ class _TrackerGoalProgressSelectorScreenState
   Goal? _getSelectedGoal() {
     if (_selectedGoalId == null) return null;
     try {
-      return _trackerPlugin.controller.goals
-          .firstWhere((goal) => goal.id == _selectedGoalId);
+      return _trackerPlugin.controller.goals.firstWhere(
+        (goal) => goal.id == _selectedGoalId,
+      );
     } catch (_) {
       return null;
     }
@@ -125,10 +129,11 @@ class _TrackerGoalProgressSelectorScreenState
 
   @override
   Widget build(BuildContext context) {
-
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: const Center(
+          child: DSThemeBridge(child: Center(child: DSLoadingDots())),
+        ),
       );
     }
 
@@ -137,76 +142,79 @@ class _TrackerGoalProgressSelectorScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text('tracker_configureGoalProgressBarWidget'.tr),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.close,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => Navigator.of(context).pop(),
+              );
+            },
+          ),
         ),
       ),
-      body: goals.isEmpty
-          ? _buildEmptyState()
-          : WidgetConfigEditor(
-              widgetSize: WidgetSize.large,
-              initialConfig: _widgetConfig,
-              previewTitle: '进度条预览',
-              onConfigChanged: (config) {
-                setState(() => _widgetConfig = config);
-              },
-              previewBuilder: _buildPreview,
-              customConfigWidgets: [
-                _buildGoalSelector(),
-              ],
-            ),
-      bottomNavigationBar: _selectedGoalId != null
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: _saveAndFinish,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      body:
+          goals.isEmpty
+              ? _buildEmptyState()
+              : WidgetConfigEditor(
+                widgetSize: WidgetSize.large,
+                initialConfig: _widgetConfig,
+                previewTitle: '进度条预览',
+                onConfigChanged: (config) {
+                  setState(() => _widgetConfig = config);
+                },
+                previewBuilder: _buildPreview,
+                customConfigWidgets: [_buildGoalSelector()],
+              ),
+      bottomNavigationBar:
+          _selectedGoalId != null
+              ? SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DSThemeBridge(
+                    child: DSButton(
+                      label: '确认配置',
+                      size: DSButtonSize.lg,
+                      expand: true,
+                      onPressed: _saveAndFinish,
                     ),
                   ),
-                  child: const Text(
-                    '确认配置',
-                    style: TextStyle(fontSize: 16),
-                  ),
                 ),
-              ),
-            )
-          : null,
+              )
+              : null,
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.track_changes,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '暂无目标',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // DS 无 track_changes 图标，用 refresh 顶替
+                DsIcon(DsIconKind.refresh, size: 64, color: theme.disabled),
+                const SizedBox(height: 16),
+                Text(
+                  '暂无目标',
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '请先在目标追踪插件中创建目标',
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '请先在目标追踪插件中创建目标',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -231,10 +239,7 @@ class _TrackerGoalProgressSelectorScreenState
             children: [
               Icon(Icons.track_changes, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
-              Text(
-                '请选择目标',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              Text('请选择目标', style: TextStyle(color: Colors.grey[600])),
             ],
           ),
         ),
@@ -242,9 +247,10 @@ class _TrackerGoalProgressSelectorScreenState
     }
 
     // 计算进度百分比
-    final progress = selectedGoal.targetValue > 0
-        ? selectedGoal.currentValue / selectedGoal.targetValue
-        : 0.0;
+    final progress =
+        selectedGoal.targetValue > 0
+            ? selectedGoal.currentValue / selectedGoal.targetValue
+            : 0.0;
     final progressPercent = (progress * 100).clamp(0, 100).toInt();
 
     // 渲染进度条样式小组件预览（白色卡片）
@@ -290,11 +296,7 @@ class _TrackerGoalProgressSelectorScreenState
                   color: Colors.white,
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Icon(
-                  Icons.add,
-                  size: 18,
-                  color: Colors.grey[600],
-                ),
+                child: Icon(Icons.add, size: 18, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -330,10 +332,7 @@ class _TrackerGoalProgressSelectorScreenState
           // 底部：百分比 + 进度条
           Text(
             '$progressPercent%',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 13),
           ),
           const SizedBox(height: 4),
           ClipRRect(
@@ -352,120 +351,126 @@ class _TrackerGoalProgressSelectorScreenState
 
   /// 构建目标选择器
   Widget _buildGoalSelector() {
-    final theme = Theme.of(context);
     final goals = _trackerPlugin.controller.goals;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.track_changes, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '选择追踪目标',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...goals.map((goal) {
-              final isSelected = _selectedGoalId == goal.id;
-              // 计算进度百分比
-              final progress = goal.currentValue / goal.targetValue;
-              final progressPercent = (progress * 100).clamp(0, 100).toInt();
+    return DSThemeBridge(
+      // WidgetConfigEditor 为共享 Material 容器，DS 组件先过桥
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  onTap: () => _onGoalSelected(goal),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : Colors.grey.withOpacity(0.3),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      color: isSelected
-                          ? theme.colorScheme.primary.withOpacity(0.05)
-                          : Colors.transparent,
-                    ),
-                    child: Row(
-                      children: [
-                        // 图标
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: goal.iconColor != null
-                                ? Color(goal.iconColor!).withAlpha(30)
-                                : Colors.blue.withAlpha(30),
-                            borderRadius: BorderRadius.circular(10),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // DS 无 track_changes 图标，用 refresh 顶替
+                  DsIcon(DsIconKind.refresh, size: 22, color: theme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    '选择追踪目标',
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...goals.map((goal) {
+                final isSelected = _selectedGoalId == goal.id;
+                // 计算进度百分比
+                final progress = goal.currentValue / goal.targetValue;
+                final progressPercent = (progress * 100).clamp(0, 100).toInt();
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Pressable(
+                    onPressed: () => _onGoalSelected(goal),
+                    builder: (context, states) {
+                      final pressed = states.contains(WidgetState.pressed);
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: theme.radii.md,
+                          border: Border.all(
+                            color: isSelected ? theme.primary : theme.stroke,
+                            width: isSelected ? 2 : 1,
                           ),
-                          child: Icon(
-                            IconData(
-                              int.parse(goal.icon),
-                              fontFamily: 'MaterialIcons',
+                          color:
+                              isSelected
+                                  ? theme.primary.withValues(alpha: 0.05)
+                                  : pressed
+                                  ? theme.surfaceAlt.withValues(alpha: 0.5)
+                                  : Colors.transparent,
+                        ),
+                        child: Row(
+                          children: [
+                            // 图标（goal.icon 为持久化 codePoint，保留 Material）
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color:
+                                    goal.iconColor != null
+                                        ? Color(goal.iconColor!).withAlpha(30)
+                                        : theme.primary.withAlpha(30),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                IconData(
+                                  int.parse(goal.icon),
+                                  fontFamily: 'MaterialIcons',
+                                ),
+                                color:
+                                    goal.iconColor != null
+                                        ? Color(goal.iconColor!)
+                                        : theme.primary,
+                                size: 24,
+                              ),
                             ),
-                            color: goal.iconColor != null
-                                ? Color(goal.iconColor!)
-                                : Colors.blue,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+                            const SizedBox(width: 12),
 
-                        // 目标信息
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                goal.name,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            // 目标信息
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    goal.name,
+                                    style: DsTypography.body.copyWith(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${goal.currentValue.toInt()}/${goal.targetValue.toInt()} ${goal.unitType} ($progressPercent%)',
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${goal.currentValue.toInt()}/${goal.targetValue.toInt()} ${goal.unitType} ($progressPercent%)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
 
-                        // 选中标记
-                        Icon(
-                          isSelected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : Colors.grey[400],
-                          size: 24,
+                            // 选中标记（空心圆未选中态无 DS 对应，保留 Material）
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              color:
+                                  isSelected ? theme.primary : theme.disabled,
+                              size: 24,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                ),
-              );
-            }),
-          ],
-        ),
+                );
+              }),
+            ],
+          );
+        },
       ),
     );
   }
@@ -476,11 +481,15 @@ class _TrackerGoalProgressSelectorScreenState
       _selectedGoalId = goal.id;
       // 可以选择性地更新进度条颜色为目标的颜色
       if (goal.progressColor != null) {
-        _widgetConfig =
-            _widgetConfig.updateColor('accent', Color(goal.progressColor!));
+        _widgetConfig = _widgetConfig.updateColor(
+          'accent',
+          Color(goal.progressColor!),
+        );
       } else if (goal.iconColor != null) {
-        _widgetConfig =
-            _widgetConfig.updateColor('accent', Color(goal.iconColor!));
+        _widgetConfig = _widgetConfig.updateColor(
+          'accent',
+          Color(goal.iconColor!),
+        );
       }
     });
   }
@@ -538,7 +547,6 @@ class _TrackerGoalProgressSelectorScreenState
       );
 
       if (mounted) {
-
         Toast.success('${'tracker_configured'.tr} "${selectedGoal.name}"');
 
         await Future.delayed(const Duration(milliseconds: 500));
@@ -548,7 +556,6 @@ class _TrackerGoalProgressSelectorScreenState
       }
     } catch (e) {
       if (mounted) {
-
         Toast.error('${'tracker_configurationFailed'.tr}: $e');
       }
     }
@@ -565,7 +572,7 @@ class _TrackerGoalProgressSelectorScreenState
             'currentValue': goal.currentValue,
             'targetValue': goal.targetValue,
             'unitType': goal.unitType,
-          }
+          },
         ],
       });
 
@@ -575,7 +582,8 @@ class _TrackerGoalProgressSelectorScreenState
       );
 
       debugPrint(
-          '目标数据已同步: ${goal.name}, ${goal.currentValue}/${goal.targetValue} ${goal.unitType}');
+        '目标数据已同步: ${goal.name}, ${goal.currentValue}/${goal.targetValue} ${goal.unitType}',
+      );
     } catch (e) {
       debugPrint('同步目标数据失败: $e');
     }

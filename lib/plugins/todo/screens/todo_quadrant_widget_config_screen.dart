@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
 
 /// 任务四象限小组件配置界面
@@ -11,16 +13,15 @@ class TodoQuadrantWidgetConfigScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int? widgetId;
 
-  const TodoQuadrantWidgetConfigScreen({
-    super.key,
-    this.widgetId,
-  });
+  const TodoQuadrantWidgetConfigScreen({super.key, this.widgetId});
 
   @override
-  State<TodoQuadrantWidgetConfigScreen> createState() => _TodoQuadrantWidgetConfigScreenState();
+  State<TodoQuadrantWidgetConfigScreen> createState() =>
+      _TodoQuadrantWidgetConfigScreenState();
 }
 
-class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfigScreen> {
+class _TodoQuadrantWidgetConfigScreenState
+    extends State<TodoQuadrantWidgetConfigScreen> {
   late WidgetConfig _widgetConfig;
   bool _isLoading = true;
 
@@ -63,7 +64,10 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
       if (savedPrimaryColor != null) {
         final colorValue = int.tryParse(savedPrimaryColor);
         if (colorValue != null) {
-          _widgetConfig = _widgetConfig.updateColor('primary', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'primary',
+            Color(colorValue),
+          );
         }
       }
 
@@ -74,7 +78,10 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
       if (savedAccentColor != null) {
         final colorValue = int.tryParse(savedAccentColor);
         if (colorValue != null) {
-          _widgetConfig = _widgetConfig.updateColor('accent', Color(colorValue));
+          _widgetConfig = _widgetConfig.updateColor(
+            'accent',
+            Color(colorValue),
+          );
         }
       }
 
@@ -101,14 +108,15 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
 
     try {
       // 1. 获取配置值
-      final primaryColor = _widgetConfig.getColor('primary') ?? const Color(0xFF2196F3);
+      final primaryColor =
+          _widgetConfig.getColor('primary') ?? const Color(0xFF2196F3);
       final accentColor = _widgetConfig.getColor('accent') ?? Colors.white;
       final opacity = _widgetConfig.opacity;
 
       // 2. 保存颜色配置（必须使用 String 类型！）
       await HomeWidget.saveWidgetData<String>(
         'todo_quadrant_widget_primary_color_${widget.widgetId}',
-        primaryColor.value.toString(),  // Color.value 转为字符串
+        primaryColor.value.toString(), // Color.value 转为字符串
       );
 
       await HomeWidget.saveWidgetData<String>(
@@ -118,7 +126,7 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
 
       await HomeWidget.saveWidgetData<String>(
         'todo_quadrant_widget_opacity_${widget.widgetId}',
-        opacity.toString(),  // double 转为字符串
+        opacity.toString(), // double 转为字符串
       );
 
       // 3. 同步数据并更新小组件
@@ -126,7 +134,8 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
       await HomeWidget.updateWidget(
         name: 'TodoQuadrantWidgetProvider',
         iOSName: 'TodoQuadrantWidgetProvider',
-        qualifiedAndroidName: 'github.hunmer.aboutme.widgets.providers.TodoQuadrantWidgetProvider',
+        qualifiedAndroidName:
+            'github.hunmer.aboutme.widgets.providers.TodoQuadrantWidgetProvider',
       );
 
       if (mounted) Navigator.of(context).pop();
@@ -172,13 +181,7 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
                 ),
               ),
               const Spacer(),
-              Text(
-                '本日',
-                style: TextStyle(
-                  color: accentColor,
-                  fontSize: 10,
-                ),
-              ),
+              Text('本日', style: TextStyle(color: accentColor, fontSize: 10)),
             ],
           ),
           const SizedBox(height: 8),
@@ -386,82 +389,101 @@ class _TodoQuadrantWidgetConfigScreenState extends State<TodoQuadrantWidgetConfi
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('todo_configureQuadrantWidget'.tr),
         actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveAndFinish,
-            child: Text(
-              _isLoading ? 'todo_loading'.tr : 'Done',
-              style: const TextStyle(color: Colors.white),
+          // AppBar actions 位于主题树之外，外包 DSThemeBridge（陷阱 2）
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.check,
+                  size: 40,
+                  color: theme.primary,
+                  iconColor: theme.onPrimary,
+                  tooltip: _isLoading ? 'todo_loading'.tr : 'Done',
+                  onPressed: _isLoading ? null : _saveAndFinish,
+                );
+              },
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // 预览
-                Text(
-                  '预览效果',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+      body:
+          _isLoading
+              ? Center(
+                // 独立路由之上自备主题桥
+                child: DSThemeBridge(
+                  child: Center(child: DSLoadingDots(size: 20)),
+                ),
+              )
+              : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // 预览
+                  Text(
+                    '预览效果',
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: _buildPreview(_widgetConfig),
-                ),
-                const SizedBox(height: 24),
-                // 主题配置编辑器
-                Text(
-                  '主题配置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 16),
+                  Center(child: _buildPreview(_widgetConfig)),
+                  const SizedBox(height: 24),
+                  // 主题配置编辑器
+                  Text(
+                    '主题配置',
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
-                ),
-                const SizedBox(height: 16),
-                WidgetConfigEditor(
-                  widgetSize: WidgetSize.large,
-                  initialConfig: _widgetConfig,
-                  previewTitle: '四象限预览',
-                  onConfigChanged: (newConfig) {
-                    setState(() {
-                      _widgetConfig = newConfig;
-                    });
-                  },
-                  previewBuilder: (context, config) => _buildPreview(config),
-                ),
-                const SizedBox(height: 24),
-                // 说明文字
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '使用说明',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                  const SizedBox(height: 16),
+                  WidgetConfigEditor(
+                    widgetSize: WidgetSize.large,
+                    initialConfig: _widgetConfig,
+                    previewTitle: '四象限预览',
+                    onConfigChanged: (newConfig) {
+                      setState(() {
+                        _widgetConfig = newConfig;
+                      });
+                    },
+                    previewBuilder: (context, config) => _buildPreview(config),
+                  ),
+                  const SizedBox(height: 24),
+                  // 说明文字
+                  DSThemeBridge(
+                    // 共享编辑器/独立路由之上自备主题桥
+                    child: Builder(
+                      builder: (context) {
+                        final theme = DSThemeBridge.resolve(context);
+                        return DSCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '使用说明',
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '• 点击左上角日期范围按钮可切换时间范围（本日/本周/本月）\n'
+                                '• 点击各象限中的 checkbox 可快速完成任务\n'
+                                '• 点击标题栏可打开待办事项页面',
+                                style: DsTypography.body.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '• 点击左上角日期范围按钮可切换时间范围（本日/本周/本月）\n'
-                          '• 点击各象限中的 checkbox 可快速完成任务\n'
-                          '• 点击标题栏可打开待办事项页面',
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
     );
   }
 }

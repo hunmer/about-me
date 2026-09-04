@@ -1,6 +1,8 @@
 import 'package:aboutme/plugins/activity/widgets/activity_form/activity_form_widget.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
@@ -95,7 +97,8 @@ class ActivityFormState extends State<ActivityFormWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
+    final theme = DSThemeBridge.resolve(context);
+    final primaryColor = theme.primary;
 
     // 初始化时间
     final initialStartTime = getInitialTime(
@@ -149,8 +152,7 @@ class ActivityFormState extends State<ActivityFormWidget> {
         name: 'mood',
         type: FormFieldType.optionSelector,
         labelText: 'activity_mood'.tr,
-        initialValue:
-            widget.activity?.mood ?? '',
+        initialValue: widget.activity?.mood ?? '',
         options: _buildMoodOptions(),
         useHorizontalScroll: true,
         optionWidth: 80,
@@ -310,35 +312,19 @@ class ActivityFormState extends State<ActivityFormWidget> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            border: Border(
-              top: BorderSide(
-                color:
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]!
-                        : Colors.grey[200]!,
-              ),
-            ),
+            color: theme.background,
+            border: Border(top: BorderSide(color: theme.stroke)),
           ),
           child: SizedBox(
             width: double.infinity,
             height: 56,
-            child: ElevatedButton(
-              onPressed: _handleSaveWithValidation,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'app_save'.tr,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+            // DSButton 内部取 AppTheme，需包桥
+            child: DSThemeBridge(
+              child: DSButton(
+                label: 'app_save'.tr,
+                size: DSButtonSize.lg,
+                expand: true,
+                onPressed: _handleSaveWithValidation,
               ),
             ),
           ),
@@ -642,7 +628,9 @@ class ActivityFormState extends State<ActivityFormWidget> {
             tags: [...unGroupedTags.tags, newTag],
           );
           // 更新 tagGroups 中的对应项
-          final index = tagGroups.indexWhere((g) => g.name == unGroupedTags.name);
+          final index = tagGroups.indexWhere(
+            (g) => g.name == unGroupedTags.name,
+          );
           if (index != -1) {
             tagGroups[index] = unGroupedTags;
           }

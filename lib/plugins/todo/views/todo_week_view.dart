@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 import 'package:aboutme/plugins/todo/widgets/todo_day_card.dart';
 
@@ -56,43 +58,33 @@ class TodoWeekView extends StatelessWidget {
 
   /// 构建周标题
   Widget _buildWeekHeader(BuildContext context, List<DateTime> weekDates) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
     final startDate = weekDates.first;
     final endDate = weekDates.last;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.3),
-        ),
+        border: Border.all(color: theme.stroke),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.calendar_view_week,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          DsIcon(DsIconKind.calendar, size: 20, color: theme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               '${startDate.month}月${startDate.day}日 - ${endDate.month}月${endDate.day}日',
-              style: TextStyle(
-                fontSize: 14,
+              style: DsTypography.label.copyWith(
+                color: theme.text,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
           ),
           Text(
             '本周任务',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).disabledColor,
-            ),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),

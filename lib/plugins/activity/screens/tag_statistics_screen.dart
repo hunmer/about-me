@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -143,8 +145,7 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
         // Filter by tag immediately
         final taggedActivities =
             dailyActivities.where((a) {
-              if (widget.tagName ==
-                  'activity_unnamedActivity'.tr) {
+              if (widget.tagName == 'activity_unnamedActivity'.tr) {
                 return a.tags.isEmpty;
               }
               return a.tags.contains(widget.tagName);
@@ -227,6 +228,8 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     _timeRanges = [
       'Today',
       'This Week',
@@ -244,14 +247,18 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               '${DateFormat('yyyy-MM-dd').format(_startDate!)} ${'activity_to'.tr} ${DateFormat('yyyy-MM-dd').format(_endDate!)}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ),
           if (_isLoading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
+            Expanded(
+              child: Center(
+                // DSLoadingDots 内部取 AppTheme，需包桥
+                child: DSThemeBridge(
+                  child: Builder(builder: (_) => const DSLoadingDots()),
+                ),
+              ),
+            )
           else
             Expanded(
               child: SingleChildScrollView(
@@ -296,43 +303,52 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          children:
-              _timeRanges.map((range) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(getRangeText(range)),
-                    selected: _selectedRange == range,
-                    onSelected: (selected) {
-                      if (selected) _updateDateRange(range);
-                    },
-                  ),
-                );
-              }).toList(),
+        // DSChip 内部取 AppTheme，需包桥
+        child: DSThemeBridge(
+          child: Row(
+            children:
+                _timeRanges.map((range) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: DSChip(
+                      label: getRangeText(range),
+                      selected: _selectedRange == range,
+                      onSelected: (selected) {
+                        if (selected) _updateDateRange(range);
+                      },
+                    ),
+                  );
+                }).toList(),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildCard({required String title, required Widget child}) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    // DSCard 内部取 AppTheme，需包桥
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: DsTypography.heading.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.text,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                child,
+              ],
             ),
-            const SizedBox(height: 16),
-            child,
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -376,7 +392,9 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
               drawVerticalLine: false,
               getDrawingHorizontalLine: (value) {
                 return FlLine(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  color: DSThemeBridge.resolve(
+                    context,
+                  ).stroke.withValues(alpha: 0.1),
                   strokeWidth: 1,
                   dashArray: [5, 5],
                 );
@@ -406,7 +424,7 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
                           DateFormat('MM/dd').format(sortedKeys[index]),
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).textTheme.bodySmall?.color,
+                            color: DSThemeBridge.resolve(context).textSub,
                           ),
                         ),
                       );
@@ -424,7 +442,7 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
                       '${value.toInt()}h',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
+                        color: DSThemeBridge.resolve(context).textSub,
                       ),
                     );
                   },
@@ -479,17 +497,18 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                .map(
-                  (d) => Text(
-                    d,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                  ),
-                )
-                .toList(),
+            children:
+                ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                    .map(
+                      (d) => Text(
+                        d,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: DSThemeBridge.resolve(context).textSub,
+                        ),
+                      ),
+                    )
+                    .toList(),
           ),
           const SizedBox(height: 8),
           LayoutBuilder(
@@ -503,22 +522,32 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
               double mainAxisSpacing = 4.0;
               const double gridHeight = 180.0;
 
-              final offset = sortedKeys.first.weekday == 7 ? 0 : sortedKeys.first.weekday;
+              final offset =
+                  sortedKeys.first.weekday == 7 ? 0 : sortedKeys.first.weekday;
               final int totalItems = sortedKeys.length + offset;
               final int numRows = (totalItems / crossAxisCount).ceil();
 
               // If too many rows, reduce spacing to prevent negative height
-              if (numRows > 40) { // e.g. > ~9 months
+              if (numRows > 40) {
+                // e.g. > ~9 months
                 mainAxisSpacing = 1.0;
                 crossAxisSpacing = 1.0;
-              } else if (numRows > 20) { // e.g. > ~4.5 months
+              } else if (numRows > 20) {
+                // e.g. > ~4.5 months
                 mainAxisSpacing = 2.0;
                 crossAxisSpacing = 2.0;
               }
 
-              final double itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * crossAxisSpacing) / crossAxisCount;
-              final double itemHeight = (gridHeight - (numRows - 1) * mainAxisSpacing) / numRows;
-              final double childAspectRatio = itemWidth > 0 && itemHeight > 0 ? itemWidth / itemHeight : 1.0;
+              final double itemWidth =
+                  (constraints.maxWidth -
+                      (crossAxisCount - 1) * crossAxisSpacing) /
+                  crossAxisCount;
+              final double itemHeight =
+                  (gridHeight - (numRows - 1) * mainAxisSpacing) / numRows;
+              final double childAspectRatio =
+                  itemWidth > 0 && itemHeight > 0
+                      ? itemWidth / itemHeight
+                      : 1.0;
 
               return GridView.builder(
                 shrinkWrap: true,
@@ -544,7 +573,9 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
 
                   Color color;
                   if (minutes == 0) {
-                    color = Theme.of(context).dividerColor.withValues(alpha: 0.1);
+                    color = DSThemeBridge.resolve(
+                      context,
+                    ).stroke.withValues(alpha: 0.1);
                   } else if (intensity < 0.25) {
                     color = _primaryColor.withValues(alpha: 0.3);
                   } else if (intensity < 0.5) {
@@ -556,7 +587,8 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
                   }
 
                   return Tooltip(
-                    message: '${DateFormat('yyyy-MM-dd').format(date)}: ${_formatDuration(minutes)}',
+                    message:
+                        '${DateFormat('yyyy-MM-dd').format(date)}: ${_formatDuration(minutes)}',
                     child: Container(
                       decoration: BoxDecoration(
                         color: color,
@@ -574,22 +606,46 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
             children: [
               Text(
                 'Less',
-                style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: DSThemeBridge.resolve(context).textSub,
+                ),
               ),
               const SizedBox(width: 4),
-              Container(width: 10, height: 10, color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+              Container(
+                width: 10,
+                height: 10,
+                color: DSThemeBridge.resolve(
+                  context,
+                ).stroke.withValues(alpha: 0.1),
+              ),
               const SizedBox(width: 2),
-              Container(width: 10, height: 10, color: _primaryColor.withValues(alpha: 0.3)),
+              Container(
+                width: 10,
+                height: 10,
+                color: _primaryColor.withValues(alpha: 0.3),
+              ),
               const SizedBox(width: 2),
-              Container(width: 10, height: 10, color: _primaryColor.withValues(alpha: 0.5)),
+              Container(
+                width: 10,
+                height: 10,
+                color: _primaryColor.withValues(alpha: 0.5),
+              ),
               const SizedBox(width: 2),
-              Container(width: 10, height: 10, color: _primaryColor.withValues(alpha: 0.7)),
+              Container(
+                width: 10,
+                height: 10,
+                color: _primaryColor.withValues(alpha: 0.7),
+              ),
               const SizedBox(width: 2),
               Container(width: 10, height: 10, color: _primaryColor),
               const SizedBox(width: 4),
               Text(
                 'More',
-                style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: DSThemeBridge.resolve(context).textSub,
+                ),
               ),
             ],
           ),
@@ -606,7 +662,9 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
     // HTML shows labels Mon, Tue...
 
     return _buildCard(
-      title: 'activity_weekRange'.tr, // "Weekly Average" - reuse weekRange key or similar
+      title:
+          'activity_weekRange'
+              .tr, // "Weekly Average" - reuse weekRange key or similar
       child: SizedBox(
         height: 200,
         child: BarChart(
@@ -644,7 +702,7 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
                           days[index],
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).textTheme.bodySmall?.color,
+                            color: DSThemeBridge.resolve(context).textSub,
                           ),
                         ),
                       );
@@ -669,9 +727,9 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxAvg * 1.1, // Background bar full height
-                      color: Theme.of(
+                      color: DSThemeBridge.resolve(
                         context,
-                      ).dividerColor.withValues(alpha: 0.1),
+                      ).stroke.withValues(alpha: 0.1),
                     ),
                   ),
                 ],

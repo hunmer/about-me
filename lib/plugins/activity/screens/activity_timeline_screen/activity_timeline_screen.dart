@@ -5,6 +5,8 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/calendar_strip_date_picker.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/plugins/activity/widgets/activity_timeline.dart';
@@ -49,28 +51,16 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     );
 
     // 监听活动添加事件
-    eventManager.subscribe(
-      'activity_added',
-      _onActivityChanged,
-    );
+    eventManager.subscribe('activity_added', _onActivityChanged);
 
     // 监听活动删除事件
-    eventManager.subscribe(
-      'activity_deleted',
-      _onActivityChanged,
-    );
+    eventManager.subscribe('activity_deleted', _onActivityChanged);
 
     // 监听活动更新事件(如果存在)
-    eventManager.subscribe(
-      'activity_updated',
-      _onActivityChanged,
-    );
+    eventManager.subscribe('activity_updated', _onActivityChanged);
 
     // 监听同步刷新事件（WebSocket 同步后触发）
-    eventManager.subscribe(
-      'activity_refresh',
-      _onSyncRefresh,
-    );
+    eventManager.subscribe('activity_refresh', _onSyncRefresh);
 
     _initializeService().then((_) {
       if (mounted) {
@@ -142,22 +132,10 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
       'activity_notification_tapped',
       _onNotificationTapped,
     );
-    eventManager.unsubscribe(
-      'activity_added',
-      _onActivityChanged,
-    );
-    eventManager.unsubscribe(
-      'activity_deleted',
-      _onActivityChanged,
-    );
-    eventManager.unsubscribe(
-      'activity_updated',
-      _onActivityChanged,
-    );
-    eventManager.unsubscribe(
-      'activity_refresh',
-      _onSyncRefresh,
-    );
+    eventManager.unsubscribe('activity_added', _onActivityChanged);
+    eventManager.unsubscribe('activity_deleted', _onActivityChanged);
+    eventManager.unsubscribe('activity_updated', _onActivityChanged);
+    eventManager.unsubscribe('activity_refresh', _onSyncRefresh);
 
     // 清理控制器
     _viewModeController.dispose();
@@ -326,21 +304,23 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
 
   /// 构建搜索结果列表
   Widget _buildSearchResults() {
+    final theme = DSThemeBridge.resolve(context);
+
     if (_searchResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            DsIcon(DsIconKind.search, size: 64, color: theme.disabled),
             const SizedBox(height: 16),
             Text(
               _searchQuery.isEmpty ? '输入关键词搜索' : '未找到匹配结果',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
               '尝试调整搜索条件或过滤器',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: DsTypography.caption.copyWith(color: theme.disabled),
             ),
           ],
         ),
@@ -357,51 +337,104 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
         final title = result['title'];
         final subtitle = result['subtitle'];
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getActivityColor(activity),
-              child: Icon(_getActivityIcon(type), color: Colors.white),
-            ),
-            title: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(subtitle),
-                if (result['tag'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Chip(
-                      label: Text(
-                        result['tag'],
-                        style: const TextStyle(fontSize: 12),
+        // DSCard 内部取 AppTheme，需包桥
+        return DSThemeBridge(
+          child: Builder(
+            builder: (ctx) {
+              final dsTheme = DSThemeBridge.resolve(ctx);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                // 保留点击进入编辑的入口
+                child: DSCard(
+                  padding: const EdgeInsets.all(12),
+                  onTap: () {
+                    _activityController.editActivity(context, activity);
+                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _getActivityColor(activity),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: DsIcon(
+                            _getResultIcon(type),
+                            size: 20,
+                            color: dsTheme.surface,
+                          ),
+                        ),
                       ),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: dsTheme.text,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              style: DsTypography.caption.copyWith(
+                                color: dsTheme.textSub,
+                              ),
+                            ),
+                            if (result['tag'] != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: dsTheme.surfaceAlt,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    result['tag'],
+                                    style: DsTypography.caption.copyWith(
+                                      fontSize: 12,
+                                      color: dsTheme.textSub,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (result['description'] != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  result['description'],
+                                  style: DsTypography.caption.copyWith(
+                                    fontSize: 12,
+                                    color: dsTheme.textSub,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${activity.startTime.hour.toString().padLeft(2, '0')}:${activity.startTime.minute.toString().padLeft(2, '0')}',
+                        style: DsTypography.caption.copyWith(
+                          color: dsTheme.textSub,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                if (result['description'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      result['description'],
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
-            ),
-            trailing: Text(
-              '${activity.startTime.hour.toString().padLeft(2, '0')}:${activity.startTime.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-            onTap: () {
-              _activityController.editActivity(context, activity);
+                ),
+              );
             },
           ),
         );
@@ -417,24 +450,31 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     return Colors.blue;
   }
 
-  /// 获取活动图标
-  IconData _getActivityIcon(String type) {
+  /// 获取搜索结果图标
+  DsIconKind _getResultIcon(String type) {
     switch (type) {
       case 'activity':
-        return Icons.event;
+        return DsIconKind.calendar;
       case 'activity_tag':
-        return Icons.label;
+        return DsIconKind.tag;
       case 'activity_comment':
-        return Icons.comment;
+        return DsIconKind.chat;
       default:
-        return Icons.event;
+        return DsIconKind.calendar;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        // DSLoadingDots 内部取 AppTheme，需包桥
+        body: Center(
+          child: DSThemeBridge(
+            child: Builder(builder: (_) => const DSLoadingDots()),
+          ),
+        ),
+      );
     }
 
     return SuperCupertinoNavigationWrapper(
@@ -495,8 +535,8 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                                 final minutes = end.difference(start).inMinutes;
                                 final hours = minutes ~/ 60;
                                 final mins = minutes % 60;
-                                final durationText = hours > 0
-                                    ? '$hours小时$mins分钟' : '$mins分钟';
+                                final durationText =
+                                    hours > 0 ? '$hours小时$mins分钟' : '$mins分钟';
                                 Toast.show(
                                   '${DateFormat('H:mm').format(start)} - ${DateFormat('H:mm').format(end)} ($durationText)',
                                   gravity: ToastGravity.BOTTOM,
@@ -532,49 +572,91 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
       // 搜索结果页面
       searchBody: _buildSearchResults(),
       enableLargeTitle: true,
+      // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
       actions: [
         // 日历视图按钮
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
-          child: IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ActivityCalendarScreen(
-                    activityService: _activityService,
-                  ),
-                ),
-              );
-            },
-            tooltip: '日历视图',
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.calendar,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: '日历视图',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => ActivityCalendarScreen(
+                              activityService: _activityService,
+                            ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
         // 视图切换按钮
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
-          child: IconButton(
-            icon: Icon(
-              _viewModeController.isGridMode ? Icons.timeline : Icons.grid_on,
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon:
+                      _viewModeController.isGridMode
+                          ? DsIconKind.list
+                          : DsIconKind.grid,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip:
+                      _viewModeController.isGridMode ? '切换到时间轴视图' : '切换到网格视图',
+                  onPressed: _viewModeController.toggleViewMode,
+                );
+              },
             ),
-            onPressed: _viewModeController.toggleViewMode,
-            tooltip: _viewModeController.isGridMode ? '切换到时间轴视图' : '切换到网格视图',
           ),
         ),
         // 标签管理按钮
-        IconButton(
-          icon: const Icon(Icons.label),
-          onPressed: () => _tagController.showTagManagerDialog(context),
-          tooltip: '标签管理',
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.tag,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: '标签管理',
+                onPressed: () => _tagController.showTagManagerDialog(context),
+              );
+            },
+          ),
         ),
-        // 添加活动的按钮（使用IconButton避免Hero冲突）
+        // 添加活动的按钮
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
-          child: IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 28),
-            onPressed: () => ActivityController.showAddActivityScreen(context),
-            tooltip: '添加活动',
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return DSIconButton(
+                  icon: DsIconKind.plus,
+                  size: 40,
+                  tooltip: '添加活动',
+                  onPressed:
+                      () => ActivityController.showAddActivityScreen(context),
+                );
+              },
+            ),
           ),
         ),
       ],

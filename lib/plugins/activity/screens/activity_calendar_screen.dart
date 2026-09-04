@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/plugins/activity/screens/activity_timeline_screen/controllers/activity_controller.dart';
@@ -74,7 +76,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
 
     // 如果没有标签，使用主题色
     if (activity.tags.isEmpty) {
-      return Theme.of(context).primaryColor;
+      return DSThemeBridge.resolve(context).primary;
     }
 
     // 基于第一个标签生成颜色
@@ -133,7 +135,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -151,7 +153,12 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                // DSLoadingDots 内部取 AppTheme，需包桥
+                child: DSThemeBridge(
+                  child: Builder(builder: (_) => const DSLoadingDots()),
+                ),
+              )
               : AboutmeSfCalendar(
                 controller: _calendarController,
                 view: CalendarView.month,
@@ -191,7 +198,9 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
                 dataSource: ActivityCalendarDataSource(_activities),
                 onViewChanged: _onViewChanged,
                 onTap: _onCalendarTap,
-                todayHighlightColor: theme.primaryColor,
+                todayHighlightColor: theme.primary,
+                // SfCalendar 的 appointmentBuilder 回调位于桥之上：
+                // 内部仅用 Container/Text 与显式颜色，取令牌走 resolve，安全
                 appointmentBuilder: (context, calendarAppointmentDetails) {
                   final appointment =
                       calendarAppointmentDetails.appointments.first;
@@ -234,9 +243,15 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
                   return const SizedBox.shrink();
                 },
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => ActivityController.showAddActivityScreen(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: Builder(
+          builder:
+              (_) => DSFab(
+                onPressed:
+                    () => ActivityController.showAddActivityScreen(context),
+              ),
+        ),
       ),
     );
   }

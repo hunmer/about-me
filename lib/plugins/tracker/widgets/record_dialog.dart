@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/tracker/models/goal.dart';
@@ -24,98 +26,156 @@ class RecordDialog extends StatefulWidget {
 }
 
 class _RecordDialogState extends State<RecordDialog> {
-  final _formKey = GlobalKey<FormState>();
   late DateTime _recordedAt;
-  late double _value;
-  late String? _note;
+  final _valueController = TextEditingController();
+  final _noteController = TextEditingController();
+  String? _valueError;
 
   @override
   void initState() {
     super.initState();
     _recordedAt = widget.initialRecordedAt ?? DateTime.now();
-    _value = 1;
-    _note = null;
+    _valueController.text = '1';
+  }
+
+  @override
+  void dispose() {
+    _valueController.dispose();
+    _noteController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('tracker_recordTitle'.tr.replaceFirst('{goalName}', widget.goal.name)),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.access_time),
-                title: Text('tracker_recordTitle'.tr),
-                subtitle: Text(_formatDateTime(_recordedAt)),
-                trailing: const Icon(Icons.edit),
-                onTap: () => _pickDateTime(),
-              ),
-              const SizedBox(height: 16),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: TextEditingController(
-                        text: _value.toString(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'tracker_incrementValueWithUnit'
-                            .tr
-                            .replaceFirst('\${unit}', widget.goal.unitType),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '请输入增加值';
-                        }
-                        final numValue = double.tryParse(value);
-                        if (numValue == null || numValue <= 0) {
-                          return '请输入有效的正数';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) => _value = double.parse(value!),
-                    ),
+    return DSThemeBridge(
+      // 对话框路由在主题树之外，内部组件先过桥再取令牌
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'tracker_recordTitle'.tr.replaceFirst(
+                    '{goalName}',
+                    widget.goal.name,
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _calculateDifference,
-                    child: Text(
-                      'tracker_calculateDifference'.tr,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText:
-                      '${'tracker_note'.tr} (${'tracker_noteHint'.tr})',
-                  border: const OutlineInputBorder(),
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
                 ),
-                maxLines: 2,
-                onSaved: (value) => _note = value,
+                SizedBox(height: theme.spacing.lg),
+                // 记录时间行：点击修改日期时间
+                _buildTimeRow(context, theme),
+                SizedBox(height: theme.spacing.lg),
+                // 增加值 + 计算差值
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: DSInput(
+                        controller: _valueController,
+                        errorText: _valueError,
+                        hint: 'tracker_incrementValueWithUnit'.tr.replaceFirst(
+                          '\${unit}',
+                          widget.goal.unitType,
+                        ),
+                        keyboardType: TextInputType.number,
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.sm),
+                    DSButton(
+                      label: 'tracker_calculateDifference'.tr,
+                      variant: DSButtonVariant.secondary,
+                      size: DSButtonSize.sm,
+                      onPressed: _calculateDifference,
+                    ),
+                  ],
+                ),
+                SizedBox(height: theme.spacing.md),
+                DSInput(
+                  controller: _noteController,
+                  hint: '${'tracker_note'.tr} (${'tracker_noteHint'.tr})',
+                  maxLines: 2,
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'tracker_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'tracker_confirm'.tr,
+                        onPressed: _submit,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 记录时间行：时钟图标 + 时间文本 + 编辑图标
+  Widget _buildTimeRow(BuildContext context, AppThemeData theme) {
+    return Pressable(
+      onPressed: _pickDateTime,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.md,
+            vertical: theme.spacing.sm + 2,
+          ),
+          decoration: BoxDecoration(
+            color:
+                pressed
+                    ? theme.surfaceAlt.withValues(alpha: 0.6)
+                    : theme.surfaceAlt.withValues(alpha: 0.35),
+            borderRadius: theme.radii.lg,
+          ),
+          child: Row(
+            children: [
+              DsIcon(DsIconKind.clock, size: 20, color: theme.primary),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'tracker_recordTitle'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    Text(
+                      _formatDateTime(_recordedAt),
+                      style: DsTypography.body.copyWith(color: theme.text),
+                    ),
+                  ],
+                ),
               ),
+              DsIcon(DsIconKind.edit, size: 18, color: theme.textSub),
             ],
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('tracker_cancel'.tr),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: Text('tracker_confirm'.tr),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -125,14 +185,15 @@ class _RecordDialogState extends State<RecordDialog> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    // DS 日期选择器
+    final date = await showDSDatePickerDialog(
       context: context,
-      initialDate: _recordedAt.isAfter(now) ? now : _recordedAt,
-      firstDate: DateTime(2000),
-      lastDate: now,
+      theme: DSThemeBridge.resolve(context),
+      initial: _recordedAt.isAfter(now) ? now : _recordedAt,
     );
     if (date == null) return;
 
+    // DS 无时间选择器，保留 Material showTimePicker（DS API 缺口）
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_recordedAt),
@@ -152,58 +213,102 @@ class _RecordDialogState extends State<RecordDialog> {
 
   void _calculateDifference() async {
     final textController = TextEditingController();
-    final targetValue = await showDialog<double>(
+    final targetValue = await showDSDialog<double>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('tracker_calculateDifference'.tr),
-          content: TextFormField(
-            controller: textController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'tracker_inputTargetValue'.tr,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'tracker_calculateDifference'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      DSInput(
+                        controller: textController,
+                        hint: 'tracker_inputTargetValue'.tr,
+                        keyboardType: TextInputType.number,
+                        onSubmitted:
+                            (_) => _popTargetValue(context, textController),
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'tracker_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'tracker_confirm'.tr,
+                              onPressed:
+                                  () =>
+                                      _popTargetValue(context, textController),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('tracker_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                final value = double.tryParse(textController.text);
-                if (value != null) {
-                  Navigator.pop(context, value);
-                }
-              },
-              child: Text('tracker_confirm'.tr),
-            ),
-          ],
-        );
-      },
     );
+    textController.dispose();
 
     if (targetValue != null) {
+      final newValue = targetValue - widget.goal.currentValue;
       setState(() {
-        _value = targetValue - widget.goal.currentValue;
+        _valueController.text = newValue.toString();
       });
     }
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      final record = Record(
-        id: const Uuid().v4(),
-        goalId: widget.goal.id,
-        value: _value,
-        note: _note,
-        recordedAt: _recordedAt,
-      );
-
-      widget.controller.addRecord(record, widget.goal);
-      Navigator.pop(context);
+  void _popTargetValue(BuildContext context, TextEditingController controller) {
+    final value = double.tryParse(controller.text);
+    if (value != null) {
+      Navigator.pop(context, value);
     }
+  }
+
+  void _submit() {
+    final text = _valueController.text;
+    if (text.isEmpty) {
+      setState(() => _valueError = '请输入增加值');
+      return;
+    }
+    final numValue = double.tryParse(text);
+    if (numValue == null || numValue <= 0) {
+      setState(() => _valueError = '请输入有效的正数');
+      return;
+    }
+
+    final record = Record(
+      id: const Uuid().v4(),
+      goalId: widget.goal.id,
+      value: numValue,
+      // 与原版一致：空备注保存空字符串
+      note: _noteController.text,
+      recordedAt: _recordedAt,
+    );
+
+    widget.controller.addRecord(record, widget.goal);
+    Navigator.pop(context);
   }
 }

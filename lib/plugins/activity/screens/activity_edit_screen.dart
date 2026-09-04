@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/widgets/activity_form.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
@@ -228,9 +230,10 @@ class _ActivityEditScreenState extends State<ActivityEditScreen> {
       // 默认使用今天
       selectedDate = DateTime.now();
     }
-    final title = widget.activity != null
-        ? 'activity_editActivity'.tr
-        : 'activity_addActivity'.tr;
+    final title =
+        widget.activity != null
+            ? 'activity_editActivity'.tr
+            : 'activity_addActivity'.tr;
 
     final formContent = ActivityForm(
       activity: widget.activity,
@@ -245,6 +248,7 @@ class _ActivityEditScreenState extends State<ActivityEditScreen> {
 
     // bottom sheet 模式：只返回带标题栏的内容
     if (widget.showAsBottomSheet) {
+      final theme = DSThemeBridge.resolve(context);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -256,21 +260,29 @@ class _ActivityEditScreenState extends State<ActivityEditScreen> {
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: DsTypography.title.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: theme.text,
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                DSThemeBridge(
+                  // DSIconButton 内部取 AppTheme，需包桥
+                  child: Builder(
+                    builder:
+                        (_) => DSIconButton(
+                          icon: DsIconKind.close,
+                          size: 36,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: theme.stroke),
           // 表单内容
           Expanded(child: formContent),
         ],

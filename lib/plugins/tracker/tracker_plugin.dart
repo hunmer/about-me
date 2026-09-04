@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_base.dart';
@@ -44,13 +46,10 @@ class TrackerCacheUpdatedEventArgs extends EventArgs {
   /// 缓存日期
   final DateTime cacheDate;
 
-  TrackerCacheUpdatedEventArgs({
-    required this.goals,
-    required this.cacheDate,
-  }) : count = goals.length,
-       super('tracker_cache_updated');
+  TrackerCacheUpdatedEventArgs({required this.goals, required this.cacheDate})
+    : count = goals.length,
+      super('tracker_cache_updated');
 }
-
 
 class TrackerMainView extends StatefulWidget {
   final String? initialGoalId;
@@ -77,9 +76,7 @@ class _TrackerMainViewState extends State<TrackerMainView> {
 
   void _navigateToGoalDetail(String goalId) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => GoalDetailScreen(goalId: goalId),
-      ),
+      MaterialPageRoute(builder: (context) => GoalDetailScreen(goalId: goalId)),
     );
   }
 
@@ -91,24 +88,40 @@ class _TrackerMainViewState extends State<TrackerMainView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      title: Text('tracker_goalTracking'.tr),
+      title: Text(
+        'tracker_goalTracking'.tr,
+        style: DsTypography.title.copyWith(color: theme.text, fontSize: 16),
+      ),
       largeTitle: 'tracker_goalTracking'.tr,
 
       enableSearchBar: true,
       searchPlaceholder: 'tracker_searchPlaceholder'.tr,
       onSearchChanged: _onSearchChanged,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () {
-            NavigationHelper.openContainerWithHero(
-              context,
-              (context) =>
-                  GoalEditPage(controller: TrackerPlugin.instance.controller),
-            );
-          },
-          tooltip: '添加目标',
+        // 第三方导航栏回调：DS 组件需包 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 38,
+                color: theme.surface,
+                iconColor: theme.text,
+                tooltip: '添加目标',
+                onPressed: () {
+                  NavigationHelper.openContainerWithHero(
+                    context,
+                    (context) => GoalEditPage(
+                      controller: TrackerPlugin.instance.controller,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
       searchBody: ChangeNotifierProvider.value(
@@ -141,9 +154,7 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   TrackerController get controller => _controller;
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'tracker/',
-  ];
+  static const List<String> _refreshableFiles = ['tracker/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -241,7 +252,7 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
 
   @override
   Widget buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final controller = TrackerController();
 
     return Padding(
@@ -249,7 +260,7 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部图标和标题
+          // 顶部图标和标题（icon/color 为插件注册表身份，保留 Material）
           Row(
             children: [
               Container(
@@ -264,9 +275,7 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'tracker_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -284,13 +293,13 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'tracker_todayComplete'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.text),
                       ),
                       Text(
                         controller.getTodayCompletedGoals().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: theme.success,
                         ),
                       ),
                     ],
@@ -301,13 +310,13 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'tracker_thisMonthComplete'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.text),
                       ),
                       Text(
                         controller.getMonthCompletedGoals().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: theme.success,
                         ),
                       ),
                     ],

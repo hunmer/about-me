@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' hide Row, SizedBox, ListTile;
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart' as flutter show Row, SizedBox, ListTile;
 import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
@@ -18,6 +20,8 @@ class GoalDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 死代码文件：仅做轻量令牌化（无外部引用，供后续评估删除）
+    final theme = DSThemeBridge.resolve(context);
     final records =
         controller.records
             .where((r) => r.goalId == goal.id)
@@ -55,7 +59,7 @@ class GoalDetailPage extends StatelessWidget {
                     const flutter.SizedBox(width: 8),
                     Text(
                       '${goal.targetValue}${goal.unitType}',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: DsTypography.heading.copyWith(color: theme.text),
                     ),
                   ],
                 ),
@@ -63,16 +67,16 @@ class GoalDetailPage extends StatelessWidget {
                 LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: theme.surfaceAlt,
                   color:
                       goal.progressColor != null
                           ? Color(goal.progressColor!)
-                          : Theme.of(context).primaryColor,
+                          : theme.primary,
                 ),
                 const flutter.SizedBox(height: 8),
                 Text(
                   '${(progress * 100).toInt()}% 完成',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: DsTypography.body.copyWith(color: theme.text),
                 ),
               ],
             ),
@@ -90,11 +94,11 @@ class GoalDetailPage extends StatelessWidget {
                   ),
                   title: Text(
                     record.note ?? '无备注',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.text),
                   ),
                   subtitle: Text(
                     _formatDateTime(record.recordedAt),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 );
               },
@@ -121,7 +125,9 @@ class GoalDetailPage extends StatelessWidget {
   }
 
   void _navigateToEditPage(BuildContext context) {
-    NavigationHelper.push(context, GoalEditPage(controller: controller, goal: goal),
+    NavigationHelper.push(
+      context,
+      GoalEditPage(controller: controller, goal: goal),
     );
   }
 }

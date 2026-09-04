@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 /// 1x1 快速添加任务小组件
@@ -11,8 +13,9 @@ class QuickAddWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
+    // Colors.blue / Icons.add_task 为插件注册身份色与标识图标，保留 Material
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -41,10 +44,7 @@ class QuickAddWidget extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.blue,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.colorScheme.primaryContainer,
-                              width: 2,
-                            ),
+                            border: Border.all(color: theme.surface, width: 2),
                           ),
                           child: Icon(Icons.add, size: 12, color: Colors.white),
                         ),
@@ -54,8 +54,8 @@ class QuickAddWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'todo_quickAdd'.tr,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
+                    style: DsTypography.caption.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 2,

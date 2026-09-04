@@ -1,9 +1,8 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart' hide ListTile, Row, SizedBox;
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:flutter/material.dart'
-    as flutter
-    show ListTile, Row, Center, SizedBox;
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 
@@ -22,220 +21,283 @@ class GoalDetailScreen extends StatelessWidget {
     final targetGoal =
         goal ??
         (goalId != null
-            ? controller.goals.firstWhere((g) => g.id == goalId, orElse: () => throw Exception('目标不存在'))
+            ? controller.goals.firstWhere(
+              (g) => g.id == goalId,
+              orElse: () => throw Exception('目标不存在'),
+            )
             : null);
     if (targetGoal == null) {
       return const Scaffold(body: Center(child: Text('目标不存在')));
     }
     final currentValue =
-        controller.goals
-            .firstWhere((g) => g.id == targetGoal.id)
-            .currentValue;
+        controller.goals.firstWhere((g) => g.id == targetGoal.id).currentValue;
     final isCompleted = currentValue >= targetGoal.targetValue;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(targetGoal.name),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: Text('tracker_confirmClear'.tr),
-                      content: Text('tracker_confirmClearMessage'.tr),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('app_cancel'.tr),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: Text('app_ok'.tr),
-                        ),
-                      ],
-                    ),
-              );
-              if (confirmed == true) {
-                await controller.clearRecordsForGoal(targetGoal.id);
-                if (context.mounted) {
-                  Toast.success('tracker_recordsCleared'.tr);
-                }
-              }
-            },
+          // 清空记录
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed:
+                      () =>
+                          _confirmClearRecords(context, controller, targetGoal),
+                );
+              },
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              NavigationHelper.push(
-                context,
-                GoalEditPage(controller: controller, goal: targetGoal),
-              );
-            },
+          // 编辑目标
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.edit,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: () {
+                    NavigationHelper.push(
+                      context,
+                      GoalEditPage(controller: controller, goal: targetGoal),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${'tracker_goalsTitle'.tr}: ${targetGoal.name}',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const flutter.SizedBox(height: 16),
-            LinearProgressIndicator(
-              value: controller.calculateProgress(targetGoal),
-              backgroundColor: Colors.grey[200],
-              color:
-                  isCompleted
-                      ? Colors.green
-                      : targetGoal.progressColor != null
-                      ? Color(targetGoal.progressColor!)
-                      : Theme.of(context).primaryColor,
-            ),
-            const flutter.SizedBox(height: 16),
-            Text(
-              'tracker_currentProgress'.tr
-                  .replaceFirst('{currentValue}', currentValue.toString())
-                  .replaceFirst(
-                    '{targetValue}',
-                    targetGoal.targetValue.toString(),
+      body: DSThemeBridge(
+        // DS 组件需要 AppTheme 子树
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${'tracker_goalsTitle'.tr}: ${targetGoal.name}',
+                    style: DsTypography.heading.copyWith(color: theme.text),
                   ),
-            ),
-            const flutter.SizedBox(height: 16),
-            if (targetGoal.reminderTime != null)
-              Text(
-                'tracker_reminderTime'.tr.replaceFirst(
-                  '{reminderTime}',
-                  targetGoal.reminderTime.toString(),
-                ),
-              ),
-            const flutter.SizedBox(height: 16),
-            Text(
-              'tracker_recordHistory'.tr,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const flutter.SizedBox(height: 8),
-            Expanded(
-              child: FutureBuilder<List<Record>>(
-                future: controller.getRecordsForGoal(targetGoal.id),
-                builder: (context, initialSnapshot) {
-                  if (initialSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const flutter.Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
+                  const SizedBox(height: 16),
+                  DSLinearProgress(
+                    value: controller.calculateProgress(targetGoal),
+                    height: 8,
+                    color:
+                        isCompleted
+                            ? theme.success
+                            : targetGoal.progressColor != null
+                            ? Color(targetGoal.progressColor!)
+                            : theme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'tracker_currentProgress'.tr
+                        .replaceFirst('{currentValue}', currentValue.toString())
+                        .replaceFirst(
+                          '{targetValue}',
+                          targetGoal.targetValue.toString(),
+                        ),
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 16),
+                  if (targetGoal.reminderTime != null)
+                    Text(
+                      'tracker_reminderTime'.tr.replaceFirst(
+                        '{reminderTime}',
+                        targetGoal.reminderTime.toString(),
+                      ),
+                      style: DsTypography.body.copyWith(color: theme.text),
+                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'tracker_recordHistory'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: FutureBuilder<List<Record>>(
+                      future: controller.getRecordsForGoal(targetGoal.id),
+                      builder: (context, initialSnapshot) {
+                        if (initialSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(child: DSLoadingDots());
+                        }
 
-                  return StreamBuilder<List<Record>>(
-                    stream: controller.watchRecordsForGoal(targetGoal.id),
-                    initialData: initialSnapshot.data,
-                    builder: (context, snapshot) {
-                      final records = snapshot.data ?? [];
-                      if (records.isEmpty) {
-                        return flutter.Center(
-                          child: Text('tracker_noRecords'.tr),
-                        );
-                      }
-                      return ListView.builder(
-                        itemCount: records.length,
-                        itemBuilder: (context, index) {
-                          final record = records[index];
-                          return flutter.ListTile(
-                            title: Text(
-                              'tracker_recordValueDisplay'.trParams({
-                                'value': record.value.toString(),
-                              }),
-                            ),
-                            subtitle: Text(
-                              record.recordedAt
-                                  .toLocal()
-                                  .toString()
-                                  .split('.')
-                                  .first,
-                            ),
-                            trailing: flutter.Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(record.note ?? ''),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, size: 20),
-                                  onPressed: () async {
-                                    final confirmed = await showDialog<
-                                      bool
-                                    >(
-                                      context: context,
-                                      builder:
-                                          (context) => AlertDialog(
-                                            title: Text(
-                                              'tracker_confirmDelete'.tr,
-                                            ),
-                                            content: Text(
-                                              'tracker_confirmDeleteRecordMessage'
-                                                  .tr,
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      false,
-                                                    ),
-                                                child: Text(
-                                                  'app_cancel'.tr,
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      true,
-                                                    ),
-                                                child: Text('app_ok'.tr),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-                                    if (confirmed == true) {
-                                      await controller.deleteRecord(
-                                        record.id,
-                                      );
-                                      if (context.mounted) {
-                                        Toast.success(
-                                          'tracker_recordDeleted'.tr,
-                                        );
-                                      }
-                                    }
-                                  },
+                        return StreamBuilder<List<Record>>(
+                          stream: controller.watchRecordsForGoal(targetGoal.id),
+                          initialData: initialSnapshot.data,
+                          builder: (context, snapshot) {
+                            final records = snapshot.data ?? [];
+                            if (records.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'tracker_noRecords'.tr,
+                                  style: DsTypography.body.copyWith(
+                                    color: theme.textSub,
+                                  ),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
+                              );
+                            }
+                            return ListView.builder(
+                              itemCount: records.length,
+                              itemBuilder: (context, index) {
+                                final record = records[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: DSListItem(
+                                    title: 'tracker_recordValueDisplay'
+                                        .trParams({
+                                          'value': record.value.toString(),
+                                        }),
+                                    subtitle:
+                                        record.recordedAt
+                                            .toLocal()
+                                            .toString()
+                                            .split('.')
+                                            .first,
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if ((record.note ?? '').isNotEmpty)
+                                          ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 80,
+                                            ),
+                                            child: Text(
+                                              record.note ?? '',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: theme.textSub,
+                                                  ),
+                                            ),
+                                          ),
+                                        SizedBox(width: theme.spacing.xs),
+                                        DSIconButton(
+                                          icon: DsIconKind.trash,
+                                          size: 32,
+                                          color: theme.surfaceAlt,
+                                          iconColor: theme.textSub,
+                                          onPressed:
+                                              () => _confirmDeleteRecord(
+                                                context,
+                                                controller,
+                                                record,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder:
-                (context) =>
-                    RecordDialog(goal: targetGoal, controller: controller),
-          );
-        },
+      floatingActionButton: DSThemeBridge(
+        // FAB 位于 Scaffold 层，DS 组件先过桥
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return DSFab(
+              icon: DsIconKind.plus,
+              onPressed: () {
+                showDSDialog(
+                  context: context,
+                  theme: theme,
+                  builder:
+                      (context) => RecordDialog(
+                        goal: targetGoal,
+                        controller: controller,
+                      ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  /// 确认清空该目标的全部记录
+  Future<void> _confirmClearRecords(
+    BuildContext context,
+    TrackerController controller,
+    Goal targetGoal,
+  ) async {
+    final confirmed = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'tracker_confirmClear'.tr,
+                    message: 'tracker_confirmClearMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_ok'.tr,
+                  ),
+            ),
+          ),
+    );
+    if (confirmed == true) {
+      await controller.clearRecordsForGoal(targetGoal.id);
+      if (context.mounted) {
+        Toast.success('tracker_recordsCleared'.tr);
+      }
+    }
+  }
+
+  /// 确认删除单条记录
+  Future<void> _confirmDeleteRecord(
+    BuildContext context,
+    TrackerController controller,
+    Record record,
+  ) async {
+    final confirmed = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'tracker_confirmDelete'.tr,
+                    message: 'tracker_confirmDeleteRecordMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_ok'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                  ),
+            ),
+          ),
+    );
+    if (confirmed == true) {
+      await controller.deleteRecord(record.id);
+      if (context.mounted) {
+        Toast.success('tracker_recordDeleted'.tr);
+      }
+    }
   }
 }

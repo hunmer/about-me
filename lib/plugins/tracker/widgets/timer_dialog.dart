@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'dart:async';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/services/timer/events/timer_events.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/tracker/utils/tracker_notification_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -86,6 +88,8 @@ class _TimerDialogState extends State<TimerDialog> {
   }
 
   /// 启动计时器（委托给统一控制器）
+  ///
+  /// icon/color 为统一计时器的注册表数据（跨插件 IconData），保留 Material。
   void _startTimer() {
     unifiedTimerController.startTimer(
       id: widget.goal.id,
@@ -148,60 +152,86 @@ class _TimerDialogState extends State<TimerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        '${'tracker_timer'.tr} - ${widget.goal.name}',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _formatTime(_seconds),
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
-                onPressed: _toggleTimer,
-              ),
-              IconButton(icon: const Icon(Icons.stop), onPressed: _resetTimer),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _valueController,
-            decoration: InputDecoration(
-              labelText: 'tracker_recordValueWithUnit'.tr
-                  .replaceFirst('\${unit}', widget.goal.unitType),
-              border: const OutlineInputBorder(),
+    return DSThemeBridge(
+      // 对话框路由在主题树之外，内部组件先过桥再取令牌
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '${'tracker_timer'.tr} - ${widget.goal.name}',
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Text(
+                  _formatTime(_seconds),
+                  textAlign: TextAlign.center,
+                  style: DsTypography.display.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    DSIconButton(
+                      icon: _isRunning ? DsIconKind.pause : DsIconKind.play,
+                      onPressed: _toggleTimer,
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.stop,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: _resetTimer,
+                    ),
+                  ],
+                ),
+                SizedBox(height: theme.spacing.lg),
+                DSInput(
+                  controller: _valueController,
+                  hint: 'tracker_recordValueWithUnit'.tr.replaceFirst(
+                    '\${unit}',
+                    widget.goal.unitType,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: theme.spacing.md),
+                DSInput(
+                  controller: _noteController,
+                  hint: '${'tracker_note'.tr} (${'tracker_noteHint'.tr})',
+                  maxLines: 2,
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_save'.tr,
+                        onPressed: _seconds > 0 ? _saveRecord : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _noteController,
-            decoration: InputDecoration(
-              labelText:
-                  '${'tracker_note'.tr} (${'tracker_noteHint'.tr})',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 2,
-          ),
-        ],
+          );
+        },
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('app_cancel'.tr),
-        ),
-        ElevatedButton(
-          onPressed: _seconds > 0 ? _saveRecord : null,
-          child: Text('app_save'.tr),
-        ),
-      ],
     );
   }
 }

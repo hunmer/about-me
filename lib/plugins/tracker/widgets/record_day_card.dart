@@ -1,3 +1,5 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
@@ -39,15 +41,15 @@ class RecordDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     // 过滤掉目标已被删除的记录
     final visible =
         records.where((record) => goalById.containsKey(record.goalId)).toList();
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(8),
+        color: theme.surface,
+        borderRadius: theme.radii.sm,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -66,19 +68,17 @@ class RecordDayCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.flag_outlined,
+                          // DS 无旗帜图标，用图钉顶替
+                          DsIcon(
+                            DsIconKind.pin,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.disabled,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'tracker_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.disabled,
                             ),
                           ),
                         ],
@@ -102,7 +102,7 @@ class RecordDayCard extends StatelessWidget {
 
   /// 单条记录行：目标图标 + 目标名/时间 + 数值
   Widget _buildRecordItem(BuildContext context, Record record) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final goal = goalById[record.goalId]!;
 
     return InkWell(
@@ -120,18 +120,16 @@ class RecordDayCard extends StatelessWidget {
                 children: [
                   Text(
                     goal.name,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: DsTypography.caption.copyWith(color: theme.text),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _formatTime(record.recordedAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontSize: 11,
-                      color: theme.disabledColor,
+                      color: theme.textSub,
                     ),
                   ),
                 ],
@@ -140,11 +138,12 @@ class RecordDayCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '+${_formatValue(record.value)}${goal.unitType}',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: DsTypography.caption.copyWith(
                 fontWeight: FontWeight.bold,
-                color: goal.progressColor != null
-                    ? Color(goal.progressColor!)
-                    : theme.colorScheme.primary,
+                color:
+                    goal.progressColor != null
+                        ? Color(goal.progressColor!)
+                        : theme.primary,
               ),
             ),
           ],
@@ -155,18 +154,10 @@ class RecordDayCard extends StatelessWidget {
 
   /// 目标图标（icon 为 codePoint 字符串，与目标卡片解析方式一致）
   Widget _buildGoalIcon(BuildContext context, Goal goal) {
-    final codePoint = int.tryParse(goal.icon);
-    if (codePoint == null) {
-      return const Icon(Icons.flag_outlined, size: 18);
-    }
-    final color =
-        goal.iconColor != null
-            ? Color(goal.iconColor!)
-            : Theme.of(context).colorScheme.primary;
-    return Icon(
-      IconData(codePoint, fontFamily: 'MaterialIcons'),
+    return _goalMaterialIcon(
+      goal,
+      DSThemeBridge.resolve(context).primary,
       size: 18,
-      color: color,
     );
   }
 
@@ -180,6 +171,21 @@ class RecordDayCard extends StatelessWidget {
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
+}
+
+/// 目标图标（goal.icon 为持久化 codePoint 字符串，保留 Material IconData）
+///
+/// 解析失败回退为旗帜图标，与解析成功的 Material 图标保持一致。
+Widget _goalMaterialIcon(Goal goal, Color fallbackColor, {double size = 18}) {
+  final codePoint = int.tryParse(goal.icon);
+  if (codePoint == null) {
+    return Icon(Icons.flag_outlined, size: size);
+  }
+  return Icon(
+    IconData(codePoint, fontFamily: 'MaterialIcons'),
+    size: size,
+    color: goal.iconColor != null ? Color(goal.iconColor!) : fallbackColor,
+  );
 }
 
 /// 打开「添加记录」流程：多目标时先选目标，再打开记录弹窗（预填日期）
@@ -198,30 +204,7 @@ Future<void> openRecordCreateFlow(BuildContext context, DateTime date) async {
   if (goals.length == 1) {
     goal = goals.first;
   } else {
-    final selected = await showDialog<Goal>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('tracker_addRecord'.tr),
-        children: [
-          for (final g in goals)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, g),
-              child: Row(
-                children: [
-                  Expanded(child: Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${_displayValue(g.currentValue)}/${_displayValue(g.targetValue)}${g.unitType}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).disabledColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+    final selected = await _showGoalPicker(context, goals);
     if (selected == null) return;
     goal = selected;
   }
@@ -236,10 +219,108 @@ Future<void> openRecordCreateFlow(BuildContext context, DateTime date) async {
           ? now
           : DateTime(date.year, date.month, date.day, now.hour, now.minute);
 
-  await showDialog(
+  await showDSDialog(
     context: context,
-    builder: (context) =>
-        RecordDialog(goal: goal, controller: controller, initialRecordedAt: recordedAt),
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (context) => RecordDialog(
+          goal: goal,
+          controller: controller,
+          initialRecordedAt: recordedAt,
+        ),
+  );
+}
+
+/// 目标选择对话框：目标图标 + 名称 + 当前进度
+Future<Goal?> _showGoalPicker(BuildContext context, List<Goal> goals) {
+  return showDSDialog<Goal>(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (_) => DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'tracker_addRecord'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final g in goals)
+                              Pressable(
+                                onPressed: () => Navigator.pop(context, g),
+                                builder: (context, states) {
+                                  final pressed = states.contains(
+                                    WidgetState.pressed,
+                                  );
+                                  return Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: theme.spacing.md,
+                                      vertical: theme.spacing.md,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          pressed
+                                              ? theme.surfaceAlt.withValues(
+                                                alpha: 0.6,
+                                              )
+                                              : DsColors.transparent,
+                                      borderRadius: theme.radii.lg,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        _goalMaterialIcon(
+                                          g,
+                                          theme.primary,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: theme.spacing.md),
+                                        Expanded(
+                                          child: Text(
+                                            g.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: DsTypography.body.copyWith(
+                                              color: theme.text,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: theme.spacing.sm),
+                                        Text(
+                                          '${_displayValue(g.currentValue)}/${_displayValue(g.targetValue)}${g.unitType}',
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
   );
 }
 

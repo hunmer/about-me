@@ -1,3 +1,5 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/routing/plugin_route_handler.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
@@ -15,8 +17,7 @@ class TrackerRouteHandler extends PluginRouteHandler {
     final routeName = settings.name ?? '';
     // 处理目标追踪路由 - 格式: /tracker?goalId={goalId}
     // 用于小组件点击跳转到目标详情/计时器界面
-    if (routeName == '/tracker' ||
-        routeName.startsWith('/tracker?')) {
+    if (routeName == '/tracker' || routeName.startsWith('/tracker?')) {
       debugPrint('[TrackerRouteHandler] 匹配 /tracker 路由');
       return _handleTrackerRoute(routeName, settings.arguments);
     }
@@ -36,31 +37,43 @@ class TrackerRouteHandler extends PluginRouteHandler {
   Route<dynamic> _handleTrackerRoute(String routeName, Object? arguments) {
     String? goalId;
 
-    debugPrint('[TrackerRouteHandler] _handleTrackerRoute: routeName=$routeName, arguments=$arguments');
+    debugPrint(
+      '[TrackerRouteHandler] _handleTrackerRoute: routeName=$routeName, arguments=$arguments',
+    );
 
     // 从 arguments 中获取 goalId
     if (arguments is Map<String, String>) {
       goalId = arguments['goalId'];
-      debugPrint('[TrackerRouteHandler] 从 Map<String, String> 获取: goalId=$goalId');
+      debugPrint(
+        '[TrackerRouteHandler] 从 Map<String, String> 获取: goalId=$goalId',
+      );
     } else if (arguments is Map<String, dynamic>) {
       goalId = arguments['goalId']?.toString();
-      debugPrint('[TrackerRouteHandler] 从 Map<String, dynamic> 获取: goalId=$goalId');
+      debugPrint(
+        '[TrackerRouteHandler] 从 Map<String, dynamic> 获取: goalId=$goalId',
+      );
     } else {
-      debugPrint('[TrackerRouteHandler] arguments 类型: ${arguments?.runtimeType}');
+      debugPrint(
+        '[TrackerRouteHandler] arguments 类型: ${arguments?.runtimeType}',
+      );
     }
 
     // 从 URI 中解析
     if (goalId == null) {
       final uri = Uri.parse(routeName);
       goalId = uri.queryParameters['goalId'];
-      debugPrint('[TrackerRouteHandler] 从 URI 解析: goalId=$goalId, queryParams=${uri.queryParameters}');
+      debugPrint(
+        '[TrackerRouteHandler] 从 URI 解析: goalId=$goalId, queryParams=${uri.queryParameters}',
+      );
     }
 
     debugPrint('[TrackerRouteHandler] 最终 goalId=$goalId');
 
     // 如果有 goalId，跳转到目标详情页面
     if (goalId != null) {
-      debugPrint('[TrackerRouteHandler] 创建 TrackerMainView(initialGoalId: $goalId)');
+      debugPrint(
+        '[TrackerRouteHandler] 创建 TrackerMainView(initialGoalId: $goalId)',
+      );
       return createRoute(TrackerMainView(initialGoalId: goalId));
     }
 
@@ -210,6 +223,7 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('NFC 添加进度'),
@@ -229,28 +243,24 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
                 decoration: BoxDecoration(
                   color:
                       _isProcessing
-                          ? Colors.red.withOpacity(0.1)
+                          ? theme.danger.withValues(alpha: 0.1)
                           : (_success
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1)),
+                              ? theme.success.withValues(alpha: 0.1)
+                              : theme.danger.withValues(alpha: 0.1)),
                   shape: BoxShape.circle,
                 ),
                 child:
                     _isProcessing
                         ? const Center(
-                          child: SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 4,
-                              color: Colors.red,
-                            ),
+                          child: DSThemeBridge(
+                            child: Center(child: DSLoadingDots(size: 20)),
                           ),
                         )
-                        : Icon(
-                          _success ? Icons.check_circle : Icons.error,
+                        : DsIcon(
+                          // DS 无 track_changes 图标，用 refresh 顶替；错误用 block 顶替
+                          _success ? DsIconKind.check : DsIconKind.block,
                           size: 64,
-                          color: _success ? Colors.green : Colors.red,
+                          color: _success ? theme.success : theme.danger,
                         ),
               ),
               const SizedBox(height: 32),
@@ -260,19 +270,17 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.track_changes,
-                      color: Colors.red,
+                    DsIcon(
+                      // DS 无 track_changes 图标，用 refresh 顶替
+                      DsIconKind.refresh,
+                      color: theme.danger,
                       size: 32,
                     ),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
                         _goal!.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: DsTypography.display.copyWith(color: theme.text),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -285,22 +293,18 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: theme.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '+ ${widget.value} ${_goal!.unitType}',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
+                    style: DsTypography.display.copyWith(color: theme.danger),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '当前进度: ${_goal!.currentValue} / ${_goal!.targetValue} ${_goal!.unitType}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: DsTypography.body.copyWith(color: theme.textSub),
                 ),
               ],
 
@@ -309,12 +313,11 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
               // 状态消息
               Text(
                 _message,
-                style: TextStyle(
-                  fontSize: 18,
+                style: DsTypography.title.copyWith(
                   color:
                       _isProcessing
-                          ? Colors.grey[700]
-                          : (_success ? Colors.green[700] : Colors.red[700]),
+                          ? theme.textSub
+                          : (_success ? theme.success : theme.danger),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -323,30 +326,35 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
 
               // 操作按钮
               if (!_isProcessing) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const TrackerMainView(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.track_changes),
-                  label: const Text('查看目标'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      return DSButton(
+                        label: '查看目标',
+                        icon: DsIconKind.refresh,
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const TrackerMainView(),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (!_success)
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('返回'),
+                  DSThemeBridge(
+                    child: Builder(
+                      builder: (context) {
+                        return DSButton(
+                          label: '返回',
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.of(context).pop(),
+                        );
+                      },
+                    ),
                   ),
               ],
             ],

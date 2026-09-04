@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/todo/todo_plugin.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
@@ -14,10 +16,7 @@ class TodoListSelectorScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int? widgetId;
 
-  const TodoListSelectorScreen({
-    super.key,
-    this.widgetId,
-  });
+  const TodoListSelectorScreen({super.key, this.widgetId});
 
   @override
   State<TodoListSelectorScreen> createState() => _TodoListSelectorScreenState();
@@ -57,7 +56,6 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
 
   /// 获取时间范围选项
   Map<String, String> _getTimeRangeOptions(BuildContext context) {
-
     return {
       'today': 'todo_today'.tr,
       'week': 'todo_thisWeek'.tr,
@@ -96,7 +94,10 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
         'todo_widget_primary_color_${widget.widgetId}',
       );
       if (savedPrimaryColor != null) {
-        _widgetConfig = _widgetConfig.updateColor('primary', Color(savedPrimaryColor));
+        _widgetConfig = _widgetConfig.updateColor(
+          'primary',
+          Color(savedPrimaryColor),
+        );
       }
 
       // 加载强调色
@@ -104,7 +105,10 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
         'todo_widget_accent_color_${widget.widgetId}',
       );
       if (savedAccentColor != null) {
-        _widgetConfig = _widgetConfig.updateColor('accent', Color(savedAccentColor));
+        _widgetConfig = _widgetConfig.updateColor(
+          'accent',
+          Color(savedAccentColor),
+        );
       }
 
       // 加载透明度
@@ -139,12 +143,22 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
           if (task.status == TaskStatus.done) return false;
           if (task.startDate == null && task.dueDate == null) return true;
 
-          final startDay = task.startDate != null
-              ? DateTime(task.startDate!.year, task.startDate!.month, task.startDate!.day)
-              : null;
-          final dueDay = task.dueDate != null
-              ? DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day)
-              : null;
+          final startDay =
+              task.startDate != null
+                  ? DateTime(
+                    task.startDate!.year,
+                    task.startDate!.month,
+                    task.startDate!.day,
+                  )
+                  : null;
+          final dueDay =
+              task.dueDate != null
+                  ? DateTime(
+                    task.dueDate!.year,
+                    task.dueDate!.month,
+                    task.dueDate!.day,
+                  )
+                  : null;
 
           if (startDay != null && dueDay != null) {
             return !startDay.isAfter(today) && !dueDay.isBefore(today);
@@ -163,12 +177,22 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
           if (task.status == TaskStatus.done) return false;
           if (task.startDate == null && task.dueDate == null) return true;
 
-          final startDay = task.startDate != null
-              ? DateTime(task.startDate!.year, task.startDate!.month, task.startDate!.day)
-              : null;
-          final dueDay = task.dueDate != null
-              ? DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day)
-              : null;
+          final startDay =
+              task.startDate != null
+                  ? DateTime(
+                    task.startDate!.year,
+                    task.startDate!.month,
+                    task.startDate!.day,
+                  )
+                  : null;
+          final dueDay =
+              task.dueDate != null
+                  ? DateTime(
+                    task.dueDate!.year,
+                    task.dueDate!.month,
+                    task.dueDate!.day,
+                  )
+                  : null;
 
           if (startDay != null && dueDay != null) {
             return !(dueDay.isBefore(weekStart) || startDay.isAfter(weekEnd));
@@ -187,12 +211,22 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
           if (task.status == TaskStatus.done) return false;
           if (task.startDate == null && task.dueDate == null) return true;
 
-          final startDay = task.startDate != null
-              ? DateTime(task.startDate!.year, task.startDate!.month, task.startDate!.day)
-              : null;
-          final dueDay = task.dueDate != null
-              ? DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day)
-              : null;
+          final startDay =
+              task.startDate != null
+                  ? DateTime(
+                    task.startDate!.year,
+                    task.startDate!.month,
+                    task.startDate!.day,
+                  )
+                  : null;
+          final dueDay =
+              task.dueDate != null
+                  ? DateTime(
+                    task.dueDate!.year,
+                    task.dueDate!.month,
+                    task.dueDate!.day,
+                  )
+                  : null;
 
           if (startDay != null && dueDay != null) {
             return !(dueDay.isBefore(monthStart) || startDay.isAfter(monthEnd));
@@ -212,10 +246,12 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(
+          // 独立路由之上自备主题桥
+          child: DSThemeBridge(child: Center(child: DSLoadingDots(size: 20))),
+        ),
       );
     }
 
@@ -224,9 +260,20 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('todo_configureTodoListWidget'.tr),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: DSThemeBridge(
+          // AppBar leading 位于主题树之外，外包 DSThemeBridge（陷阱 2）
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.close,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => Navigator.of(context).pop(),
+              );
+            },
+          ),
         ),
       ),
       body: WidgetConfigEditor(
@@ -246,19 +293,37 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: _saveAndFinish,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _widgetConfig.getColor('primary') ?? const Color(0xFF2dd4bf),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'todo_confirmConfiguration'.tr,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          // 身份色按钮（小组件主色由用户配置）：DSButton 无自定义基色，用 Pressable+JellyBox 顶替
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final buttonColor =
+                    _widgetConfig.getColor('primary') ??
+                    const Color(0xFF2dd4bf);
+                return Pressable(
+                  onPressed: _saveAndFinish,
+                  builder: (context, states) {
+                    final pressed = states.contains(WidgetState.pressed);
+                    return AnimatedScale(
+                      scale: pressed ? 0.97 : 1.0,
+                      duration: const Duration(milliseconds: 120),
+                      child: JellyBox(
+                        height: 52,
+                        radius: BorderRadius.circular(12),
+                        color: buttonColor,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'todo_confirmConfiguration'.tr,
+                          style: DsTypography.button.copyWith(
+                            fontSize: 16,
+                            color: DsColors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ),
@@ -268,7 +333,6 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
 
   /// 构建预览
   Widget _buildPreview(BuildContext context, WidgetConfig config) {
-
     final primaryColor = config.getColor('primary') ?? const Color(0xFF2dd4bf);
     final accentColor = config.getColor('accent') ?? const Color(0xFF5eeada);
     final filteredTasks = _getFilteredTasks();
@@ -310,66 +374,63 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
                 ),
               ),
               const Spacer(),
-              Icon(
-                Icons.add,
-                color: primaryColor,
-                size: 32,
-              ),
+              Icon(Icons.add, color: primaryColor, size: 32),
             ],
           ),
           const SizedBox(height: 12),
 
           // 任务列表
           Expanded(
-            child: filteredTasks.isEmpty
-                ? Center(
-                    child: Text(
-                      'todo_noTodoTasks'.tr,
-                      style: const TextStyle(
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 14,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredTasks.take(4).length,
-                    itemBuilder: (context, index) {
-                      final task = filteredTasks[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: const Color(0xFFD1D5DB),
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                task.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1F2937),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+            child:
+                filteredTasks.isEmpty
+                    ? Center(
+                      child: Text(
+                        'todo_noTodoTasks'.tr,
+                        style: const TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 14,
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    )
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredTasks.take(4).length,
+                      itemBuilder: (context, index) {
+                        final task = filteredTasks[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFD1D5DB),
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  task.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -378,99 +439,111 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
 
   /// 构建标题配置
   Widget _buildTitleConfig() {
-    final theme = Theme.of(context);
-
     final timeRangeOptions = _getTimeRangeOptions(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    // WidgetConfigEditor 为共享 Material 组件，DS 卡片自备主题桥
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.title, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'todo_widgetTitle'.tr,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    DsIcon(DsIconKind.edit, size: 20, color: theme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'todo_widgetTitle'.tr,
+                      style: DsTypography.heading.copyWith(color: theme.text),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // 嵌入自绘容器的编辑原语，保留 Material TextField
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText:
+                        '${'todo_leaveEmptyForDefaultTitle'.tr}（${timeRangeOptions[_selectedTimeRange]}）',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: '${'todo_leaveEmptyForDefaultTitle'.tr}（${timeRangeOptions[_selectedTimeRange]}）',
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   /// 构建时间范围配置
   Widget _buildTimeRangeConfig() {
-    final theme = Theme.of(context);
-
-    final primaryColor = _widgetConfig.getColor('primary') ?? const Color(0xFF2dd4bf);
+    final primaryColor =
+        _widgetConfig.getColor('primary') ?? const Color(0xFF2dd4bf);
     final timeRangeOptions = _getTimeRangeOptions(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    // WidgetConfigEditor 为共享 Material 组件，DS 卡片自备主题桥
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.date_range, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'todo_timeRange'.tr,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    DsIcon(DsIconKind.calendar, size: 20, color: theme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'todo_timeRange'.tr,
+                      style: DsTypography.heading.copyWith(color: theme.text),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // DSChip 无自定义选中色，小组件身份色选中态保留 Material ChoiceChip
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      timeRangeOptions.entries.map((entry) {
+                        final isSelected = _selectedTimeRange == entry.key;
+                        return ChoiceChip(
+                          label: Text(entry.value),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _selectedTimeRange = entry.key;
+                              });
+                            }
+                          },
+                          selectedColor: primaryColor.withAlpha(50),
+                          checkmarkColor: primaryColor,
+                          labelStyle: TextStyle(
+                            color: isSelected ? primaryColor : theme.text,
+                            fontWeight:
+                                isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                          ),
+                        );
+                      }).toList(),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: timeRangeOptions.entries.map((entry) {
-                final isSelected = _selectedTimeRange == entry.key;
-                return ChoiceChip(
-                  label: Text(entry.value),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _selectedTimeRange = entry.key;
-                      });
-                    }
-                  },
-                  selectedColor: primaryColor.withAlpha(50),
-                  checkmarkColor: primaryColor,
-                  labelStyle: TextStyle(
-                    color: isSelected ? primaryColor : theme.textTheme.bodyMedium?.color,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -533,9 +606,10 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
       );
 
       if (mounted) {
-        final title = _titleController.text.isEmpty
-            ? timeRangeOptions[_selectedTimeRange]
-            : _titleController.text;
+        final title =
+            _titleController.text.isEmpty
+                ? timeRangeOptions[_selectedTimeRange]
+                : _titleController.text;
         toastService.showToast('Configured "$title"');
 
         await Future.delayed(const Duration(milliseconds: 500));
@@ -553,19 +627,21 @@ class _TodoListSelectorScreenState extends State<TodoListSelectorScreen> {
   /// 同步任务数据到小组件
   Future<void> _syncTasksToWidget() async {
     try {
-      final allTasks = _todoPlugin.taskController.tasks
-          .where((task) => task.status != TaskStatus.done)
-          .toList();
+      final allTasks =
+          _todoPlugin.taskController.tasks
+              .where((task) => task.status != TaskStatus.done)
+              .toList();
 
-      final taskList = allTasks.map((task) {
-        return {
-          'id': task.id,
-          'title': task.title,
-          'completed': task.status == TaskStatus.done,
-          'startDate': task.startDate?.toIso8601String(),
-          'dueDate': task.dueDate?.toIso8601String(),
-        };
-      }).toList();
+      final taskList =
+          allTasks.map((task) {
+            return {
+              'id': task.id,
+              'title': task.title,
+              'completed': task.status == TaskStatus.done,
+              'startDate': task.startDate?.toIso8601String(),
+              'dueDate': task.dueDate?.toIso8601String(),
+            };
+          }).toList();
 
       final widgetData = jsonEncode({
         'tasks': taskList,

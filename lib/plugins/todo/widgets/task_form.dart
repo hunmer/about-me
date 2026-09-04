@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/todo/controllers/controllers.dart';
 import 'package:aboutme/plugins/todo/models/models.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
@@ -34,7 +36,8 @@ class TaskForm extends StatefulWidget {
 
 class _TaskFormState extends State<TaskForm> {
   /// FormBuilderWrapper key
-  final GlobalKey<FormBuilderWrapperState> _formKey = GlobalKey<FormBuilderWrapperState>();
+  final GlobalKey<FormBuilderWrapperState> _formKey =
+      GlobalKey<FormBuilderWrapperState>();
 
   /// FormBuilderWrapper 状态引用
   FormBuilderWrapperState? _formWrapperState;
@@ -142,25 +145,18 @@ class _TaskFormState extends State<TaskForm> {
   Future<void> _confirmDelete() async {
     if (widget.task == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('todo_deleteTaskTitle'.tr),
-            content: Text('todo_deleteTaskMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'app_delete'.tr,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+          (dialogContext) => DSDialog(
+            title: 'todo_deleteTaskTitle'.tr,
+            message: 'todo_deleteTaskMessage'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'app_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
           ),
     );
 
@@ -181,21 +177,52 @@ class _TaskFormState extends State<TaskForm> {
         title: Text(
           widget.task == null ? 'todo_newTask'.tr : 'todo_editTask'.tr,
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
+        leading: DSThemeBridge(
+          // AppBar leading 位于主题树之外，外包 DSThemeBridge（陷阱 2）
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.close,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: () => Navigator.pop(context),
+              );
+            },
+          ),
         ),
         actions: [
           if (widget.task != null)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: _confirmDelete,
-              tooltip: 'app_delete'.tr,
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.trash,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.danger,
+                    tooltip: 'app_delete'.tr,
+                    onPressed: _confirmDelete,
+                  );
+                },
+              ),
             ),
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () => _formWrapperState?.submitForm(),
-            tooltip: 'app_save'.tr,
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.check,
+                  size: 40,
+                  color: theme.primary,
+                  iconColor: theme.onPrimary,
+                  tooltip: 'app_save'.tr,
+                  onPressed: () => _formWrapperState?.submitForm(),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -204,7 +231,9 @@ class _TaskFormState extends State<TaskForm> {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 32,
+              ),
               child: FormBuilderWrapper(
                 key: _formKey,
                 onStateReady: (state) => _formWrapperState = state,
@@ -298,7 +327,9 @@ class _TaskFormState extends State<TaskForm> {
         name: 'dueDate',
         type: FormFieldType.date,
         initialValue: widget.task?.dueDate,
-        hintText: DateFormat.yMMMEd(locale).format(DateTime.now().add(const Duration(days: 1))),
+        hintText: DateFormat.yMMMEd(
+          locale,
+        ).format(DateTime.now().add(const Duration(days: 1))),
         labelText: 'todo_dueDate'.tr,
         extra: {'inline': true, 'format': 'yMMMEd'},
       ),
@@ -307,7 +338,8 @@ class _TaskFormState extends State<TaskForm> {
       FormFieldConfig(
         name: 'priority',
         type: FormFieldType.select,
-        initialValue: widget.task?.priority ?? widget.initialPriority ?? TaskPriority.q2,
+        initialValue:
+            widget.task?.priority ?? widget.initialPriority ?? TaskPriority.q2,
         labelText: 'todo_priority'.tr,
         items:
             TaskPriority.values.map((p) {

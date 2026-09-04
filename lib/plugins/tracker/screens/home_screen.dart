@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
@@ -20,46 +22,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 分组切换器
-        Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Consumer<TrackerController>(
-            builder: (context, controller, child) {
-              final groups = ['全部', ...controller.getAllGroups()];
-              return ListView.builder(
-                padding: EdgeInsets.zero,
-                scrollDirection: Axis.horizontal,
-                itemCount: groups.length,
-                itemBuilder: (context, index) {
-                  final group = groups[index];
-                  final isSelected = _currentGroup == group;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(group),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => _currentGroup = group);
-                        }
+    return DSThemeBridge(
+      // SuperCupertinoNavigationWrapper 内无 AppTheme，DS 组件先过桥
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Column(
+            children: [
+              // 分组切换器
+              Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Consumer<TrackerController>(
+                  builder: (context, controller, child) {
+                    final groups = ['全部', ...controller.getAllGroups()];
+                    return ListView.builder(
+                      padding: EdgeInsets.zero,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: groups.length,
+                      itemBuilder: (context, index) {
+                        final group = groups[index];
+                        final isSelected = _currentGroup == group;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Center(
+                            child: DSChip(
+                              label: group,
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _currentGroup = group);
+                                }
+                              },
+                            ),
+                          ),
+                        );
                       },
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        // 目标列表
-        Expanded(child: _buildGoalsList(context)),
-      ],
+                    );
+                  },
+                ),
+              ),
+              // 目标列表
+              Expanded(child: _buildGoalsList(context, theme)),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildGoalsList(BuildContext context) {
+  Widget _buildGoalsList(BuildContext context, AppThemeData theme) {
     final controller = Provider.of<TrackerController>(context);
     final filteredGoals =
         controller.goals.where((goal) {
@@ -99,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: controller,
                   child: GoalDetailScreen(goal: goal),
                 ),
-                closedColor: Theme.of(context).colorScheme.surface,
+                closedColor: theme.surface,
               );
             },
           );
@@ -114,43 +126,34 @@ class _HomeScreenState extends State<HomeScreen> {
         return Dismissible(
           key: Key(goal.id),
           background: Container(
-            color: Colors.red,
+            color: theme.danger,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: DsIcon(DsIconKind.trash, color: DsColors.white),
           ),
           confirmDismiss: (direction) async {
-            return await showDialog(
+            return await showDSDialog<bool>(
               context: context,
+              theme: DSThemeBridge.resolve(context),
               builder:
-                  (context) => AlertDialog(
-                    title: Text(
-                      'tracker_confirmDeletion'.tr,
+                  (_) => DSThemeBridge(
+                    child: Builder(
+                      builder:
+                          (context) => DSDialog(
+                            title: 'tracker_confirmDeletion'.tr,
+                            message:
+                                '${'tracker_confirmDeletion'.tr} "${goal.name}"',
+                            cancelText: 'app_cancel'.tr,
+                            confirmText: 'app_delete'.tr,
+                            confirmVariant: DSButtonVariant.destructive,
+                          ),
                     ),
-                    content: Text(
-                      '${'tracker_confirmDeletion'.tr} "${goal.name}"',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('app_cancel'.tr),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text(
-                          'app_delete'.tr,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
                   ),
             );
           },
           onDismissed: (direction) {
             controller.deleteGoal(goal.id);
-            Toast.success(
-              '${'tracker_goalDeleted'.tr} "${goal.name}"',
-            );
+            Toast.success('${'tracker_goalDeleted'.tr} "${goal.name}"');
           },
           child: GoalCard(
             goal: goal,
@@ -162,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: controller,
                   child: GoalDetailScreen(goal: goal),
                 ),
-                closedColor: Theme.of(context).colorScheme.surface,
+                closedColor: theme.surface,
               );
             },
           ),
@@ -170,5 +173,4 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
 }

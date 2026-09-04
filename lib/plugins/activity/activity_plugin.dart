@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -13,6 +14,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:intl/intl.dart';
 import 'screens/activity_timeline_screen/activity_timeline_screen.dart';
 import 'screens/activity_timeline_screen/controllers/activity_controller.dart';
@@ -72,9 +74,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'activity/',
-  ];
+  static const List<String> _refreshableFiles = ['activity/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -189,7 +189,6 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -225,7 +224,10 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
             ActivityCacheUpdatedEventArgs(
               todayActivities: activities,
               todayActivityCount: activities.length,
-              todayActivityDuration: activities.fold<int>(0, (sum, a) => sum + a.durationInMinutes),
+              todayActivityDuration: activities.fold<int>(
+                0,
+                (sum, a) => sum + a.durationInMinutes,
+              ),
               cacheDate: today,
             ),
           );
@@ -247,9 +249,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 使用全局导航器打开活动编辑界面
     final navigator = navigatorKey.currentState;
     if (navigator != null) {
-      navigator.push(
-        NavigationHelper.createRoute(const ActivityEditScreen()),
-      );
+      navigator.push(NavigationHelper.createRoute(const ActivityEditScreen()));
       debugPrint('[ActivityPlugin] 活动编辑界面已打开');
     } else {
       debugPrint('[ActivityPlugin] 导航器未初始化，无法打开界面');
@@ -266,7 +266,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     await _activityService.initializeDefaultData();
 
     // 创建 Repository 和 UseCase 实例
-    final repository = ClientActivityRepository(activityService: _activityService);
+    final repository = ClientActivityRepository(
+      activityService: _activityService,
+    );
     _activityUseCase = ActivityUseCase(repository);
 
     // 初始化通知服务
@@ -280,9 +282,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     );
 
     // 初始化 TTS 设置管理器
-    _ttsSettingsManager = TTSAnnouncementSettingsManager(
-      storage: storage,
-    );
+    _ttsSettingsManager = TTSAnnouncementSettingsManager(storage: storage);
 
     _isInitialized = true;
 
@@ -396,8 +396,10 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       // 同时更新统计数据缓存
       _cachedTodayActivityCount = activities.length;
-      _cachedTodayActivityDuration =
-          activities.fold<int>(0, (sum, a) => sum + a.durationInMinutes);
+      _cachedTodayActivityDuration = activities.fold<int>(
+        0,
+        (sum, a) => sum + a.durationInMinutes,
+      );
     } catch (e) {
       debugPrint('[ActivityPlugin] 刷新今日活动缓存失败: $e');
     }
@@ -441,9 +443,10 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 检查日期是否匹配
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final cachedDay = _cacheDate != null
-        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-        : null;
+    final cachedDay =
+        _cacheDate != null
+            ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
+            : null;
 
     if (cachedDay == null || !cachedDay.isAtSameMomentAs(today)) {
       // 日期不匹配，异步刷新并返回空列表
@@ -460,9 +463,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     try {
       final now = DateTime.now();
-      final yesterday = DateTime(now.year, now.month, now.day).subtract(
-        const Duration(days: 1),
-      );
+      final yesterday = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(const Duration(days: 1));
 
       final activities = await _activityService.getActivitiesForDate(yesterday);
 
@@ -485,12 +490,19 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 检查日期是否匹配
     final now = DateTime.now();
-    final expectedYesterday = DateTime(now.year, now.month, now.day).subtract(
-      const Duration(days: 1),
-    );
-    final cachedDay = _yesterdayCacheDate != null
-        ? DateTime(_yesterdayCacheDate!.year, _yesterdayCacheDate!.month, _yesterdayCacheDate!.day)
-        : null;
+    final expectedYesterday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 1));
+    final cachedDay =
+        _yesterdayCacheDate != null
+            ? DateTime(
+              _yesterdayCacheDate!.year,
+              _yesterdayCacheDate!.month,
+              _yesterdayCacheDate!.day,
+            )
+            : null;
 
     if (cachedDay == null || !cachedDay.isAtSameMomentAs(expectedYesterday)) {
       // 日期不匹配，异步刷新并返回空列表
@@ -512,7 +524,8 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     final dateKey = DateFormat('yyyy-MM-dd').format(normalizedDate);
 
     // 如果缓存有效，直接返回
-    if (_weeklyActivitiesCacheValid && _cachedWeeklyActivities.containsKey(dateKey)) {
+    if (_weeklyActivitiesCacheValid &&
+        _cachedWeeklyActivities.containsKey(dateKey)) {
       return _cachedWeeklyActivities[dateKey]!;
     }
 
@@ -531,7 +544,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       // 加载过去7天的数据
       for (int i = 6; i >= 0; i--) {
-        final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+        final date = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: i));
         final dateKey = DateFormat('yyyy-MM-dd').format(date);
 
         try {
@@ -650,9 +667,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       debugPrint('[ActivityPlugin] 最小提醒间隔已设置为 $minutes 分钟');
 
       // 更新通知服务
-      _notificationService.updateSettings(
-        minimumReminderInterval: minutes,
-      );
+      _notificationService.updateSettings(minimumReminderInterval: minutes);
     } catch (e) {
       debugPrint('[ActivityPlugin] 设置最小提醒间隔失败: $e');
       rethrow;
@@ -683,9 +698,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       debugPrint('[ActivityPlugin] 通知更新频率已设置为 $minutes 分钟');
 
       // 更新通知服务
-      _notificationService.updateSettings(
-        updateInterval: minutes,
-      );
+      _notificationService.updateSettings(updateInterval: minutes);
     } catch (e) {
       debugPrint('[ActivityPlugin] 设置通知更新频率失败: $e');
       rethrow;
@@ -789,9 +802,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置播报间隔（分钟）
   Future<void> setTTSAnnouncementInterval(int minutes) async {
     try {
-      _ttsAnnouncementService.updateConfig(
-        unrecordedIntervalMinutes: minutes,
-      );
+      _ttsAnnouncementService.updateConfig(unrecordedIntervalMinutes: minutes);
       await _saveTTSAnnouncementSettings(unrecordedIntervalMinutes: minutes);
       debugPrint('[ActivityPlugin] 播报间隔已设置为 $minutes 分钟');
     } catch (e) {
@@ -959,14 +970,14 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部图标和标题
+          // 顶部图标和标题（icon 为插件注册的持久化 IconData，保留 Material Icons）
           Row(
             children: [
               Container(
@@ -981,8 +992,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'activity_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: DsTypography.heading.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: theme.text,
                 ),
               ),
             ],
@@ -1013,16 +1025,18 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
                         children: [
                           Text(
                             'activity_todayActivities'.tr,
-                            style: theme.textTheme.bodyMedium,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
                           Text(
                             '$activityCount',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
                               color:
                                   activityCount > 0
-                                      ? theme.colorScheme.primary
-                                      : null,
+                                      ? theme.primary
+                                      : theme.text,
                             ),
                           ),
                         ],
@@ -1033,12 +1047,15 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
                         children: [
                           Text(
                             'activity_todayDuration'.tr,
-                            style: theme.textTheme.bodyMedium,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
                           Text(
                             '${(activityDuration / 60).toStringAsFixed(1)}H',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
+                              color: theme.text,
                             ),
                           ),
                         ],
@@ -1056,16 +1073,18 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
                         children: [
                           Text(
                             'activity_remainingTime'.tr,
-                            style: theme.textTheme.bodyMedium,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
                           Text(
                             '${(remainingTime / 60).toStringAsFixed(1)}H',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
                               color:
                                   remainingTime < 120
-                                      ? theme.colorScheme.error
-                                      : null,
+                                      ? theme.danger
+                                      : theme.text,
                             ),
                           ),
                         ],
@@ -1172,9 +1191,10 @@ class _ActivityMainViewState extends State<ActivityMainView>
       },
       child: Icon(
         Icons.add,
-        color: ActivityPlugin.instance.color.computeLuminance() > 0.5
-            ? Colors.black
-            : Colors.white,
+        color:
+            ActivityPlugin.instance.color.computeLuminance() > 0.5
+                ? Colors.black
+                : Colors.white,
         size: 32,
       ),
     );
@@ -1187,29 +1207,29 @@ class _ActivityMainViewState extends State<ActivityMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.down,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          const ActivityTimelineScreen(),
-          _visitedTabs.contains(1)
-              ? ActivityStatisticsScreen(
-                  activityService: ActivityPlugin.instance.activityService,
-                )
-              : const Center(child: CircularProgressIndicator()),
-        ],
-      ),
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.down,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              const ActivityTimelineScreen(),
+              _visitedTabs.contains(1)
+                  ? ActivityStatisticsScreen(
+                    activityService: ActivityPlugin.instance.activityService,
+                  )
+                  // DSLoadingDots 内部取 AppTheme，需包桥
+                  : Center(
+                    child: DSThemeBridge(
+                      child: Builder(builder: (_) => const DSLoadingDots()),
+                    ),
+                  ),
+            ],
+          ),
       fab: _buildFab(),
       children: [
-        Tab(
-          icon: const Icon(Icons.timeline),
-          text: 'activity_timeline'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.bar_chart),
-          text: 'activity_statistics'.tr,
-        ),
+        Tab(icon: const Icon(Icons.timeline), text: 'activity_timeline'.tr),
+        Tab(icon: const Icon(Icons.bar_chart), text: 'activity_statistics'.tr),
       ],
     );
   }

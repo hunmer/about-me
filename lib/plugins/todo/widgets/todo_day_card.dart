@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 
 /// 待办单日卡片 - 展示某一天的待办事项
@@ -42,200 +44,193 @@ class TodoDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dayName = _dayNames[date.weekday - 1];
-    final isToday = _isSameDay(date, DateTime.now());
-    final isPast = date.isBefore(DateTime.now());
+    // 同时供插件页与主页日卡使用，自备主题桥保证 DS 组件可用
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          final dayName = _dayNames[date.weekday - 1];
+          final isToday = _isSameDay(date, DateTime.now());
+          final isPast = date.isBefore(DateTime.now());
 
-    // 根据任务状态设置卡片颜色
-    Color cardColor;
+          // 根据任务状态设置卡片颜色（语义色令牌随明暗自适应）
+          Color cardColor;
 
-    if (tasks.isEmpty) {
-      // 无任务
-      cardColor = Colors.grey;
-    } else if (isToday) {
-      // 今天有任务
-      cardColor = Colors.blue;
-    } else if (isPast) {
-      // 过期未完成
-      cardColor = Colors.orange;
-    } else {
-      // 未来
-      cardColor = Colors.green;
-    }
+          if (tasks.isEmpty) {
+            // 无任务
+            cardColor = theme.textSub;
+          } else if (isToday) {
+            // 今天有任务
+            cardColor = theme.primary;
+          } else if (isPast) {
+            // 过期未完成
+            cardColor = theme.warning;
+          } else {
+            // 未来
+            cardColor = theme.success;
+          }
 
-    final headerBgColor = cardColor.withOpacity(0.1);
-    final headerBorderColor = cardColor.withOpacity(0.3);
-    final titleColor = isDark ? cardColor.withOpacity(0.8) : cardColor;
+          final headerBgColor = cardColor.withValues(alpha: 0.1);
+          final headerBorderColor = cardColor.withValues(alpha: 0.3);
+          final titleColor = cardColor;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: isToday ? Border.all(color: headerBorderColor, width: 2) : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 卡片标题
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          return Container(
             decoration: BoxDecoration(
-              color: headerBgColor,
-              border: Border(bottom: BorderSide(color: headerBorderColor)),
+              color: theme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border:
+                  isToday
+                      ? Border.all(color: headerBorderColor, width: 2)
+                      : null,
             ),
-            child: Row(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // 卡片标题
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: headerBgColor,
+                    border: Border(
+                      bottom: BorderSide(color: headerBorderColor),
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        dayName,
-                        style: TextStyle(
-                          color: titleColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dayName,
+                              style: DsTypography.label.copyWith(
+                                color: titleColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${date.month}/${date.day}',
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        '${date.month}/${date.day}',
-                        style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontSize: 11,
+                      if (tasks.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cardColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${tasks.length}',
+                            style: DsTypography.caption.copyWith(
+                              color: titleColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                      if (onAddTask != null)
+                        DSIconButton(
+                          icon: DsIconKind.plus,
+                          size: 30,
+                          color: theme.surfaceAlt,
+                          iconColor: titleColor,
+                          onPressed: () => onAddTask!(date),
+                        ),
                     ],
                   ),
                 ),
-                if (tasks.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${tasks.length}',
-                      style: TextStyle(
-                        color: titleColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                if (onAddTask != null)
-                  IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      size: 18,
-                      color: titleColor,
-                    ),
-                    onPressed: () => onAddTask!(date),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 16,
-                  ),
-              ],
-            ),
-          ),
-          // 任务列表
-          Expanded(
-            child:
-                tasks.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 32,
-                            color: Colors.green.withOpacity(0.3),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '无待办',
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).disabledColor.withOpacity(0.4),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: tasks.length,
-                      itemBuilder: (context, index) {
-                        final task = tasks[index];
-                        return InkWell(
-                          onTap: () => onTaskTap(task),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
+                // 任务列表
+                Expanded(
+                  child:
+                      tasks.isEmpty
+                          ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: Checkbox(
-                                    value: task.status == TaskStatus.done,
-                                    onChanged: (val) {
-                                      onTaskStatusChanged(
-                                        task,
-                                        val == true
-                                            ? TaskStatus.done
-                                            : TaskStatus.todo,
-                                      );
-                                    },
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    side: BorderSide(
-                                      color: Theme.of(context).dividerColor,
-                                      width: 1.5,
-                                    ),
-                                    activeColor:
-                                        Theme.of(context).primaryColor,
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
+                                DsIcon(
+                                  DsIconKind.check,
+                                  size: 32,
+                                  color: theme.success.withValues(alpha: 0.3),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    task.title,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // 优先级指示器
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: task.priorityColor,
-                                    shape: BoxShape.circle,
+                                const SizedBox(height: 4),
+                                Text(
+                                  '无待办',
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub.withValues(alpha: 0.4),
                                   ),
                                 ),
                               ],
                             ),
+                          )
+                          : ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            itemCount: tasks.length,
+                            itemBuilder: (context, index) {
+                              final task = tasks[index];
+                              return InkWell(
+                                onTap: () => onTaskTap(task),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      DSCheckbox(
+                                        value: task.status == TaskStatus.done,
+                                        onChanged: (val) {
+                                          onTaskStatusChanged(
+                                            task,
+                                            val == true
+                                                ? TaskStatus.done
+                                                : TaskStatus.todo,
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          task.title,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.text,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      // 优先级指示器（模型持久化数据色）
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: task.priorityColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-          ),
-        ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

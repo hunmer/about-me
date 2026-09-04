@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 
@@ -11,9 +13,10 @@ class DashedLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = Theme.of(context).dividerColor
-      ..strokeWidth = 1.5; // Increased stroke width
+    final Paint paint =
+        Paint()
+          ..color = DSThemeBridge.resolve(context).stroke
+          ..strokeWidth = 1.5; // Increased stroke width
 
     const double dashHeight = 4.0;
     const double dashSpace = 4.0;
@@ -52,7 +55,7 @@ class ActivityTimeline extends StatelessWidget {
 
   Color _getColorFromTag(BuildContext context, ActivityRecord activity) {
     if (activity.tags.isEmpty) {
-      return Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5);
+      return DSThemeBridge.resolve(context).surfaceAlt.withValues(alpha: 0.5);
     }
     final colors = [
       Colors.blue.shade100,
@@ -72,24 +75,54 @@ class ActivityTimeline extends StatelessWidget {
 
   IconData _getActivityIcon(ActivityRecord activity) {
     final title = activity.title.toLowerCase();
-    if (title.contains('phone') || title.contains('手机')) return Icons.phone_iphone;
-    if (title.contains('sleep') || title.contains('睡觉')) return Icons.bed_outlined;
-    if (title.contains('eat') || title.contains('food') || title.contains('吃饭')) return Icons.restaurant_outlined;
-    if (title.contains('sport') || title.contains('run') || title.contains('运动')) return Icons.fitness_center_outlined;
-    if (title.contains('work') || title.contains('工作')) return Icons.work_outline;
-    if (title.contains('study') || title.contains('学习')) return Icons.book_outlined;
-    if (title.contains('game') || title.contains('游戏')) return Icons.games_outlined;
-    if (title.contains('shower') || title.contains('洗澡')) return Icons.shower_outlined;
-    if (title.contains('clean') || title.contains('打扫')) return Icons.cleaning_services_outlined;
-    if (title.contains('read') || title.contains('阅读') || title.contains('bible')) return Icons.menu_book_outlined;
-    if (title.contains('rise') || title.contains('get up') || title.contains('起床')) return Icons.alarm;
+    if (title.contains('phone') || title.contains('手机')) {
+      return Icons.phone_iphone;
+    }
+    if (title.contains('sleep') || title.contains('睡觉')) {
+      return Icons.bed_outlined;
+    }
+    if (title.contains('eat') ||
+        title.contains('food') ||
+        title.contains('吃饭')) {
+      return Icons.restaurant_outlined;
+    }
+    if (title.contains('sport') ||
+        title.contains('run') ||
+        title.contains('运动')) {
+      return Icons.fitness_center_outlined;
+    }
+    if (title.contains('work') || title.contains('工作')) {
+      return Icons.work_outline;
+    }
+    if (title.contains('study') || title.contains('学习')) {
+      return Icons.book_outlined;
+    }
+    if (title.contains('game') || title.contains('游戏')) {
+      return Icons.games_outlined;
+    }
+    if (title.contains('shower') || title.contains('洗澡')) {
+      return Icons.shower_outlined;
+    }
+    if (title.contains('clean') || title.contains('打扫')) {
+      return Icons.cleaning_services_outlined;
+    }
+    if (title.contains('read') ||
+        title.contains('阅读') ||
+        title.contains('bible')) {
+      return Icons.menu_book_outlined;
+    }
+    if (title.contains('rise') ||
+        title.contains('get up') ||
+        title.contains('起床')) {
+      return Icons.alarm;
+    }
     return Icons.local_activity_outlined;
   }
 
   String _formatDuration(DateTime start, DateTime end) {
     final duration = end.difference(start);
     if (duration.inMinutes == 0) return '';
-    
+
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
 
@@ -103,6 +136,7 @@ class ActivityTimeline extends StatelessWidget {
   }
 
   Widget _buildTimelineItem(BuildContext context, ActivityRecord activity) {
+    final theme = DSThemeBridge.resolve(context);
     final primaryColor = _getPrimaryColor(context);
     // 优先使用标签图标，如果没有标签或未提供 getTagIcons，则使用原有逻辑
     List<IconData> tagIcons = [];
@@ -128,66 +162,60 @@ class ActivityTimeline extends StatelessWidget {
     final double height = (duration.inMinutes * 1.5).clamp(64.0, 400.0);
 
     return SwipeActionWrapper(
-        key: ValueKey(activity.id),
-        leadingActions: [
-          SwipeActionPresets.edit(
-            onTap: () => onActivityTap?.call(activity),
-          ),
-        ],
-        trailingActions: [
-          SwipeActionPresets.delete(
-            onTap: () => onDeleteActivity?.call(activity),
-          ),
-        ],
-        child: InkWell(
-            onTap: () => onActivityTap?.call(activity),
-            borderRadius: BorderRadius.circular(12),
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                // 1. Time Column
-                SizedBox(
-                    width: 40,
-                    child: Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
-                    child: Text(
-                        DateFormat('H:mm').format(activity.startTime),
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                        ),
+      key: ValueKey(activity.id),
+      leadingActions: [
+        SwipeActionPresets.edit(onTap: () => onActivityTap?.call(activity)),
+      ],
+      trailingActions: [
+        SwipeActionPresets.delete(
+          onTap: () => onDeleteActivity?.call(activity),
+        ),
+      ],
+      // 点击卡片打开编辑（与滑动编辑一致），DS 无涟漪原语用 Pressable
+      child: Pressable(
+        onPressed: () => onActivityTap?.call(activity),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Time Column
+              SizedBox(
+                width: 40,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12.0),
+                  child: Text(
+                    DateFormat('H:mm').format(activity.startTime),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.textSub,
+                      fontWeight: FontWeight.w500,
                     ),
-                    ),
+                  ),
                 ),
-                const SizedBox(width: 8),
+              ),
+              const SizedBox(width: 8),
 
-                // 2. Content Column
-                Expanded(
-                    child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                        // Icon with timeline capsule
-                        SizedBox(
-                          height: height,
-                          child: Center(
-                            child: Container(
-                                width: 48,
+              // 2. Content Column
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Icon with timeline capsule
+                    // 图标为标签注册表/内容启发式产生的动态 IconData，保留 Material Icon
+                    SizedBox(
+                      height: height,
+                      child: Center(
+                        child: Container(
+                          width: 48,
                           // 多图标时使用实际高度，单图标时使用80%
                           height: tagIcons.length > 1 ? height : height * 0.8,
-                                decoration: BoxDecoration(
-                                    color: capsuleColor,
-                                    borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(
-                                        color: Theme.of(context).dividerColor,
-                                        width: 1.5,
-                                    )
-                                ),
+                          decoration: BoxDecoration(
+                            color: capsuleColor,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: theme.stroke, width: 1.5),
+                          ),
                           child:
                               tagIcons.length > 1
                                   ? // 多个标签时垂直显示图标
@@ -227,105 +255,123 @@ class ActivityTimeline extends StatelessWidget {
                                       fill: 1.0,
                                     ),
                                   ),
-                            ),
-                          ),
                         ),
-                        const SizedBox(width: 8),
-                        // Text content
-                        Expanded(
-                        child: Padding(
-                            padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
-                            child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                                if (showDuration)
-                                Text(
-                                    '${DateFormat('H:mm').format(activity.startTime)} - ${DateFormat('H:mm').format(activity.endTime)} (${_formatDuration(activity.startTime, activity.endTime)})',
-                                    style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                ),
-                                Text(
-                                activity.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                ),
-                                ),
-                                if (activity.description != null && activity.description!.isNotEmpty)
-                                Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                    activity.description!,
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    ),
-                                ),
-                                if (activity.tags.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Wrap(
-                                      spacing: 6.0,
-                                      runSpacing: 4.0,
-                                      children: activity.tags
-                                          .map((tag) => Chip(
-                                                label: Text(tag),
-                                                labelStyle: TextStyle(
-                                                  fontSize: 10,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                ),
-                                              backgroundColor: capsuleColor
-                                                  ?.withOpacity(0.7),
-                                                padding: EdgeInsets.zero,
-                                                labelPadding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                visualDensity: VisualDensity.compact,
-                                              ))
-                                          .toList(),
-                                    ),
-                                  ),
-                            ],
-                            ),
-                        ),
-                        ),
-                    ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    // Text content
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (showDuration)
+                              Text(
+                                '${DateFormat('H:mm').format(activity.startTime)} - ${DateFormat('H:mm').format(activity.endTime)} (${_formatDuration(activity.startTime, activity.endTime)})',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            Text(
+                              activity.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: theme.text,
+                              ),
+                            ),
+                            if (activity.description != null &&
+                                activity.description!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  activity.description!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.textSub,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            if (activity.tags.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Wrap(
+                                  spacing: 6.0,
+                                  runSpacing: 4.0,
+                                  children:
+                                      activity.tags
+                                          .map(
+                                            (tag) => Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6.0,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: capsuleColor?.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                tag,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: theme.text,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                
-                // 3. Right side mood emoji
-                SizedBox(
-                    width: 30,
-                    height: 48,
-                    child: Center(
-                    child: (activity.mood != null && activity.mood!.isNotEmpty)
-                        ? Text(
+              ),
+
+              // 3. Right side mood emoji
+              SizedBox(
+                width: 30,
+                height: 48,
+                child: Center(
+                  child:
+                      (activity.mood != null && activity.mood!.isNotEmpty)
+                          ? Text(
                             activity.mood!,
                             style: const TextStyle(fontSize: 20),
                           )
-                        : const SizedBox.shrink(),
-                    ),
+                          : const SizedBox.shrink(),
                 ),
-                ],
-            ),
-            ),
+              ),
+            ],
+          ),
         ),
+      ),
     );
   }
 
-  Widget _buildUnrecordedTimeGap(BuildContext context, DateTime start, DateTime end) {
+  Widget _buildUnrecordedTimeGap(
+    BuildContext context,
+    DateTime start,
+    DateTime end,
+  ) {
+    final theme = DSThemeBridge.resolve(context);
     final duration = end.difference(start);
     if (duration.inMinutes <= 1) return const SizedBox.shrink();
-    
-    final double height = (duration.inMinutes * 1.5).clamp(64.0, 400.0);
-    final capsuleColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
-    return InkWell(
-      onTap: () => onUnrecordedTimeTap?.call(start, end),
-      borderRadius: BorderRadius.circular(12),
+    final double height = (duration.inMinutes * 1.5).clamp(64.0, 400.0);
+    final capsuleColor = theme.surfaceAlt;
+
+    return Pressable(
+      onPressed: () => onUnrecordedTimeTap?.call(start, end),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
         child: Row(
@@ -341,7 +387,7 @@ class ActivityTimeline extends StatelessWidget {
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: theme.textSub,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -364,15 +410,12 @@ class ActivityTimeline extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: capsuleColor,
                           borderRadius: BorderRadius.circular(24),
-                           border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                                width: 1.5,
-                            )
+                          border: Border.all(color: theme.stroke, width: 1.5),
                         ),
                         child: Center(
-                          child: Icon(
-                            Icons.add,
-                            color: Theme.of(context).colorScheme.onSurface,
+                          child: DsIcon(
+                            DsIconKind.plus,
+                            color: theme.text,
                             size: 28,
                           ),
                         ),
@@ -385,7 +428,7 @@ class ActivityTimeline extends StatelessWidget {
                     child: Text(
                       '${'activity_unrecordedTimeText'.tr} (${_formatDuration(start, end)})',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: theme.textSub,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -405,30 +448,48 @@ class ActivityTimeline extends StatelessWidget {
     final List<Widget> items = [];
     if (activities.isEmpty) return items;
 
-    final dayStart = DateTime(activities.first.startTime.year, activities.first.startTime.month, activities.first.startTime.day);
+    final dayStart = DateTime(
+      activities.first.startTime.year,
+      activities.first.startTime.month,
+      activities.first.startTime.day,
+    );
     DateTime lastEventEnd = dayStart;
 
     if (activities.first.startTime.isAfter(lastEventEnd)) {
-      items.add(_buildUnrecordedTimeGap(context, lastEventEnd, activities.first.startTime));
+      items.add(
+        _buildUnrecordedTimeGap(
+          context,
+          lastEventEnd,
+          activities.first.startTime,
+        ),
+      );
     }
 
     for (int i = 0; i < activities.length; i++) {
       final currentActivity = activities[i];
-      
+
       if (currentActivity.startTime.isAfter(lastEventEnd)) {
-        items.add(_buildUnrecordedTimeGap(context, lastEventEnd, currentActivity.startTime));
+        items.add(
+          _buildUnrecordedTimeGap(
+            context,
+            lastEventEnd,
+            currentActivity.startTime,
+          ),
+        );
       }
 
       items.add(_buildTimelineItem(context, currentActivity));
       lastEventEnd = currentActivity.endTime;
     }
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    if (lastEventEnd.year == today.year && lastEventEnd.month == today.month && lastEventEnd.day == today.day) {
-        if (now.isAfter(lastEventEnd)) {
-            items.add(_buildUnrecordedTimeGap(context, lastEventEnd, now));
-        }
+    if (lastEventEnd.year == today.year &&
+        lastEventEnd.month == today.month &&
+        lastEventEnd.day == today.day) {
+      if (now.isAfter(lastEventEnd)) {
+        items.add(_buildUnrecordedTimeGap(context, lastEventEnd, now));
+      }
     }
 
     return items;
@@ -436,13 +497,14 @@ class ActivityTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final slices = _buildTimelineSlices(context);
 
     if (slices.isEmpty) {
       return Center(
         child: Text(
           'activity_noActivitiesText'.tr,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
+          style: TextStyle(color: theme.textSub, fontSize: 16),
         ),
       );
     }
@@ -457,7 +519,12 @@ class ActivityTimeline extends StatelessWidget {
       children: [
         Positioned(
           top: 16,
-          left: listHorizontalPadding + timeColWidth + timeGapWidth + (iconWidth / 2) - (lineStrokeWidth / 2),
+          left:
+              listHorizontalPadding +
+              timeColWidth +
+              timeGapWidth +
+              (iconWidth / 2) -
+              (lineStrokeWidth / 2),
           bottom: 0,
           child: CustomPaint(
             size: const Size(lineStrokeWidth, double.infinity),
@@ -465,8 +532,11 @@ class ActivityTimeline extends StatelessWidget {
           ),
         ),
         ListView(
-            padding: const EdgeInsets.symmetric(horizontal: listHorizontalPadding, vertical: 16.0),
-            children: slices,
+          padding: const EdgeInsets.symmetric(
+            horizontal: listHorizontalPadding,
+            vertical: 16.0,
+          ),
+          children: slices,
         ),
       ],
     );

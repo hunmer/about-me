@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 
@@ -34,11 +36,11 @@ class ActivityDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -58,19 +60,16 @@ class ActivityDayCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.timeline_outlined,
+                          DsIcon(
+                            DsIconKind.clock,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.disabled.withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'activity_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.disabled.withValues(alpha: 0.4),
                             ),
                           ),
                         ],
@@ -94,7 +93,7 @@ class ActivityDayCard extends StatelessWidget {
 
   /// 单条活动行：开始时刻+时长 + 标题/标签 + 心情
   Widget _buildRecordItem(BuildContext context, ActivityRecord record) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return InkWell(
       onTap: () => onActivityTap(record),
@@ -110,16 +109,17 @@ class ActivityDayCard extends StatelessWidget {
                 children: [
                   Text(
                     _formatTime(record.startTime),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: theme.text,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _formatDuration(record.durationInMinutes),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontSize: 10,
-                      color: theme.disabledColor,
+                      color: theme.disabled,
                     ),
                   ),
                 ],
@@ -132,8 +132,9 @@ class ActivityDayCard extends StatelessWidget {
                 children: [
                   Text(
                     record.title,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: theme.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -151,14 +152,14 @@ class ActivityDayCard extends StatelessWidget {
                               vertical: 1,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
+                              color: theme.surfaceAlt,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               tag,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: DsTypography.caption.copyWith(
                                 fontSize: 9,
-                                color: theme.colorScheme.onSurfaceVariant,
+                                color: theme.textSub,
                               ),
                             ),
                           ),

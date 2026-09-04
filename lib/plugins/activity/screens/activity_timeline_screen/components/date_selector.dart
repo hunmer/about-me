@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 class DateSelector extends StatelessWidget {
   final DateTime selectedDate;
@@ -15,7 +16,7 @@ class DateSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: DSThemeBridge.resolve(context).surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -30,9 +31,7 @@ class DateSelector extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: () {
-              onDateChanged(
-                selectedDate.subtract(const Duration(days: 1)),
-              );
+              onDateChanged(selectedDate.subtract(const Duration(days: 1)));
             },
           ),
           TextButton(

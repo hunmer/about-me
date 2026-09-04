@@ -6,6 +6,8 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'controllers/controllers.dart';
@@ -80,7 +82,6 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-    
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -96,7 +97,7 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final totalTasks = taskController.getTotalTaskCount();
     final weeklyTasks = taskController.getWeeklyTaskCount();
 
@@ -105,7 +106,7 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部图标和标题
+          // 顶部图标和标题（icon 为插件注册的持久化 IconData，保留 Material Icons）
           Row(
             children: [
               Container(
@@ -120,9 +121,7 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'todo_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
@@ -135,11 +134,12 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
                 children: [
                   Text(
                     'todo_totalTasksCount'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                   Text(
                     '$totalTasks',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -150,11 +150,12 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
                 children: [
                   Text(
                     'todo_weeklyTasksCount'.tr,
-                    style: theme.textTheme.bodyMedium,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
                   ),
                   Text(
                     '$weeklyTasks',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -215,9 +216,10 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 获取 watchOS 待办任务列表（同步方法）
   /// 返回未完成的任务，按优先级和日期排序
   List<Map<String, dynamic>> getWatchTodoTasksSync() {
-    final tasks = taskController.tasks
-        .where((task) => task.status != TaskStatus.done)
-        .toList();
+    final tasks =
+        taskController.tasks
+            .where((task) => task.status != TaskStatus.done)
+            .toList();
 
     // 按优先级排序（Q1 > Q2 > Q3 > Q4）
     tasks.sort((a, b) {
@@ -243,7 +245,8 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
         'status': task.status.index,
         'tags': task.tags,
         'subtaskCount': task.subtasks.length,
-        'completedSubtaskCount': task.subtasks.where((s) => s.isCompleted).length,
+        'completedSubtaskCount':
+            task.subtasks.where((s) => s.isCompleted).length,
         'startDate': task.startDate?.toIso8601String(),
         'dueDate': task.dueDate?.toIso8601String(),
         'duration': task.duration?.inMinutes,

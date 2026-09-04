@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/models/activity_weekly_widget_config.dart';
 import 'package:aboutme/plugins/activity/models/activity_weekly_widget_data.dart';
@@ -16,10 +18,7 @@ class ActivityWeeklyConfigScreen extends StatefulWidget {
   /// 小组件ID（Android appWidgetId）
   final int widgetId;
 
-  const ActivityWeeklyConfigScreen({
-    required this.widgetId,
-    super.key,
-  });
+  const ActivityWeeklyConfigScreen({required this.widgetId, super.key});
 
   @override
   State<ActivityWeeklyConfigScreen> createState() =>
@@ -84,8 +83,10 @@ class _ActivityWeeklyConfigScreenState
           if (primaryColorStr != null) {
             final colorValue = int.tryParse(primaryColorStr);
             if (colorValue != null) {
-              _widgetConfig =
-                  _widgetConfig.updateColor('primary', Color(colorValue));
+              _widgetConfig = _widgetConfig.updateColor(
+                'primary',
+                Color(colorValue),
+              );
             }
           }
 
@@ -93,8 +94,10 @@ class _ActivityWeeklyConfigScreenState
           if (accentColorStr != null) {
             final colorValue = int.tryParse(accentColorStr);
             if (colorValue != null) {
-              _widgetConfig =
-                  _widgetConfig.updateColor('accent', Color(colorValue));
+              _widgetConfig = _widgetConfig.updateColor(
+                'accent',
+                Color(colorValue),
+              );
             }
           }
 
@@ -121,7 +124,12 @@ class _ActivityWeeklyConfigScreenState
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('activity_configWeeklyWidget'.tr)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          // DSLoadingDots 内部取 AppTheme，需包桥
+          child: DSThemeBridge(
+            child: Builder(builder: (_) => const DSLoadingDots()),
+          ),
+        ),
       );
     }
 
@@ -130,13 +138,12 @@ class _ActivityWeeklyConfigScreenState
         title: Text('activity_configWeeklyWidget'.tr),
         actions: [
           if (_isSaving)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: DSThemeBridge(
+                  // DSLoadingDots 内部取 AppTheme，需包桥
+                  child: Builder(builder: (_) => const DSLoadingDots(size: 20)),
                 ),
               ),
             ),
@@ -150,6 +157,7 @@ class _ActivityWeeklyConfigScreenState
         },
         previewBuilder: (context, config) => _buildPreview(config),
       ),
+      // DS 暂无带文字的 extended FAB，保留 Material
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSaving ? null : _saveAndFinish,
         icon: const Icon(Icons.check),
@@ -160,10 +168,8 @@ class _ActivityWeeklyConfigScreenState
 
   /// 构建预览组件
   Widget _buildPreview(WidgetConfig config) {
-    final primaryColor =
-        config.getColor('primary') ?? const Color(0xFFEFF7F0);
-    final accentColor =
-        config.getColor('accent') ?? const Color(0xFF607afb);
+    final primaryColor = config.getColor('primary') ?? const Color(0xFFEFF7F0);
+    final accentColor = config.getColor('accent') ?? const Color(0xFF607afb);
 
     return Container(
       width: 200,
@@ -179,7 +185,7 @@ class _ActivityWeeklyConfigScreenState
           // 周标题
           Row(
             children: [
-              Icon(Icons.chevron_left, size: 16, color: accentColor),
+              DsIcon(DsIconKind.chevronLeft, size: 16, color: accentColor),
               const SizedBox(width: 4),
               Text(
                 '第1周 1.01-1.07',
@@ -190,7 +196,7 @@ class _ActivityWeeklyConfigScreenState
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, size: 16, color: accentColor),
+              DsIcon(DsIconKind.chevronRight, size: 16, color: accentColor),
             ],
           ),
           const SizedBox(height: 8),
@@ -254,7 +260,9 @@ class _ActivityWeeklyConfigScreenState
       final opacity = _widgetConfig.opacity;
 
       debugPrint('ActivityWeeklyConfig: 保存配置 widgetId=${widget.widgetId}');
-      debugPrint('ActivityWeeklyConfig: primaryColor=${primaryColor.value}, accentColor=${accentColor.value}, opacity=$opacity');
+      debugPrint(
+        'ActivityWeeklyConfig: primaryColor=${primaryColor.value}, accentColor=${accentColor.value}, opacity=$opacity',
+      );
 
       // 保存颜色配置（使用String类型）
       await HomeWidget.saveWidgetData<String>(
@@ -350,14 +358,18 @@ class _ActivityWeeklyConfigScreenState
       try {
         widgetIds = List<int>.from(jsonDecode(existingIdsJson) as List);
       } catch (e) {
-        debugPrint('Failed to parse existing widget IDs, creating new list: $e');
+        debugPrint(
+          'Failed to parse existing widget IDs, creating new list: $e',
+        );
       }
     }
 
     // 添加新 widgetId（如果不存在）
     if (!widgetIds.contains(widgetId)) {
       widgetIds.add(widgetId);
-      debugPrint('ActivityWeeklyConfig: Registered widgetId $widgetId (total: ${widgetIds.length})');
+      debugPrint(
+        'ActivityWeeklyConfig: Registered widgetId $widgetId (total: ${widgetIds.length})',
+      );
     } else {
       debugPrint('ActivityWeeklyConfig: widgetId $widgetId already registered');
     }

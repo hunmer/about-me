@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
@@ -17,9 +19,7 @@ import 'package:aboutme/plugins/activity/widgets/activity_day_card.dart';
 
 /// 获取指定日期的活动记录（按开始时间升序，与时间线页一致）
 Future<List<ActivityRecord>> _recordsForDate(DateTime date) async {
-  final records = await ActivityPlugin
-      .instance
-      .activityService
+  final records = await ActivityPlugin.instance.activityService
       .getActivitiesForDate(date);
   records.sort((a, b) => a.startTime.compareTo(b.startTime));
   return records;
@@ -85,7 +85,8 @@ class _ActivityDayCardHomeWidget extends StatefulWidget {
       _ActivityDayCardHomeWidgetState();
 }
 
-class _ActivityDayCardHomeWidgetState extends State<_ActivityDayCardHomeWidget> {
+class _ActivityDayCardHomeWidgetState
+    extends State<_ActivityDayCardHomeWidget> {
   List<ActivityRecord> _records = [];
   DateTime? _loadingFor;
   bool _loading = true;
@@ -123,11 +124,7 @@ class _ActivityDayCardHomeWidgetState extends State<_ActivityDayCardHomeWidget> 
   @override
   Widget build(BuildContext context) {
     return EventListenerContainer(
-      events: const [
-        'activity_added',
-        'activity_updated',
-        'activity_deleted',
-      ],
+      events: const ['activity_added', 'activity_updated', 'activity_deleted'],
       onEvent: _loadRecords,
       child: _buildContent(context),
     );
@@ -135,7 +132,12 @@ class _ActivityDayCardHomeWidgetState extends State<_ActivityDayCardHomeWidget> 
 
   Widget _buildContent(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      // DSLoadingDots 内部取 AppTheme，需包桥
+      return Center(
+        child: DSThemeBridge(
+          child: Builder(builder: (_) => const DSLoadingDots()),
+        ),
+      );
     }
 
     return ActivityDayCard(

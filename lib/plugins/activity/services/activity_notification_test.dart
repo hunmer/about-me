@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'activity_notification_service.dart';
 import 'activity_service.dart';
 import '../../../../core/storage/storage_manager.dart';
@@ -114,7 +115,8 @@ class ActivityNotificationTest {
     try {
       debugPrint('[ActivityNotificationTest] 测试智能时间检测...');
 
-      final optimalTime = await _notificationService.detectOptimalActivityTime();
+      final optimalTime =
+          await _notificationService.detectOptimalActivityTime();
       debugPrint('[ActivityNotificationTest] ✓ 建议的活动时间: $optimalTime');
 
       return optimalTime != null;
@@ -130,7 +132,7 @@ class ActivityNotificationTest {
 
     if (!_isInitialized) {
       // 插件已在 initialize() 中完成初始化
-    // 这里可以添加额外的应用级注册逻辑
+      // 这里可以添加额外的应用级注册逻辑
     }
 
     final results = <String, bool>{};
@@ -149,13 +151,14 @@ class ActivityNotificationTest {
       final passedTests = results.values.where((success) => success).length;
       final successRate = (passedTests / totalTests * 100).toStringAsFixed(1);
 
-      debugPrint('[ActivityNotificationTest] 测试完成: $passedTests/$totalTests 通过 ($successRate%)');
+      debugPrint(
+        '[ActivityNotificationTest] 测试完成: $passedTests/$totalTests 通过 ($successRate%)',
+      );
 
       for (final entry in results.entries) {
         final status = entry.value ? '✓' : '✗';
         debugPrint('[ActivityNotificationTest] $status ${entry.key}');
       }
-
     } catch (e) {
       debugPrint('[ActivityNotificationTest] 运行测试时发生错误: $e');
     }
@@ -171,63 +174,71 @@ class ActivityNotificationTest {
   }
 
   /// 显示测试结果对话框
-  static void showTestResults(BuildContext context, Map<String, bool> results, {String? error}) {
+  static void showTestResults(
+    BuildContext context,
+    Map<String, bool> results, {
+    String? error,
+  }) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('activity_notificationTestResult'.tr),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            children: [
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    error,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ...results.entries.map((entry) {
-                final status = entry.value ? '✓' : '✗';
-                final color = entry.value ? Colors.green : Colors.red;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    children: [
-                      Text(
-                        status,
+      builder:
+          (context) => AlertDialog(
+            title: Text('activity_notificationTestResult'.tr),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                children: [
+                  if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Text(
+                        error,
                         style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          color: DSThemeBridge.resolve(context).danger,
+                          fontSize: 14,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _getTestDisplayName(entry.key),
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                    ),
+                  ...results.entries.map((entry) {
+                    final status = entry.value ? '✓' : '✗';
+                    final color =
+                        entry.value
+                            ? DSThemeBridge.resolve(context).success
+                            : DSThemeBridge.resolve(context).danger;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Text(
+                            status,
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _getTestDisplayName(entry.key),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('activity_confirm'.tr),
+              ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('activity_confirm'.tr),
-          ),
-        ],
-      ),
     );
   }
 
