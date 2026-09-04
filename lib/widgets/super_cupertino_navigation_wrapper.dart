@@ -116,6 +116,10 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 如果提供此回调，在非移动端（桌面平台）将显示自定义返回按钮
   final VoidCallback? onLeadingPressed;
 
+  /// 自定义左上角返回按钮
+  /// 提供时替换默认的 DS 图标返回按钮，点击行为由该 widget 自行处理
+  final Widget? backButton;
+
   /// ========== 多条件过滤相关配置 ==========
 
   /// 是否启用多条件过滤
@@ -174,6 +178,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     this.filterLabels = const {}, // 改为空映射，通过国际化获取默认值
     this.onSearchFilterChanged,
     this.onLeadingPressed,
+    this.backButton,
     // 多条件过滤参数
     this.enableMultiFilter = false,
     this.multiFilterItems,
@@ -512,6 +517,51 @@ class _SuperCupertinoNavigationWrapperState
     });
   }
 
+  /// 解析左上角返回按钮
+  ///
+  /// 优先级：[backButton] 完全自定义 > 默认 DS 图标按钮（路由可返回且
+  /// 非 fullscreenDialog 时显示）> 桌面端 [onLeadingPressed] 回调按钮
+  /// （仅在显式关闭 automaticallyImplyLeading 时走到）；其余情况不显示
+  Widget? _resolveLeading() {
+    if (widget.backButton != null) return widget.backButton;
+
+    final implyLeading = widget.automaticallyImplyLeading ?? true;
+
+    if (implyLeading) {
+      final route = ModalRoute.of(context);
+      final canBack =
+          route != null &&
+          route.canPop &&
+          !(route is PageRoute && route.fullscreenDialog);
+      return canBack
+          ? _buildDefaultBackButton(() => Navigator.maybePop(context))
+          : null;
+    }
+
+    if (!(UniversalPlatform.isAndroid || UniversalPlatform.isIOS) &&
+        widget.onLeadingPressed != null) {
+      return _buildDefaultBackButton(widget.onLeadingPressed!);
+    }
+    return null;
+  }
+
+  /// 默认的 DS 风格返回图标按钮（primary 果冻圆球，同 DSFab 质感）
+  Widget _buildDefaultBackButton(VoidCallback onPressed) {
+    return Builder(
+      builder: (context) {
+        final ds = AppTheme.of(context);
+        return DSIconButton(
+          icon: DsIconKind.chevronLeft,
+          size: 36,
+          color: ds.primary,
+          iconColor: ds.onPrimary,
+          tooltip: widget.previousPageTitle ?? 'core_back'.tr,
+          onPressed: onPressed,
+        );
+      },
+    );
+  }
+
   /// 构建 SuperAppBar，根据 enableSearchBar 条件决定是否包含 searchBar
   SuperAppBar _buildSuperAppBar() {
     // 构建 searchBar，当 enableSearchBar 为 false 时传入 disabled 的 SuperSearchBar
@@ -535,24 +585,7 @@ class _SuperCupertinoNavigationWrapperState
           Theme.of(context).appBarTheme.backgroundColor ??
           Theme.of(context).colorScheme.surface,
       automaticallyImplyLeading: effectiveAutomaticallyImplyLeading,
-      leading:
-          (UniversalPlatform.isAndroid || UniversalPlatform.isIOS)
-              ? null
-              : (widget.onLeadingPressed != null
-                  ? Builder(
-                    builder: (context) {
-                      final ds = AppTheme.of(context);
-                      return DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 36,
-                        color: ds.surfaceAlt,
-                        iconColor: ds.textSub,
-                        tooltip: widget.previousPageTitle ?? 'core_back'.tr,
-                        onPressed: widget.onLeadingPressed,
-                      );
-                    },
-                  )
-                  : null),
+      leading: _resolveLeading(),
       title: widget.title,
       previousPageTitle: widget.previousPageTitle ?? 'core_back'.tr,
       previousPageTitleStyle:
