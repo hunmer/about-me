@@ -29,9 +29,6 @@ import 'widgets/background_settings_page.dart';
 import 'widgets/create_folder_dialog.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/layout_manager_dialog.dart';
-import 'widgets/date_view_grid.dart';
-import 'widgets/home_date_bar.dart';
-import 'widgets/home_date_sort_bar.dart';
 import 'widgets/quick_create_dialog.dart';
 import 'widgets/selector_widget_types.dart';
 import 'widgets/widget_settings_dialog.dart';
@@ -42,14 +39,10 @@ class HomeScreenView extends StatelessWidget {
   final HomeScreenController controller;
   final TabController? tabController;
 
-  /// 内容模式：true=日期数据视图（日程），false=固定布局网格（看板）
-  final bool dateView;
-
   const HomeScreenView({
     super.key,
     required this.controller,
     this.tabController,
-    this.dateView = false,
   });
 
   @override
@@ -89,8 +82,6 @@ class HomeScreenView extends StatelessWidget {
             // 主内容
             controller.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : dateView
-                ? _buildDateViewContent(context)
                 : controller.savedLayouts.isEmpty
                 ? _buildHomeContent(context)
                 : Positioned.fill(
@@ -229,21 +220,6 @@ class HomeScreenView extends StatelessWidget {
             child: Container(color: Colors.transparent),
           ),
       ],
-    );
-  }
-
-  /// 构建日期视图内容（日期横条 + 排序选项 + 日期数据卡片网格）
-  Widget _buildDateViewContent(BuildContext context) {
-    return Positioned.fill(
-      child: Column(
-        children: [
-          // 日期横条：切换主页选中日期，日期卡片跟随刷新
-          const HomeDateBar(),
-          // 排序选项条
-          const HomeDateSortBar(),
-          const Expanded(child: HomeDateViewGrid()),
-        ],
-      ),
     );
   }
 

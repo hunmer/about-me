@@ -11,10 +11,7 @@ import 'home_screen_view.dart';
 /// - HomeScreenController: 状态管理和业务逻辑
 /// - HomeScreenView: UI 构建
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.dateView = false, this.asRoot = true});
-
-  /// 内容模式：true=日期数据视图（日程），false=固定布局网格（看板）
-  final bool dateView;
+  const HomeScreen({super.key, this.asRoot = true});
 
   /// 是否作为启动根页面：执行恢复上次插件等启动逻辑。
   /// 作为果冻小屋页签嵌入时应传 false
@@ -137,7 +134,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, TickerProvider
     return HomeScreenView(
       controller: _controller,
       tabController: _tabController,
-      dateView: widget.dateView,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
@@ -37,7 +38,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             index: _tabIndex,
             children: const [
               _CottageTab(),
-              HomeScreen(dateView: true, asRoot: false),
+              HomeScheduleScreen(),
               HomeScreen(asRoot: false),
               SettingsScreen(),
             ],
