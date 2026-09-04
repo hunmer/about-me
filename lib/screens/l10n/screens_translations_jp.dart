@@ -60,6 +60,12 @@ final Map<String, String> screensTranslationsJp = {
   'screens_blurLevel': 'ぼかしレベル',
   'screens_save': '保存',
   'screens_globalBackgroundImage': 'グローバル背景画像',
+  'screens_solidBackgroundColor': '単色背景',
+  'screens_solidBackgroundSet': '単色背景が設定されています',
+  'screens_solidBackgroundNotSet': '未設定（ライト/ダークのデフォルトに従う）',
+  'screens_solidBackgroundColorSettings': '単色背景設定',
+  'screens_restoreDefaultBackground': 'デフォルトの背景に戻す',
+  'screens_themeBackgroundDescription': '背景画像と単色背景はすべての画面に適用されます。両方設定した場合、画像が上に表示され、カバーされない部分は単色で埋められます。未設定の場合はシステムのデフォルトを使用します。ホーム画面で個別に設定した背景画像が優先されます。',
 
   // create_folder_dialog
   'screens_selectIcon': 'アイコンを選択',

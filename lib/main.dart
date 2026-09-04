@@ -12,7 +12,9 @@ import 'package:procm_sdk_dart/procm_sdk_dart.dart';
 
 // GetX 统一翻译导入
 import 'package:aboutme/l10n/unified_translations.dart';
+import 'package:aboutme/core/widgets/app_background.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/core/services/app_background_controller.dart';
 
 // 第三方库国际化
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -284,49 +286,74 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       initial: savedThemeMode ?? AdaptiveThemeMode.light,
       builder:
           (theme, darkTheme) => WidgetUriHandler(
-            child: GetMaterialApp(
-              translations: UnifiedTranslations(),
-              locale: _getInitialLocale(globalConfigManager.getLocale()),
-              fallbackLocale: const Locale('zh', 'CN'),
-              scaffoldMessengerKey: scaffoldMessengerKey,
-              navigatorKey: navigatorKey,
-              title: 'Aboutme',
-              debugShowCheckedModeBanner: false,
-              localizationsDelegates: const [
-                // 仅保留第三方库的国际化
-                SfGlobalLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                FlutterQuillLocalizations.delegate,
-              ],
-              supportedLocales: const [
-                Locale('zh', 'CN'), // 中文
-                Locale('en', 'US'), // 英文
-                Locale('ja', 'JP'), // 日文
-              ],
-              theme: theme,
-              darkTheme: darkTheme,
-              builder: (context, child) {
-                // 确保字体大小不受系统设置影响
-                // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
-                // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
-                return DSThemeBridge(
-                  child: MediaQuery(
-                    data: MediaQuery.of(
-                      context,
-                    ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                    child: StyledToast(child: child!),
-                  ),
+            child: ListenableBuilder(
+              listenable: AppBackgroundController(),
+              builder: (context, _) {
+                // 设置全局主题背景（背景图/纯色）后，Scaffold/AppBar 纯色背景改为透明以透出背景
+                final hasCustomBackground =
+                    AppBackgroundController().hasCustomBackground;
+                return GetMaterialApp(
+                  translations: UnifiedTranslations(),
+                  locale: _getInitialLocale(globalConfigManager.getLocale()),
+                  fallbackLocale: const Locale('zh', 'CN'),
+                  scaffoldMessengerKey: scaffoldMessengerKey,
+                  navigatorKey: navigatorKey,
+                  title: 'Aboutme',
+                  debugShowCheckedModeBanner: false,
+                  localizationsDelegates: const [
+                    // 仅保留第三方库的国际化
+                    SfGlobalLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    FlutterQuillLocalizations.delegate,
+                  ],
+                  supportedLocales: const [
+                    Locale('zh', 'CN'), // 中文
+                    Locale('en', 'US'), // 英文
+                    Locale('ja', 'JP'), // 日文
+                  ],
+                  theme:
+                      hasCustomBackground ? _transparentSurfaces(theme) : theme,
+                  darkTheme:
+                      hasCustomBackground
+                          ? _transparentSurfaces(darkTheme)
+                          : darkTheme,
+                  builder: (context, child) {
+                    // 确保字体大小不受系统设置影响
+                    // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
+                    // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
+                    return DSThemeBridge(
+                      // 全局主题背景：垫在根 Navigator 之下，所有界面共用
+                      child: AppBackground(
+                        child: MediaQuery(
+                          data: MediaQuery.of(
+                            context,
+                          ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                          child: StyledToast(child: child!),
+                        ),
+                      ),
+                    );
+                  },
+                  initialRoute: AppRoutes.initialRoute,
+                  routes: AppRoutes.routes,
+                  onGenerateRoute: AppRoutes.generateRoute,
+                  navigatorObservers: [RouteHistoryManager()],
+                  onGenerateTitle: (BuildContext context) => 'app_appTitle'.tr,
                 );
               },
-              initialRoute: AppRoutes.initialRoute,
-              routes: AppRoutes.routes,
-              onGenerateRoute: AppRoutes.generateRoute,
-              navigatorObservers: [RouteHistoryManager()],
-              onGenerateTitle: (BuildContext context) => 'app_appTitle'.tr,
             ),
           ),
+    );
+  }
+
+  /// 全局主题背景生效时，将界面纯色背景（Scaffold/AppBar）改为透明
+  ThemeData _transparentSurfaces(ThemeData theme) {
+    return theme.copyWith(
+      scaffoldBackgroundColor: Colors.transparent,
+      appBarTheme: theme.appBarTheme.copyWith(
+        backgroundColor: Colors.transparent,
+      ),
     );
   }
 }

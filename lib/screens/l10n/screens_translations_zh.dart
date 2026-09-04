@@ -60,6 +60,12 @@ final Map<String, String> screensTranslationsZh = {
   'screens_blurLevel': '模糊程度',
   'screens_save': '保存',
   'screens_globalBackgroundImage': '全局背景图',
+  'screens_solidBackgroundColor': '纯色背景',
+  'screens_solidBackgroundSet': '已设置纯色背景',
+  'screens_solidBackgroundNotSet': '未设置（跟随深浅色默认）',
+  'screens_solidBackgroundColorSettings': '纯色背景设置',
+  'screens_restoreDefaultBackground': '恢复默认背景',
+  'screens_themeBackgroundDescription': '背景图与纯色背景应用于应用内所有界面；两者同时设置时背景图在上、纯色填充未覆盖区域，均未设置时使用系统默认背景。主页单独设置的背景图仍优先显示。',
 
   // create_folder_dialog
   'screens_selectIcon': '选择图标',

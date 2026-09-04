@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:aboutme/core/services/backup_service.dart';
 import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/core/services/app_background_controller.dart';
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/adaptive_switch.dart';
@@ -16,6 +17,7 @@ import 'package:aboutme/core/floating_ball/settings_screen.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 import 'package:aboutme/screens/settings_screen/screens/data_management_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/device_sync_screen.dart';
+import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
 import 'package:aboutme/screens/about_screen/about_screen.dart';
 import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
 import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
@@ -351,6 +353,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: ThemeController.isDarkTheme(context),
               onChanged: (value) => _controller.setTheme(context, value),
             ),
+          ),
+          // 主题设置：全局背景图，应用于所有界面
+          ListenableBuilder(
+            listenable: AppBackgroundController(),
+            builder: (context, _) {
+              return ListTile(
+                leading: const Icon(Icons.image),
+                title: Text('screens_themeSettings'.tr),
+                subtitle: Text(
+                  AppBackgroundController().hasBackground
+                      ? 'screens_backgroundImageSet'.tr
+                      : AppBackgroundController().backgroundColor != null
+                      ? 'screens_solidBackgroundSet'.tr
+                      : 'screens_backgroundImageNotSet'.tr,
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  NavigationHelper.push(
+                    context,
+                    const ThemeBackgroundSettingsScreen(),
+                    routeName: '/settings/theme_background',
+                  );
+                },
+              );
+            },
           ),
           const Divider(),
 

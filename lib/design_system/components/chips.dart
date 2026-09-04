@@ -12,6 +12,7 @@ class DSChip extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
+    this.leading,
     this.badge,
     this.selected = false,
     this.onSelected,
@@ -22,6 +23,9 @@ class DSChip extends StatelessWidget {
 
   /// 可选前缀图标
   final DsIconKind? icon;
+
+  /// 自定义前缀部件（如优先级色点），与 [icon] 二选一
+  final Widget? leading;
 
   /// 角标文本（如过滤项当前值的简写），跟随选中态着色
   final String? badge;
@@ -57,6 +61,10 @@ class DSChip extends StatelessWidget {
                         ? (onSelected == null ? theme.surface : theme.onPrimary)
                         : theme.textSub,
               ),
+              const SizedBox(width: 6),
+            ],
+            if (leading != null) ...[
+              leading!,
               const SizedBox(width: 6),
             ],
             Text(

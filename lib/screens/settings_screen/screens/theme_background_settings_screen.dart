@@ -1,0 +1,738 @@
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+
+/// 全局主题背景设置页面
+///
+/// 复刻主页的主题设置页面（background_settings_page）中的全局背景设置，
+/// 但作用于应用内所有界面：设置背景图或纯色背景后，
+/// 所有界面的默认纯色背景将被其替代。
+/// 不包含小组件透明度与主页布局背景设置。
+class ThemeBackgroundSettingsScreen extends StatefulWidget {
+  const ThemeBackgroundSettingsScreen({super.key});
+
+  @override
+  State<ThemeBackgroundSettingsScreen> createState() =>
+      _ThemeBackgroundSettingsScreenState();
+}
+
+class _ThemeBackgroundSettingsScreenState
+    extends State<ThemeBackgroundSettingsScreen> {
+  final AppBackgroundController _controller = AppBackgroundController();
+
+  bool _isLoading = true;
+
+  // 全局背景图设置
+  String? _backgroundPath;
+  BoxFit _backgroundFit = BoxFit.cover;
+  double _backgroundBlur = 0.0;
+
+  // 全局纯色背景
+  Color? _backgroundColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  /// 加载设置
+  Future<void> _loadSettings() async {
+    try {
+      await _controller.initialize();
+
+      if (mounted) {
+        setState(() {
+          _backgroundPath = _controller.backgroundPath;
+          _backgroundFit = _controller.backgroundFit;
+          _backgroundBlur = _controller.backgroundBlur;
+          _backgroundColor = _controller.backgroundColor;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('加载主题背景设置失败: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// 选择图片
+  Future<String?> _pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        return result.files.first.path;
+      }
+    } catch (e) {
+      debugPrint('选择图片失败: $e');
+      if (mounted) {
+        toastService.showToast('选择图片失败：$e');
+      }
+    }
+    return null;
+  }
+
+  /// 保存全局背景设置
+  Future<void> _saveBackground() async {
+    try {
+      await _controller.save(
+        backgroundPath: _backgroundPath,
+        backgroundFit: _backgroundFit,
+        backgroundBlur: _backgroundBlur,
+      );
+
+      if (mounted) {
+        toastService.showToast('主题设置已保存');
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('保存失败：$e');
+      }
+    }
+  }
+
+  /// 保存纯色背景设置（null 表示清除，恢复系统默认背景）
+  Future<void> _saveBackgroundColor(Color? color) async {
+    try {
+      await _controller.saveBackgroundColor(color);
+
+      if (mounted) {
+        toastService.showToast(color != null ? '主题设置已保存' : '已恢复默认背景');
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('保存失败：$e');
+      }
+    }
+  }
+
+  /// 应用纯色背景
+  void _applyBackgroundColor(Color? color) {
+    setState(() {
+      _backgroundColor = color;
+    });
+    _saveBackgroundColor(color);
+  }
+
+  /// 填充方式选项
+  static final List<DSSelectItem<BoxFit>> _fitItems = [
+    DSSelectItem(value: BoxFit.cover, label: 'screens_cover'.tr),
+    DSSelectItem(value: BoxFit.contain, label: 'screens_contain'.tr),
+    DSSelectItem(value: BoxFit.fill, label: 'screens_fill'.tr),
+    DSSelectItem(value: BoxFit.fitWidth, label: 'screens_fitWidth'.tr),
+    DSSelectItem(value: BoxFit.fitHeight, label: 'screens_fitHeight'.tr),
+    DSSelectItem(value: BoxFit.none, label: 'screens_none'.tr),
+    DSSelectItem(value: BoxFit.scaleDown, label: 'screens_scaleDown'.tr),
+  ];
+
+  /// 显示全局背景设置对话框
+  void _showBackgroundDialog() {
+    String? tempPath = _backgroundPath;
+    BoxFit tempFit = _backgroundFit;
+    double tempBlur = _backgroundBlur;
+
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'screens_globalBackgroundSettings'.tr,
+                                textAlign: TextAlign.center,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 背景图预览
+                              if (tempPath != null)
+                                _buildPreview(
+                                  theme,
+                                  tempPath!,
+                                  tempFit,
+                                  tempBlur,
+                                ),
+
+                              // 选择图片按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_selectImage'.tr,
+                                      icon: DsIconKind.image,
+                                      onPressed: () async {
+                                        final path = await _pickImage();
+                                        if (path != null) {
+                                          setDialogState(() {
+                                            tempPath = path;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  if (tempPath != null) ...[
+                                    SizedBox(width: theme.spacing.sm),
+                                    DSIconButton(
+                                      icon: DsIconKind.close,
+                                      size: 40,
+                                      color: theme.surfaceAlt,
+                                      iconColor: theme.textSub,
+                                      onPressed: () {
+                                        setDialogState(() {
+                                          tempPath = null;
+                                        });
+                                      },
+                                      tooltip: 'screens_clear'.tr,
+                                    ),
+                                  ],
+                                ],
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 填充方式
+                              Text(
+                                'screens_fillMode'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              DSSelect<BoxFit>(
+                                items: _fitItems,
+                                value: tempFit,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    tempFit = value;
+                                  });
+                                },
+                              ),
+
+                              SizedBox(height: theme.spacing.xl),
+
+                              // 模糊程度
+                              Text(
+                                'screens_blurLevel'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSSlider(
+                                      value: tempBlur / 10,
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          tempBlur = value * 10;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: Text(
+                                      tempBlur.toStringAsFixed(1),
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 操作按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_cancel'.tr,
+                                      variant: DSButtonVariant.outline,
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ),
+                                  SizedBox(width: theme.spacing.md),
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_save'.tr,
+                                      onPressed: () {
+                                        setState(() {
+                                          _backgroundPath = tempPath;
+                                          _backgroundFit = tempFit;
+                                          _backgroundBlur = tempBlur;
+                                        });
+                                        _saveBackground();
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          ),
+    );
+  }
+
+  /// 背景图预览（带模糊叠层）
+  Widget _buildPreview(
+    AppThemeData theme,
+    String path,
+    BoxFit fit,
+    double blur,
+  ) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: theme.spacing.lg),
+      decoration: BoxDecoration(
+        borderRadius: theme.radii.sm,
+        border: Border.all(color: theme.stroke),
+      ),
+      child: ClipRRect(
+        borderRadius: theme.radii.sm,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(File(path), fit: fit),
+            if (blur > 0)
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+                child: Container(color: const Color(0x00000000)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 显示纯色背景选择对话框（预设颜色 + 自定义颜色）
+  void _showSolidColorDialog() {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'screens_solidBackgroundColorSettings'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+
+                        // 预设颜色网格
+                        Text(
+                          'screens_presetColors'.tr,
+                          style: DsTypography.heading.copyWith(
+                            color: theme.text,
+                          ),
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                        Wrap(
+                          spacing: theme.spacing.sm,
+                          runSpacing: theme.spacing.sm,
+                          children:
+                              _predefinedColors.map((color) {
+                                final isSelected = _backgroundColor == color;
+                                return GestureDetector(
+                                  onTap: () {
+                                    _applyBackgroundColor(color);
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color:
+                                            isSelected
+                                                ? theme.primary
+                                                : theme.stroke,
+                                        width: isSelected ? 3 : 1.4,
+                                      ),
+                                    ),
+                                    child:
+                                        isSelected
+                                            ? const Center(
+                                              child: DsIcon(
+                                                DsIconKind.check,
+                                                size: 20,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                            : null,
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+
+                        // 自定义颜色按钮
+                        DSButton(
+                          label: 'screens_customColorWithTransparency'.tr,
+                          icon: DsIconKind.palette,
+                          variant: DSButtonVariant.outline,
+                          expand: true,
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _showAdvancedColorPicker(
+                              _backgroundColor ?? Colors.blue,
+                            );
+                          },
+                        ),
+
+                        // 恢复默认背景（清除纯色设置）
+                        if (_backgroundColor != null) ...[
+                          SizedBox(height: theme.spacing.md),
+                          DSButton(
+                            label: 'screens_restoreDefaultBackground'.tr,
+                            icon: DsIconKind.close,
+                            variant: DSButtonVariant.ghost,
+                            expand: true,
+                            onPressed: () {
+                              _applyBackgroundColor(null);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                        SizedBox(height: theme.spacing.md),
+                        DSButton(
+                          label: 'screens_cancel'.tr,
+                          variant: DSButtonVariant.ghost,
+                          expand: true,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+    );
+  }
+
+  /// 显示高级颜色选择器（支持透明通道）
+  void _showAdvancedColorPicker(Color initialColor) {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) {
+        // pickerColor 需在 StatefulBuilder 外声明，避免重建时被重置
+        Color pickerColor = initialColor;
+        return StatefulBuilder(
+          builder:
+              (context, setDialogState) => DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return JellyBox(
+                      radius: theme.radii.xxl,
+                      padding: EdgeInsets.all(theme.spacing.xl),
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'screens_solidBackgroundColorSettings'.tr,
+                              textAlign: TextAlign.center,
+                              style: DsTypography.title.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.lg),
+
+                            // 颜色预览
+                            Container(
+                              width: double.infinity,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: pickerColor,
+                                borderRadius: theme.radii.md,
+                                border: Border.all(color: theme.stroke),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _formatColorInfo(pickerColor),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color:
+                                      pickerColor.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.lg),
+
+                            // 快速应用预设颜色
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'screens_presetColors'.tr,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.sm),
+                            SizedBox(
+                              height: 40,
+                              width: double.infinity,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _predefinedColors.length,
+                                separatorBuilder:
+                                    (_, __) =>
+                                        SizedBox(width: theme.spacing.sm),
+                                itemBuilder: (context, index) {
+                                  final color = _predefinedColors[index];
+                                  return GestureDetector(
+                                    onTap: () {
+                                      // 应用预设颜色到选择器
+                                      setDialogState(() {
+                                        pickerColor = color;
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: theme.stroke),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.lg),
+
+                            // 颜色选择器（支持透明通道）
+                            SizedBox(
+                              width: double.infinity,
+                              child: ColorPicker(
+                                pickerColor: pickerColor,
+                                onColorChanged: (Color color) {
+                                  setDialogState(() {
+                                    pickerColor = color;
+                                  });
+                                },
+                                enableAlpha: true, // 启用透明通道
+                                displayThumbColor: true,
+                                labelTypes: const [
+                                  ColorLabelType.rgb,
+                                  ColorLabelType.hsv,
+                                ],
+                                pickerAreaHeightPercent: 0.7,
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.md),
+
+                            // 操作按钮
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DSButton(
+                                    label: 'app_cancel'.tr,
+                                    variant: DSButtonVariant.outline,
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                  ),
+                                ),
+                                SizedBox(width: theme.spacing.md),
+                                Expanded(
+                                  child: DSButton(
+                                    label: 'app_confirm'.tr,
+                                    onPressed: () {
+                                      _applyBackgroundColor(pickerColor);
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+        );
+      },
+    );
+  }
+
+  /// 格式化颜色信息（使用新的 API）
+  String _formatColorInfo(Color color) {
+    final a = (color.a * 255.0).round().clamp(0, 255);
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
+    final hex = ((a << 24) | (r << 16) | (g << 8) | b)
+        .toRadixString(16)
+        .toUpperCase()
+        .padLeft(8, '0');
+    return 'ARGB: $a, $r, $g, $b\n#$hex';
+  }
+
+  /// 预定义颜色
+  static final List<Color> _predefinedColors = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('screens_themeSettings'.tr)),
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return _isLoading
+                ? Center(child: DSLoadingDots(color: theme.textSub))
+                : ListView(
+                  padding: EdgeInsets.all(theme.spacing.lg),
+                  children: [
+                    // 全局背景设置卡片
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.image,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'screens_globalBackgroundImage'.tr,
+                      subtitle:
+                          _backgroundPath != null
+                              ? 'screens_backgroundImageSet'.tr
+                              : 'screens_backgroundImageNotSet'.tr,
+                      showChevron: true,
+                      onTap: _showBackgroundDialog,
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 纯色背景设置卡片
+                    DSListItem(
+                      leading:
+                          _backgroundColor != null
+                              ? Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: _backgroundColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: theme.stroke),
+                                ),
+                              )
+                              : DsIcon(
+                                DsIconKind.palette,
+                                size: 22,
+                                color: theme.primary,
+                              ),
+                      title: 'screens_solidBackgroundColor'.tr,
+                      subtitle:
+                          _backgroundColor != null
+                              ? 'screens_solidBackgroundSet'.tr
+                              : 'screens_solidBackgroundNotSet'.tr,
+                      showChevron: true,
+                      onTap: _showSolidColorDialog,
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 提示信息
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'screens_themeBackgroundDescription'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+          },
+        ),
+      ),
+    );
+  }
+}

@@ -1,3 +1,4 @@
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -57,10 +58,11 @@ class FilterBuilders {
 
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: availableTags.map((tag) {
         final isSelected = selectedTags.contains(tag);
-        return FilterChip(
-          label: Text(tag),
+        return DSChip(
+          label: tag,
           selected: isSelected,
           onSelected: (selected) {
             final newTags = List<String>.from(selectedTags);
@@ -71,7 +73,6 @@ class FilterBuilders {
             }
             onChanged(newTags);
           },
-          visualDensity: VisualDensity.compact,
         );
       }).toList(),
     );
@@ -88,15 +89,15 @@ class FilterBuilders {
 
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: availableTags.map((tag) {
         final isSelected = selectedTag == tag;
-        return FilterChip(
-          label: Text(tag),
+        return DSChip(
+          label: tag,
           selected: isSelected,
           onSelected: (selected) {
             onChanged(selected ? tag : null);
           },
-          visualDensity: VisualDensity.compact,
         );
       }).toList(),
     );
@@ -114,24 +115,24 @@ class FilterBuilders {
 
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: priorityLabels.entries.map((entry) {
         final priority = entry.key;
         final label = entry.value;
         final color = priorityColors[priority] ?? Colors.grey;
         final isSelected = selectedPriority == priority;
 
-        return FilterChip(
-          label: Text(label),
+        return DSChip(
+          label: label,
+          leading: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           selected: isSelected,
-          selectedColor: color.withOpacity(0.3),
           onSelected: (selected) {
             onChanged(selected ? priority : null);
           },
-          visualDensity: VisualDensity.compact,
-          avatar: CircleAvatar(
-            backgroundColor: color,
-            radius: 6,
-          ),
         );
       }).toList(),
     );
@@ -351,8 +352,8 @@ class FilterBuilders {
         final isSelected = selectedValue == key ||
                           (selectedValue == null && key == allItemsKey);
 
-        return FilterChip(
-          label: Text(label),
+        return DSChip(
+          label: label,
           selected: isSelected,
           onSelected: (selected) {
             if (selected) {
@@ -363,7 +364,6 @@ class FilterBuilders {
               onChanged(null);
             }
           },
-          visualDensity: VisualDensity.compact,
         );
       }).toList(),
     );
@@ -392,21 +392,19 @@ class FilterBuilders {
 
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: options.entries.map((entry) {
         final key = entry.key;
         final label = entry.value;
         final isSelected = selectedValue == key;
 
-        return FilterChip(
-          label: Text(label),
+        return DSChip(
+          label: label,
+          icon: isSelected ? DsIconKind.check : DsIconKind.sort,
           selected: isSelected,
           onSelected: (selected) {
             onChanged(selected ? key : null);
           },
-          visualDensity: VisualDensity.compact,
-          avatar: isSelected
-              ? const Icon(Icons.check, size: 16)
-              : const Icon(Icons.sort, size: 16),
         );
       }).toList(),
     );
