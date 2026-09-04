@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:super_cupertino_navigation_bar/super_cupertino_navigation_bar.dart';
 import 'super_cupertino_navigation_wrapper/filter_models.dart';
 import 'super_cupertino_navigation_wrapper/multi_filter_bar.dart';
@@ -565,10 +566,41 @@ class _SuperCupertinoNavigationWrapperState
   /// 构建搜索栏
   SuperSearchBar _buildSearchBar() {
     // 注意：此方法仅在 enableSearchBar=true 时被调用
+    // 样式对齐设计系统 DSInput.search（本地 vendor 包提供了 decoration 插槽）
+    final ds = AppTheme.of(context);
     return SuperSearchBar(
       enabled: true,
       scrollBehavior: SearchBarScrollBehavior.pinned,
       resultBehavior: SearchBarResultBehavior.neverVisible,
+      height: 44,
+      // 空态为浅紫填充 + 浅描边，进入搜索状态后填充/描边向主色调染，
+      // 呼应 DSInput 的聚焦变色
+      searchFieldDecoration: BoxDecoration(
+        color:
+            _isSearchFocused
+                ? Color.lerp(
+                  ds.backgroundAlt,
+                  ds.primary,
+                  ds.isDark ? 0.30 : 0.14,
+                )!
+                : ds.backgroundAlt,
+        borderRadius: ds.radii.pill,
+        border: Border.all(
+          color:
+              _isSearchFocused
+                  ? ds.primary
+                  : ds.textSub.withValues(alpha: 0.45),
+          width: 1.6,
+        ),
+        boxShadow: ds.shadows.soft,
+      ),
+      prefixIcon: DsIcon(DsIconKind.search, size: 20, color: ds.textSub),
+      textStyle: DsTypography.body.copyWith(color: ds.text),
+      placeholderTextStyle: DsTypography.body.copyWith(
+        color: ds.textSub.withValues(alpha: 0.75),
+      ),
+      cancelButtonText: 'core_cancel'.tr,
+      cancelTextStyle: DsTypography.button.copyWith(color: ds.primaryText),
       placeholderText:
           widget.searchPlaceholder.isNotEmpty
               ? widget.searchPlaceholder

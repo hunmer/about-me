@@ -1856,10 +1856,9 @@ packages:
   super_cupertino_navigation_bar:
     dependency: "direct main"
     description:
-      name: super_cupertino_navigation_bar
-      sha256: c725330bc7f135862ffe7c4e1f04772a35740d78f2f5d97a7200b910638f7668
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/super_cupertino_navigation_bar"
+      relative: true
+    source: path
     version: "2.1.2"
   super_native_extensions:
     dependency: transitive

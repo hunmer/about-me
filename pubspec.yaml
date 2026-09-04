@@ -109,7 +109,9 @@ dependencies:
   lpinyin: ^2.0.3  # Chinese pinyin conversion for tag filtering
   watch_connectivity: ^0.2.8  # Watch connectivity for watchOS communication
   flutter_floating_bottom_bar: ^1.3.0  # Floating bottom bar for bill plugin
-  super_cupertino_navigation_bar: ^2.0.0  # Super Cupertino Navigation Bar
+  # Super Cupertino Navigation Bar（本地 vendor 版：https://github.com/kspo/super_cupertino_navigation_bar @ 2.1.2，扩展了搜索框自定义样式）
+  super_cupertino_navigation_bar:
+    path: packages/super_cupertino_navigation_bar
   floating_ball_plugin:
     path: packages/floating_ball_plugin
   aboutme_widgets:
