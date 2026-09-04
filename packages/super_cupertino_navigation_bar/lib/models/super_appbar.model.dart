@@ -13,6 +13,7 @@ class SuperAppBar {
     this.automaticallyImplyLeading = true,
     this.titleSpacing = 15,
     this.previousPageTitle = "Back",
+    this.previousPageTitleStyle,
     this.alwaysShowTitle = false,
     this.searchBar,
     this.largeTitle,
@@ -100,6 +101,10 @@ class SuperAppBar {
 
   /// {@macro flutter.cupertino.CupertinoNavigationBar.previousPageTitle}
   final String previousPageTitle;
+
+  /// 自定义返回标签（chevron 旁的前页标题）文字样式，
+  /// 合并到导航动作默认样式之上；null 时沿用默认
+  final TextStyle? previousPageTitleStyle;
 
   /// Controls whether [middle] widget should always be visible (even in
   /// expanded state).

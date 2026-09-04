@@ -170,6 +170,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
       automaticallyImplyLeading: widget.appBar.automaticallyImplyLeading,
       automaticallyImplyTitle: true,
       previousPageTitle: widget.appBar.previousPageTitle,
+      previousPageTitleStyle: widget.appBar.previousPageTitleStyle,
       userMiddle: widget.appBar.title,
       userTrailing: widget.appBar.actions,
       largeTitleActions: Row(children: [...?widget.appBar.largeTitle!.actions]),

@@ -25,6 +25,7 @@ class SuperCupertinoNavigationBarBackButton extends StatelessWidget {
     super.key,
     this.color,
     this.previousPageTitle,
+    this.previousPageTitleStyle,
     this.onPressed,
   })  : backChevron = null,
         backLabel = null;
@@ -35,6 +36,7 @@ class SuperCupertinoNavigationBarBackButton extends StatelessWidget {
       this.backChevron, this.backLabel,
       {super.key})
       : previousPageTitle = null,
+        previousPageTitleStyle = null,
         color = null,
         onPressed = null;
 
@@ -49,6 +51,9 @@ class SuperCupertinoNavigationBarBackButton extends StatelessWidget {
   /// automatically derived from [CupertinoPageRoute.title] if the current and
   /// previous routes are both [CupertinoPageRoute]s.
   final String? previousPageTitle;
+
+  /// 自定义返回标签文字样式；null 时沿用 [CupertinoTheme] 的导航动作样式
+  final TextStyle? previousPageTitleStyle;
 
   /// An override callback to perform instead of the default behavior which is
   /// to pop the [Navigator].
@@ -105,6 +110,7 @@ class SuperCupertinoNavigationBarBackButton extends StatelessWidget {
                       BackLabel(
                         specifiedPreviousTitle: previousPageTitle,
                         route: currentRoute,
+                        textStyle: previousPageTitleStyle,
                       ),
                 ),
               ],

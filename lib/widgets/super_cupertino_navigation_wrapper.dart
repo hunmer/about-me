@@ -66,6 +66,10 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 返回按钮标题
   final String? previousPageTitle;
 
+  /// 返回按钮标题文字样式
+  /// 为 null 时默认使用 DS 风格（DsTypography.body + primaryText）
+  final TextStyle? previousPageTitleStyle;
+
   /// 折叠状态回调
   final Function(bool)? onCollapsed;
 
@@ -153,6 +157,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     this.backgroundColor,
     this.automaticallyImplyLeading,
     this.previousPageTitle,
+    this.previousPageTitleStyle,
     this.onCollapsed,
     this.stretch = true,
     // 过滤栏参数
@@ -323,15 +328,14 @@ class _SuperCupertinoNavigationWrapperState
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Checkbox(
+                      DSCheckbox(
                         value: value,
                         onChanged: (bool? newValue) {
                           if (newValue != null) {
                             _updateSearchFilter(key, newValue);
                           }
                         },
-                        visualDensity: VisualDensity.compact,
-                        activeColor: Theme.of(context).colorScheme.primary,
+                        semanticLabel: label,
                       ),
                       Text(
                         label,
@@ -464,11 +468,14 @@ class _SuperCupertinoNavigationWrapperState
         widget.multiFilterToggleable &&
         widget.multiFilterItems != null &&
         widget.multiFilterItems!.isNotEmpty) {
+      final ds = AppTheme.of(context);
       actionsList.add(
-        IconButton(
-          icon: Icon(
-            _isMultiFilterVisible ? Icons.filter_list : Icons.filter_list_off,
-          ),
+        DSIconButton(
+          // sort 图标（递减横线）即漏斗筛选图形；显示状态用主色、隐藏用次要色区分
+          icon: DsIconKind.sort,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: _isMultiFilterVisible ? ds.primary : ds.textSub,
           tooltip: _isMultiFilterVisible ? '隐藏过滤' : '显示过滤',
           onPressed: _toggleMultiFilter,
         ),
@@ -532,13 +539,25 @@ class _SuperCupertinoNavigationWrapperState
           (UniversalPlatform.isAndroid || UniversalPlatform.isIOS)
               ? null
               : (widget.onLeadingPressed != null
-                  ? IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: widget.onLeadingPressed,
+                  ? Builder(
+                    builder: (context) {
+                      final ds = AppTheme.of(context);
+                      return DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 36,
+                        color: ds.surfaceAlt,
+                        iconColor: ds.textSub,
+                        tooltip: widget.previousPageTitle ?? 'core_back'.tr,
+                        onPressed: widget.onLeadingPressed,
+                      );
+                    },
                   )
                   : null),
       title: widget.title,
       previousPageTitle: widget.previousPageTitle ?? 'core_back'.tr,
+      previousPageTitleStyle:
+          widget.previousPageTitleStyle ??
+          DsTypography.body.copyWith(color: AppTheme.of(context).primaryText),
       actions: _buildActions(),
       bottom: _buildBottomBar(),
       largeTitle: SuperLargeTitle(

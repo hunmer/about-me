@@ -451,13 +451,12 @@ class _ChatScreenState extends State<ChatScreen> {
             children:
                 allUsers.map((user) {
                   final isSelected = currentValue == user.id;
-                  return FilterChip(
-                    label: Text(user.username),
+                  return DSChip(
+                    label: user.username,
                     selected: isSelected,
                     onSelected: (selected) {
                       onChanged(selected ? user.id : null);
                     },
-                    showCheckmark: true,
                   );
                 }).toList(),
           );
@@ -584,8 +583,8 @@ class _ChatScreenState extends State<ChatScreen> {
               children:
                   allTags.map((tag) {
                     final isSelected = selectedTags.contains(tag);
-                    return FilterChip(
-                      label: Text(tag),
+                    return DSChip(
+                      label: tag,
                       selected: isSelected,
                       onSelected: (selected) {
                         final newTags = List<String>.from(selectedTags);
@@ -596,7 +595,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         }
                         onChanged(newTags.isEmpty ? null : newTags);
                       },
-                      showCheckmark: true,
                     );
                   }).toList(),
             );
@@ -793,20 +791,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 构建 Actions 按钮
   List<Widget> _buildActions() {
+    final ds = AppTheme.of(context);
     if (_controller.isMultiSelectMode) {
       return [
-        IconButton(
-          icon: const Icon(Icons.copy),
+        DSIconButton(
+          icon: DsIconKind.copy,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: ds.textSub,
           onPressed: _copySelectedMessages,
           tooltip: '复制选中消息',
         ),
-        IconButton(
-          icon: const Icon(Icons.delete),
+        DSIconButton(
+          icon: DsIconKind.trash,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: ds.danger,
           onPressed: _deleteSelectedMessages,
           tooltip: '删除选中消息',
         ),
-        IconButton(
-          icon: const Icon(Icons.close),
+        DSIconButton(
+          icon: DsIconKind.close,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: ds.textSub,
           onPressed: _controller.toggleMultiSelectMode,
           tooltip: '退出多选模式',
         ),
@@ -815,6 +823,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return [
       PopupMenuButton<String>(
+        padding: EdgeInsets.zero,
+        tooltip: '更多操作',
+        child: DSIconButton(
+          icon: DsIconKind.more,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: ds.textSub,
+        ),
         onSelected: (value) {
           if (value == 'multi_select') {
             _controller.toggleMultiSelectMode();
@@ -824,23 +840,23 @@ class _ChatScreenState extends State<ChatScreen> {
         },
         itemBuilder:
             (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'multi_select',
                 child: Row(
                   children: [
-                    Icon(Icons.select_all),
-                    SizedBox(width: 12),
-                    Text('多选模式'),
+                    DsIcon(DsIconKind.list, size: 18, color: ds.textSub),
+                    const SizedBox(width: 12),
+                    const Text('多选模式'),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'clear',
                 child: Row(
                   children: [
-                    Icon(Icons.clear_all),
-                    SizedBox(width: 12),
-                    Text('清空消息'),
+                    DsIcon(DsIconKind.trash, size: 18, color: ds.danger),
+                    const SizedBox(width: 12),
+                    const Text('清空消息'),
                   ],
                 ),
               ),

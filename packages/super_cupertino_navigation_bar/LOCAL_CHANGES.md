@@ -18,6 +18,14 @@
   副本）透传 `searchFieldDecoration`；此时 `backgroundColor` 传 null
   （SDK 侧两者互斥，同时传会 assert）。交互态那处本就是透明背景的
   叠加层，维持不变
+- `NavigationBarStaticComponents` 构造时透传 `previousPageTitleStyle`
+
+### 返回标签自定义样式
+
+- `SuperAppBar` 新增 `previousPageTitleStyle`（`TextStyle?`），链路：
+  model → src → `NavigationBarStaticComponents.createBackLabel` →
+  `BackLabel.textStyle`（`Text.style` 合并到导航动作默认样式之上）；
+  `SuperCupertinoNavigationBarBackButton` 直接构造路径也支持同名参数
 
 ## 同步上游
 

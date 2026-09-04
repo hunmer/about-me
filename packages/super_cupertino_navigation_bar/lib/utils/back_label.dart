@@ -7,10 +7,15 @@ class BackLabel extends StatelessWidget {
     super.key,
     required this.specifiedPreviousTitle,
     required this.route,
+    this.textStyle,
   });
 
   final String? specifiedPreviousTitle;
   final ModalRoute<dynamic>? route;
+
+  /// 自定义标签文字样式；为 null 时沿用导航动作默认样式。
+  /// Text 的 style 会合并到上层 DefaultTextStyle 之上，可只传部分属性
+  final TextStyle? textStyle;
 
   // `child` is never passed in into ValueListenableBuilder so it's always
   // null here and unused.
@@ -24,10 +29,11 @@ class BackLabel extends StatelessWidget {
       previousTitle,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      style: textStyle,
     );
 
     if (previousTitle.length > 12) {
-      textWidget = const Text('Back');
+      textWidget = Text('Back', style: textStyle);
     }
 
     return Align(

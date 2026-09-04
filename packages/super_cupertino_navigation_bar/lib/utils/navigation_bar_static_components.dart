@@ -23,6 +23,7 @@ class NavigationBarStaticComponents {
     required bool automaticallyImplyLeading,
     required bool automaticallyImplyTitle,
     required String? previousPageTitle,
+    TextStyle? previousPageTitleStyle,
     required Widget? userMiddle,
     required Widget? userTrailing,
     required Widget? userLargeTitle,
@@ -48,6 +49,7 @@ class NavigationBarStaticComponents {
           userLeading: userLeading,
           route: route,
           previousPageTitle: previousPageTitle,
+          previousPageTitleStyle: previousPageTitleStyle,
           automaticallyImplyLeading: automaticallyImplyLeading,
         ),
         middle = createMiddle(
@@ -170,6 +172,7 @@ class NavigationBarStaticComponents {
     required ModalRoute<dynamic>? route,
     required bool automaticallyImplyLeading,
     required String? previousPageTitle,
+    TextStyle? previousPageTitleStyle,
   }) {
     if (userLeading != null ||
         !automaticallyImplyLeading ||
@@ -184,6 +187,7 @@ class NavigationBarStaticComponents {
       child: BackLabel(
         specifiedPreviousTitle: previousPageTitle,
         route: route,
+        textStyle: previousPageTitleStyle,
       ),
     );
   }
