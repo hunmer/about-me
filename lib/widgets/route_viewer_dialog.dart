@@ -220,15 +220,6 @@ class _RouteViewerDialogState extends State<RouteViewerDialog> {
         ),
         onTap: () {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('路由: ${route.path}'),
-              action: SnackBarAction(
-                label: '复制',
-                onPressed: () {},
-              ),
-            ),
-          );
           try {
             Navigator.pushNamed(context, route.path);
           } catch (e) {
