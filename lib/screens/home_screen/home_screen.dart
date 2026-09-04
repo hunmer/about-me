@@ -16,8 +16,8 @@ class HomeScreen extends StatefulWidget {
   /// 内容模式：true=日期数据视图（日程），false=固定布局网格（看板）
   final bool dateView;
 
-  /// 是否作为启动根页面：执行恢复上次插件等启动逻辑，
-  /// 并隐藏底部导航（由果冻小屋主导航承担页签切换）
+  /// 是否作为启动根页面：执行恢复上次插件等启动逻辑。
+  /// 作为果冻小屋页签嵌入时应传 false
   final bool asRoot;
 
   @override
@@ -138,7 +138,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, TickerProvider
       controller: _controller,
       tabController: _tabController,
       dateView: widget.dateView,
-      showBottomNav: !widget.asRoot,
     );
   }
 }

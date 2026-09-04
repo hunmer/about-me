@@ -129,8 +129,6 @@ class AppRoutes extends NavigatorObserver {
 
   // ==================== 路由路径常量 ====================
   static const String home = '/';
-  static const String homeSchedule = '/home_schedule';
-  static const String homeBoard = '/home_board';
   static const String chat = '/chat';
   static const String diary = '/diary';
   static const String diaryDetail = '/diary_detail';

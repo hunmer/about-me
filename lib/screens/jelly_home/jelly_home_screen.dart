@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/home_screen/home_screen.dart';
+import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
 import 'widgets/jelly_bottom_nav.dart';
 import 'widgets/jelly_daily_tasks_card.dart';
@@ -9,14 +11,53 @@ import 'widgets/jelly_quick_action.dart';
 import 'widgets/jelly_stat_card.dart';
 import 'widgets/jelly_store_banner.dart';
 
-/// 果冻小屋主页（软糖果冻风布局还原）
+/// 果冻小屋主页（应用默认启动页）
+///
+/// 底部导航在四个页签间切换内容（不切换路由）：
+/// 小屋（果冻风布局）/ 日程（日期数据视图）/ 看板（固定布局网格）/ 我的（设置）。
+///
+/// 路由：/jelly_home
+class JellyHomeScreen extends StatefulWidget {
+  const JellyHomeScreen({super.key});
+
+  @override
+  State<JellyHomeScreen> createState() => _JellyHomeScreenState();
+}
+
+class _JellyHomeScreenState extends State<JellyHomeScreen> {
+  int _tabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          // IndexedStack 保活各页签状态（滚动位置、编辑进度等）
+          child: IndexedStack(
+            index: _tabIndex,
+            children: const [
+              _CottageTab(),
+              HomeScreen(dateView: true, asRoot: false),
+              HomeScreen(asRoot: false),
+              SettingsScreen(),
+            ],
+          ),
+        ),
+        JellyBottomNav(
+          current: JellyTab.values[_tabIndex],
+          onTap: (index) => setState(() => _tabIndex = index),
+        ),
+      ],
+    );
+  }
+}
+
+/// 小屋页签（软糖果冻风布局还原）
 ///
 /// 参考设计稿自上而下：资料卡 + 统计卡
-/// → 快捷操作（写日记/打卡/记账 + 新增键）→ 每日任务 + 成长 → 商店横幅 → 底部导航。
-///
-/// 路由：/jelly_home（默认启动页），底部导航：小屋 / 日程 / 看板 / 我的
-class JellyHomeScreen extends StatelessWidget {
-  const JellyHomeScreen({super.key});
+/// → 快捷操作（写日记/打卡/记账 + 新增键）→ 每日任务 + 成长 → 商店横幅。
+class _CottageTab extends StatelessWidget {
+  const _CottageTab();
 
   @override
   Widget build(BuildContext context) {
@@ -33,59 +74,50 @@ class JellyHomeScreen extends StatelessWidget {
             colors: [theme.backgroundAlt, theme.background],
           ),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: SafeArea(
-                bottom: false,
-                child: LayoutBuilder(
-                  builder: (context, viewport) => SingleChildScrollView(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-                    // 内容不足一屏时也撑满视口高度，让底部卡片组贴住底部导航
-                    child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(minHeight: viewport.maxHeight),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              SizedBox(height: theme.spacing.lg),
-                              _buildHeader(theme),
-                              SizedBox(height: theme.spacing.xl),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // 富余空间都在角色区之上，快捷操作行贴着底部卡片组
-                              SizedBox(height: theme.spacing.md),
-                              _buildQuickActions(theme),
-                              SizedBox(height: theme.spacing.lg),
-                              _buildTaskRow(theme),
-                              SizedBox(height: theme.spacing.lg),
-                              JellyStoreBanner(
-                                title: '插件商店上新',
-                                subtitle: '新插件限时免费领',
-                                onTap: () {},
-                              ),
-                              SizedBox(height: theme.spacing.lg),
-                            ],
-                          ),
-                        ],
-                      ),
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, viewport) => SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+              // 内容不足一屏时也撑满视口高度，让底部卡片组贴住底部导航
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: viewport.maxHeight),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(height: theme.spacing.lg),
+                        _buildHeader(theme),
+                        SizedBox(height: theme.spacing.xl),
+                      ],
                     ),
-                  ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 富余空间都在角色区之上，快捷操作行贴着底部卡片组
+                        SizedBox(height: theme.spacing.md),
+                        _buildQuickActions(theme),
+                        SizedBox(height: theme.spacing.lg),
+                        _buildTaskRow(theme),
+                        SizedBox(height: theme.spacing.lg),
+                        JellyStoreBanner(
+                          title: '插件商店上新',
+                          subtitle: '新插件限时免费领',
+                          onTap: () {},
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-            // 底部导航（固定）：小屋 / 日程 / 看板 / 我的
-            JellyBottomNav(current: JellyTab.cottage),
-          ],
+          ),
         ),
       ),
     );
