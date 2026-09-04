@@ -12,6 +12,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// Habits 插件的底部栏组件
@@ -32,12 +33,6 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
-
-  // 使用插件主题色和辅助色
-  final List<Color> _colors = [
-    Colors.amber, // Tab0 - 习惯列表 (插件主色)
-    Colors.orange.shade600, // Tab1 - 技能列表
-  ];
 
   late final HabitController _habitController;
   late final SkillController _skillController;
@@ -131,7 +126,6 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -156,9 +150,9 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
             ],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(icon: Icon(Icons.check_circle), text: 'habits_habits'.tr),
-        Tab(icon: Icon(Icons.star), text: 'habits_skills'.tr),
+      items: [
+        DSNavItem(icon: DsIconKind.check, label: 'habits_habits'.tr),
+        DSNavItem(icon: DsIconKind.star, label: 'habits_skills'.tr),
       ],
     );
   }

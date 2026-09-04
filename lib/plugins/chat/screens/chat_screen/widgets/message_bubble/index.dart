@@ -221,120 +221,128 @@ class _MessageBubbleState extends State<MessageBubble> {
     final backgroundColor = _getBackgroundColor(context);
     final textColor = _getTextColor(context);
 
-    return GestureDetector(
-      onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
-      onTap: widget.onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment:
-              _isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          children: [
-            // 左侧复选框（当前用户的消息在多选模式下显示）
-            if (_isCurrentUser && widget.isMultiSelectMode)
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0, top: 12.0),
-                child: _buildCheckbox(context),
-              ),
-            if (!_isCurrentUser && widget.showAvatar)
-              MessageAvatar(
-                user: _currentMessage.user,
-                onTap: widget.onAvatarTap,
-              )
-            else if (!_isCurrentUser && !widget.showAvatar)
-              const SizedBox(width: 0),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                crossAxisAlignment:
-                    _isCurrentUser
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        _isImageMessage()
-                            ? EdgeInsets.zero
-                            : const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color:
+    // 气泡内含 DS 组件(内部调 AppTheme.of),宿主可能无 AppTheme 祖树
+    // (如未迁移完的根目录 chat_screen / Overlay 重挂载),根部自包桥免疫
+    return DSThemeBridge(
+      child: GestureDetector(
+        onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
+        onTap: widget.onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment:
+                _isCurrentUser
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+            children: [
+              // 左侧复选框（当前用户的消息在多选模式下显示）
+              if (_isCurrentUser && widget.isMultiSelectMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0, top: 12.0),
+                  child: _buildCheckbox(context),
+                ),
+              if (!_isCurrentUser && widget.showAvatar)
+                MessageAvatar(
+                  user: _currentMessage.user,
+                  onTap: widget.onAvatarTap,
+                )
+              else if (!_isCurrentUser && !widget.showAvatar)
+                const SizedBox(width: 0),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment:
+                      _isCurrentUser
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding:
                           _isImageMessage()
-                              ? const Color(0x00000000)
-                              : backgroundColor,
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!_isCurrentUser)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4.0),
-                            child: Text(
-                              _currentMessage.user.username,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
+                              ? EdgeInsets.zero
+                              : const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color:
+                            _isImageMessage()
+                                ? const Color(0x00000000)
+                                : backgroundColor,
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!_isCurrentUser)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                _currentMessage.user.username,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
                               ),
                             ),
+                          if (replyMessage != null && widget.onReplyTap != null)
+                            ReplyWidget(
+                              replyMessage: replyMessage!,
+                              onTap: widget.onReplyTap!,
+                            ),
+                          MessageContent(
+                            message: _currentMessage,
+                            textColor: textColor,
                           ),
-                        if (replyMessage != null && widget.onReplyTap != null)
-                          ReplyWidget(
-                            replyMessage: replyMessage!,
-                            onTap: widget.onReplyTap!,
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!_isCurrentUser)
+                          MessageActions(
+                            onEdit: widget.onEdit,
+                            onDelete: widget.onDelete,
+                            onCopy: widget.onCopy,
+                            onSetFixedSymbol: widget.onSetFixedSymbol,
                           ),
-                        MessageContent(
-                          message: _currentMessage,
-                          textColor: textColor,
+                        if (_currentMessage.fixedSymbol != null)
+                          FixedSymbolWidget(
+                            symbol: _currentMessage.fixedSymbol!,
+                          ),
+                        if (widget.onToggleFavorite != null &&
+                            _currentMessage.metadata?['isFavorite'] == true)
+                          FavoriteIcon(
+                            isFavorite: true,
+                            onTap: widget.onToggleFavorite!,
+                          ),
+                        const SizedBox(width: 5),
+                        MessageTimestamp(
+                          date:
+                              _currentMessage.updatedAt ??
+                              _currentMessage.createdAt,
+                          isEdited: _currentMessage.updatedAt != null,
                         ),
                       ],
                     ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!_isCurrentUser)
-                        MessageActions(
-                          onEdit: widget.onEdit,
-                          onDelete: widget.onDelete,
-                          onCopy: widget.onCopy,
-                          onSetFixedSymbol: widget.onSetFixedSymbol,
-                        ),
-                      if (_currentMessage.fixedSymbol != null)
-                        FixedSymbolWidget(symbol: _currentMessage.fixedSymbol!),
-                      if (widget.onToggleFavorite != null &&
-                          _currentMessage.metadata?['isFavorite'] == true)
-                        FavoriteIcon(
-                          isFavorite: true,
-                          onTap: widget.onToggleFavorite!,
-                        ),
-                      const SizedBox(width: 5),
-                      MessageTimestamp(
-                        date:
-                            _currentMessage.updatedAt ??
-                            _currentMessage.createdAt,
-                        isEdited: _currentMessage.updatedAt != null,
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            if (_isCurrentUser && widget.showAvatar)
-              MessageAvatar(
-                user: _currentMessage.user,
-                onTap: widget.onAvatarTap,
-              )
-            else if (_isCurrentUser && !widget.showAvatar)
-              const SizedBox(width: 0),
-            // 右侧复选框（其他用户的消息在多选模式下显示）
-            if (!_isCurrentUser && widget.isMultiSelectMode)
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0, top: 12.0),
-                child: _buildCheckbox(context),
-              ),
-          ],
+              const SizedBox(width: 8),
+              if (_isCurrentUser && widget.showAvatar)
+                MessageAvatar(
+                  user: _currentMessage.user,
+                  onTap: widget.onAvatarTap,
+                )
+              else if (_isCurrentUser && !widget.showAvatar)
+                const SizedBox(width: 0),
+              // 右侧复选框（其他用户的消息在多选模式下显示）
+              if (!_isCurrentUser && widget.isMultiSelectMode)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 12.0),
+                  child: _buildCheckbox(context),
+                ),
+            ],
+          ),
         ),
       ),
     );

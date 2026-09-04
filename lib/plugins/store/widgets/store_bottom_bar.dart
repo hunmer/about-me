@@ -29,13 +29,6 @@ class _StoreBottomBarState extends State<StoreBottomBar>
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
 
-  // 使用插件主题色和辅助色
-  final List<Color> _colors = [
-    Colors.purple, // Tab0 - 商品列表 (插件主色)
-    Colors.blue.shade600, // Tab1 - 用户物品
-    Colors.green.shade600, // Tab2 - 积分历史
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -191,7 +184,6 @@ class _StoreBottomBarState extends State<StoreBottomBar>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -207,10 +199,10 @@ class _StoreBottomBarState extends State<StoreBottomBar>
             ],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(icon: Icon(Icons.shopping_bag), text: 'store_productList'.tr),
-        Tab(icon: Icon(Icons.inventory), text: 'store_myItems'.tr),
-        Tab(icon: Icon(Icons.history), text: 'store_pointsHistory'.tr),
+      items: [
+        DSNavItem(icon: DsIconKind.cart, label: 'store_productList'.tr),
+        DSNavItem(icon: DsIconKind.gift, label: 'store_myItems'.tr),
+        DSNavItem(icon: DsIconKind.clock, label: 'store_pointsHistory'.tr),
       ],
     );
   }

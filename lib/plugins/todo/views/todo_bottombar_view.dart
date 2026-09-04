@@ -182,7 +182,6 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -194,12 +193,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
             children: [_buildTabPage(0), _buildTabPage(1)],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(
-          icon: const Icon(Icons.check_box_outlined),
-          text: 'todo_todoTab'.tr,
-        ),
-        Tab(icon: const Icon(Icons.history), text: 'todo_historyTab'.tr),
+      items: [
+        DSNavItem(icon: DsIconKind.check, label: 'todo_todoTab'.tr),
+        DSNavItem(icon: DsIconKind.clock, label: 'todo_historyTab'.tr),
       ],
     );
   }

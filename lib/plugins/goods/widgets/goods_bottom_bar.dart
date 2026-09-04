@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
 /// Goods 插件的底部栏组件
@@ -27,12 +28,6 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
   late int _currentPage;
   String? _filterWarehouseId;
   final GlobalKey _bottomBarKey = GlobalKey();
-
-  // 使用插件主题色和辅助色
-  final List<Color> _colors = [
-    const Color.fromARGB(255, 207, 77, 116), // Tab0 - 仓库视图 (插件主色)
-    Colors.pink.shade400, // Tab1 - 物品视图
-  ];
 
   @override
   void initState() {
@@ -142,7 +137,6 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -162,9 +156,9 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
             ],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(icon: const Icon(Icons.warehouse), text: 'goods_warehouseTab'.tr),
-        Tab(icon: const Icon(Icons.inventory_2), text: 'goods_itemsTab'.tr),
+      items: [
+        DSNavItem(icon: DsIconKind.layers, label: 'goods_warehouseTab'.tr),
+        DSNavItem(icon: DsIconKind.gift, label: 'goods_itemsTab'.tr),
       ],
     );
   }

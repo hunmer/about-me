@@ -1124,12 +1124,6 @@ class _ActivityMainViewState extends State<ActivityMainView>
   late TabController _tabController;
   late int _currentPage;
   final Set<int> _visitedTabs = {0}; // 记录已访问的 tab，默认第一个已访问
-  final List<Color> _colors = [
-    Colors.pink,
-    Colors.purple,
-    Colors.blue,
-    Colors.orange,
-  ];
   final GlobalKey _bottomBarKey = GlobalKey(debugLabel: 'activity_bottom_bar');
 
   @override
@@ -1203,7 +1197,6 @@ class _ActivityMainViewState extends State<ActivityMainView>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -1227,9 +1220,9 @@ class _ActivityMainViewState extends State<ActivityMainView>
             ],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(icon: const Icon(Icons.timeline), text: 'activity_timeline'.tr),
-        Tab(icon: const Icon(Icons.bar_chart), text: 'activity_statistics'.tr),
+      items: [
+        DSNavItem(icon: DsIconKind.list, label: 'activity_timeline'.tr),
+        DSNavItem(icon: DsIconKind.columns, label: 'activity_statistics'.tr),
       ],
     );
   }

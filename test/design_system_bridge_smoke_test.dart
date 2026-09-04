@@ -1,10 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_card.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_grid.dart';
+
+/// CustomBottomBar 冒烟载体:TabController + DS 导航 + TabBarView
+class _BottomBarHarness extends StatefulWidget {
+  const _BottomBarHarness();
+
+  @override
+  State<_BottomBarHarness> createState() => _BottomBarHarnessState();
+}
+
+class _BottomBarHarnessState extends State<_BottomBarHarness>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomBottomBar(
+      items: const [
+        DSNavItem(icon: DsIconKind.check, label: '待办'),
+        DSNavItem(icon: DsIconKind.clock, label: '历史'),
+      ],
+      currentIndex: _tabController.index,
+      tabController: _tabController,
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            children: const [
+              Center(child: Text('page0')),
+              Center(child: Text('page1')),
+            ],
+          ),
+    );
+  }
+}
 
 void main() {
   HomeFolderItem makeFolder() => HomeFolderItem(
@@ -195,6 +238,23 @@ void main() {
       expect(tester.takeException(), isNull);
       // 选中态勾选圆内的对勾图标（CustomPaint，验证存在画布）
       expect(find.byType(HomeCard), findsOneWidget);
+    });
+
+    // CustomBottomBar 骨架替换回归:外壳(floating bottom bar)+ DSBottomNavigation
+    // 在无 DSThemeBridge 宿主下渲染、点按切页都不崩溃(外壳根部自包桥)
+    testWidgets('CustomBottomBar DS 导航渲染与切页不崩溃', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: _BottomBarHarness()));
+      // 入场有 300ms 浮动条动画,先等动画完成再断言/点按
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DSBottomNavigation), findsOneWidget);
+      expect(find.text('待办'), findsOneWidget);
+      expect(find.text('历史'), findsOneWidget);
+
+      await tester.tap(find.text('历史'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('page1'), findsOneWidget);
     });
 
     // 自绘图标回归：每个 DsIconKind 的画布绘制都不抛错

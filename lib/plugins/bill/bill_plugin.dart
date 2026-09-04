@@ -367,7 +367,6 @@ class _BillMainViewState extends State<BillMainView>
 
   DateTime? _statsStartDate;
   DateTime? _statsEndDate;
-  final List<Color> _colors = [Colors.green, Colors.blue];
   final GlobalKey _bottomBarKey = GlobalKey(debugLabel: 'bill_bottom_bar');
 
   @override
@@ -474,7 +473,6 @@ class _BillMainViewState extends State<BillMainView>
     }
 
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -500,9 +498,9 @@ class _BillMainViewState extends State<BillMainView>
             ],
           ),
       fab: _buildFab(),
-      children: const [
-        Tab(icon: Icon(Icons.receipt_long), text: '账单列表'),
-        Tab(icon: Icon(Icons.bar_chart), text: '统计分析'),
+      items: const [
+        DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
+        DSNavItem(icon: DsIconKind.columns, label: '统计分析'),
       ],
     );
   }

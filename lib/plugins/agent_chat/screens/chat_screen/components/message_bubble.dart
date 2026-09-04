@@ -79,151 +79,154 @@ class MessageBubble extends StatelessWidget {
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
     final theme = DSThemeBridge.resolve(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          // 消息内容
-          Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                // 消息气泡
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isUser
-                            ? theme.primary.mixWhite(0.85)
-                            : theme.surfaceAlt,
-                    borderRadius: theme.radii.md,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 如果是链式调用的第一条消息，使用 ChainMessageContainer
-                      if (!isUser &&
-                          message.chainExecutionId != null &&
-                          message.chainStepIndex == 0 &&
-                          messageService != null)
-                        ChainMessageContainer(
-                          conversationId: message.conversationId,
-                          chainExecutionId: message.chainExecutionId!,
-                          messageService: messageService,
-                          getAgentName: getAgentName,
-                          onRerunStep: onRerunStep,
-                        )
-                      else ...[
-                        // 传统的单消息显示模式
-                        // Agent 标签（链式模式下显示，仅当不使用容器时）
+    // 气泡内含 DS 组件(内部调 AppTheme.of),宿主屏幕 body 无 AppTheme 祖树,根部自包桥免疫
+    return DSThemeBridge(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment:
+              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            // 消息内容
+            Flexible(
+              child: Column(
+                crossAxisAlignment:
+                    isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  // 消息气泡
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isUser
+                              ? theme.primary.mixWhite(0.85)
+                              : theme.surfaceAlt,
+                      borderRadius: theme.radii.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 如果是链式调用的第一条消息，使用 ChainMessageContainer
                         if (!isUser &&
-                            message.generatedByAgentId != null &&
-                            message.chainStepIndex != null)
-                          _buildAgentLabel(context),
+                            message.chainExecutionId != null &&
+                            message.chainStepIndex == 0 &&
+                            messageService != null)
+                          ChainMessageContainer(
+                            conversationId: message.conversationId,
+                            chainExecutionId: message.chainExecutionId!,
+                            messageService: messageService,
+                            getAgentName: getAgentName,
+                            onRerunStep: onRerunStep,
+                          )
+                        else ...[
+                          // 传统的单消息显示模式
+                          // Agent 标签（链式模式下显示，仅当不使用容器时）
+                          if (!isUser &&
+                              message.generatedByAgentId != null &&
+                              message.chainStepIndex != null)
+                            _buildAgentLabel(context),
 
-                        // 消息内容 - 总是实时渲染内容（流式输出）
-                        if (isToolCallMessage)
-                          // 如果是工具调用消息，显示工具调用步骤
-                          _buildToolCallContent()
-                        else if (message.matchedTemplateIds != null &&
-                            message.matchedTemplateIds!.isNotEmpty)
-                          // 显示模版选择按钮
-                          _buildTemplateSelectionUI()
-                        else
-                          // 总是显示消息内容（包括正在生成中的内容）
-                          _buildMessageContent(),
+                          // 消息内容 - 总是实时渲染内容（流式输出）
+                          if (isToolCallMessage)
+                            // 如果是工具调用消息，显示工具调用步骤
+                            _buildToolCallContent()
+                          else if (message.matchedTemplateIds != null &&
+                              message.matchedTemplateIds!.isNotEmpty)
+                            // 显示模版选择按钮
+                            _buildTemplateSelectionUI()
+                          else
+                            // 总是显示消息内容（包括正在生成中的内容）
+                            _buildMessageContent(),
 
-                        // 附件显示
-                        if (message.attachments.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          _buildAttachments(),
+                          // 附件显示
+                          if (message.attachments.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            _buildAttachments(),
+                          ],
                         ],
+                      ],
+                    ),
+                  ),
+
+                  // 底部信息栏
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Token统计
+                      Text(
+                        TokenCounterService.formatTokenCountShort(
+                          message.tokenCount,
+                        ),
+                        style: TextStyle(fontSize: 11, color: theme.textSub),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // 时间
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: TextStyle(fontSize: 11, color: theme.textSub),
+                      ),
+
+                      // 显示思考过程按钮（仅当有思考内容且不是用户消息时显示）
+                      if (!isUser &&
+                          message.thinkingContent != null &&
+                          message.thinkingContent!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Pressable(
+                          onPressed: () => _showThinkingDialog(context),
+                          builder:
+                              (context, states) => Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DsIcon(
+                                    DsIconKind.bot,
+                                    size: 12,
+                                    color: theme.primaryText,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '显示思考过程',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: theme.primaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        ),
+                      ],
+
+                      // 已编辑标记
+                      if (message.editedAt != null) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '(已编辑)',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.textSub.withValues(alpha: 0.8),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+
+                      // 操作按钮
+                      if (!message.isGenerating) ...[
+                        const SizedBox(width: 8),
+                        _buildActionMenu(context),
                       ],
                     ],
                   ),
-                ),
-
-                // 底部信息栏
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Token统计
-                    Text(
-                      TokenCounterService.formatTokenCountShort(
-                        message.tokenCount,
-                      ),
-                      style: TextStyle(fontSize: 11, color: theme.textSub),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // 时间
-                    Text(
-                      _formatTime(message.timestamp),
-                      style: TextStyle(fontSize: 11, color: theme.textSub),
-                    ),
-
-                    // 显示思考过程按钮（仅当有思考内容且不是用户消息时显示）
-                    if (!isUser &&
-                        message.thinkingContent != null &&
-                        message.thinkingContent!.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Pressable(
-                        onPressed: () => _showThinkingDialog(context),
-                        builder:
-                            (context, states) => Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DsIcon(
-                                  DsIconKind.bot,
-                                  size: 12,
-                                  color: theme.primaryText,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '显示思考过程',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: theme.primaryText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                      ),
-                    ],
-
-                    // 已编辑标记
-                    if (message.editedAt != null) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        '(已编辑)',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: theme.textSub.withValues(alpha: 0.8),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-
-                    // 操作按钮
-                    if (!message.isGenerating) ...[
-                      const SizedBox(width: 8),
-                      _buildActionMenu(context),
-                    ],
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

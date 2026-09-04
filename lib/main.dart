@@ -12,6 +12,7 @@ import 'package:procm_sdk_dart/procm_sdk_dart.dart';
 
 // GetX 统一翻译导入
 import 'package:aboutme/l10n/unified_translations.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 // 第三方库国际化
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -42,28 +43,29 @@ void main() {
       WidgetsFlutterBinding.ensureInitialized();
 
       // 0.1 初始化 Firebase（必须在其他代码之前）
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
       // 0.2 注册 FCM 后台消息处理器（必须在 Firebase.initializeApp 之后）
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       // 0.3 初始化 procm 房间结构化日志：仅在环境变量 PROCM_WS_URL/PROCM_ROOM_ID
       // 存在时连接房间并双写；缺失时退化为纯 console 输出，不影响现有行为
-      setupLoggerFromEnv().info(
-        'Aboutme 启动',
-        {'platform': defaultTargetPlatform.name},
-      );
+      setupLoggerFromEnv().info('Aboutme 启动', {
+        'platform': defaultTargetPlatform.name,
+      });
 
       // 1. 捕获 Flutter Framework 错误（如 widget build 错误）
       FlutterError.onError = (FlutterErrorDetails details) {
         // 记录到日志服务
         final logService = LogService.instance;
         if (logService.isEnabled && logService.isInitialized) {
-        logService.error(
-          'FlutterError: ${details.exception}',
-          error: details.exception,
-          stackTrace: details.stack,
-        );
+          logService.error(
+            'FlutterError: ${details.exception}',
+            error: details.exception,
+            stackTrace: details.stack,
+          );
         }
 
         // 在调试模式下仍然显示错误界面
@@ -307,12 +309,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               darkTheme: darkTheme,
               builder: (context, child) {
                 // 确保字体大小不受系统设置影响
-                return MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                  child: StyledToast(
-                    child: child!,
+                // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
+                // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
+                return DSThemeBridge(
+                  child: MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                    child: StyledToast(child: child!),
                   ),
                 );
               },

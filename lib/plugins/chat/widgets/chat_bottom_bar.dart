@@ -30,16 +30,6 @@ class _ChatBottomBarState extends State<ChatBottomBar>
   final GlobalKey _bottomBarKey = GlobalKey();
   late ChannelListController _channelListController;
 
-  // 使用插件主题色和设计系统辅助色（动态计算）
-  List<Color> _getColors(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return [
-      widget.plugin.color, // Tab0 - 频道列表 (插件主色)
-      theme.secondary, // Tab1 - 时间线
-      theme.success, // Tab2 - 标签
-    ];
-  }
-
   @override
   void initState() {
     super.initState();
@@ -148,7 +138,6 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       child: Builder(
         builder:
             (context) => CustomBottomBar(
-              colors: _getColors(context),
               currentIndex: _currentPage,
               tabController: _tabController,
               bottomBarKey: _bottomBarKey,
@@ -173,13 +162,10 @@ class _ChatBottomBarState extends State<ChatBottomBar>
                   ),
               fab: _buildFab(),
               fabLocation: Alignment.topRight,
-              children: [
-                Tab(icon: DsIcon(DsIconKind.chat), text: 'chat_channelsTab'.tr),
-                Tab(
-                  icon: DsIcon(DsIconKind.clock),
-                  text: 'chat_timelineTab'.tr,
-                ),
-                Tab(icon: DsIcon(DsIconKind.tag), text: 'chat_tagsTab'.tr),
+              items: [
+                DSNavItem(icon: DsIconKind.chat, label: 'chat_channelsTab'.tr),
+                DSNavItem(icon: DsIconKind.clock, label: 'chat_timelineTab'.tr),
+                DSNavItem(icon: DsIconKind.tag, label: 'chat_tagsTab'.tr),
               ],
             ),
       ),

@@ -11,6 +11,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// CalendarAlbum 插件的底部栏组件
 /// 提供日历视图、标签视图和相册视图三个 Tab 的切换功能
@@ -29,13 +30,6 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
-
-  // 使用插件主题色和辅助色
-  final List<Color> _colors = [
-    const Color.fromARGB(255, 245, 210, 52), // Tab0 - 日历视图 (插件主色)
-    Colors.green.shade600, // Tab1 - 标签视图
-    Colors.purple.shade600, // Tab2 - 相册视图
-  ];
 
   late final CalendarController _calendarController;
   late final TagController _tagController;
@@ -119,12 +113,16 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${'calendar_album_total_photo_count'.tr}: ${allImages.length}'),
+                          Text(
+                            '${'calendar_album_total_photo_count'.tr}: ${allImages.length}',
+                          ),
                           const SizedBox(height: 16),
                           if (allImages.isNotEmpty) ...[
                             Text(
                               'calendar_album_recent_photos'.tr,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             SizedBox(
@@ -139,17 +137,25 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
                                     margin: const EdgeInsets.only(right: 8),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(7),
                                       child: Image.network(
                                         imageUrl,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
                                           return Container(
                                             color: Colors.grey.shade200,
-                                            child: const Icon(Icons.broken_image),
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                            ),
                                           );
                                         },
                                       ),
@@ -180,8 +186,8 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
             _currentPage == 0
                 ? Icons.create
                 : _currentPage == 1
-                    ? Icons.settings
-                    : Icons.photo_size_select_actual,
+                ? Icons.settings
+                : Icons.photo_size_select_actual,
             color: Colors.white,
             size: 32,
           ),
@@ -193,63 +199,49 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          // Tab0: 日历视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(
-                value: _calendarController,
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              // Tab0: 日历视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: CalendarScreen(key: const PageStorageKey('calendar')),
               ),
-              ChangeNotifierProvider.value(value: _tagController),
-            ],
-            child: CalendarScreen(
-              key: const PageStorageKey('calendar'),
-            ),
-          ),
-          // Tab1: 标签视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(
-                value: _calendarController,
+              // Tab1: 标签视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: TagScreen(key: const PageStorageKey('tags')),
               ),
-              ChangeNotifierProvider.value(value: _tagController),
-            ],
-            child: TagScreen(key: const PageStorageKey('tags')),
-          ),
-          // Tab2: 相册视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(
-                value: _calendarController,
+              // Tab2: 相册视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: AlbumScreen(key: const PageStorageKey('album')),
               ),
-              ChangeNotifierProvider.value(value: _tagController),
             ],
-            child: AlbumScreen(key: const PageStorageKey('album')),
           ),
-        ],
-      ),
       fab: _buildFab(),
-      children: [
-        Tab(
-          icon: const Icon(Icons.calendar_today),
-          text: 'calendar_album_calendar'.tr,
+      items: [
+        DSNavItem(
+          icon: DsIconKind.calendar,
+          label: 'calendar_album_calendar'.tr,
         ),
-        Tab(
-          icon: const Icon(Icons.tag),
-          text: 'calendar_album_tags'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.photo_library),
-          text: 'calendar_album_album'.tr,
-        ),
+        DSNavItem(icon: DsIconKind.tag, label: 'calendar_album_tags'.tr),
+        DSNavItem(icon: DsIconKind.image, label: 'calendar_album_album'.tr),
       ],
     );
   }

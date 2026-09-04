@@ -44,12 +44,6 @@ class _CheckinMainViewState extends State<CheckinMainView>
   late TabController _tabController;
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
-  final List<Color> _colors = [
-    Colors.teal,
-    Colors.blue,
-    Colors.cyan,
-    Colors.green,
-  ];
 
   @override
   void initState() {
@@ -104,7 +98,6 @@ class _CheckinMainViewState extends State<CheckinMainView>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -143,15 +136,9 @@ class _CheckinMainViewState extends State<CheckinMainView>
             ],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(
-          icon: Icon(Icons.check_circle_outline),
-          text: 'checkin_checkinList'.tr,
-        ),
-        Tab(
-          icon: Icon(Icons.bar_chart_outlined),
-          text: 'checkin_checkinStats'.tr,
-        ),
+      items: [
+        DSNavItem(icon: DsIconKind.check, label: 'checkin_checkinList'.tr),
+        DSNavItem(icon: DsIconKind.columns, label: 'checkin_checkinStats'.tr),
       ],
     );
   }

@@ -458,12 +458,6 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   late TabController _tabController;
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
-  final List<Color> _colors = [
-    Colors.deepOrange,
-    Colors.blue,
-    Colors.purple,
-    Colors.green,
-  ];
 
   @override
   void initState() {
@@ -529,7 +523,6 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
-      colors: _colors,
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
@@ -541,15 +534,9 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
             children: const [AgentListScreen(), PromptPresetScreen()],
           ),
       fab: _buildFab(),
-      children: [
-        Tab(
-          icon: const Icon(Icons.smart_toy_outlined),
-          text: 'openai_agentsTab'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.text_snippet_outlined),
-          text: 'openai_promptPreset'.tr,
-        ),
+      items: [
+        DSNavItem(icon: DsIconKind.bot, label: 'openai_agentsTab'.tr),
+        DSNavItem(icon: DsIconKind.book, label: 'openai_promptPreset'.tr),
       ],
     );
   }
