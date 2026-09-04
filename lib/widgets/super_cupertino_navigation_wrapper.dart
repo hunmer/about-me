@@ -546,19 +546,37 @@ class _SuperCupertinoNavigationWrapperState
   }
 
   /// 默认的 DS 风格返回图标按钮（primary 果冻圆球，同 DSFab 质感）
+  ///
+  /// 外层 Align 用于对抗 NavigationToolbar 对 leading 的紧高度约束
+  /// （会把固定高度的按钮拉成竖长条）：Align 向子级传递宽松约束，
+  /// 保证按钮保持 36×36 正圆并在工具栏内垂直居中
   Widget _buildDefaultBackButton(VoidCallback onPressed) {
-    return Builder(
-      builder: (context) {
-        final ds = AppTheme.of(context);
-        return DSIconButton(
-          icon: DsIconKind.chevronLeft,
-          size: 36,
-          color: ds.primary,
-          iconColor: ds.onPrimary,
-          tooltip: widget.previousPageTitle ?? 'core_back'.tr,
-          onPressed: onPressed,
-        );
-      },
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      widthFactor: 1.0,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: Builder(
+          builder: (context) {
+            final ds = AppTheme.of(context);
+            // primary 整球太冲、surfaceAlt 又太平：取两者之间的浅薰衣草，
+            // 保留渐变球体质感的同时压低饱和度
+            final ballColor = Color.lerp(
+              ds.surfaceAlt,
+              ds.primary,
+              ds.isDark ? 0.22 : 0.18,
+            )!;
+            return DSIconButton(
+              icon: DsIconKind.chevronLeft,
+              size: 36,
+              color: ballColor,
+              iconColor: ds.primaryText,
+              tooltip: widget.previousPageTitle ?? 'core_back'.tr,
+              onPressed: onPressed,
+            );
+          },
+        ),
+      ),
     );
   }
 
