@@ -69,10 +69,7 @@ List<StatItemData> _getAvailableStats(BuildContext context) {
 }
 
 /// 构建概览小组件
-Widget _buildOverviewWidget(
-  BuildContext context,
-  Map<String, dynamic> config,
-) {
+Widget _buildOverviewWidget(BuildContext context, Map<String, dynamic> config) {
   try {
     // 解析插件配置
     PluginWidgetConfig widgetConfig;

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
@@ -73,8 +75,9 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     if (widget.extraStorageKey == null) return;
 
     final plugin = PluginManager.instance.getPlugin('openai') as OpenAIPlugin;
-    final agents =
-        await plugin.controller.loadExtraStorageAgents(widget.extraStorageKey!);
+    final agents = await plugin.controller.loadExtraStorageAgents(
+      widget.extraStorageKey!,
+    );
     if (mounted) {
       setState(() {
         _extraStorageAgents = agents;
@@ -87,9 +90,9 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AgentEditScreen(
-          extraStorageKey: widget.extraStorageKey,
-        ),
+        builder:
+            (context) =>
+                AgentEditScreen(extraStorageKey: widget.extraStorageKey),
       ),
     );
 
@@ -103,23 +106,24 @@ class _AgentListDrawerState extends State<AgentListDrawer>
   Future<void> _deleteExtraAgent(String agentId) async {
     if (widget.extraStorageKey == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: const Text('确定要删除此Agent吗?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (dialogContext) => DSDialog(
+                    title: '确认删除',
+                    message: '确定要删除此Agent吗?',
+                    confirmText: '删除',
+                    cancelText: '取消',
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  ),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -264,40 +268,57 @@ class _AgentListDrawerState extends State<AgentListDrawer>
   }
 
   /// 构建agent列表
-  Widget _buildAgentList(List<AIAgent> agents, {bool showDeleteButton = false}) {
+  Widget _buildAgentList(
+    List<AIAgent> agents, {
+    bool showDeleteButton = false,
+  }) {
     // 应用过滤器（如果有）
     if (widget.agentFilter != null) {
       agents = agents.where(widget.agentFilter!).toList();
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: agents.length,
-      itemBuilder: (context, index) {
-        final agent = agents[index];
-        final agentData = {'id': agent.id, 'name': agent.name};
-        final isSelected = _isAgentSelected(agent.id);
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: agents.length,
+          itemBuilder: (context, index) {
+            final agent = agents[index];
+            final agentData = {'id': agent.id, 'name': agent.name};
+            final isSelected = _isAgentSelected(agent.id);
 
-        return ListTile(
-          leading: _buildAgentIcon(agent),
-          title: Text(agent.name),
-          subtitle: Text(agent.description),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (showDeleteButton)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                  onPressed: () => _deleteExtraAgent(agent.id),
-                ),
-              if (isSelected)
-                const Icon(Icons.check_circle, color: Colors.green)
-              else
-                const Icon(Icons.circle_outlined),
-            ],
-          ),
-          onTap: () => _toggleAgentSelection(agentData),
+            return ListTile(
+              leading: _buildAgentIcon(agent),
+              title: Text(
+                agent.name,
+                style: DsTypography.body.copyWith(color: theme.text),
+              ),
+              subtitle: Text(
+                agent.description,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showDeleteButton)
+                    DSIconButton(
+                      icon: DsIconKind.trash,
+                      size: 32,
+                      color: theme.danger,
+                      iconColor: theme.onDanger,
+                      onPressed: () => _deleteExtraAgent(agent.id),
+                    ),
+                  DSCheckbox(
+                    value: isSelected,
+                    onChanged: (_) => _toggleAgentSelection(agentData),
+                  ),
+                ],
+              ),
+              onTap: () => _toggleAgentSelection(agentData),
+            );
+          },
         );
       },
     );
@@ -310,128 +331,158 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     // 计算抽屉最大高度为屏幕高度的70%
     final maxDrawerHeight = screenHeight * 0.7;
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: maxDrawerHeight),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+    // 抽屉可能经 BottomSheet 展示,自带主题桥
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Container(
+            constraints: BoxConstraints(maxHeight: maxDrawerHeight),
+            decoration: BoxDecoration(
+              color: theme.background,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.smart_toy),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'openai_selectAgent'.tr,
-                    style: Theme.of(context).textTheme.titleLarge,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      DsIcon(DsIconKind.bot, size: 24, color: theme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'openai_selectAgent'.tr,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                      ),
+                      // 如果有extraStorageKey，显示新增按钮
+                      if (widget.extraStorageKey != null)
+                        DSIconButton(
+                          icon: DsIconKind.plus,
+                          size: 36,
+                          color: theme.surfaceAlt,
+                          iconColor: theme.textSub,
+                          tooltip: '新增Agent',
+                          onPressed: _addNewAgent,
+                        ),
+                    ],
                   ),
                 ),
-                // 如果有extraStorageKey，显示新增按钮
-                if (widget.extraStorageKey != null)
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    tooltip: '新增Agent',
-                    onPressed: _addNewAgent,
-                  ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // 如果有extraStorageKey，显示TabBar
-          if (widget.extraStorageKey != null) ...[
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: '默认Agents'),
-                Tab(text: '自定义Agents'),
-              ],
-            ),
-            const Divider(),
-          ],
-          Flexible(
-            child: widget.extraStorageKey != null
-                ? TabBarView(
+                const Divider(),
+                // 如果有extraStorageKey，显示TabBar(TabBar/TabBarView 属结构性组件,保留 Material)
+                if (widget.extraStorageKey != null) ...[
+                  TabBar(
                     controller: _tabController,
+                    tabs: const [Tab(text: '默认Agents'), Tab(text: '自定义Agents')],
+                  ),
+                  const Divider(),
+                ],
+                Flexible(
+                  child:
+                      widget.extraStorageKey != null
+                          ? TabBarView(
+                            controller: _tabController,
+                            children: [
+                              // 默认agents
+                              FutureBuilder<List<AIAgent>>(
+                                future:
+                                    (PluginManager.instance.getPlugin('openai')
+                                            as OpenAIPlugin)
+                                        .controller
+                                        .loadAgents(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return _buildAgentList(snapshot.data!);
+                                  } else if (snapshot.hasError) {
+                                    return Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'openai_errorReadingAgents'.tr,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.danger,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: DSLoadingDots(),
+                                  );
+                                },
+                              ),
+                              // Extra storage agents
+                              _buildAgentList(
+                                _extraStorageAgents,
+                                showDeleteButton: true,
+                              ),
+                            ],
+                          )
+                          : FutureBuilder<List<AIAgent>>(
+                            future:
+                                (PluginManager.instance.getPlugin('openai')
+                                        as OpenAIPlugin)
+                                    .controller
+                                    .loadAgents(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return _buildAgentList(snapshot.data!);
+                              } else if (snapshot.hasError) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'openai_errorReadingAgents'.tr,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.danger,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: DSLoadingDots(),
+                              );
+                            },
+                          ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 默认agents
-                      FutureBuilder<List<AIAgent>>(
-                        future: (PluginManager.instance
-                                .getPlugin('openai') as OpenAIPlugin)
-                            .controller
-                            .loadAgents(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            return _buildAgentList(snapshot.data!);
-                          } else if (snapshot.hasError) {
-                            return Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text('openai_errorReadingAgents'.tr),
-                            );
-                          }
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          );
-                        },
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ),
-                      // Extra storage agents
-                      _buildAgentList(
-                        _extraStorageAgents,
-                        showDeleteButton: true,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DSButton(
+                          label:
+                              '${'app_select'.tr} (${_selectedAgents.length})',
+                          onPressed:
+                              _selectedAgents.isEmpty
+                                  ? null
+                                  : _handleSelectionComplete,
+                        ),
                       ),
                     ],
-                  )
-                : FutureBuilder<List<AIAgent>>(
-                    future: (PluginManager.instance
-                            .getPlugin('openai') as OpenAIPlugin)
-                        .controller
-                        .loadAgents(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return _buildAgentList(snapshot.data!);
-                      } else if (snapshot.hasError) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text('openai_errorReadingAgents'.tr),
-                        );
-                      }
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('app_cancel'.tr),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      _selectedAgents.isEmpty ? null : _handleSelectionComplete,
-                  child: Text(
-                    '${'app_select'.tr} (${_selectedAgents.length})',
                   ),
                 ),
+                const SizedBox(height: 8),
               ],
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+          );
+        },
       ),
     );
   }

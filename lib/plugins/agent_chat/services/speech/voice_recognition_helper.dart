@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/voice_input_dialog.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'speech_recognition_config.dart';
 import 'tencent_asr_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -35,13 +37,20 @@ class VoiceRecognitionHelper {
       }
 
       // 显示语音输入对话框
-      final result = await showDialog<bool>(
+      final result = await showDSDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (context) => VoiceInputDialog(
-          recognitionService: recognitionService,
-          onRecognitionComplete: onComplete,
-        ),
+        theme: DSThemeBridge.resolve(context),
+        builder:
+            (context) => DSThemeBridge(
+              child: Builder(
+                builder:
+                    (context) => VoiceInputDialog(
+                      recognitionService: recognitionService,
+                      onRecognitionComplete: onComplete,
+                    ),
+              ),
+            ),
       );
 
       // 释放服务资源

@@ -5,6 +5,8 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/plugin_base.dart';
@@ -105,10 +107,7 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   }
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'bill/accounts.json',
-    'bill/',
-  ];
+  static const List<String> _refreshableFiles = ['bill/accounts.json', 'bill/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -136,7 +135,7 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -158,7 +157,8 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'bill_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: DsTypography.heading.copyWith(
+                  color: theme.text,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -178,16 +178,16 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'bill_todayFinance'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '¥${_billController.getTodayFinance().toStringAsFixed(2)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
                           color:
                               _billController.getTodayFinance() >= 0
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? theme.success
+                                  : theme.danger,
                         ),
                       ),
                     ],
@@ -198,16 +198,16 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'bill_monthFinance'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '¥${_billController.getMonthFinance().toStringAsFixed(2)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
                           color:
                               _billController.getMonthFinance() >= 0
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? theme.success
+                                  : theme.danger,
                         ),
                       ),
                     ],
@@ -224,11 +224,12 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                     children: [
                       Text(
                         'bill_monthBills'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         _billController.getMonthBillCount().toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -366,10 +367,7 @@ class _BillMainViewState extends State<BillMainView>
 
   DateTime? _statsStartDate;
   DateTime? _statsEndDate;
-  final List<Color> _colors = [
-    Colors.green,
-    Colors.blue,
-  ];
+  final List<Color> _colors = [Colors.green, Colors.blue];
   final GlobalKey _bottomBarKey = GlobalKey(debugLabel: 'bill_bottom_bar');
 
   @override
@@ -459,9 +457,10 @@ class _BillMainViewState extends State<BillMainView>
       shape: const CircleBorder(),
       child: Icon(
         Icons.add,
-        color: const Color(0xFF3498DB).computeLuminance() > 0.5
-            ? Colors.black
-            : Colors.white,
+        color:
+            const Color(0xFF3498DB).computeLuminance() > 0.5
+                ? Colors.black
+                : Colors.white,
         size: 32,
       ),
     );
@@ -479,26 +478,27 @@ class _BillMainViewState extends State<BillMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.down,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          BillListScreenSupercupertino(
-            billPlugin: billPlugin,
-            accountId: billPlugin.selectedAccount?.id ?? '',
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.down,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              BillListScreenSupercupertino(
+                billPlugin: billPlugin,
+                accountId: billPlugin.selectedAccount?.id ?? '',
+              ),
+              BillStatsScreenSupercupertino(
+                billPlugin: billPlugin,
+                accountId: billPlugin.selectedAccount?.id ?? '',
+                // 使用路由参数中的日期范围，如果不存在则使用默认值
+                startDate:
+                    _statsStartDate ??
+                    DateTime.now().subtract(const Duration(days: 30)),
+                endDate: _statsEndDate ?? DateTime.now(),
+              ),
+            ],
           ),
-          BillStatsScreenSupercupertino(
-            billPlugin: billPlugin,
-            accountId: billPlugin.selectedAccount?.id ?? '',
-            // 使用路由参数中的日期范围，如果不存在则使用默认值
-            startDate: _statsStartDate ?? DateTime.now().subtract(
-              const Duration(days: 30),
-            ),
-            endDate: _statsEndDate ?? DateTime.now(),
-          ),
-        ],
-      ),
       fab: _buildFab(),
       children: const [
         Tab(icon: Icon(Icons.receipt_long), text: '账单列表'),
@@ -587,7 +587,14 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
       case '自定义':
         break;
     }
-    _endDate = DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+    _endDate = DateTime(
+      _endDate.year,
+      _endDate.month,
+      _endDate.day,
+      23,
+      59,
+      59,
+    );
   }
 
   Future<void> _selectDateRange() async {
@@ -618,158 +625,170 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.pie_chart, color: BillPlugin.instance.color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '支出统计配置',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
+      body: DSThemeBridge(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    '统计类型',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(
-                        value: 'income',
-                        label: Text('收入'.tr),
-                        icon: const Icon(Icons.arrow_downward),
+                child: Row(
+                  children: [
+                    DsIcon(DsIconKind.grid, color: BillPlugin.instance.color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '支出统计配置',
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
-                      ButtonSegment(
-                        value: 'expense',
-                        label: Text('支出'.tr),
-                        icon: const Icon(Icons.arrow_upward),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: theme.stroke),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Text(
+                      '统计类型',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
                       ),
-                      ButtonSegment(
-                        value: 'balance',
-                        label: Text('结余'.tr),
-                        icon: const Icon(Icons.account_balance),
+                    ),
+                    const SizedBox(height: 8),
+                    DSSegmentedControl(
+                      options: ['收入'.tr, '支出'.tr, '结余'.tr],
+                      selected: switch (_selectedType) {
+                        'income' => 0,
+                        'expense' => 1,
+                        _ => 2,
+                      },
+                      onChanged: (index) {
+                        setState(
+                          () =>
+                              _selectedType = switch (index) {
+                                0 => 'income',
+                                1 => 'expense',
+                                _ => 'balance',
+                              },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '时间范围',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                    selected: {_selectedType},
-                    onSelectionChanged: (value) {
-                      setState(() => _selectedType = value.first);
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '时间范围',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: _periods.map((period) {
-                      final isSelected = _selectedPeriod == period;
-                      return ChoiceChip(
-                        label: Text(period),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedPeriod = period;
-                            _updateDateRange(period);
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _selectDateRange,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: theme.colorScheme.outline),
-                        borderRadius: BorderRadius.circular(8),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children:
+                          _periods.map((period) {
+                            final isSelected = _selectedPeriod == period;
+                            return DSChip(
+                              label: period,
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _selectedPeriod = period;
+                                  _updateDateRange(period);
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _selectDateRange,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.stroke),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            DsIcon(DsIconKind.calendar, color: theme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${DateFormat('yyyy-MM-dd').format(_startDate)} ~ ${DateFormat('yyyy-MM-dd').format(_endDate)}',
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_selectedPeriod == '自定义')
+                              DsIcon(
+                                DsIconKind.edit,
+                                size: 16,
+                                color: theme.textSub,
+                              ),
+                          ],
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.date_range, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${DateFormat('yyyy-MM-dd').format(_startDate)} ~ ${DateFormat('yyyy-MM-dd').format(_endDate)}',
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '目标金额',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSSlider(
+                            // DSSlider 取值 0~1，映射 1000~50000
+                            value: (_targetAmount - 1000) / 49000,
+                            onChanged: (t) {
+                              setState(() => _targetAmount = 1000 + t * 49000);
+                            },
                           ),
-                          const Spacer(),
-                          if (_selectedPeriod == '自定义')
-                            Icon(Icons.edit, size: 16, color: theme.colorScheme.outline),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '目标金额',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Slider(
-                          value: _targetAmount,
-                          min: 1000,
-                          max: 50000,
-                          divisions: 49,
-                          label: '¥${_targetAmount.toStringAsFixed(0)}',
-                          onChanged: (value) {
-                            setState(() => _targetAmount = value);
-                          },
                         ),
-                      ),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          '¥${_targetAmount.toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            '¥${_targetAmount.toStringAsFixed(0)}',
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('cancel'.tr),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _confirm,
-                      child: Text('confirm'.tr),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DSButton(label: 'confirm'.tr, onPressed: _confirm),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -802,113 +821,156 @@ class _MonthlyBillConfigFormState extends State<_MonthlyBillConfigForm> {
   }
 
   void _confirm() {
-    widget.onComplete({
-      'month': DateFormat('yyyy-MM').format(_selectedMonth),
-    });
+    widget.onComplete({'month': DateFormat('yyyy-MM').format(_selectedMonth)});
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_month, color: BillPlugin.instance.color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '月份账单配置',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
+      body: DSThemeBridge(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    '选择月份',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: theme.colorScheme.outline),
-                      borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    DsIcon(
+                      DsIconKind.calendar,
+                      color: BillPlugin.instance.color,
                     ),
-                    child: Column(
-                      children: _monthOptions.map((month) {
-                        final isSelected =
-                            month.year == _selectedMonth.year &&
-                            month.month == _selectedMonth.month;
-                        return ListTile(
-                          title: Text(_formatMonth(month)),
-                          trailing: isSelected
-                              ? Icon(Icons.check, color: BillPlugin.instance.color)
-                              : null,
-                          selected: isSelected,
-                          selectedTileColor: BillPlugin.instance.color.withOpacity(0.1),
-                          onTap: () {
-                            setState(() => _selectedMonth = month);
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ActionChip(
-                        label: const Text('本月'),
-                        onPressed: () {
-                          setState(() => _selectedMonth = DateTime.now());
-                        },
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '月份账单配置',
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
-                      ActionChip(
-                        label: const Text('上月'),
-                        onPressed: () {
-                          final now = DateTime.now();
-                          setState(() {
-                            _selectedMonth = DateTime(now.year, now.month - 1, 1);
-                          });
-                        },
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: theme.stroke),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Text(
+                      '选择月份',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.stroke),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children:
+                            _monthOptions.map((month) {
+                              final isSelected =
+                                  month.year == _selectedMonth.year &&
+                                  month.month == _selectedMonth.month;
+                              return Pressable(
+                                onPressed: () {
+                                  setState(() => _selectedMonth = month);
+                                },
+                                builder: (context, states) {
+                                  final pressed = states.contains(
+                                    WidgetState.pressed,
+                                  );
+                                  return Container(
+                                    color:
+                                        isSelected
+                                            ? BillPlugin.instance.color
+                                                .withValues(alpha: 0.1)
+                                            : (pressed
+                                                ? theme.surfaceAlt
+                                                : null),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _formatMonth(month),
+                                            style: DsTypography.body.copyWith(
+                                              color: theme.text,
+                                            ),
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          DsIcon(
+                                            DsIconKind.check,
+                                            color: BillPlugin.instance.color,
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        DSChip(
+                          label: '本月',
+                          onSelected: (_) {
+                            setState(() => _selectedMonth = DateTime.now());
+                          },
+                        ),
+                        DSChip(
+                          label: '上月',
+                          onSelected: (_) {
+                            final now = DateTime.now();
+                            setState(() {
+                              _selectedMonth = DateTime(
+                                now.year,
+                                now.month - 1,
+                                1,
+                              );
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: DSThemeBridge(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DSButton(
+                          label: 'confirm'.tr,
+                          onPressed: _confirm,
+                        ),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('cancel'.tr),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _confirm,
-                      child: Text('confirm'.tr),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

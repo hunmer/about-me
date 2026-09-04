@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'tool_list_item.dart';
 
@@ -8,7 +10,8 @@ class PluginSection extends StatefulWidget {
   final PluginToolSet toolSet;
   final List<String> visibleToolIds;
   final VoidCallback onRefresh;
-  final Function(String pluginId, String toolId, ToolConfig config)? onAddToChat;
+  final Function(String pluginId, String toolId, ToolConfig config)?
+  onAddToChat;
 
   const PluginSection({
     super.key,
@@ -28,6 +31,7 @@ class _PluginSectionState extends State<PluginSection> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final enabledCount = widget.toolSet.enabledToolCount;
     final totalCount = widget.visibleToolIds.length;
 
@@ -35,43 +39,67 @@ class _PluginSectionState extends State<PluginSection> {
       return const SizedBox.shrink();
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: theme.radii.lg,
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.25)),
+      ),
       child: Column(
         children: [
           // 插件标题栏
-          ListTile(
-            leading: Icon(
-              _isExpanded ? Icons.folder_open : Icons.folder,
-              color: Theme.of(context).primaryColor,
-            ),
-            title: Text(
-              widget.pluginId,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            subtitle: Text(
-              '$enabledCount / $totalCount 个工具已启用',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-            trailing: IconButton(
-              icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              },
-            ),
-            onTap: () {
+          Pressable(
+            onPressed: () {
               setState(() {
                 _isExpanded = !_isExpanded;
               });
             },
+            semanticLabel: widget.pluginId,
+            builder:
+                (context, states) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      DsIcon(
+                        _isExpanded ? DsIconKind.book : DsIconKind.clipboard,
+                        size: 24,
+                        color: theme.primaryText,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.pluginId,
+                              style: DsTypography.heading.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.text,
+                              ),
+                            ),
+                            Text(
+                              '$enabledCount / $totalCount 个工具已启用',
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DsIcon(
+                        _isExpanded
+                            ? DsIconKind.chevronUp
+                            : DsIconKind.chevronDown,
+                        size: 22,
+                        color: theme.textSub,
+                      ),
+                    ],
+                  ),
+                ),
           ),
 
           // 工具列表

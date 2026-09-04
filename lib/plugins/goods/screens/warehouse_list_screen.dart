@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'warehouse_detail_screen.dart';
@@ -136,55 +138,42 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
 
   /// 显示删除仓库确认对话框
   void _showDeleteWarehouseDialog(BuildContext context, dynamic warehouse) {
-    showDialog<bool>(
+    showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('goods_confirmDelete'.tr),
-            content: Text(
-              'goods_confirmDeleteWarehouseMessage'.trParams({
-                'warehouseName': warehouse.title,
-              }),
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'goods_confirmDelete'.tr,
+                    message: 'goods_confirmDeleteWarehouseMessage'.trParams({
+                      'warehouseName': warehouse.title,
+                    }),
+                    cancelText: 'goods_cancel'.tr,
+                    confirmText: 'goods_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.pop(context, false),
+                    onConfirm: () async {
+                      Navigator.pop(context, true);
+                      await GoodsPlugin.instance.deleteWarehouse(warehouse.id);
+                      if (context.mounted) {
+                        setState(() {});
+                      }
+                    },
+                  ),
             ),
-            actions: [
-              TextButton(
-                child: Text('goods_cancel'.tr),
-                onPressed: () => Navigator.pop(context, false),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () async {
-                  Navigator.pop(context, true);
-                  await GoodsPlugin.instance.deleteWarehouse(warehouse.id);
-                  if (context.mounted) {
-                    setState(() {});
-                  }
-                },
-                child: Text('goods_delete'.tr),
-              ),
-            ],
           ),
     );
   }
 
   /// 构建空搜索结果视图
   Widget _buildEmptySearchView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '未找到匹配的仓库',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '请尝试其他搜索关键词',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
+    return DSThemeBridge(
+      child: DSEmptyState(
+        emoji: '🔍',
+        title: '未找到匹配的仓库',
+        message: '请尝试其他搜索关键词',
       ),
     );
   }

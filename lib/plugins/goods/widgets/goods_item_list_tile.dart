@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
@@ -36,7 +38,8 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
     if (widget.item.imageUrl != null) {
       try {
         // 优先使用缩略图进行预览
-        final url = await widget.item.getThumbUrl() ?? await widget.item.getImageUrl();
+        final url =
+            await widget.item.getThumbUrl() ?? await widget.item.getImageUrl();
         if (mounted) {
           setState(() {
             _resolvedImageUrl = url;
@@ -57,29 +60,31 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
   Future<void> _deleteItem() async {
     if (widget.warehouseId == null) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('goods_confirmDelete'.tr),
-        content: Text('goods_confirmDeleteItem'.tr),
-        actions: [
-          TextButton(
-            child: Text('goods_cancel'.tr),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          TextButton(
-            child: Text(
-              'goods_delete'.tr,
-              style: const TextStyle(color: Colors.red),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'goods_confirmDelete'.tr,
+                    message: 'goods_confirmDeleteItem'.tr,
+                    cancelText: 'goods_cancel'.tr,
+                    confirmText: 'goods_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.pop(context, false),
+                    onConfirm: () => Navigator.pop(context, true),
+                  ),
             ),
-            onPressed: () => Navigator.pop(context, true),
           ),
-        ],
-      ),
     );
 
     if (confirm == true) {
-      await GoodsPlugin.instance.deleteGoodsItem(widget.warehouseId!, widget.item.id);
+      await GoodsPlugin.instance.deleteGoodsItem(
+        widget.warehouseId!,
+        widget.item.id,
+      );
       if (mounted) {
         Get.snackbar(
           'goods_delete'.tr,
@@ -92,20 +97,46 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
 
   @override
   Widget build(BuildContext context) {
-    final listTile = ListTile(
-      leading: _buildLeading(),
-      title: Text(widget.item.title),
-      subtitle: _buildSubtitle(context),
-      trailing:
-          widget.item.purchasePrice != null
-              ? Text(
-                '¥${widget.item.purchasePrice!.toStringAsFixed(2)}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-              )
-              : null,
-      onTap: widget.onTap,
+    final theme = DSThemeBridge.resolve(context);
+    final listTile = Pressable(
+      onPressed: widget.onTap,
+      builder:
+          (context, states) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color:
+                states.contains(WidgetState.pressed) ? theme.surfaceAlt : null,
+            child: Row(
+              children: [
+                _buildLeading(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.title,
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      _buildSubtitle(context),
+                    ],
+                  ),
+                ),
+                if (widget.item.purchasePrice != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '¥${widget.item.purchasePrice!.toStringAsFixed(2)}',
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
+                ],
+              ],
+            ),
+          ),
     );
 
     // 如果没有 warehouseId，返回普通的 ListTile
@@ -116,16 +147,8 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
     // 有 warehouseId 时，包装 SwipeAction
     return SwipeActionWrapper(
       key: ValueKey(widget.item.id),
-      leadingActions: [
-        SwipeActionPresets.edit(
-          onTap: widget.onTap ?? () {},
-        ),
-      ],
-      trailingActions: [
-        SwipeActionPresets.delete(
-          onTap: _deleteItem,
-        ),
-      ],
+      leadingActions: [SwipeActionPresets.edit(onTap: widget.onTap ?? () {})],
+      trailingActions: [SwipeActionPresets.delete(onTap: _deleteItem)],
       child: listTile,
     );
   }
@@ -133,11 +156,7 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
   Widget _buildLeading() {
     if (widget.item.imageUrl != null && _resolvedImageUrl != null) {
       final imageUrl = _resolvedImageUrl!;
-      return SizedBox(
-        width: 48,
-        height: 48,
-        child: _buildImage(imageUrl),
-      );
+      return SizedBox(width: 48, height: 48, child: _buildImage(imageUrl));
     }
     return _buildIcon();
   }
@@ -154,14 +173,7 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
         },
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
+          return const DSThemeBridge(child: Center(child: DSLoadingDots()));
         },
       );
     } else {
@@ -196,6 +208,7 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
   }
 
   Widget _buildSubtitle(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final List<Widget> content = [];
 
     // Add tags
@@ -203,6 +216,7 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
       content.add(
         Wrap(
           spacing: 4,
+          runSpacing: 2,
           children:
               widget.item.tags.map((tag) {
                 return Container(
@@ -211,12 +225,12 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: theme.surfaceAlt,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     tag,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 );
               }).toList(),
@@ -232,13 +246,12 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
       content.add(
         Row(
           children: [
-            Icon(Icons.warehouse, size: 12, color: Colors.grey[600]),
+            DsIcon(DsIconKind.store, size: 12, color: theme.textSub),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
                 widget.warehouseTitle!,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -247,7 +260,7 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
         ),
       );
     }
-    
+
     // Add last used date
     if (widget.item.lastUsedDate != null) {
       if (content.isNotEmpty) {
@@ -256,13 +269,11 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
       content.add(
         Row(
           children: [
-            Icon(Icons.history, size: 12, color: Colors.grey[600]),
+            DsIcon(DsIconKind.clock, size: 12, color: theme.textSub),
             const SizedBox(width: 4),
             Text(
               '最后使用: ${widget.item.lastUsedDate.toString().split(' ')[0]}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),

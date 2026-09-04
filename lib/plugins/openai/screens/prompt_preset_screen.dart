@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
@@ -133,25 +135,23 @@ class _PromptPresetScreenState extends State<PromptPresetScreen> {
 
   /// 删除预设
   Future<void> _deletePreset(PromptPreset preset) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('openai_deletePreset'.tr),
-            content: Text('openai_confirmDeletePreset'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text('openai_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(
-                  'openai_delete'.tr,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (dialogContext) => DSDialog(
+                    title: 'openai_deletePreset'.tr,
+                    message: 'openai_confirmDeletePreset'.tr,
+                    confirmText: 'openai_delete'.tr,
+                    cancelText: 'openai_cancel'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  ),
+            ),
           ),
     );
 
@@ -162,181 +162,233 @@ class _PromptPresetScreenState extends State<PromptPresetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
-      title: Text('openai_promptPresetManagement'.tr),
-      largeTitle: 'openai_promptPresetManagement'.tr,
-      enableLargeTitle: false,
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('openai_promptPresetManagement'.tr),
+        largeTitle: 'openai_promptPresetManagement'.tr,
+        enableLargeTitle: false,
 
-      // 启用多条件过滤
-      enableMultiFilter: true,
-      multiFilterItems: _buildFilterItems(),
-      onMultiFilterChanged: _applyFilters,
+        // 启用多条件过滤
+        enableMultiFilter: true,
+        multiFilterItems: _buildFilterItems(),
+        onMultiFilterChanged: _applyFilters,
 
-      // 启用搜索栏
-      enableSearchBar: true,
-      onSearchChanged: _handleSearch,
+        // 启用搜索栏
+        enableSearchBar: true,
+        onSearchChanged: _handleSearch,
 
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () => _showEditPage(),
-        ),
-      ],
-      body: AnimatedBuilder(
-        animation: _service,
-        builder: (context, _) {
-          if (_isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        // 第三方导航栏回调,DS 组件需包主题桥
+        actions: [
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.plus,
+                  size: 40,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: () => _showEditPage(),
+                );
+              },
+            ),
+          ),
+        ],
+        body: AnimatedBuilder(
+          animation: _service,
+          builder: (context, _) {
+            if (_isLoading) {
+              return const Center(child: DSLoadingDots());
+            }
 
-          if (_service.presets.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.text_snippet_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'openai_noPresetsYet'.tr,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'openai_createFirstPreset'.tr,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => _showEditPage(),
-                    icon: const Icon(Icons.add),
-                    label: Text('openai_addPreset'.tr),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (_filteredPresets.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.search_off, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'openai_noMatchingPresets'.tr,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'openai_tryAdjustingFilters'.tr,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _filteredPresets.length,
-            itemBuilder: (context, index) {
-              final preset = _filteredPresets[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  title: Text(
-                    preset.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (preset.description.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            preset.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      if (preset.tags.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children:
-                                preset.tags
-                                    .map(
-                                      (tag) => Chip(
-                                        label: Text(
-                                          tag,
-                                          style: const TextStyle(fontSize: 10),
-                                        ),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        visualDensity: VisualDensity.compact,
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                        ),
-                    ],
-                  ),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        await _showEditPage(preset: preset);
-                      } else if (value == 'delete') {
-                        await _deletePreset(preset);
-                      }
-                    },
-                    itemBuilder:
-                        (context) => [
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.edit, size: 20),
-                                const SizedBox(width: 8),
-                                Text('openai_editPreset'.tr),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.delete,
-                                  size: 20,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'openai_deletePreset'.tr,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                  ),
-                  onTap: () => _showEditPage(preset: preset),
+            if (_service.presets.isEmpty) {
+              return Center(
+                child: DSEmptyState(
+                  emoji: '📝',
+                  title: 'openai_noPresetsYet'.tr,
+                  message: 'openai_createFirstPreset'.tr,
+                  actionLabel: 'openai_addPreset'.tr,
+                  onAction: () => _showEditPage(),
                 ),
               );
-            },
+            }
+
+            if (_filteredPresets.isEmpty) {
+              return Center(
+                child: DSEmptyState(
+                  emoji: '🔍',
+                  title: 'openai_noMatchingPresets'.tr,
+                  message: 'openai_tryAdjustingFilters'.tr,
+                ),
+              );
+            }
+
+            return Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _filteredPresets.length,
+                  itemBuilder: (context, index) {
+                    final preset = _filteredPresets[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DSCard(
+                        onTap: () => _showEditPage(preset: preset),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    preset.name,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (preset.description.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        preset.description,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                      ),
+                                    ),
+                                  if (preset.tags.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Wrap(
+                                        spacing: 4,
+                                        runSpacing: 4,
+                                        children:
+                                            preset.tags
+                                                .map(
+                                                  (tag) => DSChip(label: tag),
+                                                )
+                                                .toList(),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            // DSPopover 经根 Overlay 展示,内容已自带主题
+                            DSPopover(
+                              width: 200,
+                              contentBuilder: (context, close) {
+                                final menuTheme = DSThemeBridge.resolve(
+                                  context,
+                                );
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _PresetMenuRow(
+                                      icon: DsIcon(
+                                        DsIconKind.edit,
+                                        size: 20,
+                                        color: menuTheme.primary,
+                                      ),
+                                      label: 'openai_editPreset'.tr,
+                                      theme: menuTheme,
+                                      onTap: () async {
+                                        close();
+                                        await _showEditPage(preset: preset);
+                                      },
+                                    ),
+                                    _PresetMenuRow(
+                                      icon: DsIcon(
+                                        DsIconKind.trash,
+                                        size: 20,
+                                        color: menuTheme.danger,
+                                      ),
+                                      label: 'openai_deletePreset'.tr,
+                                      theme: menuTheme,
+                                      danger: true,
+                                      onTap: () async {
+                                        close();
+                                        await _deletePreset(preset);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                              child: DSIconButton(
+                                icon: DsIconKind.more,
+                                size: 36,
+                                color: theme.surfaceAlt,
+                                iconColor: theme.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// 预设菜单行(果冻风格)
+class _PresetMenuRow extends StatelessWidget {
+  const _PresetMenuRow({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final Widget icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.primary;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.xs),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.md,
+            raised: false,
+            color: pressed ? accent.mixWhite(0.9) : theme.surfaceAlt,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm + 2,
+            ),
+            child: Row(
+              children: [
+                icon,
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: DsTypography.body.copyWith(
+                      color: danger ? theme.danger : theme.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),

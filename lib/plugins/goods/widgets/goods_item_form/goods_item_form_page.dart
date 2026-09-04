@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'goods_item_form.dart';
@@ -108,33 +110,24 @@ class _GoodsItemFormPageState extends State<GoodsItemFormPage> {
   }
 
   void _handleDelete(GoodsItem item) async {
-    final theme = Theme.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        title: Text(
-          'goods_confirmDelete'.tr,
-          style: TextStyle(color: theme.colorScheme.onSurface),
-        ),
-        content: Text(
-          'goods_confirmDeleteItem'.tr,
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('goods_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              'goods_delete'.tr,
-              style: TextStyle(color: theme.colorScheme.error),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'goods_confirmDelete'.tr,
+                    message: 'goods_confirmDeleteItem'.tr,
+                    cancelText: 'goods_cancel'.tr,
+                    confirmText: 'goods_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.pop(context, false),
+                    onConfirm: () => Navigator.pop(context, true),
+                  ),
             ),
           ),
-        ],
-      ),
     );
 
     if (confirmed == true && mounted) {
@@ -152,39 +145,41 @@ class _GoodsItemFormPageState extends State<GoodsItemFormPage> {
         }
       } catch (e) {
         debugPrint('Error deleting item: $e');
-        toastService.showToast(
-          'goods_saveFailed'.tr,
-          type: ToastType.error,
-        );
+        toastService.showToast('goods_saveFailed'.tr, type: ToastType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: theme.background,
+        body: const DSThemeBridge(child: Center(child: DSLoadingDots())),
       );
     }
 
     if (_item == null) {
       return Scaffold(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.background,
         appBar: AppBar(
-          backgroundColor: theme.colorScheme.surface,
-          foregroundColor: theme.colorScheme.onSurface,
+          backgroundColor: theme.background,
+          foregroundColor: theme.text,
           elevation: 0,
           title: Text('goods_itemNotFound'.tr),
         ),
-        body: Center(child: Text('goods_itemNotExist'.tr)),
+        body: Center(
+          child: Text(
+            'goods_itemNotExist'.tr,
+            style: DsTypography.body.copyWith(color: theme.textSub),
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: theme.background,
       body: GoodsItemForm(
         initialData: _item,
         onSubmit: _handleSubmit,

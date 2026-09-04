@@ -7,8 +7,8 @@ import 'goods_translations_jp.dart';
 class GoodsTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
-        'zh_CN': goodsTranslationsZh,
-        'en_US': goodsTranslationsEn,
-        'ja_JP': goodsTranslationsJp,
-      };
+    'zh_CN': goodsTranslationsZh,
+    'en_US': goodsTranslationsEn,
+    'ja_JP': goodsTranslationsJp,
+  };
 }

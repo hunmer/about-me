@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// Markdown内容渲染组件
 ///
@@ -17,6 +19,7 @@ class MarkdownContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return MarkdownBody(
       data: content,
       selectable: selectable,
@@ -24,48 +27,34 @@ class MarkdownContent extends StatelessWidget {
         // 极简风格配置
         p: const TextStyle(fontSize: 15, height: 1.5),
         code: TextStyle(
-          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+          backgroundColor: theme.surfaceAlt,
           fontFamily: 'monospace',
           fontSize: 14,
         ),
         codeblockDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
+          color: theme.surfaceAlt,
+          borderRadius: theme.radii.sm,
         ),
         codeblockPadding: const EdgeInsets.all(12),
         blockquote: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: theme.textSub,
           fontStyle: FontStyle.italic,
         ),
         blockquoteDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          border: Border(
-            left: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
-              width: 4,
-            ),
-          ),
+          color: theme.primary.mixWhite(0.9),
+          border: Border(left: BorderSide(color: theme.primary, width: 4)),
         ),
         blockquotePadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 8,
         ),
-        h1: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-        h2: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-        h3: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+        h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         listBullet: const TextStyle(fontSize: 15),
         tableBody: const TextStyle(fontSize: 14),
         tableBorder: TableBorder.all(
-          color: Theme.of(context).colorScheme.outline,
+          color: theme.textSub.withValues(alpha: 0.4),
           width: 1,
         ),
         tableColumnWidth: const FlexColumnWidth(),

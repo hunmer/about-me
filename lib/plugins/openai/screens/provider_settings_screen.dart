@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'provider_edit_screen.dart';
@@ -40,9 +42,13 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
       } else {
         // 合并逻辑：添加默认列表中存在但用户数据中缺失的服务商
         final existingIds = providers.map((p) => p.id).toSet();
-        final missingProviders = defaultProviders
-            .where((defaultProvider) => !existingIds.contains(defaultProvider.id))
-            .toList();
+        final missingProviders =
+            defaultProviders
+                .where(
+                  (defaultProvider) =>
+                      !existingIds.contains(defaultProvider.id),
+                )
+                .toList();
 
         if (missingProviders.isNotEmpty) {
           // 将缺失的默认服务商添加到列表末尾
@@ -54,9 +60,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
         }
       }
     } catch (e) {
-      _showErrorSnackBar(
-        '${'openai_loadProvidersError'.tr}: $e',
-      );
+      _showErrorSnackBar('${'openai_loadProvidersError'.tr}: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -92,27 +96,24 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
   }
 
   Future<void> _deleteProvider(ServiceProvider provider) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text(
-              'openai_confirmDeleteProviderTitle'.tr,
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (dialogContext) => DSDialog(
+                    title: 'openai_confirmDeleteProviderTitle'.tr,
+                    message: 'openai_confirmDeleteProviderMessage'.tr
+                        .replaceAll('{providerLabel}', provider.label),
+                    confirmText: 'app_delete'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  ),
             ),
-            content: Text(
-              'openai_confirmDeleteProviderMessage'.tr
-                  .replaceAll('{providerLabel}', provider.label),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('app_delete'.tr),
-              ),
-            ],
           ),
     );
 
@@ -121,9 +122,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
         await _controller.deleteProvider(provider.id);
         await _loadProviders();
       } catch (e) {
-        _showErrorSnackBar(
-          '${'openai_deleteFailed'.tr}: $e',
-        );
+        _showErrorSnackBar('${'openai_deleteFailed'.tr}: $e');
       }
     }
   }
@@ -139,93 +138,119 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
       if (!mounted) return;
       toastService.showToast('openai_cloneProviderSuccess'.tr);
     } catch (e) {
-      _showErrorSnackBar(
-        '${'openai_cloneProviderFailed'.tr}: $e',
-      );
+      _showErrorSnackBar('${'openai_cloneProviderFailed'.tr}: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('openai_providerSettingsTitle'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addProvider,
-            tooltip: 'openai_addProviderTooltip'.tr,
-          ),
-        ],
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material
+    return DSThemeBridge(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('openai_providerSettingsTitle'.tr),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: _addProvider,
+              tooltip: 'openai_addProviderTooltip'.tr,
+            ),
+          ],
+        ),
+        body: Builder(
+          builder:
+              (context) =>
+                  _isLoading
+                      ? const Center(child: DSLoadingDots())
+                      : _providers.isEmpty
+                      ? _buildEmptyState()
+                      : _buildProviderList(),
+        ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _providers.isEmpty
-              ? _buildEmptyState()
-              : _buildProviderList(),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(
-            'openai_noProvidersConfigured'.tr,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text('openai_addProviderTooltip'.tr),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _addProvider,
-            child: Text('openai_addProviderButton'.tr),
-          ),
-        ],
+      child: DSEmptyState(
+        emoji: '☁️',
+        title: 'openai_noProvidersConfigured'.tr,
+        message: 'openai_addProviderTooltip'.tr,
+        actionLabel: 'openai_addProviderButton'.tr,
+        onAction: _addProvider,
       ),
     );
   }
 
   Widget _buildProviderList() {
-    return ListView.builder(
-      itemCount: _providers.length,
-      itemBuilder: (context, index) {
-        final provider = _providers[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            title: Text(provider.label),
-            subtitle: Text(
-              provider.baseUrl,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.content_copy),
-                  onPressed: () => _cloneProvider(provider),
-                  tooltip: 'openai_cloneAgent'.tr,
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return ListView.builder(
+          itemCount: _providers.length,
+          itemBuilder: (context, index) {
+            final provider = _providers[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: DSCard(
+                padding: EdgeInsets.symmetric(
+                  horizontal: theme.spacing.md,
+                  vertical: theme.spacing.sm,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editProvider(provider),
-                  tooltip: 'openai_editAgent'.tr,
+                onTap: () => _editProvider(provider),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            provider.label,
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                          Text(
+                            provider.baseUrl,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.copy,
+                      size: 36,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: () => _cloneProvider(provider),
+                      tooltip: 'openai_cloneAgent'.tr,
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.edit,
+                      size: 36,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: () => _editProvider(provider),
+                      tooltip: 'openai_editAgent'.tr,
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.trash,
+                      size: 36,
+                      color: theme.danger,
+                      iconColor: theme.onDanger,
+                      onPressed: () => _deleteProvider(provider),
+                      tooltip: 'openai_deleteAgent'.tr,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteProvider(provider),
-                  tooltip: 'openai_deleteAgent'.tr,
-                ),
-              ],
-            ),
-            onTap: () => _editProvider(provider),
-          ),
+              ),
+            );
+          },
         );
       },
     );

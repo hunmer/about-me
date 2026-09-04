@@ -33,7 +33,7 @@ class GoodsItemFormController {
   List<UsageRecord> usageRecords = [];
   List<CustomField> customFields = [];
   List<GoodsItem> _subItems = [];
-  
+
   DateTime purchaseDate = DateTime.now();
   DateTime? expirationDate;
   String status = 'normal'; // Default status

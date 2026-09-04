@@ -60,7 +60,8 @@ class BillShortcut {
       name: json['name'] as String,
       accountId: json['accountId'] as String,
       category: json['category'] as String,
-      amount: json['amount'] != null ? (json['amount'] as num).toDouble() : null,
+      amount:
+          json['amount'] != null ? (json['amount'] as num).toDouble() : null,
       isExpense: json['isExpense'] as bool,
       icon: IconData(
         json['iconCodePoint'] as int,
@@ -132,10 +133,7 @@ class BillShortcutsWidgetConfig {
   /// 预设列表
   final List<BillShortcut> shortcuts;
 
-  BillShortcutsWidgetConfig({
-    required this.widgetId,
-    required this.shortcuts,
-  });
+  BillShortcutsWidgetConfig({required this.widgetId, required this.shortcuts});
 
   /// 序列化为JSON
   Map<String, dynamic> toJson() {
@@ -149,9 +147,10 @@ class BillShortcutsWidgetConfig {
   factory BillShortcutsWidgetConfig.fromJson(Map<String, dynamic> json) {
     return BillShortcutsWidgetConfig(
       widgetId: json['widgetId'] as int,
-      shortcuts: (json['shortcuts'] as List)
-          .map((s) => BillShortcut.fromJson(s as Map<String, dynamic>))
-          .toList(),
+      shortcuts:
+          (json['shortcuts'] as List)
+              .map((s) => BillShortcut.fromJson(s as Map<String, dynamic>))
+              .toList(),
     );
   }
 

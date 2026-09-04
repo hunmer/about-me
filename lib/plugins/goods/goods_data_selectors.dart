@@ -137,11 +137,12 @@ List<SelectableItem> _getAllItemsRecursively(
       'purchasePrice': item.purchasePrice,
       'quantity': item.quantity,
       'status': item.status,
-      'usageRecords': item.usageRecords.map((record) => record.toJson()).toList(),
+      'usageRecords':
+          item.usageRecords.map((record) => record.toJson()).toList(),
       'customFields': item.customFields.map((field) => field.toJson()).toList(),
       'notes': item.notes,
       'subItems': item.subItems.map((subItem) => subItem.toJson()).toList(),
-      'warehouseId': warehouseId,  // 添加 warehouseId
+      'warehouseId': warehouseId, // 添加 warehouseId
     };
 
     result.add(
@@ -239,74 +240,79 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: DSThemeBridge(child: Center(child: DSLoadingDots())),
+      );
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 配置选项
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildTitleInput(),
-                  const SizedBox(height: 16),
-                  _buildWarehouseSelector(),
-                  const SizedBox(height: 16),
-                  _buildTagSelector(),
-                  const SizedBox(height: 16),
-                  _buildDateTypeSelector(),
-                  if (_dateType != null) ...[
+      body: DSThemeBridge(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 配置选项
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildTitleInput(),
                     const SizedBox(height: 16),
-                    _buildDateRangeSelector(),
+                    _buildWarehouseSelector(),
+                    const SizedBox(height: 16),
+                    _buildTagSelector(),
+                    const SizedBox(height: 16),
+                    _buildDateTypeSelector(),
+                    if (_dateType != null) ...[
+                      const SizedBox(height: 16),
+                      _buildDateRangeSelector(),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            // 底部按钮
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('goods_cancel'.tr),
+              // 底部按钮
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'goods_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _confirm,
-                      child: Text('goods_confirm'.tr),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DSButton(
+                        label: 'goods_confirm'.tr,
+                        onPressed: _confirm,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildTitleInput() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'goods_widgetTitle'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: theme.text,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            filled: true,
-            hintText: 'goods_widgetTitleHint'.tr,
-          ),
+        DSInput(
+          hint: 'goods_widgetTitleHint'.tr,
           onChanged: (value) {
             setState(() {});
           },
@@ -316,27 +322,27 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
   }
 
   Widget _buildWarehouseSelector() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'goods_selectWarehouse'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: theme.text,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
+        DSSelect<String>(
           value: _selectedWarehouseId ?? 'all',
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            filled: true,
-          ),
           items: [
-            DropdownMenuItem(value: 'all', child: Text('goods_allItems'.tr)),
+            DSSelectItem(value: 'all', label: 'goods_allItems'.tr),
             ..._warehouses.map((warehouse) {
               final itemCount = _countItems(warehouse.items);
-              return DropdownMenuItem(
+              return DSSelectItem(
                 value: warehouse.id,
-                child: Text('${warehouse.title} • $itemCount'),
+                label: '${warehouse.title} • $itemCount',
               );
             }),
           ],
@@ -359,18 +365,22 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
   }
 
   Widget _buildTagSelector() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'goods_selectTagsTitle'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: theme.text,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         if (_allTags.isEmpty)
           Text(
             'goods_noTags'.tr,
-            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           )
         else
           Wrap(
@@ -379,8 +389,8 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
             children:
                 _allTags.map((tag) {
                   final isSelected = _selectedTags.contains(tag);
-                  return FilterChip(
-                    label: Text(tag),
+                  return DSChip(
+                    label: tag,
                     selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
@@ -399,19 +409,23 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
   }
 
   Widget _buildDateTypeSelector() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'goods_selectDateTypeTitle'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: theme.text,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: ChoiceChip(
-                label: Text('goods_purchaseDate'.tr),
+              child: DSChip(
+                label: 'goods_purchaseDate'.tr,
                 selected: _dateType == 'purchase',
                 onSelected: (selected) {
                   setState(() => _dateType = selected ? 'purchase' : null);
@@ -420,8 +434,8 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: ChoiceChip(
-                label: Text('goods_expirationDate'.tr),
+              child: DSChip(
+                label: 'goods_expirationDate'.tr,
                 selected: _dateType == 'expiration',
                 onSelected: (selected) {
                   setState(() => _dateType = selected ? 'expiration' : null);
@@ -435,6 +449,7 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
   }
 
   Widget _buildDateRangeSelector() {
+    final theme = DSThemeBridge.resolve(context);
     final label =
         _dateType == 'purchase'
             ? 'goods_purchaseDateRange'.tr
@@ -445,13 +460,19 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
       children: [
         Text(
           '$label (${'goods_optional'.tr})',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: theme.text,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: DSButton(
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
+                icon: DsIconKind.calendar,
                 onPressed: () async {
                   final date = await showDatePicker(
                     context: context,
@@ -461,17 +482,18 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
                   );
                   if (date != null) setState(() => _startDate = date);
                 },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  _startDate == null
-                      ? 'goods_startDate'.tr
-                      : DateFormat('yyyy-MM-dd').format(_startDate!),
-                ),
+                label:
+                    _startDate == null
+                        ? 'goods_startDate'.tr
+                        : DateFormat('yyyy-MM-dd').format(_startDate!),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: OutlinedButton.icon(
+              child: DSButton(
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
+                icon: DsIconKind.calendar,
                 onPressed: () async {
                   final date = await showDatePicker(
                     context: context,
@@ -481,25 +503,28 @@ class _GoodsListConfigFormState extends State<_GoodsListConfigForm> {
                   );
                   if (date != null) setState(() => _endDate = date);
                 },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  _endDate == null
-                      ? 'goods_endDate'.tr
-                      : DateFormat('yyyy-MM-dd').format(_endDate!),
-                ),
+                label:
+                    _endDate == null
+                        ? 'goods_endDate'.tr
+                        : DateFormat('yyyy-MM-dd').format(_endDate!),
               ),
             ),
           ],
         ),
         if (_startDate != null || _endDate != null)
-          TextButton.icon(
-            onPressed:
-                () => setState(() {
-                  _startDate = null;
-                  _endDate = null;
-                }),
-            icon: const Icon(Icons.clear, size: 16),
-            label: Text('goods_clear'.tr),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: DSButton(
+              variant: DSButtonVariant.ghost,
+              size: DSButtonSize.sm,
+              icon: DsIconKind.close,
+              label: 'goods_clear'.tr,
+              onPressed:
+                  () => setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  }),
+            ),
           ),
       ],
     );

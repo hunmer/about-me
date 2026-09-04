@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
@@ -53,10 +55,7 @@ void registerBillStatsWidget(HomeWidgetRegistry registry) {
 }
 
 /// 导航到账单统计页面
-void _navigateToBillStats(
-  BuildContext context,
-  SelectorResult result,
-) {
+void _navigateToBillStats(BuildContext context, SelectorResult result) {
   final data = result.data as Map<String, dynamic>?;
   if (data == null) {
     debugPrint('[BillStatsWidget] 配置数据为空');
@@ -117,28 +116,22 @@ class _BillStatsLiveSelectorWidget extends LiveSelectorWidget {
   /// 自定义空状态（显示"暂无账单"）
   @override
   Widget buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.surfaceAlt,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.pie_chart,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.grid, size: 48, color: theme.textSub),
             const SizedBox(height: 8),
             Text(
               '暂无账单',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),

@@ -13,17 +13,20 @@ class SubscriptionAddedEventArgs extends EventArgs {
 
 class SubscriptionUpdatedEventArgs extends EventArgs {
   final Subscription subscription;
-  SubscriptionUpdatedEventArgs(this.subscription) : super('subscription_updated');
+  SubscriptionUpdatedEventArgs(this.subscription)
+    : super('subscription_updated');
 }
 
 class SubscriptionTerminatedEventArgs extends EventArgs {
   final String subscriptionId;
-  SubscriptionTerminatedEventArgs(this.subscriptionId) : super('subscription_terminated');
+  SubscriptionTerminatedEventArgs(this.subscriptionId)
+    : super('subscription_terminated');
 }
 
 class SubscriptionDeletedEventArgs extends EventArgs {
   final String subscriptionId;
-  SubscriptionDeletedEventArgs(this.subscriptionId) : super('subscription_deleted');
+  SubscriptionDeletedEventArgs(this.subscriptionId)
+    : super('subscription_deleted');
 }
 
 class SubscriptionController with ChangeNotifier {
@@ -70,10 +73,7 @@ class SubscriptionController with ChangeNotifier {
       final data = {
         'subscriptions': _subscriptions.map((s) => s.toJson()).toList(),
       };
-      await _plugin.storage.writeJson(
-        'bill/$_subscriptionsKey.json',
-        data,
-      );
+      await _plugin.storage.writeJson('bill/$_subscriptionsKey.json', data);
     } catch (e) {
       debugPrint('保存订阅服务失败: $e');
       rethrow;
@@ -119,9 +119,7 @@ class SubscriptionController with ChangeNotifier {
       orElse: () => throw Exception('订阅服务不存在'),
     );
 
-    final updatedSubscription = subscription.copyWith(
-      isActive: false,
-    );
+    final updatedSubscription = subscription.copyWith(isActive: false);
 
     final index = _subscriptions.indexOf(subscription);
     _subscriptions[index] = updatedSubscription;
@@ -167,23 +165,26 @@ class SubscriptionController with ChangeNotifier {
     if (account == null) return;
 
     // 获取已存在的订阅账单
-    final existingBills = account.bills.where(
-      (bill) => bill.subscriptionId == subscription.id,
-    ).toList();
+    final existingBills =
+        account.bills
+            .where((bill) => bill.subscriptionId == subscription.id)
+            .toList();
 
     // 创建已存在账单的日期集合
     final existingDates = <String>{};
     for (final bill in existingBills) {
-      final dateStr = '${bill.date.year}-${bill.date.month.toString().padLeft(2, '0')}-${bill.date.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${bill.date.year}-${bill.date.month.toString().padLeft(2, '0')}-${bill.date.day.toString().padLeft(2, '0')}';
       existingDates.add(dateStr);
     }
 
     // 生成应该存在的日期列表
     final shouldHaveDates = <String>{};
     final now = DateTime.now();
-    final lastDate = subscription.endDate != null && subscription.endDate!.isBefore(now)
-        ? subscription.endDate!
-        : now;
+    final lastDate =
+        subscription.endDate != null && subscription.endDate!.isBefore(now)
+            ? subscription.endDate!
+            : now;
 
     for (int i = 0; i < subscription.days; i++) {
       final billDate = DateTime(
@@ -194,7 +195,8 @@ class SubscriptionController with ChangeNotifier {
 
       if (billDate.isAfter(lastDate)) break;
 
-      final dateStr = '${billDate.year}-${billDate.month.toString().padLeft(2, '0')}-${billDate.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${billDate.year}-${billDate.month.toString().padLeft(2, '0')}-${billDate.day.toString().padLeft(2, '0')}';
       shouldHaveDates.add(dateStr);
     }
 
@@ -219,7 +221,8 @@ class SubscriptionController with ChangeNotifier {
           accountId: account.id,
           category: subscription.category,
           date: billDate,
-          note: '自动生成的订阅账单 - ${subscription.days}天总金额¥${subscription.totalAmount.toStringAsFixed(2)}',
+          note:
+              '自动生成的订阅账单 - ${subscription.days}天总金额¥${subscription.totalAmount.toStringAsFixed(2)}',
           icon: subscription.icon,
           iconColor: subscription.iconColor,
           isSubscription: true,

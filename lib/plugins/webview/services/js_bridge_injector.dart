@@ -7,6 +7,8 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/js_bridge/batch_request_executor.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
 
 /// JS Bridge Handlers 注册服务
@@ -239,18 +241,21 @@ class JSBridgeInjector {
           final message = params['message'] as String? ?? '';
           final options = params['options'] as Map<String, dynamic>? ?? {};
 
-          final result = await showDialog<bool>(
+          final result = await showDSDialog<bool>(
             context: _context!,
+            theme: DSThemeBridge.resolve(_context!),
             builder:
-                (ctx) => AlertDialog(
-                  title: Text(options['title'] as String? ?? '提示'),
-                  content: Text(message),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(options['confirmText'] as String? ?? '确定'),
-                    ),
-                  ],
+                (ctx) => DSThemeBridge(
+                  child: Builder(
+                    builder:
+                        (ctx) => DSDialog(
+                          title: options['title'] as String? ?? '提示',
+                          message: message,
+                          confirmText:
+                              options['confirmText'] as String? ?? '确定',
+                          onConfirm: () => Navigator.of(ctx).pop(true),
+                        ),
+                  ),
                 ),
           );
           return result ?? false;
@@ -279,23 +284,29 @@ class JSBridgeInjector {
             return null;
           }
 
-          final result = await showDialog<bool>(
+          final result = await showDSDialog<bool>(
             context: _context!,
+            theme: DSThemeBridge.resolve(_context!),
             builder:
-                (ctx) => AlertDialog(
-                  title: Text(options['title'] as String? ?? ''),
-                  content: Text(options['content'] as String? ?? ''),
-                  actions: [
-                    if (options['showCancel'] != false)
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(options['cancelText'] as String? ?? '取消'),
-                      ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(options['confirmText'] as String? ?? '确定'),
-                    ),
-                  ],
+                (ctx) => DSThemeBridge(
+                  child: Builder(
+                    builder:
+                        (ctx) => DSDialog(
+                          title: options['title'] as String? ?? '',
+                          message: options['content'] as String? ?? '',
+                          cancelText:
+                              options['showCancel'] != false
+                                  ? options['cancelText'] as String? ?? '取消'
+                                  : null,
+                          confirmText:
+                              options['confirmText'] as String? ?? '确定',
+                          onCancel:
+                              options['showCancel'] != false
+                                  ? () => Navigator.of(ctx).pop(false)
+                                  : null,
+                          onConfirm: () => Navigator.of(ctx).pop(true),
+                        ),
+                  ),
                 ),
           );
           return result;

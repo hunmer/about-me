@@ -1,3 +1,5 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
@@ -13,126 +15,265 @@ class SourceManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appStoreManager = context.watch<AppStoreManager>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('webview_manage_sources'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'webview_add_source'.tr,
-            onPressed: () => _showAddSourceDialog(context),
-          ),
-        ],
-      ),
-      body: appStoreManager.sources.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.source, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'webview_no_sources'.tr,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: appStoreManager.sources.length,
-              itemBuilder: (context, index) {
-                final source = appStoreManager.sources[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: ListTile(
-                    title: Text(
-                      source.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          source.url,
-                          style: const TextStyle(fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Base URL: ${source.baseUrl}',
-                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (source.lastFetchedAt != null)
-                          Text(
-                            'Last fetched: ${_formatDate(source.lastFetchedAt!)} • ${source.appCount ?? 0} apps',
-                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('webview_manage_sources'.tr),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  tooltip: 'webview_add_source'.tr,
+                  onPressed: () => _showAddSourceDialog(context),
+                ),
+              ],
+            ),
+            body:
+                appStoreManager.sources.isEmpty
+                    ? Center(
+                      child: DSEmptyState(
+                        emoji: '📦',
+                        title: 'webview_no_sources'.tr,
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.all(8),
+                      itemCount: appStoreManager.sources.length,
+                      itemBuilder: (context, index) {
+                        final source = appStoreManager.sources[index];
+                        // 供 DSPopover 回调使用的屏幕 context(其 contentBuilder
+                        // 的 context 位于根 Overlay,读不到本屏的 Provider)
+                        final screenContext = context;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (source.isDefault)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            margin: const EdgeInsets.only(right: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(4),
+                          child: DSCard(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: theme.spacing.md,
+                              vertical: theme.spacing.sm,
                             ),
-                            child: const Text(
-                              'Default',
-                              style: TextStyle(fontSize: 11, color: Colors.white),
-                            ),
-                          ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'edit':
-                                _showEditSourceDialog(context, source);
-                                break;
-                              case 'delete':
-                                _confirmDelete(context, source);
-                                break;
-                              case 'set_default':
-                                _setAsDefault(context, source);
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.edit, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('webview_edit_source'.tr),
-                                ],
-                              ),
-                            ),
-                            if (!source.isDefault)
-                              PopupMenuItem(
-                                value: 'set_default',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.star, size: 20),
-                                    const SizedBox(width: 8),
-                                    const Text('Set as Default'),
-                                  ],
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        source.name,
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.text,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        source.url,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.text,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        'Base URL: ${source.baseUrl}',
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                          fontSize: 11,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (source.lastFetchedAt != null)
+                                        Text(
+                                          'Last fetched: ${_formatDate(source.lastFetchedAt!)} • ${source.appCount ?? 0} apps',
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.delete, size: 20, color: Colors.red),
-                                  const SizedBox(width: 8),
-                                  Text('delete'.tr, style: const TextStyle(color: Colors.red)),
+                                if (source.isDefault) ...[
+                                  DSBadge(label: 'Default'),
+                                  SizedBox(width: theme.spacing.sm),
                                 ],
+                                // DSPopover 经根 Overlay 展示,内容已自带主题
+                                DSPopover(
+                                  width: 190,
+                                  contentBuilder: (context, close) {
+                                    final menuTheme = DSThemeBridge.resolve(
+                                      context,
+                                    );
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        _SourceMenuRow(
+                                          icon: DsIcon(
+                                            DsIconKind.edit,
+                                            size: 20,
+                                            color: menuTheme.primary,
+                                          ),
+                                          label: 'webview_edit_source'.tr,
+                                          theme: menuTheme,
+                                          onTap: () {
+                                            close();
+                                            _showEditSourceDialog(
+                                              screenContext,
+                                              source,
+                                            );
+                                          },
+                                        ),
+                                        if (!source.isDefault)
+                                          _SourceMenuRow(
+                                            icon: DsIcon(
+                                              DsIconKind.star,
+                                              size: 20,
+                                              color: menuTheme.primary,
+                                            ),
+                                            label: 'Set as Default',
+                                            theme: menuTheme,
+                                            onTap: () {
+                                              close();
+                                              _setAsDefault(
+                                                screenContext,
+                                                source,
+                                              );
+                                            },
+                                          ),
+                                        _SourceMenuRow(
+                                          icon: DsIcon(
+                                            DsIconKind.trash,
+                                            size: 20,
+                                            color: menuTheme.danger,
+                                          ),
+                                          label: 'delete'.tr,
+                                          theme: menuTheme,
+                                          danger: true,
+                                          onTap: () {
+                                            close();
+                                            _confirmDelete(
+                                              screenContext,
+                                              source,
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                  child: DSIconButton(
+                                    icon: DsIconKind.more,
+                                    size: 36,
+                                    color: theme.surfaceAlt,
+                                    iconColor: theme.textSub,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddSourceDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final urlController = TextEditingController();
+    final baseUrlController = TextEditingController();
+    final appStoreManager = context.read<AppStoreManager>();
+
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'webview_add_source'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        DSInput(
+                          controller: nameController,
+                          label: 'webview_source_name'.tr,
+                          hint: 'My App Store',
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: urlController,
+                          label: 'webview_source_url'.tr,
+                          hint: 'https://example.com/apps.json',
+                          keyboardType: TextInputType.url,
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: baseUrlController,
+                          label: 'webview_source_base_url'.tr,
+                          hint: 'https://example.com',
+                          keyboardType: TextInputType.url,
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                        Text(
+                          'Base URL is used to download app files',
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: 'cancel'.tr,
+                                variant: DSButtonVariant.outline,
+                                onPressed:
+                                    () => Navigator.of(dialogContext).pop(),
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: DSButton(
+                                label: 'add'.tr,
+                                onPressed: () {
+                                  if (nameController.text.isNotEmpty &&
+                                      urlController.text.isNotEmpty &&
+                                      baseUrlController.text.isNotEmpty) {
+                                    final source = AppStoreSource(
+                                      id: const Uuid().v4(),
+                                      name: nameController.text,
+                                      url: urlController.text,
+                                      baseUrl: baseUrlController.text,
+                                      createdAt: DateTime.now(),
+                                    );
+                                    appStoreManager.addSource(source);
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -143,83 +284,7 @@ class SourceManagementScreen extends StatelessWidget {
                 );
               },
             ),
-    );
-  }
-
-  void _showAddSourceDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final urlController = TextEditingController();
-    final baseUrlController = TextEditingController();
-    final appStoreManager = context.read<AppStoreManager>();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('webview_add_source'.tr),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_name'.tr,
-                    hintText: 'My App Store',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: urlController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_url'.tr,
-                    hintText: 'https://example.com/apps.json',
-                  ),
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: baseUrlController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_base_url'.tr,
-                    hintText: 'https://example.com',
-                  ),
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Base URL is used to download app files',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text('cancel'.tr),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty &&
-                    urlController.text.isNotEmpty &&
-                    baseUrlController.text.isNotEmpty) {
-                  final source = AppStoreSource(
-                    id: const Uuid().v4(),
-                    name: nameController.text,
-                    url: urlController.text,
-                    baseUrl: baseUrlController.text,
-                    createdAt: DateTime.now(),
-                  );
-                  appStoreManager.addSource(source);
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text('add'.tr),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -229,88 +294,107 @@ class SourceManagementScreen extends StatelessWidget {
     final baseUrlController = TextEditingController(text: source.baseUrl);
     final appStoreManager = context.read<AppStoreManager>();
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('webview_edit_source'.tr),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_name'.tr,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'webview_edit_source'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        DSInput(
+                          controller: nameController,
+                          label: 'webview_source_name'.tr,
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: urlController,
+                          label: 'webview_source_url'.tr,
+                          keyboardType: TextInputType.url,
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: baseUrlController,
+                          label: 'webview_source_base_url'.tr,
+                          keyboardType: TextInputType.url,
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: 'cancel'.tr,
+                                variant: DSButtonVariant.outline,
+                                onPressed:
+                                    () => Navigator.of(dialogContext).pop(),
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: DSButton(
+                                label: 'save'.tr,
+                                onPressed: () {
+                                  if (nameController.text.isNotEmpty &&
+                                      urlController.text.isNotEmpty &&
+                                      baseUrlController.text.isNotEmpty) {
+                                    final updated = source.copyWith(
+                                      name: nameController.text,
+                                      url: urlController.text,
+                                      baseUrl: baseUrlController.text,
+                                    );
+                                    appStoreManager.updateSource(updated);
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: urlController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_url'.tr,
-                  ),
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: baseUrlController,
-                  decoration: InputDecoration(
-                    labelText: 'webview_source_base_url'.tr,
-                  ),
-                  keyboardType: TextInputType.url,
-                ),
-              ],
+                );
+              },
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text('cancel'.tr),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty &&
-                    urlController.text.isNotEmpty &&
-                    baseUrlController.text.isNotEmpty) {
-                  final updated = source.copyWith(
-                    name: nameController.text,
-                    url: urlController.text,
-                    baseUrl: baseUrlController.text,
-                  );
-                  appStoreManager.updateSource(updated);
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text('save'.tr),
-            ),
-          ],
-        );
-      },
     );
   }
 
   void _confirmDelete(BuildContext context, AppStoreSource source) async {
     final appStoreManager = context.read<AppStoreManager>();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('confirm'.tr),
-          content: Text('Delete source "${source.name}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text('cancel'.tr),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (dialogContext) => DSDialog(
+                    title: 'confirm'.tr,
+                    message: 'Delete source "${source.name}"?',
+                    confirmText: 'delete'.tr,
+                    cancelText: 'cancel'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  ),
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: Text('delete'.tr),
-            ),
-          ],
-        );
-      },
+          ),
     );
 
     if (confirmed == true && context.mounted) {
@@ -334,5 +418,59 @@ class SourceManagementScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+/// 源菜单行(果冻风格)
+class _SourceMenuRow extends StatelessWidget {
+  const _SourceMenuRow({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final Widget icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.primary;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.xs),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.md,
+            raised: false,
+            color: pressed ? accent.mixWhite(0.9) : theme.surfaceAlt,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm + 2,
+            ),
+            child: Row(
+              children: [
+                icon,
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: DsTypography.body.copyWith(
+                      color: danger ? theme.danger : theme.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
@@ -21,47 +23,57 @@ class AgentListItem extends StatelessWidget {
   Future<void> _deleteAgent(BuildContext context) async {
     final controller = OpenAIPlugin.instance.controller;
     await controller.deleteAgent(agent.id);
-    Get.snackbar(
-      'openai_agentDeleted'.tr,
-      '${agent.name} 已被删除',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    Toast.success('${agent.name} 已被删除');
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return SwipeActionWrapper(
       key: ValueKey(agent.id),
       leadingActions: [
-        SwipeActionPresets.edit(
-          onTap: () => _editAgent(context),
-        ),
+        SwipeActionPresets.edit(onTap: () => _editAgent(context)),
       ],
       trailingActions: [
-        SwipeActionPresets.delete(
-          onTap: () => _deleteAgent(context),
-        ),
+        SwipeActionPresets.delete(onTap: () => _deleteAgent(context)),
       ],
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: ListTile(
-          leading: _buildAgentIcon(),
-          title: Text(
-            agent.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '服务商: ${agent.serviceProviderId}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 4),
-              _buildTags(),
-            ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: DSCard(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.md,
+            vertical: theme.spacing.sm,
           ),
           onTap: () => _editAgent(context),
+          child: Row(
+            children: [
+              _buildAgentIcon(),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      agent.name,
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '服务商: ${agent.serviceProviderId}',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildTags(theme),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -94,24 +106,22 @@ class AgentListItem extends StatelessWidget {
         ),
       );
     }
-    
-    // 如果有自定义图标，使用自定义图标
+
+    // 如果有自定义图标，使用自定义图标(持久化 IconData,刻意保留 Material)
     if (agent.icon != null) {
       return Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: agent.iconColor ?? _getColorForServiceProvider(agent.serviceProviderId),
+          color:
+              agent.iconColor ??
+              _getColorForServiceProvider(agent.serviceProviderId),
         ),
-        child: Icon(
-          agent.icon,
-          size: 24,
-          color: Colors.white,
-        ),
+        child: Icon(agent.icon, size: 24, color: Colors.white),
       );
     }
-    
+
     // 默认图标
     return _buildDefaultIcon();
   }
@@ -124,11 +134,7 @@ class AgentListItem extends StatelessWidget {
         shape: BoxShape.circle,
         color: _getColorForServiceProvider(agent.serviceProviderId),
       ),
-      child: const Icon(
-        Icons.smart_toy,
-        size: 24,
-        color: Colors.white,
-      ),
+      child: const Icon(Icons.smart_toy, size: 24, color: Colors.white),
     );
   }
 
@@ -147,7 +153,7 @@ class AgentListItem extends StatelessWidget {
     }
   }
 
-  Widget _buildTags() {
+  Widget _buildTags(AppThemeData theme) {
     return Wrap(
       spacing: 4,
       runSpacing: 4,
@@ -156,10 +162,16 @@ class AgentListItem extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: theme.surfaceAlt,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(tag, style: const TextStyle(fontSize: 10)),
+              child: Text(
+                tag,
+                style: DsTypography.label.copyWith(
+                  fontSize: 10,
+                  color: theme.textSub,
+                ),
+              ),
             );
           }).toList(),
     );

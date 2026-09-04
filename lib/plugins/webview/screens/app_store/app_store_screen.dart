@@ -1,3 +1,6 @@
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/webview/screens/app_store/source_management_screen.dart';
 import 'package:aboutme/plugins/webview/screens/app_store/app_detail_sheet.dart';
 import 'package:flutter/material.dart';
@@ -34,79 +37,87 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
     final appStoreManager = context.watch<AppStoreManager>();
     final downloadManager = context.watch<DownloadManager>();
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text('webview_app_store'.tr),
-      largeTitle: 'webview_app_store'.tr,
-      enableLargeTitle: true,
-      enableSearchBar: true,
-      searchPlaceholder: 'search'.tr,
-      onSearchChanged: (_) => setState(() {}),
-      enableSearchFilter: true,
-      filterLabels: {
-        'title': 'webview_search_title'.tr,
-        'desc': 'webview_search_desc'.tr,
-        'author': 'webview_search_author'.tr,
-      },
-      onSearchFilterChanged: (filters) {
-        setState(() {
-          _searchFilters.addAll(filters);
-        });
-      },
-      enableMultiFilter: true,
-      multiFilterItems: _buildFilterItems(appStoreManager),
-      onMultiFilterChanged: (filters) {
-        setState(() {
-          if (filters.containsKey('tag')) {
-            _selectedTag = filters['tag'] as String? ?? '';
-          }
-          if (filters.containsKey('installed')) {
-            _showInstalledOnly = filters['installed'] as bool? ?? false;
-          }
-        });
-      },
-      actions: [
-        // 源切换按钮
-        IconButton(
-          icon: const Icon(Icons.source),
-          tooltip:
-              appStoreManager.currentSource?.name ??
-              'webview_select_source'.tr,
-          onPressed: () => _showSourcePicker(context),
-        ),
-        // 源管理按钮
-        IconButton(
-          icon: const Icon(Icons.settings),
-          tooltip: 'webview_manage_sources'.tr,
-          onPressed: () {
-            final appStoreManager = context.read<AppStoreManager>();
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => ChangeNotifierProvider.value(
-                      value: appStoreManager,
-                      child: const SourceManagementScreen(),
-                    ),
-              ),
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('webview_app_store'.tr),
+        largeTitle: 'webview_app_store'.tr,
+        enableLargeTitle: true,
+        enableSearchBar: true,
+        searchPlaceholder: 'search'.tr,
+        onSearchChanged: (_) => setState(() {}),
+        enableSearchFilter: true,
+        filterLabels: {
+          'title': 'webview_search_title'.tr,
+          'desc': 'webview_search_desc'.tr,
+          'author': 'webview_search_author'.tr,
+        },
+        onSearchFilterChanged: (filters) {
+          setState(() {
+            _searchFilters.addAll(filters);
+          });
+        },
+        enableMultiFilter: true,
+        multiFilterItems: _buildFilterItems(appStoreManager),
+        onMultiFilterChanged: (filters) {
+          setState(() {
+            if (filters.containsKey('tag')) {
+              _selectedTag = filters['tag'] as String? ?? '';
+            }
+            if (filters.containsKey('installed')) {
+              _showInstalledOnly = filters['installed'] as bool? ?? false;
+            }
+          });
+        },
+        // DS 暂无"源"图标,整组 actions 保留 Material 保持一致
+        actions: [
+          // 源切换按钮
+          IconButton(
+            icon: const Icon(Icons.source),
+            tooltip:
+                appStoreManager.currentSource?.name ??
+                'webview_select_source'.tr,
+            onPressed: () => _showSourcePicker(context),
+          ),
+          // 源管理按钮
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'webview_manage_sources'.tr,
+            onPressed: () {
+              final appStoreManager = context.read<AppStoreManager>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => ChangeNotifierProvider.value(
+                        value: appStoreManager,
+                        child: const SourceManagementScreen(),
+                      ),
+                ),
+              );
+            },
+          ),
+        ],
+        body: Builder(
+          builder: (context) {
+            return Column(
+              children: [
+                // 应用列表
+                Expanded(
+                  child:
+                      appStoreManager.isLoading
+                          ? const Center(child: DSLoadingDots())
+                          : appStoreManager.error != null
+                          ? _buildErrorView(appStoreManager)
+                          : _buildAppList(appStoreManager),
+                ),
+
+                // 安装进度条
+                if (downloadManager.isInstalling)
+                  _buildInstallProgress(downloadManager.currentTask!),
+              ],
             );
           },
         ),
-      ],
-      body: Column(
-        children: [
-          // 应用列表
-          Expanded(
-            child: appStoreManager.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : appStoreManager.error != null
-                ? _buildErrorView(appStoreManager)
-                : _buildAppList(appStoreManager),
-          ),
-
-          // 安装进度条
-          if (downloadManager.isInstalling)
-            _buildInstallProgress(downloadManager.currentTask!),
-        ],
       ),
     );
   }
@@ -122,13 +133,20 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
         title: 'webview_category'.tr,
         type: FilterType.tagsSingle,
         initialValue: _selectedTag,
+        // 第三方过滤面板经 Overlay 展示,DS 组件需包主题桥
         builder: (context, value, onChanged) {
-          return Row(
-            children: [
-              _buildTagChip('全部', '', value, onChanged),
-              ...allTags.map((tag) =>
-                  _buildTagChip(tag, tag, value, onChanged)),
-            ],
+          return DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => Row(
+                    children: [
+                      _buildTagChip('全部', '', value, onChanged),
+                      ...allTags.map(
+                        (tag) => _buildTagChip(tag, tag, value, onChanged),
+                      ),
+                    ],
+                  ),
+            ),
           );
         },
         getBadge: (value) {
@@ -142,16 +160,27 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
         title: 'webview_installed_only'.tr,
         type: FilterType.checkbox,
         initialValue: _showInstalledOnly,
+        // 第三方过滤面板经 Overlay 展示,DS 组件需包主题桥
         builder: (context, value, onChanged) {
-          return Row(
-            children: [
-              Checkbox(
-                value: value as bool? ?? false,
-                onChanged: (newValue) => onChanged(newValue ?? false),
-              ),
-              const SizedBox(width: 8),
-              Text('webview_installed_only'.tr),
-            ],
+          return DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Row(
+                  children: [
+                    DSCheckbox(
+                      value: value as bool? ?? false,
+                      onChanged: (newValue) => onChanged(newValue ?? false),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'webview_installed_only'.tr,
+                      style: DsTypography.body.copyWith(color: theme.text),
+                    ),
+                  ],
+                );
+              },
+            ),
           );
         },
         getBadge: (value) {
@@ -172,11 +201,10 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
     final isSelected = value == selectedValue;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
+      child: DSChip(
+        label: label,
         selected: isSelected,
         onSelected: (_) => onChanged(value),
-        showCheckmark: false,
       ),
     );
   }
@@ -239,13 +267,12 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
 
   /// 应用卡片
   Widget _buildAppCard(MiniApp app) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _showAppDetail(app),
-        child: Padding(
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return DSCard(
           padding: const EdgeInsets.all(12.0),
+          onTap: () => _showAppDetail(app),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -264,18 +291,18 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (app.isInstalled) ...[
-                            const Icon(
-                              Icons.check_circle,
+                            DsIcon(
+                              DsIconKind.check,
                               size: 14,
-                              color: Colors.green,
+                              color: theme.success,
                             ),
                             const SizedBox(width: 4),
                           ],
                           Text(
                             app.displayVersion,
-                            style: TextStyle(
+                            style: DsTypography.caption.copyWith(
                               fontSize: 11,
-                              color: Colors.grey[600],
+                              color: theme.textSub,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -283,22 +310,10 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                       ),
                       if (app.hasUpdate) ...[
                         const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'webview_update'.tr,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                            ),
-                          ),
+                        DSBadge(
+                          label: 'webview_update'.tr,
+                          color: theme.warning,
+                          textColor: theme.onWarning,
                         ),
                       ],
                     ],
@@ -309,9 +324,9 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
               // 标题
               Text(
                 app.title,
-                style: const TextStyle(
+                style: DsTypography.body.copyWith(
+                  color: theme.text,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -320,7 +335,7 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
               // 描述
               Text(
                 app.desc ?? '',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -338,15 +353,17 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: theme.primary.mixWhite(0.9),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.blue[200]!),
+                            border: Border.all(
+                              color: theme.primary.withValues(alpha: 0.35),
+                            ),
                           ),
                           child: Text(
                             tag,
-                            style: TextStyle(
+                            style: DsTypography.label.copyWith(
                               fontSize: 10,
-                              color: Colors.blue[700],
+                              color: theme.primaryText,
                             ),
                           ),
                         );
@@ -354,62 +371,69 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                 ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   /// 安装进度条
   Widget _buildInstallProgress(InstallTask task) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.surface,
+            boxShadow: theme.shadows.soft,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Text(
-                  '${_getStatusText(task.status)} ${task.appName}...',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${_getStatusText(task.status)} ${task.appName}...',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${(task.progress * 100).toStringAsFixed(0)}%',
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                ],
               ),
-              Text('${(task.progress * 100).toStringAsFixed(0)}%'),
+              const SizedBox(height: 8),
+              DSLinearProgress(value: task.progress),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${task.completedFiles}/${task.totalFiles} files • ${_formatBytes(task.downloadedBytes)}/${_formatBytes(task.totalBytes)}',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                  if (task.status == InstallTaskStatus.downloading)
+                    DSButton(
+                      label: 'cancel'.tr,
+                      variant: DSButtonVariant.ghost,
+                      size: DSButtonSize.sm,
+                      onPressed: () {
+                        context.read<DownloadManager>().cancelInstall();
+                      },
+                    ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(value: task.progress),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${task.completedFiles}/${task.totalFiles} files • ${_formatBytes(task.downloadedBytes)}/${_formatBytes(task.totalBytes)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              if (task.status == InstallTaskStatus.downloading)
-                TextButton(
-                  onPressed: () {
-                    context.read<DownloadManager>().cancelInstall();
-                  },
-                  child: Text('cancel'.tr),
-                ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -418,23 +442,11 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              manager.error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => manager.fetchApps(),
-              icon: const Icon(Icons.refresh),
-              label: Text('retry'.tr),
-            ),
-          ],
+        child: DSEmptyState(
+          emoji: '⚠️',
+          title: manager.error!,
+          actionLabel: 'retry'.tr,
+          onAction: () => manager.fetchApps(),
         ),
       ),
     );
@@ -442,21 +454,8 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
 
   /// 空视图
   Widget _buildEmptyView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.apps, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No apps found',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
+    return const Center(
+      child: DSEmptyState(emoji: '🧩', title: 'No apps found'),
     );
   }
 
@@ -464,44 +463,109 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
   void _showSourcePicker(BuildContext context) {
     final manager = context.read<AppStoreManager>();
     if (manager.sources.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('webview_no_sources'.tr)));
+      Toast.warning('webview_no_sources'.tr);
       return;
     }
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('webview_select_source'.tr),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children:
-                  manager.sources.map((source) {
-                    return RadioListTile<String>(
-                      title: Text(source.name),
-                      subtitle: Text(
-                        source.url,
-                        style: const TextStyle(fontSize: 12),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      value: source.id,
-                      groupValue: manager.currentSource?.id,
-                      onChanged: (value) {
-                        if (value != null) {
-                          manager.switchSource(value);
-                          Navigator.pop(dialogContext);
-                        }
-                      },
-                    );
-                  }).toList(),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'webview_select_source'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        ...manager.sources.map((source) {
+                          final selected =
+                              source.id == manager.currentSource?.id;
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: theme.spacing.sm),
+                            child: Pressable(
+                              onPressed: () {
+                                manager.switchSource(source.id);
+                                Navigator.of(dialogContext).pop();
+                              },
+                              builder: (context, states) {
+                                final pressed = states.contains(
+                                  WidgetState.pressed,
+                                );
+                                return JellyBox(
+                                  radius: theme.radii.lg,
+                                  raised: false,
+                                  color:
+                                      pressed
+                                          ? theme.primary.mixWhite(0.9)
+                                          : selected
+                                          ? theme.primary.mixWhite(0.92)
+                                          : theme.surfaceAlt,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: theme.spacing.md,
+                                    vertical: theme.spacing.sm + 2,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      DSRadio<String>(
+                                        value: source.id,
+                                        groupValue: manager.currentSource?.id,
+                                        onChanged: (_) {
+                                          manager.switchSource(source.id);
+                                          Navigator.of(dialogContext).pop();
+                                        },
+                                      ),
+                                      SizedBox(width: theme.spacing.md),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              source.name,
+                                              style: DsTypography.body.copyWith(
+                                                color: theme.text,
+                                              ),
+                                            ),
+                                            Text(
+                                              source.url,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: theme.textSub,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
     );
   }
 
@@ -512,16 +576,18 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
 
     SmoothBottomSheet.show(
       context: context,
-      builder: (sheetContext) => SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: appStoreManager),
-            ChangeNotifierProvider.value(value: downloadManager),
-          ],
-          child: AppDetailSheet(app: app),
-        ),
-      ),
+      backgroundColor: DSThemeBridge.resolve(context).surface,
+      builder:
+          (sheetContext) => SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: MultiProvider(
+              providers: [
+                ChangeNotifierProvider.value(value: appStoreManager),
+                ChangeNotifierProvider.value(value: downloadManager),
+              ],
+              child: AppDetailSheet(app: app),
+            ),
+          ),
     );
   }
 
@@ -548,46 +614,59 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
 
   /// 构建应用图标（支持网络图片、emoji文本、默认图标）
   Widget _buildAppIcon(String? icon, {double size = 48}) {
-    // 判断是否为网络图片 URL
-    final bool isNetworkImage =
-        icon != null &&
-        (icon.startsWith('http://') || icon.startsWith('https://'));
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        // 判断是否为网络图片 URL
+        final bool isNetworkImage =
+            icon != null &&
+            (icon.startsWith('http://') || icon.startsWith('https://'));
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: isNetworkImage ? null : Colors.grey[300],
+        return ClipRRect(
           borderRadius: BorderRadius.circular(8),
-        ),
-        child:
-            isNetworkImage
-                ? Image.network(
-                  icon,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: isNetworkImage ? null : theme.surfaceAlt,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child:
+                isNetworkImage
+                    ? Image.network(
+                      icon,
                       width: size,
                       height: size,
-                      color: Colors.grey[300],
-                      child: Icon(Icons.apps, size: size / 2),
-                    );
-                  },
-                )
-                : icon != null && icon.isNotEmpty
-                ? Center(
-                  child: Text(
-                    icon,
-                    style: TextStyle(fontSize: size * 0.6),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-                : Icon(Icons.apps, size: size / 2),
-      ),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: size,
+                          height: size,
+                          color: theme.surfaceAlt,
+                          child: DsIcon(
+                            DsIconKind.grid,
+                            size: size / 2,
+                            color: theme.textSub,
+                          ),
+                        );
+                      },
+                    )
+                    : icon != null && icon.isNotEmpty
+                    ? Center(
+                      child: Text(
+                        icon,
+                        style: TextStyle(fontSize: size * 0.6),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                    : DsIcon(
+                      DsIconKind.grid,
+                      size: size / 2,
+                      color: theme.textSub,
+                    ),
+          ),
+        );
+      },
     );
   }
 

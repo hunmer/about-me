@@ -26,11 +26,11 @@ void _registerDataSelectors() {
                   (account) => SelectableItem(
                     id: account.id,
                     title: account.title,
-                    subtitle:
-                        '余额: ¥${account.totalAmount.toStringAsFixed(2)}',
+                    subtitle: '余额: ¥${account.totalAmount.toStringAsFixed(2)}',
                     icon: account.icon,
                     color: account.backgroundColor,
-                    rawData: account.toJson()..['icon'] = account.icon.codePoint,
+                    rawData:
+                        account.toJson()..['icon'] = account.icon.codePoint,
                   ),
                 )
                 .toList();
@@ -152,11 +152,11 @@ void _registerDataSelectors() {
                   (account) => SelectableItem(
                     id: account.id,
                     title: account.title,
-                    subtitle:
-                        '余额: ¥${account.totalAmount.toStringAsFixed(2)}',
+                    subtitle: '余额: ¥${account.totalAmount.toStringAsFixed(2)}',
                     icon: account.icon,
                     color: account.backgroundColor,
-                    rawData: account.toJson()..['icon'] = account.icon.codePoint,
+                    rawData:
+                        account.toJson()..['icon'] = account.icon.codePoint,
                   ),
                 )
                 .toList();
@@ -181,13 +181,17 @@ void _registerDataSelectors() {
               {
                 'id': 'today',
                 'label': '今天',
-                'start': DateTime(now.year, now.month, now.day).toIso8601String(),
+                'start':
+                    DateTime(now.year, now.month, now.day).toIso8601String(),
                 'end': now.toIso8601String(),
               },
               {
                 'id': 'week',
                 'label': '本周',
-                'start': now.subtract(Duration(days: now.weekday - 1)).toIso8601String(),
+                'start':
+                    now
+                        .subtract(Duration(days: now.weekday - 1))
+                        .toIso8601String(),
                 'end': now.toIso8601String(),
               },
               {

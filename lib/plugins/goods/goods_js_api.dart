@@ -73,7 +73,10 @@ Future<String> _jsDeleteWarehouse(Map<String, dynamic> params) async {
     final result = await GoodsPlugin.instance.useCase.deleteWarehouse(params);
 
     if (result.isFailure) {
-      return jsonEncode({'success': false, 'error': result.errorOrNull?.message});
+      return jsonEncode({
+        'success': false,
+        'error': result.errorOrNull?.message,
+      });
     }
 
     return jsonEncode({'success': true, 'warehouseId': params['id']});
@@ -266,7 +269,10 @@ Future<String> _jsDeleteGoodsItem(Map<String, dynamic> params) async {
     final result = await GoodsPlugin.instance.useCase.deleteItem(useCaseParams);
 
     if (result.isFailure) {
-      return jsonEncode({'success': false, 'error': result.errorOrNull?.message});
+      return jsonEncode({
+        'success': false,
+        'error': result.errorOrNull?.message,
+      });
     }
 
     return jsonEncode({

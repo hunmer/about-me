@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -107,7 +109,7 @@ Widget buildBillStatsWidget(
   String? periodStart,
   String? periodEnd,
 ) {
-  final theme = Theme.of(context);
+  final theme = DSThemeBridge.resolve(context);
 
   // 支出卡片颜色（红色系）
   const expenseGradient = [Color(0xFFEF5350), Color(0xFFE53935)];
@@ -130,11 +132,7 @@ Widget buildBillStatsWidget(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(
-                    accountIcon,
-                    size: 16,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+                  child: Icon(accountIcon, size: 16, color: theme.onPrimary),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -143,14 +141,14 @@ Widget buildBillStatsWidget(
                     children: [
                       Text(
                         accountTitle,
-                        style: theme.textTheme.labelLarge,
+                        style: DsTypography.label.copyWith(color: theme.text),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         periodLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.outline,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
                         ),
                       ),
                     ],

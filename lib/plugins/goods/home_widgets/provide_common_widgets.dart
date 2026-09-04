@@ -19,9 +19,7 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
   final title = data['title'] as String?;
 
   debugPrint('[provideCommonWidgets] data: $data');
-  debugPrint(
-    '[provideCommonWidgets] id: $id, warehouseId: $warehouseId',
-  );
+  debugPrint('[provideCommonWidgets] id: $id, warehouseId: $warehouseId');
 
   if (id == null) {
     return {};

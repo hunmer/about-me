@@ -23,11 +23,12 @@ void registerIconWidget(HomeWidgetRegistry registry) {
       defaultSize: const SmallSize(),
       supportedSizes: [const SmallSize()],
       category: 'home_categoryRecord'.tr,
-      builder: (context, config) => GenericIconWidget(
-        icon: Icons.inventory_2,
-        color: _goodsColor,
-        name: 'goods_widgetName'.tr,
-      ),
+      builder:
+          (context, config) => GenericIconWidget(
+            icon: Icons.inventory_2,
+            color: _goodsColor,
+            name: 'goods_widgetName'.tr,
+          ),
     ),
   );
 }

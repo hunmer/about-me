@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io'
-    show File, Directory, FileSystemEntity, FileSystemEntityType;
+import 'dart:io' show File, Directory, FileSystemEntity, FileSystemEntityType;
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +11,8 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 import 'models/webview_card.dart';
 import 'models/webview_settings.dart';
@@ -165,8 +166,6 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       await _loadPreloadScripts();
     }
 
-   
-
     // 注册数据选择器
     _registerDataSelectors();
   }
@@ -176,33 +175,33 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     final jsBridge = JSBridgeManager.instance;
     final cards = cardManager.getAllCards();
     if (cards.isEmpty) {
-        return;
-      }
+      return;
+    }
 
     for (final card in cards) {
-        if (card.type == CardType.localFile) {
-          // 获取卡片对应的 HTTP 服务器路径
+      if (card.type == CardType.localFile) {
+        // 获取卡片对应的 HTTP 服务器路径
         final cardPath = await cardManager.getCardPath(card);
         final preloadFile = File('$cardPath/preload.js');
         if (await preloadFile.exists()) {
-            // 读取 preload.js 内容
+          // 读取 preload.js 内容
           final scriptContent = await preloadFile.readAsString();
-            // 在 QuickJS 引擎中执行脚本（如果 JS Bridge 未初始化，会自动加入延迟队列）
+          // 在 QuickJS 引擎中执行脚本（如果 JS Bridge 未初始化，会自动加入延迟队列）
           try {
-              final result = await jsBridge.evaluateWhenReady(
-                scriptContent,
-                description: 'preload.js: ${card.title}',
+            final result = await jsBridge.evaluateWhenReady(
+              scriptContent,
+              description: 'preload.js: ${card.title}',
             );
-              if (!result.success) {
-                print('[WebViewPlugin] 执行错误: ${result.error}');
+            if (!result.success) {
+              print('[WebViewPlugin] 执行错误: ${result.error}');
             }
-            } catch (e) {
-              print('[WebViewPlugin] ✗ 加载 preload.js 失败: ${card.title}');
-              print('[WebViewPlugin] 错误详情: $e');
-              print('[WebViewPlugin] 错误类型: ${e.runtimeType}');
+          } catch (e) {
+            print('[WebViewPlugin] ✗ 加载 preload.js 失败: ${card.title}');
+            print('[WebViewPlugin] 错误详情: $e');
+            print('[WebViewPlugin] 错误类型: ${e.runtimeType}');
           }
         }
-      } 
+      }
     }
   }
 
@@ -293,7 +292,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   Widget? buildCardView(BuildContext context) {
     if (!_isInitialized) return null;
 
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final totalCards = getTotalCardsCount();
     final activeTabs = getActiveTabsCount();
 
@@ -304,6 +303,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
         children: [
           Row(
             children: [
+              // 插件注册表图标(Icons.language),属持久化 IconData,刻意保留 Material
               Container(
                 width: 40,
                 height: 40,
@@ -316,7 +316,8 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'webview_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: DsTypography.heading.copyWith(
+                  color: theme.text,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -328,10 +329,14 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
             children: [
               Column(
                 children: [
-                  Text('webview_cards'.tr, style: theme.textTheme.bodyMedium),
+                  Text(
+                    'webview_cards'.tr,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
                   Text(
                     '$totalCards',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -339,10 +344,14 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
               ),
               Column(
                 children: [
-                  Text('webview_tabs'.tr, style: theme.textTheme.bodyMedium),
+                  Text(
+                    'webview_tabs'.tr,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
                   Text(
                     '$activeTabs',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -437,7 +446,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
       // 优先使用 pendingFilesToCopy（Android 11+ SAF 方式）
       if (pendingFilesToCopy != null && pendingFilesToCopy!.isNotEmpty) {
-        debugPrint('[WebViewPlugin] 使用 pendingFilesToCopy 复制 ${pendingFilesToCopy!.length} 个文件');
+        debugPrint(
+          '[WebViewPlugin] 使用 pendingFilesToCopy 复制 ${pendingFilesToCopy!.length} 个文件',
+        );
         await _copyFilesFromList(pendingFilesToCopy!, sourcePath, projectDir);
         pendingFilesToCopy = null; // 清空列表
 
@@ -601,7 +612,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
         }
       }
 
-      debugPrint('[WebViewPlugin] 目录复制完成: $sourcePath -> $targetPath (文件: $fileCount, 子目录: $dirCount)');
+      debugPrint(
+        '[WebViewPlugin] 目录复制完成: $sourcePath -> $targetPath (文件: $fileCount, 子目录: $dirCount)',
+      );
     } catch (e) {
       debugPrint('[WebViewPlugin] 列出目录内容失败: $sourcePath, 错误: $e');
       rethrow;

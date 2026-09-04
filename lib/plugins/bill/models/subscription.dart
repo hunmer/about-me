@@ -31,10 +31,10 @@ class Subscription {
     this.iconColor = Colors.blue,
     DateTime? createdAt,
     this.terminatedAt,
-  })  : id = id ?? const Uuid().v4(),
-        dailyAmount = totalAmount / days,
-        category = category ?? '订阅',
-        createdAt = createdAt ?? DateTime.now();
+  }) : id = id ?? const Uuid().v4(),
+       dailyAmount = totalAmount / days,
+       category = category ?? '订阅',
+       createdAt = createdAt ?? DateTime.now();
 
   /// 计算剩余天数
   int get remainingDays {
@@ -71,9 +71,7 @@ class Subscription {
     final now = DateTime.now();
 
     // 从订阅开始日期到今天（或结束日期），生成每一天的日期
-    final lastDate = endDate != null && endDate!.isBefore(now)
-        ? endDate!
-        : now;
+    final lastDate = endDate != null && endDate!.isBefore(now) ? endDate! : now;
 
     for (int i = 0; i < days; i++) {
       final billDate = DateTime(
@@ -144,17 +142,19 @@ class Subscription {
       days: json['days'] as int,
       category: json['category'] as String,
       startDate: DateTime.parse(json['startDate'] as String),
-      endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
-          : null,
+      endDate:
+          json['endDate'] != null
+              ? DateTime.parse(json['endDate'] as String)
+              : null,
       isActive: json['isActive'] as bool,
       note: json['note'] as String?,
       icon: IconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
       iconColor: Color(json['iconColor'] as int),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      terminatedAt: json['terminatedAt'] != null
-          ? DateTime.parse(json['terminatedAt'] as String)
-          : null,
+      terminatedAt:
+          json['terminatedAt'] != null
+              ? DateTime.parse(json['terminatedAt'] as String)
+              : null,
     );
   }
 }

@@ -1,3 +1,6 @@
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -31,184 +34,303 @@ class _ProxySettingsScreenState extends State<ProxySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('webview_proxy_settings'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveSettings,
-            tooltip: MaterialLocalizations.of(context).saveButtonLabel,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 平台提示
-          Card(
-            color: Colors.amber.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.amber.shade700),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'webview_proxy_android_only'.tr,
-                      style: TextStyle(color: Colors.amber.shade900),
-                    ),
-                  ),
-                ],
-              ),
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('webview_proxy_settings'.tr),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: _saveSettings,
+                  tooltip: MaterialLocalizations.of(context).saveButtonLabel,
+                ),
+              ],
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 启用开关
-          SwitchListTile(
-            title: Text('webview_proxy_enable'.tr),
-            subtitle: Text('webview_proxy_enable_desc'.tr),
-            value: _enabled,
-            onChanged: (value) {
-              setState(() {
-                _enabled = value;
-              });
-            },
-          ),
-
-          const Divider(height: 32),
-
-          // Proxy 规则列表
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'webview_proxy_rules'.tr,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _enabled ? _addProxyRule : null,
-                tooltip: 'webview_proxy_add_rule'.tr,
-              ),
-            ],
-          ),
-
-          if (_proxyRules.isEmpty)
-            Padding(
+            body: ListView(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                'webview_proxy_no_rules'.tr,
-                style: TextStyle(color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-            )
-          else
-            ..._proxyRules.asMap().entries.map((entry) {
-              final index = entry.key;
-              final rule = entry.value;
-              return Card(
-                child: ListTile(
-                  title: Text(rule.url),
-                  subtitle: _buildRuleSubtitle(rule),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+              children: [
+                // 平台提示
+                JellyBox(
+                  radius: theme.radii.lg,
+                  raised: false,
+                  padding: EdgeInsets.all(theme.spacing.lg),
+                  strokeColor: theme.warning,
+                  child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed:
-                            _enabled ? () => _editProxyRule(index, rule) : null,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: _enabled
-                            ? () => setState(() {
-                                  _proxyRules.removeAt(index);
-                                })
-                            : null,
+                      DsIcon(DsIconKind.info, size: 20, color: theme.warning),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: Text(
+                          'webview_proxy_android_only'.tr,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              );
-            }),
 
-          const SizedBox(height: 16),
-          const Divider(height: 32),
+                const SizedBox(height: 16),
 
-          // 绕过规则
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'webview_proxy_bypass_rules'.tr,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _enabled ? _addBypassRule : null,
-                tooltip: 'webview_proxy_add_bypass_rule'.tr,
-              ),
-            ],
-          ),
-
-          if (_bypassRules.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'webview_proxy_no_bypass_rules'.tr,
-                style: TextStyle(color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-            )
-          else
-            ..._bypassRules.asMap().entries.map((entry) {
-              final index = entry.key;
-              final rule = entry.value;
-              return Card(
-                child: ListTile(
-                  title: Text(rule),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: _enabled
-                        ? () => setState(() {
-                              _bypassRules.removeAt(index);
-                            })
-                        : null,
-                  ),
+                // 启用开关
+                _buildSwitchRow(
+                  theme: theme,
+                  title: 'webview_proxy_enable'.tr,
+                  subtitle: 'webview_proxy_enable_desc'.tr,
+                  value: _enabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _enabled = value;
+                    });
+                  },
                 ),
-              );
-            }),
 
-          const SizedBox(height: 16),
+                _buildDivider(theme),
 
-          // 反转绕过规则
-          SwitchListTile(
-            title: Text('webview_proxy_reverse_bypass'.tr),
-            subtitle: Text('webview_proxy_reverse_bypass_desc'.tr),
-            value: _reverseBypass,
-            onChanged:
-                _enabled
-                    ? (value) {
-                      setState(() {
-                        _reverseBypass = value;
-                      });
-                    }
-                    : null,
+                // Proxy 规则列表
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'webview_proxy_rules'.tr,
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.plus,
+                      size: 40,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: _enabled ? _addProxyRule : null,
+                      tooltip: 'webview_proxy_add_rule'.tr,
+                    ),
+                  ],
+                ),
+
+                if (_proxyRules.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'webview_proxy_no_rules'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else
+                  ..._proxyRules.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final rule = entry.value;
+                    final subtitle = _buildRuleSubtitleText(rule);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: DSCard(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: theme.spacing.md,
+                          vertical: theme.spacing.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    rule.url,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                  if (subtitle != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      subtitle,
+                                      style: DsTypography.caption.copyWith(
+                                        color: theme.textSub,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            DSIconButton(
+                              icon: DsIconKind.edit,
+                              size: 36,
+                              color: theme.surfaceAlt,
+                              iconColor: theme.textSub,
+                              onPressed:
+                                  _enabled
+                                      ? () => _editProxyRule(index, rule)
+                                      : null,
+                            ),
+                            DSIconButton(
+                              icon: DsIconKind.trash,
+                              size: 36,
+                              color: theme.danger,
+                              iconColor: theme.onDanger,
+                              onPressed:
+                                  _enabled
+                                      ? () => setState(() {
+                                        _proxyRules.removeAt(index);
+                                      })
+                                      : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
+                const SizedBox(height: 16),
+                _buildDivider(theme),
+
+                // 绕过规则
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'webview_proxy_bypass_rules'.tr,
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.plus,
+                      size: 40,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: _enabled ? _addBypassRule : null,
+                      tooltip: 'webview_proxy_add_bypass_rule'.tr,
+                    ),
+                  ],
+                ),
+
+                if (_bypassRules.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'webview_proxy_no_bypass_rules'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else
+                  ..._bypassRules.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final rule = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: DSCard(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: theme.spacing.md,
+                          vertical: theme.spacing.sm + 2,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                rule,
+                                style: DsTypography.body.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                            ),
+                            DSIconButton(
+                              icon: DsIconKind.trash,
+                              size: 36,
+                              color: theme.danger,
+                              iconColor: theme.onDanger,
+                              onPressed:
+                                  _enabled
+                                      ? () => setState(() {
+                                        _bypassRules.removeAt(index);
+                                      })
+                                      : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
+                const SizedBox(height: 16),
+
+                // 反转绕过规则
+                _buildSwitchRow(
+                  theme: theme,
+                  title: 'webview_proxy_reverse_bypass'.tr,
+                  subtitle: 'webview_proxy_reverse_bypass_desc'.tr,
+                  value: _reverseBypass,
+                  onChanged:
+                      _enabled
+                          ? (value) {
+                            setState(() {
+                              _reverseBypass = value;
+                            });
+                          }
+                          : null,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 开关行(SwitchListTile 的 DS 替代)
+  Widget _buildSwitchRow({
+    required AppThemeData theme,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: theme.spacing.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: DsTypography.body.copyWith(color: theme.text),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ],
+            ),
           ),
+          SizedBox(width: theme.spacing.md),
+          DSSwitch(value: value, onChanged: onChanged, semanticLabel: title),
         ],
       ),
     );
   }
 
-  Widget? _buildRuleSubtitle(ProxyRule rule) {
+  Widget _buildDivider(AppThemeData theme) => Container(
+    height: 1,
+    margin: EdgeInsets.symmetric(vertical: theme.spacing.md),
+    color: theme.stroke,
+  );
+
+  String? _buildRuleSubtitleText(ProxyRule rule) {
     final filters = <String>[];
     if (rule.schemeFilter != null) filters.add('scheme=${rule.schemeFilter}');
     if (rule.hostFilter != null) filters.add('host=${rule.hostFilter}');
@@ -216,7 +338,7 @@ class _ProxySettingsScreenState extends State<ProxySettingsScreen> {
     if (rule.pathFilter != null) filters.add('path=${rule.pathFilter}');
 
     if (filters.isEmpty) return null;
-    return Text(filters.join(', '));
+    return filters.join(', ');
   }
 
   void _addProxyRule() {
@@ -229,181 +351,204 @@ class _ProxySettingsScreenState extends State<ProxySettingsScreen> {
 
   void _showProxyRuleDialog({int? index, ProxyRule? rule}) {
     final urlController = TextEditingController(text: rule?.url ?? '');
-    final schemeController = TextEditingController(text: rule?.schemeFilter ?? '');
+    final schemeController = TextEditingController(
+      text: rule?.schemeFilter ?? '',
+    );
     final hostController = TextEditingController(text: rule?.hostFilter ?? '');
     final portController = TextEditingController(
       text: rule?.portFilter?.toString() ?? '',
     );
     final pathController = TextEditingController(text: rule?.pathFilter ?? '');
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title:
-            Text(
-              index == null
-                  ? 'webview_proxy_add_rule'.tr
-                  : 'webview_proxy_edit_rule'.tr,
-            ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: urlController,
-                decoration: InputDecoration(
-                  labelText: 'webview_proxy_url'.tr,
-                  hintText: 'http://proxy.example.com:8080',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ExpansionTile(
-                title: Text('webview_proxy_filters'.tr),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'webview_proxy_filters_optional'.tr,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    Text(
-                      'webview_proxy_filters_note'.tr,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.orange.shade700,
-                            fontStyle: FontStyle.italic,
-                          ),
-                    ),
-                  ],
-                ),
-                children: [
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: schemeController,
-                    decoration: InputDecoration(
-                      labelText: 'webview_proxy_scheme_filter'.tr,
-                      hintText: 'http / https',
-                      border: const OutlineInputBorder(),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          index == null
+                              ? 'webview_proxy_add_rule'.tr
+                              : 'webview_proxy_edit_rule'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        DSInput(
+                          controller: urlController,
+                          label: 'webview_proxy_url'.tr,
+                          hint: 'http://proxy.example.com:8080',
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSAccordion(
+                          initialExpanded: const [],
+                          entries: [
+                            DSAccordionEntry(
+                              title: 'webview_proxy_filters'.tr,
+                              builder: (context) {
+                                final innerTheme = DSThemeBridge.resolve(
+                                  context,
+                                );
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'webview_proxy_filters_optional'.tr,
+                                      style: DsTypography.caption.copyWith(
+                                        color: innerTheme.textSub,
+                                      ),
+                                    ),
+                                    SizedBox(height: innerTheme.spacing.xs),
+                                    Text(
+                                      'webview_proxy_filters_note'.tr,
+                                      style: DsTypography.caption.copyWith(
+                                        color: innerTheme.warning,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                    SizedBox(height: innerTheme.spacing.md),
+                                    DSInput(
+                                      controller: schemeController,
+                                      label: 'webview_proxy_scheme_filter'.tr,
+                                      hint: 'http / https',
+                                    ),
+                                    SizedBox(height: innerTheme.spacing.sm),
+                                    DSInput(
+                                      controller: hostController,
+                                      label: 'webview_proxy_host_filter'.tr,
+                                      hint: 'example.com',
+                                    ),
+                                    SizedBox(height: innerTheme.spacing.sm),
+                                    DSInput(
+                                      controller: portController,
+                                      label: 'webview_proxy_port_filter'.tr,
+                                      hint: '8080',
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                    SizedBox(height: innerTheme.spacing.sm),
+                                    DSInput(
+                                      controller: pathController,
+                                      label: 'webview_proxy_path_filter'.tr,
+                                      hint: '/api/*',
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: 'app_cancel'.tr,
+                                variant: DSButtonVariant.outline,
+                                onPressed:
+                                    () => Navigator.of(dialogContext).pop(),
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: DSButton(
+                                label: 'app_save'.tr,
+                                onPressed: () {
+                                  if (urlController.text.trim().isEmpty) {
+                                    Toast.warning(
+                                      'webview_proxy_url_required'.tr,
+                                    );
+                                    return;
+                                  }
+
+                                  final newRule = ProxyRule(
+                                    url: urlController.text.trim(),
+                                    schemeFilter:
+                                        schemeController.text.trim().isNotEmpty
+                                            ? schemeController.text.trim()
+                                            : null,
+                                    hostFilter:
+                                        hostController.text.trim().isNotEmpty
+                                            ? hostController.text.trim()
+                                            : null,
+                                    portFilter:
+                                        portController.text.trim().isNotEmpty
+                                            ? int.tryParse(
+                                              portController.text.trim(),
+                                            )
+                                            : null,
+                                    pathFilter:
+                                        pathController.text.trim().isNotEmpty
+                                            ? pathController.text.trim()
+                                            : null,
+                                  );
+
+                                  setState(() {
+                                    if (index == null) {
+                                      _proxyRules.add(newRule);
+                                    } else {
+                                      _proxyRules[index] = newRule;
+                                    }
+                                  });
+
+                                  Navigator.of(dialogContext).pop();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: hostController,
-                    decoration: InputDecoration(
-                      labelText: 'webview_proxy_host_filter'.tr,
-                      hintText: 'example.com',
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: portController,
-                    decoration: InputDecoration(
-                      labelText: 'webview_proxy_port_filter'.tr,
-                      hintText: '8080',
-                      border: const OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: pathController,
-                    decoration: InputDecoration(
-                      labelText: 'webview_proxy_path_filter'.tr,
-                      hintText: '/api/*',
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (urlController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('webview_proxy_url_required'.tr)),
                 );
-                return;
-              }
-
-              final newRule = ProxyRule(
-                url: urlController.text.trim(),
-                schemeFilter:
-                    schemeController.text.trim().isNotEmpty
-                        ? schemeController.text.trim()
-                        : null,
-                hostFilter:
-                    hostController.text.trim().isNotEmpty
-                        ? hostController.text.trim()
-                        : null,
-                portFilter:
-                    portController.text.trim().isNotEmpty
-                        ? int.tryParse(portController.text.trim())
-                        : null,
-                pathFilter:
-                    pathController.text.trim().isNotEmpty
-                        ? pathController.text.trim()
-                        : null,
-              );
-
-              setState(() {
-                if (index == null) {
-                  _proxyRules.add(newRule);
-                } else {
-                  _proxyRules[index] = newRule;
-                }
-              });
-
-              Navigator.pop(context);
-            },
-            child: Text(MaterialLocalizations.of(context).saveButtonLabel),
+              },
+            ),
           ),
-        ],
-      ),
     );
   }
 
   void _addBypassRule() {
     final controller = TextEditingController();
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('webview_proxy_add_bypass_rule'.tr),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: 'webview_proxy_bypass_pattern'.tr,
-            hintText: 'example.com, *.excluded.com',
-            border: const OutlineInputBorder(),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return DSDialog(
+                  title: 'webview_proxy_add_bypass_rule'.tr,
+                  content: DSInput(
+                    controller: controller,
+                    label: 'webview_proxy_bypass_pattern'.tr,
+                    hint: 'example.com, *.excluded.com',
+                  ),
+                  confirmText: 'app_save'.tr,
+                  cancelText: 'app_cancel'.tr,
+                  onConfirm: () {
+                    if (controller.text.trim().isNotEmpty) {
+                      setState(() {
+                        _bypassRules.add(controller.text.trim());
+                      });
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                );
+              },
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _bypassRules.add(controller.text.trim());
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: Text(MaterialLocalizations.of(context).saveButtonLabel),
-          ),
-        ],
-      ),
     );
   }
 
@@ -423,9 +568,7 @@ class _ProxySettingsScreenState extends State<ProxySettingsScreen> {
     await plugin.saveWebviewSettings();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('webview_proxy_settings_saved'.tr)),
-      );
+      Toast.success('webview_proxy_settings_saved'.tr);
       Navigator.pop(context);
     }
   }

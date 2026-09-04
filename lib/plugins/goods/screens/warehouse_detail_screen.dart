@@ -3,6 +3,8 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
@@ -58,10 +60,7 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
     RouteHistoryManager.updateCurrentContext(
       pageId: "/goods/warehouse_detail",
       title: '物品 - 仓库: ${_warehouse.title}',
-      params: {
-        'warehouseId': _warehouse.id,
-        'warehouseName': _warehouse.title,
-      },
+      params: {'warehouseId': _warehouse.id, 'warehouseName': _warehouse.title},
     );
   }
 
@@ -90,116 +89,172 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSheetAction(
+                        context,
+                        icon: DsIconKind.edit,
+                        label: 'goods_editWarehouseTitle'.tr,
+                        onTap: () {
+                          Navigator.pop(context);
+                          // 实现仓库编辑功能
+                          NavigationHelper.push(
+                            context,
+                            WarehouseForm(
+                              warehouse: _warehouse,
+                              onSave: (warehouse) async {
+                                await GoodsPlugin.instance.saveWarehouse(
+                                  warehouse,
+                                );
+                                if (context.mounted) {
+                                  await _refreshWarehouse();
+                                }
+                              },
+                              onDelete: () async {
+                                await GoodsPlugin.instance.deleteWarehouse(
+                                  _warehouse.id,
+                                );
+                                if (context.mounted) {
+                                  // 连退两页：关闭表单页和详情页
+                                  Navigator.pop(context); // 关闭表单
+                                  Navigator.pop(context); // 关闭详情
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      _buildSheetAction(
+                        context,
+                        icon: DsIconKind.trash,
+                        label: 'goods_clearWarehouseTitle'.tr,
+                        onTap: () async {
+                          final confirm = await showDSDialog<bool>(
+                            context: context,
+                            theme: DSThemeBridge.resolve(context),
+                            builder:
+                                (context) => DSThemeBridge(
+                                  child: Builder(
+                                    builder:
+                                        (context) => DSDialog(
+                                          title:
+                                              'goods_confirmClearWarehouse'.tr,
+                                          message:
+                                              'goods_confirmClearWarehouseMessage'
+                                                  .tr,
+                                          cancelText: 'app_cancel'.tr,
+                                          confirmText: 'app_ok'.tr,
+                                          onCancel:
+                                              () =>
+                                                  Navigator.pop(context, false),
+                                          onConfirm:
+                                              () =>
+                                                  Navigator.pop(context, true),
+                                        ),
+                                  ),
+                                ),
+                          );
+
+                          if (confirm == true && context.mounted) {
+                            await GoodsPlugin.instance.clearWarehouse(
+                              _warehouse.id,
+                            );
+                            Navigator.pop(context);
+                            await _refreshWarehouse();
+                          }
+                        },
+                      ),
+                      _buildSheetAction(
+                        context,
+                        icon: DsIconKind.trash,
+                        label: 'goods_deleteWarehouseTitle'.tr,
+                        destructive: true,
+                        onTap: () async {
+                          final confirm = await showDSDialog<bool>(
+                            context: context,
+                            theme: DSThemeBridge.resolve(context),
+                            builder:
+                                (context) => DSThemeBridge(
+                                  child: Builder(
+                                    builder:
+                                        (context) => DSDialog(
+                                          title: 'goods_confirmDelete'.tr,
+                                          message:
+                                              'goods_confirmDeleteWarehouseMessage'
+                                                  .trParams({
+                                                    'name': _warehouse.title,
+                                                  }),
+                                          cancelText: 'app_cancel'.tr,
+                                          confirmText: 'app_delete'.tr,
+                                          confirmVariant:
+                                              DSButtonVariant.destructive,
+                                          onCancel:
+                                              () =>
+                                                  Navigator.pop(context, false),
+                                          onConfirm:
+                                              () =>
+                                                  Navigator.pop(context, true),
+                                        ),
+                                  ),
+                                ),
+                          );
+
+                          if (confirm == true && context.mounted) {
+                            await GoodsPlugin.instance.deleteWarehouse(
+                              _warehouse.id,
+                            );
+                            // 关闭底部菜单
+                            Navigator.pop(context);
+                            // 返回上一页
+                            Navigator.pop(context);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+            ),
+          ),
+    );
+  }
+
+  /// 底部操作行（自绘，随 DS 令牌着色）
+  Widget _buildSheetAction(
+    BuildContext context, {
+    required DsIconKind icon,
+    required String label,
+    bool destructive = false,
+    required VoidCallback onTap,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
+    final color = destructive ? theme.danger : theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          color: pressed ? theme.surfaceAlt : null,
+          child: Row(
             children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: Text('goods_editWarehouseTitle'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  // 实现仓库编辑功能
-                  NavigationHelper.push(context, WarehouseForm(
-                            warehouse: _warehouse,
-                            onSave: (warehouse) async {
-                              await GoodsPlugin.instance.saveWarehouse(
-                                warehouse,
-                              );
-                              if (context.mounted) {
-                                await _refreshWarehouse();
-                              }
-                            },
-                            onDelete: () async {
-                              await GoodsPlugin.instance.deleteWarehouse(
-                                _warehouse.id,
-                              );
-                              if (context.mounted) {
-                                // 连退两页：关闭表单页和详情页
-                                Navigator.pop(context); // 关闭表单
-                                Navigator.pop(context); // 关闭详情
-                              }
-                            },),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: Text('goods_clearWarehouseTitle'.tr),
-                onTap: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Text(
-                            'goods_confirmClearWarehouse'.tr,
-                          ),
-                          content: Text(
-                            'goods_confirmClearWarehouseMessage'.tr,
-                          ),
-                          actions: [
-                            TextButton(
-                              child: Text('app_cancel'.tr),
-                              onPressed: () => Navigator.pop(context, false),
-                            ),
-                            TextButton(
-                              child: Text('app_ok'.tr),
-                              onPressed: () => Navigator.pop(context, true),
-                            ),
-                          ],
-                        ),
-                  );
-
-                  if (confirm == true && context.mounted) {
-                    await GoodsPlugin.instance.clearWarehouse(_warehouse.id);
-                    Navigator.pop(context);
-                    await _refreshWarehouse();
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_forever, color: Colors.red),
-                title: Text(
-                  'goods_deleteWarehouseTitle'.tr,
-                  style: const TextStyle(color: Colors.red),
+              DsIcon(icon, size: 24, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.body.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                onTap: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Text(
-                            'goods_confirmDelete'.tr,
-                          ),
-                          content: Text(
-                            'goods_confirmDeleteWarehouseMessage'.trParams({'name': _warehouse.title}),
-                          ),
-                          actions: [
-                            TextButton(
-                              child: Text('app_cancel'.tr),
-                              onPressed: () => Navigator.pop(context, false),
-                            ),
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text('app_delete'.tr),
-                            ),
-                          ],
-                        ),
-                  );
-
-                  if (confirm == true && context.mounted) {
-                    await GoodsPlugin.instance.deleteWarehouse(_warehouse.id);
-                    // 关闭底部菜单
-                    Navigator.pop(context);
-                    // 返回上一页
-                    Navigator.pop(context);
-                  }
-                },
               ),
             ],
           ),
+        );
+      },
     );
   }
 
@@ -231,10 +286,7 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
         await _refreshWarehouse();
       },
       onDelete: (item) async {
-        await GoodsPlugin.instance.deleteGoodsItem(
-          _warehouse.id,
-          item.id,
-        );
+        await GoodsPlugin.instance.deleteGoodsItem(_warehouse.id, item.id);
         await _refreshWarehouse();
       },
     );
@@ -251,6 +303,7 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final items = _getSortedItems();
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -260,7 +313,7 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
             const SizedBox(width: 8),
             Text(
               '(${items.length})',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -299,9 +352,7 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                   ),
                   PopupMenuItem(
                     value: 'lastUsed',
-                    child: Text(
-                      'goods_sortByLastUsedTime'.tr,
-                    ),
+                    child: Text('goods_sortByLastUsedTime'.tr),
                   ),
                 ],
           ),
@@ -323,7 +374,8 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                       runSpacing: 16,
                       children: List.generate(items.length, (index) {
                         final item = items[index];
-                        final cardWidth = (constraints.maxWidth - 16) / 2; // 2列布局，减去一个spacing
+                        final cardWidth =
+                            (constraints.maxWidth - 16) / 2; // 2列布局，减去一个spacing
 
                         return SizedBox(
                           width: cardWidth,
@@ -349,9 +401,9 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                   );
                 },
               ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: DSFab(
+        icon: DsIconKind.plus,
         onPressed: _showAddItemDialog,
-        child: const Icon(Icons.add),
       ),
     );
   }

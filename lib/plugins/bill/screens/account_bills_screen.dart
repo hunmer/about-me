@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
 import 'bill_edit_screen.dart' as bill_edit;
@@ -74,9 +76,11 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
         ],
       ),
       body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _createBill(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: DSThemeBridge(
+        child: DSFab(
+          icon: DsIconKind.plus,
+          onPressed: () => _createBill(context),
+        ),
       ),
     );
   }
@@ -140,7 +144,17 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
 
   Widget _buildBillsList(List<Bill> bills) {
     if (bills.isEmpty) {
-      return Center(child: Text('bill_noBillsYet'.tr));
+      return Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Text(
+              'bill_noBillsYet'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+            ),
+          );
+        },
+      );
     }
 
     // 对账单按日期排序
@@ -157,37 +171,37 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
   }
 
   Widget _buildBillItem(Bill bill) {
+    final theme = DSThemeBridge.resolve(context);
     final isExpense = bill.amount < 0;
-    final amountColor = isExpense ? Colors.red : Colors.green;
+    final amountColor = isExpense ? theme.danger : theme.success;
 
     return Dismissible(
       key: Key(bill.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.red,
+        color: theme.danger,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: DsIcon(DsIconKind.trash, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
-        final confirmed = await showDialog<bool>(
+        final confirmed = await showDSDialog<bool>(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => AlertDialog(
-                title: Text('bill_confirmDelete'.tr),
-                content: Text(
-                  'bill_deleteBillConfirmation'.tr,
+              (context) => DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (context) => DSDialog(
+                        title: 'bill_confirmDelete'.tr,
+                        message: 'bill_deleteBillConfirmation'.tr,
+                        cancelText: 'bill_cancel'.tr,
+                        confirmText: 'bill_delete'.tr,
+                        confirmVariant: DSButtonVariant.destructive,
+                        onCancel: () => Navigator.pop(context, false),
+                        onConfirm: () => Navigator.pop(context, true),
+                      ),
                 ),
-                actions: [
-                  TextButton(
-                    child: Text('bill_cancel'.tr),
-                    onPressed: () => Navigator.pop(context, false),
-                  ),
-                  TextButton(
-                    child: Text('bill_delete'.tr),
-                    onPressed: () => Navigator.pop(context, true),
-                  ),
-                ],
               ),
         );
         if (confirmed == true) {
@@ -209,11 +223,23 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
           ), // 0.2 * 255 ≈ 51
           child: Icon(bill.icon, color: widget.account.backgroundColor),
         ),
-        title: Text(bill.title),
-        subtitle: bill.tag != null ? Text(bill.tag!) : null,
+        title: Text(
+          bill.title,
+          style: DsTypography.body.copyWith(color: theme.text),
+        ),
+        subtitle:
+            bill.tag != null
+                ? Text(
+                  bill.tag!,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                )
+                : null,
         trailing: Text(
           '${isExpense ? '-' : '+'}¥${bill.absoluteAmount.toStringAsFixed(2)}',
-          style: TextStyle(color: amountColor, fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            color: amountColor,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         onTap: () => _editBill(context, bill),
       ),
@@ -221,25 +247,31 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
   }
 
   void _createBill(BuildContext context) {
-    NavigationHelper.push(context, bill_edit.BillEditScreen(
-              billPlugin: widget.billPlugin,
-              accountId: _currentAccount.id,
-              onSaved: () {
-                // 强制更新列表
-                _refreshAccountData();
-              },),
+    NavigationHelper.push(
+      context,
+      bill_edit.BillEditScreen(
+        billPlugin: widget.billPlugin,
+        accountId: _currentAccount.id,
+        onSaved: () {
+          // 强制更新列表
+          _refreshAccountData();
+        },
+      ),
     );
   }
 
   void _editBill(BuildContext context, Bill bill) {
-    NavigationHelper.push(context, bill_edit.BillEditScreen(
-              billPlugin: widget.billPlugin,
-              accountId: _currentAccount.id,
-              bill: bill,
-              onSaved: () {
-                // 强制更新列表
-                _refreshAccountData();
-              },),
+    NavigationHelper.push(
+      context,
+      bill_edit.BillEditScreen(
+        billPlugin: widget.billPlugin,
+        accountId: _currentAccount.id,
+        bill: bill,
+        onSaved: () {
+          // 强制更新列表
+          _refreshAccountData();
+        },
+      ),
     );
   }
 

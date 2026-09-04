@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
@@ -32,13 +34,15 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    // Material 壳为 Hero 动画源(经 openContainerWithHero),保留结构
     return Material(
       key: _cardKey,
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[300]!, width: 1),
+        side: BorderSide(color: theme.stroke, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -75,9 +79,9 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
                     children: [
                       Text(
                         agent.name,
-                        style: const TextStyle(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -85,12 +89,14 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
                       const SizedBox(height: 4),
                       Text(
                         '服务商: ${agent.serviceProviderId}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      _buildTags(),
+                      _buildTags(theme),
                     ],
                   ),
                 ),
@@ -108,11 +114,12 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
 
   /// 构建状态徽章
   Widget _buildStatusBadge() {
+    final theme = DSThemeBridge.resolve(context);
     if (widget.hasUpdate) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.orange,
+          color: theme.warning,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -122,15 +129,15 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.update, size: 14, color: Colors.white),
-            SizedBox(width: 4),
+            DsIcon(DsIconKind.refresh, size: 14, color: theme.onWarning),
+            const SizedBox(width: 4),
             Text(
               '可更新',
-              style: TextStyle(
-                color: Colors.white,
+              style: DsTypography.label.copyWith(
+                color: theme.onWarning,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -144,7 +151,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.green,
+          color: theme.success,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -154,15 +161,15 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 14, color: Colors.white),
-            SizedBox(width: 4),
+            DsIcon(DsIconKind.check, size: 14, color: theme.onSuccess),
+            const SizedBox(width: 4),
             Text(
               '已安装',
-              style: TextStyle(
-                color: Colors.white,
+              style: DsTypography.label.copyWith(
+                color: theme.onSuccess,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -275,10 +282,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
     }
   }
 
-  Widget _buildTags() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+  Widget _buildTags(AppThemeData theme) {
     return Wrap(
       spacing: 4,
       runSpacing: 4,
@@ -287,14 +291,14 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                color: theme.surfaceAlt,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 tag,
-                style: TextStyle(
+                style: DsTypography.label.copyWith(
                   fontSize: 10,
-                  color: isDark ? Colors.grey[300] : Colors.grey[800],
+                  color: theme.textSub,
                 ),
               ),
             );

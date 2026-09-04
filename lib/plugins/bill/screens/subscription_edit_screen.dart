@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
@@ -27,7 +29,10 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
 
     // 设置路由上下文
     if (widget.subscription != null) {
-      _updateRouteContext(isEdit: true, subscriptionId: widget.subscription!.id);
+      _updateRouteContext(
+        isEdit: true,
+        subscriptionId: widget.subscription!.id,
+      );
     } else {
       _updateRouteContext(isEdit: false);
     }
@@ -65,7 +70,10 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
         category: '订阅',
         startDate: values['startDate'] as DateTime,
         endDate: values['endDate'] as DateTime?,
-        note: (values['note'] as String?)?.isEmpty == true ? null : values['note'] as String?,
+        note:
+            (values['note'] as String?)?.isEmpty == true
+                ? null
+                : values['note'] as String?,
         icon: icon,
         iconColor: iconColor,
         isActive: values['isActive'] as bool,
@@ -78,10 +86,14 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
       }
 
       if (widget.subscription == null) {
-        await widget.billPlugin.controller.subscriptions.createSubscription(subscription);
+        await widget.billPlugin.controller.subscriptions.createSubscription(
+          subscription,
+        );
         Toast.success('bill_subscriptionCreated'.tr);
       } else {
-        await widget.billPlugin.controller.subscriptions.updateSubscription(subscription);
+        await widget.billPlugin.controller.subscriptions.updateSubscription(
+          subscription,
+        );
         Toast.success('bill_subscriptionUpdated'.tr);
       }
 
@@ -94,27 +106,33 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
   Future<void> _deleteSubscription() async {
     if (widget.subscription == null) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('bill_deleteSubscription'.tr),
-        content: Text('bill_deleteConfirm'.tr.replaceAll('{name}', widget.subscription!.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('bill_cancel'.tr),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'bill_deleteSubscription'.tr,
+                    message: 'bill_deleteConfirm'.tr.replaceAll(
+                      '{name}',
+                      widget.subscription!.name,
+                    ),
+                    cancelText: 'bill_cancel'.tr,
+                    confirmText: 'bill_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.pop(context, false),
+                    onConfirm: () => Navigator.pop(context, true),
+                  ),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-            child: Text('bill_delete'.tr),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
-      await widget.billPlugin.controller.subscriptions.deleteSubscription(widget.subscription!.id);
+      await widget.billPlugin.controller.subscriptions.deleteSubscription(
+        widget.subscription!.id,
+      );
       if (mounted) Navigator.of(context).pop();
     }
   }
@@ -122,9 +140,10 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
   @override
   Widget build(BuildContext context) {
     final sub = widget.subscription;
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -136,41 +155,64 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               minimumSize: const Size(48, 48),
               padding: EdgeInsets.zero,
             ),
-            child: Text('bill_cancel'.tr, style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary)),
+            child: Text(
+              'bill_cancel'.tr,
+              style: TextStyle(fontSize: 16, color: theme.primary),
+            ),
           ),
         ),
         leadingWidth: 80,
         title: Text(
           sub == null ? 'bill_addSubscription'.tr : 'bill_editSubscription'.tr,
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17, color: Theme.of(context).colorScheme.onSurface),
+          style: DsTypography.title.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+            color: theme.text,
+          ),
         ),
         centerTitle: true,
       ),
       body: FormBuilderWrapper(
         buttonBuilder: (context, onSubmit, onReset) {
           // 自定义按钮区域：保存按钮在 AppBar，底部显示删除按钮
-          return Column(
-            children: [
-              if (widget.subscription != null) ...[
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: _deleteSubscription,
-                    style: TextButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          return Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Column(
+                children: [
+                  if (widget.subscription != null) ...[
+                    const SizedBox(height: 24),
+                    Pressable(
+                      onPressed: _deleteSubscription,
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return Container(
+                          width: double.infinity,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color:
+                                pressed
+                                    ? theme.danger.withValues(alpha: 0.15)
+                                    : theme.surfaceAlt,
+                            borderRadius: theme.radii.lg,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'bill_deleteSubscription'.tr,
+                            style: DsTypography.button.copyWith(
+                              color: theme.danger,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    child: Text(
-                      'bill_deleteSubscription'.tr,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 17, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 32),
-            ],
+                  ],
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
           );
         },
         contentBuilder: (context, fields) {
@@ -195,7 +237,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               Container(
                 padding: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  color: DSThemeBridge.resolve(context).surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -243,14 +285,25 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                     child: TextButton(
                       onPressed: () {
                         // 触发表单提交
-                        final wrapper = context.findAncestorStateOfType<FormBuilderWrapperState>();
+                        final wrapper =
+                            context
+                                .findAncestorStateOfType<
+                                  FormBuilderWrapperState
+                                >();
                         wrapper?.submitForm();
                       },
                       style: TextButton.styleFrom(
                         minimumSize: const Size(48, 48),
                         padding: EdgeInsets.zero,
                       ),
-                      child: Text('bill_save'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                      child: Text(
+                        'bill_save'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: DSThemeBridge.resolve(context).primary,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -270,10 +323,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 'icon': sub?.icon ?? Icons.subscriptions,
                 'color': sub?.iconColor ?? Colors.blue,
               },
-              extra: {
-                'showLabel': true,
-                'labelText': 'bill_chooseIcon'.tr,
-              },
+              extra: {'showLabel': true, 'labelText': 'bill_chooseIcon'.tr},
             ),
 
             // 名称
@@ -297,10 +347,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               initialValue: sub?.totalAmount ?? 0.0,
               required: true,
               validationMessage: 'bill_requiredField'.tr,
-              extra: {
-                'inline': true,
-                'suffix': '¥',
-              },
+              extra: {'inline': true, 'suffix': '¥'},
             ),
 
             // 开始日期
@@ -361,10 +408,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               labelText: 'bill_notes'.tr,
               hintText: 'bill_notesHint'.tr,
               initialValue: sub?.note ?? '',
-              extra: {
-                'inline': true,
-                'maxLines': 4,
-              },
+              extra: {'inline': true, 'maxLines': 4},
             ),
           ],
           onSubmit: _saveSubscription,

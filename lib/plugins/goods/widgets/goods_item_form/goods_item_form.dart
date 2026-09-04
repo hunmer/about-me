@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'controllers/form_controller.dart';
@@ -110,7 +112,7 @@ class _GoodsItemFormState extends State<GoodsItemForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final title =
         widget.initialData == null ? 'goods_addItem'.tr : 'goods_editItem'.tr;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -118,75 +120,62 @@ class _GoodsItemFormState extends State<GoodsItemForm> {
     return SizedBox(
       // 最大高度不超过屏幕的 80%
       height: screenHeight * 0.8,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题栏
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 8, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+      child: DSThemeBridge(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题栏
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 8, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: DsTypography.title.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                // 删除按钮（编辑模式且有删除回调时显示）
-                if (widget.initialData != null && widget.onDelete != null)
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete_outline,
-                      color: theme.colorScheme.error,
+                  // 删除按钮（编辑模式且有删除回调时显示）
+                  if (widget.initialData != null && widget.onDelete != null)
+                    DSIconButton(
+                      icon: DsIconKind.trash,
+                      color: theme.danger.withValues(alpha: 0.15),
+                      iconColor: theme.danger,
+                      onPressed: _handleDelete,
+                      tooltip: 'goods_deleteProduct'.tr,
                     ),
-                    onPressed: _handleDelete,
-                    tooltip: 'goods_deleteProduct'.tr,
-                  ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-
-          // 表单内容
-          Expanded(
-            child: Form(
-              key: _formController.formKey,
-              child: BasicInfoTab(
-                controller: _formController,
-                onStateChanged: () => setState(() {}),
+                  const SizedBox(width: 8),
+                ],
               ),
             ),
-          ),
+            Divider(height: 1, color: theme.stroke),
 
-          // 底部保存按钮
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: _submitForm,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 0,
-              ),
-              child: Text(
-                'goods_save'.tr,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            // 表单内容
+            Expanded(
+              child: Form(
+                key: _formController.formKey,
+                child: BasicInfoTab(
+                  controller: _formController,
+                  onStateChanged: () => setState(() {}),
                 ),
               ),
             ),
-          ),
-        ],
 
-       
+            // 底部保存按钮
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: DSButton(
+                label: 'goods_save'.tr,
+                onPressed: _submitForm,
+                expand: true,
+                size: DSButtonSize.lg,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

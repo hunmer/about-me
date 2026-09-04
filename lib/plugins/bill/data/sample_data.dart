@@ -32,8 +32,12 @@ class BillSampleData {
           tag: '固定收入',
           icon: Icons.work,
           iconColor: Colors.green,
-          createdAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 9)),
-          updatedAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 9)),
+          createdAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 9)),
+          updatedAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 9)),
         ),
         // 昨天午餐
         Bill(
@@ -41,14 +45,20 @@ class BillSampleData {
           title: '午餐',
           amount: -32.5,
           category: '餐饮',
-          date: now.subtract(const Duration(days: 1)).add(const Duration(hours: 12, minutes: 30)),
+          date: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 12, minutes: 30)),
           accountId: 'cash-account-001',
           note: '公司附近餐厅',
           tag: '工作日',
           icon: Icons.restaurant,
           iconColor: Colors.orange,
-          createdAt: now.subtract(const Duration(days: 1)).add(const Duration(hours: 12, minutes: 30)),
-          updatedAt: now.subtract(const Duration(days: 1)).add(const Duration(hours: 12, minutes: 30)),
+          createdAt: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 12, minutes: 30)),
+          updatedAt: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 12, minutes: 30)),
         ),
         // 前天地铁卡充值
         Bill(
@@ -56,14 +66,20 @@ class BillSampleData {
           title: '地铁卡充值',
           amount: -100.0,
           category: '交通',
-          date: now.subtract(const Duration(days: 2)).add(const Duration(hours: 8, minutes: 15)),
+          date: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 8, minutes: 15)),
           accountId: 'cash-account-001',
           note: '充值200元，实际消费100元',
           tag: '通勤',
           icon: Icons.directions_transit,
           iconColor: Colors.blue,
-          createdAt: now.subtract(const Duration(days: 2)).add(const Duration(hours: 8, minutes: 15)),
-          updatedAt: now.subtract(const Duration(days: 2)).add(const Duration(hours: 8, minutes: 15)),
+          createdAt: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 8, minutes: 15)),
+          updatedAt: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 8, minutes: 15)),
         ),
         // 4天前超市购物
         Bill(
@@ -71,14 +87,20 @@ class BillSampleData {
           title: '超市购物',
           amount: -258.8,
           category: '购物',
-          date: now.subtract(const Duration(days: 4)).add(const Duration(hours: 19, minutes: 20)),
+          date: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 19, minutes: 20)),
           accountId: 'cash-account-001',
           note: '日用品和食材',
           tag: '生活必需品',
           icon: Icons.shopping_cart,
           iconColor: Colors.purple,
-          createdAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 19, minutes: 20)),
-          updatedAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 19, minutes: 20)),
+          createdAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 19, minutes: 20)),
+          updatedAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 19, minutes: 20)),
         ),
         // 5天前朋友聚餐
         Bill(
@@ -86,14 +108,20 @@ class BillSampleData {
           title: '朋友聚餐',
           amount: -168.0,
           category: '餐饮',
-          date: now.subtract(const Duration(days: 5)).add(const Duration(hours: 18, minutes: 45)),
+          date: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 18, minutes: 45)),
           accountId: 'cash-account-001',
           note: '火锅聚餐，4人AA',
           tag: '社交',
           icon: Icons.restaurant,
           iconColor: Colors.orange,
-          createdAt: now.subtract(const Duration(days: 5)).add(const Duration(hours: 18, minutes: 45)),
-          updatedAt: now.subtract(const Duration(days: 5)).add(const Duration(hours: 18, minutes: 45)),
+          createdAt: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 18, minutes: 45)),
+          updatedAt: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 18, minutes: 45)),
         ),
         // 6天前兼职收入
         Bill(
@@ -101,14 +129,20 @@ class BillSampleData {
           title: '兼职收入',
           amount: 1200.0,
           category: '工资',
-          date: now.subtract(const Duration(days: 6)).add(const Duration(hours: 20)),
+          date: now
+              .subtract(const Duration(days: 6))
+              .add(const Duration(hours: 20)),
           accountId: 'cash-account-001',
           note: '周末兼职费',
           tag: '额外收入',
           icon: Icons.work,
           iconColor: Colors.green,
-          createdAt: now.subtract(const Duration(days: 6)).add(const Duration(hours: 20)),
-          updatedAt: now.subtract(const Duration(days: 6)).add(const Duration(hours: 20)),
+          createdAt: now
+              .subtract(const Duration(days: 6))
+              .add(const Duration(hours: 20)),
+          updatedAt: now
+              .subtract(const Duration(days: 6))
+              .add(const Duration(hours: 20)),
         ),
       ],
     );
@@ -127,14 +161,20 @@ class BillSampleData {
           title: '网上购物',
           amount: -599.0,
           category: '购物',
-          date: now.subtract(const Duration(days: 1)).add(const Duration(hours: 14, minutes: 30)),
+          date: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 14, minutes: 30)),
           accountId: 'credit-card-001',
           note: '购买冬季外套',
           tag: '服装',
           icon: Icons.shopping_bag,
           iconColor: Colors.pink,
-          createdAt: now.subtract(const Duration(days: 1)).add(const Duration(hours: 14, minutes: 30)),
-          updatedAt: now.subtract(const Duration(days: 1)).add(const Duration(hours: 14, minutes: 30)),
+          createdAt: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 14, minutes: 30)),
+          updatedAt: now
+              .subtract(const Duration(days: 1))
+              .add(const Duration(hours: 14, minutes: 30)),
         ),
         // 2天前电影票
         Bill(
@@ -142,14 +182,20 @@ class BillSampleData {
           title: '电影票',
           amount: -68.0,
           category: '娱乐',
-          date: now.subtract(const Duration(days: 2)).add(const Duration(hours: 21, minutes: 15)),
+          date: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 21, minutes: 15)),
           accountId: 'credit-card-001',
           note: '《热辣滚烫》',
           tag: '休闲',
           icon: Icons.movie,
           iconColor: Colors.red,
-          createdAt: now.subtract(const Duration(days: 2)).add(const Duration(hours: 21, minutes: 15)),
-          updatedAt: now.subtract(const Duration(days: 2)).add(const Duration(hours: 21, minutes: 15)),
+          createdAt: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 21, minutes: 15)),
+          updatedAt: now
+              .subtract(const Duration(days: 2))
+              .add(const Duration(hours: 21, minutes: 15)),
         ),
         // 今天早上咖啡
         Bill(
@@ -172,14 +218,20 @@ class BillSampleData {
           title: '电费',
           amount: -320.5,
           category: '生活缴费',
-          date: now.subtract(const Duration(days: 3)).add(const Duration(hours: 10)),
+          date: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 10)),
           accountId: 'credit-card-001',
           note: '${_getCurrentMonth()}电费',
           tag: '固定支出',
           icon: Icons.bolt,
           iconColor: Colors.yellow,
-          createdAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 10)),
-          updatedAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 10)),
+          createdAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 10)),
+          updatedAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 10)),
         ),
         // 4天前话费充值
         Bill(
@@ -187,14 +239,20 @@ class BillSampleData {
           title: '话费充值',
           amount: -100.0,
           category: '生活缴费',
-          date: now.subtract(const Duration(days: 4)).add(const Duration(hours: 16, minutes: 20)),
+          date: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 16, minutes: 20)),
           accountId: 'credit-card-001',
           note: '中国移动充值',
           tag: '通讯',
           icon: Icons.phone,
           iconColor: Colors.green,
-          createdAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 16, minutes: 20)),
-          updatedAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 16, minutes: 20)),
+          createdAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 16, minutes: 20)),
+          updatedAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 16, minutes: 20)),
         ),
       ],
     );
@@ -213,14 +271,20 @@ class BillSampleData {
           title: '投资收益',
           amount: 350.0,
           category: '投资收益',
-          date: now.subtract(const Duration(days: 3)).add(const Duration(hours: 15, minutes: 30)),
+          date: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 15, minutes: 30)),
           accountId: 'savings-account-001',
           note: '基金定投收益',
           tag: '理财',
           icon: Icons.trending_up,
           iconColor: Colors.green,
-          createdAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 15, minutes: 30)),
-          updatedAt: now.subtract(const Duration(days: 3)).add(const Duration(hours: 15, minutes: 30)),
+          createdAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 15, minutes: 30)),
+          updatedAt: now
+              .subtract(const Duration(days: 3))
+              .add(const Duration(hours: 15, minutes: 30)),
         ),
         // 5天前定期存款利息
         Bill(
@@ -228,14 +292,20 @@ class BillSampleData {
           title: '定期存款利息',
           amount: 125.8,
           category: '投资收益',
-          date: now.subtract(const Duration(days: 5)).add(const Duration(hours: 11)),
+          date: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 11)),
           accountId: 'savings-account-001',
           note: '3个月定期存款利息',
           tag: '被动收入',
           icon: Icons.account_balance,
           iconColor: Colors.indigo,
-          createdAt: now.subtract(const Duration(days: 5)).add(const Duration(hours: 11)),
-          updatedAt: now.subtract(const Duration(days: 5)).add(const Duration(hours: 11)),
+          createdAt: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 11)),
+          updatedAt: now
+              .subtract(const Duration(days: 5))
+              .add(const Duration(hours: 11)),
         ),
         // 4天前银行转账
         Bill(
@@ -243,14 +313,20 @@ class BillSampleData {
           title: '银行转账',
           amount: -2000.0,
           category: '转账',
-          date: now.subtract(const Duration(days: 4)).add(const Duration(hours: 13, minutes: 45)),
+          date: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 13, minutes: 45)),
           accountId: 'savings-account-001',
           note: '转至现金账户',
           tag: '资金调配',
           icon: Icons.swap_horiz,
           iconColor: Colors.blueGrey,
-          createdAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 13, minutes: 45)),
-          updatedAt: now.subtract(const Duration(days: 4)).add(const Duration(hours: 13, minutes: 45)),
+          createdAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 13, minutes: 45)),
+          updatedAt: now
+              .subtract(const Duration(days: 4))
+              .add(const Duration(hours: 13, minutes: 45)),
         ),
       ],
     );
@@ -268,9 +344,7 @@ class BillSampleData {
     ];
 
     // 返回符合存储格式的数据
-    return {
-      'accounts': accountsJson,
-    };
+    return {'accounts': accountsJson};
   }
 
   /// 获取简化版示例数据（用于快速测试）
@@ -334,9 +408,7 @@ class BillSampleData {
     simpleCash.calculateTotal();
 
     return {
-      'accounts': [
-        jsonEncode(simpleCash.toJson()),
-      ],
+      'accounts': [jsonEncode(simpleCash.toJson())],
     };
   }
 
@@ -353,9 +425,7 @@ class BillSampleData {
     emptyAccount.calculateTotal();
 
     return {
-      'accounts': [
-        jsonEncode(emptyAccount.toJson()),
-      ],
+      'accounts': [jsonEncode(emptyAccount.toJson())],
     };
   }
 
@@ -363,8 +433,18 @@ class BillSampleData {
   static String _getCurrentMonth() {
     final now = DateTime.now();
     const months = [
-      '一月', '二月', '三月', '四月', '五月', '六月',
-      '七月', '八月', '九月', '十月', '十一月', '十二月'
+      '一月',
+      '二月',
+      '三月',
+      '四月',
+      '五月',
+      '六月',
+      '七月',
+      '八月',
+      '九月',
+      '十月',
+      '十一月',
+      '十二月',
     ];
     return months[now.month - 1];
   }

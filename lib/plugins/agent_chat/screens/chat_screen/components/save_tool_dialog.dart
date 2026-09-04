@@ -5,6 +5,8 @@ import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 保存/编辑工具对话框
 ///
@@ -54,20 +56,28 @@ class _SaveToolDialogState extends State<SaveToolDialog>
       _descriptionController.text = template.description ?? '';
       _tags.addAll(template.tags);
       // 深拷贝步骤
-      _steps.addAll(template.steps.map((s) => ToolCallStep(
+      _steps.addAll(
+        template.steps.map(
+          (s) => ToolCallStep(
             method: s.method,
             title: s.title,
             desc: s.desc,
             data: s.data,
-          )));
+          ),
+        ),
+      );
     } else if (widget.message?.toolCall?.steps != null) {
       // 创建模式：从消息中获取步骤
-      _steps.addAll(widget.message!.toolCall!.steps.map((s) => ToolCallStep(
+      _steps.addAll(
+        widget.message!.toolCall!.steps.map(
+          (s) => ToolCallStep(
             method: s.method,
             title: s.title,
             desc: s.desc,
             data: s.data,
-          )));
+          ),
+        ),
+      );
     }
   }
 
@@ -82,67 +92,86 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Column(
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      width: 560,
+      padding: const EdgeInsets.all(20),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 标题 + TabBar（TabBar 结构性组件刻意保留 Material，配色令牌化）
           Row(
             children: [
-              Icon(
-                widget.isEditMode ? Icons.edit : Icons.save,
-                color: Colors.blue,
+              DsIcon(
+                widget.isEditMode ? DsIconKind.edit : DsIconKind.download,
+                color: theme.primaryText,
               ),
               const SizedBox(width: 8),
-              Text(widget.isEditMode ? '编辑工具模板' : '保存工具'),
+              Text(
+                widget.isEditMode ? '编辑工具模板' : '保存工具',
+                style: DsTypography.title.copyWith(color: theme.text),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.info_outline), text: '基础信息'),
-              Tab(icon: Icon(Icons.list), text: '执行步骤'),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.surfaceAlt,
+              borderRadius: theme.radii.sm,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: theme.primaryText,
+              unselectedLabelColor: theme.textSub,
+              indicator: BoxDecoration(
+                color: theme.surface,
+                borderRadius: theme.radii.sm,
+              ),
+              tabs: const [
+                Tab(icon: Icon(Icons.info_outline), text: '基础信息'),
+                Tab(icon: Icon(Icons.list), text: '执行步骤'),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 500,
+            height: 500, // 固定高度以适应 TabBarView
+            child: Form(
+              key: _formKey,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // 第一个 Tab: 基础信息
+                  _buildBasicInfoTab(),
+                  // 第二个 Tab: 执行步骤
+                  _buildStepsTab(),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DSButton(
+                  label: 'agent_chat_cancel'.tr,
+                  variant: DSButtonVariant.outline,
+                  onPressed: _isSaving ? null : () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DSButton(
+                  label: 'agent_chat_save'.tr,
+                  onPressed: _isSaving ? null : _saveTool,
+                ),
+              ),
             ],
           ),
         ],
       ),
-      content: SizedBox(
-        width: 500,
-        height: 500, // 固定高度以适应 TabBarView
-        child: Form(
-          key: _formKey,
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              // 第一个 Tab: 基础信息
-              _buildBasicInfoTab(),
-              // 第二个 Tab: 执行步骤
-              _buildStepsTab(),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.pop(context),
-          child: Text('agent_chat_cancel'.tr),
-        ),
-        FilledButton(
-          onPressed: _isSaving ? null : _saveTool,
-          child:
-              _isSaving
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                  : Text('agent_chat_save'.tr),
-        ),
-      ],
     );
   }
 
@@ -214,7 +243,10 @@ class _SaveToolDialogState extends State<SaveToolDialog>
             const SizedBox(height: 16),
             Text(
               '声明使用的工具 (${_getDeclaredTools().length})',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              style: DsTypography.body.copyWith(
+                fontWeight: FontWeight.bold,
+                color: DSThemeBridge.resolve(context).text,
+              ),
             ),
             const SizedBox(height: 8),
             Container(
@@ -229,14 +261,10 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                           return name.trim().isNotEmpty;
                         })
                         .map((tool) {
-                      return Chip(
-                        avatar: const Icon(Icons.build, size: 16),
-                        label: Text(
-                              tool['name'] ?? tool['id'] ?? '',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      );
+                          return DSChip(
+                            icon: DsIconKind.gear,
+                            label: tool['name'] ?? tool['id'] ?? '',
+                          );
                         })
                         .toList(),
               ),
@@ -246,73 +274,94 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           const SizedBox(height: 16),
 
           // 标签输入
-          const Text(
-            '标签(可选)',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _tagController,
-                  decoration: InputDecoration(
-                    hintText: '输入标签后按回车添加',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.label),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: _addTag,
-                      tooltip: '添加标签',
+          Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '标签(可选)',
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.text,
                     ),
                   ),
-                  onSubmitted: (_) => _addTag(),
-                ),
-              ),
-            ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _tagController,
+                          decoration: InputDecoration(
+                            hintText: '输入标签后按回车添加',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.label),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: _addTag,
+                              tooltip: '添加标签',
+                            ),
+                          ),
+                          onSubmitted: (_) => _addTag(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_tags.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          _tags.map((tag) {
+                            return DSChip(
+                              label: tag,
+                              onDeleted: () {
+                                setState(() {
+                                  _tags.remove(tag);
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
-          if (_tags.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  _tags.map((tag) {
-                    return Chip(
-                      label: Text(tag),
-                      onDeleted: () {
-                        setState(() {
-                          _tags.remove(tag);
-                        });
-                      },
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                    );
-                  }).toList(),
-            ),
-          ],
 
           // 错误信息
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, size: 16, color: Colors.red[700]),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(fontSize: 12, color: Colors.red[900]),
+            Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.danger.mixWhite(0.92),
+                    borderRadius: theme.radii.sm,
+                    border: Border.all(
+                      color: theme.danger.withValues(alpha: 0.5),
                     ),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      DsIcon(DsIconKind.close, size: 16, color: theme.danger),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.text,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ],
@@ -322,6 +371,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
   /// 构建执行步骤 Tab
   Widget _buildStepsTab() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       children: [
         // 步骤标题和添加按钮
@@ -332,16 +382,20 @@ class _SaveToolDialogState extends State<SaveToolDialog>
             children: [
               Text(
                 '执行步骤 (${_steps.length})',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: DsTypography.body.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: theme.text,
                 ),
               ),
-              IconButton(
+              Pressable(
                 onPressed: _addStep,
-                icon: const Icon(Icons.add_circle_outline),
-                tooltip: '添加步骤',
-                color: Colors.blue,
+                semanticLabel: '添加步骤',
+                builder:
+                    (context, states) => DsIcon(
+                      DsIconKind.plus,
+                      size: 24,
+                      color: theme.primaryText,
+                    ),
               ),
             ],
           ),
@@ -352,19 +406,21 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           child:
               _steps.isEmpty
                   ? Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: const Center(
-                    child: Text(
-                        '暂无步骤,点击上方按钮添加',
-                      style: TextStyle(color: Colors.grey),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.surfaceAlt.withValues(alpha: 0.6),
+                      borderRadius: theme.radii.sm,
+                      border: Border.all(
+                        color: theme.textSub.withValues(alpha: 0.3),
+                      ),
                     ),
-                  ),
-                )
+                    child: Center(
+                      child: Text(
+                        '暂无步骤,点击上方按钮添加',
+                        style: DsTypography.body.copyWith(color: theme.textSub),
+                      ),
+                    ),
+                  )
                   : ReorderableListView.builder(
                     itemCount: _steps.length,
                     onReorder: _onReorderSteps,
@@ -399,12 +455,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
   /// 添加步骤
   void _addStep() {
     setState(() {
-      _steps.add(ToolCallStep(
-        method: 'run_js',
-        title: '',
-        desc: '',
-        data: '',
-      ));
+      _steps.add(ToolCallStep(method: 'run_js', title: '', desc: '', data: ''));
     });
   }
 
@@ -439,32 +490,41 @@ class _SaveToolDialogState extends State<SaveToolDialog>
   /// 构建步骤编辑器
   Widget _buildStepEditor(int index) {
     final step = _steps[index];
+    final theme = DSThemeBridge.resolve(context);
 
-    return Card(
+    // ExpansionTile/ReorderableDragStartListener 结构性组件刻意保留 Material
+    return Container(
       key: ValueKey(index),
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: theme.radii.md,
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.3)),
+      ),
       child: ExpansionTile(
         leading: ReorderableDragStartListener(
           index: index,
-          child: const Icon(Icons.drag_handle, color: Colors.grey),
+          child: DsIcon(DsIconKind.drag, color: theme.textSub),
         ),
         title: Text(
           step.title.isNotEmpty ? step.title : '步骤 ${index + 1}',
-          style: const TextStyle(fontSize: 14),
+          style: DsTypography.body.copyWith(color: theme.text),
         ),
-        subtitle: step.desc.isNotEmpty
-            ? Text(
-                step.desc,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-              )
-            : null,
-        trailing: IconButton(
+        subtitle:
+            step.desc.isNotEmpty
+                ? Text(
+                  step.desc,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                )
+                : null,
+        trailing: Pressable(
           onPressed: () => _deleteStep(index),
-          icon: const Icon(Icons.delete_outline, size: 20),
-          color: Colors.red,
-          tooltip: '删除步骤',
+          semanticLabel: '删除步骤',
+          builder:
+              (context, states) =>
+                  DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
         ),
         children: [
           Padding(
@@ -506,10 +566,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                   ),
                   controller: TextEditingController(text: step.data),
                   maxLines: 8,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                   onChanged: (value) => _updateStep(index, data: value),
                 ),
               ],
@@ -592,13 +649,20 @@ Future<bool?> showSaveToolDialog(
   ToolTemplateService templateService, {
   List<Map<String, String>> declaredTools = const [],
 }) {
-  return showDialog<bool>(
+  return showDSDialog<bool>(
     context: context,
-    builder: (context) => SaveToolDialog(
-      message: message,
-      templateService: templateService,
-      declaredTools: declaredTools,
-    ),
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (context) => DSThemeBridge(
+          child: Builder(
+            builder:
+                (context) => SaveToolDialog(
+                  message: message,
+                  templateService: templateService,
+                  declaredTools: declaredTools,
+                ),
+          ),
+        ),
   );
 }
 
@@ -608,11 +672,18 @@ Future<bool?> showEditToolDialog(
   SavedToolTemplate template,
   ToolTemplateService templateService,
 ) {
-  return showDialog<bool>(
+  return showDSDialog<bool>(
     context: context,
-    builder: (context) => SaveToolDialog(
-      templateService: templateService,
-      editingTemplate: template,
-    ),
+    theme: DSThemeBridge.resolve(context),
+    builder:
+        (context) => DSThemeBridge(
+          child: Builder(
+            builder:
+                (context) => SaveToolDialog(
+                  templateService: templateService,
+                  editingTemplate: template,
+                ),
+          ),
+        ),
   );
 }

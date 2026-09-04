@@ -9,6 +9,8 @@ import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'controllers/conversation_controller.dart';
 import 'screens/conversation_list_screen/conversation_list_screen.dart';
 import 'screens/chat_screen/chat_screen.dart';
@@ -130,7 +132,6 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
 
   @override
   Future<void> registerToApp(
-    
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -186,17 +187,24 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
       for (final conversation in controller.conversations) {
         try {
           // 加载该会话的消息
-          final data = await storage.read('agent_chat/messages/${conversation.id}.json');
+          final data = await storage.read(
+            'agent_chat/messages/${conversation.id}.json',
+          );
           if (data is List) {
-            final messages = data
-                .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
-                .toList();
+            final messages =
+                data
+                    .map(
+                      (json) =>
+                          ChatMessage.fromJson(json as Map<String, dynamic>),
+                    )
+                    .toList();
 
             // 统计今日消息
-            count += messages.where((msg) {
-              return msg.timestamp.isAfter(todayStart) &&
-                  msg.timestamp.isBefore(todayEnd);
-            }).length;
+            count +=
+                messages.where((msg) {
+                  return msg.timestamp.isAfter(todayStart) &&
+                      msg.timestamp.isBefore(todayEnd);
+                }).length;
           }
         } catch (e) {
           debugPrint('加载会话 ${conversation.id} 的消息失败: $e');
@@ -371,11 +379,14 @@ class _AgentChatMainViewState extends State<AgentChatMainView> {
       );
 
       // 导航到聊天界面
-      await NavigationHelper.push(context, ChatScreen(
-            conversation: conversation,
-            storage: controller.storage,
-            conversationService: controller.conversationService,
-            getSettings: () => plugin.settings,),
+      await NavigationHelper.push(
+        context,
+        ChatScreen(
+          conversation: conversation,
+          storage: controller.storage,
+          conversationService: controller.conversationService,
+          getSettings: () => plugin.settings,
+        ),
       );
     } catch (e) {
       if (mounted) {
@@ -391,25 +402,37 @@ class _AgentChatMainViewState extends State<AgentChatMainView> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: DSThemeBridge(child: DSLoadingDots())),
           );
         }
 
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('agent_chat_initializationFailed'.trParams({'error': '${snapshot.error}'})),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('agent_chat_goBack'.tr),
-                  ),
-                ],
+            body: DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        DsIcon(DsIconKind.close, size: 48, color: theme.danger),
+                        const SizedBox(height: 16),
+                        Text(
+                          'agent_chat_initializationFailed'.trParams({
+                            'error': '${snapshot.error}',
+                          }),
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                        const SizedBox(height: 16),
+                        DSButton(
+                          label: 'agent_chat_goBack'.tr,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           );

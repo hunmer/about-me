@@ -1,6 +1,8 @@
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -52,16 +54,17 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.background,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: theme.surface,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'bill_accountManagement'.tr,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+          style: DsTypography.title.copyWith(
+            color: theme.text,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -70,18 +73,15 @@ class _AccountListScreenState extends State<AccountListScreen> {
             (UniversalPlatform.isAndroid || UniversalPlatform.isIOS)
                 ? null
                 : IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  icon: Icon(Icons.arrow_back_ios_new, color: theme.text),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
       ),
       body: _buildAccountList(),
-      floatingActionButton: SizedBox(
-        width: 64,
-        height: 64,
-        child: FloatingActionButton(
+      floatingActionButton: DSThemeBridge(
+        child: DSFab(
+          size: 64,
+          icon: DsIconKind.plus,
           onPressed:
               () => SmoothBottomSheet.show(
                 context: context,
@@ -90,14 +90,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     (context) =>
                         AccountEditScreen(billPlugin: widget.billPlugin),
               ),
-          backgroundColor: Theme.of(context).primaryColor,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: Icon(
-            Icons.add,
-            size: 32,
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
         ),
       ),
     );
@@ -105,7 +97,17 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
   Widget _buildAccountList() {
     if (widget.billPlugin.accounts.isEmpty) {
-      return Center(child: Text('bill_noAccounts'.tr));
+      return Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Center(
+            child: Text(
+              'bill_noAccounts'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+            ),
+          );
+        },
+      );
     }
 
     return ListView.separated(
@@ -124,36 +126,34 @@ class _AccountListScreenState extends State<AccountListScreen> {
           trailingActions: [
             SwipeActionPresets.delete(
               onTap: () async {
-                final confirmed = await showDialog<bool>(
+                final confirmed = await showDSDialog<bool>(
                   context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('bill_confirmDelete'.tr),
-                      content: Text(
-                        '确定要删除账户"${account.title}"吗？\n删除后该账户下的所有账单记录都将被删除！',
+                  theme: DSThemeBridge.resolve(context),
+                  builder:
+                      (BuildContext context) => DSThemeBridge(
+                        child: Builder(
+                          builder:
+                              (context) => DSDialog(
+                                title: 'bill_confirmDelete'.tr,
+                                message:
+                                    '确定要删除账户"${account.title}"吗？\n删除后该账户下的所有账单记录都将被删除！',
+                                cancelText: 'bill_cancel'.tr,
+                                confirmText: '删除',
+                                confirmVariant: DSButtonVariant.destructive,
+                                onCancel:
+                                    () => Navigator.of(context).pop(false),
+                                onConfirm:
+                                    () => Navigator.of(context).pop(true),
+                              ),
+                        ),
                       ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text('bill_cancel'.tr),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text(
-                            '删除',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
                 );
 
                 if (confirmed == true) {
                   widget.billPlugin.controller.deleteAccount(account.id);
-                  Toast.success('${'bill_accountDeleted'.tr} "${account.title}"');
+                  Toast.success(
+                    '${'bill_accountDeleted'.tr} "${account.title}"',
+                  );
                 }
               },
             ),
@@ -165,17 +165,18 @@ class _AccountListScreenState extends State<AccountListScreen> {
   }
 
   Widget _buildAccountCard(BuildContext context, Account account) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: theme.stroke.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -212,32 +213,25 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     children: [
                       Text(
                         account.title,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: DsTypography.heading.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: theme.text,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${account.bills.length} 笔账单',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   '¥${account.totalAmount.toStringAsFixed(2)}',
-                  style: TextStyle(
+                  style: DsTypography.heading.copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color:
-                        account.totalAmount < 0
-                            ? const Color(0xFFE74C3C)
-                            : Theme.of(context).colorScheme.onSurface,
+                    color: account.totalAmount < 0 ? theme.danger : theme.text,
                   ),
                 ),
               ],

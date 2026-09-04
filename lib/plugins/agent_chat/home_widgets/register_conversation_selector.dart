@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/generic_selector_widget.dart';
@@ -104,116 +106,96 @@ Widget _buildConversationWidget(BuildContext context, String conversationId) {
   final lastMessageAt = conversation.lastMessageAt;
   final agentId = conversation.agentId;
 
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题行
-            Row(
-              children: [
-                Icon(
-                  Icons.chat_bubble,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+  return DSThemeBridge(
+    child: Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题行
+              Row(
+                children: [
+                  DsIcon(DsIconKind.chat, size: 20, color: theme.text),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: DsTypography.heading.copyWith(color: theme.text),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // 最后一条消息预览
-            if (lastMessagePreview.isNotEmpty)
-              Expanded(
-                child: Text(
-                  lastMessagePreview,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimaryContainer.withOpacity(0.7),
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-            else
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    '暂无消息',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ),
+                ],
               ),
 
-            // 时间和 Agent 信息
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  utils.formatDateTime(lastMessageAt),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimaryContainer.withOpacity(0.6),
+              const SizedBox(height: 12),
+
+              // 最后一条消息预览
+              if (lastMessagePreview.isNotEmpty)
+                Expanded(
+                  child: Text(
+                    lastMessagePreview,
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )
+              else
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '暂无消息',
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
                   ),
                 ),
-                // Agent 信息（异步加载）
-                if (agentId != null)
-                  FutureBuilder<AIAgent?>(
-                    future: _getAgentById(agentId),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.smart_toy_outlined,
-                              size: 12,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimaryContainer.withOpacity(0.5),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              snapshot.data!.name,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer
-                                    .withOpacity(0.5),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
+
+              // 时间和 Agent 信息
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    utils.formatDateTime(lastMessageAt),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
-              ],
-            ),
-          ],
-        ),
-      ),
+                  // Agent 信息（异步加载）
+                  if (agentId != null)
+                    FutureBuilder<AIAgent?>(
+                      future: _getAgentById(agentId),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data != null) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              DsIcon(
+                                DsIconKind.bot,
+                                size: 12,
+                                color: theme.textSub,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                snapshot.data!.name,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     ),
   );
 }

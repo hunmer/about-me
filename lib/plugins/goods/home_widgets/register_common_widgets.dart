@@ -45,10 +45,7 @@ void registerCommonWidgets(HomeWidgetRegistry registry) {
 }
 
 /// 导航到物品详情页面
-void _navigateToItem(
-  BuildContext context,
-  SelectorResult result,
-) {
+void _navigateToItem(BuildContext context, SelectorResult result) {
   final itemId = getItemIdFromResult(result);
 
   if (itemId == null || itemId.isEmpty) {

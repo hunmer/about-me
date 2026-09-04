@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
@@ -20,106 +22,113 @@ class WarehouseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
+    final theme = DSThemeBridge.resolve(context);
+    return Container(
       margin: EdgeInsets.zero,
-      color: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: theme.surface,
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Theme.of(context).dividerColor.withOpacity(0.3),
+        border: Border.all(
+          color: theme.stroke.withValues(alpha: 0.3),
           width: 1.0,
         ),
       ),
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: () {
-          if (onEdit != null || onDelete != null) {
-            WarehouseActionSheet.show(
-              context: context,
-              onEdit: onEdit ?? () {},
-              onDelete: onDelete ?? () {},
-            );
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 96,
-                height: 96,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: _buildCoverImage(),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: SizedBox(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: () {
+            if (onEdit != null || onDelete != null) {
+              WarehouseActionSheet.show(
+                context: context,
+                onEdit: onEdit ?? () {},
+                onDelete: onDelete ?? () {},
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 96,
                   height: 96,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        warehouse.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            warehouse.icon,
-                            size: 18,
-                            color: warehouse.iconColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${warehouse.items.length} 件物品',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Theme.of(context).hintColor),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '总价值',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Theme.of(context).hintColor),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '¥${_formatCurrency(_calculateTotalValue())}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _buildCoverImage(),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: SizedBox(
+                    height: 96,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          warehouse.title,
+                          style: DsTypography.heading.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              warehouse.icon,
+                              size: 18,
+                              color: warehouse.iconColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${warehouse.items.length} 件物品',
+                              style: DsTypography.body.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '总价值',
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '¥${_formatCurrency(_calculateTotalValue())}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

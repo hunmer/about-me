@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show File;
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
@@ -26,18 +28,50 @@ class BasicInfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     // 分类选项
     final categories = [
-      OptionItem(id: 'electronics', icon: Icons.devices, label: 'goods_categoryElectronics'.tr),
-      OptionItem(id: 'household', icon: Icons.lightbulb, label: 'goods_categoryHousehold'.tr),
-      OptionItem(id: 'clothing', icon: Icons.checkroom, label: 'goods_categoryClothing'.tr),
-      OptionItem(id: 'books', icon: Icons.menu_book, label: 'goods_categoryBooks'.tr),
-      OptionItem(id: 'other', icon: Icons.category, label: 'goods_categoryOther'.tr),
+      OptionItem(
+        id: 'electronics',
+        icon: Icons.devices,
+        label: 'goods_categoryElectronics'.tr,
+      ),
+      OptionItem(
+        id: 'household',
+        icon: Icons.lightbulb,
+        label: 'goods_categoryHousehold'.tr,
+      ),
+      OptionItem(
+        id: 'clothing',
+        icon: Icons.checkroom,
+        label: 'goods_categoryClothing'.tr,
+      ),
+      OptionItem(
+        id: 'books',
+        icon: Icons.menu_book,
+        label: 'goods_categoryBooks'.tr,
+      ),
+      OptionItem(
+        id: 'other',
+        icon: Icons.category,
+        label: 'goods_categoryOther'.tr,
+      ),
     ];
 
     // 状态选项
     final statuses = [
-      OptionItem(id: 'normal', icon: Icons.check_circle_outline, label: 'goods_statusNormal'.tr),
-      OptionItem(id: 'damaged', icon: Icons.broken_image, label: 'goods_statusDamaged'.tr),
-      OptionItem(id: 'lent', icon: Icons.ios_share, label: 'goods_statusLent'.tr),
+      OptionItem(
+        id: 'normal',
+        icon: Icons.check_circle_outline,
+        label: 'goods_statusNormal'.tr,
+      ),
+      OptionItem(
+        id: 'damaged',
+        icon: Icons.broken_image,
+        label: 'goods_statusDamaged'.tr,
+      ),
+      OptionItem(
+        id: 'lent',
+        icon: Icons.ios_share,
+        label: 'goods_statusLent'.tr,
+      ),
       OptionItem(id: 'sold', icon: Icons.sell, label: 'goods_statusSold'.tr),
     ];
 
@@ -213,42 +247,34 @@ class BasicInfoTab extends StatelessWidget {
   }
 
   Widget _buildImageUploadSection(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return InkWell(
       onTap: () => _pickAndCropImage(context),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         height: 160,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
+          color: theme.surfaceAlt,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.outline,
-            style: BorderStyle.solid,
-          ),
+          border: Border.all(color: theme.stroke, style: BorderStyle.solid),
         ),
-        child: controller.imagePath != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: _buildImage(),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_a_photo,
-                    size: 48,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'goods_uploadItemImage'.tr,
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
+        child:
+            controller.imagePath != null
+                ? ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: _buildImage(),
+                )
+                : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(DsIconKind.camera, size: 48, color: theme.textSub),
+                    const SizedBox(height: 8),
+                    Text(
+                      'goods_uploadItemImage'.tr,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
       ),
     );
   }
@@ -262,18 +288,12 @@ class BasicInfoTab extends StatelessWidget {
   ) {
     return DatePickerField(
       date: date,
-      formattedDate: date != null
-          ? DateFormat('yyyy-MM-dd').format(date)
-          : '',
+      formattedDate: date != null ? DateFormat('yyyy-MM-dd').format(date) : '',
       placeholder: 'goods_selectDate'.tr,
       icon: icon,
       inline: true,
       labelText: label,
-      onTap: () => _showDatePicker(
-        context,
-        date,
-        onDateSelected,
-      ),
+      onTap: () => _showDatePicker(context, date, onDateSelected),
     );
   }
 

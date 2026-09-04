@@ -1,3 +1,6 @@
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -14,82 +17,76 @@ class TabManagerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final plugin = WebViewPlugin.instance;
 
-    return ChangeNotifierProvider.value(
-      value: plugin.tabManager,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('webview_tab_manager'.tr),
-          actions: [
-            // 关闭所有标签页
-            Consumer<TabManager>(
-              builder: (context, tabManager, _) {
-                if (tabManager.tabs.isEmpty) return const SizedBox();
-                return IconButton(
-                  icon: const Icon(Icons.close_fullscreen),
-                  onPressed: () => _confirmCloseAll(context),
-                  tooltip: 'webview_close_all_tabs'.tr,
-                );
-              },
-            ),
-          ],
-        ),
-        body: Consumer<TabManager>(
-          builder: (context, tabManager, child) {
-            if (tabManager.tabs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.tab_unselected,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'webview_no_tabs'.tr,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: _getCrossAxisCount(context),
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material
+    return DSThemeBridge(
+      child: ChangeNotifierProvider.value(
+        value: plugin.tabManager,
+        child: Builder(
+          builder: (context) {
+            return Scaffold(
+              appBar: AppBar(
+                title: Text('webview_tab_manager'.tr),
+                actions: [
+                  // 关闭所有标签页
+                  Consumer<TabManager>(
+                    builder: (context, tabManager, _) {
+                      if (tabManager.tabs.isEmpty) return const SizedBox();
+                      return IconButton(
+                        icon: const Icon(Icons.close_fullscreen),
+                        onPressed: () => _confirmCloseAll(context),
+                        tooltip: 'webview_close_all_tabs'.tr,
+                      );
+                    },
+                  ),
+                ],
               ),
-              itemCount: tabManager.tabs.length + 1, // +1 for new tab button
-              itemBuilder: (context, index) {
-                if (index == tabManager.tabs.length) {
-                  // 新建标签页按钮
-                  return _buildNewTabButton(context);
-                }
+              body: Consumer<TabManager>(
+                builder: (context, tabManager, child) {
+                  if (tabManager.tabs.isEmpty) {
+                    return Center(
+                      child: DSEmptyState(
+                        emoji: '🗂️',
+                        title: 'webview_no_tabs'.tr,
+                      ),
+                    );
+                  }
 
-                final tab = tabManager.tabs[index];
-                return _TabPreviewCard(
-                  tab: tab,
-                  isActive: tab.id == tabManager.activeTabId,
-                  onTap: () {
-                    tabManager.switchToTab(tab.id);
-                    Navigator.pop(context);
-                  },
-                  onClose: () => _closeTab(context, tab.id),
-                );
-              },
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: _getCrossAxisCount(context),
+                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount:
+                        tabManager.tabs.length + 1, // +1 for new tab button
+                    itemBuilder: (context, index) {
+                      if (index == tabManager.tabs.length) {
+                        // 新建标签页按钮
+                        return _buildNewTabButton(context);
+                      }
+
+                      final tab = tabManager.tabs[index];
+                      return _TabPreviewCard(
+                        tab: tab,
+                        isActive: tab.id == tabManager.activeTabId,
+                        onTap: () {
+                          tabManager.switchToTab(tab.id);
+                          Navigator.pop(context);
+                        },
+                        onClose: () => _closeTab(context, tab.id),
+                      );
+                    },
+                  );
+                },
+              ),
+              floatingActionButton: DSFab(
+                icon: DsIconKind.plus,
+                onPressed: () => _createNewTab(context),
+              ),
             );
           },
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _createNewTab(context),
-          child: const Icon(Icons.add),
         ),
       ),
     );
@@ -104,42 +101,30 @@ class TabManagerScreen extends StatelessWidget {
   }
 
   Widget _buildNewTabButton(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _createNewTab(context),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.grey[400]!,
-              width: 2,
-              style: BorderStyle.solid,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: () => _createNewTab(context),
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return JellyBox(
+          radius: theme.radii.xl,
+          raised: false,
+          color: pressed ? theme.primary.mixWhite(0.9) : null,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.add,
-                  size: 48,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(height: 8),
+                DsIcon(DsIconKind.plus, size: 48, color: theme.textSub),
+                SizedBox(height: theme.spacing.sm),
                 Text(
                   'webview_new_tab'.tr,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -147,9 +132,7 @@ class TabManagerScreen extends StatelessWidget {
     final plugin = WebViewPlugin.instance;
 
     if (!plugin.tabManager.canAddTab) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('webview_max_tabs_reached'.tr)),
-      );
+      Toast.warning('webview_max_tabs_reached'.tr);
       return;
     }
 
@@ -175,26 +158,24 @@ class TabManagerScreen extends StatelessWidget {
   }
 
   Future<void> _confirmCloseAll(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('webview_close_all_tabs'.tr),
-        content: Text('webview_confirm_close_all'.tr),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              MaterialLocalizations.of(context).okButtonLabel,
-              style: const TextStyle(color: Colors.white),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (ctx) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'webview_close_all_tabs'.tr,
+                    message: 'webview_confirm_close_all'.tr,
+                    confirmText: 'app_confirm'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.of(ctx).pop(true),
+                    onCancel: () => Navigator.of(ctx).pop(false),
+                  ),
             ),
           ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -223,13 +204,10 @@ class _TabPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
 
     return Material(
-      color: isActive
-          ? theme.primaryColor.withOpacity(0.1)
-          : (isDark ? Colors.grey[850] : Colors.grey[100]),
+      color: isActive ? theme.primary.withValues(alpha: 0.1) : theme.surfaceAlt,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -238,7 +216,7 @@ class _TabPreviewCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive ? theme.primaryColor : Colors.transparent,
+              color: isActive ? theme.primary : Colors.transparent,
               width: 2,
             ),
           ),
@@ -249,14 +227,14 @@ class _TabPreviewCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[200],
+                  color: theme.backgroundAlt,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(10),
                   ),
                 ),
                 child: Row(
                   children: [
-                    // Favicon
+                    // Favicon(DS 暂无网页图标,回退保留 Material)
                     if (tab.favicon != null && tab.favicon!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -264,10 +242,9 @@ class _TabPreviewCard extends StatelessWidget {
                           tab.favicon!,
                           width: 16,
                           height: 16,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.language,
-                            size: 16,
-                          ),
+                          errorBuilder:
+                              (_, __, ___) =>
+                                  const Icon(Icons.language, size: 16),
                         ),
                       )
                     else
@@ -280,7 +257,8 @@ class _TabPreviewCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         tab.title.isNotEmpty ? tab.title : '新标签页',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: DsTypography.caption.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
@@ -292,9 +270,13 @@ class _TabPreviewCard extends StatelessWidget {
                     InkWell(
                       onTap: onClose,
                       borderRadius: BorderRadius.circular(10),
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
-                        child: Icon(Icons.close, size: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: DsIcon(
+                          DsIconKind.close,
+                          size: 16,
+                          color: theme.text,
+                        ),
                       ),
                     ),
                   ],
@@ -306,7 +288,7 @@ class _TabPreviewCard extends StatelessWidget {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[900] : Colors.white,
+                    color: theme.background,
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(10),
                     ),
@@ -315,18 +297,15 @@ class _TabPreviewCard extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.language,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
+                        // DS 暂无网页/地球图标,保留 Material
+                        Icon(Icons.language, size: 48, color: theme.textSub),
                         const SizedBox(height: 8),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
                             _getDisplayUrl(tab.url),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 2,

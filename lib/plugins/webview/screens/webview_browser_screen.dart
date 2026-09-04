@@ -1,4 +1,7 @@
 import 'dart:collection';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -94,74 +97,86 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
   Widget build(BuildContext context) {
     final plugin = WebViewPlugin.instance;
 
-    return ChangeNotifierProvider.value(
-      value: plugin.tabManager,
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              // 顶部地址栏和导航（根据 hideUI 参数决定是否显示）
-              if (!widget.hideUI) _buildAddressBar(context),
+    return DSThemeBridge(
+      child: ChangeNotifierProvider.value(
+        value: plugin.tabManager,
+        child: Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                // 顶部地址栏和导航（根据 hideUI 参数决定是否显示）
+                if (!widget.hideUI) _buildAddressBar(context),
 
-              // WebView 内容区域
-              Expanded(
-                child: Consumer<TabManager>(
-                  builder: (context, tabManager, child) {
-                    if (tabManager.tabs.isEmpty) {
-                      return Center(child: Text('webview_no_tabs'.tr));
-                    }
+                // WebView 内容区域
+                Expanded(
+                  child: Consumer<TabManager>(
+                    builder: (context, tabManager, child) {
+                      if (tabManager.tabs.isEmpty) {
+                        final theme = DSThemeBridge.resolve(context);
+                        return Center(
+                          child: Text(
+                            'webview_no_tabs'.tr,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        );
+                      }
 
-                    // 使用 IndexedStack 保持标签页状态
-                    return IndexedStack(
-                      index:
-                          tabManager.activeTab != null
-                              ? tabManager.getTabIndex(tabManager.activeTabId!)
-                              : 0,
-                      children:
-                          tabManager.tabs.map((tab) {
-                            return _WebViewTabContent(
-                              key: ValueKey(tab.id),
-                              tab: tab,
-                              onUrlChanged: (url) {
-                                if (tab.id == tabManager.activeTabId) {
-                                  _urlController.text = url;
-                                }
-                              },
-                              onTitleChanged: (title) {
-                                tabManager.updateTab(tab.id, title: title);
-                              },
-                              onProgressChanged: (progress) {
-                                tabManager.updateTab(
-                                  tab.id,
-                                  progress: progress,
-                                );
-                              },
-                              onLoadingChanged: (isLoading) {
-                                tabManager.updateTab(
-                                  tab.id,
-                                  isLoading: isLoading,
-                                );
-                              },
-                              onNavigationStateChanged: (
-                                canGoBack,
-                                canGoForward,
-                              ) {
-                                tabManager.updateTab(
-                                  tab.id,
-                                  canGoBack: canGoBack,
-                                  canGoForward: canGoForward,
-                                );
-                              },
-                            );
-                          }).toList(),
-                    );
-                  },
+                      // 使用 IndexedStack 保持标签页状态
+                      return IndexedStack(
+                        index:
+                            tabManager.activeTab != null
+                                ? tabManager.getTabIndex(
+                                  tabManager.activeTabId!,
+                                )
+                                : 0,
+                        children:
+                            tabManager.tabs.map((tab) {
+                              return _WebViewTabContent(
+                                key: ValueKey(tab.id),
+                                tab: tab,
+                                onUrlChanged: (url) {
+                                  if (tab.id == tabManager.activeTabId) {
+                                    _urlController.text = url;
+                                  }
+                                },
+                                onTitleChanged: (title) {
+                                  tabManager.updateTab(tab.id, title: title);
+                                },
+                                onProgressChanged: (progress) {
+                                  tabManager.updateTab(
+                                    tab.id,
+                                    progress: progress,
+                                  );
+                                },
+                                onLoadingChanged: (isLoading) {
+                                  tabManager.updateTab(
+                                    tab.id,
+                                    isLoading: isLoading,
+                                  );
+                                },
+                                onNavigationStateChanged: (
+                                  canGoBack,
+                                  canGoForward,
+                                ) {
+                                  tabManager.updateTab(
+                                    tab.id,
+                                    canGoBack: canGoBack,
+                                    canGoForward: canGoForward,
+                                  );
+                                },
+                              );
+                            }).toList(),
+                      );
+                    },
+                  ),
                 ),
-              ),
 
-              // 底部工具栏（根据 hideUI 参数决定是否显示）
-              if (!widget.hideUI) _buildBottomBar(context),
-            ],
+                // 底部工具栏（根据 hideUI 参数决定是否显示）
+                if (!widget.hideUI) _buildBottomBar(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -169,42 +184,43 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
   }
 
   Widget _buildAddressBar(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: theme.background,
+        boxShadow: theme.shadows.soft,
       ),
       child: Column(
         children: [
           Row(
             children: [
               // 返回按钮
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
+              DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
                 tooltip: '关闭',
+                onPressed: () => Navigator.pop(context),
               ),
 
-              // 地址栏
+              // 地址栏（嵌入自绘容器的 TextField 编辑原语，刻意保留 Material）
               Expanded(
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: theme.surfaceAlt,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextField(
                     controller: _urlController,
+                    style: DsTypography.body.copyWith(color: theme.text),
                     decoration: InputDecoration(
                       hintText: 'webview_enter_url'.tr,
+                      hintStyle: DsTypography.body.copyWith(
+                        color: theme.textSub.withValues(alpha: 0.75),
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -214,24 +230,29 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                         builder: (context, tm, _) {
                           final tab = tm.activeTab;
                           if (tab?.isLoading ?? false) {
-                            return const Padding(
-                              padding: EdgeInsets.all(12),
+                            return const Center(
                               child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
+                                width: 24,
+                                child: DSLoadingDots(size: 4),
                               ),
                             );
                           }
-                          return const Icon(Icons.lock_outline, size: 18);
+                          // DS 暂无锁形图标，保留 Material
+                          return Icon(
+                            Icons.lock_outline,
+                            size: 18,
+                            color: theme.textSub,
+                          );
                         },
                       ),
                       suffixIcon:
                           _isUrlBarFocused
                               ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
+                                icon: DsIcon(
+                                  DsIconKind.close,
+                                  size: 18,
+                                  color: theme.textSub,
+                                ),
                                 onPressed: () {
                                   _urlController.clear();
                                 },
@@ -266,10 +287,14 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
               Consumer<TabManager>(
                 builder: (context, tm, _) {
                   final tab = tm.activeTab;
-                  return IconButton(
-                    icon: Icon(
-                      tab?.isLoading ?? false ? Icons.close : Icons.refresh,
-                    ),
+                  return DSIconButton(
+                    icon:
+                        (tab?.isLoading ?? false)
+                            ? DsIconKind.stop
+                            : DsIconKind.refresh,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
                     onPressed: () {
                       if (tab?.isLoading ?? false) {
                         tm.getController(tab!.id)?.stopLoading();
@@ -292,12 +317,9 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
             builder: (context, tm, _) {
               final tab = tm.activeTab;
               if (tab?.isLoading ?? false) {
-                return LinearProgressIndicator(
-                  value: tab!.progress,
-                  minHeight: 2,
-                );
+                return DSLinearProgress(value: tab!.progress, height: 4);
               }
-              return const SizedBox(height: 2);
+              return const SizedBox(height: 4);
             },
           ),
         ],
@@ -306,17 +328,12 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
-      height: 50,
+      height: 60,
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: theme.background,
+        boxShadow: theme.shadows.soft,
       ),
       child: Consumer<TabManager>(
         builder: (context, tabManager, _) {
@@ -326,8 +343,11 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               // 后退
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios),
+              DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 44,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
                 onPressed:
                     tab?.canGoBack ?? false
                         ? () => tabManager.goBack(tab!.id)
@@ -336,8 +356,11 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
               ),
 
               // 前进
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_ios),
+              DSIconButton(
+                icon: DsIconKind.chevronRight,
+                size: 44,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
                 onPressed:
                     tab?.canGoForward ?? false
                         ? () => tabManager.goForward(tab!.id)
@@ -346,105 +369,160 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
               ),
 
               // 添加到卡片
-              IconButton(
-                icon: const Icon(Icons.add_box_outlined),
+              DSIconButton(
+                icon: DsIconKind.plus,
+                size: 44,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
                 onPressed: tab != null ? () => _addToCards(tab) : null,
                 tooltip: 'webview_add_to_cards'.tr,
               ),
 
               // 标签页管理
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.layers),
-                    onPressed: () => _showTabManager(),
-                    tooltip: 'webview_tab_manager'.tr,
-                  ),
-                  if (tabManager.tabCount > 1)
-                    Positioned(
-                      right: 4,
-                      top: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '${tabManager.tabCount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Center(
+                      child: DSIconButton(
+                        icon: DsIconKind.layers,
+                        size: 44,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () => _showTabManager(),
+                        tooltip: 'webview_tab_manager'.tr,
                       ),
                     ),
-                ],
+                    if (tabManager.tabCount > 1)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: theme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${tabManager.tabCount}',
+                            style: DsTypography.label.copyWith(
+                              fontSize: 10,
+                              color: theme.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
 
-              // 更多选项
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (value) => _handleMenuAction(value, tab),
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        value: 'new_tab',
-                        child: ListTile(
-                          leading: const Icon(Icons.add),
-                          title: Text('webview_new_tab'.tr),
-                          contentPadding: EdgeInsets.zero,
+              // 更多选项（DSPopover 经根 Overlay 展示，内容已自带主题）
+              DSPopover(
+                width: 230,
+                contentBuilder: (context, close) {
+                  final menuTheme = DSThemeBridge.resolve(context);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _MenuRow(
+                        icon: DsIcon(
+                          DsIconKind.plus,
+                          size: 20,
+                          color: menuTheme.primary,
                         ),
+                        label: 'webview_new_tab'.tr,
+                        theme: menuTheme,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('new_tab', tab);
+                        },
                       ),
-                      PopupMenuItem(
-                        value: 'share',
-                        child: ListTile(
-                          leading: const Icon(Icons.share),
-                          title: Text('webview_share'.tr),
-                          contentPadding: EdgeInsets.zero,
+                      _MenuRow(
+                        icon: DsIcon(
+                          DsIconKind.share,
+                          size: 20,
+                          color: menuTheme.primary,
                         ),
+                        label: 'webview_share'.tr,
+                        theme: menuTheme,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('share', tab);
+                        },
                       ),
-                      PopupMenuItem(
-                        value: 'copy_url',
-                        child: ListTile(
-                          leading: const Icon(Icons.copy),
-                          title: Text('webview_copy_url'.tr),
-                          contentPadding: EdgeInsets.zero,
+                      _MenuRow(
+                        icon: DsIcon(
+                          DsIconKind.copy,
+                          size: 20,
+                          color: menuTheme.primary,
                         ),
+                        label: 'webview_copy_url'.tr,
+                        theme: menuTheme,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('copy_url', tab);
+                        },
                       ),
-                      PopupMenuItem(
-                        value: 'open_in_browser',
-                        child: ListTile(
-                          leading: const Icon(Icons.open_in_browser),
-                          title: Text('webview_open_in_browser'.tr),
-                          contentPadding: EdgeInsets.zero,
+                      _MenuRow(
+                        // DS 暂无"外部浏览器打开"图标，保留 Material
+                        icon: Icon(
+                          Icons.open_in_browser,
+                          size: 20,
+                          color: menuTheme.primary,
                         ),
+                        label: 'webview_open_in_browser'.tr,
+                        theme: menuTheme,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('open_in_browser', tab);
+                        },
                       ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem(
-                        value: 'close_tab',
-                        child: ListTile(
-                          leading: const Icon(Icons.close),
-                          title: Text('webview_close_tab'.tr),
-                          contentPadding: EdgeInsets.zero,
+                      Container(
+                        height: 1,
+                        margin: EdgeInsets.symmetric(
+                          vertical: menuTheme.spacing.xs,
                         ),
+                        color: menuTheme.stroke,
                       ),
-                      PopupMenuItem(
-                        value: 'close_all',
-                        child: ListTile(
-                          leading: const Icon(
-                            Icons.close_fullscreen,
-                            color: Colors.red,
-                          ),
-                          title: Text(
-                            'webview_close_all_tabs'.tr,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                          contentPadding: EdgeInsets.zero,
+                      _MenuRow(
+                        icon: DsIcon(
+                          DsIconKind.close,
+                          size: 20,
+                          color: menuTheme.primary,
                         ),
+                        label: 'webview_close_tab'.tr,
+                        theme: menuTheme,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('close_tab', tab);
+                        },
+                      ),
+                      _MenuRow(
+                        icon: DsIcon(
+                          DsIconKind.close,
+                          size: 20,
+                          color: menuTheme.danger,
+                        ),
+                        label: 'webview_close_all_tabs'.tr,
+                        theme: menuTheme,
+                        danger: true,
+                        onTap: () {
+                          close();
+                          _handleMenuAction('close_all', tab);
+                        },
                       ),
                     ],
+                  );
+                },
+                child: DSIconButton(
+                  icon: DsIconKind.more,
+                  size: 44,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                ),
               ),
             ],
           );
@@ -476,9 +554,7 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
   void _addToCards(WebViewTab tab) async {
     final exists = WebViewPlugin.instance.cardManager.getCardByUrl(tab.url);
     if (exists != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('该网址已在卡片中')));
+      Toast.warning('该网址已在卡片中');
       return;
     }
 
@@ -490,9 +566,7 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('webview_card_added'.tr)));
+      Toast.success('webview_card_added'.tr);
     }
   }
 
@@ -531,9 +605,7 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
       case 'copy_url':
         if (tab != null) {
           Clipboard.setData(ClipboardData(text: tab.url));
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('webview_url_copied'.tr)));
+          Toast.success('webview_url_copied'.tr);
         }
         break;
 
@@ -561,30 +633,23 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
         break;
 
       case 'close_all':
-        final confirm = await showDialog<bool>(
+        final confirm = await showDSDialog<bool>(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (ctx) => AlertDialog(
-                title: Text('webview_close_all_tabs'.tr),
-                content: Text('webview_confirm_close_all'.tr),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(
-                      MaterialLocalizations.of(context).cancelButtonLabel,
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(
-                      MaterialLocalizations.of(context).okButtonLabel,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+              (ctx) => DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (ctx) => DSDialog(
+                        title: 'webview_close_all_tabs'.tr,
+                        message: 'webview_confirm_close_all'.tr,
+                        confirmText: 'app_confirm'.tr,
+                        cancelText: 'app_cancel'.tr,
+                        confirmVariant: DSButtonVariant.destructive,
+                        onConfirm: () => Navigator.of(ctx).pop(true),
+                        onCancel: () => Navigator.of(ctx).pop(false),
+                      ),
+                ),
               ),
         );
 
@@ -594,6 +659,60 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
         }
         break;
     }
+  }
+}
+
+/// 更多选项气泡菜单行(果冻风格)
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final Widget icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.primary;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.xs),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.md,
+            raised: false,
+            color: pressed ? accent.mixWhite(0.9) : theme.surfaceAlt,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm + 2,
+            ),
+            child: Row(
+              children: [
+                icon,
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: DsTypography.body.copyWith(
+                      color: danger ? theme.danger : theme.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -852,11 +971,10 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         useHybridComposition: true, // 启用混合组成，提高性能
       ),
       // 使用 UserScript 预加载 JS Bridge
-      initialUserScripts: webviewSettings.enableJSBridge
-          ? UnmodifiableListView<UserScript>([
-              _createAboutmeUserScript(),
-            ])
-          : null,
+      initialUserScripts:
+          webviewSettings.enableJSBridge
+              ? UnmodifiableListView<UserScript>([_createAboutmeUserScript()])
+              : null,
       shouldOverrideUrlLoading: (controller, navigationAction) async {
         final url = navigationAction.request.url?.toString() ?? '';
 
@@ -936,8 +1054,7 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
                 currentUri.host == lastUri.host) {
               // 如果已经在重定向链中，说明是循环，阻止
               if (_redirectChain.contains(normalizedUrl)) {
-                debugPrint(
-                    '[WebView] 检测到协议切换循环，阻止: $url (上次: $lastUrl)');
+                debugPrint('[WebView] 检测到协议切换循环，阻止: $url (上次: $lastUrl)');
                 return NavigationActionPolicy.CANCEL;
               }
             }
@@ -989,7 +1106,8 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
 
         // 调试：检查页面 DOM 状态和运行时错误
         try {
-          final domCheck = await controller.evaluateJavascript(source: '''
+          final domCheck = await controller.evaluateJavascript(
+            source: '''
             (function() {
               const bodyHTML = document.body ? document.body.innerHTML : 'NO BODY';
               const rootElement = document.getElementById('root') || document.getElementById('app');
@@ -1030,11 +1148,13 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
                 frameworkError: frameworkError
               });
             })();
-          ''');
+          ''',
+          );
           debugPrint('[WebView DOM Check] $domCheck');
 
           // 注入全局错误捕获器
-          await controller.evaluateJavascript(source: '''
+          await controller.evaluateJavascript(
+            source: '''
             (function() {
               if (!window.__webviewErrors) {
                 window.__webviewErrors = [];
@@ -1066,12 +1186,14 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
                 console.log('[Aboutme] Global error handlers installed');
               }
             })();
-          ''');
+          ''',
+          );
 
           // 延迟 3 秒后再次检查页面状态（用于诊断是否卡在加载状态）
           Future.delayed(const Duration(seconds: 3), () async {
             try {
-              final laterCheck = await controller.evaluateJavascript(source: '''
+              final laterCheck = await controller.evaluateJavascript(
+                source: '''
                 (function() {
                   const rootElement = document.getElementById('root') || document.getElementById('app');
                   const hasLoadingIndicator = document.querySelector('.loading, [class*="loading"], [class*="spinner"]') !== null;
@@ -1084,7 +1206,8 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
                     bodyHTML: document.body ? document.body.innerHTML.substring(0, 500) : 'NO BODY'
                   });
                 })();
-              ''');
+              ''',
+              );
               debugPrint('[WebView Status After 3s] $laterCheck');
             } catch (e) {
               debugPrint('[WebView Status After 3s] Error: $e');

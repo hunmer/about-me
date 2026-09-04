@@ -229,10 +229,12 @@ Future<Map<String, Map<String, dynamic>>> provideGoodsListWidgets(
           'preview': _getItemPreview(item),
           'timeAgo': _formatTimeAgo(item.purchaseDate ?? now, now),
           // 优先使用物品自带的图标，如果没有图片且有图标则使用图标
-          'iconCodePoint': (imageUrl == null || imageUrl.isEmpty) && item.icon != null
-              ? item.icon!.codePoint
-              : null,
-          'iconBackgroundColor': item.iconColor?.value ?? tagColor?.value ?? goodsColor.value,
+          'iconCodePoint':
+              (imageUrl == null || imageUrl.isEmpty) && item.icon != null
+                  ? item.icon!.codePoint
+                  : null,
+          'iconBackgroundColor':
+              item.iconColor?.value ?? tagColor?.value ?? goodsColor.value,
         };
       }),
     ),
@@ -252,26 +254,35 @@ Future<Map<String, Map<String, dynamic>>> provideGoodsListWidgets(
               'imageUrl': imageUrl ?? '',
               'title': featuredItem.title,
               // 无图片时使用图标
-              'iconCodePoint': (imageUrl == null || imageUrl.isEmpty) && featuredItem.icon != null
-                  ? featuredItem.icon!.codePoint
-                  : null,
-              'iconBackgroundColor': featuredItem.iconColor?.value ?? goodsColor.value,
+              'iconCodePoint':
+                  (imageUrl == null || imageUrl.isEmpty) &&
+                          featuredItem.icon != null
+                      ? featuredItem.icon!.codePoint
+                      : null,
+              'iconBackgroundColor':
+                  featuredItem.iconColor?.value ?? goodsColor.value,
             },
             'category': warehouseName,
             'newsItems': await Future.wait(
               displayItems.skip(1).map((item) async {
                 final itemImageUrl = await item.getImageUrl();
                 final primaryTag = item.tags.isNotEmpty ? item.tags.first : '';
-                final tagColor = primaryTag.isNotEmpty ? tagColors[primaryTag] : goodsColor;
+                final tagColor =
+                    primaryTag.isNotEmpty ? tagColors[primaryTag] : goodsColor;
                 return {
                   'title': item.title,
                   'time': _formatTimeAgo(item.purchaseDate ?? now, now),
                   'imageUrl': itemImageUrl ?? '',
                   // 无图片时使用图标
-                  'iconCodePoint': (itemImageUrl == null || itemImageUrl.isEmpty) && item.icon != null
-                      ? item.icon!.codePoint
-                      : null,
-                  'iconBackgroundColor': item.iconColor?.value ?? tagColor?.value ?? goodsColor.value,
+                  'iconCodePoint':
+                      (itemImageUrl == null || itemImageUrl.isEmpty) &&
+                              item.icon != null
+                          ? item.icon!.codePoint
+                          : null,
+                  'iconBackgroundColor':
+                      item.iconColor?.value ??
+                      tagColor?.value ??
+                      goodsColor.value,
                 };
               }),
             ),
@@ -295,26 +306,35 @@ Future<Map<String, Map<String, dynamic>>> provideGoodsListWidgets(
               'summary': _getItemPreview(featuredArticle),
               'imageUrl': articleImageUrl ?? '',
               // 无图片时使用图标
-              'iconCodePoint': (articleImageUrl == null || articleImageUrl.isEmpty) && featuredArticle.icon != null
-                  ? featuredArticle.icon!.codePoint
-                  : null,
-              'iconBackgroundColor': featuredArticle.iconColor?.value ?? goodsColor.value,
+              'iconCodePoint':
+                  (articleImageUrl == null || articleImageUrl.isEmpty) &&
+                          featuredArticle.icon != null
+                      ? featuredArticle.icon!.codePoint
+                      : null,
+              'iconBackgroundColor':
+                  featuredArticle.iconColor?.value ?? goodsColor.value,
             },
             'articles': await Future.wait(
               displayItems.skip(1).map((item) async {
                 final itemImageUrl = await item.getImageUrl();
                 final primaryTag = item.tags.isNotEmpty ? item.tags.first : '';
-                final tagColor = primaryTag.isNotEmpty ? tagColors[primaryTag] : goodsColor;
+                final tagColor =
+                    primaryTag.isNotEmpty ? tagColors[primaryTag] : goodsColor;
                 return {
                   'title': item.title,
                   'author': warehouseName,
                   'publication': _formatTimeAgo(item.purchaseDate ?? now, now),
                   'imageUrl': itemImageUrl ?? '',
                   // 无图片时使用图标
-                  'iconCodePoint': (itemImageUrl == null || itemImageUrl.isEmpty) && item.icon != null
-                      ? item.icon!.codePoint
-                      : null,
-                  'iconBackgroundColor': item.iconColor?.value ?? tagColor?.value ?? goodsColor.value,
+                  'iconCodePoint':
+                      (itemImageUrl == null || itemImageUrl.isEmpty) &&
+                              item.icon != null
+                          ? item.icon!.codePoint
+                          : null,
+                  'iconBackgroundColor':
+                      item.iconColor?.value ??
+                      tagColor?.value ??
+                      goodsColor.value,
                 };
               }),
             ),

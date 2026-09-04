@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -25,7 +27,7 @@ class GoodsItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     // 从 PluginManager 获取最新的物品数据
     final plugin = PluginManager.instance.getPlugin('goods') as GoodsPlugin?;
@@ -61,12 +63,13 @@ class GoodsItemWidget extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () => _navigateToItemDetail(
-              context,
-              itemId,
-              findResult?.warehouseId,
-              title,
-            ),
+            onTap:
+                () => _navigateToItemDetail(
+                  context,
+                  itemId,
+                  findResult?.warehouseId,
+                  title,
+                ),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -95,9 +98,16 @@ class GoodsItemWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.all(16),
-                child: isLarge
-                    ? _buildLargeLayout(item, title, price, hasImage, theme)
-                    : _buildMediumLayout(item, title, price, hasImage, theme),
+                child:
+                    isLarge
+                        ? _buildLargeLayout(item, title, price, hasImage, theme)
+                        : _buildMediumLayout(
+                          item,
+                          title,
+                          price,
+                          hasImage,
+                          theme,
+                        ),
               ),
             ),
           ),
@@ -112,7 +122,7 @@ class GoodsItemWidget extends StatelessWidget {
     String title,
     double? price,
     bool hasImage,
-    ThemeData theme,
+    AppThemeData theme,
   ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -123,9 +133,9 @@ class GoodsItemWidget extends StatelessWidget {
         // 标题（居中）
         Text(
           title,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: DsTypography.heading.copyWith(
             fontWeight: FontWeight.bold,
-            color: hasImage ? Colors.white : null,
+            color: hasImage ? Colors.white : theme.text,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -136,8 +146,8 @@ class GoodsItemWidget extends StatelessWidget {
           // 价格（居中）
           Text(
             '¥${price.toStringAsFixed(2)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: hasImage ? Colors.white : theme.colorScheme.primary,
+            style: DsTypography.body.copyWith(
+              color: hasImage ? Colors.white : theme.primary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -153,7 +163,7 @@ class GoodsItemWidget extends StatelessWidget {
     String title,
     double? price,
     bool hasImage,
-    ThemeData theme,
+    AppThemeData theme,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,9 +180,9 @@ class GoodsItemWidget extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: DsTypography.heading.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: hasImage ? Colors.white : null,
+                      color: hasImage ? Colors.white : theme.text,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -181,11 +191,8 @@ class GoodsItemWidget extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '¥${price.toStringAsFixed(2)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            hasImage
-                                ? Colors.white
-                                : theme.colorScheme.primary,
+                      style: DsTypography.body.copyWith(
+                        color: hasImage ? Colors.white : theme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

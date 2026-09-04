@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
@@ -247,6 +249,7 @@ class _BillListScreenSupercupertinoState
   }
 
   Widget _buildCalendarCell(DateTime day, bool isSelected) {
+    final theme = DSThemeBridge.resolve(context);
     final date = DateTime(day.year, day.month, day.day);
     final stats = _dailyStats[date];
     final isToday = _isSameDay(DateTime.now(), day);
@@ -269,36 +272,46 @@ class _BillListScreenSupercupertinoState
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: isSelected ? _primaryColor : null,
+              color: isSelected ? _primaryColor : theme.text,
             ),
           ),
           const SizedBox(height: 2),
           // 始终显示收入位置（有数据显示badge，无数据显示空占位）
           SizedBox(
             height: 10,
-            child: isIncomePositive
-                ? _buildStatBadge(stats!.income, _incomeColor, Icons.arrow_downward)
-                : const SizedBox.shrink(),
+            child:
+                isIncomePositive
+                    ? _buildStatBadge(
+                      stats!.income,
+                      _incomeColor,
+                      DsIconKind.chevronDown,
+                    )
+                    : const SizedBox.shrink(),
           ),
           // 始终显示支出位置（有数据显示badge，无数据显示空占位）
           SizedBox(
             height: 10,
-            child: isExpensePositive
-                ? _buildStatBadge(stats!.expense, _expenseColor, Icons.arrow_upward)
-                : const SizedBox.shrink(),
+            child:
+                isExpensePositive
+                    ? _buildStatBadge(
+                      stats!.expense,
+                      _expenseColor,
+                      DsIconKind.chevronUp,
+                    )
+                    : const SizedBox.shrink(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatBadge(double amount, Color color, IconData icon) {
+  Widget _buildStatBadge(double amount, Color color, DsIconKind icon) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 8, color: color),
+          DsIcon(icon, size: 8, color: color),
           const SizedBox(width: 1),
           Text(
             amount.toInt().toString(),
@@ -477,51 +490,47 @@ class _BillListScreenSupercupertinoState
           // Filter Chips
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                _buildFilterChip('all', '全部', Icons.list),
-                _buildFilterChip('income', '收入', Icons.arrow_downward),
-                _buildFilterChip('expense', '支出', Icons.arrow_upward),
-              ],
+            child: DSThemeBridge(
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  _buildFilterChip('all', '全部'),
+                  _buildFilterChip('income', '收入'),
+                  _buildFilterChip('expense', '支出'),
+                ],
+              ),
             ),
           ),
 
           // Daily Bills List
           if (_selectedDay != null) ...[
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_today, color: _primaryColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    DateFormat('yyyy年MM月dd日').format(_selectedDay!),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.calendar,
+                        size: 20,
+                        color: _primaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('yyyy年MM月dd日').format(_selectedDay!),
+                        style: DsTypography.heading.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
             if (_selectedDayBills.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.inbox_outlined,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '这一天没有账单',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                    ),
-                  ],
-                ),
-              )
+              DSThemeBridge(child: DSEmptyState(emoji: '📭', title: '这一天没有账单'))
             else
               ListView.builder(
                 shrinkWrap: true,
@@ -530,169 +539,155 @@ class _BillListScreenSupercupertinoState
                 itemCount: _selectedDayBills.length,
                 itemBuilder: (context, index) {
                   final bill = _selectedDayBills[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 4,
                     ),
-                    child: SwipeActionWrapper(
-                      key: ValueKey(bill.id),
-                      leadingActions: [
-                        SwipeActionPresets.edit(
-                          onTap: () {
-                            final billObject = Bill(
-                              id: bill.id,
-                              title: bill.title,
-                              amount:
-                                  bill.isExpense ? -bill.amount : bill.amount,
-                              accountId: widget.accountId,
-                              category: bill.category,
-                              date: bill.date,
-                              tag: bill.category,
-                              note: bill.note ?? '',
-                              createdAt: bill.date,
-                              icon: bill.icon,
-                              iconColor: bill.color,
-                            );
-                            NavigationHelper.openContainer<bool>(
-                              context,
-                              (BuildContext context) {
-                                return BillEditScreen(
-                                  billPlugin: widget.billPlugin,
+                    child: DSThemeBridge(
+                      child: JellyBox(
+                        color: DSThemeBridge.resolve(context).surface,
+                        radius: BorderRadius.circular(14),
+                        raised: false,
+                        child: SwipeActionWrapper(
+                          key: ValueKey(bill.id),
+                          leadingActions: [
+                            SwipeActionPresets.edit(
+                              onTap: () {
+                                final billObject = Bill(
+                                  id: bill.id,
+                                  title: bill.title,
+                                  amount:
+                                      bill.isExpense
+                                          ? -bill.amount
+                                          : bill.amount,
                                   accountId: widget.accountId,
-                                  bill: billObject,
-                                  onSaved: () {
-                                    _loadMonthBills();
-                                  },
+                                  category: bill.category,
+                                  date: bill.date,
+                                  tag: bill.category,
+                                  note: bill.note ?? '',
+                                  createdAt: bill.date,
+                                  icon: bill.icon,
+                                  iconColor: bill.color,
                                 );
-                              },
-                              closedColor: Colors.transparent,
-                              closedElevation: 0.0,
-                              closedShape: const RoundedRectangleBorder(),
-                            );
-                          },
-                        ),
-                      ],
-                      trailingActions: [
-                        SwipeActionPresets.delete(
-                          onTap: () async {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('bill_confirmDelete'.tr),
-                                  content: Text(
-                                    'bill_confirmDeleteThisBill'.tr,
-                                  ),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed:
-                                          () =>
-                                              Navigator.of(context).pop(false),
-                                      child: Text('bill_cancel'.tr),
-                                    ),
-                                    TextButton(
-                                      onPressed:
-                                          () => Navigator.of(context).pop(true),
-                                      child: Text('bill_delete'.tr),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-
-                            if (confirmed == true) {
-                              try {
-                                final currentAccount = widget
-                                    .billPlugin
-                                    .accounts
-                                    .firstWhere(
-                                      (account) =>
-                                          account.id == widget.accountId,
+                                NavigationHelper.openContainer<bool>(
+                                  context,
+                                  (BuildContext context) {
+                                    return BillEditScreen(
+                                      billPlugin: widget.billPlugin,
+                                      accountId: widget.accountId,
+                                      bill: billObject,
+                                      onSaved: () {
+                                        _loadMonthBills();
+                                      },
                                     );
-                                await widget.billPlugin.controller.deleteBill(
-                                  currentAccount.id,
-                                  bill.id,
+                                  },
+                                  closedColor: Colors.transparent,
+                                  closedElevation: 0.0,
+                                  closedShape: const RoundedRectangleBorder(),
                                 );
-                                _loadMonthBills();
-                              } catch (e) {
-                                Toast.error('删除失败: $e');
-                              }
-                            }
-                          },
-                        ),
-                      ],
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: bill.color.withOpacity(0.2),
-                          child: Icon(bill.icon, color: bill.color),
-                        ),
-                        title: Text(bill.title),
-                        subtitle: Text(
-                          DateFormat('yyyy-MM-dd HH:mm').format(bill.date),
-                        ),
-                        trailing: Text(
-                          '${bill.isExpense ? '-' : '+'}${_formatCurrency(bill.amount)}',
-                          style: TextStyle(
-                            color:
-                                bill.isExpense ? _expenseColor : _incomeColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onTap: () {
-                          NavigationHelper.openContainer<bool>(
+                              },
+                            ),
+                          ],
+                          trailingActions: [
+                            SwipeActionPresets.delete(
+                              onTap: () async {
+                                final confirmed = await showDSDialog<bool>(
+                                  context: context,
+                                  theme: DSThemeBridge.resolve(context),
+                                  builder:
+                                      (BuildContext context) => DSThemeBridge(
+                                        child: Builder(
+                                          builder:
+                                              (context) => DSDialog(
+                                                title: 'bill_confirmDelete'.tr,
+                                                message:
+                                                    'bill_confirmDeleteThisBill'
+                                                        .tr,
+                                                cancelText: 'bill_cancel'.tr,
+                                                confirmText: 'bill_delete'.tr,
+                                                confirmVariant:
+                                                    DSButtonVariant.destructive,
+                                                onCancel:
+                                                    () => Navigator.of(
+                                                      context,
+                                                    ).pop(false),
+                                                onConfirm:
+                                                    () => Navigator.of(
+                                                      context,
+                                                    ).pop(true),
+                                              ),
+                                        ),
+                                      ),
+                                );
+
+                                if (confirmed == true) {
+                                  try {
+                                    final currentAccount = widget
+                                        .billPlugin
+                                        .accounts
+                                        .firstWhere(
+                                          (account) =>
+                                              account.id == widget.accountId,
+                                        );
+                                    await widget.billPlugin.controller
+                                        .deleteBill(currentAccount.id, bill.id);
+                                    _loadMonthBills();
+                                  } catch (e) {
+                                    Toast.error('删除失败: $e');
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                          child: _buildBillRow(
                             context,
-                            (BuildContext context) {
-                              final billObject = Bill(
-                                id: bill.id,
-                                title: bill.title,
-                                amount:
-                                    bill.isExpense ? -bill.amount : bill.amount,
-                                accountId: widget.accountId,
-                                category: bill.category,
-                                date: bill.date,
-                                tag: bill.category,
-                                note: bill.note ?? '',
-                                createdAt: bill.date,
-                                icon: bill.icon,
-                                iconColor: bill.color,
-                              );
-                              return BillEditScreen(
-                                billPlugin: widget.billPlugin,
-                                accountId: widget.accountId,
-                                bill: billObject,
-                                onSaved: () {
-                                  _loadMonthBills();
+                            bill,
+                            showNote: false,
+                            onTap: () {
+                              NavigationHelper.openContainer<bool>(
+                                context,
+                                (BuildContext context) {
+                                  final billObject = Bill(
+                                    id: bill.id,
+                                    title: bill.title,
+                                    amount:
+                                        bill.isExpense
+                                            ? -bill.amount
+                                            : bill.amount,
+                                    accountId: widget.accountId,
+                                    category: bill.category,
+                                    date: bill.date,
+                                    tag: bill.category,
+                                    note: bill.note ?? '',
+                                    createdAt: bill.date,
+                                    icon: bill.icon,
+                                    iconColor: bill.color,
+                                  );
+                                  return BillEditScreen(
+                                    billPlugin: widget.billPlugin,
+                                    accountId: widget.accountId,
+                                    bill: billObject,
+                                    onSaved: () {
+                                      _loadMonthBills();
+                                    },
+                                  );
                                 },
+                                closedColor: Colors.transparent,
+                                closedElevation: 0.0,
+                                closedShape: const RoundedRectangleBorder(),
                               );
                             },
-                            closedColor: Colors.transparent,
-                            closedElevation: 0.0,
-                            closedShape: const RoundedRectangleBorder(),
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
                   );
                 },
               ),
           ] else
-            Container(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '请选择一天查看账单',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                  ),
-                ],
-              ),
+            DSThemeBridge(
+              child: DSEmptyState(emoji: '🗓️', title: '请选择一天查看账单'),
             ),
         ],
       ),
@@ -727,18 +722,8 @@ class _BillListScreenSupercupertinoState
     }
 
     if (_searchQuery.isNotEmpty && filteredBills.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '未找到匹配的账单',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
-        ),
+      return const DSThemeBridge(
+        child: DSEmptyState(emoji: '🔍', title: '未找到匹配的账单'),
       );
     }
 
@@ -747,89 +732,140 @@ class _BillListScreenSupercupertinoState
       itemCount: filteredBills.length,
       itemBuilder: (context, index) {
         final bill = filteredBills[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: bill.color.withOpacity(0.2),
-              child: Icon(bill.icon, color: bill.color),
-            ),
-            title: Text(bill.title),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(DateFormat('yyyy-MM-dd HH:mm').format(bill.date)),
-                if (bill.note?.isNotEmpty == true)
-                  Text(
-                    bill.note!,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-              ],
-            ),
-            trailing: Text(
-              '${bill.isExpense ? '-' : '+'}${_formatCurrency(bill.amount)}',
-              style: TextStyle(
-                color: bill.isExpense ? _expenseColor : _incomeColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onTap: () {
-              NavigationHelper.openContainer<bool>(
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: DSThemeBridge(
+            child: JellyBox(
+              color: DSThemeBridge.resolve(context).surface,
+              radius: BorderRadius.circular(14),
+              raised: false,
+              child: _buildBillRow(
                 context,
-                (BuildContext context) {
-                  final billObject = Bill(
-                    id: bill.id,
-                    title: bill.title,
-                    amount: bill.isExpense ? -bill.amount : bill.amount,
-                    accountId: widget.accountId,
-                    category: bill.category,
-                    date: bill.date,
-                    tag: bill.category,
-                    note: bill.note ?? '',
-                    createdAt: bill.date,
-                    icon: bill.icon,
-                    iconColor: bill.color,
-                  );
-                  return BillEditScreen(
-                    billPlugin: widget.billPlugin,
-                    accountId: widget.accountId,
-                    bill: billObject,
-                    onSaved: () {
-                      _loadMonthBills();
+                bill,
+                showNote: true,
+                onTap: () {
+                  NavigationHelper.openContainer<bool>(
+                    context,
+                    (BuildContext context) {
+                      final billObject = Bill(
+                        id: bill.id,
+                        title: bill.title,
+                        amount: bill.isExpense ? -bill.amount : bill.amount,
+                        accountId: widget.accountId,
+                        category: bill.category,
+                        date: bill.date,
+                        tag: bill.category,
+                        note: bill.note ?? '',
+                        createdAt: bill.date,
+                        icon: bill.icon,
+                        iconColor: bill.color,
+                      );
+                      return BillEditScreen(
+                        billPlugin: widget.billPlugin,
+                        accountId: widget.accountId,
+                        bill: billObject,
+                        onSaved: () {
+                          _loadMonthBills();
+                        },
+                      );
                     },
+                    closedColor: Colors.transparent,
+                    closedElevation: 0.0,
+                    closedShape: const RoundedRectangleBorder(),
                   );
                 },
-                closedColor: Colors.transparent,
-                closedElevation: 0.0,
-                closedShape: const RoundedRectangleBorder(),
-              );
-            },
+              ),
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildFilterChip(String value, String label, IconData icon) {
+  /// 账单行（自绘，图标/颜色为持久化数据）
+  Widget _buildBillRow(
+    BuildContext context,
+    BillModel bill, {
+    bool showNote = false,
+    VoidCallback? onTap,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: pressed ? theme.surfaceAlt : null,
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: bill.color.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(bill.icon, size: 22, color: bill.color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bill.title,
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      DateFormat('yyyy-MM-dd HH:mm').format(bill.date),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    if (showNote && bill.note?.isNotEmpty == true)
+                      Text(
+                        bill.note!,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${bill.isExpense ? '-' : '+'}${_formatCurrency(bill.amount)}',
+                style: DsTypography.body.copyWith(
+                  color: bill.isExpense ? _expenseColor : _incomeColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(String value, String label) {
     final isSelected = _filterCategory == value;
-    return FilterChip(
-      label: Text(label),
+    return DSChip(
+      label: label,
       selected: isSelected,
       onSelected: (selected) {
         setState(() {
           _filterCategory = value;
         });
       },
-      backgroundColor: Colors.grey[100],
-      selectedColor: _primaryColor.withOpacity(0.2),
-      side: BorderSide(
-        color: isSelected ? _primaryColor : Colors.grey[300]!,
-        width: 1,
-      ),
-      labelStyle: TextStyle(
-        color: isSelected ? _primaryColor : Colors.grey[700],
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
     );
   }
 }

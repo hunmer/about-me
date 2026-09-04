@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 月份选择器组件
 /// 显示一个水平滚动的月份列表，每个月份卡片显示收入和支出统计
@@ -305,7 +306,7 @@ class _MonthSelectorState extends State<MonthSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = DSThemeBridge.resolve(context).isDark;
 
     // 如果需要在构建后滚动
     if (_shouldScrollOnNextBuild) {

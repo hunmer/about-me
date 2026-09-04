@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'warehouse_list_screen.dart';
 import 'goods_list_screen.dart';
@@ -72,23 +74,29 @@ class _GoodsMainScreenState extends State<GoodsMainScreen> {
 
       enableBottomBar: true,
       bottomBarHeight: 60,
-      bottomBarChild: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          border: Border(top: BorderSide(color: Colors.grey.shade300)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+      bottomBarChild: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border(top: BorderSide(color: theme.stroke)),
+              ),
+              child: DSBottomNavigation(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                items: [
+                  DSNavItem(icon: DsIconKind.store, label: '仓库'),
+                  DSNavItem(icon: DsIconKind.layers, label: '物品'),
+                ],
+              ),
+            );
           },
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.warehouse), label: '仓库'),
-            BottomNavigationBarItem(icon: Icon(Icons.inventory), label: '物品'),
-          ],
         ),
       ),
     );

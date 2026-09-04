@@ -4,12 +4,7 @@ class UsageRecord {
   final int? duration; // Duration in minutes
   final String? location;
 
-  UsageRecord({
-    required this.date,
-    this.note,
-    this.duration,
-    this.location,
-  });
+  UsageRecord({required this.date, this.note, this.duration, this.location});
 
   factory UsageRecord.fromJson(Map<String, dynamic> json) {
     return UsageRecord(

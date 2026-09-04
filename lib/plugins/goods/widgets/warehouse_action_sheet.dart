@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 /// 仓库操作抽屉
@@ -34,12 +36,12 @@ class WarehouseActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
+    final isDark = theme.isDark;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: theme.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -48,9 +50,9 @@ class WarehouseActionSheet extends StatelessWidget {
           // 操作选项
           _buildActionItem(
             context,
-            icon: Icons.edit,
+            icon: DsIconKind.edit,
             label: 'goods_editWarehouse'.tr,
-            color: Colors.blue,
+            color: theme.primary,
             isDark: isDark,
             onTap: () {
               Navigator.pop(context);
@@ -59,9 +61,9 @@ class WarehouseActionSheet extends StatelessWidget {
           ),
           _buildActionItem(
             context,
-            icon: Icons.delete,
+            icon: DsIconKind.trash,
             label: 'goods_deleteWarehouse'.tr,
-            color: Colors.red,
+            color: theme.danger,
             isDark: isDark,
             onTap: () {
               Navigator.pop(context);
@@ -76,12 +78,13 @@ class WarehouseActionSheet extends StatelessWidget {
   /// 构建操作项
   Widget _buildActionItem(
     BuildContext context, {
-    required IconData icon,
+    required DsIconKind icon,
     required String label,
     required Color color,
     required bool isDark,
     required VoidCallback onTap,
   }) {
+    final theme = DSThemeBridge.resolve(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -95,10 +98,10 @@ class WarehouseActionSheet extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(isDark ? 0.2 : 0.1),
+                  color: color.withValues(alpha: isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: DsIcon(icon, color: color, size: 22),
               ),
               const SizedBox(width: 16),
 
@@ -106,19 +109,15 @@ class WarehouseActionSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: DsTypography.body.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : Colors.grey[900],
+                    color: theme.text,
                   ),
                 ),
               ),
 
               // 箭头
-              Icon(
-                Icons.chevron_right,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
-              ),
+              DsIcon(DsIconKind.chevronRight, color: theme.textSub, size: 22),
             ],
           ),
         ),

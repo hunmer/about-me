@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
@@ -104,9 +106,7 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
   List<Warehouse> get warehouses => _warehouses;
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'goods/',
-  ];
+  static const List<String> _refreshableFiles = ['goods/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -245,10 +245,7 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     await storage.createDirectory('goods');
 
     // 创建客户端 Repository
-    final repository = ClientGoodsRepository(
-      plugin: this,
-      pluginColor: color,
-    );
+    final repository = ClientGoodsRepository(plugin: this, pluginColor: color);
 
     // 初始化 UseCase
     _useCase = GoodsUseCase(repository);
@@ -355,7 +352,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
       // 更新仓库列表
       final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await storage.write('goods/warehouses.json', {'warehouses': warehouseIds});
+      await storage.write('goods/warehouses.json', {
+        'warehouses': warehouseIds,
+      });
 
       notifyListeners();
 
@@ -373,7 +372,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
       _warehouses.removeWhere((w) => w.id == warehouseId);
 
       final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await storage.write('goods/warehouses.json', {'warehouses': warehouseIds});
+      await storage.write('goods/warehouses.json', {
+        'warehouses': warehouseIds,
+      });
 
       notifyListeners();
 
@@ -580,7 +581,6 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-    
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -600,7 +600,7 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Widget? buildCardView(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -622,7 +622,8 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
               const SizedBox(width: 12),
               Text(
                 'goods_name'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: DsTypography.heading.copyWith(
+                  color: theme.text,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -642,11 +643,12 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'goods_totalQuantity'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '${getTotalItemsCount()}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -658,11 +660,12 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'goods_totalValue'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '¥${getTotalItemsValue().toStringAsFixed(2)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -681,16 +684,16 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
                     children: [
                       Text(
                         'goods_oneMonthUnused'.tr,
-                        style: theme.textTheme.bodyMedium,
+                        style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                       Text(
                         '${getUnusedItemsCount()}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: DsTypography.body.copyWith(
                           color:
                               getUnusedItemsCount() > 0
-                                  ? theme.colorScheme.error
-                                  : null,
+                                  ? theme.danger
+                                  : theme.text,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -743,7 +746,6 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
       'updateItem': _jsUpdateGoodsItem, // 别名
       'deleteGoodsItem': _jsDeleteGoodsItem,
       'deleteItem': _jsDeleteGoodsItem, // 别名
-
       // 使用记录相关
       'addUsageRecord': _jsAddUsageRecord,
 

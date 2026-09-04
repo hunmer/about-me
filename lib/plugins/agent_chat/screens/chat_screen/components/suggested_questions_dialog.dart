@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 预设问题选择对话框
 class SuggestedQuestionsDialog extends StatefulWidget {
   final StorageManager storage;
 
-  const SuggestedQuestionsDialog({
-    super.key,
-    required this.storage,
-  });
+  const SuggestedQuestionsDialog({super.key, required this.storage});
 
   @override
   State<SuggestedQuestionsDialog> createState() =>
@@ -20,7 +19,8 @@ class SuggestedQuestionsDialog extends StatefulWidget {
 
 class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   // 存储上次选中分类的 key
-  static const String _lastCategoryKey = 'agent_chat/suggested_questions_last_category';
+  static const String _lastCategoryKey =
+      'agent_chat/suggested_questions_last_category';
 
   final _service = SuggestedQuestionsService();
   Map<String, List<String>>? _questions;
@@ -64,10 +64,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         setState(() {
           _isLoading = false;
         });
-        toastService.showToast(
-          '加载问题失败: $e',
-          type: ToastType.error,
-        );
+        toastService.showToast('加载问题失败: $e', type: ToastType.error);
       }
     }
   }
@@ -83,13 +80,16 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DsRadii.xlValue),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -105,7 +105,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
           Flexible(
             child:
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
                     : _questions == null || _questions!.isEmpty
                     ? _buildEmptyState()
                     : _buildQuestionsList(),
@@ -117,11 +117,14 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   /// 构建标题栏
   Widget _buildHeader() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: theme.surface,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DsRadii.xlValue),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -132,18 +135,25 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline, color: Colors.orange),
+          DsIcon(DsIconKind.star, color: theme.warning),
           const SizedBox(width: 8),
-          const Text(
-            '你可以问',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text('你可以问', style: DsTypography.title.copyWith(color: theme.text)),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
+          Pressable(
             onPressed: () => Navigator.pop(context),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+            semanticLabel: '关闭',
+            builder:
+                (context, states) => SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.close,
+                      size: 20,
+                      color: theme.textSub,
+                    ),
+                  ),
+                ),
           ),
         ],
       ),
@@ -152,13 +162,17 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   /// 构建分类标签栏
   Widget _buildCategoryTabs() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       height: 50,
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.surfaceAlt.withValues(alpha: 0.5),
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+          bottom: BorderSide(
+            color: theme.textSub.withValues(alpha: 0.25),
+            width: 1,
+          ),
         ),
       ),
       child: ListView.builder(
@@ -172,26 +186,18 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: FilterChip(
-              label: Text(categoryName),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedCategory = categoryKey;
-                });
-                // 保存选中的分类
-                _saveSelectedCategory(categoryKey);
-              },
-              backgroundColor: Colors.white,
-              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-              checkmarkColor: Theme.of(context).primaryColor,
-              labelStyle: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[700],
+            child: Center(
+              child: DSChip(
+                label: categoryName,
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedCategory = categoryKey;
+                  });
+                  // 保存选中的分类
+                  _saveSelectedCategory(categoryKey);
+                },
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           );
         },
@@ -201,17 +207,18 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline, size: 64, color: Colors.grey[400]),
+            DsIcon(DsIconKind.info, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               '暂无可用的问题示例',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: DsTypography.heading.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -221,6 +228,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   /// 构建问题列表（只显示选中分类的问题）
   Widget _buildQuestionsList() {
+    final theme = DSThemeBridge.resolve(context);
     if (_selectedCategory == null) return const SizedBox.shrink();
 
     final questions = _questions![_selectedCategory] ?? [];
@@ -229,31 +237,42 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
       shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: questions.length,
-      separatorBuilder: (context, index) => Divider(
-        color: Colors.grey[200],
-        height: 1,
-        indent: 16,
-        endIndent: 16,
-      ),
+      separatorBuilder:
+          (context, index) => Divider(
+            color: theme.textSub.withValues(alpha: 0.2),
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+          ),
       itemBuilder: (context, index) => _buildQuestionItem(questions[index]),
     );
   }
 
   /// 构建单个问题项
   Widget _buildQuestionItem(String question) {
-    return InkWell(
-      onTap: () => Navigator.pop(context, question),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(question, style: const TextStyle(fontSize: 15)),
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: () => Navigator.pop(context, question),
+      semanticLabel: question,
+      builder:
+          (context, states) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    question,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                ),
+                DsIcon(
+                  DsIconKind.chevronRight,
+                  size: 14,
+                  color: theme.textSub.withValues(alpha: 0.7),
+                ),
+              ],
             ),
-            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
@@ -266,6 +285,11 @@ Future<String?> showSuggestedQuestionsDialog(
   return SmoothBottomSheet.show<String>(
     context: context,
     isScrollControlled: true,
-    builder: (context) => SuggestedQuestionsDialog(storage: storage),
+    builder:
+        (context) => DSThemeBridge(
+          child: Builder(
+            builder: (context) => SuggestedQuestionsDialog(storage: storage),
+          ),
+        ),
   );
 }

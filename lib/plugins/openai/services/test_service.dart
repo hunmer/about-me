@@ -4,6 +4,8 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 // 添加本地化导入
 import 'request_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -49,8 +51,9 @@ class TestService {
     // 如果没有提供初始值，则尝试加载上次输入的文本
     String loadedInitialValue = initialValue ?? await getLastInput();
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       barrierDismissible: false, // 防止点击外部关闭对话框导致控制器过早处置
       builder: (BuildContext dialogContext) {
         return _TextInputDialog(
@@ -161,39 +164,65 @@ ${'openai_checkItems'.tr}:
     // 使用独立的context避免MediaQuery依赖问题
     // 获取本地化实例
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       barrierDismissible: true,
-      useRootNavigator: true,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text('openai_testResponse'.tr),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SelectableText(response),
-                if (containsImageUrl) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    '${'openai_previewImages'.tr}:',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+        return DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              // SelectableText 需要 Material 祖先
+              return Material(
+                type: MaterialType.transparency,
+                child: JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'openai_testResponse'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        const SizedBox(height: 16),
+                        SelectableText(
+                          response,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                        if (containsImageUrl) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            '${'openai_previewImages'.tr}:',
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildImagePreview(response, context),
+                        ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: DSButton(
+                            label: 'openai_close'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  _buildImagePreview(response, dialogContext),
-                ],
-              ],
-            ),
+                ),
+              );
+            },
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('openai_close'.tr),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-          ],
         );
       },
     );
@@ -208,7 +237,7 @@ ${'openai_checkItems'.tr}:
     // 获取本地化实例
 
     if (matches.isEmpty) {
-      return Text('openai_imageLoadFailed'.tr);
+      return const _LoadFailedText();
     }
 
     // 使用ValueKey生成唯一键以避免重复键问题
@@ -240,18 +269,22 @@ ${'openai_checkItems'.tr}:
                       fit: BoxFit.contain,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
+                        final total = loadingProgress.expectedTotalBytes;
                         return Container(
                           width: 300,
                           height: 200,
                           alignment: Alignment.center,
-                          child: CircularProgressIndicator(
-                            value:
-                                loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        (loadingProgress.expectedTotalBytes ??
-                                            1)
-                                    : null,
-                          ),
+                          child:
+                              total != null
+                                  ? DSRingProgress(
+                                    value:
+                                        loadingProgress.cumulativeBytesLoaded /
+                                        total,
+                                    size: 60,
+                                    strokeWidth: 6,
+                                    child: const SizedBox.shrink(),
+                                  )
+                                  : const DSLoadingDots(size: 6),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
@@ -260,23 +293,44 @@ ${'openai_checkItems'.tr}:
                           height: 100,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: DSThemeBridge.resolve(context).surfaceAlt,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text('openai_imageLoadFailed'.tr),
+                          child: const _LoadFailedText(),
                         );
                       },
                     ),
                   ),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    cleanUrl,
-                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                  Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return SelectableText(
+                        cleanUrl,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.primary,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             );
           }).toList(),
+    );
+  }
+}
+
+/// 图片加载失败文案
+class _LoadFailedText extends StatelessWidget {
+  const _LoadFailedText();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Text(
+      'openai_imageLoadFailed'.tr,
+      style: DsTypography.caption.copyWith(color: theme.textSub),
     );
   }
 }
@@ -340,7 +394,6 @@ class _TextInputDialogState extends State<_TextInputDialog> {
     } catch (e) {
       debugPrint('加载上次输入失败: $e');
       if (!_isDisposed) {
-
         toastService.showToast('openai_lastInputLoadFailed'.tr);
       }
     } finally {
@@ -375,7 +428,6 @@ class _TextInputDialogState extends State<_TextInputDialog> {
     final input = _controller.text.trim();
     if (input.isEmpty) {
       if (!_isDisposed) {
-
         toastService.showToast('openai_enterTestText'.tr);
       }
       return;
@@ -420,203 +472,197 @@ class _TextInputDialogState extends State<_TextInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Builder(
+    return DSThemeBridge(
+      child: Builder(
         builder: (context) {
-
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(widget.title),
-              // 加载上次输入的按钮
-              IconButton(
-                icon:
-                    _isLoading
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.refresh, size: 20),
-                tooltip: 'openai_loadLastInput'.tr,
-                onPressed: _isLoading ? null : _loadLastInput,
-              ),
-            ],
-          );
-        },
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _controller,
-                maxLines: 10,
-                decoration: InputDecoration(
-                  hintText: widget.hintText,
-                  border: const OutlineInputBorder(),
-                ),
-                enabled: !_isTesting, // 测试时禁用输入
-              ),
-              if (widget.enableImagePicker) ...[
-                const SizedBox(height: 16),
-                Row(
+          final theme = DSThemeBridge.resolve(context);
+          // SelectableText 需要 Material 祖先
+          return Material(
+            type: MaterialType.transparency,
+            child: JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Builder(
-                      builder: (context) {
-
-                        return ElevatedButton.icon(
-                          onPressed: _pickImage,
-                          icon: const Icon(Icons.image),
-                          label: Text('openai_selectImage'.tr),
-                        );
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                        ),
+                        // 加载上次输入的按钮
+                        SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: Center(
+                            child:
+                                _isLoading
+                                    ? const DSLoadingDots(size: 4)
+                                    : DSIconButton(
+                                      icon: DsIconKind.refresh,
+                                      size: 36,
+                                      color: theme.surfaceAlt,
+                                      iconColor: theme.textSub,
+                                      tooltip: 'openai_loadLastInput'.tr,
+                                      onPressed:
+                                          _isLoading ? null : _loadLastInput,
+                                    ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-
-                    Expanded(
-                      child: Builder(
-                        builder: (context) {
-
-                          return _selectedImage != null
-                              ? Text(
-                                '${'openai_selectedImage'.tr}: ${_selectedImage!.path.split('/').last}',
-                                overflow: TextOverflow.ellipsis,
-                              )
-                              : Text('openai_noImageSelected'.tr);
-                        },
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: _controller,
+                      hint: widget.hintText,
+                      maxLines: 10,
+                      enabled: !_isTesting, // 测试时禁用输入
+                    ),
+                    if (widget.enableImagePicker) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          DSButton(
+                            onPressed: _pickImage,
+                            icon: DsIconKind.image,
+                            label: 'openai_selectImage'.tr,
+                            size: DSButtonSize.sm,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _selectedImage != null
+                                  ? '${'openai_selectedImage'.tr}: ${_selectedImage!.path.split('/').last}'
+                                  : 'openai_noImageSelected'.tr,
+                              overflow: TextOverflow.ellipsis,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DSButton(
+                            onPressed: () {
+                              setState(() {
+                                _testResult = null;
+                              });
+                            },
+                            label: 'openai_clearOutput'.tr,
+                            variant: DSButtonVariant.ghost,
+                            size: DSButtonSize.sm,
+                          ),
+                        ],
                       ),
-                    ),
-
-                    const SizedBox(width: 8),
-                    Builder(
-                      builder: (context) {
-
-                        return TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _testResult = null;
-                            });
-                          },
-                          child: Text('openai_clearOutput'.tr),
-                        );
-                      },
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 16),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _selectedImage!,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+                    ],
+                    // 显示测试结果
+                    if (_testResult != null) ...[
+                      const SizedBox(height: 16),
+                      Container(height: 1, color: theme.stroke),
+                      const SizedBox(height: 8),
+                      Text(
+                        'openai_testResponse'.tr,
+                        style: DsTypography.heading.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.surfaceAlt,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: theme.stroke),
+                        ),
+                        constraints: const BoxConstraints(maxHeight: 300),
+                        child: SingleChildScrollView(
+                          child: SelectableText(
+                            _testResult!,
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    // 显示加载指示器
+                    if (_isTesting) ...[
+                      const SizedBox(height: 16),
+                      Center(child: DSLoadingDots(label: 'openai_testing'.tr)),
+                    ],
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'openai_close'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed:
+                                _isTesting
+                                    ? null
+                                    : () {
+                                      if (!_isDisposed) {
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
+                          ),
+                        ),
+                        // 如果提供了测试agent，显示测试按钮；否则显示保存按钮
+                        if (widget.testAgent != null) ...[
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'openai_testAgent'.tr,
+                              onPressed: _isTesting ? null : _runTest,
+                            ),
+                          ),
+                        ] else ...[
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'openai_save'.tr,
+                              onPressed: () {
+                                if (!_isDisposed) {
+                                  final text = _controller.text;
+                                  Navigator.of(context).pop({
+                                    'text': text,
+                                    'image': _selectedImage,
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
-                if (_selectedImage != null) ...[
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _selectedImage!,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ],
-              ],
-              // 显示测试结果
-              if (_testResult != null) ...[
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-
-                    return Text(
-                      'openai_testResponse'.tr,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  constraints: const BoxConstraints(maxHeight: 300),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      _testResult!,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-              // 显示加载指示器
-              if (_isTesting) ...[
-                const SizedBox(height: 16),
-                Center(
-                  child: Column(
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 8),
-                      Text('openai_testing'.tr),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+          );
+        },
       ),
-      actions: <Widget>[
-        Builder(
-          builder: (context) {
-
-            return TextButton(
-              onPressed:
-                  _isTesting
-                      ? null
-                      : () {
-                        if (!_isDisposed) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-              child: Text('openai_close'.tr),
-            );
-          },
-        ),
-        // 如果提供了测试agent，显示测试按钮；否则显示保存按钮
-        if (widget.testAgent != null)
-          Builder(
-            builder: (context) {
-
-              return ElevatedButton(
-                onPressed: _isTesting ? null : _runTest,
-                child: Text('openai_testAgent'.tr),
-              );
-            },
-          )
-        else
-          Builder(
-            builder: (context) {
-
-              return TextButton(
-                child: Text('openai_save'.tr),
-                onPressed: () {
-                  if (!_isDisposed) {
-                    final text = _controller.text;
-                    Navigator.of(
-                      context,
-                    ).pop({'text': text, 'image': _selectedImage});
-                  }
-                },
-              );
-            },
-          ),
-      ],
     );
   }
 }

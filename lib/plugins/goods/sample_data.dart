@@ -79,12 +79,7 @@ class GoodsSampleData {
             purchaseDate: DateTime(2023, 10, 15),
             purchasePrice: 5999.0,
             notes: '舒适的布艺沙发，可坐3人',
-            usageRecords: [
-              UsageRecord(
-                date: DateTime.now(),
-                note: '日常休息',
-              ),
-            ],
+            usageRecords: [UsageRecord(date: DateTime.now(), note: '日常休息')],
             customFields: [
               CustomField(key: '材质', value: '布艺'),
               CustomField(key: '颜色', value: '深灰色'),
@@ -109,10 +104,7 @@ class GoodsSampleData {
             purchasePrice: 599.0,
             notes: '全自动咖啡机，支持多种口味',
             usageRecords: [
-              UsageRecord(
-                date: DateTime.now(),
-                note: '制作早晨咖啡',
-              ),
+              UsageRecord(date: DateTime.now(), note: '制作早晨咖啡'),
               UsageRecord(
                 date: now.subtract(const Duration(days: 1)),
                 note: '制作下午茶',
@@ -176,12 +168,7 @@ class GoodsSampleData {
             purchaseDate: DateTime(2023, 11, 20),
             purchasePrice: 1599.0,
             notes: '1.5米办公桌，带抽屉',
-            usageRecords: [
-              UsageRecord(
-                date: DateTime.now(),
-                note: '日常办公',
-              ),
-            ],
+            usageRecords: [UsageRecord(date: DateTime.now(), note: '日常办公')],
             customFields: [
               CustomField(key: '材质', value: '实木'),
               CustomField(key: '颜色', value: '橡木色'),

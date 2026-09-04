@@ -42,7 +42,10 @@ class _ItemSelectorWidgetState extends State<_ItemSelectorWidget> {
             _itemData = null;
             _warehouseId = null;
             for (final warehouse in args.warehouses) {
-              final item = _findItemInWarehouse(warehouse['items'] as List, widget.itemId);
+              final item = _findItemInWarehouse(
+                warehouse['items'] as List,
+                widget.itemId,
+              );
               if (item != null) {
                 _itemData = item;
                 _warehouseId = warehouse['id'] as String;
@@ -147,10 +150,7 @@ Widget _renderItemData(
 }
 
 /// 导航到物品详情页面
-void _navigateToItem(
-  BuildContext context,
-  SelectorResult result,
-) {
+void _navigateToItem(BuildContext context, SelectorResult result) {
   final itemId = getItemIdFromResult(result);
 
   if (itemId == null || itemId.isEmpty) {

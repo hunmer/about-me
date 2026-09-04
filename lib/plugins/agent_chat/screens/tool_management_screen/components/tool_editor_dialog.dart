@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+
 /// 工具编辑对话框
 class ToolEditorDialog extends StatefulWidget {
   final String pluginId;
@@ -71,33 +74,42 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
     // 初始化控制器
     _toolIdController = TextEditingController(text: widget.toolId ?? '');
     _titleController = TextEditingController(text: widget.config?.title ?? '');
-    _descriptionController =
-        TextEditingController(text: widget.config?.description ?? '');
-    _returnsTypeController =
-        TextEditingController(text: widget.config?.returns.type ?? 'string');
-    _returnsDescController =
-        TextEditingController(text: widget.config?.returns.description ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.config?.description ?? '',
+    );
+    _returnsTypeController = TextEditingController(
+      text: widget.config?.returns.type ?? 'string',
+    );
+    _returnsDescController = TextEditingController(
+      text: widget.config?.returns.description ?? '',
+    );
     _notesController = TextEditingController(text: widget.config?.notes ?? '');
 
     _enabled = widget.config?.enabled ?? true;
 
     // 加载现有参数
     if (widget.config != null) {
-      _parameters = widget.config!.parameters
-          .map((p) => _ParameterData(
-                nameController: TextEditingController(text: p.name),
-                typeController: TextEditingController(text: p.type),
-                descController: TextEditingController(text: p.description),
-                optional: p.optional,
-              ))
-          .toList();
+      _parameters =
+          widget.config!.parameters
+              .map(
+                (p) => _ParameterData(
+                  nameController: TextEditingController(text: p.name),
+                  typeController: TextEditingController(text: p.type),
+                  descController: TextEditingController(text: p.description),
+                  optional: p.optional,
+                ),
+              )
+              .toList();
 
-      _examples = widget.config!.examples
-          .map((e) => _ExampleData(
-                codeController: TextEditingController(text: e.code),
-                commentController: TextEditingController(text: e.comment),
-              ))
-          .toList();
+      _examples =
+          widget.config!.examples
+              .map(
+                (e) => _ExampleData(
+                  codeController: TextEditingController(text: e.code),
+                  commentController: TextEditingController(text: e.comment),
+                ),
+              )
+              .toList();
     }
   }
 
@@ -124,12 +136,14 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
   /// 添加参数
   void _addParameter() {
     setState(() {
-      _parameters.add(_ParameterData(
-        nameController: TextEditingController(),
-        typeController: TextEditingController(text: 'string'),
-        descController: TextEditingController(),
-        optional: false,
-      ));
+      _parameters.add(
+        _ParameterData(
+          nameController: TextEditingController(),
+          typeController: TextEditingController(text: 'string'),
+          descController: TextEditingController(),
+          optional: false,
+        ),
+      );
     });
   }
 
@@ -144,10 +158,12 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
   /// 添加示例
   void _addExample() {
     setState(() {
-      _examples.add(_ExampleData(
-        codeController: TextEditingController(),
-        commentController: TextEditingController(),
-      ));
+      _examples.add(
+        _ExampleData(
+          codeController: TextEditingController(),
+          commentController: TextEditingController(),
+        ),
+      );
     });
   }
 
@@ -166,25 +182,33 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
     }
 
     // 构建参数列表
-    final parameters = _parameters
-        .map((p) => ToolParameter(
-              name: p.nameController.text.trim(),
-              type: p.typeController.text.trim(),
-              description: p.descController.text.trim(),
-              optional: p.optional,
-            ))
-        .toList();
+    final parameters =
+        _parameters
+            .map(
+              (p) => ToolParameter(
+                name: p.nameController.text.trim(),
+                type: p.typeController.text.trim(),
+                description: p.descController.text.trim(),
+                optional: p.optional,
+              ),
+            )
+            .toList();
 
     // 构建示例列表
-    final examples = _examples
-        .where((e) =>
-            e.codeController.text.trim().isNotEmpty ||
-            e.commentController.text.trim().isNotEmpty)
-        .map((e) => ToolExample(
-              code: e.codeController.text.trim(),
-              comment: e.commentController.text.trim(),
-            ))
-        .toList();
+    final examples =
+        _examples
+            .where(
+              (e) =>
+                  e.codeController.text.trim().isNotEmpty ||
+                  e.commentController.text.trim().isNotEmpty,
+            )
+            .map(
+              (e) => ToolExample(
+                code: e.codeController.text.trim(),
+                comment: e.commentController.text.trim(),
+              ),
+            )
+            .toList();
 
     // 构建返回值
     final returns = ToolReturns(
@@ -199,104 +223,113 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
       parameters: parameters,
       returns: returns,
       examples: examples,
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
+      notes:
+          _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
       enabled: _enabled,
     );
 
     // 返回结果
     Navigator.pop(context, {
-      'toolId': widget.isNew
-          ? _toolIdController.text.trim()
-          : widget.toolId,
+      'toolId': widget.isNew ? _toolIdController.text.trim() : widget.toolId,
       'config': config,
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.9,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 标题栏
-            Row(
-              children: [
-                Text(
-                  widget.isNew ? '添加工具' : '编辑工具',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const Divider(),
-
-            // 表单内容
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Tab 栏
-                    TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      tabs: const [
-                        Tab(text: '基本信息'),
-                        Tab(text: '参数列表'),
-                        Tab(text: '返回值'),
-                        Tab(text: '示例代码'),
-                      ],
-                    ),
-
-                    // Tab 内容
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          // 基本信息
-                          _buildBasicInfoTab(),
-                          // 参数列表
-                          _buildParametersTab(),
-                          // 返回值
-                          _buildReturnsTab(),
-                          // 示例代码
-                          _buildExamplesTab(),
-                        ],
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      width: MediaQuery.of(context).size.width * 0.9,
+      height: MediaQuery.of(context).size.height * 0.9,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // 标题栏
+          Row(
+            children: [
+              Text(
+                widget.isNew ? '添加工具' : '编辑工具',
+                style: DsTypography.title.copyWith(color: theme.text),
+              ),
+              const Spacer(),
+              Pressable(
+                onPressed: () => Navigator.pop(context),
+                semanticLabel: '关闭',
+                builder:
+                    (context, states) => Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: DsIcon(
+                        DsIconKind.close,
+                        size: 20,
+                        color: theme.textSub,
                       ),
                     ),
-                  ],
-                ),
+              ),
+            ],
+          ),
+          Divider(color: theme.textSub.withValues(alpha: 0.2)),
+
+          // 表单内容
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Tab 栏（结构性组件刻意保留 Material，配色令牌化）
+                  TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    labelColor: theme.primaryText,
+                    unselectedLabelColor: theme.textSub,
+                    indicatorColor: theme.primary,
+                    tabs: const [
+                      Tab(text: '基本信息'),
+                      Tab(text: '参数列表'),
+                      Tab(text: '返回值'),
+                      Tab(text: '示例代码'),
+                    ],
+                  ),
+
+                  // Tab 内容
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // 基本信息
+                        _buildBasicInfoTab(),
+                        // 参数列表
+                        _buildParametersTab(),
+                        // 返回值
+                        _buildReturnsTab(),
+                        // 示例代码
+                        _buildExamplesTab(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
 
-            const Divider(),
+          Divider(color: theme.textSub.withValues(alpha: 0.2)),
 
-            // 底部按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('agent_chat_cancel'.tr),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _save,
-                  child: Text('agent_chat_save'.tr),
-                ),
-              ],
-            ),
-          ],
-        ),
+          // 底部按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              DSButton(
+                label: 'agent_chat_cancel'.tr,
+                variant: DSButtonVariant.ghost,
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 8),
+              DSButton(label: 'agent_chat_save'.tr, onPressed: _save),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -386,17 +419,49 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
         const SizedBox(height: 16),
 
         // 启用工具
-        Card(
-          child: SwitchListTile(
-            title: Text('agent_chat_enableTool'.tr),
-            subtitle: Text('agent_chat_disableToolWarning'.tr),
-            value: _enabled,
-            onChanged: (value) {
-              setState(() {
-                _enabled = value;
-              });
-            },
-          ),
+        Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.surfaceAlt.withValues(alpha: 0.5),
+                borderRadius: theme.radii.md,
+                border: Border.all(
+                  color: theme.textSub.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'agent_chat_enableTool'.tr,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                        Text(
+                          'agent_chat_disableToolWarning'.tr,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DSSwitch(
+                    value: _enabled,
+                    onChanged: (value) {
+                      setState(() {
+                        _enabled = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
@@ -404,6 +469,7 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
 
   /// 构建参数列表 Tab
   Widget _buildParametersTab() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       children: [
         // 添加按钮
@@ -412,9 +478,10 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: Text('agent_chat_addParameter'.tr),
+              DSButton(
+                icon: DsIconKind.plus,
+                label: 'agent_chat_addParameter'.tr,
+                size: DSButtonSize.sm,
                 onPressed: _addParameter,
               ),
             ],
@@ -423,34 +490,50 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
 
         // 参数列表
         Expanded(
-          child: _parameters.isEmpty
+          child:
+              _parameters.isEmpty
                   ? Center(
-                  child: Text('agent_chat_noParametersClickToAdd'.tr),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: _parameters.length,
-                  itemBuilder: (context, index) {
-                    final param = _parameters[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
+                    child: Text(
+                      'agent_chat_noParametersClickToAdd'.tr,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _parameters.length,
+                    itemBuilder: (context, index) {
+                      final param = _parameters[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.surface,
+                          borderRadius: theme.radii.md,
+                          border: Border.all(
+                            color: theme.textSub.withValues(alpha: 0.3),
+                          ),
+                        ),
                         child: Column(
                           children: [
                             Row(
                               children: [
                                 Text(
                                   '参数 ${index + 1}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                  style: DsTypography.body.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.text,
+                                  ),
                                 ),
                                 const Spacer(),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  iconSize: 20,
-                                  color: Colors.red,
+                                Pressable(
                                   onPressed: () => _removeParameter(index),
+                                  semanticLabel: '删除参数',
+                                  builder:
+                                      (context, states) => DsIcon(
+                                        DsIconKind.trash,
+                                        size: 20,
+                                        color: theme.danger,
+                                      ),
                                 ),
                               ],
                             ),
@@ -499,25 +582,29 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
                               },
                             ),
                             const SizedBox(height: 8),
-                            CheckboxListTile(
-                                title: Text(
-                                  'agent_chat_optionalParameter'.tr,
+                            Row(
+                              children: [
+                                DSCheckbox(
+                                  value: param.optional,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      param.optional = value ?? false;
+                                    });
+                                  },
                                 ),
-                              value: param.optional,
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              onChanged: (value) {
-                                setState(() {
-                                  param.optional = value ?? false;
-                                });
-                              },
+                                Text(
+                                  'agent_chat_optionalParameter'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
         ),
       ],
     );
@@ -544,9 +631,7 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
         const SizedBox(height: 16),
         TextFormField(
           controller: _returnsDescController,
-          decoration: const InputDecoration(
-            labelText: '返回值描述',
-          ),
+          decoration: const InputDecoration(labelText: '返回值描述'),
           maxLines: 5,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -561,6 +646,7 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
 
   /// 构建示例代码 Tab
   Widget _buildExamplesTab() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       children: [
         // 添加按钮
@@ -569,9 +655,10 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: Text('agent_chat_addExample'.tr),
+              DSButton(
+                icon: DsIconKind.plus,
+                label: 'agent_chat_addExample'.tr,
+                size: DSButtonSize.sm,
                 onPressed: _addExample,
               ),
             ],
@@ -580,21 +667,29 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
 
         // 示例列表
         Expanded(
-          child: _examples.isEmpty
+          child:
+              _examples.isEmpty
                   ? Center(
                     child: Text(
                       'agent_chat_noExamplesClickToAdd'.tr,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
                     ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: _examples.length,
-                  itemBuilder: (context, index) {
-                    final example = _examples[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _examples.length,
+                    itemBuilder: (context, index) {
+                      final example = _examples[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.surface,
+                          borderRadius: theme.radii.md,
+                          border: Border.all(
+                            color: theme.textSub.withValues(alpha: 0.3),
+                          ),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -602,25 +697,33 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
                               children: [
                                 Text(
                                   '示例 ${index + 1}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                  style: DsTypography.body.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.text,
+                                  ),
                                 ),
                                 const Spacer(),
                                 // 测试按钮
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.play_arrow, size: 18),
-                                    label: Text(
-                                      'agent_chat_test'.tr,
-                                    ),
-                                  onPressed: () =>
-                                      _testExample(example.codeController.text),
+                                DSButton(
+                                  icon: DsIconKind.play,
+                                  label: 'agent_chat_test'.tr,
+                                  size: DSButtonSize.sm,
+                                  variant: DSButtonVariant.secondary,
+                                  onPressed:
+                                      () => _testExample(
+                                        example.codeController.text,
+                                      ),
                                 ),
                                 const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  iconSize: 20,
-                                  color: Colors.red,
+                                Pressable(
                                   onPressed: () => _removeExample(index),
+                                  semanticLabel: '删除示例',
+                                  builder:
+                                      (context, states) => DsIcon(
+                                        DsIconKind.trash,
+                                        size: 20,
+                                        color: theme.danger,
+                                      ),
                                 ),
                               ],
                             ),
@@ -645,10 +748,9 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
         ),
       ],
     );
@@ -665,33 +767,43 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
     bool isCancelled = false;
 
     // 显示加载对话框（带取消按钮）
-    showDialog(
+    showDSDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                    Text('agent_chat_executingJSCode'.tr),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.cancel),
-                      label: Text('agent_chat_cancel'.tr),
-                  onPressed: () {
-                    isCancelled = true;
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const DSLoadingDots(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'agent_chat_executingJSCode'.tr,
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                      const SizedBox(height: 16),
+                      DSButton(
+                        icon: DsIconKind.close,
+                        label: 'agent_chat_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () {
+                          isCancelled = true;
+                          Navigator.pop(dialogContext);
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-        ),
-      ),
     );
 
     try {
@@ -772,31 +884,62 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
       formattedMessage = message;
     }
 
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: TextField(
-            controller: TextEditingController(text: formattedMessage),
-            readOnly: true,
-            maxLines: null,
-            minLines: 10,
-            style: const TextStyle(fontFamily: 'monospace'),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(12),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(
+                    maxWidth: 520,
+                    maxHeight: 520,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child: TextField(
+                          controller: TextEditingController(
+                            text: formattedMessage,
+                          ),
+                          readOnly: true,
+                          maxLines: null,
+                          minLines: 10,
+                          style: DsTypography.caption.copyWith(
+                            fontFamily: 'monospace',
+                            color: theme.text,
+                          ),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: theme.radii.sm,
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSButton(
+                        label: 'agent_chat_close'.tr,
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-                child: Text('agent_chat_close'.tr),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -827,10 +970,7 @@ class _ExampleData {
   final TextEditingController codeController;
   final TextEditingController commentController;
 
-  _ExampleData({
-    required this.codeController,
-    required this.commentController,
-  });
+  _ExampleData({required this.codeController, required this.commentController});
 
   void dispose() {
     codeController.dispose();

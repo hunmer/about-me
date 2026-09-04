@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
@@ -158,7 +160,7 @@ class _BillStatsScreenSupercupertinoState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = DSThemeBridge.resolve(context).isDark;
     final bills = _getBillsForMonth(_selectedMonth);
 
     double totalIncome = 0;
@@ -339,11 +341,12 @@ class _BillStatsScreenSupercupertinoState
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, size: 16),
-                      onPressed: () => _changeMonth(-1),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 30,
+                        onPressed: () => _changeMonth(-1),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -355,11 +358,12 @@ class _BillStatsScreenSupercupertinoState
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onPressed: () => _changeMonth(1),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon: DsIconKind.chevronRight,
+                        size: 30,
+                        onPressed: () => _changeMonth(1),
+                      ),
                     ),
                   ],
                 ),
@@ -461,7 +465,7 @@ class _BillStatsScreenSupercupertinoState
                 '收入',
                 _formatCurrency(totalIncome),
                 _incomeColor,
-                Icons.arrow_downward,
+                DsIconKind.chevronDown,
                 isDark,
               ),
               Container(
@@ -476,7 +480,7 @@ class _BillStatsScreenSupercupertinoState
                 '支出',
                 _formatCurrency(totalExpense),
                 _expenseColor,
-                Icons.arrow_upward,
+                DsIconKind.chevronUp,
                 isDark,
               ),
               Container(
@@ -491,7 +495,7 @@ class _BillStatsScreenSupercupertinoState
                 '结余',
                 _formatCurrency(balance),
                 balance >= 0 ? _incomeColor : _expenseColor,
-                balance >= 0 ? Icons.check_circle : Icons.warning,
+                balance >= 0 ? DsIconKind.check : DsIconKind.info,
                 isDark,
               ),
             ],
@@ -505,12 +509,12 @@ class _BillStatsScreenSupercupertinoState
     String label,
     String amount,
     Color color,
-    IconData icon,
+    DsIconKind icon,
     bool isDark,
   ) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
+        DsIcon(icon, color: color, size: 24),
         const SizedBox(height: 8),
         Text(
           label,

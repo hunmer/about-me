@@ -57,20 +57,22 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
 
   /// 创建新仓库
   Future<void> _createWarehouse() async {
-    await NavigationHelper.push(context, WarehouseForm(
-              onSave: (warehouse) async {
-                try {
-                  await widget.plugin.saveWarehouse(warehouse);
-                  if (mounted) {
+    await NavigationHelper.push(
+      context,
+      WarehouseForm(
+        onSave: (warehouse) async {
+          try {
+            await widget.plugin.saveWarehouse(warehouse);
+            if (mounted) {
               Toast.success('goods_warehouseCreated'.tr);
-                  }
-                } catch (e) {
-                  if (mounted) {
+            }
+          } catch (e) {
+            if (mounted) {
               Toast.error('${'goods_createWarehouseFailed'.tr}: $e');
-                  }
-                }
-              },
-      )
+            }
+          }
+        },
+      ),
     );
   }
 
@@ -119,9 +121,10 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
       shape: const CircleBorder(),
       child: Icon(
         _currentPage == 0 ? Icons.add_business : Icons.add,
-        color: widget.plugin.color.computeLuminance() < 0.5
-            ? Colors.white
-            : Colors.black,
+        color:
+            widget.plugin.color.computeLuminance() < 0.5
+                ? Colors.white
+                : Colors.black,
         size: 32,
       ),
       onPressed: () {
@@ -143,30 +146,25 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          // Tab0: 仓库视图
-          WarehouseListScreen(onWarehouseTap: _handleWarehouseTap),
-          // Tab1: 物品视图
-          GoodsListScreen(
-            key: ValueKey('goods_list_${_filterWarehouseId ?? "all"}'),
-            initialFilterWarehouseId: _filterWarehouseId,
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              // Tab0: 仓库视图
+              WarehouseListScreen(onWarehouseTap: _handleWarehouseTap),
+              // Tab1: 物品视图
+              GoodsListScreen(
+                key: ValueKey('goods_list_${_filterWarehouseId ?? "all"}'),
+                initialFilterWarehouseId: _filterWarehouseId,
+              ),
+            ],
           ),
-        ],
-      ),
       fab: _buildFab(),
       children: [
-        Tab(
-          icon: const Icon(Icons.warehouse),
-          text: 'goods_warehouseTab'.tr,
-        ),
-        Tab(
-          icon: const Icon(Icons.inventory_2),
-          text: 'goods_itemsTab'.tr,
-        ),
+        Tab(icon: const Icon(Icons.warehouse), text: 'goods_warehouseTab'.tr),
+        Tab(icon: const Icon(Icons.inventory_2), text: 'goods_itemsTab'.tr),
       ],
     );
   }

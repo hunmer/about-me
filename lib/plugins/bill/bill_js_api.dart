@@ -192,7 +192,9 @@ Future<String> _jsGetStats(Map<String, dynamic> params) async {
 /// @param params.endDate 结束日期 (可选，格式: YYYY-MM-DD)
 /// @param params.accountId 账户ID (可选，不传则统计所有账户)
 Future<String> _jsGetCategoryStats(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.getCategoryStats(params);
+  final result = await BillPlugin.instance._billUseCase.getCategoryStats(
+    params,
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message ?? '获取分类统计失败'});
@@ -286,11 +288,11 @@ Future<String> _jsFindAccountById(Map<String, dynamic> params) async {
     (a) => a.id == id,
     orElse:
         () => Account(
-      id: '',
-      title: '',
-      icon: Icons.error,
-      backgroundColor: Colors.transparent,
-    ),
+          id: '',
+          title: '',
+          icon: Icons.error,
+          backgroundColor: Colors.transparent,
+        ),
   );
 
   if (account.id.isEmpty) {

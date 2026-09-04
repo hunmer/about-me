@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
@@ -26,12 +28,12 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
   late DateTime _selectedMonth;
   bool _isExpenseSelected = true;
   final Set<String> _expandedCategories = {};
-  
+
   // Colors from design
   static const Color _incomeColor = Color(0xFF2ECC71);
   static const Color _expenseColor = Color(0xFFE74C3C);
   static const Color _primaryColor = Color(0xFF3498DB);
-  
+
   @override
   void initState() {
     super.initState();
@@ -58,20 +60,26 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
 
       return currentAccount.bills
           .where((bill) {
-            return bill.createdAt.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
-                   bill.createdAt.isBefore(monthEnd.add(const Duration(seconds: 1)));
+            return bill.createdAt.isAfter(
+                  monthStart.subtract(const Duration(seconds: 1)),
+                ) &&
+                bill.createdAt.isBefore(
+                  monthEnd.add(const Duration(seconds: 1)),
+                );
           })
-          .map((bill) => BillModel(
-            id: bill.id,
-            title: bill.title,
-            amount: bill.absoluteAmount,
-            date: bill.createdAt,
-            icon: bill.icon,
-            color: bill.iconColor,
-            category: bill.tag ?? '未分类',
-            note: bill.note,
-            isExpense: bill.isExpense,
-          ))
+          .map(
+            (bill) => BillModel(
+              id: bill.id,
+              title: bill.title,
+              amount: bill.absoluteAmount,
+              date: bill.createdAt,
+              icon: bill.icon,
+              color: bill.iconColor,
+              category: bill.tag ?? '未分类',
+              note: bill.note,
+              isExpense: bill.isExpense,
+            ),
+          )
           .toList();
     } catch (e) {
       return [];
@@ -82,7 +90,7 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
     final bills = _getBillsForMonth(month);
     double income = 0;
     double expense = 0;
-    
+
     for (var bill in bills) {
       if (bill.isExpense) {
         expense += bill.amount;
@@ -90,22 +98,25 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
         income += bill.amount;
       }
     }
-    
+
     return {'income': income, 'expense': expense};
   }
 
   void _changeMonth(int monthsToAdd) {
     setState(() {
-      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + monthsToAdd);
+      _selectedMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + monthsToAdd,
+      );
       _expandedCategories.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = DSThemeBridge.resolve(context).isDark;
     final bills = _getBillsForMonth(_selectedMonth);
-    
+
     double totalIncome = 0;
     double totalExpense = 0;
     for (var bill in bills) {
@@ -118,7 +129,8 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
     final balance = totalIncome - totalExpense;
 
     // Filter bills for the list based on toggle
-    final listBills = bills.where((b) => b.isExpense == _isExpenseSelected).toList();
+    final listBills =
+        bills.where((b) => b.isExpense == _isExpenseSelected).toList();
     final totalListAmount = _isExpenseSelected ? totalExpense : totalIncome;
 
     // Group by Category
@@ -133,15 +145,16 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
         );
       }
       categoryStats[bill.category]!.amount += bill.amount;
-      
+
       // Group by Title for sub-items
       final subMap = categoryStats[bill.category]!.subItems;
       final key = bill.title.isNotEmpty ? bill.title : '其他';
       subMap[key] = (subMap[key] ?? 0) + bill.amount;
     }
 
-    final sortedCategories = categoryStats.values.toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final sortedCategories =
+        categoryStats.values.toList()
+          ..sort((a, b) => b.amount.compareTo(a.amount));
 
     return SingleChildScrollView(
       child: Column(
@@ -155,7 +168,7 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
               children: [
                 // Summary Card
                 _buildSummaryCard(isDark, totalIncome, totalExpense, balance),
-                
+
                 const SizedBox(height: 16),
 
                 // Details Card
@@ -181,7 +194,10 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.grey[800] : Colors.grey[100],
+                                color:
+                                    isDark
+                                        ? Colors.grey[800]
+                                        : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.all(4),
@@ -197,7 +213,10 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.grey[400] : Colors.grey[500],
+                                color:
+                                    isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[500],
                               ),
                             ),
                           ],
@@ -210,7 +229,10 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                           padding: const EdgeInsets.all(32),
                           child: Text(
                             '暂无数据',
-                            style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400]),
+                            style: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[500] : Colors.grey[400],
+                            ),
                           ),
                         )
                       else
@@ -219,13 +241,19 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: sortedCategories.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final category = sortedCategories[index];
-                            final percentage = totalListAmount > 0 
-                                ? category.amount / totalListAmount 
-                                : 0.0;
-                            return _buildCategoryItem(category, percentage, isDark);
+                            final percentage =
+                                totalListAmount > 0
+                                    ? category.amount / totalListAmount
+                                    : 0.0;
+                            return _buildCategoryItem(
+                              category,
+                              percentage,
+                              isDark,
+                            );
                           },
                         ),
                     ],
@@ -241,7 +269,10 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
 
   Widget _buildHeader(bool isDark) {
     return Container(
-      color: isDark ? Colors.white.withAlpha(10) : Colors.white.withAlpha(200), // Glassmorphism-ish
+      color:
+          isDark
+              ? Colors.white.withAlpha(10)
+              : Colors.white.withAlpha(200), // Glassmorphism-ish
       child: Column(
         children: [
           // Year and Nav
@@ -256,24 +287,29 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, size: 16),
-                      onPressed: () => _changeMonth(-1),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 30,
+                        onPressed: () => _changeMonth(-1),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         '${_selectedMonth.year}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onPressed: () => _changeMonth(1),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon: DsIconKind.chevronRight,
+                        size: 30,
+                        onPressed: () => _changeMonth(1),
+                      ),
                     ),
                   ],
                 ),
@@ -298,7 +334,12 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
     );
   }
 
-  Widget _buildSummaryCard(bool isDark, double income, double expense, double balance) {
+  Widget _buildSummaryCard(
+    bool isDark,
+    double income,
+    double expense,
+    double balance,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -317,13 +358,28 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSummaryItem('总收入', income, _incomeColor, Icons.arrow_downward, isDark),
-              _buildSummaryItem('总支出', expense, _expenseColor, Icons.arrow_upward, isDark),
+              _buildSummaryItem(
+                '总收入',
+                income,
+                _incomeColor,
+                DsIconKind.chevronDown,
+                isDark,
+              ),
+              _buildSummaryItem(
+                '总支出',
+                expense,
+                _expenseColor,
+                DsIconKind.chevronUp,
+                isDark,
+              ),
             ],
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1, color: isDark ? Colors.grey[700] : Colors.grey[200]),
+            child: Divider(
+              height: 1,
+              color: isDark ? Colors.grey[700] : Colors.grey[200],
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -351,13 +407,23 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
     );
   }
 
-  Widget _buildSummaryItem(String label, double amount, Color color, IconData icon, bool isDark) {
+  Widget _buildSummaryItem(
+    String label,
+    double amount,
+    Color color,
+    DsIconKind icon,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[500]),
+            DsIcon(
+              icon,
+              size: 16,
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -389,33 +455,42 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? (isDark ? Colors.grey[600] : Colors.white) 
-              : Colors.transparent,
+          color:
+              isSelected
+                  ? (isDark ? Colors.grey[600] : Colors.white)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected && !isDark
-              ? [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 2)]
-              : null,
+          boxShadow:
+              isSelected && !isDark
+                  ? [
+                    BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 2),
+                  ]
+                  : null,
         ),
         child: Text(
           text,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected 
-                ? (isDark ? Colors.white : Colors.grey[900])
-                : (isDark ? Colors.grey[400] : Colors.grey[500]),
+            color:
+                isSelected
+                    ? (isDark ? Colors.white : Colors.grey[900])
+                    : (isDark ? Colors.grey[400] : Colors.grey[500]),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryItem(_CategoryData category, double percentage, bool isDark) {
+  Widget _buildCategoryItem(
+    _CategoryData category,
+    double percentage,
+    bool isDark,
+  ) {
     final isExpanded = _expandedCategories.contains(category.name);
-// Blue for income bars? Or Green? Design uses colored bars.
-        // HTML uses specific colors for categories (Rose, Blue, Orange, Purple, Teal).
-        // Since we don't have per-category colors in BillModel (we have iconColor), use that!
+    // Blue for income bars? Or Green? Design uses colored bars.
+    // HTML uses specific colors for categories (Rose, Blue, Orange, Purple, Teal).
+    // Since we don't have per-category colors in BillModel (we have iconColor), use that!
     final itemColor = category.color; // Use bill's color
 
     return Column(
@@ -443,7 +518,7 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                 child: Icon(category.icon, color: itemColor, size: 24),
               ),
               const SizedBox(width: 12),
-              
+
               // Info
               Expanded(
                 child: Column(
@@ -498,47 +573,62 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(
-                isExpanded ? Icons.expand_less : Icons.expand_more,
+              DsIcon(
+                isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
                 color: Colors.grey[400],
               ),
             ],
           ),
         ),
-        
+
         // Sub Items
         if (isExpanded && category.subItems.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 52, top: 12), // Indent to align with text
+            padding: const EdgeInsets.only(
+              left: 52,
+              top: 12,
+            ), // Indent to align with text
             child: Column(
-              children: category.subItems.entries.map((entry) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[200]!, width: 2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        entry.key,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+              children:
+                  category.subItems.entries.map((entry) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color:
+                                isDark ? Colors.grey[700]! : Colors.grey[200]!,
+                            width: 2,
+                          ),
                         ),
                       ),
-                      Text(
-                        '¥${entry.value.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.grey[200] : Colors.grey[800],
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            entry.key,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            '¥${entry.value.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isDark ? Colors.grey[200] : Colors.grey[800],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
       ],
@@ -548,7 +638,6 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
   String _formatCurrency(double amount) {
     return NumberFormat('#,##0.00', 'en_US').format(amount.abs());
   }
-
 }
 
 class _CategoryData {

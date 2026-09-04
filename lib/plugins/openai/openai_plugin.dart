@@ -5,6 +5,8 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:flutter/gestures.dart';
@@ -47,9 +49,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   final ChatEventHandler _chatEventHandler = ChatEventHandler();
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'openai/',
-  ];
+  static const List<String> _refreshableFiles = ['openai/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -162,48 +162,57 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       }
 
       // 显示导入确认对话框
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showDSDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('openai_importAgent'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('openai_importAgentConfirm'.tr),
-              const SizedBox(height: 16),
-              Text('${'openai_nameLabel'.tr}: ${agent.name}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              if (agent.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('${'openai_descriptionLabel'.tr}: ${agent.description}'),
-              ],
-              if (agent.tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  children: agent.tags
-                      .map((tag) => Chip(
-                            label: Text(tag, style: const TextStyle(fontSize: 12)),
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ))
-                      .toList(),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('openai_cancel'.tr),
+        theme: DSThemeBridge.resolve(context),
+        builder:
+            (dialogContext) => DSThemeBridge(
+              child: Builder(
+                builder: (dialogContext) {
+                  final theme = DSThemeBridge.resolve(dialogContext);
+                  return DSDialog(
+                    title: 'openai_importAgent'.tr,
+                    message: 'openai_importAgentConfirm'.tr,
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${'openai_nameLabel'.tr}: ${agent.name}',
+                          style: DsTypography.body.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (agent.description.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            '${'openai_descriptionLabel'.tr}: ${agent.description}',
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                        if (agent.tags.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 4,
+                            children:
+                                agent.tags
+                                    .map((tag) => DSChip(label: tag))
+                                    .toList(),
+                          ),
+                        ],
+                      ],
+                    ),
+                    confirmText: 'openai_import'.tr,
+                    cancelText: 'openai_cancel'.tr,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  );
+                },
+              ),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('openai_import'.tr),
-            ),
-          ],
-        ),
       );
 
       if (confirmed != true) return;
@@ -365,7 +374,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   Widget _buildCardViewContent(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return FutureBuilder<Map<String, dynamic>>(
       future: _getAgentsData(),
@@ -376,7 +385,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 顶部图标和标题
+              // 顶部图标和标题(插件注册表图标 Icons.smart_toy,属持久化 IconData,刻意保留 Material)
               Row(
                 children: [
                   Container(
@@ -391,7 +400,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
                   const SizedBox(width: 12),
                   Text(
                     'openai_name'.tr,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: DsTypography.heading.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -411,16 +421,15 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
                         children: [
                           Text(
                             'openai_totalAgents'.tr,
-                            style: theme.textTheme.bodyMedium,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
                           Text(
                             '$agentsCount',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
                               fontWeight: FontWeight.bold,
-                              color:
-                                  agentsCount > 0
-                                      ? theme.colorScheme.primary
-                                      : null,
                             ),
                           ),
                         ],
@@ -524,12 +533,13 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.down,
-        physics: const NeverScrollableScrollPhysics(),
-        children: const [AgentListScreen(), PromptPresetScreen()],
-      ),
+      body:
+          (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.down,
+            physics: const NeverScrollableScrollPhysics(),
+            children: const [AgentListScreen(), PromptPresetScreen()],
+          ),
       fab: _buildFab(),
       children: [
         Tab(

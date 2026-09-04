@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show File;
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_selector_dialog.dart';
 
@@ -30,10 +32,10 @@ class GoodsSubItemsField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: theme.backgroundAlt,
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(16),
@@ -42,14 +44,13 @@ class GoodsSubItemsField extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.widgets,
-                  size: 20, color: theme.colorScheme.onSurfaceVariant),
+              DsIcon(DsIconKind.layers, size: 20, color: theme.textSub),
               const SizedBox(width: 6),
               Text(
                 'goods_subItemList'.tr,
-                style: TextStyle(
+                style: DsTypography.heading.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+                  color: theme.text,
                 ),
               ),
             ],
@@ -65,7 +66,7 @@ class GoodsSubItemsField extends StatelessWidget {
                     child: Container(
                       width: 128,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
+                        color: theme.surface,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       clipBehavior: Clip.hardEdge,
@@ -89,7 +90,9 @@ class GoodsSubItemsField extends StatelessWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -109,8 +112,8 @@ class GoodsSubItemsField extends StatelessWidget {
                               subItem.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.text,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -128,27 +131,26 @@ class GoodsSubItemsField extends StatelessWidget {
                       width: 128,
                       height: 134,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
+                        color: theme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: theme.colorScheme.outline,
+                          color: theme.stroke,
                           style: BorderStyle.solid,
                         ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.add,
+                          DsIcon(
+                            DsIconKind.plus,
                             size: 32,
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: theme.textSub,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'goods_add'.tr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSurfaceVariant,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                           ),
                         ],
@@ -203,12 +205,16 @@ class GoodsSubItemsField extends StatelessWidget {
   void _showAddSubItemDialog(BuildContext context) async {
     final excludeItemIds = subItems.map((e) => e.id).toList();
 
-    final result = await showDialog<dynamic>(
+    final result = await showDSDialog<dynamic>(
       context: context,
-      builder: (context) => GoodsItemSelectorDialog(
-        excludeItemId: excludeItemId,
-        excludeItemIds: excludeItemIds,
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: GoodsItemSelectorDialog(
+              excludeItemId: excludeItemId,
+              excludeItemIds: excludeItemIds,
+            ),
+          ),
     );
 
     if (result != null) {

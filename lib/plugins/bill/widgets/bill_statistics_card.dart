@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:intl/intl.dart';
 
 class BillStatisticsCard extends StatelessWidget {
@@ -15,15 +17,19 @@ class BillStatisticsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
+    final theme = DSThemeBridge.resolve(context);
+    return DSThemeBridge(
+      child: DSCard(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text(
+            Text(
               '账单概览',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: DsTypography.title.copyWith(
+                color: theme.text,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -32,20 +38,20 @@ class BillStatisticsCard extends StatelessWidget {
                 _buildStatItem(
                   '收入',
                   totalIncome,
-                  Colors.green,
-                  Icons.arrow_downward,
+                  theme.success,
+                  DsIconKind.chevronDown,
                 ),
                 _buildStatItem(
                   '支出',
                   totalExpense,
-                  Colors.red,
-                  Icons.arrow_upward,
+                  theme.danger,
+                  DsIconKind.chevronUp,
                 ),
                 _buildStatItem(
                   '结余',
                   balance,
-                  balance >= 0 ? Colors.blue : Colors.orange,
-                  Icons.account_balance_wallet,
+                  balance >= 0 ? theme.primary : theme.warning,
+                  DsIconKind.piggy,
                 ),
               ],
             ),
@@ -59,24 +65,34 @@ class BillStatisticsCard extends StatelessWidget {
     String title,
     double amount,
     Color color,
-    IconData icon,
+    DsIconKind icon,
   ) {
     final formatter = NumberFormat.currency(symbol: '¥', decimalDigits: 2);
 
-    return Column(
-      children: [
-        Icon(icon, color: color),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          formatter.format(amount),
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-        ),
-      ],
+    return Builder(
+      builder: (context) {
+        return Column(
+          children: [
+            DsIcon(icon, color: color),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: DsTypography.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              formatter.format(amount),
+              style: DsTypography.body.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

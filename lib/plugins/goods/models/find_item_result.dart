@@ -4,12 +4,9 @@ import 'goods_item.dart';
 class FindItemResult {
   /// 找到的物品
   final GoodsItem item;
-  
+
   /// 物品所在仓库的ID
   final String warehouseId;
 
-  FindItemResult({
-    required this.item,
-    required this.warehouseId,
-  });
+  FindItemResult({required this.item, required this.warehouseId});
 }

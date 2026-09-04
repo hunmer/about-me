@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -28,27 +30,47 @@ class _AgentCardState extends State<AgentCard> {
   void _showActionMenu(BuildContext context) {
     SmoothBottomSheet.show(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit, color: Colors.blue),
-            title: const Text('编辑'),
-            onTap: () {
-              Navigator.pop(context);
-              _editAgent();
-            },
+      backgroundColor: DSThemeBridge.resolve(context).surface,
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _AgentSheetActionRow(
+                      icon: DsIcon(
+                        DsIconKind.edit,
+                        size: 20,
+                        color: theme.primary,
+                      ),
+                      label: '编辑',
+                      theme: theme,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _editAgent();
+                      },
+                    ),
+                    _AgentSheetActionRow(
+                      icon: DsIcon(
+                        DsIconKind.trash,
+                        size: 20,
+                        color: theme.danger,
+                      ),
+                      label: '删除',
+                      theme: theme,
+                      danger: true,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _deleteAgent();
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('删除', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteAgent();
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -66,11 +88,7 @@ class _AgentCardState extends State<AgentCard> {
   Future<void> _deleteAgent() async {
     final controller = OpenAIPlugin.instance.controller;
     await controller.deleteAgent(agent.id);
-    Get.snackbar(
-      'openai_agentDeleted'.tr,
-      '${agent.name} 已被删除',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    Toast.success('${agent.name} 已被删除');
   }
 
   @override
@@ -87,6 +105,60 @@ class _AgentCardState extends State<AgentCard> {
       iconColorValue: agent.iconColor?.value,
       onTap: () => _editAgent(),
       onLongPress: () => _showActionMenu(context),
+    );
+  }
+}
+
+/// Agent 卡片长按菜单行(果冻风格)
+class _AgentSheetActionRow extends StatelessWidget {
+  const _AgentSheetActionRow({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final Widget icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.primary;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.sm),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return JellyBox(
+            radius: theme.radii.lg,
+            raised: false,
+            color: pressed ? accent.mixWhite(0.9) : theme.surfaceAlt,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.md,
+            ),
+            child: Row(
+              children: [
+                icon,
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: DsTypography.body.copyWith(
+                      color: danger ? theme.danger : theme.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

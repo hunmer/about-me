@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -82,144 +84,145 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.account != null;
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
-      child: Column(
-        children: [
-          // 标题栏
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    isEdit ? '编辑账户' : '新建账户',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+      child: DSThemeBridge(
+        child: Column(
+          children: [
+            // 标题栏
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Row(
                 children: [
-                  const SizedBox(height: 32),
-                  // Icon Display
-                  GestureDetector(
-                    onTap: _pickIcon,
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _selectedColor.withValues(alpha: 0.1),
-                      ),
-                      child: Icon(
-                        _selectedIcon,
-                        size: 48,
-                        color: _selectedColor,
+                  Expanded(
+                    child: Text(
+                      isEdit ? '编辑账户' : '新建账户',
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Icon & Color Selection Trigger
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: _pickIcon,
-                        child: Text(
-                          '选择图标',
-                          style: TextStyle(
-                            color: _selectedColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _pickColor,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _selectedColor,
-                            border: Border.all(
-                              color: theme.dividerColor,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 48),
-                  // Input Field
-                  TextInputField(
-                    controller: _titleController,
-                    labelText: 'bill_accountName'.tr,
-                    hintText: '例如: 现金, 银行卡',
-                    primaryColor: _selectedColor,
-                  ),
-                  if (isEdit) ...[
-                    const SizedBox(height: 32),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.error,
-                      ),
-                      icon: const Icon(Icons.delete_outline),
-                      label: Text(
-                        'bill_deleteAccount'.tr,
-                      ),
-                      onPressed: _deleteAccount,
-                    ),
-                  ],
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
-          ),
-          // Bottom Button
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              16,
-              24,
-              MediaQuery.of(context).viewInsets.bottom + 24,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saveAccount,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: const StadiumBorder(),
-                  elevation: 4,
-                  shadowColor: _selectedColor.withValues(alpha: 0.4),
-                ),
-                child: Text(
-                  isEdit ? '保存' : '创建',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+            Divider(height: 1, color: theme.stroke),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 32),
+                    // Icon Display
+                    GestureDetector(
+                      onTap: _pickIcon,
+                      child: Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _selectedColor.withValues(alpha: 0.1),
+                        ),
+                        child: Icon(
+                          _selectedIcon,
+                          size: 48,
+                          color: _selectedColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Icon & Color Selection Trigger
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: _pickIcon,
+                          child: Text(
+                            '选择图标',
+                            style: TextStyle(
+                              color: _selectedColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: _pickColor,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _selectedColor,
+                              border: Border.all(color: theme.stroke, width: 1),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 48),
+                    // Input Field
+                    TextInputField(
+                      controller: _titleController,
+                      labelText: 'bill_accountName'.tr,
+                      hintText: '例如: 现金, 银行卡',
+                      primaryColor: _selectedColor,
+                    ),
+                    if (isEdit) ...[
+                      const SizedBox(height: 32),
+                      DSButton(
+                        label: 'bill_deleteAccount'.tr,
+                        variant: DSButtonVariant.destructive,
+                        icon: DsIconKind.trash,
+                        onPressed: _deleteAccount,
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),
-          ),
-        ],
+            // Bottom Button
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                16,
+                24,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: Pressable(
+                  onPressed: _saveAccount,
+                  builder: (context, states) {
+                    final pressed = states.contains(WidgetState.pressed);
+                    return JellyBox(
+                      color: _selectedColor,
+                      radius: theme.radii.lg,
+                      height: 56,
+                      shadows:
+                          pressed ? theme.pressedShadow(_selectedColor) : null,
+                      child: Center(
+                        child: Text(
+                          isEdit ? '保存' : '创建',
+                          style: DsTypography.button.copyWith(
+                            color: theme.onPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -252,7 +255,9 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                NavigationHelper.createRoute(widget.billPlugin.buildMainView(context)),
+                NavigationHelper.createRoute(
+                  widget.billPlugin.buildMainView(context),
+                ),
               );
             }
           });
@@ -275,24 +280,23 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
   }
 
   void _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('app_confirmDelete'.tr),
-            content: Text(
-              'bill_confirmDeleteAccountWithBills'.tr,
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'app_confirmDelete'.tr,
+                    message: 'bill_confirmDeleteAccountWithBills'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.pop(context, false),
+                    onConfirm: () => Navigator.pop(context, true),
+                  ),
             ),
-            actions: [
-              TextButton(
-                child: Text('app_cancel'.tr),
-                onPressed: () => Navigator.pop(context, false),
-              ),
-              TextButton(
-                child: Text('app_delete'.tr),
-                onPressed: () => Navigator.pop(context, true),
-              ),
-            ],
           ),
     );
 

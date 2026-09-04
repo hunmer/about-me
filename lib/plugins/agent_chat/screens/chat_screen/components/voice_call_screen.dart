@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_config_dialog.dart';
@@ -80,10 +82,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     );
 
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
 
@@ -111,7 +110,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     });
 
     // 监听识别文本（实时更新）
-    _recognizedTextSubscription = widget.manager.recognizedTextStream.listen((text) {
+    _recognizedTextSubscription = widget.manager.recognizedTextStream.listen((
+      text,
+    ) {
       if (mounted) {
         setState(() {
           _textController.text = text;
@@ -173,9 +174,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       case VoiceCallState.idle:
         break;
       default:
-        buttons = [
-          NotificationButton(text: '结束', id: 'end'),
-        ];
+        buttons = [NotificationButton(text: '结束', id: 'end')];
     }
 
     try {
@@ -230,21 +229,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   /// 获取状态图标
-  IconData _getStatusIcon() {
+  DsIconKind _getStatusIcon() {
     switch (_currentState) {
       case VoiceCallState.recording:
-        return Icons.mic;
+        return DsIconKind.mic;
       case VoiceCallState.processing:
       case VoiceCallState.recognized:
-        return Icons.psychology;
+        return DsIconKind.bot;
       case VoiceCallState.speaking:
-        return Icons.volume_up;
+        return DsIconKind.bell;
       case VoiceCallState.paused:
-        return Icons.pause;
+        return DsIconKind.pause;
       case VoiceCallState.error:
-        return Icons.error;
+        return DsIconKind.close;
       default:
-        return Icons.phone_disabled;
+        return DsIconKind.mic;
     }
   }
 
@@ -259,23 +258,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   /// 退出
   Future<void> _exit() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('结束通话'),
-        content: const Text('确定要结束当前通话吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: '结束通话',
+                    message: '确定要结束当前通话吗？',
+                    cancelText: '取消',
+                    confirmText: '结束',
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('结束'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -286,11 +286,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   /// 打开设置
   Future<void> _openSettings() async {
-    final result = await showDialog<VoiceCallConfig>(
+    final result = await showDSDialog<VoiceCallConfig>(
       context: context,
-      builder: (context) => VoiceCallConfigDialog(
-        initialConfig: widget.manager.config,
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => VoiceCallConfigDialog(
+                    initialConfig: widget.manager.config,
+                  ),
+            ),
+          ),
     );
 
     if (result != null) {
@@ -309,26 +316,27 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     _updateForegroundNotification();
 
     final backgroundImage = widget.manager.config.backgroundImagePath;
-    final hasBackgroundImage = backgroundImage != null && File(backgroundImage).existsSync();
+    final hasBackgroundImage =
+        backgroundImage != null && File(backgroundImage).existsSync();
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Container(
-        decoration: hasBackgroundImage
-            ? BoxDecoration(
-                image: DecorationImage(
-                  image: FileImage(File(backgroundImage)),
-                  fit: BoxFit.cover,
-                ),
-              )
-            : null,
+        decoration:
+            hasBackgroundImage
+                ? BoxDecoration(
+                  image: DecorationImage(
+                    image: FileImage(File(backgroundImage)),
+                    fit: BoxFit.cover,
+                  ),
+                )
+                : null,
         child: Container(
           // 添加半透明遮罩以提高可读性
-          decoration: hasBackgroundImage
-              ? BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
-                )
-              : null,
+          decoration:
+              hasBackgroundImage
+                  ? BoxDecoration(color: Colors.black.withOpacity(0.4))
+                  : null,
           child: SafeArea(
             child: Column(
               children: [
@@ -336,11 +344,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 _buildTopBar(),
 
                 // 主要内容区 - 中间显示 Agent 头像/图标
-                Expanded(
-                  child: Center(
-                    child: _buildAgentAvatar(),
-                  ),
-                ),
+                Expanded(child: Center(child: _buildAgentAvatar())),
 
                 // 录音输入区（在底部控制区上方）
                 if (_currentState == VoiceCallState.recording)
@@ -363,10 +367,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       child: Row(
         children: [
           // 退出按钮
-          IconButton(
+          Pressable(
             onPressed: _exit,
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            style: IconButton.styleFrom(backgroundColor: Colors.white10),
+            semanticLabel: '退出',
+            builder:
+                (context, states) => Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Colors.white10,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const DsIcon(
+                    DsIconKind.chevronLeft,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
           ),
           const SizedBox(width: 16),
           // 标题
@@ -384,10 +402,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 ),
                 Text(
                   '第 $_currentTurn 轮',
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
             ),
@@ -396,10 +411,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           _buildStatusIndicatorSmall(),
           const SizedBox(width: 8),
           // 设置按钮
-          IconButton(
+          Pressable(
             onPressed: _openSettings,
-            icon: const Icon(Icons.settings, color: Colors.white),
-            style: IconButton.styleFrom(backgroundColor: Colors.white10),
+            semanticLabel: '设置',
+            builder:
+                (context, states) => Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Colors.white10,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const DsIcon(
+                    DsIconKind.gear,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
           ),
         ],
       ),
@@ -418,11 +447,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            _getStatusIcon(),
-            color: _getStatusColor(),
-            size: 14,
-          ),
+          DsIcon(_getStatusIcon(), color: _getStatusColor(), size: 14),
           const SizedBox(width: 6),
           Text(
             _getStatusText(),
@@ -452,8 +477,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildDefaultAvatarIcon(agent),
+          errorBuilder:
+              (context, error, stackTrace) => _buildDefaultAvatarIcon(agent),
         ),
       );
     } else {
@@ -465,10 +490,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: statusColor,
-          width: 3,
-        ),
+        border: Border.all(color: statusColor, width: 3),
         boxShadow: [
           BoxShadow(
             color: statusColor.withOpacity(0.3),
@@ -493,11 +515,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         shape: BoxShape.circle,
         color: Colors.white.withOpacity(0.1),
       ),
-      child: Icon(
-        icon,
-        color: iconColor,
-        size: 56,
-      ),
+      child: Icon(icon, color: iconColor, size: 56),
     );
   }
 
@@ -510,10 +528,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _getStatusColor(),
-            width: 1.5,
-          ),
+          border: Border.all(color: _getStatusColor(), width: 1.5),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -526,7 +541,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 麦克风图标
-                    Icon(Icons.mic, color: _getStatusColor(), size: 18),
+                    DsIcon(DsIconKind.mic, color: _getStatusColor(), size: 18),
                     const SizedBox(width: 10),
                     // 文本输入
                     Expanded(
@@ -534,10 +549,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                         controller: _textController,
                         focusNode: _focusNode,
                         maxLines: 2,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                         decoration: const InputDecoration(
                           hintText: '正在识别...',
-                          hintStyle: TextStyle(color: Colors.white38, fontSize: 14),
+                          hintStyle: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 14,
+                          ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                           isDense: true,
@@ -547,7 +568,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     // 倒计时
                     if (!_autoSendCancelled && _countdownSeconds > 0)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatusColor(),
                           borderRadius: BorderRadius.circular(12),
@@ -576,7 +600,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     // 编辑按钮
                     if (!_autoSendCancelled)
                       _buildCompactActionButton(
-                        icon: Icons.edit,
+                        icon: DsIconKind.edit,
                         label: '编辑',
                         color: Colors.orange,
                         onTap: () {
@@ -587,7 +611,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     const SizedBox(width: 8),
                     // 发送按钮
                     _buildCompactActionButton(
-                      icon: Icons.send,
+                      icon: DsIconKind.send,
                       label: '发送',
                       color: Colors.green,
                       onTap: () {
@@ -600,7 +624,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     const SizedBox(width: 8),
                     // 删除按钮
                     _buildCompactActionButton(
-                      icon: Icons.close,
+                      icon: DsIconKind.close,
                       label: '清除',
                       color: Colors.red,
                       onTap: () {
@@ -620,36 +644,37 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   /// 构建精简版操作按钮
   Widget _buildCompactActionButton({
-    required IconData icon,
+    required DsIconKind icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 14),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+    return Pressable(
+      onPressed: onTap,
+      semanticLabel: label,
+      builder:
+          (context, states) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DsIcon(icon, color: color, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
@@ -663,28 +688,28 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   /// 构建主控制按钮（带脉冲动画）
   Widget _buildMainControlButton() {
-    IconData icon;
+    DsIconKind icon;
     Color color;
     VoidCallback? onTap;
 
     switch (_currentState) {
       case VoiceCallState.recording:
-        icon = Icons.pause;
+        icon = DsIconKind.pause;
         color = Colors.orange;
         onTap = _togglePause;
         break;
       case VoiceCallState.paused:
-        icon = Icons.play_arrow;
+        icon = DsIconKind.play;
         color = Colors.green;
         onTap = _togglePause;
         break;
       case VoiceCallState.speaking:
-        icon = Icons.skip_next;
+        icon = DsIconKind.chevronRight;
         color = Colors.blue;
         onTap = () => widget.manager.skipSpeaking();
         break;
       default:
-        icon = Icons.call_end;
+        icon = DsIconKind.close;
         color = Colors.red;
         onTap = _exit;
     }
@@ -708,11 +733,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: DsIcon(icon, color: Colors.white, size: 32),
           ),
         );
       },

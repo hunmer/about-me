@@ -9,6 +9,8 @@ import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
 import 'package:aboutme/plugins/agent_chat/services/token_counter_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'markdown_content.dart';
@@ -75,6 +77,7 @@ class MessageBubble extends StatelessWidget {
     final isUser = message.isUser;
     final isToolCallMessage =
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -98,9 +101,9 @@ class MessageBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         isUser
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
+                            ? theme.primary.mixWhite(0.85)
+                            : theme.surfaceAlt,
+                    borderRadius: theme.radii.md,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,10 +160,7 @@ class MessageBubble extends StatelessWidget {
                       TokenCounterService.formatTokenCountShort(
                         message.tokenCount,
                       ),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      style: TextStyle(fontSize: 11, color: theme.textSub),
                     ),
 
                     const SizedBox(width: 8),
@@ -168,10 +168,7 @@ class MessageBubble extends StatelessWidget {
                     // 时间
                     Text(
                       _formatTime(message.timestamp),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      style: TextStyle(fontSize: 11, color: theme.textSub),
                     ),
 
                     // 显示思考过程按钮（仅当有思考内容且不是用户消息时显示）
@@ -179,26 +176,27 @@ class MessageBubble extends StatelessWidget {
                         message.thinkingContent != null &&
                         message.thinkingContent!.isNotEmpty) ...[
                       const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () => _showThinkingDialog(context),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.psychology_outlined,
-                              size: 12,
-                              color: Theme.of(context).colorScheme.primary,
+                      Pressable(
+                        onPressed: () => _showThinkingDialog(context),
+                        builder:
+                            (context, states) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DsIcon(
+                                  DsIconKind.bot,
+                                  size: 12,
+                                  color: theme.primaryText,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '显示思考过程',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.primaryText,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '显示思考过程',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
 
@@ -209,7 +207,7 @@ class MessageBubble extends StatelessWidget {
                         '(已编辑)',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Theme.of(context).colorScheme.outline,
+                          color: theme.textSub.withValues(alpha: 0.8),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -233,61 +231,61 @@ class MessageBubble extends StatelessWidget {
   /// 构建会话分隔符
   Widget _buildSessionDivider() {
     return Builder(
-      builder:
-          (context) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(context).colorScheme.primary,
-                    thickness: 1,
-                  ),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: theme.primary.withValues(alpha: 0.45),
+                  thickness: 1,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.primary.mixWhite(0.88),
+                    borderRadius: theme.radii.md,
+                    border: Border.all(color: theme.primary),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DsIcon(
+                        DsIconKind.plus,
+                        size: 16,
+                        color: theme.primaryText,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.fiber_new,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
+                      const SizedBox(width: 6),
+                      Text(
+                        message.content,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.primaryText,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          message.content,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(context).colorScheme.primary,
-                    thickness: 1,
-                  ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: theme.primary.withValues(alpha: 0.45),
+                  thickness: 1,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        );
+      },
     );
   }
 
@@ -297,6 +295,7 @@ class MessageBubble extends StatelessWidget {
     if (message.toolCall != null && message.toolCall!.steps.isNotEmpty) {
       return Builder(
         builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
           // 智能解析content，提取思考内容和AI回复
           final parsedContent = _parseToolCallContent(message.content);
 
@@ -323,21 +322,14 @@ class MessageBubble extends StatelessWidget {
               else if (message.isGenerating) ...[
                 Row(
                   children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+                    DSLoadingDots(size: 8, color: theme.primary),
                     const SizedBox(width: 8),
                     Text(
                       '正在生成...',
                       style: TextStyle(
                         fontSize: 14,
                         fontStyle: FontStyle.italic,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: theme.textSub,
                       ),
                     ),
                   ],
@@ -440,87 +432,77 @@ class MessageBubble extends StatelessWidget {
   /// 构建图片附件
   Widget _buildImageAttachment(FileAttachment attachment) {
     return Builder(
-      builder:
-          (context) => GestureDetector(
-            onTap: () => _viewImage(context, attachment),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                constraints: const BoxConstraints(
-                  maxWidth: 200,
-                  maxHeight: 200,
-                ),
-                child: Image.file(
-                  File(attachment.filePath),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 200,
-                      height: 150,
-                      color: Theme.of(context).colorScheme.surfaceVariant,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.broken_image,
-                            size: 48,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Image load failed',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return GestureDetector(
+          onTap: () => _viewImage(context, attachment),
+          child: ClipRRect(
+            borderRadius: theme.radii.sm,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 200, maxHeight: 200),
+              child: Image.file(
+                File(attachment.filePath),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 200,
+                    height: 150,
+                    color: theme.surfaceAlt,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        DsIcon(
+                          DsIconKind.image,
+                          size: 48,
+                          color: theme.textSub,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Image load failed',
+                          style: TextStyle(fontSize: 12, color: theme.textSub),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),
+        );
+      },
     );
   }
 
   /// 构建文件附件
   Widget _buildFileAttachment(FileAttachment attachment) {
     return Builder(
-      builder:
-          (context) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.description,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(attachment.fileName, style: const TextStyle(fontSize: 12)),
-                const SizedBox(width: 4),
-                Text(
-                  attachment.formattedSize,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.surface,
+            borderRadius: theme.radii.sm,
+            border: Border.all(color: theme.textSub.withValues(alpha: 0.45)),
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DsIcon(DsIconKind.book, size: 16, color: theme.textSub),
+              const SizedBox(width: 4),
+              Text(
+                attachment.fileName,
+                style: TextStyle(fontSize: 12, color: theme.text),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                attachment.formattedSize,
+                style: TextStyle(fontSize: 10, color: theme.textSub),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -545,241 +527,189 @@ class MessageBubble extends StatelessWidget {
 
   /// 构建操作菜单
   Widget _buildActionMenu(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final isToolCallMessage =
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
 
-    return PopupMenuButton<String>(
-      padding: EdgeInsets.zero,
-      icon: Icon(
-        Icons.more_vert,
-        size: 16,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      onSelected: (value) {
-        switch (value) {
-          case 'copy':
-            Clipboard.setData(ClipboardData(text: message.content));
-            toastService.showToast('已复制到剪贴板');
-            break;
-          case 'edit':
-            _showEditDialog(context);
-            break;
-          case 'delete':
-            onDelete?.call(message.id);
-            break;
-          case 'regenerate':
-            onRegenerate?.call(message.id);
-            break;
-          case 'save_tool':
-            onSaveTool?.call(message);
-            break;
-          case 'rerun_tool':
-            onRerunTool?.call(message.id);
-            break;
-          case 'view_details':
-            _showToolDetailDialog(context);
-            break;
-        }
-      },
-      itemBuilder:
-          (context) => [
-            PopupMenuItem(
-              value: 'copy',
-              child: Row(
-                children: [
-                  Icon(Icons.copy, size: 18),
-                  const SizedBox(width: 8),
-                  Text('agent_chat_copy'.tr),
-                ],
-              ),
+    return DSPopover(
+      width: 200,
+      contentBuilder: (popoverContext, close) {
+        final popoverTheme = DSThemeBridge.resolve(popoverContext);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _MenuAction(
+              icon: DsIconKind.copy,
+              label: 'agent_chat_copy'.tr,
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                Clipboard.setData(ClipboardData(text: message.content));
+                toastService.showToast('已复制到剪贴板');
+              },
             ),
             // 允许编辑所有消息（除了工具调用消息）
             if (onEdit != null && !isToolCallMessage)
-              PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 18),
-                    const SizedBox(width: 8),
-                    Text('agent_chat_edit'.tr),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.edit,
+                label: 'agent_chat_edit'.tr,
+                theme: popoverTheme,
+                onTap: () {
+                  close();
+                  _showEditDialog(context);
+                },
               ),
             if (!message.isUser && onRegenerate != null && hasAgent)
-              PopupMenuItem(
-                value: 'regenerate',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh, size: 18),
-                    const SizedBox(width: 8),
-                    Text('agent_chat_regenerate'.tr),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.refresh,
+                label: 'agent_chat_regenerate'.tr,
+                theme: popoverTheme,
+                onTap: () {
+                  close();
+                  onRegenerate?.call(message.id);
+                },
               ),
             if (!message.isUser && isToolCallMessage && onSaveTool != null)
-              PopupMenuItem(
-                value: 'save_tool',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.save,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'agent_chat_saveTool'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.download,
+                label: 'agent_chat_saveTool'.tr,
+                theme: popoverTheme,
+                accent: popoverTheme.primaryText,
+                onTap: () {
+                  close();
+                  onSaveTool?.call(message);
+                },
               ),
             if (!message.isUser && isToolCallMessage && onRerunTool != null)
-              PopupMenuItem(
-                value: 'rerun_tool',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.replay,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'agent_chat_reExecuteTool'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.refresh,
+                label: 'agent_chat_reExecuteTool'.tr,
+                theme: popoverTheme,
+                accent: popoverTheme.secondary,
+                onTap: () {
+                  close();
+                  onRerunTool?.call(message.id);
+                },
               ),
             if (!message.isUser && isToolCallMessage && storage != null)
-              PopupMenuItem(
-                value: 'view_details',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'agent_chat_viewDetails'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.info,
+                label: 'agent_chat_viewDetails'.tr,
+                theme: popoverTheme,
+                accent: popoverTheme.primaryText,
+                onTap: () {
+                  close();
+                  _showToolDetailDialog(context);
+                },
               ),
             if (onDelete != null)
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'agent_chat_delete'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                ),
+              _MenuAction(
+                icon: DsIconKind.trash,
+                label: 'agent_chat_delete'.tr,
+                theme: popoverTheme,
+                accent: popoverTheme.danger,
+                onTap: () {
+                  close();
+                  onDelete?.call(message.id);
+                },
               ),
           ],
+        );
+      },
+      child: DsIcon(DsIconKind.more, size: 16, color: theme.textSub),
     );
   }
 
   /// 显示编辑对话框
   void _showEditDialog(BuildContext context) {
     final textController = TextEditingController(text: message.content);
+    // 与原实现一致：字符数在打开时计算一次
+    final initialLength = textController.text.length;
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Row(
-              children: [
-                Text('agent_chat_editMessage'.tr),
-                const SizedBox(width: 8),
-                if (!message.isUser)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'AI',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.bold,
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'agent_chat_editMessage'.tr,
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (!message.isUser)
+                            DSBadge(
+                              label: 'AI',
+                              color: theme.secondary,
+                              textColor: theme.text,
+                            ),
+                        ],
                       ),
-                    ),
-                  ),
-              ],
-            ),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.8,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: textController,
-                    maxLines: null,
-                    minLines: 5,
-                    keyboardType: TextInputType.multiline,
-                    decoration: const InputDecoration(
-                      hintText: '输入消息内容...',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '${textController.text.length} 字符',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      SizedBox(height: theme.spacing.md),
+                      DSInput(
+                        controller: textController,
+                        hint: '输入消息内容...',
+                        maxLines: null,
+                        minLines: 5,
+                        keyboardType: TextInputType.multiline,
                       ),
-                    ),
+                      SizedBox(height: theme.spacing.xs),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '$initialLength 字符',
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: 'agent_chat_cancel'.tr,
+                              variant: DSButtonVariant.outline,
+                              onPressed: () => Navigator.pop(dialogContext),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: 'agent_chat_save'.tr,
+                              onPressed: () {
+                                final newContent = textController.text.trim();
+                                if (newContent.isNotEmpty &&
+                                    newContent != message.content) {
+                                  onEdit?.call(message.id, newContent);
+                                }
+                                Navigator.pop(dialogContext);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('agent_chat_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () {
-                  final newContent = textController.text.trim();
-                  if (newContent.isNotEmpty && newContent != message.content) {
-                    onEdit?.call(message.id, newContent);
-                  }
-                  Navigator.pop(context);
-                },
-                child: Text('agent_chat_save'.tr),
-              ),
-            ],
           ),
     );
   }
@@ -792,10 +722,12 @@ class MessageBubble extends StatelessWidget {
     }
 
     // 显示加载指示器
-    showDialog(
+    showDSDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => const DSThemeBridge(child: Center(child: DSLoadingDots())),
     );
 
     try {
@@ -817,10 +749,11 @@ class MessageBubble extends StatelessWidget {
 
       // 显示详情对话框
       if (context.mounted) {
-        showDialog(
+        showDSDialog(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (context) => ToolDetailDialog(
+              (dialogContext) => ToolDetailDialog(
                 detail: detail,
                 toolCallSteps: message.toolCall?.steps,
               ),
@@ -842,184 +775,139 @@ class MessageBubble extends StatelessWidget {
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
 
     return Builder(
-      builder:
-          (context) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 模版卡片列表
-              ...message.matchedTemplateIds!.map((templateId) {
-                // 获取模版名称
-                final templateName =
-                    getTemplateName?.call(templateId) ?? '未知模版';
-                // 判断当前模版是否已运行
-                // 只要有 toolCall，就说明已经执行了
-                final isExecuted = hasToolCall;
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 模版卡片列表
+            ...message.matchedTemplateIds!.map((templateId) {
+              // 获取模版名称
+              final templateName = getTemplateName?.call(templateId) ?? '未知模版';
+              // 判断当前模版是否已运行
+              // 只要有 toolCall，就说明已经执行了
+              final isExecuted = hasToolCall;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 模版卡片
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color:
-                              isExecuted
-                                  ? Theme.of(
-                                    context,
-                                  ).colorScheme.tertiaryContainer
-                                  : Theme.of(
-                                    context,
-                                  ).colorScheme.primaryContainer,
-                          border: Border.all(
-                            color:
-                                isExecuted
-                                    ? Theme.of(context).colorScheme.tertiary
-                                    : Theme.of(context).colorScheme.primary,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 模版卡片
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            isExecuted
+                                ? theme.success.mixWhite(0.85)
+                                : theme.primary.mixWhite(0.85),
+                        border: Border.all(
+                          color: isExecuted ? theme.success : theme.primary,
                         ),
-                        child: Row(
-                          children: [
-                            // 左侧：图标
-                            Icon(
-                              isExecuted
-                                  ? Icons.check_circle_outline
-                                  : Icons.play_circle_outline,
-                              size: 24,
-                              color:
-                                  isExecuted
-                                      ? Theme.of(context).colorScheme.tertiary
-                                      : Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 12),
+                        borderRadius: theme.radii.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          // 左侧：图标
+                          DsIcon(
+                            isExecuted ? DsIconKind.check : DsIconKind.play,
+                            size: 24,
+                            color:
+                                isExecuted ? theme.success : theme.primaryText,
+                          ),
+                          const SizedBox(width: 12),
 
-                            // 中间：模版信息
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    templateName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color:
-                                          isExecuted
-                                              ? Theme.of(
-                                                context,
-                                              ).colorScheme.onTertiaryContainer
-                                              : Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    isExecuted ? '已运行' : '待运行',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color:
-                                          isExecuted
-                                              ? Theme.of(
-                                                context,
-                                              ).colorScheme.tertiary
-                                              : Theme.of(
-                                                context,
-                                              ).colorScheme.secondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // 右侧：操作按钮
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                          // 中间：模版信息
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 查看结果按钮（仅已运行时显示）
-                                if (isExecuted) ...[
-                                  Builder(
-                                    builder:
-                                        (context) => IconButton(
-                                          icon: Icon(
-                                            Icons.visibility_outlined,
-                                            size: 20,
-                                          ),
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.tertiary,
-                                          tooltip: '查看结果',
-                                          onPressed:
-                                              () => _showTemplateResultDialog(
-                                                context,
-                                              ),
-                                        ),
+                                Text(
+                                  templateName,
+                                  style: DsTypography.heading.copyWith(
+                                    color: theme.text,
                                   ),
-                                  const SizedBox(width: 4),
-                                ],
-
-                                // 运行/重新运行按钮
-                                ElevatedButton.icon(
-                                  onPressed:
-                                      onExecuteTemplate != null
-                                          ? () => onExecuteTemplate!(
-                                            message.id,
-                                            templateId,
-                                          )
-                                          : null,
-                                  icon: Icon(
-                                    isExecuted
-                                        ? Icons.replay
-                                        : Icons.play_arrow,
-                                    size: 16,
-                                  ),
-                                  label: Text(isExecuted ? '重新运行' : '运行'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isExecuted ? '已运行' : '待运行',
+                                  style: DsTypography.caption.copyWith(
+                                    color:
                                         isExecuted
-                                            ? Theme.of(
-                                              context,
-                                            ).colorScheme.tertiary
-                                            : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.onPrimary,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    textStyle: const TextStyle(fontSize: 13),
+                                            ? theme.success
+                                            : theme.primaryText,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+
+                          // 右侧：操作按钮
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 查看结果按钮（仅已运行时显示）
+                              if (isExecuted) ...[
+                                Pressable(
+                                  onPressed:
+                                      () => _showTemplateResultDialog(context),
+                                  semanticLabel: '查看结果',
+                                  builder:
+                                      (context, states) => DsIcon(
+                                        DsIconKind.info,
+                                        size: 20,
+                                        color: theme.success,
+                                      ),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+
+                              // 运行/重新运行按钮
+                              DSButton(
+                                label: isExecuted ? '重新运行' : '运行',
+                                icon:
+                                    isExecuted
+                                        ? DsIconKind.refresh
+                                        : DsIconKind.play,
+                                size: DSButtonSize.sm,
+                                variant:
+                                    isExecuted
+                                        ? DSButtonVariant.secondary
+                                        : DSButtonVariant.primary,
+                                onPressed:
+                                    onExecuteTemplate != null
+                                        ? () => onExecuteTemplate!(
+                                          message.id,
+                                          templateId,
+                                        )
+                                        : null,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
+                    ),
 
-                      // 分割线（如果有 AI 回复内容）
-                      if (message.content.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Divider(
-                          color: Theme.of(context).colorScheme.outline,
-                          thickness: 1,
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // AI 最终回复（从 content 中提取，排除工具结果部分）
-                      if (message.content.isNotEmpty) _buildFinalReplyContent(),
+                    // 分割线（如果有 AI 回复内容）
+                    if (message.content.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Divider(
+                        color: theme.textSub.withValues(alpha: 0.3),
+                        thickness: 1,
+                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
-                );
-              }),
-            ],
-          ),
+
+                    // AI 最终回复（从 content 中提取，排除工具结果部分）
+                    if (message.content.isNotEmpty) _buildFinalReplyContent(),
+                  ],
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
@@ -1090,34 +978,29 @@ class MessageBubble extends StatelessWidget {
   /// 构建工具执行时的加载状态
   Widget _buildToolLoadingState() {
     return Builder(
-      builder:
-          (context) => Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DSLoadingDots(size: 8, color: theme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'AI正在构建答案...',
+                  style: DsTypography.caption.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.textSub,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI正在构建答案...',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
@@ -1128,185 +1011,191 @@ class MessageBubble extends StatelessWidget {
       return;
     }
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (dialogContext) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(
-                  Icons.assessment_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text('agent_chat_toolExecutionResult'.tr),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: message.toolCall!.steps.length,
-                separatorBuilder: (context, index) => const Divider(height: 24),
-                itemBuilder: (context, index) {
-                  final step = message.toolCall!.steps[index];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(
+                    maxWidth: 480,
+                    maxHeight: 560,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 步骤标题
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '步骤 ${index + 1}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
+                          DsIcon(
+                            DsIconKind.clipboard,
+                            color: theme.primaryText,
+                            size: 22,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              step.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                              'agent_chat_toolExecutionResult'.tr,
+                              style: DsTypography.title.copyWith(
+                                color: theme.text,
                               ),
                             ),
                           ),
                         ],
                       ),
-
-                      // 步骤描述
-                      if (step.desc.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          step.desc,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-
-                      // 执行结果
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color:
-                              step.status == ToolCallStatus.success
-                                  ? Theme.of(
-                                    context,
-                                  ).colorScheme.tertiaryContainer
-                                  : step.status == ToolCallStatus.failed
-                                  ? Theme.of(context).colorScheme.errorContainer
-                                  : Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color:
-                                step.status == ToolCallStatus.success
-                                    ? Theme.of(context).colorScheme.tertiary
-                                    : step.status == ToolCallStatus.failed
-                                    ? Theme.of(context).colorScheme.error
-                                    : Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: message.toolCall!.steps.length,
+                          separatorBuilder:
+                              (context, index) =>
+                                  SizedBox(height: theme.spacing.lg),
+                          itemBuilder: (context, index) {
+                            final step = message.toolCall!.steps[index];
+                            final isSuccess =
+                                step.status == ToolCallStatus.success;
+                            final isFailed =
+                                step.status == ToolCallStatus.failed;
+                            final statusColor =
+                                isSuccess
+                                    ? theme.success
+                                    : isFailed
+                                    ? theme.danger
+                                    : theme.textSub;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  step.status == ToolCallStatus.success
-                                      ? Icons.check_circle
-                                      : step.status == ToolCallStatus.failed
-                                      ? Icons.error
-                                      : Icons.hourglass_empty,
-                                  size: 16,
-                                  color:
-                                      step.status == ToolCallStatus.success
-                                          ? Theme.of(
-                                            context,
-                                          ).colorScheme.onTertiaryContainer
-                                          : step.status == ToolCallStatus.failed
-                                          ? Theme.of(
-                                            context,
-                                          ).colorScheme.onErrorContainer
-                                          : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
+                                // 步骤标题
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: theme.primary.mixWhite(0.88),
+                                        borderRadius: theme.radii.sm,
+                                      ),
+                                      child: Text(
+                                        '步骤 ${index + 1}',
+                                        style: DsTypography.caption.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.primaryText,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        step.title,
+                                        style: DsTypography.heading.copyWith(
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  step.status == ToolCallStatus.success
-                                      ? '执行成功'
-                                      : step.status == ToolCallStatus.failed
-                                      ? '执行失败'
-                                      : '执行中',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+
+                                // 步骤描述
+                                if (step.desc.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    step.desc,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                ],
+
+                                // 执行结果
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
                                     color:
-                                        step.status == ToolCallStatus.success
-                                            ? Theme.of(
-                                              context,
-                                            ).colorScheme.onTertiaryContainer
-                                            : step.status ==
-                                                ToolCallStatus.failed
-                                            ? Theme.of(
-                                              context,
-                                            ).colorScheme.onErrorContainer
-                                            : Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
+                                        isSuccess
+                                            ? theme.success.mixWhite(0.88)
+                                            : isFailed
+                                            ? theme.danger.mixWhite(0.9)
+                                            : theme.surfaceAlt,
+                                    borderRadius: theme.radii.sm,
+                                    border: Border.all(color: statusColor),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          DsIcon(
+                                            isSuccess
+                                                ? DsIconKind.check
+                                                : isFailed
+                                                ? DsIconKind.close
+                                                : DsIconKind.clock,
+                                            size: 16,
+                                            color: statusColor,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            isSuccess
+                                                ? '执行成功'
+                                                : isFailed
+                                                ? '执行失败'
+                                                : '执行中',
+                                            style: DsTypography.caption
+                                                .copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: statusColor,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (step.result != null ||
+                                          step.error != null) ...[
+                                        const SizedBox(height: 8),
+                                        Divider(
+                                          height: 1,
+                                          color: theme.textSub.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SelectableText(
+                                          step.error ?? step.result ?? '无结果',
+                                          style: DsTypography.caption.copyWith(
+                                            fontFamily: 'monospace',
+                                            color: theme.text,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ],
-                            ),
-                            if (step.result != null || step.error != null) ...[
-                              const SizedBox(height: 8),
-                              const Divider(height: 1),
-                              const SizedBox(height: 8),
-                              SelectableText(
-                                step.error ?? step.result ?? '无结果',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                            ],
-                          ],
+                            );
+                          },
                         ),
                       ),
+                      SizedBox(height: theme.spacing.md),
+                      DSButton(
+                        label: 'agent_chat_close'.tr,
+                        expand: true,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text('agent_chat_close'.tr),
-              ),
-            ],
           ),
     );
   }
@@ -1322,39 +1211,40 @@ class MessageBubble extends StatelessWidget {
     // 如果既没有内容也没有工具模板，显示空消息提示
     if (!hasContent && !hasToolTemplate) {
       return Builder(
-        builder:
-            (context) => Text(
-              '(空消息)',
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Text(
+            '(空消息)',
+            style: TextStyle(fontStyle: FontStyle.italic, color: theme.textSub),
+          );
+        },
       );
     }
 
     return Builder(
-      builder:
-          (context) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 显示工具模板（如果有）
-              if (hasToolTemplate) ...[
-                _buildUserToolTemplate(toolTemplate),
-                // 如果同时有文本内容，添加分隔
-                if (hasContent) ...[
-                  const SizedBox(height: 8),
-                  Divider(
-                    color: Theme.of(context).colorScheme.outline,
-                    thickness: 1,
-                  ),
-                  const SizedBox(height: 8),
-                ],
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 显示工具模板（如果有）
+            if (hasToolTemplate) ...[
+              _buildUserToolTemplate(toolTemplate),
+              // 如果同时有文本内容，添加分隔
+              if (hasContent) ...[
+                const SizedBox(height: 8),
+                Divider(
+                  color: theme.textSub.withValues(alpha: 0.3),
+                  thickness: 1,
+                ),
+                const SizedBox(height: 8),
               ],
-              // 显示文本内容（如果有）
-              if (hasContent) MarkdownContent(content: message.content),
             ],
-          ),
+            // 显示文本内容（如果有）
+            if (hasContent) MarkdownContent(content: message.content),
+          ],
+        );
+      },
     );
   }
 
@@ -1364,85 +1254,70 @@ class MessageBubble extends StatelessWidget {
     final description = toolTemplate['description'] as String?;
 
     return Builder(
-      builder:
-          (context) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.build_circle,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            '工具模板:',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSecondaryContainer,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              name,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSecondaryContainer,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (description != null && description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.secondary.mixWhite(0.85),
+            borderRadius: theme.radii.sm,
+            border: Border.all(color: theme.secondary),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DsIcon(DsIconKind.gear, size: 18, color: theme.textSub),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                Theme.of(
-                                  context,
-                                ).colorScheme.onSecondaryContainer,
+                          '工具模板:',
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                            fontWeight: FontWeight.w500,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: DsTypography.body.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.text,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
+                    ),
+                    if (description != null && description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        );
+      },
     );
   }
 
   /// 构建 Agent 标签（链式模式）
   Widget _buildAgentLabel(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final agentName =
         getAgentName?.call(message.generatedByAgentId!) ?? 'Agent';
     final stepIndex = message.chainStepIndex!;
@@ -1452,27 +1327,20 @@ class MessageBubble extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          ),
+          color: theme.primary.mixWhite(0.9),
+          borderRadius: theme.radii.sm,
+          border: Border.all(color: theme.primary.withValues(alpha: 0.35)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.link,
-              size: 14,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            DsIcon(DsIconKind.layers, size: 14, color: theme.primaryText),
             const SizedBox(width: 4),
             Text(
               '步骤 ${stepIndex + 1}: $agentName',
-              style: TextStyle(
-                fontSize: 11,
+              style: DsTypography.caption.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.primaryText,
               ),
             ),
           ],
@@ -1483,32 +1351,61 @@ class MessageBubble extends StatelessWidget {
 
   /// 显示思考过程对话框
   void _showThinkingDialog(BuildContext context) {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.psychology_outlined,
-              color: Theme.of(context).colorScheme.primary,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(
+                    maxWidth: 480,
+                    maxHeight: 520,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          DsIcon(
+                            DsIconKind.bot,
+                            color: theme.primaryText,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '思考过程',
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: MarkdownContent(
+                            content: message.thinkingContent ?? '',
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSButton(
+                        label: '关闭',
+                        expand: true,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            const SizedBox(width: 8),
-            const Text('思考过程'),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: MarkdownContent(content: message.thinkingContent ?? ''),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1524,5 +1421,53 @@ class MessageBubble extends StatelessWidget {
     } else {
       return '${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
     }
+  }
+}
+
+/// 气泡菜单行（DSPopover 内容）
+class _MenuAction extends StatelessWidget {
+  const _MenuAction({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.accent,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final effective = accent ?? theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.sm,
+            vertical: theme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.sm,
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 16, color: effective),
+              SizedBox(width: theme.spacing.sm),
+              Text(
+                label,
+                style: DsTypography.caption.copyWith(color: effective),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

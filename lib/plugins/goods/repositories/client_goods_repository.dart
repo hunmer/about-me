@@ -11,10 +11,7 @@ class ClientGoodsRepository extends IGoodsRepository {
   final dynamic plugin; // GoodsPlugin 实例
   final Color pluginColor;
 
-  ClientGoodsRepository({
-    required this.plugin,
-    required this.pluginColor,
-  });
+  ClientGoodsRepository({required this.plugin, required this.pluginColor});
 
   // ============ 仓库操作 ============
 
@@ -60,12 +57,11 @@ class ClientGoodsRepository extends IGoodsRepository {
       final warehouse = Warehouse(
         id: dto.id,
         title: dto.name,
-        icon: dto.iconData != null
-            ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
-            : Icons.inventory_2,
-        iconColor: dto.iconColor != null
-            ? Color(dto.iconColor!)
-            : pluginColor,
+        icon:
+            dto.iconData != null
+                ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
+                : Icons.inventory_2,
+        iconColor: dto.iconColor != null ? Color(dto.iconColor!) : pluginColor,
         imageUrl: dto.description, // 使用 description 字段存储 imageUrl
         items: [],
       );
@@ -78,7 +74,10 @@ class ClientGoodsRepository extends IGoodsRepository {
   }
 
   @override
-  Future<Result<WarehouseDto>> updateWarehouse(String id, WarehouseDto dto) async {
+  Future<Result<WarehouseDto>> updateWarehouse(
+    String id,
+    WarehouseDto dto,
+  ) async {
     try {
       // 获取现有仓库
       final existingWarehouse = plugin.getWarehouse(id);
@@ -89,12 +88,11 @@ class ClientGoodsRepository extends IGoodsRepository {
       // 创建更新后的仓库
       final updatedWarehouse = existingWarehouse.copyWith(
         title: dto.name,
-        icon: dto.iconData != null
-            ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
-            : null,
-        iconColor: dto.iconColor != null
-            ? Color(dto.iconColor!)
-            : null,
+        icon:
+            dto.iconData != null
+                ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
+                : null,
+        iconColor: dto.iconColor != null ? Color(dto.iconColor!) : null,
         imageUrl: dto.description, // 临时使用 description 字段存储 imageUrl
       );
 
@@ -169,7 +167,10 @@ class ClientGoodsRepository extends IGoodsRepository {
   }
 
   @override
-  Future<Result<GoodsItemDto>> createItem(String warehouseId, GoodsItemDto dto) async {
+  Future<Result<GoodsItemDto>> createItem(
+    String warehouseId,
+    GoodsItemDto dto,
+  ) async {
     try {
       // 检查仓库是否存在
       final warehouse = plugin.getWarehouse(warehouseId);
@@ -194,7 +195,11 @@ class ClientGoodsRepository extends IGoodsRepository {
   }
 
   @override
-  Future<Result<GoodsItemDto>> updateItem(String warehouseId, String id, GoodsItemDto dto) async {
+  Future<Result<GoodsItemDto>> updateItem(
+    String warehouseId,
+    String id,
+    GoodsItemDto dto,
+  ) async {
     try {
       // 查找物品
       final result = plugin.findGoodsItemById(id);
@@ -289,7 +294,9 @@ class ClientGoodsRepository extends IGoodsRepository {
           final itemJson = item.toJson();
           final fieldValue = itemJson[query.field!]?.toString() ?? '';
           if (query.fuzzy) {
-            isMatch = fieldValue.toLowerCase().contains((query.value ?? '').toLowerCase());
+            isMatch = fieldValue.toLowerCase().contains(
+              (query.value ?? '').toLowerCase(),
+            );
           } else {
             isMatch = fieldValue == (query.value ?? '');
           }
@@ -363,11 +370,12 @@ class ClientGoodsRepository extends IGoodsRepository {
       category: null, // GoodsItem 没有 category 字段
       imageUrl: item.imageUrl, // 添加图片URL
       tags: item.tags,
-      customFields: item.customFields.isNotEmpty
-          ? item.customFields
-              .map((field) => {'key': field.key, 'value': field.value})
-              .toList()
-          : [],
+      customFields:
+          item.customFields.isNotEmpty
+              ? item.customFields
+                  .map((field) => {'key': field.key, 'value': field.value})
+                  .toList()
+              : [],
       createdAt: DateTime.now(), // GoodsItem 没有 createdAt 字段
       updatedAt: DateTime.now(), // GoodsItem 没有 updatedAt 字段
     );
@@ -384,14 +392,17 @@ class ClientGoodsRepository extends IGoodsRepository {
       purchaseDate: null, // GoodsItem 没有 purchaseDate 字段
       purchasePrice: null, // GoodsItem 没有 purchasePrice 字段
       usageRecords: [],
-      customFields: dto.customFields.isNotEmpty
-          ? dto.customFields
-              .map((e) => CustomField(
-                key: (e['key'] ?? '').toString(),
-                value: (e['value'] ?? '').toString(),
-              ))
-              .toList()
-          : [],
+      customFields:
+          dto.customFields.isNotEmpty
+              ? dto.customFields
+                  .map(
+                    (e) => CustomField(
+                      key: (e['key'] ?? '').toString(),
+                      value: (e['value'] ?? '').toString(),
+                    ),
+                  )
+                  .toList()
+              : [],
       notes: dto.description,
       subItems: [],
     );

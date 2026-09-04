@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
@@ -19,8 +23,7 @@ class AgentChainConfigDialog extends StatefulWidget {
   });
 
   @override
-  State<AgentChainConfigDialog> createState() =>
-      _AgentChainConfigDialogState();
+  State<AgentChainConfigDialog> createState() => _AgentChainConfigDialogState();
 }
 
 class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
@@ -34,9 +37,7 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
   @override
   void initState() {
     super.initState();
-    _chain = widget.initialChain != null
-        ? List.from(widget.initialChain!)
-        : [];
+    _chain = widget.initialChain != null ? List.from(widget.initialChain!) : [];
 
     // 初始化预设服务
     final storage = PluginManager.instance.storageManager!;
@@ -56,7 +57,11 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
         // 加载extra storage agents
         final extraAgents = await openAIPlugin.controller
             .loadExtraStorageAgents('agent_chain_agents');
-        _availableAgents = [...normalAgents, ...temporaryAgents, ...extraAgents];
+        _availableAgents = [
+          ...normalAgents,
+          ...temporaryAgents,
+          ...extraAgents,
+        ];
       }
     } catch (e) {
       debugPrint('加载Agent列表失败: $e');
@@ -71,11 +76,13 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
     if (_availableAgents.isEmpty) return;
 
     setState(() {
-      _chain.add(AgentChainNode(
-        agentId: _availableAgents.first.id,
-        contextMode: AgentContextMode.conversationContext,
-        order: _chain.length,
-      ));
+      _chain.add(
+        AgentChainNode(
+          agentId: _availableAgents.first.id,
+          contextMode: AgentContextMode.conversationContext,
+          order: _chain.length,
+        ),
+      );
     });
   }
 
@@ -132,60 +139,79 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
   /// 保存当前链为预设
   Future<void> _saveAsPreset() async {
     if (_chain.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('当前链为空，无法保存')),
-      );
+      toastService.showToast('当前链为空，无法保存');
       return;
     }
 
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
 
-    final result = await showDialog<bool>(
+    final result = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('保存为预设'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: '预设名称',
-                hintText: '输入预设名称',
-              ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: '描述（可选）',
-                hintText: '简要描述预设用途',
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('请输入预设名称')),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '保存为预设',
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSInput(
+                        controller: nameController,
+                        label: '预设名称',
+                        hint: '输入预设名称',
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSInput(
+                        controller: descriptionController,
+                        label: '描述（可选）',
+                        hint: '简要描述预设用途',
+                        maxLines: 2,
+                      ),
+                      SizedBox(height: theme.spacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSButton(
+                              label: '取消',
+                              variant: DSButtonVariant.outline,
+                              onPressed:
+                                  () => Navigator.pop(dialogContext, false),
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.md),
+                          Expanded(
+                            child: DSButton(
+                              label: '保存',
+                              onPressed: () {
+                                if (nameController.text.trim().isEmpty) {
+                                  toastService.showToast('请输入预设名称');
+                                  return;
+                                }
+                                Navigator.pop(dialogContext, true);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
-                return;
-              }
-              Navigator.pop(context, true);
-            },
-            child: const Text('保存'),
+              },
+            ),
           ),
-        ],
-      ),
     );
 
     if (result == true && mounted) {
@@ -194,9 +220,7 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
 
       // 检查名称是否已存在
       if (_presetService.isNameExists(name)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('预设名称 "$name" 已存在')),
-        );
+        toastService.showToast('预设名称 "$name" 已存在');
         return;
       }
 
@@ -210,15 +234,11 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
         await _presetService.savePreset(preset);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('预设 "$name" 已保存')),
-          );
+          toastService.showToast('预设 "$name" 已保存');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('保存失败: $e')),
-          );
+          toastService.showToast('保存失败: $e');
         }
       }
     }
@@ -233,356 +253,147 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
     if (!mounted) return;
 
     if (presets.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无保存的预设')),
-      );
+      toastService.showToast('暂无保存的预设');
       return;
     }
 
-    await showDialog(
+    await showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择预设'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: presets.length,
-            itemBuilder: (context, index) {
-              final preset = presets[index];
-              return Card(
-                child: ListTile(
-                  title: Text(preset.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (preset.description != null)
-                        Text(preset.description!),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${preset.chain.length} 个 Agent',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(
+                    maxWidth: 440,
+                    maxHeight: 520,
                   ),
-                  trailing: Row(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        tooltip: '删除预设',
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('确认删除'),
-                              content: Text('确定要删除预设 "${preset.name}" 吗？'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('取消'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  child: const Text('删除'),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirm == true && mounted) {
-                            await _deletePreset(preset.id);
-                            Navigator.pop(context); // 关闭预设列表
-                          }
-                        },
+                      Text(
+                        '选择预设',
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
                       ),
-                    ],
-                  ),
-                  onTap: () {
-                    _applyPreset(preset.id);
-                    Navigator.pop(context);
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 应用预设
-  Future<void> _applyPreset(String presetId) async {
-    final preset = _presetService.getPreset(presetId);
-    if (preset == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('预设不存在')),
-      );
-      return;
-    }
-
-    setState(() {
-      _chain = List.from(preset.chain);
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已应用预设 "${preset.name}"')),
-    );
-  }
-
-  /// 删除预设
-  Future<void> _deletePreset(String presetId) async {
-    try {
-      await _presetService.deletePreset(presetId);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('预设已删除')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('删除失败: $e')),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.8,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题栏
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Agent 链配置',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.folder_open),
-                      tooltip: '加载预设',
-                      onPressed: _showPresetList,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.save),
-                      tooltip: '保存为预设',
-                      onPressed: _saveAsPreset,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 说明文字
-            Text(
-              '配置多个 Agent 按顺序执行，每个 Agent 可选择不同的上下文模式',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-
-            // Agent 链列表
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _chain.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.link_off,
-                                  size: 48, color: Colors.grey[400]),
-                              const SizedBox(height: 16),
-                              Text('暂无 Agent 节点',
-                                  style: TextStyle(color: Colors.grey[600])),
-                            ],
-                          ),
-                        )
-                      : ReorderableListView.builder(
-                          itemCount: _chain.length,
-                          onReorder: (oldIndex, newIndex) {
-                            setState(() {
-                              if (newIndex > oldIndex) newIndex--;
-                              final item = _chain.removeAt(oldIndex);
-                              _chain.insert(newIndex, item);
-                              // 更新 order
-                              for (int i = 0; i < _chain.length; i++) {
-                                _chain[i] = _chain[i].copyWith(order: i);
-                              }
-                            });
-                          },
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: presets.length,
                           itemBuilder: (context, index) {
-                            final node = _chain[index];
-
-                            return Card(
-                              key: ValueKey(index),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                            final preset = presets[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Container(
+                                padding: EdgeInsets.all(theme.spacing.md),
+                                decoration: BoxDecoration(
+                                  color: theme.surfaceAlt.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  borderRadius: theme.radii.md,
+                                  border: Border.all(
+                                    color: theme.textSub.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
                                   children: [
-                                    // 节点标题和操作按钮
-                                    Row(
-                                      children: [
-                                        Icon(Icons.drag_handle,
-                                            color: Colors.grey[400]),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '步骤 ${index + 1}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_upward,
-                                              size: 20),
-                                          onPressed: index > 0
-                                              ? () => _moveUp(index)
-                                              : null,
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_downward,
-                                              size: 20),
-                                          onPressed: index < _chain.length - 1
-                                              ? () => _moveDown(index)
-                                              : null,
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete,
-                                              size: 20, color: Colors.red),
-                                          onPressed: () => _removeNode(index),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-
-                                    // Agent 选择器
-                                    InkWell(
-                                      onTap: () async {
-                                        final result =
-                                            await showModalBottomSheet<
-                                              List<Map<String, String>>>(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) => AgentListDrawer(
-                                            selectedAgents: [
-                                              {
-                                                'id': node.agentId,
-                                                'name': _availableAgents
-                                                        .firstWhere(
-                                                          (a) =>
-                                                              a.id ==
-                                                              node.agentId,
-                                                          orElse: () =>
-                                                              _availableAgents
-                                                                  .first,
-                                                        )
-                                                        .name,
-                                              },
-                                            ],
-                                            onAgentSelected: (agents) {},
-                                            allowMultipleSelection: false,
-                                            extraStorageKey: 'agent_chain_agents',
-                                          ),
-                                        );
-
-                                        if (result != null && result.isNotEmpty) {
-                                          setState(() {
-                                            _chain[index] = _chain[index]
-                                                .copyWith(agentId: result.first['id']);
-                                            // 重新加载agents以包含可能新增的临时agents
-                                            _loadAgents();
-                                          });
-                                        }
-                                      },
-                                      child: InputDecorator(
-                                        decoration: const InputDecoration(
-                                          labelText: 'Agent',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                _availableAgents
-                                                    .firstWhere(
-                                                      (a) => a.id == node.agentId,
-                                                      orElse: () =>
-                                                          _availableAgents.first,
-                                                    )
-                                                    .name,
-                                              ),
+                                    Expanded(
+                                      child: Pressable(
+                                        onPressed: () {
+                                          _applyPreset(preset.id);
+                                          Navigator.pop(dialogContext);
+                                        },
+                                        semanticLabel: preset.name,
+                                        builder:
+                                            (context, states) => Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  preset.name,
+                                                  style: DsTypography.body
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: theme.text,
+                                                      ),
+                                                ),
+                                                if (preset.description != null)
+                                                  Text(
+                                                    preset.description!,
+                                                    style: DsTypography.caption
+                                                        .copyWith(
+                                                          color: theme.textSub,
+                                                        ),
+                                                  ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${preset.chain.length} 个 Agent',
+                                                  style: DsTypography.caption
+                                                      .copyWith(
+                                                        color: theme.textSub,
+                                                      ),
+                                                ),
+                                              ],
                                             ),
-                                            const Icon(Icons.arrow_drop_down),
-                                          ],
-                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 12),
-
-                                    // 上下文模式选择器
-                                    DropdownButtonFormField<AgentContextMode>(
-                                      value: node.contextMode,
-                                      decoration: const InputDecoration(
-                                        labelText: '上下文模式',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      items: AgentContextMode.values.map((mode) {
-                                        return DropdownMenuItem(
-                                          value: mode,
-                                          child: Text(_getContextModeLabel(mode)),
+                                    Pressable(
+                                      onPressed: () async {
+                                        final confirm = await showDSDialog<
+                                          bool
+                                        >(
+                                          context: context,
+                                          theme: DSThemeBridge.resolve(context),
+                                          builder:
+                                              (confirmContext) => DSThemeBridge(
+                                                child: Builder(
+                                                  builder:
+                                                      (c2) => DSDialog(
+                                                        title: '确认删除',
+                                                        message:
+                                                            '确定要删除预设 "${preset.name}" 吗？',
+                                                        cancelText: '取消',
+                                                        confirmText: '删除',
+                                                        confirmVariant:
+                                                            DSButtonVariant
+                                                                .destructive,
+                                                        onConfirm:
+                                                            () => Navigator.pop(
+                                                              confirmContext,
+                                                              true,
+                                                            ),
+                                                        onCancel:
+                                                            () => Navigator.pop(
+                                                              confirmContext,
+                                                              false,
+                                                            ),
+                                                      ),
+                                                ),
+                                              ),
                                         );
-                                      }).toList(),
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          setState(() {
-                                            _chain[index] = _chain[index]
-                                                .copyWith(contextMode: value);
-                                          });
+
+                                        if (confirm == true && mounted) {
+                                          await _deletePreset(preset.id);
+                                          if (dialogContext.mounted) {
+                                            Navigator.pop(
+                                              dialogContext,
+                                            ); // 关闭预设列表
+                                          }
                                         }
                                       },
-                                    ),
-                                    const SizedBox(height: 8),
-
-                                    // 上下文模式说明
-                                    Text(
-                                      _getContextModeDescription(node.contextMode),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.grey[600],
+                                      semanticLabel: '删除预设',
+                                      builder:
+                                          (context, states) => DsIcon(
+                                            DsIconKind.trash,
+                                            size: 20,
+                                            color: theme.danger,
                                           ),
                                     ),
                                   ],
@@ -591,37 +402,423 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
                             );
                           },
                         ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSButton(
+                        label: '关闭',
+                        expand: true,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
+          ),
+    );
+  }
 
-            const SizedBox(height: 16),
+  /// 应用预设
+  Future<void> _applyPreset(String presetId) async {
+    final preset = _presetService.getPreset(presetId);
+    if (preset == null) {
+      toastService.showToast('预设不存在');
+      return;
+    }
 
-            // 底部按钮
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _addNode,
-                  icon: const Icon(Icons.add),
-                  label: const Text('添加 Agent'),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _chain.isEmpty
-                      ? null
-                      : () {
+    setState(() {
+      _chain = List.from(preset.chain);
+    });
+
+    toastService.showToast('已应用预设 "${preset.name}"');
+  }
+
+  /// 删除预设
+  Future<void> _deletePreset(String presetId) async {
+    try {
+      await _presetService.deletePreset(presetId);
+
+      if (mounted) {
+        toastService.showToast('预设已删除');
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('删除失败: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      width: MediaQuery.of(context).size.width * 0.9,
+      height: MediaQuery.of(context).size.height * 0.8,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题栏
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Agent 链配置',
+                style: DsTypography.title.copyWith(color: theme.text),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Pressable(
+                    onPressed: _showPresetList,
+                    semanticLabel: '加载预设',
+                    builder:
+                        (context, states) => Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: DsIcon(
+                            DsIconKind.book,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        ),
+                  ),
+                  Pressable(
+                    onPressed: _saveAsPreset,
+                    semanticLabel: '保存为预设',
+                    builder:
+                        (context, states) => Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: DsIcon(
+                            DsIconKind.download,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        ),
+                  ),
+                  Pressable(
+                    onPressed: () => Navigator.pop(context),
+                    semanticLabel: '关闭',
+                    builder:
+                        (context, states) => Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: DsIcon(
+                            DsIconKind.close,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 说明文字
+          Text(
+            '配置多个 Agent 按顺序执行，每个 Agent 可选择不同的上下文模式',
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          const SizedBox(height: 16),
+
+          // Agent 链列表
+          Expanded(
+            child:
+                _isLoading
+                    ? const Center(child: DSLoadingDots())
+                    : _chain.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DsIcon(
+                            DsIconKind.layers,
+                            size: 48,
+                            color: theme.textSub,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '暂无 Agent 节点',
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ReorderableListView.builder(
+                      itemCount: _chain.length,
+                      onReorder: (oldIndex, newIndex) {
+                        setState(() {
+                          if (newIndex > oldIndex) newIndex--;
+                          final item = _chain.removeAt(oldIndex);
+                          _chain.insert(newIndex, item);
+                          // 更新 order
+                          for (int i = 0; i < _chain.length; i++) {
+                            _chain[i] = _chain[i].copyWith(order: i);
+                          }
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final node = _chain[index];
+
+                        return Container(
+                          key: ValueKey(index),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.surface,
+                            borderRadius: theme.radii.md,
+                            border: Border.all(
+                              color: theme.textSub.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 节点标题和操作按钮
+                              Row(
+                                children: [
+                                  DsIcon(
+                                    DsIconKind.drag,
+                                    color: theme.textSub.withValues(alpha: 0.7),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '步骤 ${index + 1}',
+                                    style: DsTypography.heading.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Pressable(
+                                    onPressed:
+                                        index > 0 ? () => _moveUp(index) : null,
+                                    semanticLabel: '上移',
+                                    builder:
+                                        (context, states) => Padding(
+                                          padding: const EdgeInsets.all(6),
+                                          child: DsIcon(
+                                            DsIconKind.chevronUp,
+                                            size: 20,
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                  ),
+                                  Pressable(
+                                    onPressed:
+                                        index < _chain.length - 1
+                                            ? () => _moveDown(index)
+                                            : null,
+                                    semanticLabel: '下移',
+                                    builder:
+                                        (context, states) => Padding(
+                                          padding: const EdgeInsets.all(6),
+                                          child: DsIcon(
+                                            DsIconKind.chevronDown,
+                                            size: 20,
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                  ),
+                                  Pressable(
+                                    onPressed: () => _removeNode(index),
+                                    semanticLabel: '删除节点',
+                                    builder:
+                                        (context, states) => Padding(
+                                          padding: const EdgeInsets.all(6),
+                                          child: DsIcon(
+                                            DsIconKind.trash,
+                                            size: 20,
+                                            color: theme.danger,
+                                          ),
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Agent 选择器
+                              Pressable(
+                                onPressed: () async {
+                                  final result = await SmoothBottomSheet.show<
+                                    List<Map<String, String>>
+                                  >(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    builder:
+                                        (context) => DSThemeBridge(
+                                          child: Builder(
+                                            builder:
+                                                (context) => AgentListDrawer(
+                                                  selectedAgents: [
+                                                    {
+                                                      'id': node.agentId,
+                                                      'name':
+                                                          _availableAgents
+                                                              .firstWhere(
+                                                                (a) =>
+                                                                    a.id ==
+                                                                    node.agentId,
+                                                                orElse:
+                                                                    () =>
+                                                                        _availableAgents
+                                                                            .first,
+                                                              )
+                                                              .name,
+                                                    },
+                                                  ],
+                                                  onAgentSelected: (agents) {},
+                                                  allowMultipleSelection: false,
+                                                  extraStorageKey:
+                                                      'agent_chain_agents',
+                                                ),
+                                          ),
+                                        ),
+                                  );
+
+                                  if (result != null && result.isNotEmpty) {
+                                    setState(() {
+                                      _chain[index] = _chain[index].copyWith(
+                                        agentId: result.first['id'],
+                                      );
+                                      // 重新加载agents以包含可能新增的临时agents
+                                      _loadAgents();
+                                    });
+                                  }
+                                },
+                                semanticLabel: '选择 Agent',
+                                builder:
+                                    (context, states) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: theme.surfaceAlt.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        borderRadius: theme.radii.sm,
+                                        border: Border.all(
+                                          color: theme.textSub.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Agent',
+                                                  style: DsTypography.caption
+                                                      .copyWith(
+                                                        color: theme.textSub,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  _availableAgents
+                                                      .firstWhere(
+                                                        (a) =>
+                                                            a.id ==
+                                                            node.agentId,
+                                                        orElse:
+                                                            () =>
+                                                                _availableAgents
+                                                                    .first,
+                                                      )
+                                                      .name,
+                                                  style: DsTypography.body
+                                                      .copyWith(
+                                                        color: theme.text,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          DsIcon(
+                                            DsIconKind.chevronDown,
+                                            color: theme.primaryText,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // 上下文模式选择器
+                              DSSelect<AgentContextMode>(
+                                value: node.contextMode,
+                                items:
+                                    AgentContextMode.values.map((mode) {
+                                      return DSSelectItem(
+                                        value: mode,
+                                        label: _getContextModeLabel(mode),
+                                      );
+                                    }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _chain[index] = _chain[index].copyWith(
+                                        contextMode: value,
+                                      );
+                                    });
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 8),
+
+                              // 上下文模式说明
+                              Text(
+                                _getContextModeDescription(node.contextMode),
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 底部按钮
+          Row(
+            children: [
+              DSButton(
+                label: '添加 Agent',
+                icon: DsIconKind.plus,
+                onPressed: _addNode,
+              ),
+              const Spacer(),
+              DSButton(
+                label: '取消',
+                variant: DSButtonVariant.ghost,
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 8),
+              DSButton(
+                label: '保存',
+                onPressed:
+                    _chain.isEmpty
+                        ? null
+                        : () {
                           widget.onSave(_chain);
                           Navigator.pop(context);
                         },
-                  child: const Text('保存'),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

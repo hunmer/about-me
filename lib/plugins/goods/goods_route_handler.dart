@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/plugins/goods/dialogs/add_usage_record_dialog.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
@@ -56,7 +58,9 @@ class GoodsRouteHandler extends PluginRouteHandler {
       warehouseName = arguments['warehouseName'];
     }
 
-    debugPrint('打开仓库详情: warehouseId=$warehouseId, warehouseName=$warehouseName');
+    debugPrint(
+      '打开仓库详情: warehouseId=$warehouseId, warehouseName=$warehouseName',
+    );
 
     if (warehouseId == null || warehouseId.isEmpty) {
       // 没有仓库ID，回退到物品插件主视图
@@ -91,16 +95,16 @@ class GoodsRouteHandler extends PluginRouteHandler {
 
     debugPrint('打开物品详情: itemId=$itemId, warehouseId=$warehouseId');
 
-    if (itemId == null || itemId.isEmpty || warehouseId == null || warehouseId.isEmpty) {
+    if (itemId == null ||
+        itemId.isEmpty ||
+        warehouseId == null ||
+        warehouseId.isEmpty) {
       // 参数不完整，回退到物品插件主视图
       return createRoute(const GoodsMainView());
     }
 
     return createRoute(
-      GoodsItemDetailScreen(
-        itemId: itemId,
-        warehouseId: warehouseId,
-      ),
+      GoodsItemDetailScreen(itemId: itemId, warehouseId: warehouseId),
     );
   }
 
@@ -211,9 +215,10 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
   Future<void> _showAddUsageRecordDialog() async {
     if (_goodsItem == null || _warehouseId == null) return;
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => const AddUsageRecordDialog(),
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => const DSThemeBridge(child: AddUsageRecordDialog()),
     );
 
     if (result != null) {
@@ -277,6 +282,12 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final statusColor =
+        _isProcessing
+            ? theme.warning
+            : (_success ? theme.success : theme.danger);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('NFC 添加使用记录'),
@@ -294,29 +305,19 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: _isProcessing
-                      ? Colors.orange.withOpacity(0.1)
-                      : (_success
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1)),
+                  color: statusColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: _isProcessing
-                    ? const Center(
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 4,
-                            color: Colors.orange,
-                          ),
+                child:
+                    _isProcessing
+                        ? const DSThemeBridge(
+                          child: Center(child: DSLoadingDots(size: 14)),
+                        )
+                        : DsIcon(
+                          _success ? DsIconKind.check : DsIconKind.close,
+                          size: 64,
+                          color: statusColor,
                         ),
-                      )
-                    : Icon(
-                        _success ? Icons.check_circle : Icons.error,
-                        size: 64,
-                        color: _success ? Colors.green : Colors.red,
-                      ),
               ),
               const SizedBox(height: 32),
 
@@ -333,8 +334,8 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _goodsItem!.title,
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: DsTypography.title.copyWith(
+                        color: theme.text,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -346,12 +347,7 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
               // 状态消息
               Text(
                 _message,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: _isProcessing
-                      ? Colors.grey[700]
-                      : (_success ? Colors.green[700] : Colors.red[700]),
-                ),
+                style: DsTypography.heading.copyWith(color: statusColor),
                 textAlign: TextAlign.center,
               ),
 
@@ -364,26 +360,22 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: theme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.blue.withOpacity(0.3),
+                      color: theme.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.history,
-                        color: Colors.blue,
-                      ),
+                      DsIcon(DsIconKind.clock, size: 20, color: theme.primary),
                       const SizedBox(width: 8),
                       Text(
                         '共 ${_goodsItem!.usageRecords.length} 条使用记录',
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue,
+                          color: theme.primary,
                         ),
                       ),
                     ],
@@ -396,38 +388,26 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
               // 操作按钮
               if (!_isProcessing) ...[
                 if (!_success && _goodsItem != null) ...[
-                  ElevatedButton.icon(
-                    onPressed: _showAddUsageRecordDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('重新添加'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
+                  DSThemeBridge(
+                    child: DSButton(
+                      label: '重新添加',
+                      icon: DsIconKind.plus,
+                      onPressed: _showAddUsageRecordDialog,
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const GoodsMainView(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.inventory),
-                  label: const Text('查看物品'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _success ? Colors.orange : Colors.grey,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
+                DSThemeBridge(
+                  child: DSButton(
+                    label: '查看物品',
+                    icon: DsIconKind.layers,
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => const GoodsMainView(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),

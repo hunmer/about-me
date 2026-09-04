@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import '../models/subscription.dart';
@@ -186,18 +188,8 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     final filteredSubscriptions = _filterSubscriptions(subscriptions);
 
     if (_searchQuery.isNotEmpty && filteredSubscriptions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '未找到匹配的订阅服务',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
-        ),
+      return const DSThemeBridge(
+        child: DSEmptyState(emoji: '🔍', title: '未找到匹配的订阅服务'),
       );
     }
 
@@ -260,47 +252,32 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.subscriptions_outlined,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'bill_noSubscriptions'.tr,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'bill_clickToAddSubscription'.tr,
-            style: TextStyle(color: Colors.grey.shade500),
-          ),
-        ],
+    return DSThemeBridge(
+      child: DSEmptyState(
+        emoji: '🔁',
+        title: 'bill_noSubscriptions'.tr,
+        message: 'bill_clickToAddSubscription'.tr,
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade600,
-            letterSpacing: 0.5,
-          ),
-        ),
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+            child: Text(
+              title,
+              style: DsTypography.caption.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.textSub,
+                letterSpacing: 0.5,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -321,98 +298,137 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: Text('bill_edit'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _navigateToEdit(subscription: subscription);
-                },
-              ),
-              if (subscription.isActive)
-                ListTile(
-                  leading: const Icon(Icons.stop_circle_outlined),
-                  title: Text('bill_terminateSubscription'.tr),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showTerminateDialog(subscription);
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: Text(
-                  'bill_delete'.tr,
-                  style: const TextStyle(color: Colors.red),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteDialog(subscription);
-                },
-              ),
-            ],
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSheetAction(
+                        context,
+                        icon: DsIconKind.edit,
+                        label: 'bill_edit'.tr,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToEdit(subscription: subscription);
+                        },
+                      ),
+                      if (subscription.isActive)
+                        _buildSheetAction(
+                          context,
+                          icon: DsIconKind.stop,
+                          label: 'bill_terminateSubscription'.tr,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showTerminateDialog(subscription);
+                          },
+                        ),
+                      _buildSheetAction(
+                        context,
+                        icon: DsIconKind.trash,
+                        label: 'bill_delete'.tr,
+                        destructive: true,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _showDeleteDialog(subscription);
+                        },
+                      ),
+                    ],
+                  ),
+            ),
           ),
     );
   }
 
-  void _showTerminateDialog(Subscription subscription) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('bill_terminateSubscription'.tr),
-            content: Text(
-              'bill_terminateConfirm'.tr.replaceAll(
-                '{name}',
-                subscription.name,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('bill_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  widget.billPlugin.controller.subscriptions
-                      .terminateSubscription(subscription.id);
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text('bill_save'.tr),
+  /// 底部操作行（自绘，随 DS 令牌着色）
+  Widget _buildSheetAction(
+    BuildContext context, {
+    required DsIconKind icon,
+    required String label,
+    bool destructive = false,
+    required VoidCallback onTap,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
+    final color = destructive ? theme.danger : theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          color: pressed ? theme.surfaceAlt : null,
+          child: Row(
+            children: [
+              DsIcon(icon, size: 24, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.body.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTerminateDialog(Subscription subscription) {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'bill_terminateSubscription'.tr,
+                    message: 'bill_terminateConfirm'.tr.replaceAll(
+                      '{name}',
+                      subscription.name,
+                    ),
+                    cancelText: 'bill_cancel'.tr,
+                    confirmText: 'bill_save'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () {
+                      widget.billPlugin.controller.subscriptions
+                          .terminateSubscription(subscription.id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+            ),
           ),
     );
   }
 
   void _showDeleteDialog(Subscription subscription) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('bill_deleteSubscription'.tr),
-            content: Text(
-              'bill_deleteConfirm'.tr.replaceAll('{name}', subscription.name),
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'bill_deleteSubscription'.tr,
+                    message: 'bill_deleteConfirm'.tr.replaceAll(
+                      '{name}',
+                      subscription.name,
+                    ),
+                    cancelText: 'bill_cancel'.tr,
+                    confirmText: 'bill_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () {
+                      widget.billPlugin.controller.subscriptions
+                          .deleteSubscription(subscription.id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('bill_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  widget.billPlugin.controller.subscriptions.deleteSubscription(
-                    subscription.id,
-                  );
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text('bill_delete'.tr),
-              ),
-            ],
           ),
     );
   }
@@ -440,8 +456,8 @@ class _SubscriptionListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isInactive ? Colors.grey : subscription.iconColor;
+    final theme = DSThemeBridge.resolve(context);
+    final color = isInactive ? theme.disabled : subscription.iconColor;
     final frequency = _getFrequencyText(subscription.days);
     final nextDate =
         subscription.isActive
@@ -454,15 +470,15 @@ class _SubscriptionListTile extends StatelessWidget {
       child: Container(
         height: 128,
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: theme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.1),
+            color: theme.stroke.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -508,8 +524,8 @@ class _SubscriptionListTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           isInactive
-                              ? Colors.grey.withOpacity(0.1)
-                              : color.withOpacity(0.1),
+                              ? theme.disabled.withValues(alpha: 0.1)
+                              : color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(subscription.icon, color: color, size: 28),
@@ -531,8 +547,8 @@ class _SubscriptionListTile extends StatelessWidget {
                                 subscription.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 18,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -547,10 +563,9 @@ class _SubscriptionListTile extends StatelessWidget {
                             children: [
                               Text(
                                 '¥${subscription.totalAmount.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: DsTypography.body.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade400,
+                                  color: theme.primary,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -560,12 +575,12 @@ class _SubscriptionListTile extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.1),
+                                  color: color.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   frequency,
-                                  style: TextStyle(
+                                  style: DsTypography.caption.copyWith(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     color: color,
@@ -586,17 +601,17 @@ class _SubscriptionListTile extends StatelessWidget {
                             if (nextDate != null)
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.event,
+                                  DsIcon(
+                                    DsIconKind.calendar,
                                     size: 12,
-                                    color: theme.hintColor,
+                                    color: theme.textSub,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${"bill_nextDate".tr} ${DateFormat('MMM d, yyyy').format(nextDate)}',
-                                    style: TextStyle(
+                                    style: DsTypography.caption.copyWith(
                                       fontSize: 10,
-                                      color: theme.hintColor,
+                                      color: theme.textSub,
                                     ),
                                   ),
                                 ],
@@ -616,8 +631,9 @@ class _SubscriptionListTile extends StatelessWidget {
                                         child: Container(
                                           height: 6,
                                           decoration: BoxDecoration(
-                                            color: theme.disabledColor
-                                                .withOpacity(0.2),
+                                            color: theme.disabled.withValues(
+                                              alpha: 0.2,
+                                            ),
                                             borderRadius: BorderRadius.circular(
                                               3,
                                             ),
@@ -639,7 +655,7 @@ class _SubscriptionListTile extends StatelessWidget {
                                       const SizedBox(width: 6),
                                       Text(
                                         '${(subscription.progress * 100).toInt()}%',
-                                        style: TextStyle(
+                                        style: DsTypography.caption.copyWith(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                           color: color,
@@ -658,15 +674,17 @@ class _SubscriptionListTile extends StatelessWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.1),
+                                      color: theme.primary.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       'bill_autoRenew'.tr,
-                                      style: TextStyle(
+                                      style: DsTypography.caption.copyWith(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.blue.shade400,
+                                        color: theme.primary,
                                       ),
                                     ),
                                   ),
@@ -709,8 +727,8 @@ class _SubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isInactive ? Colors.grey : subscription.iconColor;
+    final theme = DSThemeBridge.resolve(context);
+    final color = isInactive ? theme.disabled : subscription.iconColor;
     final frequency = _getFrequencyText(subscription.days);
     final nextDate =
         subscription.isActive
@@ -722,15 +740,15 @@ class _SubscriptionCard extends StatelessWidget {
       onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: theme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.1),
+            color: theme.stroke.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -783,8 +801,8 @@ class _SubscriptionCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               isInactive
-                                  ? Colors.grey.withOpacity(0.1)
-                                  : color.withOpacity(0.1),
+                                  ? theme.disabled.withValues(alpha: 0.1)
+                                  : color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(subscription.icon, color: color, size: 24),
@@ -814,10 +832,9 @@ class _SubscriptionCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             '¥${subscription.totalAmount.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade400,
+                              color: theme.primary,
                             ),
                           ),
                         ],
@@ -832,8 +849,8 @@ class _SubscriptionCard extends StatelessWidget {
                       subscription.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -844,20 +861,24 @@ class _SubscriptionCard extends StatelessWidget {
                     children: [
                       Divider(
                         height: 1,
-                        color: theme.dividerColor.withOpacity(0.5),
+                        color: theme.stroke.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 8),
                       // Date Row
                       if (nextDate != null)
                         Row(
                           children: [
-                            Icon(Icons.event, size: 12, color: theme.hintColor),
+                            DsIcon(
+                              DsIconKind.calendar,
+                              size: 12,
+                              color: theme.textSub,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${"bill_nextDate".tr} ${DateFormat('MMM d').format(nextDate)}',
-                              style: TextStyle(
+                              style: DsTypography.caption.copyWith(
                                 fontSize: 10,
-                                color: theme.hintColor,
+                                color: theme.textSub,
                               ),
                             ),
                           ],
@@ -875,8 +896,8 @@ class _SubscriptionCard extends StatelessWidget {
                                   child: Container(
                                     height: 6,
                                     decoration: BoxDecoration(
-                                      color: theme.disabledColor.withOpacity(
-                                        0.2,
+                                      color: theme.disabled.withValues(
+                                        alpha: 0.2,
                                       ),
                                       borderRadius: BorderRadius.circular(3),
                                     ),
@@ -900,7 +921,7 @@ class _SubscriptionCard extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Text(
                                   '${(subscription.progress * 100).toInt()}%',
-                                  style: TextStyle(
+                                  style: DsTypography.caption.copyWith(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     color: color,
@@ -918,15 +939,15 @@ class _SubscriptionCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: theme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 'bill_autoRenew'.tr,
-                                style: TextStyle(
+                                style: DsTypography.caption.copyWith(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.blue.shade400,
+                                  color: theme.primary,
                                 ),
                               ),
                             ),

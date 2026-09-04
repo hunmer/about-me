@@ -2,6 +2,8 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
@@ -50,14 +52,17 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     }
 
     // 如果有初始标签筛选
-    if (widget.initialFilterTags != null && widget.initialFilterTags!.isNotEmpty) {
+    if (widget.initialFilterTags != null &&
+        widget.initialFilterTags!.isNotEmpty) {
       _multiFilters['tags'] = widget.initialFilterTags;
     }
 
     // 如果有初始日期筛选
     if (widget.initialFilterStartDate != null) {
       try {
-        _multiFilters['startDate'] = DateTime.parse(widget.initialFilterStartDate!);
+        _multiFilters['startDate'] = DateTime.parse(
+          widget.initialFilterStartDate!,
+        );
       } catch (e) {
         debugPrint('[GoodsListScreen] 解析 startDate 失败: $e');
       }
@@ -112,7 +117,6 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     }
   }
 
-
   /// 获取所有物品的标签列表
   List<String> _getAllTags() {
     final tags = <String>{};
@@ -163,10 +167,9 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
               allItemsLabel: 'goods_allWarehouses'.tr,
             );
           },
-          getBadge: (value) => FilterBuilders.singleChoiceBadge(
-            value,
-            warehouseOptions,
-          ),
+          getBadge:
+              (value) =>
+                  FilterBuilders.singleChoiceBadge(value, warehouseOptions),
         ),
 
       // 2. 标签多选过滤
@@ -287,6 +290,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     final maxController = TextEditingController(
       text: range['max']?.toString() ?? '',
     );
+    final theme = DSThemeBridge.resolve(context);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -296,7 +300,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
         children: [
           Text(
             'goods_priceRange'.tr,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: DsTypography.heading.copyWith(color: theme.text),
           ),
           const SizedBox(height: 16),
           Row(
@@ -480,10 +484,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
       context: context,
       initialData: item,
       onSubmit: (updatedItem) async {
-        await GoodsPlugin.instance.saveGoodsItem(
-          warehouse.id,
-          updatedItem,
-        );
+        await GoodsPlugin.instance.saveGoodsItem(warehouse.id, updatedItem);
         setState(() {});
       },
       onDelete: (itemToDelete) async {
@@ -567,8 +568,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                 builder: (context, constraints) {
                   return MasonryGridView.count(
                     padding: const EdgeInsets.all(16),
-                    crossAxisCount:
-                        constraints.maxWidth > 600 ? 3 : 2, // 响应式列数
+                    crossAxisCount: constraints.maxWidth > 600 ? 3 : 2, // 响应式列数
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     itemCount: allItems.length,

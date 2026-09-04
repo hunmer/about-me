@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../../../core/services/toast_service.dart';
 import '../../../../../../core/services/speech_recognition_config_service.dart';
@@ -294,28 +296,22 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
     if (agent == null) {
       // 未配置，提示用户跳转到设置界面
-      final shouldGoToSettings = await showDialog<bool>(
+      final shouldGoToSettings = await showDSDialog<bool>(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
-            (context) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.auto_fix_high),
-                  SizedBox(width: 8),
-                  Text('AI智能纠错'),
-                ],
+            (dialogContext) => DSThemeBridge(
+              child: Builder(
+                builder:
+                    (ctx) => DSDialog(
+                      title: 'AI智能纠错',
+                      message: '您还未配置AI纠错助手。是否跳转到设置界面进行配置？',
+                      cancelText: '取消',
+                      confirmText: '去设置',
+                      onConfirm: () => Navigator.of(dialogContext).pop(true),
+                      onCancel: () => Navigator.of(dialogContext).pop(false),
+                    ),
               ),
-              content: const Text('您还未配置AI纠错助手。是否跳转到设置界面进行配置？'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('去设置'),
-                ),
-              ],
             ),
       );
 
@@ -383,78 +379,77 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 标题
-            Text(
-              '语音识别',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      padding: const EdgeInsets.all(20),
+      constraints: const BoxConstraints(maxWidth: 440),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 标题
+          Text('语音识别', style: DsTypography.title.copyWith(color: theme.text)),
+          const SizedBox(height: 20),
 
-            // 状态显示
-            _buildStateIndicator(),
-            const SizedBox(height: 16),
+          // 状态显示
+          _buildStateIndicator(),
+          const SizedBox(height: 16),
 
-            // 文本显示区
-            _buildTextDisplay(),
-            const SizedBox(height: 20),
+          // 文本显示区
+          _buildTextDisplay(),
+          const SizedBox(height: 20),
 
-            // 录音按钮区域
-            _buildRecordButtons(),
-            const SizedBox(height: 20),
+          // 录音按钮区域
+          _buildRecordButtons(),
+          const SizedBox(height: 20),
 
-            // 操作按钮
-            _buildActionButtons(),
-          ],
-        ),
+          // 操作按钮
+          _buildActionButtons(),
+        ],
       ),
     );
   }
 
   /// 构建状态指示器
   Widget _buildStateIndicator() {
+    final theme = DSThemeBridge.resolve(context);
     Color stateColor;
-    IconData stateIcon;
+    DsIconKind stateIcon;
 
     switch (_currentState) {
       case SpeechRecognitionState.idle:
-        stateColor = Colors.grey;
-        stateIcon = Icons.mic_none;
+        stateColor = theme.textSub;
+        stateIcon = DsIconKind.mic;
         break;
       case SpeechRecognitionState.connecting:
-        stateColor = Colors.orange;
-        stateIcon = Icons.sync;
+        stateColor = theme.warning;
+        stateIcon = DsIconKind.refresh;
         break;
       case SpeechRecognitionState.recording:
-        stateColor = Colors.red;
-        stateIcon = Icons.mic;
+        stateColor = theme.danger;
+        stateIcon = DsIconKind.mic;
         break;
       case SpeechRecognitionState.processing:
-        stateColor = Colors.blue;
-        stateIcon = Icons.hourglass_empty;
+        stateColor = theme.primaryText;
+        stateIcon = DsIconKind.clock;
         break;
       case SpeechRecognitionState.error:
-        stateColor = Colors.red;
-        stateIcon = Icons.error_outline;
+        stateColor = theme.danger;
+        stateIcon = DsIconKind.close;
         break;
     }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(stateIcon, color: stateColor, size: 20),
+        DsIcon(stateIcon, color: stateColor, size: 20),
         const SizedBox(width: 8),
         Text(
           _currentState.description,
-          style: TextStyle(color: stateColor, fontWeight: FontWeight.w500),
+          style: DsTypography.body.copyWith(
+            color: stateColor,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -462,19 +457,18 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
   /// 构建文本显示区
   Widget _buildTextDisplay() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 120, maxHeight: 200),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withAlpha(51),
-        ),
+        color: theme.surfaceAlt,
+        borderRadius: theme.radii.md,
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.2)),
       ),
       child: Stack(
         children: [
-          // 文本输入框
+          // 文本输入框（编辑原语刻意保留 Material）
           Scrollbar(
             controller: _scrollController,
             child: TextField(
@@ -487,7 +481,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(12),
               ),
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: DsTypography.body.copyWith(color: theme.text),
             ),
           ),
           // 清空按钮（右下角）
@@ -499,37 +493,35 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
               builder: (context, child) {
                 final hasText = _textController.text.isNotEmpty;
                 if (!hasText) return const SizedBox.shrink();
-                return Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      _textController.clear();
-                      setState(() {
-                        _savedText = null;
-                        _isAppendMode = false;
-                      });
-                    },
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(26),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                return Pressable(
+                  onPressed: () {
+                    _textController.clear();
+                    setState(() {
+                      _savedText = null;
+                      _isAppendMode = false;
+                    });
+                  },
+                  semanticLabel: '清空文本',
+                  builder:
+                      (context, states) => Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: theme.surface,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(26),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: DsIcon(
+                          DsIconKind.close,
+                          size: 16,
+                          color: theme.textSub,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.clear,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
@@ -546,7 +538,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       children: [
         // 标点符号替换按钮（左侧）
         _buildIconButton(
-          icon: Icons.text_fields,
+          icon: DsIconKind.edit,
           tooltip: '标点符号替换',
           isActive: _enablePunctuationReplacement,
           onPressed: () {
@@ -571,7 +563,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
         // AI智能纠错按钮（右侧）
         _buildIconButton(
-          icon: Icons.auto_fix_high,
+          icon: DsIconKind.bot,
           tooltip: 'AI智能纠错',
           isActive: _isCorrecting,
           onPressed: _isCorrecting ? () {} : () => _performAICorrection(),
@@ -582,6 +574,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
   /// 构建录音按钮
   Widget _buildRecordButton() {
+    final theme = DSThemeBridge.resolve(context);
     return GestureDetector(
       // 点击触发：开始或停止录音
       onTap: () {
@@ -606,26 +599,19 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
               height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color:
-                    _isRecording
-                        ? Colors.red
-                        : Theme.of(context).colorScheme.primary,
+                color: _isRecording ? theme.danger : theme.primary,
                 boxShadow:
                     _isRecording
                         ? [
                           BoxShadow(
-                            color: Colors.red.withAlpha(102),
+                            color: theme.danger.withAlpha(102),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
                         ]
                         : [],
               ),
-              child: Icon(
-                _isRecording ? Icons.mic : Icons.mic_none,
-                color: Colors.white,
-                size: 40,
-              ),
+              child: DsIcon(DsIconKind.mic, color: theme.onPrimary, size: 40),
             ),
           );
         },
@@ -635,45 +621,36 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
 
   /// 构建图标按钮
   Widget _buildIconButton({
-    required IconData icon,
+    required DsIconKind icon,
     required String tooltip,
     required bool isActive,
     required VoidCallback onPressed,
   }) {
+    final theme = DSThemeBridge.resolve(context);
     return Tooltip(
       message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color:
-                  isActive
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-              border: Border.all(
+      child: Pressable(
+        onPressed: onPressed,
+        semanticLabel: tooltip,
+        builder:
+            (context, states) => Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
                 color:
-                    isActive
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.transparent,
-                width: 2,
+                    isActive ? theme.primary.mixWhite(0.88) : theme.surfaceAlt,
+                border: Border.all(
+                  color: isActive ? theme.primary : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: DsIcon(
+                icon,
+                size: 24,
+                color: isActive ? theme.primaryText : theme.textSub,
               ),
             ),
-            child: Icon(
-              icon,
-              size: 24,
-              color:
-                  isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -683,14 +660,18 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(onPressed: _cancel, child: Text('agent_chat_cancel'.tr)),
+        DSButton(
+          label: 'agent_chat_cancel'.tr,
+          variant: DSButtonVariant.ghost,
+          onPressed: _cancel,
+        ),
         const SizedBox(width: 12),
-        FilledButton(
+        DSButton(
+          label: 'agent_chat_send'.tr,
           onPressed:
               _currentState == SpeechRecognitionState.recording
                   ? null
                   : _confirmSend,
-          child: Text('agent_chat_send'.tr),
         ),
       ],
     );

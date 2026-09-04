@@ -5,6 +5,8 @@ import 'package:aboutme/plugins/agent_chat/managers/ai_message_status_manager.da
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'markdown_content.dart';
 import 'tool_call_steps.dart';
 
@@ -143,7 +145,9 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
 
     // 从状态管理器获取实时状态
     final statusManager = widget.messageService.statusManager;
-    final chainStatuses = statusManager.getChainMessages(widget.chainExecutionId);
+    final chainStatuses = statusManager.getChainMessages(
+      widget.chainExecutionId,
+    );
 
     // 更新消息ID到状态的映射（清空后重新填充）
     _statusMap.clear();
@@ -179,9 +183,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
       _lastSummaryGeneratingState = isNowGenerating;
 
       // 如果是首次加载且有完成的最终结果，默认选中
-      if (wasGenerating == null &&
-          summaryMsg != null &&
-          !isNowGenerating) {
+      if (wasGenerating == null && summaryMsg != null && !isNowGenerating) {
         _selectedTabIndex = regularMessages.length; // 选中最终结果tab
       }
       // 如果最终总结刚刚完成生成，自动切换到该tab
@@ -327,6 +329,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
     required VoidCallback onTap,
     int? tokenCount, // token计数（仅最终结果tab生成时显示）
   }) {
+    final theme = DSThemeBridge.resolve(context);
     Color backgroundColor;
     Color borderColor;
     Color textColor;
@@ -335,41 +338,32 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
     if (hasError) {
       backgroundColor =
           isSelected
-              ? Theme.of(context).colorScheme.errorContainer
-              : Theme.of(context).colorScheme.errorContainer.withOpacity(0.3);
-      borderColor = Theme.of(context).colorScheme.error;
-      textColor = Theme.of(context).colorScheme.onErrorContainer;
-      statusWidget = Icon(Icons.error_outline, size: 16, color: textColor);
+              ? theme.danger.mixWhite(0.88)
+              : theme.danger.mixWhite(0.88).withValues(alpha: 0.4);
+      borderColor = theme.danger;
+      textColor = theme.text;
+      statusWidget = DsIcon(DsIconKind.close, size: 16, color: theme.danger);
     } else if (isGenerating) {
       backgroundColor =
           isSelected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3);
-      borderColor = Theme.of(context).colorScheme.primary;
-      textColor = Theme.of(context).colorScheme.onPrimaryContainer;
-      // 使用旋转动画的加载图标
+              ? theme.primary.mixWhite(0.88)
+              : theme.primary.mixWhite(0.88).withValues(alpha: 0.4);
+      borderColor = theme.primary;
+      textColor = theme.text;
+      // 弹跳加载点
       statusWidget = SizedBox(
         width: 16,
         height: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(textColor),
-        ),
+        child: Center(child: DSLoadingDots(size: 5)),
       );
     } else {
       backgroundColor =
           isSelected
-              ? Theme.of(context).colorScheme.tertiaryContainer
-              : Theme.of(
-                context,
-              ).colorScheme.tertiaryContainer.withOpacity(0.3);
-      borderColor = Theme.of(context).colorScheme.tertiary;
-      textColor = Theme.of(context).colorScheme.onTertiaryContainer;
-      statusWidget = Icon(
-        Icons.check_circle_outline,
-        size: 16,
-        color: textColor,
-      );
+              ? theme.success.mixWhite(0.88)
+              : theme.success.mixWhite(0.88).withValues(alpha: 0.4);
+      borderColor = theme.success;
+      textColor = theme.text;
+      statusWidget = DsIcon(DsIconKind.check, size: 16, color: theme.success);
     }
 
     return GestureDetector(
@@ -378,7 +372,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: theme.radii.sm,
           border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         ),
         child: Row(
@@ -390,9 +384,8 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
             ],
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              style: DsTypography.caption.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: textColor,
               ),
             ),
@@ -401,9 +394,9 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
               const SizedBox(width: 4),
               Text(
                 '(~$tokenCount)',
-                style: TextStyle(
+                style: DsTypography.caption.copyWith(
                   fontSize: 10,
-                  color: textColor.withOpacity(0.7),
+                  color: theme.textSub,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -416,6 +409,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
 
   /// 构建消息内容
   Widget _buildMessageContent(BuildContext context, ChatMessage message) {
+    final theme = DSThemeBridge.resolve(context);
     // 从状态管理器获取实时生成状态
     final status = _statusMap[message.id];
     final isGenerating = status?.isActive ?? false;
@@ -447,21 +441,13 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
         else if (isGenerating)
           Row(
             children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
+              DSLoadingDots(size: 8, color: theme.primary),
               const SizedBox(width: 8),
               Text(
                 '正在生成...',
-                style: TextStyle(
-                  fontSize: 14,
+                style: DsTypography.body.copyWith(
                   fontStyle: FontStyle.italic,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: theme.textSub,
                 ),
               ),
             ],
@@ -469,9 +455,9 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
         else
           Text(
             '(空消息)',
-            style: TextStyle(
+            style: DsTypography.body.copyWith(
               fontStyle: FontStyle.italic,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: theme.textSub,
             ),
           ),
       ],

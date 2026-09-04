@@ -5,6 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'components/plugin_section.dart';
 import 'components/tool_editor_dialog.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -93,33 +95,56 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
     }
 
     // 选择插件
-    final selectedPlugin = await showDialog<String>(
+    final selectedPlugin = await showDSDialog<String>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_selectPlugin'.tr),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(context).copyWith(
-                  dragDevices: {
-                    PointerDeviceKind.touch,
-                    PointerDeviceKind.mouse,
-                    PointerDeviceKind.trackpad,
-                  },
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: pluginIds.length,
-                  itemBuilder: (context, index) {
-                    final pluginId = pluginIds[index];
-                    return ListTile(
-                      title: Text(pluginId),
-                      onTap: () => Navigator.pop(context, pluginId),
-                    );
-                  },
-                ),
-              ),
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'agent_chat_selectPlugin'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child: ScrollConfiguration(
+                          behavior: ScrollConfiguration.of(ctx).copyWith(
+                            dragDevices: {
+                              PointerDeviceKind.touch,
+                              PointerDeviceKind.mouse,
+                              PointerDeviceKind.trackpad,
+                            },
+                          ),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: pluginIds.length,
+                            itemBuilder: (context, index) {
+                              final pluginId = pluginIds[index];
+                              return DSListItem(
+                                title: pluginId,
+                                onTap:
+                                    () =>
+                                        Navigator.pop(dialogContext, pluginId),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
     );
@@ -127,10 +152,17 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
     if (selectedPlugin == null) return;
 
     // 打开编辑对话框
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => ToolEditorDialog(pluginId: selectedPlugin, isNew: true),
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) =>
+                      ToolEditorDialog(pluginId: selectedPlugin, isNew: true),
+            ),
+          ),
     );
 
     if (result != null) {
@@ -166,22 +198,22 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
       if (filePath == null) return;
 
       // 确认导入
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showDSDialog<bool>(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
-            (context) => AlertDialog(
-              title: Text('agent_chat_confirmImport'.tr),
-              content: Text('agent_chat_importConfigOverride'.tr),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text('agent_chat_cancel'.tr),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text('agent_chat_confirm'.tr),
-                ),
-              ],
+            (dialogContext) => DSThemeBridge(
+              child: Builder(
+                builder:
+                    (ctx) => DSDialog(
+                      title: 'agent_chat_confirmImport'.tr,
+                      message: 'agent_chat_importConfigOverride'.tr,
+                      cancelText: 'agent_chat_cancel'.tr,
+                      confirmText: 'agent_chat_confirm'.tr,
+                      onConfirm: () => Navigator.pop(dialogContext, true),
+                      onCancel: () => Navigator.pop(dialogContext, false),
+                    ),
+              ),
             ),
       );
 
@@ -233,26 +265,23 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
 
   /// 恢复默认配置
   Future<void> _resetToDefault() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_confirmRestoreDefault'.tr),
-            content: Text('agent_chat_restoreDefaultDescription'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('agent_chat_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('agent_chat_restoreDefault'.tr),
-              ),
-            ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'agent_chat_confirmRestoreDefault'.tr,
+                    message: 'agent_chat_restoreDefaultDescription'.tr,
+                    cancelText: 'agent_chat_cancel'.tr,
+                    confirmText: 'agent_chat_restoreDefault'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
+            ),
           ),
     );
 
@@ -343,15 +372,16 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
             // "全部" 按钮
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text('agent_chat_all'.tr),
-                selected: _selectedPluginFilter == null,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedPluginFilter = null;
-                  });
-                },
-                selectedColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Center(
+                child: DSChip(
+                  label: 'agent_chat_all'.tr,
+                  selected: _selectedPluginFilter == null,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedPluginFilter = null;
+                    });
+                  },
+                ),
               ),
             ),
             // 各个插件按钮
@@ -362,21 +392,20 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
 
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(
-                    'agent_chat_pluginInfo'.trParams({
+                child: Center(
+                  child: DSChip(
+                    label: 'agent_chat_pluginInfo'.trParams({
                       'pluginId': pluginId,
                       'enabledCount': enabledCount.toString(),
                       'totalCount': totalCount.toString(),
                     }),
+                    selected: _selectedPluginFilter == pluginId,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedPluginFilter = selected ? pluginId : null;
+                      });
+                    },
                   ),
-                  selected: _selectedPluginFilter == pluginId,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedPluginFilter = selected ? pluginId : null;
-                    });
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primaryContainer,
                 ),
               );
             }),
@@ -388,8 +417,9 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.background,
       title: Text('agent_chat_toolManagement'.tr),
       largeTitle: 'agent_chat_toolManagement'.tr,
       enableLargeTitle: true,
@@ -401,92 +431,105 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
       onSearchSubmitted: (query) {
         _onSearchChanged(query);
       },
+      // 第三方导航栏 actions 回调内构建 DS 组件需包 DSThemeBridge
       actions: [
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          tooltip: '更多选项',
-          enabled: !_isLoading,
-          onSelected: (value) {
-            switch (value) {
-              case 'add':
-                _addTool();
-                break;
-              case 'import':
-                _importConfig();
-                break;
-              case 'export':
-                _exportConfig();
-                break;
-              case 'reset':
-                _resetToDefault();
-                break;
-            }
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'add',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.add),
-                      const SizedBox(width: 12),
-                      Text('agent_chat_addTool'.tr),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'import',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.file_download),
-                      const SizedBox(width: 12),
-                      Text('agent_chat_importConfig'.tr),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'export',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.file_upload),
-                      const SizedBox(width: 12),
-                      Text('agent_chat_exportConfig'.tr),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'reset',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.restore, color: Colors.red),
-                      const SizedBox(width: 12),
-                      Text(
-                        'agent_chat_restoreDefault'.tr,
-                        style: const TextStyle(color: Colors.red),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              // 与原 PopupMenuButton 一致：加载中禁用菜单
+              return IgnorePointer(
+                ignoring: _isLoading,
+                child: DSPopover(
+                  width: 190,
+                  contentBuilder: (popoverContext, close) {
+                    final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ToolMenuAction(
+                          icon: DsIconKind.plus,
+                          label: 'agent_chat_addTool'.tr,
+                          theme: popoverTheme,
+                          onTap: () {
+                            close();
+                            _addTool();
+                          },
+                        ),
+                        _ToolMenuAction(
+                          icon: DsIconKind.download,
+                          label: 'agent_chat_importConfig'.tr,
+                          theme: popoverTheme,
+                          onTap: () {
+                            close();
+                            _importConfig();
+                          },
+                        ),
+                        _ToolMenuAction(
+                          icon: DsIconKind.share,
+                          label: 'agent_chat_exportConfig'.tr,
+                          theme: popoverTheme,
+                          onTap: () {
+                            close();
+                            _exportConfig();
+                          },
+                        ),
+                        _ToolMenuAction(
+                          icon: DsIconKind.refresh,
+                          label: 'agent_chat_restoreDefault'.tr,
+                          theme: popoverTheme,
+                          danger: true,
+                          onTap: () {
+                            close();
+                            _resetToDefault();
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                  child: JellyBox(
+                    width: 40,
+                    height: 40,
+                    radius: theme.radii.md,
+                    color: theme.primary,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.more,
+                        size: 20,
+                        color: theme.onPrimary,
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ],
+              );
+            },
+          ),
         ),
       ],
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
               : Column(
                 children: [
                   // 插件筛选按钮栏
                   if (_allPluginTools.isNotEmpty) _buildPluginFilterBar(),
 
                   const SizedBox(height: 8),
-                  const Divider(),
+                  Divider(color: theme.textSub.withValues(alpha: 0.2)),
 
                   // 工具列表
                   Expanded(
                     child:
                         _allPluginTools.isEmpty
-                            ? Center(child: Text('agent_chat_noToolConfig'.tr))
+                            ? Center(
+                              child: Text(
+                                'agent_chat_noToolConfig'.tr,
+                                style: DsTypography.body.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            )
                             : ScrollConfiguration(
                               behavior: ScrollConfiguration.of(
                                 context,
@@ -505,7 +548,10 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
                   ),
 
                   // 底部统计信息
-                  const Divider(height: 1),
+                  Divider(
+                    height: 1,
+                    color: theme.textSub.withValues(alpha: 0.2),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -520,6 +566,7 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
 
   /// 构建统计信息卡片
   Widget _buildStatistics() {
+    final theme = DSThemeBridge.resolve(context);
     // 直接从内存中的工具配置计算统计，确保与 _showDisabledTools 一致
     int totalTools = 0;
     int enabledTools = 0;
@@ -535,28 +582,31 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
 
     final disabledCount = totalTools - enabledTools;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildStatItem('总工具数', totalTools.toString(), Icons.build),
-            _buildStatItem(
-              '已启用',
-              enabledTools.toString(),
-              Icons.check_circle,
-              color: Colors.green,
-            ),
-            _buildStatItem(
-              '已禁用',
-              disabledCount.toString(),
-              Icons.block,
-              color: Colors.grey,
-              onTap: disabledCount > 0 ? _showDisabledTools : null,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: theme.radii.md,
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('总工具数', totalTools.toString(), DsIconKind.gear),
+          _buildStatItem(
+            '已启用',
+            enabledTools.toString(),
+            DsIconKind.check,
+            color: theme.success,
+          ),
+          _buildStatItem(
+            '已禁用',
+            disabledCount.toString(),
+            DsIconKind.block,
+            color: theme.textSub,
+            onTap: disabledCount > 0 ? _showDisabledTools : null,
+          ),
+        ],
       ),
     );
   }
@@ -564,28 +614,34 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
   Widget _buildStatItem(
     String label,
     String value,
-    IconData icon, {
+    DsIconKind icon, {
     Color? color,
     VoidCallback? onTap,
   }) {
+    final theme = DSThemeBridge.resolve(context);
     final child = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color),
+        DsIcon(icon, color: color ?? theme.primaryText),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: DsTypography.title.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.text,
+          ),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(label, style: DsTypography.caption.copyWith(color: theme.textSub)),
       ],
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(padding: const EdgeInsets.all(8), child: child),
+      return Pressable(
+        onPressed: onTap,
+        semanticLabel: label,
+        builder:
+            (context, states) =>
+                Padding(padding: const EdgeInsets.all(8), child: child),
       );
     }
 
@@ -628,175 +684,331 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
       (a, b) => (a['pluginId'] as String).compareTo(b['pluginId'] as String),
     );
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.block, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text('agent_chat_disabledTools'.tr),
-                const Spacer(),
-                Text(
-                  '${disabledTools.length} 个',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(
+                    maxWidth: 460,
+                    maxHeight: 560,
                   ),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child:
-                  disabledTools.isEmpty
-                      ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                size: 64,
-                                color: Colors.green,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          DsIcon(DsIconKind.block, color: theme.textSub),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'agent_chat_disabledTools'.tr,
+                              style: DsTypography.title.copyWith(
+                                color: theme.text,
                               ),
-                              const SizedBox(height: 16),
-                              Text('agent_chat_allToolsEnabled'.tr),
-                            ],
+                            ),
                           ),
-                        ),
-                      )
-                      : ScrollConfiguration(
-                        behavior: ScrollConfiguration.of(context).copyWith(
-                          dragDevices: {
-                            PointerDeviceKind.touch,
-                            PointerDeviceKind.mouse,
-                            PointerDeviceKind.trackpad,
-                          },
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: disabledTools.length,
-                          itemBuilder: (context, index) {
-                            final item = disabledTools[index];
-                            final pluginId = item['pluginId'] as String;
-                            final toolId = item['toolId'] as String;
-                            final config = item['config'] as ToolConfig;
-
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.grey[200],
-                                child: Text(
-                                  pluginId[0].toUpperCase(),
-                                  style: TextStyle(color: Colors.grey[700]),
-                                ),
-                              ),
-                              title: Text(
-                                toolId,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    config.title,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '插件: $pluginId',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
+                          Text(
+                            '${disabledTools.length} 个',
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Flexible(
+                        child:
+                            disabledTools.isEmpty
+                                ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        DsIcon(
+                                          DsIconKind.check,
+                                          size: 64,
+                                          color: theme.success,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'agent_chat_allToolsEnabled'.tr,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.green,
+                                )
+                                : ScrollConfiguration(
+                                  behavior: ScrollConfiguration.of(
+                                    ctx,
+                                  ).copyWith(
+                                    dragDevices: {
+                                      PointerDeviceKind.touch,
+                                      PointerDeviceKind.mouse,
+                                      PointerDeviceKind.trackpad,
+                                    },
+                                  ),
+                                  child: ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: disabledTools.length,
+                                    itemBuilder: (context, index) {
+                                      final item = disabledTools[index];
+                                      final pluginId =
+                                          item['pluginId'] as String;
+                                      final toolId = item['toolId'] as String;
+                                      final config =
+                                          item['config'] as ToolConfig;
+
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 8,
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.all(
+                                            theme.spacing.md,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.surfaceAlt.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                            borderRadius: theme.radii.md,
+                                            border: Border.all(
+                                              color: theme.textSub.withValues(
+                                                alpha: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: 40,
+                                                height: 40,
+                                                alignment: Alignment.center,
+                                                decoration: BoxDecoration(
+                                                  color: theme.surface,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Text(
+                                                  pluginId[0].toUpperCase(),
+                                                  style: DsTypography.body
+                                                      .copyWith(
+                                                        color: theme.textSub,
+                                                      ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      toolId,
+                                                      style: DsTypography.body
+                                                          .copyWith(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                theme.textSub,
+                                                            decoration:
+                                                                TextDecoration
+                                                                    .lineThrough,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      config.title,
+                                                      style: DsTypography.body
+                                                          .copyWith(
+                                                            color: theme.text,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      '插件: $pluginId',
+                                                      style: DsTypography
+                                                          .caption
+                                                          .copyWith(
+                                                            color:
+                                                                theme.textSub,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Pressable(
+                                                onPressed: () async {
+                                                  try {
+                                                    await ToolConfigManager
+                                                        .instance
+                                                        .toggleToolEnabled(
+                                                          pluginId,
+                                                          toolId,
+                                                          true,
+                                                        );
+                                                    Navigator.pop(
+                                                      dialogContext,
+                                                    );
+                                                    await _loadTools();
+                                                    _showSuccess(
+                                                      '已启用工具: $toolId',
+                                                    );
+                                                  } catch (e) {
+                                                    _showError('启用失败: $e');
+                                                  }
+                                                },
+                                                semanticLabel: '启用此工具',
+                                                builder:
+                                                    (context, states) => DsIcon(
+                                                      DsIconKind.check,
+                                                      color: theme.success,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
-                                tooltip: '启用此工具',
-                                onPressed: () async {
-                                  try {
-                                    await ToolConfigManager.instance
-                                        .toggleToolEnabled(
-                                          pluginId,
-                                          toolId,
-                                          true,
-                                        );
-                                    Navigator.pop(context);
-                                    await _loadTools();
-                                    _showSuccess('已启用工具: $toolId');
-                                  } catch (e) {
-                                    _showError('启用失败: $e');
-                                  }
-                                },
-                              ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      if (disabledTools.isNotEmpty)
+                        DSButton(
+                          label: 'agent_chat_enableAll'.tr,
+                          icon: DsIconKind.check,
+                          variant: DSButtonVariant.outline,
+                          expand: true,
+                          onPressed: () async {
+                            final confirmed = await showDSDialog<bool>(
+                              context: ctx,
+                              theme: DSThemeBridge.resolve(ctx),
+                              builder:
+                                  (confirmContext) => DSThemeBridge(
+                                    child: Builder(
+                                      builder:
+                                          (c2) => DSDialog(
+                                            title:
+                                                'agent_chat_confirmEnableAll'
+                                                    .tr,
+                                            message:
+                                                'agent_chat_confirmEnableAllTools'
+                                                    .trParams({
+                                                      'count':
+                                                          disabledTools.length
+                                                              .toString(),
+                                                    }),
+                                            cancelText: 'agent_chat_cancel'.tr,
+                                            confirmText:
+                                                'agent_chat_enableAll'.tr,
+                                            onConfirm:
+                                                () => Navigator.pop(
+                                                  confirmContext,
+                                                  true,
+                                                ),
+                                            onCancel:
+                                                () => Navigator.pop(
+                                                  confirmContext,
+                                                  false,
+                                                ),
+                                          ),
+                                    ),
+                                  ),
                             );
+
+                            if (confirmed == true) {
+                              try {
+                                for (final item in disabledTools) {
+                                  await ToolConfigManager.instance
+                                      .toggleToolEnabled(
+                                        item['pluginId'] as String,
+                                        item['toolId'] as String,
+                                        true,
+                                      );
+                                }
+                                Navigator.pop(dialogContext);
+                                await _loadTools();
+                                _showSuccess('已启用所有工具');
+                              } catch (e) {
+                                _showError('批量启用失败: $e');
+                              }
+                            }
                           },
                         ),
+                      SizedBox(height: theme.spacing.sm),
+                      DSButton(
+                        label: 'agent_chat_close'.tr,
+                        variant: DSButtonVariant.ghost,
+                        expand: true,
+                        onPressed: () => Navigator.pop(dialogContext),
                       ),
+                    ],
+                  ),
+                );
+              },
             ),
-            actions: [
-              if (disabledTools.isNotEmpty)
-                TextButton.icon(
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            title: Text('agent_chat_confirmEnableAll'.tr),
-                            content: Text(
-                              'agent_chat_confirmEnableAllTools'.trParams({
-                                'count': disabledTools.length.toString(),
-                              }),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text('agent_chat_cancel'.tr),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: Text('agent_chat_enableAll'.tr),
-                              ),
-                            ],
-                          ),
-                    );
+          ),
+    );
+  }
+}
 
-                    if (confirmed == true) {
-                      try {
-                        for (final item in disabledTools) {
-                          await ToolConfigManager.instance.toggleToolEnabled(
-                            item['pluginId'] as String,
-                            item['toolId'] as String,
-                            true,
-                          );
-                        }
-                        Navigator.pop(context);
-                        await _loadTools();
-                        _showSuccess('已启用所有工具');
-                      } catch (e) {
-                        _showError('批量启用失败: $e');
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.done_all),
-                  label: Text('agent_chat_enableAll'.tr),
+/// 顶栏气泡菜单行
+class _ToolMenuAction extends StatelessWidget {
+  const _ToolMenuAction({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.sm,
+            vertical: theme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.sm,
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 16, color: accent),
+              SizedBox(width: theme.spacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.caption.copyWith(color: accent),
                 ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('agent_chat_close'.tr),
               ),
             ],
           ),
+        );
+      },
     );
   }
 }

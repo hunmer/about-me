@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 
 /// 工具调用步骤展示组件
@@ -27,12 +29,16 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!, width: 1),
+        color: theme.primary.mixWhite(0.92),
+        borderRadius: theme.radii.md,
+        border: Border.all(
+          color: theme.primary.withValues(alpha: 0.4),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,23 +47,22 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue[100],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+              color: theme.primary.mixWhite(0.85),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(DsRadii.mdValue),
+                topRight: Radius.circular(DsRadii.mdValue),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.construction, size: 20, color: Colors.blue[700]),
+                DsIcon(DsIconKind.gear, size: 20, color: theme.primaryText),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '工具调用 (${widget.steps.length} 个步骤)',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: DsTypography.body.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: theme.text,
                     ),
                   ),
                 ),
@@ -86,18 +91,22 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   /// 构建单个步骤卡片
   Widget _buildStepCard(ToolCallStep step, int index, bool isExpanded) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
+        color: theme.surface,
+        borderRadius: theme.radii.sm,
+        border: Border.all(
+          color: theme.textSub.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 步骤头部
-          InkWell(
-            onTap: () {
+          Pressable(
+            onPressed: () {
               setState(() {
                 if (isExpanded) {
                   _expandedSteps.remove(index);
@@ -106,57 +115,60 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                 }
               });
             },
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // 状态图标
-                  _buildStatusIcon(step.status),
-                  const SizedBox(width: 8),
+            semanticLabel: '${index + 1}. ${step.title}',
+            builder:
+                (context, states) => Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // 状态图标
+                      _buildStatusIcon(step.status),
+                      const SizedBox(width: 8),
 
-                  // 步骤标题
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${index + 1}. ${step.title}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (step.desc.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            step.desc,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                      // 步骤标题
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${index + 1}. ${step.title}',
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.text,
+                              ),
                             ),
-                            maxLines: isExpanded ? null : 1,
-                            overflow: isExpanded ? null : TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                            if (step.desc.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                step.desc,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                                maxLines: isExpanded ? null : 1,
+                                overflow:
+                                    isExpanded ? null : TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
 
-                  // 展开/折叠图标
-                  Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                    color: Colors.grey[600],
+                      // 展开/折叠图标
+                      DsIcon(
+                        isExpanded
+                            ? DsIconKind.chevronUp
+                            : DsIconKind.chevronDown,
+                        size: 20,
+                        color: theme.textSub,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
           ),
 
           // 展开的详细内容
           if (isExpanded) ...[
-            const Divider(height: 1),
+            Divider(height: 1, color: theme.textSub.withValues(alpha: 0.3)),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -168,11 +180,11 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
                   // 执行数据
                   if (step.data.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       '执行代码:',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: DsTypography.caption.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: theme.text,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -180,15 +192,14 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(4),
+                        color: theme.surfaceAlt.withValues(alpha: 0.6),
+                        borderRadius: theme.radii.sm,
                       ),
                       child: SelectableText(
                         step.data,
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: DsTypography.caption.copyWith(
                           fontFamily: 'monospace',
-                          color: Colors.grey[800],
+                          color: theme.text,
                         ),
                       ),
                     ),
@@ -197,12 +208,11 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
                   // 执行结果
                   if (step.result != null) ...[
-                    const Text(
+                    Text(
                       '执行结果:',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: DsTypography.caption.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: theme.success,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -210,28 +220,26 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.green[200]!),
+                        color: theme.success.mixWhite(0.92),
+                        borderRadius: theme.radii.sm,
+                        border: Border.all(
+                          color: theme.success.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: SelectableText(
                         step.result!,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.green[900],
-                        ),
+                        style: DsTypography.caption.copyWith(color: theme.text),
                       ),
                     ),
                   ],
 
                   // 错误信息
                   if (step.error != null) ...[
-                    const Text(
+                    Text(
                       '错误信息:',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: DsTypography.caption.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: theme.danger,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -239,13 +247,15 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.red[200]!),
+                        color: theme.danger.mixWhite(0.92),
+                        borderRadius: theme.radii.sm,
+                        border: Border.all(
+                          color: theme.danger.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: SelectableText(
                         step.error!,
-                        style: TextStyle(fontSize: 11, color: Colors.red[900]),
+                        style: DsTypography.caption.copyWith(color: theme.text),
                       ),
                     ),
                   ],
@@ -253,27 +263,19 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                   // 重新执行按钮
                   if (!widget.isGenerating && widget.onRerunStep != null) ...[
                     const SizedBox(height: 12),
-                    const Divider(height: 1),
+                    Divider(
+                      height: 1,
+                      color: theme.textSub.withValues(alpha: 0.3),
+                    ),
                     const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
+                      child: DSButton(
+                        label: 'agent_chat_executeAgain'.tr,
+                        icon: DsIconKind.refresh,
+                        size: DSButtonSize.sm,
+                        variant: DSButtonVariant.outline,
                         onPressed: () => widget.onRerunStep!(index),
-                        icon: const Icon(Icons.replay, size: 16),
-                        label: Text('agent_chat_executeAgain'.tr),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange[50],
-                          foregroundColor: Colors.orange[700],
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                            side: BorderSide(color: Colors.orange[300]!),
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -288,31 +290,30 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   /// 构建状态图标
   Widget _buildStatusIcon(ToolCallStatus status) {
+    final theme = DSThemeBridge.resolve(context);
     switch (status) {
       case ToolCallStatus.pending:
-        return Icon(
-          Icons.radio_button_unchecked,
+        return DsIcon(
+          DsIconKind.minus,
           size: 20,
-          color: Colors.grey[400],
+          color: theme.textSub.withValues(alpha: 0.6),
         );
       case ToolCallStatus.running:
         return SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.blue[700],
-          ),
+          child: Center(child: DSLoadingDots(size: 6)),
         );
       case ToolCallStatus.success:
-        return Icon(Icons.check_circle, size: 20, color: Colors.green[600]);
+        return DsIcon(DsIconKind.check, size: 20, color: theme.success);
       case ToolCallStatus.failed:
-        return Icon(Icons.error, size: 20, color: Colors.red[600]);
+        return DsIcon(DsIconKind.close, size: 20, color: theme.danger);
     }
   }
 
   /// 构建信息行
   Widget _buildInfoRow(String label, String value) {
+    final theme = DSThemeBridge.resolve(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,13 +321,16 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
           width: 60,
           child: Text(
             '$label:',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            style: DsTypography.caption.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.text,
+            ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ),
       ],

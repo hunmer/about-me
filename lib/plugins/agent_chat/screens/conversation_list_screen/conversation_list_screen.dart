@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
@@ -154,48 +156,55 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         builder: (context, currentValue, onChanged) {
           final selectedGroups = currentValue as List<String>? ?? [];
 
-          return Row(
-            children: [
-              // "全部"按钮
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: const Text('全部'),
-                  selected: selectedGroups.isEmpty,
-                  onSelected: (selected) {
-                    if (selected || selectedGroups.isNotEmpty) {
-                      onChanged(<String>[]);
-                    }
-                  },
-                  showCheckmark: false,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-              // 分组按钮
-              ...groups.map((groupName) {
-                final isSelected = selectedGroups.contains(groupName);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(groupName),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      final newGroups = List<String>.from(selectedGroups);
-                      if (selected) {
-                        newGroups.add(groupName);
-                      } else {
-                        newGroups.remove(groupName);
-                      }
-                      onChanged(newGroups);
-                    },
-                    showCheckmark: true,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    visualDensity: VisualDensity.compact,
-                  ),
+          // 第三方过滤面板回调内构建 DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return Row(
+                  children: [
+                    // "全部"按钮
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Center(
+                        child: DSChip(
+                          label: '全部',
+                          selected: selectedGroups.isEmpty,
+                          onSelected: (selected) {
+                            if (selected || selectedGroups.isNotEmpty) {
+                              onChanged(<String>[]);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    // 分组按钮
+                    ...groups.map((groupName) {
+                      final isSelected = selectedGroups.contains(groupName);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Center(
+                          child: DSChip(
+                            label: groupName,
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              final newGroups = List<String>.from(
+                                selectedGroups,
+                              );
+                              if (selected) {
+                                newGroups.add(groupName);
+                              } else {
+                                newGroups.remove(groupName);
+                              }
+                              onChanged(newGroups);
+                            },
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 );
-              }),
-            ],
+              },
+            ),
           );
         },
         getBadge: (value) {
@@ -212,29 +221,59 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     final nameController = TextEditingController();
 
     try {
-      final result = await showDialog<bool>(
+      final result = await showDSDialog<bool>(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
-            (context) => AlertDialog(
-              title: Text('agent_chat_addChannel'.tr),
-              content: TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: '频道名称',
-                  hintText: '请输入频道名称',
-                ),
-                autofocus: true,
+            (dialogContext) => DSThemeBridge(
+              child: Builder(
+                builder: (ctx) {
+                  final theme = DSThemeBridge.resolve(ctx);
+                  return JellyBox(
+                    radius: theme.radii.xxl,
+                    padding: EdgeInsets.all(theme.spacing.xl),
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'agent_chat_addChannel'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: nameController,
+                          label: '频道名称',
+                          hint: '请输入频道名称',
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: 'agent_chat_cancel'.tr,
+                                variant: DSButtonVariant.outline,
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, false),
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: DSButton(
+                                label: 'agent_chat_create'.tr,
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, true),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text('agent_chat_cancel'.tr),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text('agent_chat_create'.tr),
-                ),
-              ],
             ),
       );
 
@@ -259,11 +298,12 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final hasAnyConversations =
         _controller.conversationService.conversations.isNotEmpty;
 
     return SuperCupertinoNavigationWrapper(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.background,
       title: Text('agent_chat_aiChat'.tr),
       largeTitle: 'agent_chat_aiChat'.tr,
       enableLargeTitle: true,
@@ -275,29 +315,53 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       onSearchSubmitted: (query) {
         _controller.setSearchQuery(query);
       },
+      // 第三方导航栏 actions 回调内构建 DS 组件需包 DSThemeBridge
       actions: [
-        // 添加按钮
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline, size: 24),
-          tooltip: '添加频道',
-          onPressed: _showAddChannelDialog,
-        ),
-        // 工具管理按钮
-        IconButton(
-          icon: const Icon(Icons.build, size: 24),
-          tooltip: '工具管理',
-          onPressed: _openToolManagement,
-        ),
-        // 工具模板按钮
-        IconButton(
-          icon: const Icon(Icons.inventory_2, size: 24),
-          tooltip: '工具模板',
-          onPressed: _openToolTemplate,
-        ),
-        // 设置按钮
-        IconButton(
-          icon: const Icon(Icons.settings, size: 24),
-          onPressed: _openSettings,
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 添加按钮
+                  DSIconButton(
+                    icon: DsIconKind.plus,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _showAddChannelDialog,
+                    tooltip: '添加频道',
+                  ),
+                  // 工具管理按钮
+                  DSIconButton(
+                    icon: DsIconKind.gear,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _openToolManagement,
+                    tooltip: '工具管理',
+                  ),
+                  // 工具模板按钮
+                  DSIconButton(
+                    icon: DsIconKind.clipboard,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _openToolTemplate,
+                    tooltip: '工具模板',
+                  ),
+                  // 设置按钮
+                  DSIconButton(
+                    icon: DsIconKind.gear,
+                    size: 40,
+                    onPressed: _openSettings,
+                    tooltip: '设置',
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ],
       // 多条件过滤配置
@@ -314,7 +378,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       },
       body:
           _controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
               : hasAnyConversations
               ? _buildConversationList()
               : _buildEmptyState(),
@@ -323,20 +387,21 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 空状态视图
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
+          DsIcon(DsIconKind.chat, size: 80, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
             '还没有任何会话',
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            style: DsTypography.title.copyWith(color: theme.textSub),
           ),
           const SizedBox(height: 8),
           Text(
             '点击右下角的 + 按钮创建新会话',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: DsTypography.body.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -381,21 +446,22 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 空列表状态
   Widget _buildEmptyListState({Key? key}) {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       key: key,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+          DsIcon(DsIconKind.chat, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
             '没有匹配的会话',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: DsTypography.heading.copyWith(color: theme.textSub),
           ),
           const SizedBox(height: 8),
           Text(
             '尝试调整搜索条件或分组过滤器',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: DsTypography.body.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -404,6 +470,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 会话卡片
   Widget _buildConversationCard(Conversation conversation) {
+    final theme = DSThemeBridge.resolve(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: SwipeActionWrapper(
@@ -412,6 +479,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
           SwipeActionPresets.edit(
             onTap: () => _showEditConversationDialog(conversation),
           ),
+          // 共享 SwipeAction 组件 API 需要 IconData，刻意保留 Material 图标
           SwipeActionOption(
             label: conversation.isPinned ? '取消置顶' : '置顶',
             icon:
@@ -427,9 +495,8 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
             onTap: () => _showDeleteConfirmDialog(conversation),
           ),
         ],
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
+        child: Pressable(
+          onPressed: () {
             NavigationHelper.openContainerWithHero(
               context,
               (context) => ChatScreen(
@@ -440,85 +507,99 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
               ),
             );
           },
-          highlightColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300, width: 1.0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.blue[100],
-                    child: Icon(
-                      conversation.isPinned ? Icons.push_pin : Icons.chat,
-                      color: Colors.blue[700],
-                    ),
+          semanticLabel: conversation.title,
+          builder:
+              (context, states) => Container(
+                decoration: BoxDecoration(
+                  color: theme.surface,
+                  border: Border.all(
+                    color: theme.textSub.withValues(alpha: 0.3),
+                    width: 1.0,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  borderRadius: theme.radii.md,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: theme.primary.mixWhite(0.88),
+                          shape: BoxShape.circle,
+                        ),
+                        child: DsIcon(
+                          conversation.isPinned
+                              ? DsIconKind.pin
+                              : DsIconKind.chat,
+                          size: 22,
+                          color: theme.primaryText,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                conversation.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (conversation.unreadCount > 0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${conversation.unreadCount}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    conversation.title,
+                                    style: DsTypography.body.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.text,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (conversation.unreadCount > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: theme.danger,
+                                      borderRadius: theme.radii.pill,
+                                    ),
+                                    child: Text(
+                                      '${conversation.unreadCount}',
+                                      style: DsTypography.caption.copyWith(
+                                        color: theme.onDanger,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (conversation.lastMessagePreview != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                conversation.lastMessagePreview!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
                               ),
+                            ],
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDateTime(conversation.lastMessageAt),
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
                           ],
                         ),
-                        if (conversation.lastMessagePreview != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            conversation.lastMessagePreview!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatDateTime(conversation.lastMessageAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -550,39 +631,61 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     );
 
     try {
-      final result = await showDialog<bool>(
+      final result = await showDSDialog<bool>(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
-            (context) => AlertDialog(
-              title: Text('agent_chat_editConversation'.tr),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: '会话标题'),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: groupsController,
-                    decoration: const InputDecoration(
-                      labelText: '分组',
-                      hintText: '用逗号分隔多个分组，例如：工作, 生活',
+            (dialogContext) => DSThemeBridge(
+              child: Builder(
+                builder: (ctx) {
+                  final theme = DSThemeBridge.resolve(ctx);
+                  return JellyBox(
+                    radius: theme.radii.xxl,
+                    padding: EdgeInsets.all(theme.spacing.xl),
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'agent_chat_editConversation'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(controller: titleController, label: '会话标题'),
+                        SizedBox(height: theme.spacing.md),
+                        DSInput(
+                          controller: groupsController,
+                          label: '分组',
+                          hint: '用逗号分隔多个分组，例如：工作, 生活',
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: 'agent_chat_cancel'.tr,
+                                variant: DSButtonVariant.outline,
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, false),
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.md),
+                            Expanded(
+                              child: DSButton(
+                                label: 'agent_chat_save'.tr,
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, true),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text('agent_chat_cancel'.tr),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text('agent_chat_save'.tr),
-                ),
-              ],
             ),
       );
 
@@ -617,26 +720,25 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 显示删除确认对话框
   Future<void> _showDeleteConfirmDialog(Conversation conversation) async {
-    final result = await showDialog<bool>(
+    final result = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_confirmDelete'.tr),
-            content: Text(
-              'agent_chat_confirmDeleteConversation'.trParams({
-                'title': conversation.title,
-              }),
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'agent_chat_confirmDelete'.tr,
+                    message: 'agent_chat_confirmDeleteConversation'.trParams({
+                      'title': conversation.title,
+                    }),
+                    cancelText: 'agent_chat_cancel'.tr,
+                    confirmText: 'agent_chat_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('agent_chat_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('agent_chat_delete'.tr),
-              ),
-            ],
           ),
     );
 

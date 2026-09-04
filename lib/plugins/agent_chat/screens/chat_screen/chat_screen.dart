@@ -16,12 +16,15 @@ import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_manager.dart';
-import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart' show VoiceCallConfig, TTSConfig;
+import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart'
+    show VoiceCallConfig, TTSConfig;
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_config_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/voice_call_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -88,7 +91,8 @@ class _ChatScreenState extends State<ChatScreen> {
   // 语音通话相关
   VoiceCallManager? _voiceCallManager;
   VoiceCallConfig _voiceCallConfig = const VoiceCallConfig();
-  final StreamController<String> _aiMessageStreamController = StreamController<String>.broadcast();
+  final StreamController<String> _aiMessageStreamController =
+      StreamController<String>.broadcast();
 
   @override
   void initState() {
@@ -115,8 +119,9 @@ class _ChatScreenState extends State<ChatScreen> {
   /// 加载聊天设置（从会话配置中加载）
   void _loadChatSettings() {
     // 从 ConversationService 获取最新的会话对象（而非 widget.conversation）
-    final latestConversation = _controller.conversationService
-        .getConversation(widget.conversation.id);
+    final latestConversation = _controller.conversationService.getConversation(
+      widget.conversation.id,
+    );
 
     // 从会话中加载 TTS 配置
     final ttsConfig = latestConversation?.ttsConfig;
@@ -131,7 +136,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _voiceCallConfig = voiceCallConfig;
     }
 
-    debugPrint('📖 已加载会话设置: autoReadEnabled=$_autoReadEnabled, voiceCallConfig=${voiceCallConfig != null}');
+    debugPrint(
+      '📖 已加载会话设置: autoReadEnabled=$_autoReadEnabled, voiceCallConfig=${voiceCallConfig != null}',
+    );
   }
 
   /// 保存聊天设置（保存到会话配置）
@@ -147,7 +154,9 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       // 保存会话
-      await _controller.conversationService.updateConversation(updatedConversation);
+      await _controller.conversationService.updateConversation(
+        updatedConversation,
+      );
       debugPrint('💾 已保存会话设置到 conversation');
     } catch (e) {
       debugPrint('❌ 保存会话设置失败: $e');
@@ -412,22 +421,23 @@ class _ChatScreenState extends State<ChatScreen> {
     // 打开语音通话全屏界面
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => VoiceCallScreen(
-          manager: _voiceCallManager!,
-          agent: _currentAgent,
-          onExit: () async {
-            await _stopVoiceCallForegroundService();
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-          onConfigChanged: (config) async {
-            setState(() {
-              _voiceCallConfig = config;
-            });
-            await _saveChatSettings();
-          },
-        ),
+        builder:
+            (context) => VoiceCallScreen(
+              manager: _voiceCallManager!,
+              agent: _currentAgent,
+              onExit: () async {
+                await _stopVoiceCallForegroundService();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              onConfigChanged: (config) async {
+                setState(() {
+                  _voiceCallConfig = config;
+                });
+                await _saveChatSettings();
+              },
+            ),
       ),
     );
   }
@@ -476,8 +486,9 @@ class _ChatScreenState extends State<ChatScreen> {
     BuildContext context, {
     required VoiceCallConfig initialConfig,
   }) {
-    return showDialog<VoiceCallConfig>(
+    return showDSDialog<VoiceCallConfig>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder: (context) => VoiceCallConfigDialog(initialConfig: initialConfig),
     );
   }
@@ -580,273 +591,136 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: InkWell(
-          onTap: _showAgentSelector,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.conversation.title,
-                style: const TextStyle(fontSize: 16),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 显示模式图标
-                  Icon(
-                    _isChainMode ? Icons.link : Icons.smart_toy,
-                    size: 14,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-
-                  // 显示 agent 信息
-                  Text(
-                    _getAgentDisplayText(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color:
-                          _hasValidAgent()
-                              ? Colors.grey[600]
-                              : Colors.orange[700],
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          // 工具调用 Agent 配置按钮
-          IconButton(
-            icon: const Icon(Icons.build_circle_outlined),
-            onPressed: _showToolAgentsConfig,
-            tooltip: '工具调用 Agent',
-          ),
-          // 工具模板管理按钮
-          IconButton(
-            icon: const Icon(Icons.inventory_2_outlined),
-            onPressed: _openToolTemplateManagement,
-            tooltip: '工具模板',
-          ),
-          // 语音相关按钮（仅在设置了 Agent 时显示）
-          if (_currentAgent != null) ...[
-            // 自动朗读设置按钮
-            IconButton(
-              icon: Icon(
-                _autoReadEnabled ? Icons.volume_up : Icons.volume_off,
-                color: _autoReadEnabled ? Colors.blue : null,
-              ),
-              onPressed: _openTTSSettings,
-              tooltip: '语音播报设置',
-            ),
-            // 语音通话按钮
-            IconButton(
-              icon: const Icon(Icons.phone_in_talk),
-              onPressed: _openVoiceCall,
-              tooltip: '语音通话',
-            ),
-          ],
-          // 更多菜单
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: '更多',
-            onSelected: (value) {
-              switch (value) {
-                case 'tool_management':
-                  _openToolManagement();
-                  break;
-                case 'token_stats':
-                  _showTokenStats();
-                  break;
-                case 'clear_messages':
-                  _showClearMessagesConfirm();
-                  break;
-                case 'settings':
-                  _showSettings();
-                  break;
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    value: 'tool_management',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.build_outlined),
-                        const SizedBox(width: 12),
-                        Text('agent_chat_toolManagement'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'token_stats',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.analytics_outlined),
-                        const SizedBox(width: 12),
-                        Text('agent_chat_tokenStatistics'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'clear_messages',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete_sweep),
-                        const SizedBox(width: 12),
-                        Text('agent_chat_confirmClear'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings),
-                        const SizedBox(width: 12),
-                        Text('agent_chat_conversationSettings'.tr),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
-        ],
+      appBar: _AgentChatAppBar(
+        title: widget.conversation.title,
+        isChainMode: _isChainMode,
+        agentDisplayText: _getAgentDisplayText(),
+        hasValidAgent: _hasValidAgent(),
+        autoReadEnabled: _autoReadEnabled,
+        showVoiceActions: _currentAgent != null,
+        onTitleTap: _showAgentSelector,
+        onToolAgentsConfig: _showToolAgentsConfig,
+        onToolTemplateManagement: _openToolTemplateManagement,
+        onTTSSettings: _openTTSSettings,
+        onVoiceCall: _openVoiceCall,
+        onToolManagement: _openToolManagement,
+        onTokenStats: _showTokenStats,
+        onClearMessages: _showClearMessagesConfirm,
+        onSettings: _showSettings,
       ),
       body:
           _controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
               : Column(
                 children: [
                   // 已选工具列表
                   if (_controller.selectedTools.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.blue.withValues(alpha: 0.3),
+                    Builder(
+                      builder: (context) {
+                        final theme = DSThemeBridge.resolve(context);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                          decoration: BoxDecoration(
+                            color: theme.primary.mixWhite(0.9),
+                            border: Border(
+                              bottom: BorderSide(
+                                color: theme.primary.withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.build,
-                                size: 16,
-                                color: Colors.blue,
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                '已选工具:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              const Spacer(),
-                              TextButton.icon(
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder:
-                                        (context) => AlertDialog(
-                                          title: Text(
-                                            'agent_chat_confirmClear'.tr,
-                                          ),
-                                          content: Text(
-                                            'agent_chat_confirmClearTools'.tr,
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () => Navigator.pop(
-                                                    context,
-                                                    false,
-                                                  ),
-                                              child: Text(
-                                                'agent_chat_cancel'.tr,
-                                              ),
-                                            ),
-                                            TextButton(
-                                              onPressed:
-                                                  () => Navigator.pop(
-                                                    context,
-                                                    true,
-                                                  ),
-                                              child: Text(
-                                                'agent_chat_confirm'.tr,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                  );
-                                  if (confirm == true) {
-                                    await _controller.clearSelectedTools();
-                                  }
-                                },
-                                icon: const Icon(Icons.clear_all, size: 14),
-                                label: Text(
-                                  'agent_chat_clear'.tr,
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
+                              Row(
+                                children: [
+                                  DsIcon(
+                                    DsIconKind.gear,
+                                    size: 16,
+                                    color: theme.primaryText,
                                   ),
-                                  minimumSize: const Size(0, 28),
-                                ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '已选工具:',
+                                    style: DsTypography.caption.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.primaryText,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  DSButton(
+                                    label: 'agent_chat_clear'.tr,
+                                    icon: DsIconKind.close,
+                                    size: DSButtonSize.sm,
+                                    variant: DSButtonVariant.ghost,
+                                    onPressed: () async {
+                                      final confirm = await showDSDialog<bool>(
+                                        context: context,
+                                        theme: DSThemeBridge.resolve(context),
+                                        builder:
+                                            (dialogContext) => DSThemeBridge(
+                                              child: Builder(
+                                                builder:
+                                                    (ctx) => DSDialog(
+                                                      title:
+                                                          'agent_chat_confirmClear'
+                                                              .tr,
+                                                      message:
+                                                          'agent_chat_confirmClearTools'
+                                                              .tr,
+                                                      cancelText:
+                                                          'agent_chat_cancel'
+                                                              .tr,
+                                                      confirmText:
+                                                          'agent_chat_confirm'
+                                                              .tr,
+                                                      onConfirm:
+                                                          () => Navigator.pop(
+                                                            dialogContext,
+                                                            true,
+                                                          ),
+                                                      onCancel:
+                                                          () => Navigator.pop(
+                                                            dialogContext,
+                                                            false,
+                                                          ),
+                                                    ),
+                                              ),
+                                            ),
+                                      );
+                                      if (confirm == true) {
+                                        await _controller.clearSelectedTools();
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children:
+                                    _controller.selectedTools.map((tool) {
+                                      return DSChip(
+                                        label:
+                                            tool['toolName'] ??
+                                            tool['toolId'] ??
+                                            '',
+                                        onDeleted: () async {
+                                          await _controller
+                                              .removeToolFromConversation(
+                                                tool['id']!,
+                                              );
+                                        },
+                                      );
+                                    }).toList(),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children:
-                                _controller.selectedTools.map((tool) {
-                                  return Chip(
-                                    label: Text(
-                                      tool['toolName'] ?? tool['toolId'] ?? '',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                    deleteIcon: const Icon(
-                                      Icons.close,
-                                      size: 16,
-                                    ),
-                                    onDeleted: () async {
-                                      await _controller
-                                          .removeToolFromConversation(
-                                            tool['id']!,
-                                          );
-                                    },
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                    ),
-                                    visualDensity: VisualDensity.compact,
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
 
                   // 猜你想问区域
@@ -969,33 +843,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 构建猜你想问横条
   Widget _buildSuggestedQuestionsBar() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: theme.surfaceAlt.withValues(alpha: 0.5),
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
+          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
         children: [
           const SizedBox(width: 12),
-          Icon(
-            Icons.tips_and_updates_outlined,
-            size: 18,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          DsIcon(DsIconKind.star, size: 18, color: theme.primaryText),
           const SizedBox(width: 8),
           Text(
             '猜你想问',
-            style: TextStyle(
-              fontSize: 13,
+            style: DsTypography.caption.copyWith(
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.primary,
+              color: theme.primaryText,
             ),
           ),
           const SizedBox(width: 12),
@@ -1015,26 +881,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   final question = _suggestedQuestions[index];
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(
-                      label: Text(
-                        question,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onPressed: () {
-                        // 点击问题填入输入框
-                        _controller.setInputText(question);
-                      },
-                      avatar: Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                      side: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outline.withValues(alpha: 0.3),
+                    child: Center(
+                      child: DSChip(
+                        label: question,
+                        icon: DsIconKind.chat,
+                        onSelected: (_) {
+                          // 点击问题填入输入框
+                          _controller.setInputText(question);
+                        },
                       ),
                     ),
                   );
@@ -1044,27 +898,29 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(width: 8),
           // 刷新按钮
-          IconButton(
-            icon:
-                _isLoadingSuggestions
-                    ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    )
-                    : Icon(
-                      Icons.refresh,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+          Pressable(
             onPressed:
                 _isLoadingSuggestions ? null : _refreshSuggestedQuestions,
-            tooltip: '刷新问题',
+            semanticLabel: '刷新问题',
+            builder:
+                (context, states) => SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Center(
+                    child:
+                        _isLoadingSuggestions
+                            ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: DSLoadingDots(size: 5),
+                            )
+                            : DsIcon(
+                              DsIconKind.refresh,
+                              size: 20,
+                              color: theme.primaryText,
+                            ),
+                  ),
+                ),
           ),
           const SizedBox(width: 8),
         ],
@@ -1074,27 +930,32 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+          DsIcon(DsIconKind.chat, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
             _currentAgent != null ? '开始新的对话' : '请先选择一个Agent',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: DsTypography.heading.copyWith(color: theme.textSub),
           ),
           const SizedBox(height: 8),
           if (_currentAgent != null)
             Text(
               '当前Agent: ${_currentAgent!.name}',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             )
           else
-            OutlinedButton.icon(
-              onPressed: _showAgentSelector,
-              icon: const Icon(Icons.smart_toy),
-              label: Text('agent_chat_selectAgent'.tr),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: DSButton(
+                label: 'agent_chat_selectAgent'.tr,
+                icon: DsIconKind.bot,
+                variant: DSButtonVariant.outline,
+                onPressed: _showAgentSelector,
+              ),
             ),
         ],
       ),
@@ -1103,63 +964,58 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 构建新会话按钮
   Widget _buildNewSessionButton() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child:
-            _controller.isLastMessageSessionDivider
-                ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.blue.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.blue[700],
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child:
+                _controller.isLastMessageSessionDivider
+                    ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '已开启新会话',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.w500,
-                        ),
+                      decoration: BoxDecoration(
+                        color: theme.success.mixWhite(0.88),
+                        borderRadius: theme.radii.sm,
+                        border: Border.all(color: theme.success),
                       ),
-                    ],
-                  ),
-                )
-                : OutlinedButton.icon(
-                  onPressed: () async {
-                    await _controller.createNewSession();
-                    // 自动滚动到底部
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _scrollToBottom();
-                    });
-                  },
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: Text('agent_chat_createNewChat'.tr),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          DsIcon(
+                            DsIconKind.check,
+                            size: 16,
+                            color: theme.success,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '已开启新会话',
+                            style: DsTypography.body.copyWith(
+                              color: theme.success,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : DSButton(
+                      label: 'agent_chat_createNewChat'.tr,
+                      icon: DsIconKind.plus,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () async {
+                        await _controller.createNewSession();
+                        // 自动滚动到底部
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToBottom();
+                        });
+                      },
                     ),
-                    side: BorderSide(color: Colors.blue.withValues(alpha: 0.5)),
-                    foregroundColor: Colors.blue[700],
-                  ),
-                ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1168,45 +1024,70 @@ class _ChatScreenState extends State<ChatScreen> {
     final totalTokens = _controller.getTotalTokens();
     final contextTokens = _controller.getContextTokens();
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_tokenStatistics'.tr),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatRow('总Token数', totalTokens.toString()),
-                const SizedBox(height: 8),
-                _buildStatRow('上下文Token数', contextTokens.toString()),
-                const SizedBox(height: 8),
-                _buildStatRow('上下文消息数', '${_controller.contextMessageCount} 条'),
-                const SizedBox(height: 16),
-                Text(
-                  '注：Token数为估算值，实际消耗以API返回为准',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'agent_chat_tokenStatistics'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      _buildStatRow(ctx, '总Token数', totalTokens.toString()),
+                      SizedBox(height: theme.spacing.sm),
+                      _buildStatRow(ctx, '上下文Token数', contextTokens.toString()),
+                      SizedBox(height: theme.spacing.sm),
+                      _buildStatRow(
+                        ctx,
+                        '上下文消息数',
+                        '${_controller.contextMessageCount} 条',
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      Text(
+                        '注：Token数为估算值，实际消耗以API返回为准',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      DSButton(
+                        label: 'agent_chat_close'.tr,
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('agent_chat_close'.tr),
-              ),
-            ],
           ),
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(BuildContext context, String label, String value) {
+    final theme = DSThemeBridge.resolve(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14)),
+        Text(label, style: DsTypography.body.copyWith(color: theme.text)),
         Text(
           value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          style: DsTypography.body.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.text,
+          ),
         ),
       ],
     );
@@ -1287,96 +1168,148 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showSettings() {
     int? customContextCount = widget.conversation.contextMessageCount;
 
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => StatefulBuilder(
+          (dialogContext) => StatefulBuilder(
             builder:
-                (context, setDialogState) => AlertDialog(
-                  title: Text('agent_chat_conversationSettings'.tr),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '上下文消息数量',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: RadioListTile<int?>(
-                              title: Text('agent_chat_useGlobalSettings'.tr),
-                              value: null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: RadioListTile<int?>(
-                              title: Text('agent_chat_custom'.tr),
-                              value: -1, // 用-1表示自定义模式
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (customContextCount != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16, top: 8),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Slider(
-                                  value: customContextCount!.toDouble(),
-                                  min: 1,
-                                  max: 50,
-                                  divisions: 49,
-                                  label: customContextCount.toString(),
-                                  onChanged: (value) {
-                                    setDialogState(() {
-                                      customContextCount = value.toInt();
-                                    });
-                                  },
-                                ),
+                (dialogContext, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (ctx) {
+                      final theme = DSThemeBridge.resolve(ctx);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'agent_chat_conversationSettings'.tr,
+                              textAlign: TextAlign.center,
+                              style: DsTypography.title.copyWith(
+                                color: theme.text,
                               ),
-                              SizedBox(
-                                width: 40,
-                                child: Text(
-                                  '$customContextCount',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(height: theme.spacing.md),
+                            Text(
+                              '上下文消息数量',
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.text,
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.sm),
+                            // 与原实现一致：单选项仅作展示（无切换回调）
+                            Row(
+                              children: [
+                                DSRadio<int?>(
+                                  value: null,
+                                  groupValue: null,
+                                  onChanged: null,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    'agent_chat_useGlobalSettings'.tr,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                DSRadio<int?>(
+                                  value: -1,
+                                  groupValue: null,
+                                  onChanged: null,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    'agent_chat_custom'.tr,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (customContextCount != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8, top: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: DSSlider(
+                                        value: (customContextCount! - 1) / 49,
+                                        onChanged: (value) {
+                                          setDialogState(() {
+                                            customContextCount =
+                                                (value * 49).round() + 1;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 40,
+                                      child: Text(
+                                        '$customContextCount',
+                                        textAlign: TextAlign.center,
+                                        style: DsTypography.body.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
+                            SizedBox(height: theme.spacing.lg),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DSButton(
+                                    label: 'agent_chat_cancel'.tr,
+                                    variant: DSButtonVariant.outline,
+                                    onPressed:
+                                        () => Navigator.pop(dialogContext),
+                                  ),
+                                ),
+                                SizedBox(width: theme.spacing.md),
+                                Expanded(
+                                  child: DSButton(
+                                    label: 'agent_chat_save'.tr,
+                                    onPressed: () async {
+                                      // 保存设置
+                                      final updatedConversation = widget
+                                          .conversation
+                                          .copyWith(
+                                            contextMessageCount:
+                                                customContextCount,
+                                          );
+                                      await _controller.conversationService
+                                          .updateConversation(
+                                            updatedConversation,
+                                          );
+                                      if (mounted) {
+                                        Navigator.pop(dialogContext);
+                                        toastService.showToast(
+                                          'Settings saved',
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                    ],
+                      );
+                    },
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('agent_chat_cancel'.tr),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        // 保存设置
-                        final updatedConversation = widget.conversation
-                            .copyWith(contextMessageCount: customContextCount);
-                        await _controller.conversationService
-                            .updateConversation(updatedConversation);
-                        if (mounted) {
-                          Navigator.pop(context);
-                          toastService.showToast('Settings saved');
-                        }
-                      },
-                      child: Text('agent_chat_save'.tr),
-                    ),
-                  ],
                 ),
           ),
     );
@@ -1389,25 +1322,25 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_confirmClear'.tr),
-            content: Text(
-              '确定要清空当前会话的所有消息吗？\n\n'
-              '当前共有 ${_controller.messages.length} 条消息，此操作不可恢复。',
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'agent_chat_confirmClear'.tr,
+                    message:
+                        '确定要清空当前会话的所有消息吗？\n\n'
+                        '当前共有 ${_controller.messages.length} 条消息，此操作不可恢复。',
+                    cancelText: 'agent_chat_cancel'.tr,
+                    confirmText: 'agent_chat_clear'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('agent_chat_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('agent_chat_clear'.tr),
-              ),
-            ],
           ),
     );
 
@@ -1447,45 +1380,60 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     // 显示模式选择对话框
-    final mode = await showDialog<String>(
+    final mode = await showDSDialog<String>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => SimpleDialog(
-            title: const Text('选择配置模式'),
-            children: [
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, 'single'),
-                child: ListTile(
-                  leading: Icon(
-                    isCurrentlySingleMode
-                        ? Icons.check_circle
-                        : Icons.smart_toy,
-                    color: isCurrentlySingleMode ? Colors.green : null,
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final theme = DSThemeBridge.resolve(ctx);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '选择配置模式',
+                        textAlign: TextAlign.center,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                      _ModeOption(
+                        icon:
+                            isCurrentlySingleMode
+                                ? DsIconKind.check
+                                : DsIconKind.bot,
+                        accent: isCurrentlySingleMode ? theme.success : null,
+                        title: '单 Agent 模式',
+                        subtitle:
+                            isCurrentlySingleMode
+                                ? '${getCurrentAgentDisplayText()} | 选择一个 Agent 进行对话'
+                                : '选择一个 Agent 进行对话',
+                        onTap: () => Navigator.pop(dialogContext, 'single'),
+                      ),
+                      SizedBox(height: theme.spacing.sm),
+                      _ModeOption(
+                        icon:
+                            isCurrentlyChainMode
+                                ? DsIconKind.check
+                                : DsIconKind.layers,
+                        accent: isCurrentlyChainMode ? theme.success : null,
+                        title: 'Agent 链模式',
+                        subtitle:
+                            isCurrentlyChainMode
+                                ? '${getCurrentAgentDisplayText()} | 配置多个 Agent 顺序执行'
+                                : '配置多个 Agent 顺序执行',
+                        onTap: () => Navigator.pop(dialogContext, 'chain'),
+                      ),
+                    ],
                   ),
-                  title: const Text('单 Agent 模式'),
-                  subtitle: Text(
-                    isCurrentlySingleMode
-                        ? '${getCurrentAgentDisplayText()} | 选择一个 Agent 进行对话'
-                        : '选择一个 Agent 进行对话',
-                  ),
-                ),
-              ),
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, 'chain'),
-                child: ListTile(
-                  leading: Icon(
-                    isCurrentlyChainMode ? Icons.check_circle : Icons.link,
-                    color: isCurrentlyChainMode ? Colors.green : null,
-                  ),
-                  title: const Text('Agent 链模式'),
-                  subtitle: Text(
-                    isCurrentlyChainMode
-                        ? '${getCurrentAgentDisplayText()} | 配置多个 Agent 顺序执行'
-                        : '配置多个 Agent 顺序执行',
-                  ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
     );
 
@@ -1549,8 +1497,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _showAgentChainConfig() async {
     if (!mounted) return;
 
-    await showDialog(
+    await showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => AgentChainConfigDialog(
             initialChain: _controller.conversation.agentChain,
@@ -1580,8 +1529,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _showToolAgentsConfig() async {
     if (!mounted) return;
 
-    await showDialog(
+    await showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => ToolAgentsConfigDialog(
             initialToolDetectionConfig:
@@ -1629,29 +1579,376 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 显示删除确认对话框
   Future<void> _showDeleteConfirmation(String messageId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('agent_chat_confirmDelete'.tr),
-            content: Text('agent_chat_confirmDeleteMessage'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('agent_chat_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text('agent_chat_delete'.tr),
-              ),
-            ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'agent_chat_confirmDelete'.tr,
+                    message: 'agent_chat_confirmDeleteMessage'.tr,
+                    cancelText: 'agent_chat_cancel'.tr,
+                    confirmText: 'agent_chat_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
+            ),
           ),
     );
 
     if (confirm == true) {
       await _controller.deleteMessage(messageId);
     }
+  }
+}
+
+// ========== 自绘顶栏与对话框辅助 ==========
+
+/// 聊天页顶部栏（自绘果冻风，替代 Material AppBar）
+class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final bool isChainMode;
+  final String agentDisplayText;
+  final bool hasValidAgent;
+  final bool autoReadEnabled;
+  final bool showVoiceActions;
+  final VoidCallback onTitleTap;
+  final VoidCallback onToolAgentsConfig;
+  final VoidCallback onToolTemplateManagement;
+  final VoidCallback onTTSSettings;
+  final VoidCallback onVoiceCall;
+  final VoidCallback onToolManagement;
+  final VoidCallback onTokenStats;
+  final VoidCallback onClearMessages;
+  final VoidCallback onSettings;
+
+  const _AgentChatAppBar({
+    required this.title,
+    required this.isChainMode,
+    required this.agentDisplayText,
+    required this.hasValidAgent,
+    required this.autoReadEnabled,
+    required this.showVoiceActions,
+    required this.onTitleTap,
+    required this.onToolAgentsConfig,
+    required this.onToolTemplateManagement,
+    required this.onTTSSettings,
+    required this.onVoiceCall,
+    required this.onToolManagement,
+    required this.onTokenStats,
+    required this.onClearMessages,
+    required this.onSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return Material(
+            color: theme.surface,
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Row(
+                  children: [
+                    if (Navigator.of(context).canPop())
+                      DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                    Expanded(
+                      child: Pressable(
+                        onPressed: onTitleTap,
+                        semanticLabel: title,
+                        builder:
+                            (context, states) => Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: DsTypography.heading.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // 显示模式图标
+                                    DsIcon(
+                                      isChainMode
+                                          ? DsIconKind.layers
+                                          : DsIconKind.bot,
+                                      size: 14,
+                                      color: theme.textSub,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    // 显示 agent 信息
+                                    Flexible(
+                                      child: Text(
+                                        agentDisplayText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: DsTypography.caption.copyWith(
+                                          color:
+                                              hasValidAgent
+                                                  ? theme.textSub
+                                                  : theme.warning,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    DsIcon(
+                                      DsIconKind.chevronDown,
+                                      size: 16,
+                                      color: theme.textSub,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                      ),
+                    ),
+                    // 工具调用 Agent 配置按钮
+                    DSIconButton(
+                      icon: DsIconKind.gear,
+                      size: 40,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: onToolAgentsConfig,
+                      tooltip: '工具调用 Agent',
+                    ),
+                    // 工具模板管理按钮
+                    DSIconButton(
+                      icon: DsIconKind.clipboard,
+                      size: 40,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: onToolTemplateManagement,
+                      tooltip: '工具模板',
+                    ),
+                    // 语音相关按钮（仅在设置了 Agent 时显示）
+                    if (showVoiceActions) ...[
+                      // 自动朗读设置按钮
+                      DSIconButton(
+                        icon: DsIconKind.bell,
+                        size: 40,
+                        color:
+                            autoReadEnabled ? theme.primary : theme.surfaceAlt,
+                        iconColor:
+                            autoReadEnabled ? theme.onPrimary : theme.textSub,
+                        onPressed: onTTSSettings,
+                        tooltip: '语音播报设置',
+                      ),
+                      // 语音通话按钮
+                      DSIconButton(
+                        icon: DsIconKind.mic,
+                        size: 40,
+                        onPressed: onVoiceCall,
+                        tooltip: '语音通话',
+                      ),
+                    ],
+                    _buildMenu(context, theme),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 更多操作气泡菜单
+  Widget _buildMenu(BuildContext context, AppThemeData theme) {
+    return DSPopover(
+      width: 190,
+      contentBuilder: (popoverContext, close) {
+        final popoverTheme = DSThemeBridge.resolve(popoverContext);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _AppBarMenuAction(
+              icon: DsIconKind.gear,
+              label: 'agent_chat_toolManagement'.tr,
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                onToolManagement();
+              },
+            ),
+            _AppBarMenuAction(
+              icon: DsIconKind.sort,
+              label: 'agent_chat_tokenStatistics'.tr,
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                onTokenStats();
+              },
+            ),
+            _AppBarMenuAction(
+              icon: DsIconKind.trash,
+              label: 'agent_chat_confirmClear'.tr,
+              theme: popoverTheme,
+              danger: true,
+              onTap: () {
+                close();
+                onClearMessages();
+              },
+            ),
+            _AppBarMenuAction(
+              icon: DsIconKind.gear,
+              label: 'agent_chat_conversationSettings'.tr,
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                onSettings();
+              },
+            ),
+          ],
+        );
+      },
+      child: JellyBox(
+        width: 40,
+        height: 40,
+        radius: theme.radii.md,
+        color: theme.primary,
+        child: Center(
+          child: DsIcon(DsIconKind.more, size: 20, color: theme.onPrimary),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+/// 顶栏气泡菜单行
+class _AppBarMenuAction extends StatelessWidget {
+  const _AppBarMenuAction({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = danger ? theme.danger : theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.sm,
+            vertical: theme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.sm,
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 16, color: accent),
+              SizedBox(width: theme.spacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.caption.copyWith(color: accent),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 配置模式选择行（单 Agent / Agent 链）
+class _ModeOption extends StatelessWidget {
+  const _ModeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.accent,
+  });
+
+  final DsIconKind icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final effective = accent ?? theme.text;
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.all(theme.spacing.md),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.lg,
+            border: Border.all(color: theme.textSub.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 24, color: effective),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: DsTypography.body.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

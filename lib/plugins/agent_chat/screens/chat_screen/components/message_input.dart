@@ -9,6 +9,8 @@ import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
@@ -70,8 +72,9 @@ class _MessageInputState extends State<MessageInput> {
 
     try {
       // 使用 VoiceRecognitionHelper 创建服务（不显示错误提示）
-      final service =
-          await VoiceRecognitionHelper.createServiceSilently(context);
+      final service = await VoiceRecognitionHelper.createServiceSilently(
+        context,
+      );
 
       if (service != null && mounted) {
         setState(() {
@@ -192,10 +195,10 @@ class _MessageInputState extends State<MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -235,10 +238,21 @@ class _MessageInputState extends State<MessageInput> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // 附件按钮
-                IconButton(
-                  icon: const Icon(Icons.attach_file),
+                Pressable(
                   onPressed: _showAttachmentMenu,
-                  tooltip: '添加附件',
+                  semanticLabel: '添加附件',
+                  builder:
+                      (context, states) => SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.copy,
+                            size: 22,
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
                 ),
 
                 // 输入框
@@ -249,8 +263,8 @@ class _MessageInputState extends State<MessageInput> {
                       maxHeight: 120,
                     ),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(20),
+                      color: theme.surfaceAlt,
+                      borderRadius: theme.radii.pill,
                     ),
                     child: TextField(
                       controller: _textController,
@@ -258,11 +272,16 @@ class _MessageInputState extends State<MessageInput> {
                       maxLines: null,
                       textInputAction: TextInputAction.newline,
                       enabled: widget.controller.currentAgent != null,
+                      style: DsTypography.body.copyWith(color: theme.text),
+                      cursorColor: theme.primary,
                       decoration: InputDecoration(
                         hintText:
                             widget.controller.currentAgent != null
                                 ? '输入消息...'
                                 : '请先选择Agent...',
+                        hintStyle: DsTypography.body.copyWith(
+                          color: theme.textSub.withValues(alpha: 0.75),
+                        ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -280,25 +299,25 @@ class _MessageInputState extends State<MessageInput> {
                                   padding: const EdgeInsets.only(right: 4),
                                   child: Text(
                                     '~${widget.controller.inputTokenCount}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
                                     ),
                                   ),
                                 ),
                               // "你可以问"按钮
                               if (widget.controller.currentAgent != null)
-                                InkWell(
-                                  onTap: _showSuggestedQuestions,
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: Icon(
-                                      Icons.lightbulb_outline,
-                                      size: 20,
-                                      color: Colors.orange[700],
-                                    ),
-                                  ),
+                                Pressable(
+                                  onPressed: _showSuggestedQuestions,
+                                  semanticLabel: '你可以问',
+                                  builder:
+                                      (context, states) => Padding(
+                                        padding: const EdgeInsets.all(4),
+                                        child: DsIcon(
+                                          DsIconKind.star,
+                                          size: 20,
+                                          color: theme.warning,
+                                        ),
+                                      ),
                                 ),
                             ],
                           ),
@@ -326,42 +345,45 @@ class _MessageInputState extends State<MessageInput> {
                     },
                   )
                 else
-                  IconButton(
-                    icon: const Icon(Icons.mic),
+                  Pressable(
                     onPressed:
                         widget.controller.currentAgent != null
                             ? _showVoiceInputDialog
                             : null,
-                    tooltip: '语音输入（未配置）',
+                    semanticLabel: '语音输入（未配置）',
+                    builder:
+                        (context, states) => SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Center(
+                            child: DsIcon(
+                              DsIconKind.mic,
+                              size: 22,
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ),
                   ),
 
                 // 发送/取消按钮
-                Container(
-                  decoration: BoxDecoration(
-                    color:
-                        widget.controller.isSending
-                            ? Colors
-                                .red // 发送中显示红色
-                            : (_canSendMessage()
-                                ? Colors.blue
-                                : Colors.grey[300]),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon:
-                        widget.controller.isSending
-                            ? const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                            ) // 显示取消图标
-                            : const Icon(Icons.send, color: Colors.white),
-                    onPressed:
-                        widget.controller.isSending
-                            ? () =>
-                                widget.controller
-                                    .cancelSending() // 取消发送
-                            : (_canSendMessage() ? _sendMessage : null),
-                  ),
+                DSIconButton(
+                  icon:
+                      widget.controller.isSending
+                          ? DsIconKind
+                              .close // 显示取消图标
+                          : DsIconKind.send,
+                  size: 44,
+                  color:
+                      widget.controller.isSending
+                          ? theme
+                              .danger // 发送中显示红色
+                          : theme.primary,
+                  onPressed:
+                      widget.controller.isSending
+                          ? () =>
+                              widget.controller
+                                  .cancelSending() // 取消发送
+                          : (_canSendMessage() ? _sendMessage : null),
                 ),
               ],
             ),
@@ -373,11 +395,14 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 构建当前状态显示
   Widget _buildCurrentStatus() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        color: theme.surfaceAlt.withValues(alpha: 0.5),
+        border: Border(
+          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.25)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,13 +411,12 @@ class _MessageInputState extends State<MessageInput> {
           if (widget.controller.selectedToolTemplate != null) ...[
             Row(
               children: [
-                Icon(Icons.build_circle, size: 16, color: Colors.orange[700]),
+                DsIcon(DsIconKind.gear, size: 16, color: theme.warning),
                 const SizedBox(width: 6),
                 Text(
                   '使用工具模板',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -406,7 +430,7 @@ class _MessageInputState extends State<MessageInput> {
           if (widget.controller.selectedToolTemplate != null &&
               widget.controller.selectedFiles.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Divider(height: 1, color: Colors.grey[300]),
+            Divider(height: 1, color: theme.textSub.withValues(alpha: 0.3)),
             const SizedBox(height: 12),
           ],
 
@@ -414,13 +438,12 @@ class _MessageInputState extends State<MessageInput> {
           if (widget.controller.selectedFiles.isNotEmpty) ...[
             Row(
               children: [
-                Icon(Icons.attach_file, size: 16, color: Colors.blue[700]),
+                DsIcon(DsIconKind.copy, size: 16, color: theme.primaryText),
                 const SizedBox(width: 6),
                 Text(
                   '已选择 ${widget.controller.selectedFiles.length} 个文件',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -445,17 +468,18 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 构建工具模板芯片
   Widget _buildToolTemplateChip(SavedToolTemplate template) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange[200]!),
+        color: theme.warning.mixWhite(0.9),
+        borderRadius: theme.radii.sm,
+        border: Border.all(color: theme.warning.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.build_circle, size: 18, color: Colors.orange[700]),
+          DsIcon(DsIconKind.gear, size: 18, color: theme.warning),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -463,32 +487,39 @@ class _MessageInputState extends State<MessageInput> {
               children: [
                 Text(
                   template.name,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: DsTypography.body.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange[900],
+                    color: theme.text,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${template.steps.length} 个步骤',
-                  style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          InkWell(
-            onTap: () => widget.controller.clearSelectedToolTemplate(),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.orange[300]!),
-              ),
-              child: Icon(Icons.close, size: 14, color: Colors.orange[700]),
-            ),
+          Pressable(
+            onPressed: () => widget.controller.clearSelectedToolTemplate(),
+            semanticLabel: '移除工具模板',
+            builder:
+                (context, states) => Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: theme.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.warning.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: DsIcon(
+                    DsIconKind.close,
+                    size: 14,
+                    color: theme.warning,
+                  ),
+                ),
           ),
         ],
       ),
@@ -497,37 +528,45 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 构建文件芯片
   Widget _buildFileChip(File file, int index) {
+    final theme = DSThemeBridge.resolve(context);
     final isImage = FilePickerHelper.isImageFile(file);
     final fileName = FilePickerHelper.getFileName(file);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        color: theme.surface,
+        borderRadius: theme.radii.sm,
+        border: Border.all(color: theme.textSub.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isImage ? Icons.image : FilePickerHelper.getFileIcon(file),
-            size: 18,
-            color: Colors.blue[700],
-          ),
+          // 文件扩展名图标映射（含配色）刻意保留 Material
+          if (isImage)
+            DsIcon(DsIconKind.image, size: 18, color: theme.primaryText)
+          else
+            Icon(
+              FilePickerHelper.getFileIcon(file),
+              size: 18,
+              color: theme.primaryText,
+            ),
           const SizedBox(width: 6),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 150),
             child: Text(
               fileName,
-              style: const TextStyle(fontSize: 13),
+              style: DsTypography.caption.copyWith(color: theme.text),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 4),
-          InkWell(
-            onTap: () => widget.controller.removeFile(index),
-            child: const Icon(Icons.close, size: 16, color: Colors.grey),
+          Pressable(
+            onPressed: () => widget.controller.removeFile(index),
+            semanticLabel: '移除文件',
+            builder:
+                (context, states) =>
+                    DsIcon(DsIconKind.close, size: 16, color: theme.textSub),
           ),
         ],
       ),
@@ -539,27 +578,40 @@ class _MessageInputState extends State<MessageInput> {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  title: Text('agent_chat_image'.tr),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.controller.pickImages();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.description),
-                  title: Text('agent_chat_document'.tr),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.controller.pickDocuments();
-                  },
-                ),
-              ],
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DSListItem(
+                          leading: DsIcon(
+                            DsIconKind.image,
+                            size: 22,
+                            color: DSThemeBridge.resolve(context).primaryText,
+                          ),
+                          title: 'agent_chat_image'.tr,
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.controller.pickImages();
+                          },
+                        ),
+                        DSListItem(
+                          leading: DsIcon(
+                            DsIconKind.book,
+                            size: 22,
+                            color: DSThemeBridge.resolve(context).primaryText,
+                          ),
+                          title: 'agent_chat_document'.tr,
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.controller.pickDocuments();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
             ),
           ),
     );
@@ -602,14 +654,15 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 构建工具模板搜索区域
   Widget _buildToolTemplateSearchArea() {
+    final theme = DSThemeBridge.resolve(context);
     if (_isLoadingToolResults) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.surface,
           border: Border(
-            top: BorderSide(color: Colors.grey[300]!),
-            bottom: BorderSide(color: Colors.grey[300]!),
+            top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
+            bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
           ),
           boxShadow: [
             BoxShadow(
@@ -621,13 +674,12 @@ class _MessageInputState extends State<MessageInput> {
         ),
         child: Row(
           children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            DSLoadingDots(size: 7),
             const SizedBox(width: 12),
-            Text('agent_chat_loadingToolTemplates'.tr, style: TextStyle(color: Colors.grey[700])),
+            Text(
+              'agent_chat_loadingToolTemplates'.tr,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
           ],
         ),
       );
@@ -652,14 +704,15 @@ class _MessageInputState extends State<MessageInput> {
   }
 
   Widget _buildToolCommandSearchResults() {
+    final theme = DSThemeBridge.resolve(context);
     final keyword = _commandToolQuery ?? '';
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
+          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
+          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
         ),
         boxShadow: [
           BoxShadow(
@@ -677,23 +730,22 @@ class _MessageInputState extends State<MessageInput> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
               children: [
-                Icon(Icons.search, size: 18, color: Colors.orange[700]),
+                DsIcon(DsIconKind.search, size: 18, color: theme.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '匹配的工具模板：$keyword',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[700],
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
                 if (_isLoadingCommandToolResults)
-                  const SizedBox(
+                  SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: DSLoadingDots(size: 5),
                   ),
               ],
             ),
@@ -705,7 +757,7 @@ class _MessageInputState extends State<MessageInput> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text(
                 '找不到 "$keyword"，按 Enter 继续搜索',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
             )
           else
@@ -728,42 +780,46 @@ class _MessageInputState extends State<MessageInput> {
   }
 
   Widget _buildToolCommandResultItem(SavedToolTemplate template) {
-    return InkWell(
-      onTap: () => _applyToolCommandTemplate(template),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Icon(Icons.build_circle, size: 20, color: Colors.orange[600]),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    template.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: () => _applyToolCommandTemplate(template),
+      builder:
+          (context, states) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                DsIcon(DsIconKind.gear, size: 20, color: theme.warning),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        template.name,
+                        style: DsTypography.body.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.text,
+                        ),
+                      ),
+                      if (template.description != null &&
+                          template.description!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          template.description!,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
-                  if (template.description != null &&
-                      template.description!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      template.description!,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
+                ),
+                DsIcon(DsIconKind.chevronRight, size: 16, color: theme.textSub),
+              ],
             ),
-            const Icon(Icons.north_west, size: 16, color: Colors.grey),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -783,13 +839,14 @@ class _MessageInputState extends State<MessageInput> {
   }
 
   Widget _buildToolSearchEmptyState() {
+    final theme = DSThemeBridge.resolve(context);
     final keyword = _toolSearchKeyword ?? '';
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
+          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
+          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
         ),
         boxShadow: [
           BoxShadow(
@@ -807,20 +864,18 @@ class _MessageInputState extends State<MessageInput> {
             padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
             child: Row(
               children: [
-                Icon(Icons.search_off, size: 20, color: Colors.orange[700]),
+                DsIcon(DsIconKind.search, size: 20, color: theme.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '找不到 $keyword',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[800],
+                    style: DsTypography.caption.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                Pressable(
                   onPressed: () {
                     setState(() {
                       _isSearchingTools = false;
@@ -829,7 +884,19 @@ class _MessageInputState extends State<MessageInput> {
                       _toolSearchKeyword = null;
                     });
                   },
-                  tooltip: '取消',
+                  semanticLabel: '取消',
+                  builder:
+                      (context, states) => SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.close,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
                 ),
               ],
             ),
@@ -838,7 +905,7 @@ class _MessageInputState extends State<MessageInput> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
               '没有找到匹配的工具模板，请尝试其他关键词。',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ),
         ],

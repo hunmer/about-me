@@ -65,7 +65,8 @@ class BillTranslationsEn {
     'bill_accountTitle': 'Account',
     'bill_deleteAccount': 'Delete Account',
     'bill_enterAccountName': 'Enter account name',
-    'bill_confirmDeleteAccountWithBills': 'Delete this account and all its bills?',
+    'bill_confirmDeleteAccountWithBills':
+        'Delete this account and all its bills?',
 
     // Time range
     'bill_todayFinance': 'Today',
@@ -98,7 +99,8 @@ class BillTranslationsEn {
     'bill_addQuickPreset': 'Add Quick Preset',
     'bill_quickAccountingPreview': 'Quick Accounting Preview',
     'bill_noQuickPresets': 'No Quick Presets',
-    'bill_clickToAddQuickPreset': 'Click the + button in the bottom right to add quick presets',
+    'bill_clickToAddQuickPreset':
+        'Click the + button in the bottom right to add quick presets',
     'bill_editQuickPreset': 'Edit Quick Preset',
     'bill_presetName': 'Preset Name',
     'bill_presetNameHint': 'e.g: breakfast, taxi',
@@ -120,7 +122,8 @@ class BillTranslationsEn {
 
     // Stats Widget Strings
     'bill_statsWidgetName': 'Expense Stats',
-    'bill_statsWidgetDescription': 'Display income/expense stats with custom target',
+    'bill_statsWidgetDescription':
+        'Display income/expense stats with custom target',
     'bill_statsSelectorTitle': 'Stats Configuration',
     'bill_selectType': 'Stats Type',
     'bill_selectPeriod': 'Time Period',
@@ -161,7 +164,8 @@ class BillTranslationsEn {
     'bill_notes': 'Notes',
     'bill_terminateSubscription': 'Terminate Subscription',
     'bill_terminateConfirm': 'Are you sure you want to terminate "{name}"?',
-    'bill_deleteConfirm': 'Are you sure you want to delete "{name}"? This action cannot be undone.',
+    'bill_deleteConfirm':
+        'Are you sure you want to delete "{name}"? This action cannot be undone.',
     'bill_subscriptionCreated': 'Subscription created',
     'bill_subscriptionUpdated': 'Subscription updated',
     'bill_subscriptionDeleted': 'Subscription deleted',

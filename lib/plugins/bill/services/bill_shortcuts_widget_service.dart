@@ -12,7 +12,8 @@ import 'package:aboutme/core/services/system_widget_service.dart';
 /// - 删除小组件配置
 /// - 触发小组件更新
 class BillShortcutsWidgetService {
-  static final BillShortcutsWidgetService _instance = BillShortcutsWidgetService._internal();
+  static final BillShortcutsWidgetService _instance =
+      BillShortcutsWidgetService._internal();
   factory BillShortcutsWidgetService() => _instance;
   BillShortcutsWidgetService._internal();
 
@@ -43,13 +44,17 @@ class BillShortcutsWidgetService {
       );
 
       if (success == true) {
-        debugPrint('BillShortcutsWidgetService: 配置已保存 (widgetId: ${config.widgetId})');
+        debugPrint(
+          'BillShortcutsWidgetService: 配置已保存 (widgetId: ${config.widgetId})',
+        );
         // 等待 SharedPreferences 数据写入完成
         await Future.delayed(const Duration(milliseconds: 200));
         // 保存成功后触发小组件更新
         await updateWidget(config.widgetId);
       } else {
-        debugPrint('BillShortcutsWidgetService: 配置保存失败 (widgetId: ${config.widgetId})');
+        debugPrint(
+          'BillShortcutsWidgetService: 配置保存失败 (widgetId: ${config.widgetId})',
+        );
       }
 
       return success ?? false;
@@ -76,7 +81,9 @@ class BillShortcutsWidgetService {
       final configMap = jsonDecode(configJson) as Map<String, dynamic>;
       final config = BillShortcutsWidgetConfig.fromJson(configMap);
 
-      debugPrint('BillShortcutsWidgetService: 配置已加载 (widgetId: $widgetId, shortcuts: ${config.shortcuts.length})');
+      debugPrint(
+        'BillShortcutsWidgetService: 配置已加载 (widgetId: $widgetId, shortcuts: ${config.shortcuts.length})',
+      );
       return config;
     } catch (e) {
       debugPrint('BillShortcutsWidgetService: 加载配置时出错: $e');
@@ -143,7 +150,9 @@ class BillShortcutsWidgetService {
         // 保存成功后触发小组件更新
         await updateWidget(widgetId);
       } else {
-        debugPrint('BillShortcutsWidgetService: 颜色配置保存失败 (widgetId: $widgetId)');
+        debugPrint(
+          'BillShortcutsWidgetService: 颜色配置保存失败 (widgetId: $widgetId)',
+        );
       }
 
       return success ?? false;
@@ -170,7 +179,9 @@ class BillShortcutsWidgetService {
       final colorMap = jsonDecode(colorJson) as Map<String, dynamic>;
 
       return {
-        'backgroundColor': Color(int.parse(colorMap['backgroundColor'] as String)),
+        'backgroundColor': Color(
+          int.parse(colorMap['backgroundColor'] as String),
+        ),
         'textColor': Color(int.parse(colorMap['textColor'] as String)),
         'iconColor': Color(int.parse(colorMap['iconColor'] as String)),
       };

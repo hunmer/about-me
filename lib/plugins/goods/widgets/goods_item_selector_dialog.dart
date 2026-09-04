@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
@@ -103,8 +105,6 @@ class _GoodsItemSelectorDialogState extends State<GoodsItemSelectorDialog> {
     return allItems;
   }
 
-  // 递归获取所有物品（包括子物品）
-
   // 递归添加子物品
   // ignore: unused_element
   void _addSubItemsRecursively(GoodsItem item, List<GoodsItem> result) {
@@ -116,94 +116,110 @@ class _GoodsItemSelectorDialogState extends State<GoodsItemSelectorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final items = _getSelectableItems();
 
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'goods_selectItem'.tr,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+    return JellyBox(
+      radius: theme.radii.xxl,
+      padding: EdgeInsets.all(theme.spacing.lg),
+      constraints: const BoxConstraints(maxWidth: 400, maxHeight: 560),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'goods_selectItem'.tr,
+                  style: DsTypography.title.copyWith(color: theme.text),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // 分类选择器
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'goods_filterByCategory'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.category),
               ),
-              initialValue: _selectedCategory,
-              items: [
-                DropdownMenuItem<String>(
-                  value: null,
-                  child: Text('goods_allCategories'.tr),
-                ),
-                ..._availableCategories.map(
-                  (category) => DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  ),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value;
-                });
+              DSIconButton(
+                icon: DsIconKind.close,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 分类选择器
+          DSSelect<String>(
+            items: [
+              DSSelectItem(value: '', label: 'goods_allCategories'.tr),
+              ..._availableCategories.map(
+                (category) => DSSelectItem(value: category, label: category),
+              ),
+            ],
+            value: _selectedCategory ?? '',
+            hint: 'goods_filterByCategory'.tr,
+            onChanged: (value) {
+              setState(() {
+                _selectedCategory =
+                    (value == '' || value == null) ? null : value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          DSInput(
+            controller: _searchController,
+            hint: 'goods_searchItems'.tr,
+            prefix: DsIcon(DsIconKind.search, size: 18, color: theme.textSub),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return _buildItemRow(context, item);
               },
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'goods_searchItems'.tr,
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return ListTile(
-                    leading:
-                        item.icon != null
-                            ? Icon(item.icon, color: item.iconColor)
-                            : null,
-                    title: Text(item.title),
-                    subtitle:
-                        item.purchasePrice != null
-                            ? Text('goods_price'.tr)
-                            : null,
-                    onTap: () => Navigator.of(context).pop(item),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildItemRow(BuildContext context, GoodsItem item) {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: () => Navigator.of(context).pop(item),
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: pressed ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.md,
+          ),
+          child: Row(
+            children: [
+              if (item.icon != null) ...[
+                Icon(item.icon, size: 20, color: item.iconColor),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: DsTypography.body.copyWith(color: theme.text),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (item.purchasePrice != null)
+                Text(
+                  'goods_price'.tr,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

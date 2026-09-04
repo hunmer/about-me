@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -113,18 +115,21 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
   }
 
   void _showFilterDialog() {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => FilterDialog(
-            selectedProviders: _selectedProviders,
-            selectedTags: _selectedTags,
-            onApply: (providers, tags) {
-              setState(() {
-                _selectedProviders = providers;
-                _selectedTags = tags;
-              });
-            },
+          (context) => DSThemeBridge(
+            child: FilterDialog(
+              selectedProviders: _selectedProviders,
+              selectedTags: _selectedTags,
+              onApply: (providers, tags) {
+                setState(() {
+                  _selectedProviders = providers;
+                  _selectedTags = tags;
+                });
+              },
+            ),
           ),
     );
   }
@@ -186,130 +191,122 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'openai_tags'.tr,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'openai_tags'.tr,
+                style: DsTypography.body.copyWith(
+                  color: theme.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      _allTags.map((tag) {
+                        final isSelected = _selectedTags.contains(tag);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: DSChip(
+                            label: tag,
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedTags.add(tag);
+                                } else {
+                                  _selectedTags.remove(tag);
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children:
-                  _allTags.map((tag) {
-                    final isSelected = _selectedTags.contains(tag);
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(tag),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedTags.add(tag);
-                            } else {
-                              _selectedTags.remove(tag);
-                            }
-                          });
-                        },
-                      ),
-                    );
-                  }).toList(),
-            ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: const Text('Agent 商场'),
+        largeTitle: 'Agent 商场',
+        body: _buildBody(),
+        enableLargeTitle: false,
+        automaticallyImplyLeading: true,
+
+        // 启用搜索栏
+        enableSearchBar: true,
+        searchPlaceholder: 'openai_searchAgent'.tr,
+        onSearchChanged: _onSearchChanged,
+
+        // 启用搜索过滤器
+        enableSearchFilter: true,
+        filterLabels: const {'name': '名称', 'description': '描述', 'tags': '标签'},
+        onSearchFilterChanged: _onSearchFilterChanged,
+
+        // DS 暂无"筛选漏斗"图标,整组 actions 保留 Material 保持一致
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadMarketplaceData,
+            tooltip: '刷新',
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+            tooltip: '筛选',
+          ),
+          IconButton(
+            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+            onPressed: () {
+              setState(() {
+                _isGridView = !_isGridView;
+              });
+            },
+            tooltip: '切换视图',
           ),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
-      title: const Text('Agent 商场'),
-      largeTitle: 'Agent 商场',
-      body: _buildBody(),
-      enableLargeTitle: false,
-      automaticallyImplyLeading: true,
-
-      // 启用搜索栏
-      enableSearchBar: true,
-      searchPlaceholder: 'openai_searchAgent'.tr,
-      onSearchChanged: _onSearchChanged,
-
-      // 启用搜索过滤器
-      enableSearchFilter: true,
-      filterLabels: const {'name': '名称', 'description': '描述', 'tags': '标签'},
-      onSearchFilterChanged: _onSearchFilterChanged,
-
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: _loadMarketplaceData,
-          tooltip: '刷新',
-        ),
-        IconButton(
-          icon: const Icon(Icons.filter_list),
-          onPressed: _showFilterDialog,
-          tooltip: '筛选',
-        ),
-        IconButton(
-          icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-          onPressed: () {
-            setState(() {
-              _isGridView = !_isGridView;
-            });
-          },
-          tooltip: '切换视图',
-        ),
-      ],
-    );
-  }
-
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: DSLoadingDots());
     }
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _loadMarketplaceData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: DSEmptyState(
+            emoji: '⚠️',
+            title: _errorMessage!,
+            actionLabel: '重试',
+            onAction: _loadMarketplaceData,
+          ),
         ),
       );
     }
 
     if (_marketplaceAgents.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.store_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '商场暂无可用 Agent',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
-        ),
+      return const Center(
+        child: DSEmptyState(emoji: '🏪', title: '商场暂无可用 Agent'),
       );
     }
 

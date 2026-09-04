@@ -207,7 +207,9 @@ class BillController with ChangeNotifier {
     try {
       // 获取示例数据
       final sampleData = BillSampleData.getSampleData();
-      final sampleAccountsJson = List<String>.from(sampleData['accounts'] ?? []);
+      final sampleAccountsJson = List<String>.from(
+        sampleData['accounts'] ?? [],
+      );
 
       if (sampleAccountsJson.isNotEmpty) {
         _accounts.addAll(

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
@@ -18,7 +20,6 @@ class ProviderEditScreen extends StatefulWidget {
 }
 
 class _ProviderEditScreenState extends State<ProviderEditScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _labelController = TextEditingController();
   final _baseUrlController = TextEditingController();
   final _defaultModelController = TextEditingController();
@@ -32,6 +33,10 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
 
   // API 格式
   String _apiFormat = 'openai';
+
+  /// DSInput 无内建 Form 校验，提交时手动校验（经 errorText 展示）
+  String? _labelError;
+  String? _baseUrlError;
 
   @override
   void initState() {
@@ -160,7 +165,28 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
   }
 
   Future<void> _saveProvider() async {
-    if (!_formKey.currentState!.validate()) {
+    // DSInput 无内建 Form 校验，提交时手动校验
+    String? labelError;
+    String? baseUrlError;
+    final label = _labelController.text.trim();
+    final baseUrl = _baseUrlController.text.trim();
+
+    if (label.isEmpty) {
+      labelError = 'openai_providerLabelError'.tr;
+    }
+    if (baseUrl.isEmpty) {
+      baseUrlError = 'openai_pleaseEnterBaseUrl'.tr;
+    } else if (!baseUrl.startsWith('http://') &&
+        !baseUrl.startsWith('https://')) {
+      baseUrlError = 'openai_baseUrlError'.tr;
+    }
+
+    setState(() {
+      _labelError = labelError;
+      _baseUrlError = baseUrlError;
+    });
+
+    if (labelError != null || baseUrlError != null) {
       return;
     }
 
@@ -168,8 +194,8 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
 
     final provider = ServiceProvider(
       id: widget.provider?.id ?? const Uuid().v4(),
-      label: _labelController.text.trim(),
-      baseUrl: _baseUrlController.text.trim(),
+      label: label,
+      baseUrl: baseUrl,
       headers: _headers,
       defaultModel:
           _defaultModelController.text.trim().isEmpty
@@ -196,22 +222,22 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
 
   // 显示确认对话框
   Future<bool> _showUnsavedChangesDialog() async {
-    final result = await showDialog<bool>(
+    final result = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('openai_unsavedChangesTitle'.tr),
-            content: Text('openai_unsavedHeaderWarning'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('openai_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('openai_discard'.tr),
-              ),
-            ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (dialogContext) => DSDialog(
+                    title: 'openai_unsavedChangesTitle'.tr,
+                    message: 'openai_unsavedHeaderWarning'.tr,
+                    confirmText: 'openai_discard'.tr,
+                    cancelText: 'openai_cancel'.tr,
+                    onConfirm: () => Navigator.of(dialogContext).pop(true),
+                    onCancel: () => Navigator.of(dialogContext).pop(false),
+                  ),
+            ),
           ),
     );
     return result ?? false;
@@ -219,227 +245,244 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, dynamic result) async {
-        if (didPop) return;
+    // Scaffold/AppBar 属结构性组件,刻意保留 Material
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (bool didPop, dynamic result) async {
+              if (didPop) return;
 
-        // 检查是否有未添加的 header 输入
-        if (_hasUnsavedHeaderInput()) {
-          final shouldPop = await _showUnsavedChangesDialog();
-          if (shouldPop && context.mounted) {
-            Navigator.pop(context);
-          }
-        } else {
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.provider == null
-                ? 'openai_addProvider'.tr
-                : 'openai_editProvider'.tr,
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveProvider,
-              tooltip: 'openai_saveTooltip'.tr,
-            ),
-          ],
-        ),
-        body: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TextFormField(
-                controller: _labelController,
-                decoration: InputDecoration(
-                  labelText: 'openai_serviceProvider'.tr,
-                  hintText: 'openai_pleaseSelectProvider'.tr,
-                  border: OutlineInputBorder(),
+              // 检查是否有未添加的 header 输入
+              if (_hasUnsavedHeaderInput()) {
+                final shouldPop = await _showUnsavedChangesDialog();
+                if (shouldPop && context.mounted) {
+                  Navigator.pop(context);
+                }
+              } else {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(
+                  widget.provider == null
+                      ? 'openai_addProvider'.tr
+                      : 'openai_editProvider'.tr,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'openai_providerLabelError'.tr;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _baseUrlController,
-                decoration: InputDecoration(
-                  labelText: 'openai_baseUrl'.tr,
-                  hintText: 'openai_enterBaseUrl'.tr,
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'openai_pleaseEnterBaseUrl'.tr;
-                  }
-                  if (!value.startsWith('http://') &&
-                      !value.startsWith('https://')) {
-                    return 'openai_baseUrlError'.tr;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _defaultModelController,
-                      decoration: InputDecoration(
-                        labelText: '默认模型',
-                        hintText: '选择此服务商的默认模型',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
+                actions: [
                   IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: _selectDefaultModel,
-                    tooltip: 'openai_searchModel'.tr,
+                    icon: const Icon(Icons.save),
+                    onPressed: _saveProvider,
+                    tooltip: 'openai_saveTooltip'.tr,
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _apiFormat,
-                decoration: InputDecoration(
-                  labelText: 'API 格式',
-                  hintText: '选择 API 格式',
-                  border: OutlineInputBorder(),
-                ),
-                items: ApiFormat.values.map((format) {
-                  return DropdownMenuItem(
-                    value: format.value,
-                    child: Text(format.label),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _apiFormat = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              body: ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
-                    'Headers',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  _HeaderQuickSelect(
-                    onSelected: (headerKey) {
-                      _headerKeyController.text = headerKey;
-                      // 自动聚焦到 value 输入框
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      // 延迟聚焦，确保文本已填充
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        // 这里可以添加聚焦逻辑
-                      });
+                  DSInput(
+                    controller: _labelController,
+                    label: 'openai_serviceProvider'.tr,
+                    hint: 'openai_pleaseSelectProvider'.tr,
+                    errorText: _labelError,
+                    onChanged: (_) {
+                      if (_labelError != null) {
+                        setState(() => _labelError = null);
+                      }
                     },
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  const SizedBox(height: 16),
+                  DSInput(
+                    controller: _baseUrlController,
+                    label: 'openai_baseUrl'.tr,
+                    hint: 'openai_enterBaseUrl'.tr,
+                    errorText: _baseUrlError,
+                    onChanged: (_) {
+                      if (_baseUrlError != null) {
+                        setState(() => _baseUrlError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _headerKeyController,
-                              decoration: InputDecoration(
-                                labelText: 'openai_headerKey'.tr,
-                                hintText: 'openai_enterHeaders'.tr,
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _headerValueController,
-                              decoration: InputDecoration(
-                                labelText: 'openai_headerValue'.tr,
-                                hintText: 'openai_enterHeaders'.tr,
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle),
-                            onPressed: _addHeader,
-                            tooltip: 'openai_addHeader'.tr,
-                          ),
-                        ],
+                      Expanded(
+                        child: DSInput(
+                          controller: _defaultModelController,
+                          label: '默认模型',
+                          hint: '选择此服务商的默认模型',
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      _headers.isEmpty
-                          ? Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text(
-                                'openai_noHeaders'.tr,
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                          )
-                          : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _headers.length,
-                            itemBuilder: (context, index) {
-                              final key = _headers.keys.elementAt(index);
-                              final value = _headers[key]!;
-                              return ListTile(
-                                title: Text(key),
-                                subtitle: Text(
-                                  value,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () => _editHeader(key),
-                                      tooltip: 'openai_editHeader'.tr,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () => _removeHeader(key),
-                                      tooltip: 'openai_deleteHeader'.tr,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
+                      SizedBox(width: theme.spacing.sm),
+                      DSIconButton(
+                        icon: DsIconKind.search,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _selectDefaultModel,
+                        tooltip: 'openai_searchModel'.tr,
+                      ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  DSSelect<String>(
+                    value: _apiFormat,
+                    hint: '选择 API 格式',
+                    items:
+                        ApiFormat.values
+                            .map(
+                              (format) => DSSelectItem(
+                                label: format.label,
+                                value: format.value,
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _apiFormat = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Headers',
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      _HeaderQuickSelect(
+                        onSelected: (headerKey) {
+                          _headerKeyController.text = headerKey;
+                          // 自动聚焦到 value 输入框
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          // 延迟聚焦，确保文本已填充
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            // 这里可以添加聚焦逻辑
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  JellyBox(
+                    radius: theme.radii.xl,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: DSInput(
+                                controller: _headerKeyController,
+                                label: 'openai_headerKey'.tr,
+                                hint: 'openai_enterHeaders'.tr,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: DSInput(
+                                controller: _headerValueController,
+                                label: 'openai_headerValue'.tr,
+                                hint: 'openai_enterHeaders'.tr,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            DSIconButton(
+                              icon: DsIconKind.plus,
+                              size: 40,
+                              color: theme.surfaceAlt,
+                              iconColor: theme.textSub,
+                              onPressed: _addHeader,
+                              tooltip: 'openai_addHeader'.tr,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _headers.isEmpty
+                            ? Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'openai_noHeaders'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _headers.length,
+                              itemBuilder: (context, index) {
+                                final key = _headers.keys.elementAt(index);
+                                final value = _headers[key]!;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              key,
+                                              style: DsTypography.body.copyWith(
+                                                color: theme.text,
+                                              ),
+                                            ),
+                                            Text(
+                                              value,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: theme.textSub,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      DSIconButton(
+                                        icon: DsIconKind.edit,
+                                        size: 36,
+                                        color: theme.surfaceAlt,
+                                        iconColor: theme.textSub,
+                                        onPressed: () => _editHeader(key),
+                                        tooltip: 'openai_editHeader'.tr,
+                                      ),
+                                      DSIconButton(
+                                        icon: DsIconKind.trash,
+                                        size: 36,
+                                        color: theme.danger,
+                                        iconColor: theme.onDanger,
+                                        onPressed: () => _removeHeader(key),
+                                        tooltip: 'openai_deleteHeader'.tr,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -472,46 +515,35 @@ class _HeaderQuickSelectState extends State<_HeaderQuickSelect> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedValue,
-          hint: const Text('快捷选择', style: TextStyle(fontSize: 14)),
-          icon: const Icon(Icons.arrow_drop_down, size: 20),
-          isDense: true,
-          style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-          items: _commonHeaders.entries.map((entry) {
-            return DropdownMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                _getDisplayLabel(entry.key),
-                style: const TextStyle(fontSize: 14),
-              ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
+    return DSSelect<String>(
+      value: _selectedValue,
+      hint: '快捷选择',
+      width: 150,
+      items:
+          _commonHeaders.entries
+              .map(
+                (entry) => DSSelectItem(
+                  label: _getDisplayLabel(entry.key),
+                  value: entry.key,
+                ),
+              )
+              .toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedValue = value;
+          });
+          widget.onSelected(_commonHeaders[value] ?? value);
+          // 重置选择，方便下次使用
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
               setState(() {
-                _selectedValue = value;
-              });
-              widget.onSelected(_commonHeaders[value] ?? value);
-              // 重置选择，方便下次使用
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (mounted) {
-                  setState(() {
-                    _selectedValue = null;
-                  });
-                }
+                _selectedValue = null;
               });
             }
-          },
-        ),
-      ),
+          });
+        }
+      },
     );
   }
 

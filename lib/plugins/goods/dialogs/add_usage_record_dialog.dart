@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class AddUsageRecordDialog extends StatefulWidget {
   const AddUsageRecordDialog({super.key});
@@ -51,67 +53,131 @@ class _AddUsageRecordDialogState extends State<AddUsageRecordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('goods_addUsageRecord'.tr),
-      content: SingleChildScrollView(
+    final theme = DSThemeBridge.resolve(context);
+
+    return JellyBox(
+      radius: theme.radii.xxl,
+      padding: EdgeInsets.all(theme.spacing.xl),
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ListTile(
-              title: Text('goods_dateTime'.tr),
-              subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate)),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: _pickDate,
+            Text(
+              'goods_addUsageRecord'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
-            const SizedBox(height: 8),
-            TextField(
+            SizedBox(height: theme.spacing.lg),
+            // 日期时间选择行
+            Pressable(
+              onPressed: _pickDate,
+              builder: (context, states) {
+                final pressed = states.contains(WidgetState.pressed);
+                return Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: theme.spacing.md,
+                    vertical: theme.spacing.sm + 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: pressed ? theme.surfaceAlt : theme.background,
+                    borderRadius: theme.radii.lg,
+                  ),
+                  child: Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.calendar,
+                        size: 20,
+                        color: theme.primary,
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'goods_dateTime'.tr,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                            Text(
+                              DateFormat(
+                                'yyyy-MM-dd HH:mm',
+                              ).format(_selectedDate),
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DsIcon(
+                        DsIconKind.chevronRight,
+                        size: 18,
+                        color: theme.textSub,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: theme.spacing.md),
+            DSInput(
               controller: _durationController,
-              decoration: const InputDecoration(
-                labelText: '使用时长 (分钟)',
-                hintText: '例如: 30',
-                border: OutlineInputBorder(),
-              ),
+              label: '使用时长 (分钟)',
+              hint: '例如: 30',
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
-            TextField(
+            SizedBox(height: theme.spacing.md),
+            DSInput(
               controller: _locationController,
-              decoration: const InputDecoration(
-                labelText: '使用地点',
-                hintText: '例如: 办公室',
-                border: OutlineInputBorder(),
-              ),
+              label: '使用地点',
+              hint: '例如: 办公室',
             ),
-            const SizedBox(height: 16),
-            TextField(
+            SizedBox(height: theme.spacing.md),
+            DSInput(
               controller: _noteController,
-              decoration: InputDecoration(
-                labelText: 'goods_optionalNote'.tr,
-                border: const OutlineInputBorder(),
-              ),
+              label: 'goods_optionalNote'.tr,
               maxLines: 3,
+            ),
+            SizedBox(height: theme.spacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'goods_cancel'.tr,
+                    variant: DSButtonVariant.outline,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: 'goods_confirm'.tr,
+                    onPressed: () {
+                      final duration = int.tryParse(_durationController.text);
+                      Navigator.pop(context, {
+                        'date': _selectedDate,
+                        'duration': duration,
+                        'location':
+                            _locationController.text.isEmpty
+                                ? null
+                                : _locationController.text,
+                        'note':
+                            _noteController.text.isEmpty
+                                ? null
+                                : _noteController.text,
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('goods_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () {
-            final duration = int.tryParse(_durationController.text);
-            Navigator.pop(context, {
-              'date': _selectedDate,
-              'duration': duration,
-              'location': _locationController.text.isEmpty ? null : _locationController.text,
-              'note': _noteController.text.isEmpty ? null : _noteController.text,
-            });
-          },
-          child: Text('goods_confirm'.tr),
-        ),
-      ],
     );
   }
 }

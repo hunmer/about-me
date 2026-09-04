@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -47,7 +49,7 @@ Widget renderCardData(
   SelectorResult result,
   Map<String, dynamic> config,
 ) {
-  final theme = Theme.of(context);
+  final theme = DSThemeBridge.resolve(context);
 
   // dataSelector 已经将数据转换为 Map，直接使用
   if (result.data == null || result.data is! Map) {
@@ -78,13 +80,13 @@ Widget renderCardData(
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
+                    color: theme.success.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'webview_localFile'.tr,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green,
+                    style: DsTypography.label.copyWith(
+                      color: theme.success,
                       fontSize: 10,
                     ),
                   ),
@@ -94,7 +96,8 @@ Widget renderCardData(
           // 卡片标题
           Text(
             title,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: DsTypography.title.copyWith(
+              color: theme.text,
               fontWeight: FontWeight.bold,
             ),
             maxLines: 2,
@@ -102,21 +105,19 @@ Widget renderCardData(
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          // URL 或路径
+          // URL 或路径(DS 暂无文件夹/网页图标,保留 Material)
           Row(
             children: [
               Icon(
                 isLocalFile ? Icons.folder : Icons.public,
                 size: 16,
-                color: theme.colorScheme.outline,
+                color: theme.textSub,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   url,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

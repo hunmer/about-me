@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import '../../../../core/services/toast_service.dart';
@@ -57,9 +59,7 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
       }
     } catch (e) {
       if (mounted) {
-        toastService.showToast(
-          '${'openai_loadModelsFailed'.tr}: $e',
-        );
+        toastService.showToast('${'openai_loadModelsFailed'.tr}: $e');
       }
       setState(() {
         _modelGroups = [];
@@ -128,12 +128,8 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            hintText: '搜索模型...',
-                            prefixIcon: Icon(Icons.search),
-                            border: InputBorder.none,
-                          ),
+                        child: DSInput.search(
+                          hint: '搜索模型...',
                           onChanged: (value) {
                             setState(() {
                               _searchQuery = value;
@@ -153,77 +149,143 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
                   ),
                 ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : TabBarView(
-                controller: _tabController,
-                children:
-                    _modelGroups.map((group) {
-                      final filteredModels = _getFilteredModels(group.models);
-                      return filteredModels.isEmpty
-                          ? Center(
-                            child: Text(
-                              'openai_noModelsFound'.tr,
-                            ),
-                          )
-                          : ListView.builder(
-                            itemCount: filteredModels.length,
-                            itemBuilder: (context, index) {
-                              final model = filteredModels[index];
-                              final isSelected = _selectedModel?.id == model.id;
+      body: Builder(
+        builder:
+            (context) =>
+                _isLoading
+                    ? const Center(child: DSLoadingDots())
+                    : TabBarView(
+                      controller: _tabController,
+                      children:
+                          _modelGroups.map((group) {
+                            final filteredModels = _getFilteredModels(
+                              group.models,
+                            );
+                            return filteredModels.isEmpty
+                                ? Center(child: Text('openai_noModelsFound'.tr))
+                                : Builder(
+                                  builder: (context) {
+                                    final theme = DSThemeBridge.resolve(
+                                      context,
+                                    );
+                                    return ListView.builder(
+                                      itemCount: filteredModels.length,
+                                      itemBuilder: (context, index) {
+                                        final model = filteredModels[index];
+                                        final isSelected =
+                                            _selectedModel?.id == model.id;
 
-                              return ListTile(
-                                title: Text(model.name),
-                                subtitle: Text(model.group),
-                                trailing:
-                                    isSelected
-                                        ? const Icon(
-                                          Icons.check_circle,
-                                          color: Colors.green,
-                                        )
-                                        : null,
-                                selected: isSelected,
-                                onTap: () {
-                                  setState(() {
-                                    _selectedModel = model;
-                                  });
-                                },
-                                onLongPress: () {
-                                  // 显示模型详情
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(model.name),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text('分组: ${model.group}'),
-                                        ],
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context).pop(),
-                                          child: Text('openai_close'.tr),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          );
-                    }).toList(),
-              ),
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 4,
+                                          ),
+                                          child: GestureDetector(
+                                            onLongPress: () {
+                                              // 显示模型详情
+                                              showDSDialog(
+                                                context: context,
+                                                theme: DSThemeBridge.resolve(
+                                                  context,
+                                                ),
+                                                builder:
+                                                    (
+                                                      dialogContext,
+                                                    ) => DSThemeBridge(
+                                                      child: Builder(
+                                                        builder:
+                                                            (
+                                                              dialogContext,
+                                                            ) => DSDialog(
+                                                              title: model.name,
+                                                              message:
+                                                                  '分组: ${model.group}',
+                                                              confirmText:
+                                                                  'openai_close'
+                                                                      .tr,
+                                                              onConfirm:
+                                                                  () =>
+                                                                      Navigator.of(
+                                                                        dialogContext,
+                                                                      ).pop(),
+                                                            ),
+                                                      ),
+                                                    ),
+                                              );
+                                            },
+                                            child: DSCard(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: theme.spacing.md,
+                                                vertical: theme.spacing.sm,
+                                              ),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedModel = model;
+                                                });
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          model.name,
+                                                          style: DsTypography
+                                                              .body
+                                                              .copyWith(
+                                                                color:
+                                                                    theme.text,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          model.group,
+                                                          style: DsTypography
+                                                              .caption
+                                                              .copyWith(
+                                                                color:
+                                                                    theme
+                                                                        .textSub,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (isSelected)
+                                                    DsIcon(
+                                                      DsIconKind.check,
+                                                      size: 22,
+                                                      color: theme.success,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                          }).toList(),
+                    ),
+      ),
       floatingActionButton:
           _selectedModel != null
-              ? FloatingActionButton(
-                onPressed: () {
-                  Navigator.of(context).pop(_selectedModel);
-                },
-                child: const Icon(Icons.check),
+              ? DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    return DSFab(
+                      icon: DsIconKind.check,
+                      onPressed: () {
+                        Navigator.of(context).pop(_selectedModel);
+                      },
+                    );
+                  },
+                ),
               )
               : null,
     );

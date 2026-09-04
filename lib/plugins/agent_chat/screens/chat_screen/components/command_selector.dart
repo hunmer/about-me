@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_command.dart';
 
 /// 命令选择器组件
@@ -16,16 +18,17 @@ class CommandSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     if (commands.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
+          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
+          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
         ),
         boxShadow: [
           BoxShadow(
@@ -44,9 +47,8 @@ class CommandSelector extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
               '可用命令',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+              style: DsTypography.caption.copyWith(
+                color: theme.textSub,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -70,79 +72,75 @@ class CommandSelector extends StatelessWidget {
 
   /// 构建命令项
   Widget _buildCommandItem(ChatCommand command) {
-    return InkWell(
-      onTap: () => onCommandSelected(command),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            // 命令图标
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: command.color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+    return Pressable(
+      onPressed: () => onCommandSelected(command),
+      builder: (context, states) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              // 命令图标（动态 IconData 及其配色刻意保留 Material）
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: command.color.withValues(alpha: 0.1),
+                  borderRadius: theme.radii.sm,
+                ),
+                child: Icon(command.icon, size: 20, color: command.color),
               ),
-              child: Icon(
-                command.icon,
-                size: 20,
-                color: command.color,
-              ),
-            ),
 
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // 命令信息
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '/${command.command}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: command.color,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      if (command.requiresArgument) ...[
-                        const SizedBox(width: 4),
+              // 命令信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Text(
-                          '[参数]',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                            fontStyle: FontStyle.italic,
+                          '/${command.command}',
+                          style: DsTypography.body.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: command.color,
+                            fontFamily: 'monospace',
                           ),
                         ),
+                        if (command.requiresArgument) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '[参数]',
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    command.description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      command.description,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // 箭头图标
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: Colors.grey[400],
-            ),
-          ],
-        ),
-      ),
+              // 箭头图标
+              DsIcon(
+                DsIconKind.chevronRight,
+                size: 14,
+                color: theme.textSub.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

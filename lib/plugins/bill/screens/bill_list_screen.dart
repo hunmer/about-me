@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
@@ -327,7 +329,7 @@ class _BillListScreenState extends State<BillListScreen> {
                 dayFormat: 'EEE',
                 monthCellStyle: MonthCellStyle(
                   textStyle: TextStyle(
-                    color: Colors.grey[500],
+                    color: DSThemeBridge.resolve(context).textSub,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -368,15 +370,21 @@ class _BillListScreenState extends State<BillListScreen> {
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  DateFormat(
-                    'MMMM d, EEEE',
-                    Localizations.localeOf(context).toString(),
-                  ).format(_selectedDay ?? DateTime.now()),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return Text(
+                      DateFormat(
+                        'MMMM d, EEEE',
+                        Localizations.localeOf(context).toString(),
+                      ).format(_selectedDay ?? DateTime.now()),
+                      style: DsTypography.title.copyWith(
+                        color: theme.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -396,7 +404,7 @@ class _BillListScreenState extends State<BillListScreen> {
   Widget _buildCalendarCell(DateTime day, bool isSelected) {
     final dateKey = DateTime(day.year, day.month, day.day);
     final stats = _dailyStats[dateKey];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
 
     return Container(
       margin: const EdgeInsets.all(2),
@@ -413,10 +421,7 @@ class _BillListScreenState extends State<BillListScreen> {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                color:
-                    isSelected
-                        ? Colors.white
-                        : (isDark ? Colors.white : Colors.grey[800]),
+                color: isSelected ? Colors.white : theme.text,
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -453,7 +458,6 @@ class _BillListScreenState extends State<BillListScreen> {
   }
 
   Widget _buildListView() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final filteredBills = _filteredBills;
 
     return Column(
@@ -461,32 +465,26 @@ class _BillListScreenState extends State<BillListScreen> {
       children: [
         // Filter Chips
         SizedBox(
-          height: 40,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: _availableCategories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final category = _availableCategories[index];
-              final isSelected = _filterCategory == category;
-              return ActionChip(
-                label: Text(_getCategoryLabel(category)),
-                backgroundColor:
-                    isSelected
-                        ? _primaryColor
-                        : (isDark ? Colors.grey[800] : Colors.grey[200]),
-                labelStyle: TextStyle(
-                  color:
-                      isSelected
-                          ? Colors.white
-                          : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                  fontWeight: FontWeight.w500,
-                ),
-                shape: const StadiumBorder(side: BorderSide.none),
-                onPressed: () => setState(() => _filterCategory = category),
-              );
-            },
+          height: 44,
+          child: DSThemeBridge(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: _availableCategories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final category = _availableCategories[index];
+                final isSelected = _filterCategory == category;
+                return Center(
+                  child: DSChip(
+                    label: _getCategoryLabel(category),
+                    selected: isSelected,
+                    onSelected:
+                        (_) => setState(() => _filterCategory = category),
+                  ),
+                );
+              },
+            ),
           ),
         ),
 
@@ -502,14 +500,21 @@ class _BillListScreenState extends State<BillListScreen> {
           ), // 增加底部padding为悬浮按钮留空间
           child:
               filteredBills.isEmpty
-                  ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 50),
-                      child: Text(
-                        'bill_noBills'.tr,
-                        style: TextStyle(color: Colors.grey[500]),
-                      ),
-                    ),
+                  ? Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 50),
+                          child: Text(
+                            'bill_noBills'.tr,
+                            style: DsTypography.body.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   )
                   : Column(
                     children:
@@ -520,7 +525,7 @@ class _BillListScreenState extends State<BillListScreen> {
                             padding: EdgeInsets.only(
                               bottom: index < filteredBills.length - 1 ? 12 : 0,
                             ),
-                            child: _buildBillCard(bill, isDark),
+                            child: _buildBillCard(bill),
                           );
                         }).toList(),
                   ),
@@ -529,11 +534,14 @@ class _BillListScreenState extends State<BillListScreen> {
     );
   }
 
-  Widget _buildBillCard(BillModel bill, bool isDark) {
+  Widget _buildBillCard(BillModel bill) {
     final currencyFormatter = NumberFormat.currency(
       symbol: '¥',
       decimalDigits: 0,
     ); // HTML shows no decimals
+
+    final theme = DSThemeBridge.resolve(context);
+    final isDark = theme.isDark;
 
     // Determine colors based on HTML style
     // Income: Emerald bg/text
@@ -573,31 +581,29 @@ class _BillListScreenState extends State<BillListScreen> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20.0),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: theme.danger,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: DsIcon(DsIconKind.trash, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
-        return await showDialog(
+        return await showDSDialog(
           context: context,
+          theme: DSThemeBridge.resolve(context),
           builder:
-              (BuildContext context) => AlertDialog(
-                title: Text('bill_confirmDelete'.tr),
-                content: Text('bill_deleteBillConfirmation'.tr),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text('bill_cancel'.tr),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(
-                      'bill_delete'.tr,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
+              (BuildContext context) => DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (context) => DSDialog(
+                        title: 'bill_confirmDelete'.tr,
+                        message: 'bill_deleteBillConfirmation'.tr,
+                        cancelText: 'bill_cancel'.tr,
+                        confirmText: 'bill_delete'.tr,
+                        confirmVariant: DSButtonVariant.destructive,
+                        onCancel: () => Navigator.of(context).pop(false),
+                        onConfirm: () => Navigator.of(context).pop(true),
+                      ),
+                ),
               ),
         );
       },
@@ -642,10 +648,9 @@ class _BillListScreenState extends State<BillListScreen> {
                   children: [
                     Text(
                       bill.title.isNotEmpty ? bill.title : bill.category,
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: DsTypography.heading.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.grey[900],
+                        color: theme.text,
                       ),
                     ),
                     if (bill.note != null && bill.note!.isNotEmpty)
@@ -653,9 +658,8 @@ class _BillListScreenState extends State<BillListScreen> {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           bill.note!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? Colors.grey[400] : Colors.grey[500],
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -667,8 +671,7 @@ class _BillListScreenState extends State<BillListScreen> {
               Text(
                 (bill.isExpense ? '-' : '+') +
                     currencyFormatter.format(bill.amount),
-                style: TextStyle(
-                  fontSize: 16,
+                style: DsTypography.heading.copyWith(
                   fontWeight: FontWeight.bold,
                   color: amountColor,
                 ),

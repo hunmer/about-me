@@ -2,10 +2,7 @@ class CustomField {
   final String key;
   final String value;
 
-  CustomField({
-    required this.key,
-    required this.value,
-  });
+  CustomField({required this.key, required this.value});
 
   factory CustomField.fromJson(Map<String, dynamic> json) {
     return CustomField(
@@ -15,9 +12,6 @@ class CustomField {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'key': key,
-      'value': value,
-    };
+    return {'key': key, 'value': value};
   }
 }

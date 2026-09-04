@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
@@ -25,7 +27,10 @@ void registerGoodsListWidget(HomeWidgetRegistry registry) {
       icon: Icons.view_list,
       color: goodsColor,
       defaultSize: const LargeSize(),
-      supportedSizes: [const CustomSize(width: -1, height: -1), const LargeSize()],
+      supportedSizes: [
+        const CustomSize(width: -1, height: -1),
+        const LargeSize(),
+      ],
       category: 'home_categoryRecord'.tr,
 
       // 选择器配置
@@ -51,10 +56,7 @@ void registerGoodsListWidget(HomeWidgetRegistry registry) {
 }
 
 /// 导航到物品列表页面
-void _navigateToGoodsList(
-  BuildContext context,
-  SelectorResult result,
-) {
+void _navigateToGoodsList(BuildContext context, SelectorResult result) {
   final data = result.data as Map<String, dynamic>?;
   if (data == null) {
     debugPrint('[GoodsListWidget] 过滤器数据为空');
@@ -115,28 +117,22 @@ class _GoodsListLiveSelectorWidget extends LiveSelectorWidget {
   /// 自定义空状态（显示"暂无物品"）
   @override
   Widget buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     return SizedBox.expand(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.surfaceAlt,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.layers, size: 48, color: theme.textSub),
             const SizedBox(height: 8),
             Text(
               'goods_noItems'.tr,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),

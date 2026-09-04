@@ -92,10 +92,7 @@ class _BillDayCardHomeWidget extends StatelessWidget {
 
       // 监听账单数据变化（controller 为 ChangeNotifier）与主页选中日期
       return AnimatedBuilder(
-        animation: Listenable.merge([
-          plugin.controller,
-          HomeDateController(),
-        ]),
+        animation: Listenable.merge([plugin.controller, HomeDateController()]),
         builder: (context, _) {
           final date = HomeDateController().date;
 

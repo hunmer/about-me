@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -105,14 +107,8 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       duration: const Duration(milliseconds: 800),
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
 
@@ -131,21 +127,22 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       await widget.recognitionService.initialize();
 
       // 监听识别结果并实时更新到输入框
-      _recognitionSubscription =
-          widget.recognitionService.recognitionStream.listen((text) {
-        setState(() {
-          _recognizedText = text;
-        });
+      _recognitionSubscription = widget.recognitionService.recognitionStream
+          .listen((text) {
+            setState(() {
+              _recognizedText = text;
+            });
 
-        // 实时更新到输入框
-        if (_isRecording && text.isNotEmpty) {
-          _updateTextController(text);
-        }
-      });
+            // 实时更新到输入框
+            if (_isRecording && text.isNotEmpty) {
+              _updateTextController(text);
+            }
+          });
 
       // 监听状态变化
-      _stateSubscription =
-          widget.recognitionService.stateStream.listen((state) {
+      _stateSubscription = widget.recognitionService.stateStream.listen((
+        state,
+      ) {
         if (state == SpeechRecognitionState.idle && _isRecording) {
           setState(() {
             _isRecording = false;
@@ -155,7 +152,9 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       });
 
       // 监听错误
-      _errorSubscription = widget.recognitionService.errorStream.listen((error) {
+      _errorSubscription = widget.recognitionService.errorStream.listen((
+        error,
+      ) {
         _handleError(error);
       });
 
@@ -175,7 +174,8 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
     try {
       // 保存录音开始前的文本和光标位置
       _textBeforeRecording = widget.textController.text;
-      _cursorPositionBeforeRecording = widget.textController.selection.baseOffset;
+      _cursorPositionBeforeRecording =
+          widget.textController.selection.baseOffset;
       // 如果光标位置无效（-1），则使用文本末尾
       if (_cursorPositionBeforeRecording < 0 ||
           _cursorPositionBeforeRecording > _textBeforeRecording.length) {
@@ -245,8 +245,13 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
     if (recognizedText.isEmpty) return;
 
     // 将识别的文本插入到开始录音时的光标位置
-    final beforeCursor = _textBeforeRecording.substring(0, _cursorPositionBeforeRecording);
-    final afterCursor = _textBeforeRecording.substring(_cursorPositionBeforeRecording);
+    final beforeCursor = _textBeforeRecording.substring(
+      0,
+      _cursorPositionBeforeRecording,
+    );
+    final afterCursor = _textBeforeRecording.substring(
+      _cursorPositionBeforeRecording,
+    );
 
     // 构建新文本：光标前 + 识别文本 + 光标后
     final newText = beforeCursor + recognizedText + afterCursor;
@@ -254,7 +259,8 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
     widget.textController.text = newText;
 
     // 将光标移动到插入文本的末尾
-    final newCursorPosition = _cursorPositionBeforeRecording + recognizedText.length;
+    final newCursorPosition =
+        _cursorPositionBeforeRecording + recognizedText.length;
     widget.textController.selection = TextSelection.fromPosition(
       TextPosition(offset: newCursorPosition),
     );
@@ -281,40 +287,40 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
 
   @override
   Widget build(BuildContext context) {
-    final iconWidget = widget.icon ?? const Icon(Icons.mic);
-    final buttonColor = _isRecording
-        ? (widget.recordingColor ?? Colors.red)
-        : (widget.color ?? Theme.of(context).iconTheme.color);
+    final theme = DSThemeBridge.resolve(context);
+    final iconWidget = widget.icon ?? DsIcon(DsIconKind.mic);
+    final buttonColor =
+        _isRecording
+            ? (widget.recordingColor ?? theme.danger)
+            : (widget.color ?? theme.textSub);
     final tooltipText = widget.tooltip ?? (_isRecording ? '点击停止录音' : '点击开始录音');
 
     return Tooltip(
       message: tooltipText,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: widget.enabled && _isInitialized ? _toggleRecording : null,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                final scale = _isRecording ? _scaleAnimation.value : 1.0;
+      child: Pressable(
+        onPressed: widget.enabled && _isInitialized ? _toggleRecording : null,
+        semanticLabel: tooltipText,
+        builder:
+            (context, states) => Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  final scale = _isRecording ? _scaleAnimation.value : 1.0;
 
-                return Transform.scale(
-                  scale: scale,
-                  child: IconTheme(
-                    data: IconThemeData(
-                      color: buttonColor,
-                      size: widget.size ?? 24.0,
+                  return Transform.scale(
+                    scale: scale,
+                    child: IconTheme(
+                      data: IconThemeData(
+                        color: buttonColor,
+                        size: widget.size ?? 24.0,
+                      ),
+                      child: iconWidget,
                     ),
-                    child: iconWidget,
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ),
       ),
     );
   }

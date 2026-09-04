@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
@@ -29,116 +31,182 @@ class _CustomFieldsListState extends State<CustomFieldsList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'goods_customFields'.tr,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: Text('goods_addField'.tr),
-              onPressed: _addNewField,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (_fields.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'goods_noCustomFields'.tr,
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _fields.length,
-            itemBuilder: (context, index) {
-              final field = _fields[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                child: ListTile(
-                  title: Text(field.key),
-                  subtitle: Text(field.value),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removeField(index),
-                  ),
-                  onTap: () => _editField(index),
+    final theme = DSThemeBridge.resolve(context);
+    return DSThemeBridge(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'goods_customFields'.tr,
+                style: DsTypography.heading.copyWith(
+                  color: theme.text,
+                  fontWeight: FontWeight.bold,
                 ),
-              );
-            },
+              ),
+              DSButton(
+                label: 'goods_addField'.tr,
+                variant: DSButtonVariant.ghost,
+                icon: DsIconKind.plus,
+                size: DSButtonSize.sm,
+                onPressed: _addNewField,
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 8),
+          if (_fields.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'goods_noCustomFields'.tr,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _fields.length,
+              itemBuilder: (context, index) {
+                final field = _fields[index];
+                return JellyBox(
+                  color: theme.surfaceAlt,
+                  radius: theme.radii.lg,
+                  raised: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              field.key,
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              field.value,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DSIconButton(
+                        icon: DsIconKind.trash,
+                        size: 36,
+                        color: theme.danger.withValues(alpha: 0.12),
+                        iconColor: theme.danger,
+                        onPressed: () => _removeField(index),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 弹出字段编辑对话框（新增/编辑共用）
+  Future<bool?> _showFieldDialog(
+    String title,
+    TextEditingController keyController,
+    TextEditingController valueController,
+  ) {
+    return showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => JellyBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: DsTypography.title.copyWith(
+                              color: DSThemeBridge.resolve(context).text,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          DSInput(
+                            controller: keyController,
+                            label: 'goods_fieldName'.tr,
+                            hint: 'goods_enterFieldName'.tr,
+                          ),
+                          const SizedBox(height: 16),
+                          DSInput(
+                            controller: valueController,
+                            label: 'goods_fieldValue'.tr,
+                            hint: 'goods_enterFieldValue'.tr,
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DSButton(
+                                  label: 'goods_cancel'.tr,
+                                  variant: DSButtonVariant.outline,
+                                  onPressed:
+                                      () => Navigator.of(context).pop(false),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DSButton(
+                                  label: 'goods_confirm'.tr,
+                                  onPressed: () {
+                                    if (keyController.text.isNotEmpty &&
+                                        valueController.text.isNotEmpty) {
+                                      Navigator.of(context).pop(true);
+                                    } else {
+                                      toastService.showToast(
+                                        'goods_fieldNameAndValueCannotBeEmpty'
+                                            .tr,
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+            ),
+          ),
     );
   }
 
   void _addNewField() async {
     final TextEditingController keyController = TextEditingController();
     final TextEditingController valueController = TextEditingController();
-    final theme = Theme.of(context);
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            'goods_addCustomField'.tr,
-            style: TextStyle(color: theme.colorScheme.onSurface),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: keyController,
-                decoration: InputDecoration(
-                  labelText: 'goods_fieldName'.tr,
-                  hintText: 'goods_enterFieldName'.tr,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: valueController,
-                decoration: InputDecoration(
-                  labelText: 'goods_fieldValue'.tr,
-                  hintText: 'goods_enterFieldValue'.tr,
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                if (keyController.text.isNotEmpty &&
-                    valueController.text.isNotEmpty) {
-                  Navigator.of(context).pop(true);
-                } else {
-                  toastService.showToast(
-                    'goods_fieldNameAndValueCannotBeEmpty'.tr,
-                  );
-                }
-              },
-              child: Text('goods_confirm'.tr),
-            ),
-          ],
-        );
-      },
+    final bool? confirmed = await _showFieldDialog(
+      'goods_addCustomField'.tr,
+      keyController,
+      valueController,
     );
 
     if (confirmed == true) {
@@ -159,59 +227,11 @@ class _CustomFieldsListState extends State<CustomFieldsList> {
     final TextEditingController valueController = TextEditingController(
       text: field.value,
     );
-    final theme = Theme.of(context);
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            'goods_editCustomField'.tr,
-            style: TextStyle(color: theme.colorScheme.onSurface),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: keyController,
-                decoration: InputDecoration(
-                  labelText: 'goods_fieldName'.tr,
-                  hintText: 'goods_enterFieldName'.tr,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: valueController,
-                decoration: InputDecoration(
-                  labelText: 'goods_fieldValue'.tr,
-                  hintText: 'goods_enterFieldValue'.tr,
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                if (keyController.text.isNotEmpty &&
-                    valueController.text.isNotEmpty) {
-                  Navigator.of(context).pop(true);
-                } else {
-                  toastService.showToast(
-                    'goods_fieldNameAndValueCannotBeEmpty'.tr,
-                  );
-                }
-              },
-              child: Text('goods_confirm'.tr),
-            ),
-          ],
-        );
-      },
+    final bool? confirmed = await _showFieldDialog(
+      'goods_editCustomField'.tr,
+      keyController,
+      valueController,
     );
 
     if (confirmed == true) {
@@ -226,35 +246,24 @@ class _CustomFieldsListState extends State<CustomFieldsList> {
   }
 
   void _removeField(int index) {
-    final theme = Theme.of(context);
-    showDialog<bool>(
+    showDSDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            'goods_confirmDelete'.tr,
-            style: TextStyle(color: theme.colorScheme.onSurface),
-          ),
-          content: Text(
-            'goods_confirmDeleteCustomField'.tr,
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => DSDialog(
+                    title: 'goods_confirmDelete'.tr,
+                    message: 'goods_confirmDeleteCustomField'.tr,
+                    cancelText: 'goods_cancel'.tr,
+                    confirmText: 'goods_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onCancel: () => Navigator.of(context).pop(false),
+                    onConfirm: () => Navigator.of(context).pop(true),
+                  ),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(
-                'goods_delete'.tr,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            ),
-          ],
-        );
-      },
+          ),
     ).then((confirmed) {
       if (confirmed == true) {
         setState(() {

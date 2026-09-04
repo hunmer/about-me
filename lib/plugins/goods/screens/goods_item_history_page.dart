@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/models/usage_record.dart';
 
@@ -63,9 +65,10 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
     // Sort records descending
     final records = List<UsageRecord>.from(_item.usageRecords)
       ..sort((a, b) => b.date.compareTo(a.date));
+    final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.background,
       appBar: AppBar(
         title: Text('goods_usageHistory'.tr),
         centerTitle: true,
@@ -75,7 +78,12 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
         ),
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(32, 16, 16, 16), // Left padding for timeline
+        padding: const EdgeInsets.fromLTRB(
+          32,
+          16,
+          16,
+          16,
+        ), // Left padding for timeline
         itemCount: records.length,
         itemBuilder: (context, index) {
           final record = records[index];
@@ -86,6 +94,7 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
   }
 
   Widget _buildRecordItem(UsageRecord record, bool isLast) {
+    final theme = DSThemeBridge.resolve(context);
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -96,11 +105,9 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
             top: 24,
             bottom: -16, // Extend to next item
             width: 2,
-            child: Container(
-              color: Theme.of(context).dividerColor,
-            ),
+            child: Container(color: theme.stroke),
           ),
-        
+
         // Dot
         Positioned(
           left: -31,
@@ -109,81 +116,71 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
             width: 16,
             height: 16,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
+              color: theme.primary,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                width: 4,
-              ),
+              border: Border.all(color: theme.background, width: 4),
             ),
           ),
         ),
 
         // Card
-        Container(
-          margin: const EdgeInsets.only(bottom: 24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header (Date)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: Theme.of(context).hintColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _formatDate(record.date),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: JellyBox(
+            color: theme.surface,
+            radius: BorderRadius.circular(16),
+            raised: false,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header (Date)
+                  Row(
+                    children: [
+                      DsIcon(DsIconKind.clock, size: 16, color: theme.textSub),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDate(record.date),
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.5)),
-                const SizedBox(height: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Divider(
+                    height: 1,
+                    color: theme.stroke.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 12),
 
-                // Duration
-                _buildInfoRow(
-                  Icons.hourglass_empty,
-                  '使用时长', // TODO: Localize
-                  _formatDuration(record.duration),
-                ),
-                const SizedBox(height: 8),
+                  // Duration
+                  _buildInfoRow(
+                    DsIconKind.clock,
+                    '使用时长', // TODO: Localize
+                    _formatDuration(record.duration),
+                  ),
+                  const SizedBox(height: 8),
 
-                // Location
-                _buildInfoRow(
-                  Icons.location_on,
-                  '使用地点', // TODO: Localize
-                  record.location ?? '-',
-                ),
-                const SizedBox(height: 8),
+                  // Location
+                  _buildInfoRow(
+                    DsIconKind.pin,
+                    '使用地点', // TODO: Localize
+                    record.location ?? '-',
+                  ),
+                  const SizedBox(height: 8),
 
-                // Note
-                _buildInfoRow(
-                  Icons.sticky_note_2,
-                  '备注', // TODO: Localize
-                  record.note ?? '-',
-                  isNote: true,
-                ),
-              ],
+                  // Note
+                  _buildInfoRow(
+                    DsIconKind.clipboard,
+                    '备注', // TODO: Localize
+                    record.note ?? '-',
+                    isNote: true,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -191,25 +188,27 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {bool isNote = false}) {
+  Widget _buildInfoRow(
+    DsIconKind icon,
+    String label,
+    String value, {
+    bool isNote = false,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Theme.of(context).hintColor,
-        ),
+        DsIcon(icon, size: 16, color: theme.textSub),
         const SizedBox(width: 6),
         if (isNote)
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                style: DsTypography.body.copyWith(color: theme.text),
                 children: [
                   TextSpan(
                     text: '$label: ',
-                    style: TextStyle(color: Theme.of(context).hintColor),
+                    style: TextStyle(color: theme.textSub),
                   ),
                   TextSpan(
                     text: value,
@@ -225,11 +224,14 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
               children: [
                 Text(
                   '$label: ',
-                  style: TextStyle(color: Theme.of(context).hintColor, fontSize: 14),
+                  style: DsTypography.body.copyWith(color: theme.textSub),
                 ),
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: DsTypography.body.copyWith(
+                    color: theme.text,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),

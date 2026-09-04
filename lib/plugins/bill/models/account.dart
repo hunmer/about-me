@@ -60,7 +60,7 @@ class Account {
     }
     bills.add(bill);
     calculateTotal();
-    
+
     // 发布账单添加事件
     EventManager.instance.broadcast(
       BillController.billAddedEvent,

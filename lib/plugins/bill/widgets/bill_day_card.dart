@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
@@ -38,11 +40,11 @@ class BillDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -66,15 +68,13 @@ class BillDayCard extends StatelessWidget {
                           Icon(
                             Icons.account_balance_wallet_outlined,
                             size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
+                            color: theme.disabled.withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'bill_dayCardEmpty'.tr,
                             style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
+                              color: theme.disabled.withValues(alpha: 0.4),
                               fontSize: 12,
                             ),
                           ),
@@ -114,7 +114,7 @@ class BillDayCard extends StatelessWidget {
 
   /// 单条账单行：分类图标 + 标题/分类 + 时间 + 金额
   Widget _buildBillItem(BuildContext context, Bill bill) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return InkWell(
       onTap: () => onBillTap(bill),
@@ -135,7 +135,8 @@ class BillDayCard extends StatelessWidget {
                 children: [
                   Text(
                     bill.title.isNotEmpty ? bill.title : bill.category,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
+                      color: theme.text,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -144,9 +145,9 @@ class BillDayCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${bill.category} ${_formatTime(bill.date)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: DsTypography.caption.copyWith(
                       fontSize: 11,
-                      color: theme.disabledColor,
+                      color: theme.disabled,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -157,7 +158,7 @@ class BillDayCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '${bill.isExpense ? '-' : '+'}¥${bill.absoluteAmount.toStringAsFixed(2)}',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: DsTypography.caption.copyWith(
                 fontWeight: FontWeight.bold,
                 color: bill.isExpense ? _expenseColor : _incomeColor,
               ),

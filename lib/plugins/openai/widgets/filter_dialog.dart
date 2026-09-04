@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 
@@ -49,17 +51,28 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('openai_filterAgents'.tr),
-      content: SizedBox(
-        width: double.maxFinite,
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      padding: EdgeInsets.all(theme.spacing.xl),
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
+              'openai_filterAgents'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.lg),
+            Text(
               'openai_serviceProvider'.tr,
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: DsTypography.body.copyWith(
+                color: theme.text,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -67,8 +80,8 @@ class _FilterDialogState extends State<FilterDialog> {
               runSpacing: 8,
               children:
                   _allProviders.map((provider) {
-                    return FilterChip(
-                      label: Text(provider),
+                    return DSChip(
+                      label: provider,
                       selected: _selectedProviders.contains(provider),
                       onSelected: (selected) {
                         setState(() {
@@ -85,7 +98,10 @@ class _FilterDialogState extends State<FilterDialog> {
             const SizedBox(height: 16),
             Text(
               'openai_tags'.tr,
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: DsTypography.body.copyWith(
+                color: theme.text,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -93,8 +109,8 @@ class _FilterDialogState extends State<FilterDialog> {
               runSpacing: 8,
               children:
                   _allTags.map((tag) {
-                    return FilterChip(
-                      label: Text(tag),
+                    return DSChip(
+                      label: tag,
                       selected: _selectedTags.contains(tag),
                       onSelected: (selected) {
                         setState(() {
@@ -108,22 +124,31 @@ class _FilterDialogState extends State<FilterDialog> {
                     );
                   }).toList(),
             ),
+            SizedBox(height: theme.spacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'openai_cancel'.tr,
+                    variant: DSButtonVariant.outline,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: 'openai_apply'.tr,
+                    onPressed: () {
+                      widget.onApply(_selectedProviders, _selectedTags);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('openai_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () {
-            widget.onApply(_selectedProviders, _selectedTags);
-            Navigator.pop(context);
-          },
-          child: Text('openai_apply'.tr),
-        ),
-      ],
     );
   }
 }

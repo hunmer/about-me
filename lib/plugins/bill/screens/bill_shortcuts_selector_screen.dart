@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
 import 'package:aboutme/plugins/bill/models/bill_shortcut.dart';
 import 'package:aboutme/plugins/bill/services/bill_shortcuts_widget_service.dart';
@@ -16,10 +18,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 class BillShortcutsSelectorScreen extends StatefulWidget {
   final int widgetId;
 
-  const BillShortcutsSelectorScreen({
-    super.key,
-    required this.widgetId,
-  });
+  const BillShortcutsSelectorScreen({super.key, required this.widgetId});
 
   @override
   State<BillShortcutsSelectorScreen> createState() =>
@@ -67,8 +66,9 @@ class _BillShortcutsSelectorScreenState
 
   /// 加载已有配置
   Future<void> _loadExistingConfig() async {
-    final config = await BillShortcutsWidgetService.instance
-        .loadWidgetConfig(widget.widgetId);
+    final config = await BillShortcutsWidgetService.instance.loadWidgetConfig(
+      widget.widgetId,
+    );
 
     if (config != null && mounted) {
       setState(() {
@@ -78,12 +78,16 @@ class _BillShortcutsSelectorScreenState
     }
 
     // 加载颜色配置
-    final colors = await BillShortcutsWidgetService.instance
-        .loadWidgetColors(widget.widgetId);
+    final colors = await BillShortcutsWidgetService.instance.loadWidgetColors(
+      widget.widgetId,
+    );
 
     if (colors != null && mounted) {
       setState(() {
-        _widgetConfig = _widgetConfig.updateColor('background', colors['backgroundColor']!);
+        _widgetConfig = _widgetConfig.updateColor(
+          'background',
+          colors['backgroundColor']!,
+        );
         _widgetConfig = _widgetConfig.updateColor('text', colors['textColor']!);
         _widgetConfig = _widgetConfig.updateColor('icon', colors['iconColor']!);
       });
@@ -104,11 +108,10 @@ class _BillShortcutsSelectorScreenState
     }
 
     // 打开编辑对话框
-    final shortcut = await showDialog<BillShortcut>(
+    final shortcut = await showDSDialog<BillShortcut>(
       context: context,
-      builder: (context) => BillShortcutEditDialog(
-        accounts: accounts,
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => BillShortcutEditDialog(accounts: accounts),
     );
 
     if (shortcut != null && mounted) {
@@ -123,12 +126,14 @@ class _BillShortcutsSelectorScreenState
     if (_billPlugin == null) return;
 
     final accounts = _billPlugin!.accounts;
-    final shortcut = await showDialog<BillShortcut>(
+    final shortcut = await showDSDialog<BillShortcut>(
       context: context,
-      builder: (context) => BillShortcutEditDialog(
-        accounts: accounts,
-        initialShortcut: _shortcuts[index],
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => BillShortcutEditDialog(
+            accounts: accounts,
+            initialShortcut: _shortcuts[index],
+          ),
     );
 
     if (shortcut != null && mounted) {
@@ -158,8 +163,8 @@ class _BillShortcutsSelectorScreenState
     );
 
     // 保存配置
-    final saveResult =
-        await BillShortcutsWidgetService.instance.saveWidgetConfig(config);
+    final saveResult = await BillShortcutsWidgetService.instance
+        .saveWidgetConfig(config);
 
     if (!saveResult) {
       if (mounted) {
@@ -205,14 +210,11 @@ class _BillShortcutsSelectorScreenState
           });
         },
         previewBuilder: _buildPreview,
-        customConfigWidgets: [
-          _buildShortcutsList(),
-        ],
+        customConfigWidgets: [_buildShortcutsList()],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: DSFab(
+        icon: DsIconKind.plus,
         onPressed: _addShortcut,
-        tooltip: 'bill_addQuickPreset'.tr,
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -240,11 +242,7 @@ class _BillShortcutsSelectorScreenState
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Icon(
-                Icons.add,
-                color: config.getColor('icon'),
-                size: 24,
-              ),
+              Icon(Icons.add, color: config.getColor('icon'), size: 24),
             ],
           ),
           const SizedBox(height: 12),
@@ -253,10 +251,7 @@ class _BillShortcutsSelectorScreenState
             Center(
               child: Text(
                 'bill_noQuickPresets'.tr,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
             )
           else
@@ -311,9 +306,10 @@ class _BillShortcutsSelectorScreenState
                   ? '-¥${shortcut.amount!.toStringAsFixed(2)}'
                   : '+¥${shortcut.amount!.toStringAsFixed(2)}',
               style: TextStyle(
-                color: shortcut.isExpense
-                    ? const Color(0xFFEF4444)
-                    : const Color(0xFF10B981),
+                color:
+                    shortcut.isExpense
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF10B981),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -325,52 +321,74 @@ class _BillShortcutsSelectorScreenState
 
   /// 构建快捷列表
   Widget _buildShortcutsList() {
+    final theme = DSThemeBridge.resolve(context);
     if (_shortcuts.isEmpty) {
       return Center(
         child: Text(
           'bill_clickToAddQuickPreset'.tr,
-          style: const TextStyle(color: Colors.grey),
+          style: DsTypography.body.copyWith(color: theme.textSub),
         ),
       );
     }
 
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _shortcuts.length,
-      onReorder: (oldIndex, newIndex) {
-        setState(() {
-          if (newIndex > oldIndex) {
-            newIndex -= 1;
-          }
-          final item = _shortcuts.removeAt(oldIndex);
-          _shortcuts.insert(newIndex, item);
-        });
-      },
-      itemBuilder: (context, index) {
-        final shortcut = _shortcuts[index];
-        return ListTile(
-          key: ValueKey(shortcut.id),
-          leading: Icon(shortcut.icon, color: shortcut.iconColor),
-          title: Text(shortcut.name),
-          subtitle: Text(
-            '${shortcut.category}${shortcut.amount != null ? " · ${shortcut.isExpense ? "-" : "+"}¥${shortcut.amount!.toStringAsFixed(2)}" : ""}',
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => _editShortcut(index),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _removeShortcut(index),
-              ),
-            ],
-          ),
-        );
-      },
+    return DSThemeBridge(
+      child: ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _shortcuts.length,
+        onReorder: (oldIndex, newIndex) {
+          setState(() {
+            if (newIndex > oldIndex) {
+              newIndex -= 1;
+            }
+            final item = _shortcuts.removeAt(oldIndex);
+            _shortcuts.insert(newIndex, item);
+          });
+        },
+        itemBuilder: (context, index) {
+          final shortcut = _shortcuts[index];
+          return Container(
+            key: ValueKey(shortcut.id),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(shortcut.icon, color: shortcut.iconColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        shortcut.name,
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${shortcut.category}${shortcut.amount != null ? " · ${shortcut.isExpense ? "-" : "+"}¥${shortcut.amount!.toStringAsFixed(2)}" : ""}',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                DSIconButton(
+                  icon: DsIconKind.edit,
+                  size: 38,
+                  onPressed: () => _editShortcut(index),
+                ),
+                DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 38,
+                  onPressed: () => _removeShortcut(index),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -391,9 +409,11 @@ class BillShortcutEditDialog extends StatefulWidget {
 }
 
 class _BillShortcutEditDialogState extends State<BillShortcutEditDialog> {
-  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _amountController;
+
+  /// 名称校验错误（DSInput 通过 errorText 展示）
+  String? _nameError;
 
   String? _selectedAccountId;
   String _selectedCategory = '餐饮';
@@ -442,16 +462,22 @@ class _BillShortcutEditDialogState extends State<BillShortcutEditDialog> {
   }
 
   void _save() {
-    if (!_formKey.currentState!.validate()) return;
+    // DSInput 无内建 Form 校验，提交时手动校验
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _nameError = 'bill_pleaseEnterPresetName'.tr);
+      return;
+    }
+    setState(() => _nameError = null);
 
     final shortcut = BillShortcut(
       id: widget.initialShortcut?.id,
       name: _nameController.text.trim(),
       accountId: _selectedAccountId!,
       category: _selectedCategory,
-      amount: _amountController.text.isNotEmpty
-          ? double.tryParse(_amountController.text)
-          : null,
+      amount:
+          _amountController.text.isNotEmpty
+              ? double.tryParse(_amountController.text)
+              : null,
       isExpense: _isExpense,
       icon: _selectedIcon,
       iconColor: _selectedIconColor,
@@ -462,66 +488,78 @@ class _BillShortcutEditDialogState extends State<BillShortcutEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.initialShortcut == null
-          ? 'bill_addQuickPreset'.tr
-          : 'bill_editQuickPreset'.tr),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 名称
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'bill_presetName'.tr,
-                  hintText: 'bill_presetNameHint'.tr,
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'bill_pleaseEnterPresetName'.tr;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+    final theme = DSThemeBridge.resolve(context);
+    return JellyBox(
+      radius: theme.radii.xxl,
+      padding: EdgeInsets.all(theme.spacing.xl),
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.initialShortcut == null
+                  ? 'bill_addQuickPreset'.tr
+                  : 'bill_editQuickPreset'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.lg),
+            // 名称
+            DSInput(
+              controller: _nameController,
+              label: 'bill_presetName'.tr,
+              hint: 'bill_presetNameHint'.tr,
+              errorText: _nameError,
+              onChanged: (_) {
+                if (_nameError != null) {
+                  setState(() => _nameError = null);
+                }
+              },
+            ),
+            SizedBox(height: theme.spacing.md),
 
-              // 账户
-              DropdownButtonFormField<String>(
-                value: _selectedAccountId,
-                decoration: const InputDecoration(labelText: '账户'),
-                items: widget.accounts.map((account) {
-                  return DropdownMenuItem<String>(
-                    value: account.id,
-                    child: Text(account.title),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedAccountId = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
+            // 账户
+            DSSelect<String>(
+              value: _selectedAccountId,
+              items:
+                  widget.accounts
+                      .map(
+                        (account) => DSSelectItem(
+                          value: account.id as String,
+                          label: account.title as String,
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedAccountId = value;
+                });
+              },
+              hint: '账户',
+            ),
+            SizedBox(height: theme.spacing.md),
 
-              // 分类
-              DropdownButtonFormField<String>(
+            // 分类（选项需展示持久化 IconData，DSSelect 不支持自定义行，保留 Material 下拉）
+            Material(
+              type: MaterialType.transparency,
+              child: DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: const InputDecoration(labelText: '分类'),
-                items: _categoryIcons.keys.map((category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Row(
-                      children: [
-                        Icon(_categoryIcons[category], size: 20),
-                        const SizedBox(width: 8),
-                        Text(category),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                items:
+                    _categoryIcons.keys.map((category) {
+                      return DropdownMenuItem<String>(
+                        value: category,
+                        child: Row(
+                          children: [
+                            Icon(_categoryIcons[category], size: 20),
+                            const SizedBox(width: 8),
+                            Text(category),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedCategory = value!;
@@ -529,46 +567,47 @@ class _BillShortcutEditDialogState extends State<BillShortcutEditDialog> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+            ),
+            SizedBox(height: theme.spacing.md),
 
-              // 金额(可选)
-              TextFormField(
-                controller: _amountController,
-                decoration: InputDecoration(
-                  labelText: 'bill_presetAmount'.tr,
-                  hintText: 'bill_presetAmountHint'.tr,
+            // 金额(可选)
+            DSInput(
+              controller: _amountController,
+              label: 'bill_presetAmount'.tr,
+              hint: 'bill_presetAmountHint'.tr,
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: theme.spacing.md),
+
+            // 收入/支出
+            DSSegmentedControl(
+              options: ['bill_expense'.tr, 'bill_income'.tr],
+              selected: _isExpense ? 0 : 1,
+              onChanged: (index) {
+                setState(() {
+                  _isExpense = index == 0;
+                });
+              },
+            ),
+            SizedBox(height: theme.spacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'bill_cancel'.tr,
+                    variant: DSButtonVariant.outline,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-
-              // 收入/支出
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(value: true, label: Text('bill_expense'.tr)),
-                  ButtonSegment(value: false, label: Text('bill_income'.tr)),
-                ],
-                selected: {_isExpense},
-                onSelectionChanged: (Set<bool> newSelection) {
-                  setState(() {
-                    _isExpense = newSelection.first;
-                  });
-                },
-              ),
-            ],
-          ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(label: 'bill_save'.tr, onPressed: _save),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('bill_cancel'.tr),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text('bill_save'.tr),
-        ),
-      ],
     );
   }
 }

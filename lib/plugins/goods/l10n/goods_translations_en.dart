@@ -7,12 +7,15 @@ const Map<String, String> goodsTranslationsEn = {
   'goods_addCustomField': 'Add Custom Field',
   'goods_cancel': 'Cancel',
   'goods_confirm': 'Confirm',
-  'goods_fieldNameAndValueCannotBeEmpty': 'Field name and value cannot be empty',
+  'goods_fieldNameAndValueCannotBeEmpty':
+      'Field name and value cannot be empty',
   'goods_editCustomField': 'Edit Custom Field',
   'goods_confirmDelete': 'Confirm Delete',
-  'goods_confirmDeleteCustomField': 'Are you sure you want to delete this custom field?',
+  'goods_confirmDeleteCustomField':
+      'Are you sure you want to delete this custom field?',
   'goods_delete': 'Delete',
-  'goods_confirmDeleteItem': 'Are you sure you want to delete this item? This cannot be undone.',
+  'goods_confirmDeleteItem':
+      'Are you sure you want to delete this item? This cannot be undone.',
   'goods_deleteProduct': 'Delete Product',
   'goods_selectImageFailed': 'Failed to select image: @error',
   'goods_addSubItem': 'Add Sub Item',
@@ -31,14 +34,17 @@ const Map<String, String> goodsTranslationsEn = {
   'goods_tag': 'Tag',
   'goods_editWarehouse': 'Edit Warehouse',
   'goods_clearWarehouse': 'Clear Warehouse',
-  'goods_confirmClearWarehouse': 'Are you sure you want to clear all items in this warehouse?',
+  'goods_confirmClearWarehouse':
+      'Are you sure you want to clear all items in this warehouse?',
   'goods_deleteWarehouse': 'Delete Warehouse',
-  'goods_confirmDeleteWarehouse': 'Are you sure you want to delete this warehouse?',
+  'goods_confirmDeleteWarehouse':
+      'Are you sure you want to delete this warehouse?',
   'goods_addUsageRecord': 'Add Record',
   'goods_noUsageRecords': 'No Usage Records',
   'goods_addUsageRecordTitle': 'Add Usage Record',
   'goods_editUsageRecordTitle': 'Edit Usage Record',
-  'goods_confirmDeleteUsageRecord': 'Are you sure you want to delete this usage record?',
+  'goods_confirmDeleteUsageRecord':
+      'Are you sure you want to delete this usage record?',
   'goods_selectImage': 'Select Image',
   'goods_selectItem': 'Select Item',
   'goods_filterByCategory': 'Filter by Category',
@@ -73,7 +79,8 @@ const Map<String, String> goodsTranslationsEn = {
   'goods_viewAsGrid': 'View as grid',
   'goods_editWarehouseTitle': 'Edit Warehouse',
   'goods_clearWarehouseTitle': 'Clear Warehouse',
-  'goods_confirmClearWarehouseMessage': 'Are you sure you want to clear all items in this warehouse?',
+  'goods_confirmClearWarehouseMessage':
+      'Are you sure you want to clear all items in this warehouse?',
   'goods_deleteWarehouseTitle': 'Delete Warehouse',
   'goods_confirmDeleteWarehouseMessage':
       'Are you sure you want to delete warehouse "@warehouseName"?\nAll items in the warehouse will also be deleted.',
@@ -81,7 +88,8 @@ const Map<String, String> goodsTranslationsEn = {
   'goods_addItemButtonLabel': 'Add',
   'goods_editItemButtonLabel': 'Edit',
   'goods_deleteItemButtonLabel': 'Delete',
-  'goods_confirmDeleteItemMessage': 'Are you sure you want to delete this item?',
+  'goods_confirmDeleteItemMessage':
+      'Are you sure you want to delete this item?',
   'goods_totalQuantity': 'Total',
   'goods_totalValue': 'Value',
   'goods_oneMonthUnused': 'Unused',
