@@ -12,6 +12,7 @@ class DSChip extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
+    this.badge,
     this.selected = false,
     this.onSelected,
     this.onDeleted,
@@ -21,6 +22,9 @@ class DSChip extends StatelessWidget {
 
   /// 可选前缀图标
   final DsIconKind? icon;
+
+  /// 角标文本（如过滤项当前值的简写），跟随选中态着色
+  final String? badge;
 
   /// 是否处于选中态（果冻高亮）
   final bool selected;
@@ -65,6 +69,25 @@ class DSChip extends StatelessWidget {
                         : theme.textSub,
               ),
             ),
+            if (badge != null && badge!.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color:
+                      selected
+                          ? theme.onPrimary.withValues(alpha: 0.25)
+                          : theme.surfaceAlt,
+                  borderRadius: theme.radii.pill,
+                ),
+                child: Text(
+                  badge!,
+                  style: DsTypography.label.copyWith(
+                    color: selected ? theme.onPrimary : theme.textSub,
+                  ),
+                ),
+              ),
+            ],
             if (onDeleted != null) ...[
               const SizedBox(width: 6),
               GestureDetector(

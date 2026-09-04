@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'filter_models.dart';
 
 /// 多条件过滤栏组件
@@ -116,6 +117,7 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
 
   /// 构建第一层：过滤项列表
   Widget _buildListView() {
+    final ds = AppTheme.of(context);
     return Row(
       children: [
         // 过滤项列表（可滚动）
@@ -127,13 +129,15 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
             itemBuilder: (context, index) {
               final item = widget.filterItems[index];
               final badge = _buildBadge(item);
+              final hasBadge = badge != null && badge.isNotEmpty;
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: _FilterChip(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+                child: DSChip(
                   label: item.title,
-                  badge: badge,
-                  onTap: () => _selectFilter(index),
+                  badge: hasBadge ? badge : null,
+                  selected: hasBadge,
+                  onSelected: (_) => _selectFilter(index),
                 ),
               );
             },
@@ -143,26 +147,14 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
         // 清空所有按钮
         if (widget.filterState.hasAnyFilter)
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              onTap: _clearAllFilters,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.close,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ],
-                ),
-              ),
+            padding: const EdgeInsets.only(right: 8),
+            child: DSIconButton(
+              icon: DsIconKind.close,
+              size: 36,
+              color: ds.surfaceAlt,
+              iconColor: ds.danger,
+              onPressed: _clearAllFilters,
+              tooltip: '清空过滤',
             ),
           ),
       ],
@@ -177,15 +169,20 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
     }
 
     final item = widget.filterItems[_selectedFilterIndex!];
+    final ds = AppTheme.of(context);
 
     return Row(
       children: [
         // 返回按钮
-        IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          onPressed: _backToList,
-          padding: const EdgeInsets.all(8),
-          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: DSIconButton(
+            icon: DsIconKind.chevronLeft,
+            size: 36,
+            color: ds.surfaceAlt,
+            iconColor: ds.textSub,
+            onPressed: _backToList,
+          ),
         ),
 
         // 内容区域（可滚动）
@@ -202,56 +199,6 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// 过滤条件芯片组件
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final String? badge;
-  final VoidCallback onTap;
-
-  const _FilterChip({required this.label, this.badge, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final hasBadge = badge != null && badge!.isNotEmpty;
-
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          if (hasBadge) ...[
-            const SizedBox(width: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                badge!,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-      selected: hasBadge,
-      onSelected: (_) => onTap(),
-      showCheckmark: false,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-      visualDensity: VisualDensity.compact,
-      side: BorderSide(
-        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-        width: 0.5,
-      ),
     );
   }
 }
