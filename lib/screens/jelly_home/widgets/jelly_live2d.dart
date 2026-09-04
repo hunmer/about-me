@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../live2d_online_model_page.dart';
+import '../live2d_online_models.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
@@ -29,7 +31,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   final Live2DViewController _controller = Live2DViewController();
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
-  _Live2DModel _selectedModel = _models.first;
+  Live2DModelDefinition _selectedModel = _models.first;
+  bool _isSwitchingModel = true;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -120,6 +123,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 点击角色：先通知宿主（陪伴数值互动），再播放动作 + 随机台词气泡
   void _handleTap(String? hitAreaId, String? hitAreaName, double x, double y) {
+    if (_isSwitchingModel) return;
+    if (_controller.value.lastError != null) {
+      unawaited(_loadModel(_selectedModel));
+      return;
+    }
+    if (!_controller.value.isLoaded) return;
     widget.onTap?.call(hitAreaId, hitAreaName);
     _playTapMotion(hitAreaId: hitAreaId, hitAreaName: hitAreaName);
     _showBubble(_pickBubbleMessage(hitAreaId, hitAreaName));
@@ -167,32 +176,50 @@ class _JellyLive2DState extends State<JellyLive2D> {
     });
   }
 
-  /// 点击命中可点击区域后挑选动作：
-  /// 优先 Cubism 惯例的 Tap<区域> 分组（如 TapHead），没有则从默认分组
-  /// 随机选一个；两者都没有（如 IceGirl）就不播放。
-  Future<void> _playTapMotion({
-    String? hitAreaId,
-    String? hitAreaName,
-  }) async {
+  /// 点击命中可点击区域后挑选动作。模型有语音时优先随机选择带
+  /// Sound 的动作；同时优先匹配 Cubism 惯例的 Tap<区域> 分组。
+  Future<void> _playTapMotion({String? hitAreaId, String? hitAreaName}) async {
     // Mao 的 HitArea Name 为空，用 Id（HitAreaHead → Head）补齐
     final area =
         (hitAreaName != null && hitAreaName.isNotEmpty)
             ? hitAreaName
             : hitAreaId?.replaceFirst('HitArea', '') ?? '';
 
-    List<_Live2DMotion> candidates = const [];
-    if (area.isNotEmpty) {
-      final tapGroup = 'Tap${area[0].toUpperCase()}${area.substring(1)}';
+    final areaGroup = area.isEmpty ? null : 'tap${area.toLowerCase()}';
+    final exact =
+        areaGroup == null
+            ? const <Live2DMotionDefinition>[]
+            : _selectedModel.motions
+                .where((motion) => motion.group.toLowerCase() == areaGroup)
+                .toList();
+    final genericTap =
+        _selectedModel.motions
+            .where((motion) => motion.group.toLowerCase() == 'tap')
+            .toList();
+    final voiced =
+        _selectedModel.motions.where((motion) => motion.hasSound).toList();
+
+    List<Live2DMotionDefinition> candidates =
+        exact.where((motion) => motion.hasSound).toList();
+    if (candidates.isEmpty) {
+      candidates = genericTap.where((motion) => motion.hasSound).toList();
+    }
+    if (candidates.isEmpty) candidates = voiced;
+    if (candidates.isEmpty) candidates = exact;
+    if (candidates.isEmpty) candidates = genericTap;
+    if (candidates.isEmpty) {
       candidates =
-          _selectedModel.motions.where((m) => m.group == tapGroup).toList();
+          _selectedModel.motions.where((motion) => motion.group == '').toList();
     }
     if (candidates.isEmpty) {
       candidates =
-          _selectedModel.motions.where((m) => m.group == '').toList();
+          _selectedModel.motions
+              .where((motion) => motion.group.toLowerCase() != 'idle')
+              .toList();
     }
     if (candidates.isEmpty) return;
 
-    final motion = candidates[Random().nextInt(candidates.length)];
+    final motion = candidates[_random.nextInt(candidates.length)];
     try {
       // priority 3 = force，确保盖过 Idle 让动作明显可见
       await _controller.startMotion(
@@ -205,23 +232,79 @@ class _JellyLive2DState extends State<JellyLive2D> {
     }
   }
 
-  Future<void> _loadModel(_Live2DModel model) async {
+  Future<void> _loadModel(Live2DModelDefinition model) async {
+    if (mounted) {
+      _bubbleTimer?.cancel();
+      setState(() {
+        _isSwitchingModel = true;
+        _bubbleMessage = null;
+      });
+    }
     try {
       await _controller.whenAttached;
       if (!mounted) return;
+      if (_controller.value.isLoaded) {
+        await _controller.unloadModel();
+      }
       await _controller.loadModel(
-        modelDir: model.assetFolder,
+        modelDir: model.modelDir,
         modelFileName: model.modelFile,
       );
     } on Live2DException {
       // The controller exposes the detailed error through Live2DViewState.
+    } finally {
+      if (mounted) setState(() => _isSwitchingModel = false);
     }
   }
 
-  Future<void> _selectModel(_Live2DModel model) async {
-    if (model == _selectedModel || _controller.value.isLoadingModel) return;
+  Future<void> _selectModel(Live2DModelDefinition model) async {
+    if (model == _selectedModel ||
+        _isSwitchingModel ||
+        _controller.value.isLoadingModel) {
+      return;
+    }
     setState(() => _selectedModel = model);
     await _loadModel(model);
+  }
+
+  String _loadStageLabel(String? stage) {
+    return switch (stage) {
+      'preparing' => '准备加载',
+      'model-config' => '读取模型配置',
+      'model-data' => '加载模型数据',
+      'components' => '加载模型组件',
+      'motions' => '加载动作与语音',
+      'textures' => '加载模型纹理',
+      'complete' => '加载完成',
+      _ => '正在加载',
+    };
+  }
+
+  String _loadErrorMessage(Live2DException error) {
+    return error.message.split('\n').first.trim();
+  }
+
+  Future<void> _openOnlineModels(BuildContext sheetContext) async {
+    Navigator.of(sheetContext).pop();
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final model = await Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push<Live2DModelDefinition>(
+      PageRouteBuilder(
+        pageBuilder: (_, _, _) => const Live2DOnlineModelPage(),
+        transitionsBuilder:
+            (_, animation, _, child) => FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
+              child: child,
+            ),
+      ),
+    );
+    if (model != null && mounted) await _selectModel(model);
   }
 
   void _showControls() {
@@ -258,8 +341,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 spacing: theme.spacing.sm,
                 runSpacing: theme.spacing.sm,
                 children: [
-              for (final model in _models)
-                DSChip(
+                  for (final model in _models)
+                    DSChip(
                       label: model.label,
                       selected: model == _selectedModel,
                       onSelected: (_) {
@@ -267,85 +350,104 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         _selectModel(model);
                       },
                     ),
-              ],
-            ),
-            SizedBox(height: theme.spacing.xl),
-            Text(
-              '人物大小',
-              style: DsTypography.heading.copyWith(color: theme.text),
-            ),
-            SizedBox(height: theme.spacing.sm),
-            ValueListenableBuilder<double>(
-              valueListenable: _size,
-              builder: (context, size, _) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DSButton(
-                          label: '缩小',
-                          size: DSButtonSize.sm,
-                          onPressed:
-                              size > _minSize
-                                  ? () => _changeSize(-_sizeStep)
-                                  : null,
-                        ),
-                      ),
-                      SizedBox(width: theme.spacing.sm),
-                      Expanded(
-                        child: DSButton(
-                          label: '放大',
-                          size: DSButtonSize.sm,
-                          onPressed:
-                              size < _maxSize
-                                  ? () => _changeSize(_sizeStep)
-                                  : null,
-                        ),
-                      ),
-                      SizedBox(width: theme.spacing.sm),
-                      Expanded(
-                        child: DSButton(
-                          label: '重置',
-                          size: DSButtonSize.sm,
-                          onPressed:
-                              size == _defaultSize ? null : _resetSize,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                  Text(
-                    '当前 ${(size / _defaultSize * 100).round()}%'
-                    '（${size.round()}px，自动保存）',
-                    textAlign: TextAlign.center,
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
-                  ),
                 ],
               ),
-            ),
-            SizedBox(height: theme.spacing.xl),
-            Text(
-              '可点击区域',
-              style: DsTypography.heading.copyWith(color: theme.text),
-            ),
-            SizedBox(height: theme.spacing.sm),
-            ValueListenableBuilder<bool>(
-              valueListenable: _hitAreasVisible,
-              builder:
-                  (context, visible, _) => DSChip(
-                    label: visible ? '已开启' : '已关闭',
-                    selected: visible,
-                    onSelected: (_) => _toggleHitAreas(!visible),
-                  ),
-            ),
-            SizedBox(height: theme.spacing.xs),
-            Text(
-              '开启后标出模型定义的可点击区域（红色框 + 名称），'
-              '点击命中区域会触发随机动作',
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-            SizedBox(height: theme.spacing.xl),
+              SizedBox(height: theme.spacing.sm),
+              DSListItem(
+                title: '在线选择模型',
+                subtitle: '从 Eikanya 模型仓库加载 Cubism 3/4 模型',
+                leading: DsIcon(
+                  DsIconKind.download,
+                  size: 18,
+                  color: theme.primary,
+                ),
+                trailing: DsIcon(
+                  DsIconKind.chevronRight,
+                  size: 18,
+                  color: theme.textSub,
+                ),
+                onTap: () => _openOnlineModels(sheetContext),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
+                '人物大小',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              ValueListenableBuilder<double>(
+                valueListenable: _size,
+                builder:
+                    (context, size, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DSButton(
+                                label: '缩小',
+                                size: DSButtonSize.sm,
+                                onPressed:
+                                    size > _minSize
+                                        ? () => _changeSize(-_sizeStep)
+                                        : null,
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.sm),
+                            Expanded(
+                              child: DSButton(
+                                label: '放大',
+                                size: DSButtonSize.sm,
+                                onPressed:
+                                    size < _maxSize
+                                        ? () => _changeSize(_sizeStep)
+                                        : null,
+                              ),
+                            ),
+                            SizedBox(width: theme.spacing.sm),
+                            Expanded(
+                              child: DSButton(
+                                label: '重置',
+                                size: DSButtonSize.sm,
+                                onPressed:
+                                    size == _defaultSize ? null : _resetSize,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                        Text(
+                          '当前 ${(size / _defaultSize * 100).round()}%'
+                          '（${size.round()}px，自动保存）',
+                          textAlign: TextAlign.center,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
+                '可点击区域',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              ValueListenableBuilder<bool>(
+                valueListenable: _hitAreasVisible,
+                builder:
+                    (context, visible, _) => DSChip(
+                      label: visible ? '已开启' : '已关闭',
+                      selected: visible,
+                      onSelected: (_) => _toggleHitAreas(!visible),
+                    ),
+              ),
+              SizedBox(height: theme.spacing.xs),
+              Text(
+                '开启后标出模型定义的可点击区域（红色框 + 名称），'
+                '点击命中区域会触发随机动作',
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              SizedBox(height: theme.spacing.xl),
               Text(
                 '动作列表',
                 style: DsTypography.heading.copyWith(color: theme.text),
@@ -359,7 +461,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
               else
                 for (final motion in _selectedModel.motions) ...[
                   DSListItem(
-                    title: motion.label,
+                    title:
+                        motion.hasSound ? '${motion.label}（语音）' : motion.label,
                     leading: DsIcon(
                       DsIconKind.play,
                       size: 18,
@@ -405,7 +508,117 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 // 气泡要上浮到方框外（角色头顶上方），不能裁剪
                 clipBehavior: Clip.none,
                 children: [
-                  Live2DView(controller: _controller),
+                  AnimatedOpacity(
+                    opacity:
+                        _isSwitchingModel || _controller.value.lastError != null
+                            ? 0
+                            : 1,
+                    duration: const Duration(milliseconds: 160),
+                    child: Live2DView(controller: _controller),
+                  ),
+                  ValueListenableBuilder<Live2DViewState>(
+                    valueListenable: _controller,
+                    builder: (context, state, _) {
+                      final error = state.lastError;
+                      final showPlaceholder =
+                          _isSwitchingModel || error != null;
+                      if (!showPlaceholder) return const SizedBox.shrink();
+
+                      final progress = state.modelLoadProgress.clamp(0.0, 1.0);
+                      final percent = (progress * 100).round();
+                      return Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap:
+                              error == null
+                                  ? null
+                                  : () => _loadModel(_selectedModel),
+                          child: MouseRegion(
+                            cursor:
+                                error == null
+                                    ? MouseCursor.defer
+                                    : SystemMouseCursors.click,
+                            child: ColoredBox(
+                              color: theme.background.withValues(alpha: 0.96),
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 250,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (error == null) ...[
+                                        const DSLoadingDots(size: 10),
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          '${_loadStageLabel(state.modelLoadStage)} '
+                                          '$percent%',
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.text,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        SizedBox(height: theme.spacing.sm),
+                                        DSLinearProgress(
+                                          value: progress,
+                                          height: 8,
+                                        ),
+                                        SizedBox(height: theme.spacing.sm),
+                                        Text(
+                                          _selectedModel.label,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        DsIcon(
+                                          DsIconKind.refresh,
+                                          size: 30,
+                                          color: theme.danger,
+                                        ),
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          '模型加载失败',
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.danger,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        SizedBox(height: theme.spacing.sm),
+                                        Text(
+                                          _loadErrorMessage(error),
+                                          maxLines: 4,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          '点击重新加载',
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   // 点击触发的台词气泡：短暂显示在角色上方，几秒后淡出
                   Positioned(
                     left: 0,
@@ -443,11 +656,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       child: ValueListenableBuilder<Live2DViewState>(
                         valueListenable: _controller,
                         builder: (context, state, child) {
-                          final error = state.lastError;
-                          final label =
-                              error == null
-                                  ? _selectedModel.label
-                                  : '加载失败：${error.message}';
+                          if (state.isLoadingModel || state.lastError != null) {
+                            return const SizedBox.shrink();
+                          }
                           return Container(
                             constraints: const BoxConstraints(maxWidth: 260),
                             padding: EdgeInsets.symmetric(
@@ -455,25 +666,16 @@ class _JellyLive2DState extends State<JellyLive2D> {
                               vertical: theme.spacing.xs,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  (error == null
-                                      ? theme.surface
-                                      : theme.danger)
-                                  .withValues(alpha: 0.88),
+                              color: theme.surface.withValues(alpha: 0.88),
                               borderRadius: theme.radii.pill,
                               boxShadow: theme.shadows.soft,
                             ),
                             child: Text(
-                              state.isLoadingModel
-                                  ? '正在加载 ${_selectedModel.label}'
-                                  : label,
+                              _selectedModel.label,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: DsTypography.caption.copyWith(
-                                color:
-                                    error == null
-                                        ? theme.text
-                                        : theme.onDanger,
+                                color: theme.text,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -490,57 +692,35 @@ class _JellyLive2DState extends State<JellyLive2D> {
   }
 }
 
-class _Live2DModel {
-  const _Live2DModel({
-    required this.label,
-    required this.assetFolder,
-    required this.modelFile,
-    required this.motions,
-  });
-
-  final String label;
-  final String assetFolder;
-  final String modelFile;
-  final List<_Live2DMotion> motions;
-}
-
-class _Live2DMotion {
-  const _Live2DMotion(this.group, this.index, this.label);
-
-  final String group;
-  final int index;
-  final String label;
-}
-
-const List<_Live2DModel> _models = [
-  _Live2DModel(
+const List<Live2DModelDefinition> _models = [
+  Live2DModelDefinition(
     label: 'Mao',
-    assetFolder: 'assets/models/mao/',
+    modelDir: 'assets/models/mao/',
     modelFile: 'mao_pro.model3.json',
     motions: [
-      _Live2DMotion('Idle', 0, '待机'),
-      _Live2DMotion('', 0, '动作 1'),
-      _Live2DMotion('', 1, '动作 2'),
-      _Live2DMotion('', 2, '动作 3'),
-      _Live2DMotion('', 3, '特殊动作 1'),
-      _Live2DMotion('', 4, '特殊动作 2'),
-      _Live2DMotion('', 5, '特殊动作 3'),
+      Live2DMotionDefinition(group: 'Idle', index: 0, label: '待机'),
+      Live2DMotionDefinition(group: '', index: 0, label: '动作 1'),
+      Live2DMotionDefinition(group: '', index: 1, label: '动作 2'),
+      Live2DMotionDefinition(group: '', index: 2, label: '动作 3'),
+      Live2DMotionDefinition(group: '', index: 3, label: '特殊动作 1'),
+      Live2DMotionDefinition(group: '', index: 4, label: '特殊动作 2'),
+      Live2DMotionDefinition(group: '', index: 5, label: '特殊动作 3'),
     ],
   ),
-  _Live2DModel(
+  Live2DModelDefinition(
     label: 'IceGirl',
-    assetFolder: 'assets/models/icegirl/',
+    modelDir: 'assets/models/icegirl/',
     modelFile: 'IceGirl.model3.json',
     motions: [],
   ),
-  _Live2DModel(
+  Live2DModelDefinition(
     label: 'Ren',
-    assetFolder: 'assets/models/ren/',
+    modelDir: 'assets/models/ren/',
     modelFile: 'ren.model3.json',
     motions: [
-      _Live2DMotion('Idle', 0, '待机'),
-      _Live2DMotion('', 0, '动作 1'),
-      _Live2DMotion('', 1, '动作 2'),
+      Live2DMotionDefinition(group: 'Idle', index: 0, label: '待机'),
+      Live2DMotionDefinition(group: '', index: 0, label: '动作 1'),
+      Live2DMotionDefinition(group: '', index: 1, label: '动作 2'),
     ],
   ),
 ];

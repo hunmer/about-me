@@ -1,5 +1,46 @@
 # 研究发现：home_grid 卡片体系与插件条目 UI
 
+## 10. Live2D 在线模型与语音任务（2026-09-05）
+- Live2D 使用路径依赖 `/Users/Zhuanz/Documents/flutter_live2d-main`；macOS 链路为 Flutter AppKitView → Swift WKWebView → 本地 HTTP 服务 → Cubism Web runtime。
+- 当前原生反向事件已有 `onContextMenu`、`onTap`；点击由 Web runtime 命中 HitAreas 后回传 Dart。
+- 在线模型参考 `/Users/Zhuanz/Documents/galgenai/utils/repoUtils.ts`：解析 Eikanya JSON 树，只接受 `.model.json` / `.model3.json`，URL 基址为 `https://cdn.jsdelivr.net/gh/Eikanya/Live2d-model@master/`。
+- 当前模型差异很大：HitArea 名称可能为空、甚至完全没有 HitAreas；区域绑定需优先使用稳定的 Id，并允许模型级随机兜底。
+- macOS 用户正在运行自己的调试实例，验证时不得操作该实例；只启动/终止我方单独的 Debug 二进制。
+- `asset_cache.dart` 已把带 scheme 的 `modelDir` 原样传给平台；阻断远程模型的是 macOS Swift `loadModel`：它一律构造 `fileURLWithPath` 并校验本地文件存在。最小修复是在 Swift 识别 http/https，直接把远程目录 URL 传入 JS runtime。
+- Web runtime `LAppModel.startMotion()` 已通过 `getMotionSoundFileName(group, no)` 读到模型动作的 voice 文件名，并调用 `_wavFileHandler.start(modelDir + voice)` 播放；底层语音能力已有，缺的是 app 可发现的动作/语音元数据与点击区域绑定策略。
+- about-me 当前本地模型动作列表是手写 `_Live2DMotion`；在线模型需请求其 model JSON 并解析 `FileReferences.Motions`，生成动作组/索引及 `Sound` 标记，才能避免试探不存在动作造成错误状态。
+- 点击策略可统一为：优先 `Tap<规范化区域>`；未找到时，本地模型沿用默认动作，在线模型优先随机选择带 `Sound` 的动作，从而做到“如果模型提供语音则随机播放”。
+- Eikanya 目录 JSON 地址确认是 `https://guansss.github.io/live2d-viewer-web/eikanyalive2d-model.json`；目录可直接请求且结构与参考 `parseRepoData` 一致。
+- 目录统计：1061 个 `.model3.json`、256 个 Cubism 2 `.model.json`。当前 `CubismModelSettingJson`/moc3 runtime 仅支持 Cubism 3/4，因此在线页只列 `.model3.json`，避免可预见的加载失败。
+- `LAppWavFileHandler` 名义上处理 WAV，但实现仅 fetch/decode PCM 并提供 RMS 做口型，没有 `Audio`/`AudioContext` 输出，所以用户听不到声音。需要同时启动 HTML audio 播放，并在切换语音/释放模型时停止旧音频。
+- app 的 macOS entitlements 已有 `com.apple.security.network.client=true`，无需新增网络权限。
+- 真实仓库验证：`三色绘恋S/chiguo_A` 的 `Act[0]` 含 `Sound: voice/cg_01066-01067.wav`；对应 jsDelivr 资源返回 HTTP 200、`audio/wav`、`access-control-allow-origin: *`，与解析和播放路径一致。
+- 用户实测远程模型在 Dart 层失败：`_resolveModelDir` 只有 `kIsWeb` 分支会接受 URI scheme，macOS 的 HTTP(S) URL 落入 `_extractAssetDirToCache`，因此尚未到达已实现的 Swift 远程分支。
+- 目录解析失败时 `Live2DViewController.loadModel` 仅关闭 `isLoadingModel`，旧 `loadedModel` 和原生模型仍保留；about-me 又继续处理 `onTap`，导致向旧 `/model/` 根目录发送在线模型动作索引。
+- 修复策略：HTTP(S) 在 `_resolveModelDir` 的平台判断之前直接返回；about-me 模型切换先 `unloadModel`，平台视图保持挂载但用不透明加载占位覆盖，并在切换期间忽略 tap。
+- `Live2DViewState.loadedModel` 文档声明失败加载会清空，但 controller 的异常 catch 只更新 `isLoadingModel`；需同步清空状态，避免调用方继续把旧模型视为可交互。
+- `mori_miko` 已进入远程 runtime，但其约百个预加载动作中有部分 motion3 元数据不兼容、部分 fetch rejection。`preLoadMotionGroup` 没有 catch，且通过减少 `_allMotionCount` 结算失败，异步并发下既会遗漏 rejection，也可能提前完成；实测因此停在 `WaitLoadMotion` 直到 75 秒超时。
+- 在线模型应允许“主体可加载、坏动作跳过”：固定总数，每个动作请求在 finally 中只结算一次，只有所有动作尝试结束后进入纹理阶段。
+- `mori_miko` 动作结算修复后已进入纹理/shader 阶段，但近百个动作请求占满远程加载队列，75 秒时才开始渲染并被 native timeout 清理；纹理本身为可访问的 4096x4096 PNG（约 5.9 MB，CORS 正常）。
+- 远程模型不应在首屏预加载全部动作：上限 24，优先带 Sound、Idle、Tap，再按模型顺序补足；app 动作清单使用同一筛选，保证不会随机选择未预加载动作。本地模型维持全部预加载。
+- 用户追加要求加载百分比、错误占位和点击重试。现有链路只有整体 loadModel Future，需新增资源阶段进度事件；单个 motion HTTP 403 应继续作为非致命资源错误跳过，只有模型配置、moc/纹理等主体失败才进入错误占位。
+- macOS 已用 `window.webkit.messageHandlers.flutterLive2D` 上报 tap，Swift 再通过 `flutter_live2d` MethodChannel 调 Dart；加载进度可复用同一链路新增 `loadProgress`，无需引入 EventChannel。
+- `LAppModel` 现有 `LoadStep` 状态机可映射为近似百分比；这代表加载阶段完成度，不是网络字节下载进度。致命资源 fetch 当前部分只写日志并可能等到超时，需要同步暴露失败状态供 runtime 立即抛错。
+- Aboutme 当前底部状态标签已读取 `Live2DViewState.lastError`，但主体占位只在 `_isSwitchingModel` 时出现，错误后不可交互；应统一为 loading/error 两态覆盖层并在 error 态绑定 retry。
+- `Live2DViewState` 当前仅有 `isLoadingModel/loadedModel/lastError`，需增加 `modelLoadProgress` 与 `modelLoadStage`，在 attach/load/unload/detach 的生命周期中清理或更新。
+- 进度采用阶段完成度：配置 2%-10%、MOC/组件 10%-55%、动作 55%-80%（按 settled/total）、纹理 82%-98%（按 loaded/total）、完成 100%。该数值稳定可解释，但不是 HTTP 字节进度。
+- macOS 平台视图可能吞掉 Flutter 覆盖层点击；错误重试除 Flutter `GestureDetector` 外，还要复用 runtime 原生 `onTap` 回调：未加载且存在 `lastError` 时调用当前模型重试。
+- 用户日志中的 motion HTTP 403 是非致命动作资源错误，应结算该动作后继续；不进入整体错误占位。配置/MOC/纹理/超时才作为致命错误。
+- 用户实测 `l2d00055（凍京Nerco/l2d）` 主体加载成功，但每个动作均报 `The number of segment/point does not match the metadata`、`Inconsistent motion3.json`、`Failed to create motion from buffer`；点击随后报 `Can't start motion motions/tap3.motion3.json`。根因已收敛到旧 motion3 元数据与 Cubism SDK 6 严格校验不兼容，而非 URL、索引或渲染循环。
+- 同份日志还出现 `DSLoadingDots` 内部 Row 在 22px 宽约束下溢出 6.1px，需要确认调用位置是否为本轮 Live2D 占位并做局部适配。
+- `l2d00055.model3.json` 为 Cubism 3，14 个动作全部位于空名称动作组；示例 `tap3.motion3.json` 也是 `Version: 3`，曲线 Segments 编码可读，但声明 `TotalSegmentCount=210/TotalPointCount=294` 被 SDK 6 判定与实际不一致。
+- 正常 Mao 动作同样为 Version 3，但元数据与曲线吻合。兼容方向应优先使用 Cubism loader 已有的 consistency 开关，仅对远程旧动作放宽元数据一致性校验，不修改正常动作文件或全局关闭校验。
+- `DSLoadingDots(size: 6)` 在在线模型页的 22px 尾部区域理论宽度约 27.4px，正好对应日志中溢出 6.1px；应把该处 size 调到 4.5 左右，而非修改全局加载组件。
+- 对 14 个动作逐一计算：`TotalSegmentCount` 全部比真实 segment 数多 1，`TotalPointCount` 全部比真实 point 数少 36（37 条曲线，等价于旧导出器几乎未计每曲线起点），属于稳定的旧导出器元数据错误。
+- 最稳妥兼容方式是在调用 Cubism `loadMotion` 前解析 JSON，仅当统计不一致时重算 `CurveCount/TotalSegmentCount/TotalPointCount` 并重新编码；正常 motion3 原字节直接透传，继续保留 SDK 一致性校验。
+- SDK `CubismMotion.parse` 会按 Meta 声明的 segment/point 数预分配数组，说明仅关闭一致性检查并不安全；重算 Meta 是必要修复。
+- `l2d00055` 不声明 `Idle` 组，所有动作在空组，循环动作通过文件名 `*_loop.motion3.json` 表示。runtime 自动待机固定调用 `Idle`，因此还需在 Idle 组缺失时优先从空组中选择文件名含 `loop` 的动作。
+
 ## 1. 主页卡片双体系
 - **旧体系**: `BasePlugin.buildCardView()` (~28 插件实现) → `PluginGrid`/`PluginCard`，
   现仅悬浮球选择器 (core/floating_ball/widgets/plugin_overlay_selector.dart) 和
@@ -111,4 +152,3 @@ chat、agent_chat、openai、nfc、tts、webview、scripts_center、store、node
   （会触发 non_const warning，与既有代码一致）
 - day 插件快速新建预填：EditMemorialDayPage 只收整对象 → 传 MemorialDay(title:'', targetDate:date)，
   保存时 page 内重新生成 id
-

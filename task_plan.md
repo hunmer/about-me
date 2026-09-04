@@ -1,5 +1,74 @@
 # 任务计划：插件条目 UI 迁移为 home_grid 卡片 + 主页快速新建
 
+## 追加任务：Live2D 在线模型与点击语音（2026-09-05）
+
+### 目标
+- Live2D 右键菜单增加“在线选择模型”，打开独立页面浏览并加载在线模型。
+- Live2D 支持将模型点击区域绑定到语音，点击时播放。
+- about-me 默认配置为：模型提供语音时，点击区域随机播放语音。
+
+### Phase 12: 现状与协议勘察 [complete]
+- [x] 12.1 核对 app、flutter_live2d 包、macOS Web runtime 的模型加载与事件通道
+- [x] 12.2 核对在线模型仓库 JSON 来源、CORS/相对资源加载约束
+- [x] 12.3 核对现有右键菜单和模型配置持久化位置
+
+### Phase 13: 在线模型选择与加载 [complete]
+- [x] 13.1 增加在线模型目录解析/请求模型
+- [x] 13.2 增加独立选择页面（加载、错误、刷新、搜索/分类等必要状态）
+- [x] 13.3 右键菜单入口与远程加载调用（本次不新增模型持久化，保持现有本地模型行为一致）
+
+### Phase 14: 点击区域语音 [complete]
+- [x] 14.1 Live2D 动作 `Sound` 增加真实音频播放，保留 WAV 口型分析
+- [x] 14.2 about-me 设置区域动作匹配 + 模型自带语音随机播放策略
+- [x] 14.3 处理无语音回退、连续点击停止旧音频、模型释放清理与异步 WAV 防过期
+
+### Phase 15: 验证与收尾 [complete]
+- [x] 15.1 Web runtime build；包 analyze 0 issues、test 3/3
+- [x] 15.2 app 改动文件 analyze 0 issues、test 13/13、macOS debug build、独立进程冒烟通过
+- [x] 15.3 更新 findings/progress，并提供手动验收步骤
+
+### 本次错误记录
+- `apply_patch` 第一次更新 Phase 12 时锚点少一个空格导致校验失败；已读取原文并改用准确锚点，无文件内容受损。
+- 用 `dart -e` 探查 URI 时发现当前 Dart CLI 不支持 `-e`；产品代码未受影响，相关编码规则由新增单测覆盖。
+- 一次跨仓库组合补丁因平台接口注释锚点不一致而整体校验失败；已确认无部分写入，改为按文件应用。
+- 第二次 Web runtime 重建误在包根目录执行，因根目录无 npm build script 失败；包 analyze/test 仍通过，随后改回 `web_runtime/` 执行。
+- 第一次 app 冒烟等待条件误写为 runtime/model 任一日志即结束，只验证到 runtime ready；已精确终止我方 PID，改为两条日志均出现后重跑。
+
+### Phase 16: 远程解析与切换占位修复 [complete]
+- [x] 16.1 原生平台 HTTP(S) 模型目录绕过 Flutter asset 解包
+- [x] 16.2 切换时先卸载旧模型并阻断旧模型点击/动作
+- [x] 16.3 保持平台视图挂载，覆盖模型区域显示加载占位和模型名称
+- [x] 16.4 包 analyze/test、app analyze/test/build 与运行日志验证
+
+### Phase 16 错误记录
+- 首次远程冒烟只等待 30 秒并丢失后台 session 元数据；已精确终止我方 PID，改用可轮询 session 和 75 秒边界。
+- `mori_miko` 远程请求已到 runtime，但动作预加载异常未结算导致 75 秒超时；改为失败动作不阻塞主体加载。
+- 修复结算后 `mori_miko` 仍因近百个动作抢占请求队列而在纹理阶段超时；远程首载改为最多预加载 24 个优先动作。
+- 在 `web_runtime/` 重建后顺带执行 `flutter test`，该目录无 test 因而失败；bundle build 与该目录 analyze 已通过，包测试改在根目录执行。
+- 远程动作预算补丁保留了一行旧方法签名，检查时发现且尚未打包；删除重复签名后再验证。
+
+### Phase 17: 加载进度、错误占位与点击重试 [complete]
+- [x] 17.1 扩展 runtime → 原生 → Dart 的模型加载进度事件
+- [x] 17.2 加载占位显示阶段与百分比，失败时显示可读错误
+- [x] 17.3 点击错误占位重新加载当前选择模型
+- [x] 17.4 确认单个 motion HTTP 403 仅跳过，不导致模型整体失败
+- [x] 17.5 Web runtime build、包与 app analyze/test/build 验证
+
+### Phase 17 错误记录
+- 首次勘察误读不存在的 `lib/live2d_view.dart`；实际公开入口为 `lib/flutter_live2d.dart`，控制器与状态文件已从 `lib/src/` 读取，未产生文件修改。
+- 首次读取测试误用了不存在的 `test/live2d_flutter_test.dart`；实际测试文件为 `test/flutter_live2d_test.dart`，已按真实路径读取，未产生文件修改。
+
+### Phase 18: 旧版 motion3 兼容修复 [complete]
+- [x] 18.1 对比 `l2d00055` 动作 JSON 与当前 Cubism motion3 结构
+- [x] 18.2 在 runtime 加入最小兼容转换，保持正常 motion3 不受影响
+- [x] 18.3 验证预加载和点击触发均能创建动作
+- [x] 18.4 确认并处理日志中的加载动画布局溢出
+- [x] 18.5 Web runtime build、包/app analyze/test/build 与目标模型冒烟
+
+### Phase 18 错误记录
+- 首次搜索 Cubism framework 源码误用了不存在的 `web_runtime/framework/src`，且一次从 Aboutme 工作目录读取包内 `web_runtime/src/lappmodel.ts`；均为只读命令，后续改用 `rg --files` 定位真实路径。
+- 首次更新 Phase 18 记录时把 `progress.md` 的会话锚点写进 `task_plan.md` 补丁，整次补丁校验失败且无部分写入；已拆分为正确文件锚点。
+
 ## 目标
 把待办、日记插件的条目 UI（一项待办、一篇日记）迁移为 home_grid 可加载的功能卡片，
 并在主页底部中央新增快速新建按钮。为第二阶段「主页日期横条」铺好日期管道。

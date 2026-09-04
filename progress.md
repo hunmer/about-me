@@ -1,5 +1,51 @@
 # 进度日志
 
+## 会话: 2026-09-05（Live2D 在线模型与点击语音）
+- 已读取交接文档与 galgenai `repoUtils.ts`，确认在线模型数据格式、CDN URL 规则和 macOS Live2D 调用链。
+- 已保留既有主页卡片规划历史，新增 Phase 12-15 跟踪本次实现。
+- 当前进行 Phase 12：定位 app 与 `flutter_live2d-main` 的具体接口和配置持久化方式。
+- 已确认远程加载阻断点在 macOS Swift，本次需改包；runtime 已能在动作开始时播放模型 `Sound`，本次重点补动作元数据解析与点击区域绑定。
+- Phase 12 完成：在线页只展示 runtime 可支持的 `.model3.json`；发现 WAV handler 只做口型分析不发声，Phase 14 必须补真实音频输出。
+- 已新增在线目录/模型动作解析、在线选择页、右键入口和点击语音优先策略；包侧已补远程 URL、跨域纹理与真实音频播放。
+- 验证：Web runtime build 成功；包 analyze 0 issues、test 3/3；about-me 改动文件 analyze 0 issues、新增解析测试 2/2。
+- 收尾验证：about-me 全量 test 13/13；`flutter build macos --debug` 成功；独立 PID 冒烟同时确认 `JavaScript runtime ready` 与 `loadModel completed result=true`，测试进程已终止，用户原进程未操作。
+- Phase 13-15 全部完成。在线模型手动验收：右键人物 → 在线选择模型 → 搜索/分类 → 选择模型；对带 `Sound` 的模型点击人物区域，应随机播放语音且连续点击不重叠。
+- 真实在线数据抽查确认模型 `Sound` 字段及 WAV CDN 资源均可访问并允许跨域。
+
+## 会话: 2026-09-05（远程加载实测修复）
+- 用户日志确认 HTTP(S) 目录被 Dart asset resolver 拒绝，且失败后旧模型仍响应点击。
+- 新增 Phase 16：修复 URL 分流并实现加载期替换占位。
+- 修复 Dart asset resolver：HTTP(S) 模型地址直接交给原生/runtime，不再按 `flutter.assets` 解析。
+- 切换模型时立即卸载旧模型、阻断点击，并在保持平台视图挂载的同时覆盖加载占位和模型名称。
+- 修复 runtime 动作加载失败不结算的问题；远程模型首载最多预加载 24 个动作，优先语音、Idle、Tap，避免大量动作阻塞纹理与主体加载。
+- `mori_miko` 定向远程冒烟成功：日志确认远程请求进入 runtime，`loadModel completed result=true`。
+- 最终验证：包 analyze 0 issues、test 3/3；about-me 定向 analyze 0 issues、全量 test 14/14；默认 Mao macOS Debug 构建及冒烟成功。
+- Phase 16 完成。因包含 package Dart 与 Web runtime bundle 变更，实际验收需要完全退出并重启 App，热重载不足。
+
+## 会话: 2026-09-05（加载进度与错误重试）
+- 用户要求加载占位显示进度；失败时显示错误，点击占位重新加载。
+- 新增 Phase 17，开始勘察 runtime、Swift、Dart 之间的事件通道。
+- 已完成阶段进度链路：runtime `loadProgress` → Swift MethodChannel → `Live2DViewState`。
+- 加载占位显示阶段、百分比和线性进度条；致命错误显示可读错误及“点击重新加载”。
+- 错误重试同时接入 Flutter 占位点击和原生 `onTap` 回调，覆盖 macOS 平台视图吞事件的情况。
+- motion HTTP 403 继续作为非致命错误结算并跳过；配置、MOC、纹理失败会立即结束加载并进入错误占位。
+- Web runtime build 成功，开始执行 analyze/test/build。
+- 验证完成：Live2D 包 analyze 0 issues、test 4/4；Aboutme 定向 analyze 0 issues、全量 test 14/14；macOS Debug 构建成功。
+- 独立 Debug 进程默认 Mao 冒烟成功：`command loadModel completed`、`loadModel completed result=true`；仅终止本次测试进程。
+- 两仓库 `git diff --check` 通过，Phase 17 完成。
+
+## 会话: 2026-09-05（旧版 motion3 兼容）
+- 用户反馈 `l2d00055` 加载后完全静止，点击动作也不生效。
+- 日志确认模型主体加载成功，所有动作因 motion3 元数据不一致被 Cubism SDK 6 拒绝；新增 Phase 18 进行格式对比和兼容处理。
+- 已远程读取目标模型及 14 个动作，确认每个动作都是同一种旧导出器 Meta 计数偏差；决定加载前按真实 Segments 重算元数据，不全局关闭一致性校验。
+- 已定位日志中的 6.1px overflow：在线模型页 22px trailing 容器装不下 `DSLoadingDots(size: 6)`。
+- 已加入 motion3 Meta 自动重算，预加载和按需加载共用；缺失 Idle 时优先回退空组的 `loop` 动作。
+- 在线页局部将尾部 `DSLoadingDots` 调整为 4.5，Web runtime build 成功。
+- 目标模型专用 macOS Debug 冒烟：14 个动作不再出现 consistency/create motion 错误，模型 0.675s 加载成功；等待超过动作时长后无 `Can't start motion`，自动 loop 回退正常。
+- 临时默认模型配置已在运行测试包前恢复为 `_models.first`，测试进程已单独终止。
+- 最终验证：Web runtime build；包 analyze 0 issues、test 4/4；Aboutme 定向 analyze 0 issues、test 14/14；默认 Mao macOS Debug 重建成功。
+- Phase 18 完成。
+
 ## 会话: 2026-08-30 (任务启动 + Phase 1-5 实施)
 
 ### 背景对齐 (grilling 两轮)
@@ -130,4 +176,3 @@ tracker/record_dialog（initialRecordedAt）、9 插件 ×3 l10n 文件
 
 ### 下一步
 - 用户跑 app 验证（清单见 task_plan.md「手动验证清单」）
-
