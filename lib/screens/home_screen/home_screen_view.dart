@@ -13,6 +13,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_bottom_nav.dart';
 import 'home_screen_controller.dart';
 import 'managers/home_date_controller.dart';
 import 'managers/home_layout_manager.dart';
@@ -42,10 +43,18 @@ class HomeScreenView extends StatelessWidget {
   final HomeScreenController controller;
   final TabController? tabController;
 
+  /// 内容模式：true=日期数据视图（日程），false=固定布局网格（看板）
+  final bool dateView;
+
+  /// 是否显示果冻小屋底部导航（页签形态打开时为 true）
+  final bool showBottomNav;
+
   const HomeScreenView({
     super.key,
     required this.controller,
     this.tabController,
+    this.dateView = false,
+    this.showBottomNav = false,
   });
 
   @override
@@ -62,6 +71,10 @@ class HomeScreenView extends StatelessWidget {
         appBar: _buildAppBar(context),
         extendBodyBehindAppBar: controller.currentBackgroundPath != null,
         drawer: const AppDrawer(),
+        bottomNavigationBar:
+            showBottomNav
+            ? JellyBottomNav(current: dateView ? JellyTab.schedule : JellyTab.board)
+            : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton:
             controller.isEditMode ||
@@ -85,7 +98,7 @@ class HomeScreenView extends StatelessWidget {
             // 主内容
             controller.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : controller.isDateViewMode
+                : dateView
                 ? _buildDateViewContent(context)
                 : controller.savedLayouts.isEmpty
                 ? _buildHomeContent(context)
@@ -191,19 +204,6 @@ class HomeScreenView extends StatelessWidget {
             tooltip: '退出选择',
           ),
         ] else ...[
-          // 固定布局 / 日期视图 模式切换
-          IconButton(
-            icon: Icon(
-              controller.isDateViewMode
-                  ? Icons.grid_view
-                  : Icons.calendar_view_day,
-            ),
-            onPressed: () => controller.toggleDateViewMode(),
-            tooltip:
-                controller.isDateViewMode
-                    ? 'home_modeFixedLayout'.tr
-                    : 'home_modeDateView'.tr,
-          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddWidgetDialog(context),

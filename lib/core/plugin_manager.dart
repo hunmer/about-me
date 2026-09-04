@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
@@ -220,7 +221,11 @@ class PluginManager {
 
   static toHomeScreen(BuildContext context) {
     PluginManager.instance._currentPlugin = null; // 清除当前插件记录
-    // 清除所有历史路由，回到根路由
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    // 清除所有历史路由，回到根路由（默认主页：果冻小屋）
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.initialRoute,
+      (route) => false,
+    );
   }
 }

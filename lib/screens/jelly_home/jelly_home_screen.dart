@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+import 'widgets/jelly_bottom_nav.dart';
 import 'widgets/jelly_daily_tasks_card.dart';
 import 'widgets/jelly_growth_card.dart';
 import 'widgets/jelly_profile_card.dart';
@@ -13,16 +14,9 @@ import 'widgets/jelly_store_banner.dart';
 /// 参考设计稿自上而下：资料卡 + 统计卡
 /// → 快捷操作（写日记/打卡/记账 + 新增键）→ 每日任务 + 成长 → 商店横幅 → 底部导航。
 ///
-/// 路由：/jelly_home
-class JellyHomeScreen extends StatefulWidget {
+/// 路由：/jelly_home（默认启动页），底部导航：小屋 / 日程 / 看板 / 我的
+class JellyHomeScreen extends StatelessWidget {
   const JellyHomeScreen({super.key});
-
-  @override
-  State<JellyHomeScreen> createState() => _JellyHomeScreenState();
-}
-
-class _JellyHomeScreenState extends State<JellyHomeScreen> {
-  int _navIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -89,31 +83,8 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
                 ),
               ),
             ),
-            // 底部导航（固定）
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  theme.spacing.lg,
-                  theme.spacing.sm,
-                  theme.spacing.lg,
-                  theme.spacing.lg,
-                ),
-                child: DSBottomNavigation(
-                  items: const [
-                    DSNavItem(icon: DsIconKind.home, label: '小屋'),
-                    DSNavItem(icon: DsIconKind.calendar, label: '日历'),
-                    DSNavItem(icon: DsIconKind.chat, label: '对话'),
-                    DSNavItem(
-                        icon: DsIconKind.store, label: '商店', showBadge: true),
-                    DSNavItem(
-                        icon: DsIconKind.user, label: '我的', showBadge: true),
-                  ],
-                  currentIndex: _navIndex,
-                  onTap: (i) => setState(() => _navIndex = i),
-                ),
-              ),
-            ),
+            // 底部导航（固定）：小屋 / 日程 / 看板 / 我的
+            JellyBottomNav(current: JellyTab.cottage),
           ],
         ),
       ),

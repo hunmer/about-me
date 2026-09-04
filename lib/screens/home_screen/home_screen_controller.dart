@@ -61,10 +61,6 @@ class HomeScreenController extends ChangeNotifier {
   // 是否通过参数启动（如小组件、URL scheme等）
   bool _launchedWithParameters = false;
 
-  // 日期视图模式标志（false=固定布局网格，true=日期数据视图）
-  bool _isDateViewMode = false;
-  static const String _dateViewConfigKey = 'home_date_view';
-
   // 记录已加载过的布局ID，避免重复加载
   final Set<String> _loadedLayoutIds = {};
 
@@ -97,9 +93,6 @@ class HomeScreenController extends ChangeNotifier {
   bool get launchedWithParameters => _launchedWithParameters;
   bool get triedToOpenPlugin => _triedToOpenPlugin;
 
-  /// 是否处于日期视图模式
-  bool get isDateViewMode => _isDateViewMode;
-
   /// 获取指定布局的 items（从缓存或当前 layoutManager）
   List<HomeItem> getItemsForLayout(String layoutId) {
     if (_currentLayoutId == layoutId) {
@@ -117,57 +110,12 @@ class HomeScreenController extends ChangeNotifier {
   void init(VoidCallback onStateChanged) {
     _stateChangedCallback = onStateChanged;
     initializeLayout();
-    loadDateViewMode();
     // 创建包装器，先同步缓存再通知 UI
     _layoutChangedListener = () {
       onLayoutChanged(onStateChanged);
     };
     _layoutManager.addListener(_layoutChangedListener!);
     AppStartupState.instance.addListener(onStateChanged);
-  }
-
-  /// 加载日期视图模式配置
-  Future<void> loadDateViewMode() async {
-    try {
-      final config = await globalConfigManager.getPluginConfig(
-        _dateViewConfigKey,
-      );
-      if (config != null && config['enabled'] == true) {
-        _isDateViewMode = true;
-        _stateChangedCallback?.call();
-      }
-    } catch (e) {
-      debugPrint('Error loading date view mode: $e');
-    }
-  }
-
-  /// 设置日期视图模式
-  ///
-  /// 切换到日期视图时自动退出编辑/批量模式；配置会持久化
-  Future<void> setDateViewMode(bool value) async {
-    if (_isDateViewMode == value) return;
-    _isDateViewMode = value;
-
-    if (value) {
-      if (isEditMode) toggleEditMode();
-      if (isBatchMode) exitBatchMode();
-    }
-
-    notifyListeners();
-    _stateChangedCallback?.call();
-
-    try {
-      await globalConfigManager.savePluginConfig(_dateViewConfigKey, {
-        'enabled': value,
-      });
-    } catch (e) {
-      debugPrint('Error saving date view mode: $e');
-    }
-  }
-
-  /// 切换日期视图模式
-  void toggleDateViewMode() {
-    setDateViewMode(!_isDateViewMode);
   }
 
   /// 标记为已初始化

@@ -642,7 +642,10 @@ void handleWidgetClick(String url) {
         try {
           // 从小组件进入时，重置路由栈为两层：首页 + 目标页面
           // 1. 先清除所有路由并回到首页
-          navigator.pushNamedAndRemoveUntil('/', (route) => false);
+          navigator.pushNamedAndRemoveUntil(
+            AppRoutes.initialRoute,
+            (route) => false,
+          );
 
           // 2. 延迟一帧后再推入目标路由，确保首页已经完全加载
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -650,7 +653,9 @@ void handleWidgetClick(String url) {
               RouteSettings(name: routePath, arguments: arguments),
             );
             navigator.push(route);
-            debugPrint('导航成功：路由栈现在有两层 (/ -> $routePath)');
+            debugPrint(
+              '导航成功：路由栈现在有两层 (${AppRoutes.initialRoute} -> $routePath)',
+            );
           });
         } catch (error, stack) {
           debugPrint('路由导航失败: $error');
@@ -663,7 +668,10 @@ void handleWidgetClick(String url) {
           if (retryNavigator != null) {
             try {
               // 重试时也使用相同的两层路由栈逻辑
-              retryNavigator.pushNamedAndRemoveUntil('/', (route) => false);
+              retryNavigator.pushNamedAndRemoveUntil(
+                AppRoutes.initialRoute,
+                (route) => false,
+              );
 
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 final route = AppRoutes.generateRoute(
@@ -698,7 +706,10 @@ void handleActivityNotificationClick() {
       try {
         // 从活动通知进入时，重置路由栈为两层：首页 + 活动编辑界面
         // 1. 先清除所有路由并回到首页
-        navigator.pushNamedAndRemoveUntil('/', (route) => false);
+        navigator.pushNamedAndRemoveUntil(
+          AppRoutes.initialRoute,
+          (route) => false,
+        );
 
         // 2. 延迟一帧后再推入目标路由，确保首页已经完全加载
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -706,7 +717,9 @@ void handleActivityNotificationClick() {
             const RouteSettings(name: AppRoutes.activityEdit),
           );
           navigator.push(route);
-          debugPrint('活动通知导航成功：路由栈现在有两层 (/ -> /activity_edit)');
+          debugPrint(
+            '活动通知导航成功：路由栈现在有两层 (${AppRoutes.initialRoute} -> /activity_edit)',
+          );
         });
       } catch (error, stack) {
         debugPrint('活动通知路由导航失败: $error');
@@ -719,7 +732,10 @@ void handleActivityNotificationClick() {
         if (retryNavigator != null) {
           try {
             // 重试时也使用相同的两层路由栈逻辑
-            retryNavigator.pushNamedAndRemoveUntil('/', (route) => false);
+            retryNavigator.pushNamedAndRemoveUntil(
+              AppRoutes.initialRoute,
+              (route) => false,
+            );
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
               final route = AppRoutes.generateRoute(

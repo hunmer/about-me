@@ -440,7 +440,10 @@ void _navigateToWidgetUri(String url) {
         );
         try {
           // 从小组件进入时，重置路由栈为两层：首页 + 目标页面
-          navigator.pushNamedAndRemoveUntil('/', (route) => false);
+          navigator.pushNamedAndRemoveUntil(
+            AppRoutes.initialRoute,
+            (route) => false,
+          );
 
           // 延迟一帧后再推入目标路由
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -448,7 +451,7 @@ void _navigateToWidgetUri(String url) {
               RouteSettings(name: routePath, arguments: arguments),
             );
             navigator.push(route);
-            debugPrint('导航成功：路由栈现在有两层 (/ -> $routePath)');
+            debugPrint('导航成功：路由栈现在有两层 (${AppRoutes.initialRoute} -> $routePath)');
 
             // 导航成功后清除初始URI状态
             AppStartupState.instance.clearInitialWidgetUri();
@@ -466,7 +469,10 @@ void _navigateToWidgetUri(String url) {
           final retryNavigator = navigatorKey.currentState;
           if (retryNavigator != null) {
             try {
-              retryNavigator.pushNamedAndRemoveUntil('/', (route) => false);
+              retryNavigator.pushNamedAndRemoveUntil(
+                AppRoutes.initialRoute,
+                (route) => false,
+              );
 
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 final route = AppRoutes.generateRoute(

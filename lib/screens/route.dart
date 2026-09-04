@@ -123,11 +123,14 @@ class AppRoutes extends NavigatorObserver {
   // 判断是否可以返回上一级路由
   static bool canPop(BuildContext context) {
     final navigator = Navigator.of(context);
-    return ModalRoute.of(context)?.settings.name != home && navigator.canPop();
+    return ModalRoute.of(context)?.settings.name != initialRoute &&
+        navigator.canPop();
   }
 
   // ==================== 路由路径常量 ====================
   static const String home = '/';
+  static const String homeSchedule = '/home_schedule';
+  static const String homeBoard = '/home_board';
   static const String chat = '/chat';
   static const String diary = '/diary';
   static const String diaryDetail = '/diary_detail';
@@ -301,5 +304,6 @@ class AppRoutes extends NavigatorObserver {
     'live_activities_test': (context) => const LiveActivitiesTestScreen(),
   };
 
-  static String get initialRoute => home;
+  // 默认启动路由：果冻小屋
+  static String get initialRoute => jellyHome;
 }

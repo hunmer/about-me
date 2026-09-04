@@ -22,6 +22,28 @@ class CoreRoutes implements RouteRegistry {
           description: '主屏幕（别名）',
         ),
 
+        // 日程（主屏幕日期数据视图，从果冻小屋底部导航进入）
+        RouteDefinition(
+          path: '/home_schedule',
+          handler:
+              (settings) => RouteHelpers.createRoute(
+                const HomeScreen(dateView: true, asRoot: false),
+                settings: settings,
+              ),
+          description: '日程（日期数据视图主页）',
+        ),
+
+        // 看板（主屏幕固定布局网格，从果冻小屋底部导航进入）
+        RouteDefinition(
+          path: '/home_board',
+          handler:
+              (settings) => RouteHelpers.createRoute(
+                const HomeScreen(asRoot: false),
+                settings: settings,
+              ),
+          description: '看板（固定布局网格主页）',
+        ),
+
         // 设置页面
         RouteDefinition(
           path: '/settings',
