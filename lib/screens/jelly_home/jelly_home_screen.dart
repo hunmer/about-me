@@ -4,12 +4,11 @@ import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
+import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
-import 'widgets/jelly_daily_tasks_card.dart';
-import 'widgets/jelly_growth_card.dart';
+import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_profile_card.dart';
-import 'widgets/jelly_quick_action.dart';
 import 'widgets/jelly_stat_card.dart';
 import 'widgets/jelly_store_banner.dart';
 
@@ -58,9 +57,29 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 /// 小屋页签（软糖果冻风布局还原）
 ///
 /// 参考设计稿自上而下：资料卡 + 统计卡
-/// → 快捷操作（写日记/打卡/记账 + 新增键）→ 每日任务 + 成长 → 商店横幅。
-class _CottageTab extends StatelessWidget {
+/// → Live2D 角色 + 陪伴状态卡 → 商店横幅。
+class _CottageTab extends StatefulWidget {
   const _CottageTab();
+
+  @override
+  State<_CottageTab> createState() => _CottageTabState();
+}
+
+class _CottageTabState extends State<_CottageTab> {
+  /// 小智的陪伴数值（情绪/精力/好感度/陪伴天数），挂载时读取并结算
+  final CompanionController _companion = CompanionController();
+
+  @override
+  void initState() {
+    super.initState();
+    _companion.load();
+  }
+
+  @override
+  void dispose() {
+    _companion.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,13 +124,11 @@ class _CottageTab extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 富余空间都在角色区之上，快捷操作行贴着底部卡片组
-                        SizedBox(height: theme.spacing.md),
-                        _buildQuickActions(theme),
+                        // 富余空间都在角色区之上，Live2D 角色贴着底部卡片组
                         SizedBox(height: theme.spacing.md),
                         const Center(child: JellyLive2D()),
                         SizedBox(height: theme.spacing.lg),
-                        _buildTaskRow(theme),
+                        JellyCompanionCard(controller: _companion),
                         SizedBox(height: theme.spacing.lg),
                         JellyStoreBanner(
                           title: '插件商店上新',
@@ -178,98 +195,4 @@ class _CottageTab extends StatelessWidget {
     (DsIconKind.book, '本月记录', '128 条'),
   ];
 
-  /// 快捷操作行：三个果冻圆钮居中，右侧悬浮「+」
-  Widget _buildQuickActions(AppThemeData theme) {
-    return SizedBox(
-      height: 84,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              JellyQuickAction(
-                icon: DsIconKind.book,
-                label: '写日记',
-                color: theme.secondary,
-                size: 56,
-                onPressed: () {},
-              ),
-              SizedBox(width: theme.spacing.xl),
-              JellyQuickAction(
-                icon: DsIconKind.calendarCheck,
-                label: '打卡',
-                color: theme.success,
-                size: 56,
-                onPressed: () {},
-              ),
-              SizedBox(width: theme.spacing.xl),
-              JellyQuickAction(
-                icon: DsIconKind.piggy,
-                label: '记账',
-                color: theme.primary,
-                size: 56,
-                onPressed: () {},
-              ),
-            ],
-          ),
-          Positioned(right: 0, top: 0, child: DSFab(onPressed: () {})),
-        ],
-      ),
-    );
-  }
-
-  /// 任务 + 成长双卡
-  ///
-  /// 滚动视图内高度无界，不能用 IntrinsicHeight 拉等高——成长卡里的
-  /// DSLinearProgress 内部是 LayoutBuilder，不支持固有尺寸探测
-  /// （LayoutBuilder does not support returning intrinsic dimensions）。
-  /// 这里直接给定行高让 stretch 生效，高度取任务卡自然高度（约 136）+ 余量。
-  Widget _buildTaskRow(AppThemeData theme) {
-    return SizedBox(
-      height: 148,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-        Expanded(
-          child: JellyDailyTasksCard(
-            tasks: [
-              JellyDailyTask(
-                name: '写日记',
-                progress: '1/1',
-                reward: 10,
-                leadingIcon: DsIconKind.book,
-                leadingColor: theme.secondary,
-                done: true,
-              ),
-              JellyDailyTask(
-                name: '喝水打卡',
-                progress: '1/2',
-                reward: 10,
-                leadingIcon: DsIconKind.drop,
-                leadingColor: theme.primary,
-              ),
-              JellyDailyTask(
-                name: '记账',
-                progress: '3 笔',
-                reward: 15,
-                leadingIcon: DsIconKind.piggy,
-                leadingColor: theme.primary.mixBlack(0.08),
-              ),
-            ],
-            onTaskTap: (_) {},
-          ),
-        ),
-        SizedBox(width: theme.spacing.md),
-        Expanded(
-          child: JellyGrowthCard(
-            exp: 625,
-            expMax: 1000,
-            nextUnlock: '下一级解锁年度报告',
-          ),
-        ),
-        ],
-      ),
-    );
-  }
 }
