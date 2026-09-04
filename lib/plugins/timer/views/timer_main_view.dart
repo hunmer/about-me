@@ -5,7 +5,10 @@ import 'package:aboutme/plugins/timer/views/add_timer_task_dialog.dart';
 import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
@@ -25,7 +28,9 @@ class _TimerMainViewState extends State<TimerMainView> {
   Map<String, List<TimerTask>> _groupedTasks = {};
   List<TimerTask> _searchResults = [];
   String _currentQuery = '';
-  String _selectedGroup = '全部'; // 当前选中的分组
+
+  // 多条件过滤参数
+  Map<String, dynamic> _multiFilters = {};
 
   @override
   void initState() {
@@ -37,7 +42,7 @@ class _TimerMainViewState extends State<TimerMainView> {
     // 初始化时设置路由上下文
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _updateRouteContext(_selectedGroup);
+        _updateRouteContext(_groupLabelFromFilters(_multiFilters));
       }
     });
   }
@@ -77,27 +82,38 @@ class _TimerMainViewState extends State<TimerMainView> {
     });
   }
 
-  /// 获取所有分组(用于过滤栏)
+  /// 获取所有分组(用于多条件过滤)
   List<String> get _groups {
     final g = _groupedTasks.keys.toList()..sort();
-    return ['全部', ...g];
+    return g;
   }
 
-  /// 选择分组
-  void _selectGroup(String group) {
-    setState(() {
-      _selectedGroup = group;
+  /// 从过滤参数中解析当前分组显示名
+  String _groupLabelFromFilters(Map<String, dynamic> filters) {
+    return filters['group'] as String? ?? 'timer_all'.tr;
+  }
+
+  /// 应用多条件过滤
+  void _applyMultiFilters(Map<String, dynamic> filters) {
+    // 使用 addPostFrameCallback 避免在 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters = filters;
+        });
+        // 更新路由上下文，使"询问当前上下文"功能能获取到当前分组
+        _updateRouteContext(_groupLabelFromFilters(filters));
+      }
     });
-    // 更新路由上下文
-    _updateRouteContext(group);
   }
 
-  /// 根据选中的分组过滤任务
+  /// 根据多条件过滤获取任务
   List<TimerTask> get _filteredByGroup {
-    if (_selectedGroup == '全部') {
+    final group = _multiFilters['group'] as String?;
+    if (group == null) {
       return _tasks;
     } else {
-      return _groupedTasks[_selectedGroup] ?? [];
+      return _groupedTasks[group] ?? [];
     }
   }
 
@@ -109,41 +125,35 @@ class _TimerMainViewState extends State<TimerMainView> {
     }
   }
 
-  /// 构建分组过滤栏
-  Widget _buildFilterBar() {
+  /// 构建多条件过滤项
+  List<FilterItem> _buildFilterItems() {
     final groups = _groups;
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: groups.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final group = groups[index];
-          final isSelected = group == _selectedGroup;
-          return ChoiceChip(
-            label: Text(group),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (selected) {
-                _selectGroup(group);
-              }
-            },
-            showCheckmark: false,
-            labelStyle: TextStyle(
-              color:
-                  isSelected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).textTheme.bodyMedium?.color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-            selectedColor: Theme.of(context).primaryColor,
+    if (groups.isEmpty) {
+      return [];
+    }
+
+    final groupOptions = {
+      for (final group in groups) group: group,
+    };
+
+    return [
+      FilterItem(
+        id: 'group',
+        title: 'timer_group'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+            options: groupOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'timer_all'.tr,
           );
         },
+        getBadge: (value) => FilterBuilders.singleChoiceBadge(value, groupOptions),
       ),
-    );
+    ];
   }
 
   @override
@@ -157,29 +167,39 @@ class _TimerMainViewState extends State<TimerMainView> {
       searchPlaceholder: 'timer_searchPlaceholder'.tr,
       onSearchChanged: _searchTasks,
       searchBody: _buildSearchResults(),
-      // ========== 过滤栏配置 ==========
-      enableFilterBar: true,
-      filterBarChild: _buildFilterBar(),
+      // ========== 多条件过滤配置 ==========
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _applyMultiFilters,
 
       backgroundColor: Theme.of(context).colorScheme.surface,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () async {
-            final newTask = await NavigationHelper.openContainer<TimerTask>(
-              context,
-              (context) => AddTimerTaskDialog(
-                groups: _plugin.timerController.getGroups(),
-              ),
-            );
-            if (newTask != null) {
-              await _plugin.addTask(newTask);
-              setState(() {
-                _tasks = _plugin.getTasks();
-                _groupedTasks = groupBy(_tasks, (TimerTask task) => task.group);
-              });
-            }
-          },
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 40,
+                tooltip: 'timer_addTimer'.tr,
+                onPressed: () async {
+                  final newTask = await NavigationHelper.openContainer<TimerTask>(
+                    context,
+                    (context) => AddTimerTaskDialog(
+                      groups: _plugin.timerController.getGroups(),
+                    ),
+                  );
+                  if (newTask != null) {
+                    await _plugin.addTask(newTask);
+                    setState(() {
+                      _tasks = _plugin.getTasks();
+                      _groupedTasks = groupBy(_tasks, (TimerTask task) => task.group);
+                    });
+                  }
+                },
+              );
+            },
+          ),
         ),
       ],
       body: ListView.separated(

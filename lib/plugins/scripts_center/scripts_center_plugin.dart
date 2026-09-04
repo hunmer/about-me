@@ -13,6 +13,8 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart' as event_args;
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_definition.dart';
@@ -522,65 +524,126 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
 
       actions: [
         // 脚本商场按钮
-        IconButton(
-          icon: const Icon(Icons.store, size: 24),
-          tooltip: 'scripts_center_scriptStore'.tr,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => MultiProvider(
-                      providers: [
-                        ChangeNotifierProvider.value(
-                          value: _plugin.scriptStoreManager,
-                        ),
-                        ChangeNotifierProvider.value(
-                          value: _plugin.scriptDownloadManager,
-                        ),
-                        ChangeNotifierProvider.value(
-                          value: _plugin.scriptManager,
-                        ),
-                      ],
-                      child: const ScriptStoreScreen(),
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              final theme = DSThemeBridge.resolve(buildContext);
+              return DSIconButton(
+                icon: DsIconKind.store,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'scripts_center_scriptStore'.tr,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => MultiProvider(
+                            providers: [
+                              ChangeNotifierProvider.value(
+                                value: _plugin.scriptStoreManager,
+                              ),
+                              ChangeNotifierProvider.value(
+                                value: _plugin.scriptDownloadManager,
+                              ),
+                              ChangeNotifierProvider.value(
+                                value: _plugin.scriptManager,
+                              ),
+                            ],
+                            child: const ScriptStoreScreen(),
+                          ),
                     ),
-              ),
-            );
-          },
+                  );
+                },
+              );
+            },
+          ),
         ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.add_circle_outline, size: 24),
-          tooltip: 'scripts_center_newScript'.tr,
-          onSelected: (value) async {
-            if (value == 'new') {
-              _showCreateScriptDialog(context);
-            } else if (value == 'import') {
-              await _showImportScriptDialog(context);
-            }
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'new',
-                  child: Row(
+        // 新建/导入脚本菜单(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              final theme = DSThemeBridge.resolve(buildContext);
+              return DSPopover(
+                width: 190,
+                contentBuilder: (popoverContext, close) {
+                  final popoverTheme = DSThemeBridge.resolve(popoverContext);
+
+                  Widget menuRow(
+                    DsIconKind icon,
+                    String label,
+                    VoidCallback onTap,
+                  ) {
+                    return Pressable(
+                      onPressed: () {
+                        close();
+                        onTap();
+                      },
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: popoverTheme.spacing.sm,
+                            vertical: popoverTheme.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: pressed ? popoverTheme.surfaceAlt : null,
+                            borderRadius: popoverTheme.radii.sm,
+                          ),
+                          child: Row(
+                            children: [
+                              DsIcon(icon, size: 18, color: popoverTheme.text),
+                              SizedBox(width: popoverTheme.spacing.sm),
+                              Text(
+                                label,
+                                style: DsTypography.body.copyWith(
+                                  color: popoverTheme.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.add, size: 20),
-                      const SizedBox(width: 12),
-                      Text('scripts_center_newScript'.tr),
+                      menuRow(
+                        DsIconKind.plus,
+                        'scripts_center_newScript'.tr,
+                        () => _showCreateScriptDialog(context),
+                      ),
+                      menuRow(
+                        DsIconKind.download,
+                        '导入JS文件',
+                        () {
+                          _showImportScriptDialog(context);
+                        },
+                      ),
                     ],
+                  );
+                },
+                child: JellyBox(
+                  width: 40,
+                  height: 40,
+                  radius: theme.radii.circle,
+                  color: theme.primary,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.plus,
+                      size: 20,
+                      color: theme.onPrimary,
+                    ),
                   ),
                 ),
-                PopupMenuItem(
-                  value: 'import',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.file_upload, size: 20),
-                      const SizedBox(width: 12),
-                      Text('导入JS文件'),
-                    ],
-                  ),
-                ),
-              ],
+              );
+            },
+          ),
         ),
       ],
       body: ScriptsListScreen(

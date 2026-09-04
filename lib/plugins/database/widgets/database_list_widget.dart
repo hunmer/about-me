@@ -8,6 +8,8 @@ import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
@@ -61,11 +63,19 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
       },
 
       // 添加新建按钮
+      // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
       actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          tooltip: 'database_add_database'.tr,
-          onPressed: () => _showAddDatabaseDialog(context),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 40,
+                tooltip: 'database_add_database'.tr,
+                onPressed: () => _showAddDatabaseDialog(context),
+              );
+            },
+          ),
         ),
       ],
 

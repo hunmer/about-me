@@ -2,6 +2,8 @@ import 'dart:io' show File;
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
@@ -189,20 +191,31 @@ class _CalendarScreenState extends State<CalendarScreen>
         // 搜索结果页面
         searchBody: _buildSearchResults(calendarController, tagController),
         actions: [
-          IconButton(
-            icon: Icon(Icons.today, color: theme.iconTheme.color),
-            onPressed: () {
-              setState(() {
-                _focusedDay = DateTime.now();
-                Provider.of<CalendarController>(
-                  context,
-                  listen: false,
-                ).selectDate(DateTime.now());
-              });
-              // 更新路由上下文
-              _updateRouteContext(DateTime.now());
-            },
-            tooltip: 'calendar_album_back_to_current_month'.tr,
+          // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+          DSThemeBridge(
+            child: Builder(
+              builder: (buildContext) {
+                final theme = DSThemeBridge.resolve(buildContext);
+                return DSIconButton(
+                  icon: DsIconKind.calendar,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: 'calendar_album_back_to_current_month'.tr,
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay = DateTime.now();
+                      Provider.of<CalendarController>(
+                        context,
+                        listen: false,
+                      ).selectDate(DateTime.now());
+                    });
+                    // 更新路由上下文
+                    _updateRouteContext(DateTime.now());
+                  },
+                );
+              },
+            ),
           ),
         ],
         body: _buildCalendarListView(calendarController, selectedDate),

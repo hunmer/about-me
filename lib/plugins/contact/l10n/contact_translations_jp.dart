@@ -16,6 +16,7 @@ const Map<String, String> contactTranslationsJp = {
   'contact_deleteConfirmation': 'この連絡先を削除してもよろしいですか？',
   'contact_noContacts': '連絡先がありません',
   'contact_searchContacts': '連絡先を検索',
+  'contact_all': 'すべて',
 
   // Groups
   'contact_contactGroups': 'グループ',

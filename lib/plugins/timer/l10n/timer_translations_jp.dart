@@ -23,6 +23,8 @@ class TimerTranslationsJp {
     'timer_cycleCount': 'サイクル数',
     'timer_taskName': 'タスク名',
     'timer_selectGroup': 'グループを選択',
+    'timer_group': 'グループ',
+    'timer_all': 'すべて',
     'timer_cancelTimer': 'タイマーをキャンセル',
     'timer_pauseTimerConfirm': 'タイマーを一時停止してもよろしいですか？経過時間: @time',
     'timer_continueTimer': 'タイマーを再開',

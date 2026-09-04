@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/widgets/memorial_day_card.dart';
@@ -143,39 +145,111 @@ class _DayHomeScreenState extends State<DayHomeScreen> {
             },
             // 搜索结果页面
             searchBody: _buildSearchResults(controller),
+            // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
             actions: [
-              // 排序菜单
-              PopupMenuButton<SortMode>(
-                icon: Icon(Icons.sort, color: theme.iconTheme.color),
-                tooltip: 'day_sortOptions'.tr,
-                onSelected: (mode) => controller.setSortMode(mode),
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        value: SortMode.upcoming,
-                        child: Text('day_upcomingSort'.tr),
+              // 排序菜单(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
+              DSThemeBridge(
+                child: Builder(
+                  builder: (buildContext) {
+                    final theme = DSThemeBridge.resolve(buildContext);
+                    return DSPopover(
+                      width: 190,
+                      contentBuilder: (popoverContext, close) {
+                        final popoverTheme = DSThemeBridge.resolve(
+                          popoverContext,
+                        );
+
+                        Widget menuRow(SortMode value, String label) {
+                          return Pressable(
+                            onPressed: () {
+                              close();
+                              controller.setSortMode(value);
+                            },
+                            builder: (context, states) {
+                              final pressed = states.contains(
+                                WidgetState.pressed,
+                              );
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: popoverTheme.spacing.sm,
+                                  vertical: popoverTheme.spacing.sm,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      pressed ? popoverTheme.surfaceAlt : null,
+                                  borderRadius: popoverTheme.radii.sm,
+                                ),
+                                child: Row(
+                                  children: [
+                                    DsIcon(
+                                      controller.sortMode == value
+                                          ? DsIconKind.check
+                                          : DsIconKind.sort,
+                                      size: 18,
+                                      color: popoverTheme.text,
+                                    ),
+                                    SizedBox(width: popoverTheme.spacing.sm),
+                                    Text(
+                                      label,
+                                      style: DsTypography.body.copyWith(
+                                        color: popoverTheme.text,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            menuRow(SortMode.upcoming, 'day_upcomingSort'.tr),
+                            menuRow(SortMode.recent, 'day_recentSort'.tr),
+                            menuRow(SortMode.manual, 'day_manualSort'.tr),
+                          ],
+                        );
+                      },
+                      child: JellyBox(
+                        width: 36,
+                        height: 36,
+                        radius: theme.radii.circle,
+                        color: theme.surfaceAlt,
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.sort,
+                            size: 18,
+                            color: theme.textSub,
+                          ),
+                        ),
                       ),
-                      PopupMenuItem(
-                        value: SortMode.recent,
-                        child: Text('day_recentSort'.tr),
-                      ),
-                      PopupMenuItem(
-                        value: SortMode.manual,
-                        child: Text('day_manualSort'.tr),
-                      ),
-                    ],
+                    );
+                  },
+                ),
               ),
               // 视图切换按钮
-              IconButton(
-                icon: Icon(
-                  controller.isCardView ? Icons.view_list : Icons.view_module,
-                  color: theme.iconTheme.color,
+              DSThemeBridge(
+                child: Builder(
+                  builder: (buildContext) {
+                    final theme = DSThemeBridge.resolve(buildContext);
+                    return DSIconButton(
+                      icon:
+                          controller.isCardView
+                              ? DsIconKind.list
+                              : DsIconKind.grid,
+                      size: 36,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      tooltip:
+                          controller.isCardView
+                              ? 'day_listView'.tr
+                              : 'day_cardView'.tr,
+                      onPressed: controller.toggleView,
+                    );
+                  },
                 ),
-                onPressed: controller.toggleView,
-                tooltip:
-                    controller.isCardView
-                        ? 'day_listView'.tr
-                        : 'day_cardView'.tr,
               ),
             ],
             body: Stack(
@@ -185,9 +259,16 @@ class _DayHomeScreenState extends State<DayHomeScreen> {
                 Positioned(
                   bottom: 16,
                   right: 16,
-                  child: FloatingActionButton(
-                    onPressed: () => _showEditDialog(context),
-                    child: const Icon(Icons.add),
+                  child: DSThemeBridge(
+                    child: Builder(
+                      builder: (buildContext) {
+                        return DSIconButton(
+                          icon: DsIconKind.plus,
+                          size: 56,
+                          onPressed: () => _showEditDialog(context),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],

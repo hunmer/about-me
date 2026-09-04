@@ -22,6 +22,8 @@ class TimerTranslationsEn {
     'timer_cycleCount': 'Cycle Count',
     'timer_taskName': 'Task Name',
     'timer_selectGroup': 'Select Group',
+    'timer_group': 'Group',
+    'timer_all': 'All',
     'timer_cancelTimer': 'Cancel Timer',
     'timer_pauseTimerConfirm': 'Are you sure you want to pause the timer? Recorded time: @time',
     'timer_continueTimer': 'Continue Timer',

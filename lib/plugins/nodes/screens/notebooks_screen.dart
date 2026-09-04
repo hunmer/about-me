@@ -2,6 +2,8 @@ import 'package:get/get.dart' hide Node;
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -52,9 +54,18 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
       },
       searchBody: _buildSearchResults(context, filteredNotebooks, controller),
       actions: [
-        IconButton(
-          icon: Icon(Icons.add, color: theme.iconTheme.color),
-          onPressed: () => _showAddNotebookDialog(context),
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 40,
+                tooltip: 'nodes_addNotebook'.tr,
+                onPressed: () => _showAddNotebookDialog(context),
+              );
+            },
+          ),
         ),
       ],
       body: ReorderableListView.builder(

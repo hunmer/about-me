@@ -21,6 +21,8 @@ import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 // UseCase 架构导入
 import 'package:shared_models/usecases/calendar/calendar_usecase.dart';
@@ -933,46 +935,84 @@ class _CalendarMainViewState extends State<CalendarMainView> {
               _searchQuery = query;
             });
           },
+          // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
           actions: [
             // 刷新系统事件按钮
-            IconButton(
-              icon:
-                  _isRefreshing
-                      ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.iconTheme.color ?? Colors.grey,
-                          ),
-                        ),
-                      )
-                      : Icon(Icons.refresh, color: theme.iconTheme.color),
-              tooltip: _isRefreshing ? '正在刷新...' : '刷新日历事件',
-              onPressed: _isRefreshing ? null : _refreshSystemEvents,
+            DSThemeBridge(
+              child: Builder(
+                builder: (buildContext) {
+                  final theme = DSThemeBridge.resolve(buildContext);
+                  if (_isRefreshing) {
+                    return SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Center(
+                        child: DSLoadingDots(size: 10, color: theme.textSub),
+                      ),
+                    );
+                  }
+                  return DSIconButton(
+                    icon: DsIconKind.refresh,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: '刷新日历事件',
+                    onPressed: _refreshSystemEvents,
+                  );
+                },
+              ),
             ),
             // 跳转到今天按钮
-            IconButton(
-              icon: Icon(Icons.today, color: theme.iconTheme.color),
-              tooltip: 'calendar_backToToday'.tr,
-              onPressed: () {
-                plugin.sfController.displayDate = DateTime.now();
-                // 更新路由上下文
-                _updateRouteContext();
-              },
+            DSThemeBridge(
+              child: Builder(
+                builder: (buildContext) {
+                  final theme = DSThemeBridge.resolve(buildContext);
+                  return DSIconButton(
+                    icon: DsIconKind.calendar,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'calendar_backToToday'.tr,
+                    onPressed: () {
+                      plugin.sfController.displayDate = DateTime.now();
+                      // 更新路由上下文
+                      _updateRouteContext();
+                    },
+                  );
+                },
+              ),
             ),
             // 查看所有事件按钮
-            IconButton(
-              icon: Icon(Icons.list_alt, color: theme.iconTheme.color),
-              tooltip: 'calendar_allEvents'.tr,
-              onPressed: () => plugin.showAllEvents(context),
+            DSThemeBridge(
+              child: Builder(
+                builder: (buildContext) {
+                  final theme = DSThemeBridge.resolve(buildContext);
+                  return DSIconButton(
+                    icon: DsIconKind.list,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'calendar_allEvents'.tr,
+                    onPressed: () => plugin.showAllEvents(context),
+                  );
+                },
+              ),
             ),
             // 查看已完成事件按钮
-            IconButton(
-              icon: Icon(Icons.done_all, color: theme.iconTheme.color),
-              tooltip: 'calendar_completedEvents'.tr,
-              onPressed: () => plugin.showCompletedEvents(context),
+            DSThemeBridge(
+              child: Builder(
+                builder: (buildContext) {
+                  final theme = DSThemeBridge.resolve(buildContext);
+                  return DSIconButton(
+                    icon: DsIconKind.check,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'calendar_completedEvents'.tr,
+                    onPressed: () => plugin.showCompletedEvents(context),
+                  );
+                },
+              ),
             ),
           ],
         );

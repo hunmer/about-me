@@ -64,6 +64,7 @@ const Map<String, String> contactTranslationsZh = {
   'contact_addTag': '添加标签',
   'contact_addTagTooltip': '为此联系人添加标签',
   'contact_addressLabel': '地址',
+  'contact_all': '全部',
   'contact_basicInfoTab': '基本信息',
   'contact_dateRange': '日期范围',
   'contact_days': '天',

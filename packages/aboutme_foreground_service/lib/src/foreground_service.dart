@@ -24,6 +24,11 @@ class AboutmeForegroundService {
   /// 是否已初始化
   bool get isInitialized => _isInitialized;
 
+  /// flutter_foreground_task 仅提供 Android/iOS 原生实现，
+  /// 其他平台调用方法通道会抛 MissingPluginException
+  bool get _isSupportedPlatform =>
+      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
   /// 初始化前台服务
   ///
   /// [config] 服务配置，如果不传则使用默认配置
@@ -31,6 +36,11 @@ class AboutmeForegroundService {
   /// 此方法会自动请求必要的权限（通知权限、电池优化豁免、精确闹钟权限）
   Future<void> initialize({ForegroundServiceConfig? config}) async {
     if (_isInitialized) return;
+
+    if (!_isSupportedPlatform) {
+      debugPrint('[AboutmeForegroundService] 当前平台不支持前台服务，跳过初始化');
+      return;
+    }
 
     final cfg = config ?? const ForegroundServiceConfig();
 
@@ -106,6 +116,10 @@ class AboutmeForegroundService {
     String? notificationInitialRoute,
     required Function() callback,
   }) async {
+    if (!_isSupportedPlatform) {
+      return ServiceResult.failure('当前平台不支持前台服务');
+    }
+
     try {
       if (await isRunning) {
         await FlutterForegroundTask.restartService();
@@ -137,6 +151,10 @@ class AboutmeForegroundService {
 
   /// 停止前台服务
   Future<ServiceResult> stopService() async {
+    if (!_isSupportedPlatform) {
+      return ServiceResult.failure('当前平台不支持前台服务');
+    }
+
     try {
       await FlutterForegroundTask.stopService();
       return ServiceResult.success();
@@ -150,6 +168,8 @@ class AboutmeForegroundService {
     required String title,
     required String text,
   }) async {
+    if (!_isSupportedPlatform) return;
+
     await FlutterForegroundTask.updateService(
       notificationTitle: title,
       notificationText: text,
@@ -157,7 +177,10 @@ class AboutmeForegroundService {
   }
 
   /// 检查服务是否正在运行
-  Future<bool> get isRunning => FlutterForegroundTask.isRunningService;
+  Future<bool> get isRunning async {
+    if (!_isSupportedPlatform) return false;
+    return FlutterForegroundTask.isRunningService;
+  }
 
   /// 添加数据回调
   void addDataCallback(Function(Object) callback) {
@@ -176,29 +199,39 @@ class AboutmeForegroundService {
 
   /// 检查通知权限
   Future<bool> checkNotificationPermission() async {
+    if (!_isSupportedPlatform) return false;
     final permission = await FlutterForegroundTask.checkNotificationPermission();
     return permission == NotificationPermission.granted;
   }
 
   /// 请求通知权限
   Future<bool> requestNotificationPermission() async {
+    if (!_isSupportedPlatform) return false;
     final permission = await FlutterForegroundTask.requestNotificationPermission();
     return permission == NotificationPermission.granted;
   }
 
   /// 检查是否忽略电池优化
-  Future<bool> get isIgnoringBatteryOptimizations =>
-      FlutterForegroundTask.isIgnoringBatteryOptimizations;
+  Future<bool> get isIgnoringBatteryOptimizations async {
+    if (!_isSupportedPlatform) return false;
+    return FlutterForegroundTask.isIgnoringBatteryOptimizations;
+  }
 
   /// 请求忽略电池优化
-  Future<bool> requestIgnoreBatteryOptimization() =>
-      FlutterForegroundTask.requestIgnoreBatteryOptimization();
+  Future<bool> requestIgnoreBatteryOptimization() async {
+    if (!_isSupportedPlatform) return false;
+    return FlutterForegroundTask.requestIgnoreBatteryOptimization();
+  }
 
   /// 检查是否可以调度精确闹钟
-  Future<bool> get canScheduleExactAlarms =>
-      FlutterForegroundTask.canScheduleExactAlarms;
+  Future<bool> get canScheduleExactAlarms async {
+    if (!_isSupportedPlatform) return false;
+    return FlutterForegroundTask.canScheduleExactAlarms;
+  }
 
   /// 打开闹钟和提醒设置
-  Future<bool> openAlarmsAndRemindersSettings() =>
-      FlutterForegroundTask.openAlarmsAndRemindersSettings();
+  Future<bool> openAlarmsAndRemindersSettings() async {
+    if (!_isSupportedPlatform) return false;
+    return FlutterForegroundTask.openAlarmsAndRemindersSettings();
+  }
 }

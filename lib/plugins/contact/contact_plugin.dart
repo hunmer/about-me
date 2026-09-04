@@ -10,6 +10,7 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:shared_models/repositories/contact/contact_repository.dart';
 import 'controllers/contact_controller.dart';
 import 'models/contact_model.dart';
@@ -332,7 +333,10 @@ class ContactMainViewState extends State<ContactMainView> {
   List<Contact> _searchResults = [];
   String _currentSearchQuery = '';
   bool _isSearching = false;
-  String _selectedTag = '全部'; // 当前选中的标签
+
+  // 多条件过滤参数
+  Map<String, dynamic> _multiFilters = {};
+  List<String> _availableTags = [];
 
   // GlobalKey for OpenContainer animation
   final GlobalKey _addButtonKey = GlobalKey();
@@ -347,6 +351,9 @@ class ContactMainViewState extends State<ContactMainView> {
 
     // 订阅同步刷新事件
     EventManager.instance.subscribe('contact_refresh', _handleSyncRefresh);
+
+    // 加载标签（用于多条件过滤）
+    _loadAvailableTags();
   }
 
   @override
@@ -360,7 +367,7 @@ class ContactMainViewState extends State<ContactMainView> {
   void _handleSyncRefresh(EventArgs args) {
     debugPrint('[ContactMainView] 收到同步刷新事件');
     if (mounted) {
-      setState(() {});
+      _loadAvailableTags();
     }
   }
 
@@ -524,7 +531,7 @@ class ContactMainViewState extends State<ContactMainView> {
           contact: contact,
           controller: _controller,
           onTap: () => _addOrEditContact(contact),
-          onContactUpdated: () => setState(() {}),
+          onContactUpdated: () => _loadAvailableTags(),
         );
       },
     );
@@ -544,6 +551,7 @@ class ContactMainViewState extends State<ContactMainView> {
             }
             if (mounted) {
               setState(() {});
+              _loadAvailableTags();
             }
           } catch (e) {
             ToastService.instance.showToast('contact_saveFailedMessage'.tr);
@@ -553,86 +561,76 @@ class ContactMainViewState extends State<ContactMainView> {
           // 删除联系人，导航由 ContactForm 处理
           if (contact != null) {
             await _controller.deleteContact(contact.id);
+            _loadAvailableTags();
           }
         },
       ),
     );
   }
 
-  /// 获取所有标签(用于过滤栏)
-  Future<List<String>> _getTags() async {
+  /// 加载所有标签（用于多条件过滤）
+  Future<void> _loadAvailableTags() async {
     final tags = await _controller.getAllTags();
-    return ['全部', ...tags];
-  }
-
-  /// 选择标签
-  void _selectTag(String tag) {
-    setState(() {
-      _selectedTag = tag;
-    });
-  }
-
-  /// 根据选中的标签过滤联系人
-  Future<List<Contact>> _getFilteredByTag() async {
-    final contacts = await _controller.getFilteredAndSortedContacts();
-    if (_selectedTag == '全部') {
-      return contacts;
-    } else {
-      return contacts
-          .where((contact) => contact.tags.contains(_selectedTag))
-          .toList();
+    tags.sort();
+    if (mounted) {
+      setState(() {
+        _availableTags = tags;
+      });
     }
   }
 
-  /// 构建标签过滤栏
-  Widget _buildFilterBar() {
-    return FutureBuilder<List<String>>(
-      future: _getTags(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
+  /// 构建多条件过滤项
+  List<FilterItem> _buildFilterItems() {
+    if (_availableTags.isEmpty) {
+      return [];
+    }
 
-        final tags = snapshot.data!;
-        if (tags.length <= 1) {
-          // 只有"全部"标签,不显示过滤栏
-          return const SizedBox.shrink();
-        }
+    final tagOptions = {
+      for (final tag in _availableTags) tag: tag,
+    };
 
-        return Container(
-          height: 50,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: tags.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final tag = tags[index];
-              final isSelected = tag == _selectedTag;
-              return ChoiceChip(
-                label: Text(tag),
-                selected: isSelected,
-                onSelected: (selected) {
-                  if (selected) {
-                    _selectTag(tag);
-                  }
-                },
-                showCheckmark: false,
-                labelStyle: TextStyle(
-                  color:
-                      isSelected
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).textTheme.bodyMedium?.color,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                selectedColor: Theme.of(context).primaryColor,
-              );
-            },
-          ),
-        );
-      },
-    );
+    return [
+      FilterItem(
+        id: 'tag',
+        title: 'contact_tags'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+            options: tagOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'contact_all'.tr,
+          );
+        },
+        getBadge: (value) => FilterBuilders.singleChoiceBadge(value, tagOptions),
+      ),
+    ];
+  }
+
+  /// 应用多条件过滤
+  void _applyMultiFilters(Map<String, dynamic> filters) {
+    // 使用 addPostFrameCallback 避免在 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters = filters;
+        });
+      }
+    });
+  }
+
+  /// 根据多条件过滤获取联系人
+  Future<List<Contact>> _getFilteredContacts() async {
+    final contacts = await _controller.getFilteredAndSortedContacts();
+    final tag = _multiFilters['tag'] as String?;
+    if (tag == null) {
+      return contacts;
+    }
+    return contacts
+        .where((contact) => contact.tags.contains(tag))
+        .toList();
   }
 
   @override
@@ -648,11 +646,12 @@ class ContactMainViewState extends State<ContactMainView> {
         _searchContacts(query);
       },
       searchBody: _buildSearchResults(),
-      // ========== 过滤栏配置 ==========
-      enableFilterBar: true,
-      filterBarChild: _buildFilterBar(),
+      // ========== 多条件过滤配置 ==========
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _applyMultiFilters,
       body: FutureBuilder<List<Contact>>(
-        future: _getFilteredByTag(),
+        future: _getFilteredContacts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -694,7 +693,7 @@ class ContactMainViewState extends State<ContactMainView> {
                 contact: contacts[index],
                 controller: _controller,
                 onTap: () => _addOrEditContact(contacts[index]),
-                onContactUpdated: () => setState(() {}),
+                onContactUpdated: () => _loadAvailableTags(),
               );
             },
           );
@@ -715,6 +714,7 @@ class ContactMainViewState extends State<ContactMainView> {
                 onSave: (savedContact) async {
                   await _controller.addContact(savedContact);
                   setState(() {});
+                  _loadAvailableTags();
                 },
               ),
               sourceKey: _addButtonKey,

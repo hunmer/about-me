@@ -16,6 +16,7 @@ const Map<String, String> contactTranslationsEn = {
   'contact_deleteConfirmation': 'Are you sure you want to delete this contact?',
   'contact_noContacts': 'No contacts yet',
   'contact_searchContacts': 'Search contacts',
+  'contact_all': 'All',
 
   // Groups
   'contact_contactGroups': 'Groups',

@@ -22,6 +22,8 @@ class TimerTranslationsZh {
     'timer_cycleCount': '循环次数',
     'timer_taskName': '任务名称',
     'timer_selectGroup': '选择分组',
+    'timer_group': '分组',
+    'timer_all': '全部',
     'timer_cancelTimer': '取消计时器',
     'timer_pauseTimerConfirm': '确定要暂停计时器吗?已记录时间:@time',
     'timer_continueTimer': '继续计时',
