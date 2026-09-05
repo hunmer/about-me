@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -55,16 +57,13 @@ class JellySpeechBubble extends StatelessWidget {
             horizontal: theme.spacing.xl,
             vertical: theme.spacing.md,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: _ScrollableBubbleText(
+          child: _ScrollableBubbleText(
               text: text,
               interval: typingInterval,
               onComplete: onTypingComplete,
               style: DsTypography.button.copyWith(fontSize: 15, color: theme.primaryText),
               streaming: streaming,
               onUserInteract: onUserInteract,
-            ),
           ),
         ),
       ),
@@ -99,6 +98,8 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
   final ScrollController _scrollController = ScrollController();
   Timer? _typeTimer;
   int _shown = 0;
+  bool _mouseHovering = false;
+  bool _userScrolling = false;
 
   @override
   void initState() {
@@ -140,7 +141,9 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
     _typeTimer = Timer.periodic(widget.interval, (_) {
       if (!mounted) return;
       setState(() => _shown++);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      if (!_mouseHovering && !_userScrolling) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
       if (_shown >= widget.text.runes.length) {
         _typeTimer?.cancel();
         _finishTyping();
@@ -168,41 +171,95 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => widget.onUserInteract?.call(),
-      child: ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 180),
-      child: NotificationListener<UserScrollNotification>(
-        onNotification: (_) {
-          widget.onUserInteract?.call();
-          return false;
+    final visibleText = String.fromCharCodes(widget.text.runes.take(_shown));
+    return MouseRegion(
+      onEnter: (_) {
+        _mouseHovering = true;
+        widget.onUserInteract?.call();
+      },
+      onExit: (_) {
+        _mouseHovering = false;
+        _userScrolling = false;
+        _scrollToBottom(animated: true);
+      },
+      child: Listener(
+        onPointerDown: (_) => widget.onUserInteract?.call(),
+        onPointerSignal: (event) {
+          if (event is! PointerScrollEvent || !_scrollController.hasClients) return;
+          GestureBinding.instance.pointerSignalResolver.register(event, (resolvedEvent) {
+            final scroll = resolvedEvent as PointerScrollEvent;
+            final position = _scrollController.position;
+            final target = (position.pixels + scroll.scrollDelta.dy).clamp(
+              position.minScrollExtent,
+              position.maxScrollExtent,
+            );
+            _userScrolling = true;
+            widget.onUserInteract?.call();
+            _scrollController.jumpTo(target);
+          });
         },
-        child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000)],
-          stops: [0.0, 0.16, 1.0],
-        ).createShader(bounds),
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            child: SizedBox(
-              width: double.infinity,
-              child: MarkdownBody(
-                  data: String.fromCharCodes(widget.text.runes.take(_shown)),
-                  shrinkWrap: true,
-                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                    p: widget.style,
-                    h1: widget.style.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
-                    h2: widget.style.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
-                    code: widget.style,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 24, maxHeight: 72),
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: (notification) {
+              _userScrolling = notification.direction != ScrollDirection.idle;
+              widget.onUserInteract?.call();
+              return false;
+            },
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x00000000),
+                    Color(0xFF000000),
+                    Color(0xFF000000),
+                  ],
+                  stops: [0.0, 0.16, 1.0],
+                ).createShader(bounds),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: widget.text == '...'
+                          ? const SizedBox(
+                              height: 24,
+                              child: Center(
+                                child: Text('...', textAlign: TextAlign.center),
+                              ),
+                            )
+                          : MarkdownBody(
+                              data: visibleText,
+                              shrinkWrap: true,
+                              styleSheet: MarkdownStyleSheet.fromTheme(
+                                Theme.of(context),
+                              ).copyWith(
+                                p: widget.style,
+                                h1: widget.style.copyWith(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                h2: widget.style.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                code: widget.style,
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
+              ),
             ),
           ),
         ),
-        ),
-      ),
       ),
     );
   }

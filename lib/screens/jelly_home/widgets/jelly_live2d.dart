@@ -17,7 +17,7 @@ import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false});
+  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70)});
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
@@ -26,6 +26,7 @@ class JellyLive2D extends StatefulWidget {
   final Live2DModelDefinition? initialModel;
   final int? reaction;
   final bool streaming;
+  final Duration typingInterval;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -38,6 +39,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const double _maxSize = 560;
   static const double _sizeStep = 40;
   static const double _modelViewportAspectRatio = 0.5;
+  static const double _bubbleReservedHeight = 120;
   static const String _sizePrefKey = 'jelly_live2d.size';
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
@@ -676,7 +678,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             width: size,
-            height: size,
+            height: size + (_bubbleMessage == null ? 0 : _bubbleReservedHeight),
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onLongPress: _showControls,
@@ -688,7 +690,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 // 气泡要上浮到方框外（角色头顶上方），不能裁剪
                 clipBehavior: Clip.none,
                 children: [
-                  AnimatedOpacity(
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: size,
+                    child: AnimatedOpacity(
                     opacity:
                         _isSwitchingModel || _controller.value.lastError != null
                             ? 0
@@ -735,6 +742,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         ),
                       ),
                     ),
+                    ),
                   ),
                   ValueListenableBuilder<Live2DViewState>(
                     valueListenable: _controller,
@@ -746,7 +754,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
                       final progress = state.modelLoadProgress.clamp(0.0, 1.0);
                       final percent = (progress * 100).round();
-                      return Positioned.fill(
+                      return Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: size,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap:
@@ -843,29 +855,24 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 0,
-                    child: IgnorePointer(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child:
-                            _bubbleMessage == null
-                                ? const SizedBox.shrink()
-                                : FractionalTranslation(
-                                  key: ValueKey(_bubbleMessage),
-                                  translation: const Offset(0, -0.75),
-                                  child: Center(
-                                      child: FractionallySizedBox(
-                                        widthFactor: 0.8,
-                                        child: JellySpeechBubble(
-                                          text: _bubbleMessage!,
-                                          streaming: _bubbleStreaming,
-                                          onUserInteract: _pauseBubbleHide,
-                                          onTypingComplete: _onBubbleTyped,
-                                        ),
-                                      ),
-                                  ),
+                    bottom: size,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _bubbleMessage == null
+                          ? const SizedBox.shrink()
+                          : Center(
+                              key: const ValueKey('live2d-speech-bubble'),
+                              child: FractionallySizedBox(
+                                widthFactor: 0.8,
+                                child: JellySpeechBubble(
+                                  text: _bubbleMessage!,
+                                  streaming: _bubbleStreaming,
+                                  typingInterval: widget.typingInterval,
+                                  onUserInteract: _pauseBubbleHide,
+                                  onTypingComplete: _onBubbleTyped,
                                 ),
-                      ),
+                              ),
+                            ),
                     ),
                   ),
                   Positioned(

@@ -13,6 +13,12 @@ class Live2DPlugin extends BasePlugin {
   static Live2DPlugin? _instance;
   static Live2DPlugin get instance => _instance ??= PluginManager.instance.getPlugin('live2d') as Live2DPlugin;
   static const fixedGroup = 'live2d';
+  static const defaultTypingIntervalMs = 70;
+
+  Duration get bubbleTypingInterval => Duration(
+    milliseconds:
+        settings['typingIntervalMs'] as int? ?? defaultTypingIntervalMs,
+  );
 
   /// Live2D 气泡只展示最终回答，隐藏模型返回的思考块。
   static String cleanReply(String value) {
@@ -55,6 +61,7 @@ class Live2DPlugin extends BasePlugin {
   @override IconData get icon => Icons.face_retouching_natural;
 
   @override Future<void> initialize() async {
+    await loadSettings({'typingIntervalMs': defaultTypingIntervalMs});
     final data = await storage.read('$storageDir/archives.json');
     final rawArchives = data is Map ? data['archives'] : null;
     archives

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
@@ -77,6 +78,9 @@ class _CottageTabState extends State<_CottageTab> {
   final CompanionController _companion = CompanionController();
   String? _live2dMessage;
   int _live2dReaction = 0;
+  String? _pendingLive2dReply;
+  bool _pendingLive2dStreaming = false;
+  bool _live2dReplyFrameScheduled = false;
 
   @override
   void initState() {
@@ -140,6 +144,7 @@ class _CottageTabState extends State<_CottageTab> {
                           child: JellyLive2D(
                             message: _live2dMessage,
                             reaction: _live2dReaction,
+                            typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
                             onTap: (hitAreaId, _) {
                               if (hitAreaId != null) {
                                 _companion.recordInteraction();
@@ -148,10 +153,7 @@ class _CottageTabState extends State<_CottageTab> {
                           ),
                         ),
                         Live2DChatInput(
-                          onReply: (reply, streaming) => setState(() {
-                            _live2dMessage = reply;
-                            if (!streaming) _live2dReaction++;
-                          }),
+                          onReply: _scheduleLive2dReply,
                         ),
                         SizedBox(height: theme.spacing.lg),
                         JellyCompanionCard(controller: _companion),
@@ -172,6 +174,27 @@ class _CottageTabState extends State<_CottageTab> {
         ),
       ),
     );
+  }
+
+  void _scheduleLive2dReply(String reply, bool streaming) {
+    _pendingLive2dReply = reply;
+    _pendingLive2dStreaming = streaming;
+    if (_live2dReplyFrameScheduled) return;
+    _live2dReplyFrameScheduled = true;
+    if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
+      debugPrint('[Live2DChat] deferred reply update during ${SchedulerBinding.instance.schedulerPhase.name}');
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _live2dReplyFrameScheduled = false;
+      final pending = _pendingLive2dReply;
+      _pendingLive2dReply = null;
+      if (!mounted || pending == null) return;
+      setState(() {
+        _live2dMessage = pending;
+        if (!_pendingLive2dStreaming) _live2dReaction++;
+      });
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   /// 顶部：左资料卡 + 右三张统计卡

@@ -22,6 +22,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   List<AIAgent> agents = [];
   Live2DArchive? archive;
   bool _showPreview = false;
+  late double _typingIntervalMs = (plugin.settings['typingIntervalMs'] as int? ?? Live2DPlugin.defaultTypingIntervalMs).toDouble();
 
   @override
   void initState() {
@@ -165,6 +166,17 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
             const SizedBox(height: 16),
             ListTile(title: const Text('人格 Agent'), subtitle: Text(selectedAgent?.name ?? '未选择'), trailing: const Icon(Icons.chevron_right), onTap: chooseAgent),
             const SizedBox(height: 16),
+            Text('文字展示速度：${_typingIntervalMs.round()} 毫秒/字'),
+            Slider(
+              value: _typingIntervalMs,
+              min: 20,
+              max: 200,
+              divisions: 18,
+              label: '${_typingIntervalMs.round()} ms',
+              onChanged: (value) => setState(() => _typingIntervalMs = value),
+              onChangeEnd: (value) => plugin.updateSettings({'typingIntervalMs': value.round()}),
+            ),
+            const SizedBox(height: 16),
             Text('模型：${current.modelLabel}'),
             const SizedBox(height: 8),
             FilledButton.icon(
@@ -179,6 +191,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                 child: JellyLive2D(
                   key: ValueKey('${current.modelDir}${current.modelFile}'),
                   initialModel: modelFor(current),
+                  typingInterval: Duration(milliseconds: _typingIntervalMs.round()),
                 ),
               ),
             ],
