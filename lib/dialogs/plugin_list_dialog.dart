@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/screens/route.dart';
+import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
 /// 防重复弹窗标志位
 bool _isDialogShowing = false;
@@ -31,10 +34,34 @@ class PluginListDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                '插件列表',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              Stack(
+                children: [
+                  const Center(
+                    child: Text(
+                      '插件列表',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.settings),
+                      tooltip: 'app_settings'.tr,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        NavigationHelper.push(
+                          context,
+                          const SettingsScreen(),
+                          routeName: AppRoutes.settings,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Flexible(
@@ -59,11 +86,6 @@ class PluginListDialog extends StatelessWidget {
                     return _buildPluginCard(context, plugin);
                   },
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('app_close'.tr),
               ),
             ],
           ),

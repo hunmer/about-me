@@ -63,7 +63,9 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
       _conversationController != null && _conversationController!.isInitialized;
 
   AgentChatPlugin() {
-    _instance = this;
+    // BuiltinPlugins.createAll() is also used to list disabled plugins in
+    // settings. Those temporary instances must not replace the registered one.
+    _instance ??= this;
   }
 
   @override

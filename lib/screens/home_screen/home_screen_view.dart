@@ -5,7 +5,6 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/widgets/app_drawer.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:extended_tabs/extended_tabs.dart';
 import 'package:flutter/material.dart';
@@ -58,7 +57,6 @@ class HomeScreenView extends StatelessWidget {
       child: Scaffold(
         appBar: _buildAppBar(context),
         extendBodyBehindAppBar: controller.currentBackgroundPath != null,
-        drawer: const AppDrawer(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton:
             controller.isEditMode ||
@@ -154,16 +152,6 @@ class HomeScreenView extends StatelessWidget {
       backgroundColor:
           controller.currentBackgroundPath != null ? Colors.transparent : null,
       elevation: controller.currentBackgroundPath != null ? 0 : null,
-      leading: Builder(
-        builder: (BuildContext context) {
-          return IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          );
-        },
-      ),
       actions: [
         if (controller.isBatchMode) ...[
           if (controller.selectedItemIds.isNotEmpty) ...[
