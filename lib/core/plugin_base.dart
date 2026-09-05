@@ -119,6 +119,12 @@ abstract class PluginBase {
   /// 如果插件需要自定义卡片显示样式，可以重写此方法
   Widget? buildCardView(BuildContext context) => null;
 
+  /// 是否提供设置页面
+  ///
+  /// 重写 [buildSettingsView] 的插件应同时重写此 getter 返回 true，
+  /// 用于决定是否展示插件设置入口
+  bool get hasSettingsView => false;
+
   /// 构建插件设置视图
   Widget buildSettingsView(BuildContext context) {
     return Column(children: [

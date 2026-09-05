@@ -1,0 +1,76 @@
+import 'package:flutter/material.dart';
+import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/services/request_service.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'screens/live2d_settings_screen.dart';
+
+class Live2DPlugin extends BasePlugin {
+  static Live2DPlugin? _instance;
+  static Live2DPlugin get instance => _instance ??= PluginManager.instance.getPlugin('live2d') as Live2DPlugin;
+  static const fixedGroup = 'live2d';
+  final List<Live2DArchive> archives = [];
+  String? selectedId;
+
+  @override String get id => 'live2d';
+  @override Color get color => Colors.pink;
+  @override IconData get icon => Icons.face_retouching_natural;
+
+  @override Future<void> initialize() async {
+    final data = await storage.read('$storageDir/archives.json');
+    final rawArchives = data is Map ? data['archives'] : null;
+    archives
+      ..clear()
+      ..addAll((rawArchives is List ? rawArchives : const []).map(
+        (e) => Live2DArchive.fromJson(Map<String, dynamic>.from(e as Map)),
+      ));
+    selectedId = data['selectedId'] as String?;
+  }
+  Future<void> save() async => storage.write('$storageDir/archives.json', {'selectedId': selectedId, 'archives': archives.map((a) => a.toJson()).toList()});
+  Live2DArchive? get selected => archives.where((a) => a.id == selectedId).firstOrNull;
+  Future<void> upsert(Live2DArchive archive) async {
+    final i = archives.indexWhere((a) => a.id == archive.id);
+    if (i < 0) {
+      archives.add(archive);
+    } else {
+      archives[i] = archive;
+    }
+    selectedId = archive.id;
+    await save();
+  }
+  Future<void> deleteArchive(String id) async {
+    archives.removeWhere((item) => item.id == id);
+    if (selectedId == id) selectedId = archives.isEmpty ? null : archives.first.id;
+    final controller = AgentChatPlugin.instance.conversationController;
+    final conversation = controller?.conversationService.getTemporaryConversationForRoute('live2d:$id');
+    if (conversation != null) await controller!.conversationService.deleteConversation(conversation.id);
+    await save();
+  }
+  Future<String> sendMessage(String text) async {
+    final archive = selected;
+    if (archive?.agentId == null) throw StateError('请先在 Live2D 存档中选择 Agent');
+    final agent = await AgentController().getAgent(archive!.agentId!);
+    if (agent == null) throw StateError('Agent 不存在');
+    final controller = AgentChatPlugin.instance.conversationController;
+    if (controller == null) throw StateError('Agent Chat 尚未初始化');
+    var conversation = controller.conversationService.getTemporaryConversationForRoute('live2d:${archive.id}');
+    conversation ??= await controller.conversationService.createTemporaryConversation(title: archive.name, routeName: 'live2d:${archive.id}', agentId: agent.id);
+    if (!conversation.groups.contains(fixedGroup)) {
+      conversation = conversation.copyWith(groups: [...conversation.groups, fixedGroup]);
+      await controller.conversationService.updateConversation(conversation);
+    }
+    await controller.messageService.addMessage(ChatMessage.user(conversationId: conversation.id, content: text));
+    final response = await RequestService.chat(text, agent);
+    await controller.messageService.addMessage(ChatMessage.ai(conversationId: conversation.id, content: response, isGenerating: false, generatedByAgentId: agent.id));
+    await controller.conversationService.updateLastMessage(conversation.id, response);
+    return response;
+  }
+  @override Widget buildMainView(BuildContext context) => const Live2DSettingsScreen();
+  @override Widget buildSettingsView(BuildContext context) => const Live2DSettingsScreen();
+  @override String? getPluginName(context) => 'Live2D';
+  @override Future<void> registerToApp(PluginManager pluginManager, ConfigManager configManager) async {}
+}

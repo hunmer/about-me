@@ -51,14 +51,7 @@ class AppDrawer extends StatelessWidget {
                     final plugin = visiblePlugins[index];
 
                     // 只对有配置页面的插件显示设置按钮
-                    final hasSettings = [
-                      'chat',
-                      'openai',
-                      'activity',
-                      'agent_chat',
-                      'webview',
-                      'store',
-                    ].contains(plugin.id);
+                    final hasSettings = plugin.hasSettingsView;
 
                     return ListTile(
                       leading: Icon(plugin.icon),

@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
@@ -11,6 +11,7 @@ import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_profile_card.dart';
 import 'widgets/jelly_stat_card.dart';
 import 'widgets/jelly_store_banner.dart';
+import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 
 /// 果冻小屋主页（应用默认启动页）
 ///
@@ -68,6 +69,10 @@ class _CottageTab extends StatefulWidget {
 class _CottageTabState extends State<_CottageTab> {
   /// 小智的陪伴数值（情绪/精力/好感度/陪伴天数），挂载时读取并结算
   final CompanionController _companion = CompanionController();
+  final TextEditingController _live2dInput = TextEditingController();
+  String? _live2dMessage;
+  bool _sendingLive2d = false;
+  int _live2dReaction = 0;
 
   @override
   void initState() {
@@ -78,6 +83,7 @@ class _CottageTabState extends State<_CottageTab> {
   @override
   void dispose() {
     _companion.dispose();
+    _live2dInput.dispose();
     super.dispose();
   }
 
@@ -129,12 +135,21 @@ class _CottageTabState extends State<_CottageTab> {
                         // 点击命中角色本体（hit area）算一次陪伴互动
                         Center(
                           child: JellyLive2D(
+                            message: _live2dMessage,
+                            reaction: _live2dReaction,
                             onTap: (hitAreaId, _) {
                               if (hitAreaId != null) {
                                 _companion.recordInteraction();
                               }
                             },
                           ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(children: [
+                            Expanded(child: TextField(controller: _live2dInput, enabled: !_sendingLive2d, decoration: const InputDecoration(hintText: '和 Live2D 聊聊', border: OutlineInputBorder(), isDense: true), onSubmitted: (_) => _sendLive2d())),
+                            IconButton(onPressed: _sendingLive2d ? null : _sendLive2d, icon: _sendingLive2d ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send)),
+                          ]),
                         ),
                         SizedBox(height: theme.spacing.lg),
                         JellyCompanionCard(controller: _companion),
@@ -155,6 +170,19 @@ class _CottageTabState extends State<_CottageTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _sendLive2d() async {
+    final text = _live2dInput.text.trim();
+    if (text.isEmpty) return;
+    _live2dInput.clear();
+    setState(() { _sendingLive2d = true; _live2dMessage = '…'; });
+    try {
+      final response = await Live2DPlugin.instance.sendMessage(text);
+      if (mounted) setState(() { _live2dMessage = response; _live2dReaction++; });
+    } catch (e) {
+      if (mounted) setState(() => _live2dMessage = '发送失败：$e');
+    } finally { if (mounted) setState(() => _sendingLive2d = false); }
   }
 
   /// 顶部：左资料卡 + 右三张统计卡

@@ -313,6 +313,9 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
   }
 
   @override
+  bool get hasSettingsView => true;
+
+  @override
   Widget buildSettingsView(BuildContext context) {
     return StoreSettingsScreen(plugin: this);
   }

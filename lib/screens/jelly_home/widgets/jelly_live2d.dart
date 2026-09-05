@@ -17,11 +17,14 @@ import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap});
+  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction});
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
   final void Function(String? hitAreaId, String? hitAreaName)? onTap;
+  final String? message;
+  final Live2DModelDefinition? initialModel;
+  final int? reaction;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -40,7 +43,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   final Live2DViewController _controller = Live2DViewController();
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
-  Live2DModelDefinition _selectedModel = _models.first;
+  late Live2DModelDefinition _selectedModel = widget.initialModel ?? _models.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
 
@@ -76,6 +79,29 @@ class _JellyLive2DState extends State<JellyLive2D> {
     '嗯？怎么啦',
   ];
   static final Random _random = Random();
+
+  @override
+  void didUpdateWidget(covariant JellyLive2D oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.message != null && widget.message != oldWidget.message) {
+      _showBubble(widget.message!);
+    }
+    if (widget.reaction != null && widget.reaction != oldWidget.reaction) {
+      _playReaction();
+    }
+  }
+
+  Future<void> _playReaction() async {
+    if (_isSwitchingModel || !_controller.value.isLoaded) return;
+    final candidates = _selectedModel.motions.where((motion) => motion.group.toLowerCase() != 'idle').toList();
+    if (candidates.isEmpty) return;
+    final motion = candidates[_random.nextInt(candidates.length)];
+    try {
+      await _controller.startMotion(group: motion.group, index: motion.index);
+    } on Live2DException catch (e) {
+      debugPrint('[JellyLive2D] reaction motion failed: ${e.message}');
+    }
+  }
 
   @override
   void initState() {
@@ -898,3 +924,5 @@ const List<Live2DModelDefinition> _models = [
     ],
   ),
 ];
+
+List<Live2DModelDefinition> get availableJellyLive2DModels => List.unmodifiable(_models);

@@ -278,6 +278,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   @override
+  bool get hasSettingsView => true;
+
+  @override
   Widget buildSettingsView(BuildContext context) {
     return const PluginSettingsScreen();
   }

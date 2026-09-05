@@ -105,30 +105,59 @@ class PluginListDialog extends StatelessWidget {
           Navigator.of(context).pop();
           PluginManager.instance.openPlugin(context, plugin);
         },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            // 插件图标
-            Icon(
-              plugin.icon ?? Icons.extension,
-              size: 36,
-              color: plugin.color ?? Theme.of(context).primaryColor,
-            ),
-            const SizedBox(height: 8),
-            // 插件名称
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: Text(
-                plugin.getPluginName(context) ?? plugin.id,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 插件图标
+                Icon(
+                  plugin.icon ?? Icons.extension,
+                  size: 36,
+                  color: plugin.color ?? Theme.of(context).primaryColor,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(height: 8),
+                // 插件名称
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Text(
+                    plugin.getPluginName(context) ?? plugin.id,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
+            // 插件设置入口（仅有设置页面的插件显示）
+            if (plugin.hasSettingsView)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 16,
+                    icon: const Icon(Icons.settings),
+                    tooltip: 'app_settings'.tr,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      NavigationHelper.push(
+                        context,
+                        plugin.buildSettingsView(context),
+                        routeName: '/plugin/${plugin.id}/settings',
+                      );
+                    },
+                  ),
+                ),
+              ),
           ],
         ),
       ),

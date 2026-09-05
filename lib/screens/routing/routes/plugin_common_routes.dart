@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:aboutme/plugins/contact/contact_plugin.dart';
 import 'package:aboutme/plugins/database/database_plugin.dart';
 import 'package:aboutme/plugins/day/day_plugin.dart';
+import 'package:aboutme/plugins/live2d/screens/live2d_settings_screen.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/screens/home_screen/widgets/common_widget_selector_page.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -80,6 +81,7 @@ class PluginCommonRoutes implements RouteRegistry {
           handler: (settings) => RouteHelpers.createRoute(const OpenAIMainView()),
           description: 'AI 助手主页面',
         ),
+        RouteDefinition(path: '/live2d', handler: (settings) => RouteHelpers.createRoute(const Live2DSettingsScreen()), description: 'Live2D 设置'),
         RouteDefinition(
           path: 'openai',
           handler: (settings) => RouteHelpers.createRoute(const OpenAIMainView()),

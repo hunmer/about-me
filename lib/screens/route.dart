@@ -162,6 +162,7 @@ class AppRoutes extends NavigatorObserver {
   static const String notes = '/notes';
   static const String notesCreate = '/notes/create';
   static const String openai = '/openai';
+  static const String live2d = '/live2d';
   static const String scriptsCenter = '/scripts_center';
   static const String store = '/store';
   static const String storePointsHistory = '/store/points_history';

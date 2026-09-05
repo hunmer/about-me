@@ -178,6 +178,9 @@ class NodesPlugin extends PluginBase with JSBridgePlugin {
   }
 
   @override
+  bool get hasSettingsView => true;
+
+  @override
   Widget buildSettingsView(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('nodes_nodesSettings'.tr)),

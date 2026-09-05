@@ -153,6 +153,9 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
   }
 
   @override
+  bool get hasSettingsView => true;
+
+  @override
   Widget buildSettingsView(BuildContext context) {
     return AgentChatSettingsScreen(plugin: this);
   }
