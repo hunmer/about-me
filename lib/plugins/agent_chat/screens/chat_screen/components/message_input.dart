@@ -16,6 +16,7 @@ import 'command_selector.dart';
 import 'tool_template_selector.dart';
 import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
 import '../../../../../../core/services/toast_service.dart';
+import 'agent_chat_text_input.dart';
 
 /// 消息输入框组件
 class MessageInput extends StatefulWidget {
@@ -257,38 +258,14 @@ class _MessageInputState extends State<MessageInput> {
 
                 // 输入框
                 Expanded(
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minHeight: 40,
-                      maxHeight: 120,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.surfaceAlt,
-                      borderRadius: theme.radii.pill,
-                    ),
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      maxLines: null,
-                      textInputAction: TextInputAction.newline,
-                      enabled: widget.controller.currentAgent != null,
-                      style: DsTypography.body.copyWith(color: theme.text),
-                      cursorColor: theme.primary,
-                      decoration: InputDecoration(
-                        hintText:
-                            widget.controller.currentAgent != null
-                                ? '输入消息...'
-                                : '请先选择Agent...',
-                        hintStyle: DsTypography.body.copyWith(
-                          color: theme.textSub.withValues(alpha: 0.75),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        // 显示token统计和"你可以问"按钮
-                        suffixIcon: Padding(
+                  child: AgentChatTextInput(
+                    controller: _textController,
+                    focusNode: _focusNode,
+                    enabled: widget.controller.currentAgent != null,
+                    hintText: widget.controller.currentAgent != null
+                        ? '输入消息...'
+                        : '请先选择Agent...',
+                    suffixIcon: Padding(
                           padding: const EdgeInsets.only(right: 4),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -320,9 +297,7 @@ class _MessageInputState extends State<MessageInput> {
                                       ),
                                 ),
                             ],
-                          ),
                         ),
-                      ),
                     ),
                   ),
                 ),

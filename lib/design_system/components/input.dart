@@ -83,9 +83,21 @@ class DSInput extends StatefulWidget {
   State<DSInput> createState() => _DSInputState();
 }
 
-class _DSInputState extends State<DSInput> {
+class _DSInputState extends State<DSInput>
+    implements TextSelectionGestureDetectorBuilderDelegate {
   TextEditingController? _internalController;
   FocusNode? _internalFocus;
+  late final TextSelectionGestureDetectorBuilder _selectionGestureBuilder;
+
+  @override
+  final GlobalKey<EditableTextState> editableTextKey =
+      GlobalKey<EditableTextState>();
+
+  @override
+  bool get forcePressEnabled => false;
+
+  @override
+  bool get selectionEnabled => widget.enabled;
 
   TextEditingController get _effectiveController =>
       widget.controller ?? (_internalController ??= TextEditingController());
@@ -193,42 +205,51 @@ class _DSInputState extends State<DSInput> {
                                   ),
                                 IgnorePointer(
                                   ignoring: !widget.enabled,
-                                  child: EditableText(
-                                    controller: _effectiveController,
-                                    focusNode: _effectiveFocus,
-                                    readOnly: !widget.enabled,
-                                    maxLines: widget.maxLines,
-                                    minLines: widget.minLines,
-                                    inputFormatters:
-                                        widget.maxLength == null
-                                            ? null
-                                            : [
-                                              LengthLimitingTextInputFormatter(
-                                                widget.maxLength,
-                                              ),
-                                            ],
-                                    obscureText: widget.obscureText,
-                                    keyboardType: widget.keyboardType,
-                                    textInputAction: widget.textInputAction,
-                                    scrollPhysics: widget.scrollPhysics,
-                                    onChanged: widget.onChanged,
-                                    onSubmitted: widget.onSubmitted,
-                                    cursorColor: theme.primary,
-                                    backgroundCursorColor: DsColors.transparent,
-                                    cursorWidth: 2,
-                                    cursorRadius: const Radius.circular(2),
-                                    autocorrect: false,
-                                    style: DsTypography.body.copyWith(
-                                      color:
-                                          widget.enabled
-                                              ? theme.text
-                                              : theme.textSub,
-                                    ),
-                                    strutStyle: const StrutStyle(
-                                      fontSize: 14,
-                                      forceStrutHeight: true,
-                                    ),
-                                  ),
+                                  child: _selectionGestureBuilder
+                                      .buildGestureDetector(
+                                        behavior: HitTestBehavior.translucent,
+                                        child: EditableText(
+                                          key: editableTextKey,
+                                          controller: _effectiveController,
+                                          focusNode: _effectiveFocus,
+                                          readOnly: !widget.enabled,
+                                          maxLines: widget.maxLines,
+                                          minLines: widget.minLines,
+                                          inputFormatters:
+                                              widget.maxLength == null
+                                                  ? null
+                                                  : [
+                                                    LengthLimitingTextInputFormatter(
+                                                      widget.maxLength,
+                                                    ),
+                                                  ],
+                                          obscureText: widget.obscureText,
+                                          keyboardType: widget.keyboardType,
+                                          textInputAction:
+                                              widget.textInputAction,
+                                          scrollPhysics: widget.scrollPhysics,
+                                          onChanged: widget.onChanged,
+                                          onSubmitted: widget.onSubmitted,
+                                          cursorColor: theme.primary,
+                                          backgroundCursorColor:
+                                              DsColors.transparent,
+                                          cursorWidth: 2,
+                                          cursorRadius: const Radius.circular(
+                                            2,
+                                          ),
+                                          autocorrect: false,
+                                          style: DsTypography.body.copyWith(
+                                            color:
+                                                widget.enabled
+                                                    ? theme.text
+                                                    : theme.textSub,
+                                          ),
+                                          strutStyle: const StrutStyle(
+                                            fontSize: 14,
+                                            forceStrutHeight: true,
+                                          ),
+                                        ),
+                                      ),
                                 ),
                               ],
                             );
@@ -261,6 +282,9 @@ class _DSInputState extends State<DSInput> {
   @override
   void initState() {
     super.initState();
+    _selectionGestureBuilder = TextSelectionGestureDetectorBuilder(
+      delegate: this,
+    );
     _effectiveFocus.addListener(_handleFocusChange);
   }
 

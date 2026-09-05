@@ -17,7 +17,7 @@ import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction});
+  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false});
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
@@ -25,6 +25,7 @@ class JellyLive2D extends StatefulWidget {
   final String? message;
   final Live2DModelDefinition? initialModel;
   final int? reaction;
+  final bool streaming;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -53,11 +54,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
+  bool _bubbleStreaming = false;
   Timer? _bubbleTimer;
+  Timer? _bubbleResumeTimer;
   String? _lastBubbleMessage;
 
   /// 气泡展示时长
-  static const Duration _bubbleDuration = Duration(seconds: 3);
+  static const Duration _minimumBubbleDuration = Duration(seconds: 6);
+  static const Duration _maximumBubbleDuration = Duration(seconds: 30);
 
   /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）
   static const List<String> _headMessages = [
@@ -84,7 +88,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   void didUpdateWidget(covariant JellyLive2D oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.message != null && widget.message != oldWidget.message) {
-      _showBubble(widget.message!);
+      _showBubble(widget.message!, streaming: widget.streaming);
     }
     if (widget.reaction != null && widget.reaction != oldWidget.reaction) {
       _playReaction();
@@ -119,6 +123,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   @override
   void dispose() {
     _bubbleTimer?.cancel();
+    _bubbleResumeTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
     _controller.dispose();
@@ -225,19 +230,34 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 展示气泡；消失计时从打字效果完成后才算（见 [_onBubbleTyped]），
   /// 连续点击时直接换台词重新打字
-  void _showBubble(String message) {
+  void _showBubble(String message, {bool streaming = false}) {
     _bubbleTimer?.cancel();
-    setState(() => _bubbleMessage = message);
+    setState(() {
+      _bubbleMessage = message;
+      _bubbleStreaming = streaming;
+    });
   }
 
   /// 台词逐字浮现完毕：从现在起再展示 [_bubbleDuration] 后收起
   void _onBubbleTyped() {
     _bubbleTimer?.cancel();
-    _bubbleTimer = Timer(_bubbleDuration, () {
+    final length = _bubbleMessage?.runes.length ?? 0;
+    final seconds = (6 + (length ~/ 80) * 4).clamp(
+      _minimumBubbleDuration.inSeconds,
+      _maximumBubbleDuration.inSeconds,
+    );
+    _bubbleTimer = Timer(Duration(seconds: seconds), () {
       if (mounted) {
         setState(() => _bubbleMessage = null);
       }
     });
+  }
+
+  void _pauseBubbleHide() {
+    if (_bubbleMessage == null) return;
+    _bubbleTimer?.cancel();
+    _bubbleResumeTimer?.cancel();
+    _bubbleResumeTimer = Timer(const Duration(seconds: 2), _onBubbleTyped);
   }
 
   /// 点击命中可点击区域后挑选动作。模型有语音时优先随机选择带
@@ -834,15 +854,15 @@ class _JellyLive2DState extends State<JellyLive2D> {
                                   key: ValueKey(_bubbleMessage),
                                   translation: const Offset(0, -0.75),
                                   child: Center(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 240,
+                                      child: FractionallySizedBox(
+                                        widthFactor: 0.8,
+                                        child: JellySpeechBubble(
+                                          text: _bubbleMessage!,
+                                          streaming: _bubbleStreaming,
+                                          onUserInteract: _pauseBubbleHide,
+                                          onTypingComplete: _onBubbleTyped,
+                                        ),
                                       ),
-                                      child: JellySpeechBubble(
-                                        text: _bubbleMessage!,
-                                        onTypingComplete: _onBubbleTyped,
-                                      ),
-                                    ),
                                   ),
                                 ),
                       ),

@@ -12,6 +12,12 @@ import 'widgets/jelly_profile_card.dart';
 import 'widgets/jelly_stat_card.dart';
 import 'widgets/jelly_store_banner.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
 
 /// 果冻小屋主页（应用默认启动页）
 ///
@@ -69,9 +75,7 @@ class _CottageTab extends StatefulWidget {
 class _CottageTabState extends State<_CottageTab> {
   /// 小智的陪伴数值（情绪/精力/好感度/陪伴天数），挂载时读取并结算
   final CompanionController _companion = CompanionController();
-  final TextEditingController _live2dInput = TextEditingController();
   String? _live2dMessage;
-  bool _sendingLive2d = false;
   int _live2dReaction = 0;
 
   @override
@@ -83,7 +87,6 @@ class _CottageTabState extends State<_CottageTab> {
   @override
   void dispose() {
     _companion.dispose();
-    _live2dInput.dispose();
     super.dispose();
   }
 
@@ -144,12 +147,11 @@ class _CottageTabState extends State<_CottageTab> {
                             },
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Row(children: [
-                            Expanded(child: TextField(controller: _live2dInput, enabled: !_sendingLive2d, decoration: const InputDecoration(hintText: '和 Live2D 聊聊', border: OutlineInputBorder(), isDense: true), onSubmitted: (_) => _sendLive2d())),
-                            IconButton(onPressed: _sendingLive2d ? null : _sendLive2d, icon: _sendingLive2d ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send)),
-                          ]),
+                        Live2DChatInput(
+                          onReply: (reply, streaming) => setState(() {
+                            _live2dMessage = reply;
+                            if (!streaming) _live2dReaction++;
+                          }),
                         ),
                         SizedBox(height: theme.spacing.lg),
                         JellyCompanionCard(controller: _companion),
@@ -170,19 +172,6 @@ class _CottageTabState extends State<_CottageTab> {
         ),
       ),
     );
-  }
-
-  Future<void> _sendLive2d() async {
-    final text = _live2dInput.text.trim();
-    if (text.isEmpty) return;
-    _live2dInput.clear();
-    setState(() { _sendingLive2d = true; _live2dMessage = '…'; });
-    try {
-      final response = await Live2DPlugin.instance.sendMessage(text);
-      if (mounted) setState(() { _live2dMessage = response; _live2dReaction++; });
-    } catch (e) {
-      if (mounted) setState(() => _live2dMessage = '发送失败：$e');
-    } finally { if (mounted) setState(() => _sendingLive2d = false); }
   }
 
   /// 顶部：左资料卡 + 右三张统计卡
@@ -232,4 +221,102 @@ class _CottageTabState extends State<_CottageTab> {
     (DsIconKind.book, '本月记录', '128 条'),
   ];
 
+}
+
+class Live2DChatInput extends StatefulWidget {
+  const Live2DChatInput({super.key, required this.onReply});
+
+  final void Function(String reply, bool streaming) onReply;
+
+  @override
+  State<Live2DChatInput> createState() => _Live2DChatInputState();
+}
+
+class _Live2DChatInputState extends State<Live2DChatInput> {
+  late final Future<ChatController?> _controllerFuture = _initialize();
+  ChatController? _controller;
+  MessageService? _messageService;
+  String? _lastReplyId;
+  String? _lastReplyContent;
+
+  Future<ChatController?> _initialize() async {
+    final archive = Live2DPlugin.instance.selected;
+    final agentId = archive?.agentId;
+    final agentChat = AgentChatPlugin.instance.conversationController;
+    if (archive == null || agentId == null || agentChat == null) return null;
+
+    var conversation = agentChat.conversationService
+        .getTemporaryConversationForRoute('live2d:${archive.id}');
+    conversation ??= await agentChat.conversationService
+        .createTemporaryConversation(
+          title: archive.name,
+          routeName: 'live2d:${archive.id}',
+          agentId: agentId,
+        );
+    if (!conversation.groups.contains(Live2DPlugin.fixedGroup)) {
+      conversation = conversation.copyWith(
+        groups: [...conversation.groups, Live2DPlugin.fixedGroup],
+      );
+      await agentChat.conversationService.updateConversation(conversation);
+    }
+
+    final messageService = MessageService(storage: Live2DPlugin.instance.storage);
+    final controller = ChatController(
+      conversation: conversation,
+      messageService: messageService,
+      conversationService: agentChat.conversationService,
+      messageDetailService: MessageDetailService(storage: Live2DPlugin.instance.storage),
+      templateService: ToolTemplateService(Live2DPlugin.instance.storage),
+      getSettings: () => AgentChatPlugin.instance.settings,
+    );
+    await controller.initialize();
+    _messageService = messageService;
+    _controller = controller;
+    messageService.addListener(_onMessagesChanged);
+    return controller;
+  }
+
+  void _onMessagesChanged() {
+    final messages = _messageService?.currentMessages ?? const [];
+    final latestUserIndex = messages.lastIndexWhere((message) => message.isUser);
+    if (latestUserIndex < 0) return;
+    for (var index = messages.length - 1; index > latestUserIndex; index--) {
+      final message = messages[index];
+      if (message.isUser) continue;
+      final reply = Live2DPlugin.cleanReply(message.content);
+      if (message.isGenerating) {
+        final display = reply.isEmpty ? '...' : reply;
+        if (display != _lastReplyContent && mounted) {
+          _lastReplyContent = display;
+          widget.onReply(display, true);
+        }
+        break;
+      }
+      if (reply.isEmpty || message.id == _lastReplyId) continue;
+      _lastReplyId = message.id;
+      _lastReplyContent = reply;
+      if (mounted) widget.onReply(reply, false);
+      break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageService?.removeListener(_onMessagesChanged);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ChatController?>(
+      future: _controllerFuture,
+      builder: (context, snapshot) {
+        final controller = snapshot.data;
+        if (snapshot.hasError) return const Text('Live2D 聊天初始化失败');
+        if (controller == null) return const Text('请先在 Live2D 设置中选择 Agent');
+        return MessageInput(controller: controller);
+      },
+    );
+  }
 }

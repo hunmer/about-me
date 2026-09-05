@@ -48,6 +48,7 @@ class _AgentListDrawerState extends State<AgentListDrawer>
   late List<Map<String, String>> _selectedAgents;
   late TabController? _tabController;
   List<AIAgent> _extraStorageAgents = [];
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -87,6 +88,11 @@ class _AgentListDrawerState extends State<AgentListDrawer>
 
   /// 添加新agent
   Future<void> _addNewAgent() async {
+    final openai = PluginManager.instance.getPlugin('openai') as OpenAIPlugin;
+    final before = widget.extraStorageKey == null
+        ? await openai.controller.loadAgents()
+        : await openai.controller.loadExtraStorageAgents(widget.extraStorageKey!);
+    final beforeIds = before.map((agent) => agent.id).toSet();
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -96,9 +102,23 @@ class _AgentListDrawerState extends State<AgentListDrawer>
       ),
     );
 
-    // 如果创建成功，重新加载agents
     if (result == true) {
+      final after = widget.extraStorageKey == null
+          ? await openai.controller.loadAgents()
+          : await openai.controller.loadExtraStorageAgents(widget.extraStorageKey!);
+      final created = after.where((agent) => !beforeIds.contains(agent.id)).toList();
       await _loadExtraStorageAgents();
+      if (created.isNotEmpty && mounted) {
+        final agent = created.last;
+        setState(() {
+          if (!widget.allowMultipleSelection) _selectedAgents.clear();
+          _selectedAgents.removeWhere((item) => item['id'] == agent.id);
+          _selectedAgents.add({'id': agent.id, 'name': agent.name});
+        });
+        // 创建成功后立即回填并关闭抽屉，避免用户再次点击“选择”。
+        widget.onAgentSelected(List<Map<String, String>>.from(_selectedAgents));
+        Navigator.pop(context, _selectedAgents);
+      }
     }
   }
 
@@ -133,6 +153,24 @@ class _AgentListDrawerState extends State<AgentListDrawer>
         widget.extraStorageKey!,
       );
       await _loadExtraStorageAgents();
+    }
+  }
+
+  Future<void> _editAgent(AIAgent agent) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AgentEditScreen(
+          agent: agent,
+          extraStorageKey: widget.extraStorageKey,
+        ),
+      ),
+    );
+    if (result != true || !mounted) return;
+    if (widget.extraStorageKey != null) {
+      await _loadExtraStorageAgents();
+    } else {
+      setState(() {});
     }
   }
 
@@ -276,6 +314,13 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     if (widget.agentFilter != null) {
       agents = agents.where(widget.agentFilter!).toList();
     }
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      agents = agents.where((agent) {
+        return agent.name.toLowerCase().contains(query) ||
+            agent.description.toLowerCase().contains(query);
+      }).toList();
+    }
 
     return Builder(
       builder: (context) {
@@ -296,6 +341,12 @@ class _AgentListDrawerState extends State<AgentListDrawer>
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  DSIconButton(
+                    icon: DsIconKind.edit,
+                    size: 32,
+                    tooltip: '编辑 Agent',
+                    onPressed: () => _editAgent(agent),
+                  ),
                   if (showDeleteButton)
                     DSIconButton(
                       icon: DsIconKind.trash,
@@ -353,17 +404,22 @@ class _AgentListDrawerState extends State<AgentListDrawer>
                           style: DsTypography.title.copyWith(color: theme.text),
                         ),
                       ),
-                      // 如果有extraStorageKey，显示新增按钮
-                      if (widget.extraStorageKey != null)
-                        DSIconButton(
-                          icon: DsIconKind.plus,
-                          size: 36,
-                          color: theme.surfaceAlt,
-                          iconColor: theme.textSub,
-                          tooltip: '新增Agent',
-                          onPressed: _addNewAgent,
-                        ),
+                      DSIconButton(
+                        icon: DsIconKind.plus,
+                        size: 36,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        tooltip: '新建 Agent',
+                        onPressed: _addNewAgent,
+                      ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DSInput.search(
+                    hint: '搜索 Agent',
+                    onChanged: (value) => setState(() => _searchQuery = value),
                   ),
                 ),
                 const Divider(),

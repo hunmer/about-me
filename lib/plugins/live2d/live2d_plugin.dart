@@ -13,6 +13,40 @@ class Live2DPlugin extends BasePlugin {
   static Live2DPlugin? _instance;
   static Live2DPlugin get instance => _instance ??= PluginManager.instance.getPlugin('live2d') as Live2DPlugin;
   static const fixedGroup = 'live2d';
+
+  /// Live2D 气泡只展示最终回答，隐藏模型返回的思考块。
+  static String cleanReply(String value) {
+    var result = value.replaceAll(
+      RegExp(r'<think>[\s\S]*?</think>', caseSensitive: false),
+      '',
+    );
+    // 兼容流式响应中尚未闭合的思考标签。
+    result = result.replaceFirst(RegExp(r'<think>[\s\S]*$', caseSensitive: false), '');
+    return _sanitizeUtf16(result.trim());
+  }
+
+  static String _sanitizeUtf16(String value) {
+    final output = StringBuffer();
+    for (var i = 0; i < value.length; i++) {
+      final unit = value.codeUnitAt(i);
+      if (unit >= 0xD800 && unit <= 0xDBFF) {
+        if (i + 1 < value.length) {
+          final next = value.codeUnitAt(i + 1);
+          if (next >= 0xDC00 && next <= 0xDFFF) {
+            output.writeCharCode(0x10000 + ((unit - 0xD800) << 10) + next - 0xDC00);
+            i++;
+            continue;
+          }
+        }
+        output.write('\uFFFD');
+      } else if (unit >= 0xDC00 && unit <= 0xDFFF) {
+        output.write('\uFFFD');
+      } else {
+        output.writeCharCode(unit);
+      }
+    }
+    return output.toString();
+  }
   final List<Live2DArchive> archives = [];
   String? selectedId;
 

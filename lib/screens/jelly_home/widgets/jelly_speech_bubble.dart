@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
@@ -18,6 +19,8 @@ class JellySpeechBubble extends StatelessWidget {
     this.onTap,
     this.onTypingComplete,
     this.typingInterval = const Duration(milliseconds: 110),
+    this.streaming = false,
+    this.onUserInteract,
   });
 
   final String text;
@@ -28,6 +31,8 @@ class JellySpeechBubble extends StatelessWidget {
 
   /// 每个字的浮现间隔
   final Duration typingInterval;
+  final bool streaming;
+  final VoidCallback? onUserInteract;
 
   /// 尾巴高度（画在胶囊边界之外，下方 Padding 负责占位）
   static const double tailHeight = 13;
@@ -50,13 +55,15 @@ class JellySpeechBubble extends StatelessWidget {
             horizontal: theme.spacing.xl,
             vertical: theme.spacing.md,
           ),
-          child: TypewriterText(
-            text,
-            interval: typingInterval,
-            onComplete: onTypingComplete,
-            style: DsTypography.button.copyWith(
-              fontSize: 15,
-              color: theme.primaryText,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: _ScrollableBubbleText(
+              text: text,
+              interval: typingInterval,
+              onComplete: onTypingComplete,
+              style: DsTypography.button.copyWith(fontSize: 15, color: theme.primaryText),
+              streaming: streaming,
+              onUserInteract: onUserInteract,
             ),
           ),
         ),
@@ -71,6 +78,132 @@ class JellySpeechBubble extends StatelessWidget {
               states.contains(WidgetState.pressed)
                   ? Opacity(opacity: 0.85, child: bubble)
                   : bubble,
+    );
+  }
+}
+
+class _ScrollableBubbleText extends StatefulWidget {
+  const _ScrollableBubbleText({required this.text, required this.interval, required this.onComplete, required this.style, required this.streaming, this.onUserInteract});
+  final String text;
+  final Duration interval;
+  final VoidCallback? onComplete;
+  final TextStyle style;
+  final bool streaming;
+  final VoidCallback? onUserInteract;
+
+  @override
+  State<_ScrollableBubbleText> createState() => _ScrollableBubbleTextState();
+}
+
+class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
+  final ScrollController _scrollController = ScrollController();
+  Timer? _typeTimer;
+  int _shown = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _restartTyping();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScrollableBubbleText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text || oldWidget.streaming != widget.streaming) {
+      if (widget.text.startsWith(oldWidget.text) && _shown <= oldWidget.text.runes.length) {
+        _startTypingTimer();
+      } else {
+        _restartTyping();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _typeTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _restartTyping() {
+    _typeTimer?.cancel();
+    _shown = 0;
+    _startTypingTimer();
+  }
+
+  void _startTypingTimer() {
+    _typeTimer?.cancel();
+    if (_shown >= widget.text.runes.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finishTyping());
+      return;
+    }
+    _typeTimer = Timer.periodic(widget.interval, (_) {
+      if (!mounted) return;
+      setState(() => _shown++);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      if (_shown >= widget.text.runes.length) {
+        _typeTimer?.cancel();
+        _finishTyping();
+      }
+    });
+  }
+
+  void _finishTyping() {
+    if (!mounted || _shown < widget.text.runes.length) return;
+    if (!widget.streaming) widget.onComplete?.call();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom(animated: true);
+    });
+  }
+
+  void _scrollToBottom({bool animated = false}) {
+    if (!mounted || !_scrollController.hasClients) return;
+    final target = _scrollController.position.maxScrollExtent;
+    if (animated) {
+      _scrollController.animateTo(target, duration: const Duration(milliseconds: 900), curve: Curves.easeOut);
+    } else {
+      _scrollController.jumpTo(target);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => widget.onUserInteract?.call(),
+      child: ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 180),
+      child: NotificationListener<UserScrollNotification>(
+        onNotification: (_) {
+          widget.onUserInteract?.call();
+          return false;
+        },
+        child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000)],
+          stops: [0.0, 0.16, 1.0],
+        ).createShader(bounds),
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: SizedBox(
+              width: double.infinity,
+              child: MarkdownBody(
+                  data: String.fromCharCodes(widget.text.runes.take(_shown)),
+                  shrinkWrap: true,
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                    p: widget.style,
+                    h1: widget.style.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                    h2: widget.style.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+                    code: widget.style,
+                ),
+            ),
+          ),
+        ),
+        ),
+      ),
+      ),
     );
   }
 }
@@ -97,7 +230,7 @@ class _BubblePainter extends CustomPainter {
       ..addRRect(
         RRect.fromRectAndRadius(
           Offset.zero & size,
-          Radius.circular(size.height / 2),
+          const Radius.circular(18),
         ),
       );
 
@@ -186,7 +319,12 @@ class _TypewriterTextState extends State<TypewriterText> {
   void didUpdateWidget(TypewriterText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
-      setState(_restart);
+      if (widget.text.startsWith(oldWidget.text) && _shown <= oldWidget.text.length) {
+        _timer?.cancel();
+        _timer = Timer.periodic(widget.interval, _tick);
+      } else {
+        setState(_restart);
+      }
     }
   }
 

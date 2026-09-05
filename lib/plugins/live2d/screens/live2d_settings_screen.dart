@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
-import 'package:aboutme/plugins/openai/widgets/prompt_editor.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
@@ -20,6 +21,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   final nameController = TextEditingController();
   List<AIAgent> agents = [];
   Live2DArchive? archive;
+  bool _showPreview = false;
 
   @override
   void initState() {
@@ -37,17 +39,31 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     super.dispose();
   }
 
-  void selectArchive(String? id) {
-    if (id == '__new__') {
-      final created = Live2DArchive.create(modelLabel: '默认模型', modelDir: '', modelFile: '');
-      plugin.upsert(created);
-      setState(() { archive = created; nameController.text = created.name; });
-    } else if (id != null) {
-      setState(() {
-        archive = plugin.archives.firstWhere((item) => item.id == id);
-        nameController.text = archive!.name;
-      });
+  Future<void> createArchive() async {
+    if (_showPreview) setState(() => _showPreview = false);
+    final created = Live2DArchive.create(modelLabel: 'Mao', modelDir: 'assets/models/mao/', modelFile: 'mao_pro.model3.json');
+    await plugin.upsert(created);
+    setState(() { archive = created; nameController.text = created.name; });
+  }
+
+  Future<void> chooseAgent() async {
+    // 原生 Live2D 平台视图不能跨底部抽屉导航保持挂载，先主动卸载。
+    if (_showPreview) {
+      setState(() => _showPreview = false);
+      await Future<void>.delayed(Duration.zero);
     }
+    final selected = archive?.agentId == null ? <Map<String, String>>[] : [{'id': archive!.agentId!, 'name': agents.where((a) => a.id == archive!.agentId).firstOrNull?.name ?? ''}];
+    final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => AgentListDrawer(
+        selectedAgents: selected,
+        allowMultipleSelection: false,
+        onAgentSelected: (_) {},
+      ),
+    );
+    if (!mounted || result == null || result.isEmpty || archive == null) return;
+    setState(() => archive!.agentId = result.first['id']);
   }
 
   Future<void> saveArchive() async {
@@ -62,6 +78,10 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   }
 
   Future<void> chooseOnlineModel() async {
+    if (_showPreview) {
+      setState(() => _showPreview = false);
+      await Future<void>.delayed(Duration.zero);
+    }
     final model = await Navigator.of(context).push<Live2DModelDefinition>(
       MaterialPageRoute(builder: (_) => const Live2DOnlineModelPage()),
     );
@@ -106,48 +126,62 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   Widget build(BuildContext context) {
     final current = archive;
     final selectedAgent = agents.where((agent) => agent.id == current?.agentId).firstOrNull;
-    final prompts = current?.personality.isNotEmpty == true
-        ? current!.personality
-        : (selectedAgent?.messages ?? [Prompt(type: 'system', content: '')]);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Live2D 设置'), actions: [if (current != null) IconButton(onPressed: deleteCurrentArchive, icon: const Icon(Icons.delete_outline)), IconButton(onPressed: saveArchive, icon: const Icon(Icons.save))]),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          DropdownButton<String>(
-            isExpanded: true,
-            value: current?.id,
-            hint: const Text('选择或创建 Live2D 存档'),
-            items: [
-              ...plugin.archives.map((item) => DropdownMenuItem(value: item.id, child: Text(item.name))),
-              const DropdownMenuItem(value: '__new__', child: Text('创建新存档')),
-            ],
-            onChanged: selectArchive,
-          ),
+          Row(children: [const Expanded(child: Text('Live2D 存档', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), TextButton.icon(onPressed: createArchive, icon: const Icon(Icons.add), label: const Text('新建'))]),
+          if (plugin.archives.isNotEmpty)
+            SizedBox(
+              height: 48,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: plugin.archives.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, index) {
+                  final item = plugin.archives[index];
+                  return ChoiceChip(
+                    label: Text(item.name),
+                    selected: item.id == current?.id,
+                    onSelected: (_) {
+                      if (_showPreview) _showPreview = false;
+                      setState(() {
+                        archive = item;
+                        nameController.text = item.name;
+                        plugin.selectedId = item.id;
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
           if (current != null) ...[
             TextField(controller: nameController, decoration: const InputDecoration(labelText: '名称')),
             const SizedBox(height: 16),
-            DropdownButtonFormField<Live2DModelDefinition>(
-              value: availableJellyLive2DModels.where((model) => model.label == current.modelLabel).firstOrNull,
-              decoration: const InputDecoration(labelText: 'Live2D 模型'),
-              items: availableJellyLive2DModels.map((model) => DropdownMenuItem(value: model, child: Text(model.label))).toList(),
-              onChanged: (model) { if (model != null) setState(() { current.modelLabel = model.label; current.modelDir = model.modelDir; current.modelFile = model.modelFile; }); },
-            ),
+            ListTile(title: const Text('Live2D 模型'), subtitle: Text(current.modelLabel), trailing: const Icon(Icons.chevron_right), onTap: () async { if (_showPreview) { setState(() => _showPreview = false); await Future<void>.delayed(Duration.zero); } final model = await showModalBottomSheet<Live2DModelDefinition>(context: context, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: availableJellyLive2DModels.map((model) => ListTile(title: Text(model.label), onTap: () => Navigator.pop(context, model))).toList())); if (model != null) setState(() { current.modelLabel = model.label; current.modelDir = model.modelDir; current.modelFile = model.modelFile; }); }),
             Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: chooseOnlineModel, icon: const Icon(Icons.cloud_download), label: const Text('从在线模型仓库选择'))),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: current.agentId,
-              decoration: const InputDecoration(labelText: '人格 Agent'),
-              items: agents.map((agent) => DropdownMenuItem(value: agent.id, child: Text(agent.name))).toList(),
-              onChanged: (value) => setState(() => current.agentId = value),
-            ),
-            const SizedBox(height: 16),
-            PromptEditor(prompts: prompts, onPromptsChanged: (value) => current.personality = value),
+            ListTile(title: const Text('人格 Agent'), subtitle: Text(selectedAgent?.name ?? '未选择'), trailing: const Icon(Icons.chevron_right), onTap: chooseAgent),
             const SizedBox(height: 16),
             Text('模型：${current.modelLabel}'),
             const SizedBox(height: 8),
-            SizedBox(height: 220, child: JellyLive2D(initialModel: modelFor(current))),
+            FilledButton.icon(
+              onPressed: () => setState(() => _showPreview = !_showPreview),
+              icon: Icon(_showPreview ? Icons.stop : Icons.play_arrow),
+              label: Text(_showPreview ? '卸载 Live2D' : '显示 Live2D'),
+            ),
+            if (_showPreview) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 220,
+                child: JellyLive2D(
+                  key: ValueKey('${current.modelDir}${current.modelFile}'),
+                  initialModel: modelFor(current),
+                ),
+              ),
+            ],
           ],
         ],
       ),
