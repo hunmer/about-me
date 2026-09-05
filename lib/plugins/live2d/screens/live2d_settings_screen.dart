@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
@@ -89,7 +90,9 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   String get _selectedVoiceLabel {
     final service = _selectedTTSService;
     if (service == null) {
-      return _selectedTTSServiceId == null ? '使用默认语音' : '所选语音不可用';
+      return _selectedTTSServiceId == null
+          ? 'live2d_defaultVoice'.tr
+          : 'live2d_voiceUnavailable'.tr;
     }
     final voice = service.voice ?? service.voiceId;
     return voice == null || voice.isEmpty
@@ -163,7 +166,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('已保存')));
+      ).showSnackBar(SnackBar(content: Text('live2d_saved'.tr)));
       setState(() {});
     }
   }
@@ -191,16 +194,18 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('删除存档'),
-            content: Text('确定删除“${current.name}”吗？'),
+            title: Text('live2d_deleteArchiveTitle'.tr),
+            content: Text(
+              'live2d_deleteArchiveConfirm'.trParams({'name': current.name}),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
+                child: Text('core_cancel'.tr),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('删除'),
+                child: Text('core_delete'.tr),
               ),
             ],
           ),
@@ -225,7 +230,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live2D 设置'),
+        title: Text('live2d_settingsTitle'.tr),
         actions: [
           if (current != null)
             IconButton(
@@ -240,16 +245,19 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Live2D 存档',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  'live2d_archivesSection'.tr,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               TextButton.icon(
                 onPressed: createArchive,
                 icon: const Icon(Icons.add),
-                label: const Text('新建'),
+                label: Text('live2d_newArchive'.tr),
               ),
             ],
           ),
@@ -280,11 +288,11 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
           if (current != null) ...[
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: '名称'),
+              decoration: InputDecoration(labelText: 'live2d_nameLabel'.tr),
             ),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('Live2D 模型'),
+              title: Text('live2d_modelSection'.tr),
               subtitle: Text(current.modelLabel),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
@@ -321,21 +329,21 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               child: TextButton.icon(
                 onPressed: chooseOnlineModel,
                 icon: const Icon(Icons.cloud_download),
-                label: const Text('从在线模型仓库选择'),
+                label: Text('live2d_chooseOnlineModel'.tr),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('人格 Agent'),
-              subtitle: Text(selectedAgent?.name ?? '未选择'),
+              title: Text('live2d_agentSection'.tr),
+              subtitle: Text(selectedAgent?.name ?? 'live2d_noAgentSelected'.tr),
               trailing: const Icon(Icons.chevron_right),
               onTap: chooseAgent,
             ),
             const SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('AI 回复语音播报'),
-              subtitle: const Text('回复完成后自动朗读'),
+              title: Text('live2d_autoReadTitle'.tr),
+              subtitle: Text('live2d_autoReadSubtitle'.tr),
               value: _autoReadEnabled,
               onChanged: _setAutoReadEnabled,
             ),
@@ -343,13 +351,17 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.record_voice_over),
-                title: const Text('播报语音'),
+                title: Text('live2d_voiceTitle'.tr),
                 subtitle: Text(_selectedVoiceLabel),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openTTSSettings,
               ),
             const SizedBox(height: 16),
-            Text('文字展示速度：${_typingIntervalMs.round()} 毫秒/字'),
+            Text(
+              'live2d_typingSpeed'.trParams({
+                'ms': _typingIntervalMs.round().toString(),
+              }),
+            ),
             Slider(
               value: _typingIntervalMs,
               min: 20,
@@ -363,12 +375,16 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   }),
             ),
             const SizedBox(height: 16),
-            Text('模型：${current.modelLabel}'),
+            Text('live2d_modelLabel'.trParams({'model': current.modelLabel})),
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: () => setState(() => _showPreview = !_showPreview),
               icon: Icon(_showPreview ? Icons.stop : Icons.play_arrow),
-              label: Text(_showPreview ? '卸载 Live2D' : '显示 Live2D'),
+              label: Text(
+                _showPreview
+                    ? 'live2d_hidePreview'.tr
+                    : 'live2d_showPreview'.tr,
+              ),
             ),
             if (_showPreview) ...[
               const SizedBox(height: 8),
@@ -385,11 +401,11 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '动作列表（点击在预览中播放）',
+                'live2d_motionList'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if ((modelFor(current)?.motions ?? const []).isEmpty)
-                const Text('当前模型没有可用动作')
+                Text('live2d_noMotions'.tr)
               else
                 for (final motion in modelFor(current)!.motions)
                   ListTile(
@@ -397,7 +413,11 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.play_arrow),
                     title: Text(
-                      motion.hasSound ? '${motion.label}（语音）' : motion.label,
+                      motion.hasSound
+                          ? 'screens_jellyLive2dMotionWithVoice'.trParams({
+                              'label': motion.label.tr,
+                            })
+                          : motion.label.tr,
                     ),
                     onTap: () {
                       _motionRequest.value = null;

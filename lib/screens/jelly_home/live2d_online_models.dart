@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 const String live2DOnlineCatalogUrl =
@@ -61,7 +62,11 @@ class Live2DOnlineCatalog {
         .get(Uri.parse(live2DOnlineCatalogUrl))
         .timeout(const Duration(seconds: 25));
     if (response.statusCode != 200) {
-      throw Exception('模型仓库返回 HTTP ${response.statusCode}');
+      throw Exception(
+        'screens_jellyLive2dRepoHttpError'.trParams({
+          'code': response.statusCode.toString(),
+        }),
+      );
     }
     return parseModels(jsonDecode(utf8.decode(response.bodyBytes)));
   }
@@ -111,7 +116,9 @@ class Live2DOnlineCatalog {
         final category =
             ancestors.length > 1 && ancestors[1].isNotEmpty
                 ? ancestors[1]
-                : (nodeName.isEmpty ? '未分类' : nodeName);
+                : (nodeName.isEmpty
+                      ? 'screens_jellyLive2dUncategorized'.tr
+                      : nodeName);
         final url =
             '$_live2DModelCdnBase${pathParts.map(Uri.encodeComponent).join('/')}';
 
@@ -137,11 +144,15 @@ class Live2DOnlineCatalog {
         .get(modelUri)
         .timeout(const Duration(seconds: 25));
     if (response.statusCode != 200) {
-      throw Exception('模型配置返回 HTTP ${response.statusCode}');
+      throw Exception(
+        'screens_jellyLive2dConfigHttpError'.trParams({
+          'code': response.statusCode.toString(),
+        }),
+      );
     }
     final data = jsonDecode(utf8.decode(response.bodyBytes));
     if (data is! Map<String, dynamic>) {
-      throw const FormatException('模型配置不是 JSON 对象');
+      throw FormatException('screens_jellyLive2dConfigNotJson'.tr);
     }
 
     return Live2DModelDefinition(
@@ -178,7 +189,7 @@ class Live2DOnlineCatalog {
             index: index,
             label:
                 name == null || name.isEmpty
-                    ? '${group.isEmpty ? '动作' : group} ${index + 1}'
+                    ? '${group.isEmpty ? 'screens_jellyLive2dMotionGeneric'.tr : group} ${index + 1}'
                     : name,
             hasSound: sound != null && sound.isNotEmpty,
           ),

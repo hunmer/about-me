@@ -47,6 +47,9 @@ import '../plugins/goods/l10n/goods_translations_jp.dart';
 import '../plugins/habits/l10n/habits_translations_zh.dart';
 import '../plugins/habits/l10n/habits_translations_en.dart';
 import '../plugins/habits/l10n/habits_translations_jp.dart';
+import '../plugins/live2d/l10n/live2d_translations_zh.dart';
+import '../plugins/live2d/l10n/live2d_translations_en.dart';
+import '../plugins/live2d/l10n/live2d_translations_jp.dart';
 import '../plugins/nodes/l10n/nodes_translations_zh.dart';
 import '../plugins/nodes/l10n/nodes_translations_en.dart';
 import '../plugins/nodes/l10n/nodes_translations_jp.dart';
@@ -190,6 +193,10 @@ class UnifiedTranslations extends Translations {
     zhDict.addAll(HabitsTranslationsZh.translations);
     enDict.addAll(HabitsTranslationsEn.translations);
     jpDict.addAll(HabitsTranslationsJp.translations);
+
+    zhDict.addAll(live2dTranslationsZh);
+    enDict.addAll(live2dTranslationsEn);
+    jpDict.addAll(live2dTranslationsJp);
 
     zhDict.addAll(nodesTranslationsZh);
     enDict.addAll(nodesTranslationsEn);

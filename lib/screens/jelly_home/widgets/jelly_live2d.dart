@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,25 +77,26 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const Duration _minimumBubbleDuration = Duration(seconds: 6);
   static const Duration _maximumBubbleDuration = Duration(seconds: 30);
 
-  /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）
-  static const List<String> _headMessages = [
-    '摸摸头～',
-    '头发要被摸乱啦',
-    '嘿嘿，最喜欢摸头了',
-    '今天也要加油鸭',
-  ];
-  static const List<String> _bodyMessages = [
-    '戳肚子会痒！',
-    '干嘛戳我呀',
-    '再戳就要生气啦',
-    '呜哇！',
-  ];
-  static const List<String> _missMessages = [
-    '咦？那边什么都没有哦',
-    '叫我有什么事吗？',
-    '我在这里呀～',
-    '嗯？怎么啦',
-  ];
+  /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）。
+  /// 翻译需运行时解析，用 getter 每次取当前语言
+  static List<String> get _headMessages => [
+        'screens_jellyLive2dTapHead1'.tr,
+        'screens_jellyLive2dTapHead2'.tr,
+        'screens_jellyLive2dTapHead3'.tr,
+        'screens_jellyLive2dTapHead4'.tr,
+      ];
+  static List<String> get _bodyMessages => [
+        'screens_jellyLive2dPokeBody1'.tr,
+        'screens_jellyLive2dPokeBody2'.tr,
+        'screens_jellyLive2dPokeBody3'.tr,
+        'screens_jellyLive2dPokeBody4'.tr,
+      ];
+  static List<String> get _missMessages => [
+        'screens_jellyLive2dMiss1'.tr,
+        'screens_jellyLive2dMiss2'.tr,
+        'screens_jellyLive2dMiss3'.tr,
+        'screens_jellyLive2dMiss4'.tr,
+      ];
   static final Random _random = Random();
 
   @override
@@ -546,24 +548,24 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   Future<({Uint8List bytes, Size size})> _captureFullModel() async {
     if (!_controller.value.isLoaded || _isSwitchingModel) {
-      throw StateError('模型尚未加载完成');
+      throw StateError('screens_jellyLive2dModelNotLoaded'.tr);
     }
 
     await WidgetsBinding.instance.endOfFrame;
     final boundary =
         _modelCaptureKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
-    if (boundary == null) throw StateError('无法访问模型画面');
+    if (boundary == null) throw StateError('screens_jellyLive2dCaptureUnavailable'.tr);
 
     final image = await boundary.toImage(pixelRatio: 2);
     try {
       final rgba = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       final pixels = rgba?.buffer.asUint8List();
       if (pixels == null || !_containsVisiblePixel(pixels)) {
-        throw StateError('当前平台不支持捕获 Live2D 画面');
+        throw StateError('screens_jellyLive2dCaptureUnsupported'.tr);
       }
       final png = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (png == null) throw StateError('模型画面编码失败');
+      if (png == null) throw StateError('screens_jellyLive2dCaptureEncodeFailed'.tr);
       return (
         bytes: png.buffer.asUint8List(),
         size: Size(image.width.toDouble(), image.height.toDouble()),
@@ -603,9 +605,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
         context: context,
         builder:
             (dialogContext) => DSDialog(
-              title: '无法设置裁剪区域',
+              title: 'screens_jellyLive2dCropErrorTitle'.tr,
               message: error.toString().replaceFirst('Bad state: ', ''),
-              confirmText: '知道了',
+              confirmText: 'screens_jellyLive2dGotIt'.tr,
               onConfirm: () => Navigator.of(dialogContext).pop(),
             ),
       );
@@ -614,14 +616,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   String _loadStageLabel(String? stage) {
     return switch (stage) {
-      'preparing' => '准备加载',
-      'model-config' => '读取模型配置',
-      'model-data' => '加载模型数据',
-      'components' => '加载模型组件',
-      'motions' => '加载动作与语音',
-      'textures' => '加载模型纹理',
-      'complete' => '加载完成',
-      _ => '正在加载',
+      'preparing' => 'screens_jellyLive2dLoadStagePreparing'.tr,
+      'model-config' => 'screens_jellyLive2dLoadStageModelConfig'.tr,
+      'model-data' => 'screens_jellyLive2dLoadStageModelData'.tr,
+      'components' => 'screens_jellyLive2dLoadStageComponents'.tr,
+      'motions' => 'screens_jellyLive2dLoadStageMotions'.tr,
+      'textures' => 'screens_jellyLive2dLoadStageTextures'.tr,
+      'complete' => 'screens_jellyLive2dLoadStageComplete'.tr,
+      _ => 'screens_jellyLive2dLoadStageLoading'.tr,
     };
   }
 
@@ -670,13 +672,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Live2D 档案',
+                      'screens_jellyLive2dArchives'.tr,
                       style: DsTypography.heading.copyWith(color: theme.text),
                     ),
                     SizedBox(height: theme.spacing.sm),
                     if (Live2DPlugin.instance.archives.isEmpty)
                       Text(
-                        '暂无档案，请在 Live2D 设置中创建',
+                        'screens_jellyLive2dNoArchives'.tr,
                         style: DsTypography.body.copyWith(color: theme.textSub),
                       )
                     else
@@ -702,7 +704,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
-                '人物大小',
+                'screens_jellyLive2dCharacterSize'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
               SizedBox(height: theme.spacing.sm),
@@ -716,7 +718,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                           children: [
                             Expanded(
                               child: DSButton(
-                                label: '缩小',
+                                label: 'screens_jellyLive2dShrink'.tr,
                                 size: DSButtonSize.sm,
                                 onPressed:
                                     size > _minSize
@@ -727,7 +729,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                             SizedBox(width: theme.spacing.sm),
                             Expanded(
                               child: DSButton(
-                                label: '放大',
+                                label: 'screens_jellyLive2dEnlarge'.tr,
                                 size: DSButtonSize.sm,
                                 onPressed:
                                     size < _maxSize
@@ -738,7 +740,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                             SizedBox(width: theme.spacing.sm),
                             Expanded(
                               child: DSButton(
-                                label: '重置',
+                                label: 'screens_jellyLive2dReset'.tr,
                                 size: DSButtonSize.sm,
                                 onPressed:
                                     size == _defaultSize ? null : _resetSize,
@@ -748,8 +750,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         ),
                         SizedBox(height: theme.spacing.sm),
                         Text(
-                          '当前 ${(size / _defaultSize * 100).round()}%'
-                          '（${size.round()}px，自动保存）',
+                          'screens_jellyLive2dCurrentSize'.trParams({
+                            'percent':
+                                (size / _defaultSize * 100).round().toString(),
+                            'size': size.round().toString(),
+                          }),
                           textAlign: TextAlign.center,
                           style: DsTypography.caption.copyWith(
                             color: theme.textSub,
@@ -760,13 +765,16 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
-                '显示区域',
+                'screens_jellyLive2dDisplayArea'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
               SizedBox(height: theme.spacing.sm),
               DSListItem(
-                title: '设置显示裁剪区域',
-                subtitle: _cropRegion.isFull ? '当前显示完整模型' : '已应用自定义裁剪区域',
+                title: 'screens_jellyLive2dSetCropRegion'.tr,
+                subtitle:
+                    _cropRegion.isFull
+                        ? 'screens_jellyLive2dCropFullModel'.tr
+                        : 'screens_jellyLive2dCropApplied'.tr,
                 leading: DsIcon(
                   DsIconKind.image,
                   size: 18,
@@ -785,10 +793,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
               SizedBox(height: theme.spacing.sm),
               ValueListenableBuilder<bool>(
                 valueListenable: _borderVisible,
-                builder:
-                    (context, visible, _) => DSListItem(
-                      title: '显示边框',
-                      subtitle: '标出 Live2D 的实际显示区域',
+                    builder:
+                        (context, visible, _) => DSListItem(
+                      title: 'screens_jellyLive2dShowBorder'.tr,
+                      subtitle: 'screens_jellyLive2dShowBorderDesc'.tr,
                       leading: DsIcon(
                         DsIconKind.image,
                         size: 18,
@@ -796,14 +804,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       ),
                       trailing: DSSwitch(
                         value: visible,
-                        semanticLabel: '显示 Live2D 边框',
+                        semanticLabel: 'screens_jellyLive2dShowBorderSemantic'.tr,
                         onChanged: (value) => _borderVisible.value = value,
                       ),
                     ),
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
-                '可点击区域',
+                'screens_jellyLive2dHitAreas'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
               SizedBox(height: theme.spacing.sm),
@@ -811,15 +819,17 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 valueListenable: _hitAreasVisible,
                 builder:
                     (context, visible, _) => DSChip(
-                      label: visible ? '已开启' : '已关闭',
+                      label:
+                          visible
+                              ? 'screens_jellyLive2dEnabled'.tr
+                              : 'screens_jellyLive2dDisabled'.tr,
                       selected: visible,
                       onSelected: (_) => _toggleHitAreas(!visible),
                     ),
               ),
               SizedBox(height: theme.spacing.xs),
               Text(
-                '开启后标出模型定义的可点击区域（红色框 + 名称），'
-                '点击命中区域会触发随机动作',
+                'screens_jellyLive2dHitAreasDesc'.tr,
                 style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
             ],
@@ -996,7 +1006,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                                         ),
                                         SizedBox(height: theme.spacing.md),
                                         Text(
-                                          '模型加载失败',
+                                          'screens_jellyLive2dLoadFailed'.tr,
                                           textAlign: TextAlign.center,
                                           style: DsTypography.body.copyWith(
                                             color: theme.danger,
@@ -1015,7 +1025,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                                         ),
                                         SizedBox(height: theme.spacing.md),
                                         Text(
-                                          '点击重新加载',
+                                          'screens_jellyLive2dTapToReload'.tr,
                                           style: DsTypography.caption.copyWith(
                                             color: theme.primary,
                                             fontWeight: FontWeight.w700,
@@ -1082,13 +1092,42 @@ const List<Live2DModelDefinition> _models = [
     modelDir: 'assets/models/mao/',
     modelFile: 'mao_pro.model3.json',
     motions: [
-      Live2DMotionDefinition(group: 'Idle', index: 0, label: '待机'),
-      Live2DMotionDefinition(group: '', index: 0, label: '动作 1'),
-      Live2DMotionDefinition(group: '', index: 1, label: '动作 2'),
-      Live2DMotionDefinition(group: '', index: 2, label: '动作 3'),
-      Live2DMotionDefinition(group: '', index: 3, label: '特殊动作 1'),
-      Live2DMotionDefinition(group: '', index: 4, label: '特殊动作 2'),
-      Live2DMotionDefinition(group: '', index: 5, label: '特殊动作 3'),
+      // label 存翻译 key，显示处需 .tr 解析
+      Live2DMotionDefinition(
+        group: 'Idle',
+        index: 0,
+        label: 'screens_jellyLive2dMotionIdle',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 0,
+        label: 'screens_jellyLive2dMotion1',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 1,
+        label: 'screens_jellyLive2dMotion2',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 2,
+        label: 'screens_jellyLive2dMotion3',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 3,
+        label: 'screens_jellyLive2dSpecialMotion1',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 4,
+        label: 'screens_jellyLive2dSpecialMotion2',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 5,
+        label: 'screens_jellyLive2dSpecialMotion3',
+      ),
     ],
   ),
   Live2DModelDefinition(
@@ -1102,9 +1141,21 @@ const List<Live2DModelDefinition> _models = [
     modelDir: 'assets/models/ren/',
     modelFile: 'ren.model3.json',
     motions: [
-      Live2DMotionDefinition(group: 'Idle', index: 0, label: '待机'),
-      Live2DMotionDefinition(group: '', index: 0, label: '动作 1'),
-      Live2DMotionDefinition(group: '', index: 1, label: '动作 2'),
+      Live2DMotionDefinition(
+        group: 'Idle',
+        index: 0,
+        label: 'screens_jellyLive2dMotionIdle',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 0,
+        label: 'screens_jellyLive2dMotion1',
+      ),
+      Live2DMotionDefinition(
+        group: '',
+        index: 1,
+        label: 'screens_jellyLive2dMotion2',
+      ),
     ],
   ),
 ];

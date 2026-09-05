@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 
 import 'jelly_live2d_crop_region.dart';
 
@@ -52,9 +53,9 @@ class _JellyLive2DCropDialogState extends State<_JellyLive2DCropDialog> {
     );
 
     return DSDialog(
-      title: '设置显示裁剪区域',
-      confirmText: '应用',
-      cancelText: '取消',
+      title: 'screens_jellyLive2dSetCropRegion'.tr,
+      confirmText: 'screens_jellyLive2dApply'.tr,
+      cancelText: 'screens_cancel'.tr,
       onConfirm: () => Navigator.of(context).pop(_region),
       onCancel: () => Navigator.of(context).pop(),
       content: Column(
@@ -84,7 +85,7 @@ class _JellyLive2DCropDialogState extends State<_JellyLive2DCropDialog> {
           ),
           SizedBox(height: theme.spacing.md),
           DSButton(
-            label: '恢复完整区域',
+            label: 'screens_jellyLive2dResetCrop'.tr,
             icon: DsIconKind.refresh,
             size: DSButtonSize.sm,
             variant: DSButtonVariant.outline,

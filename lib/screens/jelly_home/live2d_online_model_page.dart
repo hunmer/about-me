@@ -1,5 +1,6 @@
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 
 import 'live2d_online_models.dart';
 
@@ -35,7 +36,10 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
       setState(() => _models = models);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '加载在线模型仓库失败：$error');
+      setState(
+        () => _error =
+            'screens_jellyLive2dOnlineLoadRepoFailed'.trParams({'error': '$error'}),
+      );
     } finally {
       if (mounted) setState(() => _loadingCatalog = false);
     }
@@ -53,7 +57,10 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
       Navigator.of(context).pop(definition);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '读取模型配置失败：$error');
+      setState(
+        () => _error =
+            'screens_jellyLive2dOnlineLoadConfigFailed'.trParams({'error': '$error'}),
+      );
     } finally {
       if (mounted) setState(() => _loadingUrl = null);
     }
@@ -94,13 +101,13 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                     children: [
                       DSIconButton(
                         icon: DsIconKind.chevronLeft,
-                        tooltip: '返回',
+                        tooltip: 'core_back'.tr,
                         size: 36,
                         onPressed: () => Navigator.maybePop(context),
                       ),
                       Expanded(
                         child: Text(
-                          '在线 Live2D 模型',
+                          'screens_jellyLive2dOnlineTitle'.tr,
                           textAlign: TextAlign.center,
                           style: DsTypography.heading.copyWith(
                             color: theme.text,
@@ -109,7 +116,7 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                       ),
                       DSIconButton(
                         icon: DsIconKind.refresh,
-                        tooltip: '刷新模型仓库',
+                        tooltip: 'screens_jellyLive2dOnlineRefresh'.tr,
                         size: 36,
                         onPressed: _loadingCatalog ? null : _loadCatalog,
                       ),
@@ -118,7 +125,7 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                 ),
                 SizedBox(height: theme.spacing.lg),
                 DSInput.search(
-                  hint: '搜索模型或分类',
+                  hint: 'screens_jellyLive2dOnlineSearchHint'.tr,
                   onChanged: (value) => setState(() => _query = value),
                 ),
                 if (_categories.isNotEmpty) ...[
@@ -129,7 +136,7 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                       scrollDirection: Axis.horizontal,
                       children: [
                         DSChip(
-                          label: '全部',
+                          label: 'screens_jellyLive2dOnlineAll'.tr,
                           selected: _category == null,
                           onSelected: (_) => setState(() => _category = null),
                         ),
@@ -170,14 +177,16 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
 
   Widget _buildContent(AppThemeData theme) {
     if (_loadingCatalog && _models.isEmpty) {
-      return const Center(child: DSLoadingDots(label: '正在加载模型仓库'));
+      return Center(
+        child: DSLoadingDots(label: 'screens_jellyLive2dOnlineLoading'.tr),
+      );
     }
     if (_error != null && _models.isEmpty) {
       return Center(
         child: DSEmptyState(
           emoji: '!',
-          title: '模型仓库暂时不可用',
-          actionLabel: '重试',
+          title: 'screens_jellyLive2dOnlineUnavailable'.tr,
+          actionLabel: 'app_retry'.tr,
           onAction: _loadCatalog,
         ),
       );
@@ -185,14 +194,21 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
 
     final models = _filteredModels;
     if (models.isEmpty) {
-      return const Center(child: DSEmptyState(emoji: '?', title: '没有找到匹配的模型'));
+      return Center(
+        child: DSEmptyState(
+          emoji: '?',
+          title: 'screens_jellyLive2dOnlineEmpty'.tr,
+        ),
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '${models.length} 个可用模型（Cubism 3/4）',
+          'screens_jellyLive2dOnlineCount'.trParams({
+            'count': models.length.toString(),
+          }),
           style: DsTypography.caption.copyWith(color: theme.textSub),
         ),
         SizedBox(height: theme.spacing.sm),

@@ -1,0 +1,26 @@
+/// Live2D插件中文翻译
+const Map<String, String> live2dTranslationsZh = {
+  // 设置页
+  'live2d_settingsTitle': 'Live2D 设置',
+  'live2d_archivesSection': 'Live2D 存档',
+  'live2d_newArchive': '新建',
+  'live2d_nameLabel': '名称',
+  'live2d_modelSection': 'Live2D 模型',
+  'live2d_chooseOnlineModel': '从在线模型仓库选择',
+  'live2d_agentSection': '人格 Agent',
+  'live2d_noAgentSelected': '未选择',
+  'live2d_autoReadTitle': 'AI 回复语音播报',
+  'live2d_autoReadSubtitle': '回复完成后自动朗读',
+  'live2d_voiceTitle': '播报语音',
+  'live2d_defaultVoice': '使用默认语音',
+  'live2d_voiceUnavailable': '所选语音不可用',
+  'live2d_typingSpeed': '文字展示速度：@ms 毫秒/字',
+  'live2d_modelLabel': '模型：@model',
+  'live2d_showPreview': '显示 Live2D',
+  'live2d_hidePreview': '卸载 Live2D',
+  'live2d_motionList': '动作列表（点击在预览中播放）',
+  'live2d_noMotions': '当前模型没有可用动作',
+  'live2d_saved': '已保存',
+  'live2d_deleteArchiveTitle': '删除存档',
+  'live2d_deleteArchiveConfirm': '确定删除“@name”吗？',
+};

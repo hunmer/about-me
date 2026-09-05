@@ -1,0 +1,26 @@
+/// Live2D插件英文翻译
+const Map<String, String> live2dTranslationsEn = {
+  // Settings screen
+  'live2d_settingsTitle': 'Live2D Settings',
+  'live2d_archivesSection': 'Live2D Profiles',
+  'live2d_newArchive': 'New',
+  'live2d_nameLabel': 'Name',
+  'live2d_modelSection': 'Live2D Model',
+  'live2d_chooseOnlineModel': 'Choose from online model repository',
+  'live2d_agentSection': 'Agent Persona',
+  'live2d_noAgentSelected': 'Not selected',
+  'live2d_autoReadTitle': 'Auto-read AI replies',
+  'live2d_autoReadSubtitle': 'Automatically read replies when complete',
+  'live2d_voiceTitle': 'Voice',
+  'live2d_defaultVoice': 'Use default voice',
+  'live2d_voiceUnavailable': 'Selected voice unavailable',
+  'live2d_typingSpeed': 'Typing speed: @ms ms/char',
+  'live2d_modelLabel': 'Model: @model',
+  'live2d_showPreview': 'Show Live2D',
+  'live2d_hidePreview': 'Unload Live2D',
+  'live2d_motionList': 'Motions (tap to play in preview)',
+  'live2d_noMotions': 'No motions available for this model',
+  'live2d_saved': 'Saved',
+  'live2d_deleteArchiveTitle': 'Delete profile',
+  'live2d_deleteArchiveConfirm': 'Delete "@name"?',
+};

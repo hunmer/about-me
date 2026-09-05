@@ -148,6 +148,7 @@ class HomeScreenView extends StatelessWidget {
   /// 构建 AppBar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: false,
       title: Center(child: _buildTabBar(context)),
       backgroundColor:
           controller.currentBackgroundPath != null ? Colors.transparent : null,

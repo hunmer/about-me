@@ -1,0 +1,26 @@
+/// Live2D插件日文翻译
+const Map<String, String> live2dTranslationsJp = {
+  // 設定画面
+  'live2d_settingsTitle': 'Live2D 設定',
+  'live2d_archivesSection': 'Live2D プロフィール',
+  'live2d_newArchive': '新規',
+  'live2d_nameLabel': '名称',
+  'live2d_modelSection': 'Live2D モデル',
+  'live2d_chooseOnlineModel': 'オンラインモデルリポジトリから選択',
+  'live2d_agentSection': 'エージェント人格',
+  'live2d_noAgentSelected': '未選択',
+  'live2d_autoReadTitle': 'AI 返信の音声読み上げ',
+  'live2d_autoReadSubtitle': '返信完了後に自動で読み上げます',
+  'live2d_voiceTitle': '読み上げ音声',
+  'live2d_defaultVoice': 'デフォルト音声を使用',
+  'live2d_voiceUnavailable': '選択された音声は利用できません',
+  'live2d_typingSpeed': '文字表示速度：@ms ミリ秒/文字',
+  'live2d_modelLabel': 'モデル：@model',
+  'live2d_showPreview': 'Live2D を表示',
+  'live2d_hidePreview': 'Live2D を非表示',
+  'live2d_motionList': 'モーション一覧（タップでプレビュー再生）',
+  'live2d_noMotions': 'このモデルには利用可能なモーションがありません',
+  'live2d_saved': '保存しました',
+  'live2d_deleteArchiveTitle': 'プロフィールを削除',
+  'live2d_deleteArchiveConfirm': '「@name」を削除しますか？',
+};
