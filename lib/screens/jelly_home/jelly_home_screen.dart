@@ -161,12 +161,6 @@ class _CottageTabState extends State<_CottageTab> {
                             SizedBox(height: theme.spacing.lg),
                             JellyCompanionCard(controller: _companion),
                             SizedBox(height: theme.spacing.lg),
-                            JellyStoreBanner(
-                              title: '插件商店上新',
-                              subtitle: '新插件限时免费领',
-                              onTap: () {},
-                            ),
-                            SizedBox(height: theme.spacing.lg),
                           ],
                         ),
                       ],

@@ -1,8 +1,8 @@
 # 任务计划
 
-- [in_progress] 检查 DSPopover 定位与滚动行为
-- [pending] 排查 DS 输入及其他表单组件交互问题
-- [pending] 实施最小修复并运行验证
+- [completed] 检查 DSPopover 定位与滚动行为
+- [completed] 排查 DS 输入及其他表单组件交互问题
+- [completed] 实施最小修复并运行验证
 
 ## 成功标准
 

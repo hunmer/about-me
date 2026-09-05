@@ -60,6 +60,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
   final ValueNotifier<bool> _hitAreasVisible = ValueNotifier<bool>(false);
 
+  /// Live2D 实际显示视口的边框开关，仅用于界面调试，不持久化
+  final ValueNotifier<bool> _borderVisible = ValueNotifier<bool>(false);
+
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
   bool _bubbleStreaming = false;
@@ -147,6 +150,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _bubbleResumeTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
+    _borderVisible.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -652,6 +656,25 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         ? () => _openCropEditor(sheetContext)
                         : null,
               ),
+              SizedBox(height: theme.spacing.sm),
+              ValueListenableBuilder<bool>(
+                valueListenable: _borderVisible,
+                builder:
+                    (context, visible, _) => DSListItem(
+                      title: '显示边框',
+                      subtitle: '标出 Live2D 的实际显示区域',
+                      leading: DsIcon(
+                        DsIconKind.image,
+                        size: 18,
+                        color: theme.primary,
+                      ),
+                      trailing: DSSwitch(
+                        value: visible,
+                        semanticLabel: '显示 Live2D 边框',
+                        onChanged: (value) => _borderVisible.value = value,
+                      ),
+                    ),
+              ),
               SizedBox(height: theme.spacing.xl),
               Text(
                 '可点击区域',
@@ -719,12 +742,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       maxWidth: double.infinity,
                       maxHeight: double.infinity,
                       child: Transform.translate(
-                        // Windows 纹理视图随外层左上角移动：水平抵消一半
-                        // 尺寸差以保持居中，垂直抵消完整尺寸差以固定脚底。
-                        offset: Offset(
-                          (size - _defaultSize) / 2,
-                          size - _defaultSize,
-                        ),
+                        // 仅垂直抵消尺寸差以固定脚底；水平方向由
+                        // OverflowBox + bottomCenter 保持居中。
+                        offset: Offset(0, size - _defaultSize),
                         child: Transform.scale(
                           scale: size / _defaultSize,
                           alignment: Alignment.bottomCenter,
@@ -756,6 +776,32 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       ),
                     ),
                     ),
+                  ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _borderVisible,
+                    builder:
+                        (context, visible, _) =>
+                            visible
+                                ? Positioned(
+                                  left:
+                                      size *
+                                      (1 - _modelViewportAspectRatio) /
+                                      2,
+                                  bottom: 0,
+                                  width: size * _modelViewportAspectRatio,
+                                  height: size,
+                                  child: IgnorePointer(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: theme.danger,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                : const SizedBox.shrink(),
                   ),
                   ValueListenableBuilder<Live2DViewState>(
                     valueListenable: _controller,
