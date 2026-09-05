@@ -366,6 +366,9 @@ class ChatController extends ChangeNotifier {
       throw Exception('未选择 Agent');
     }
 
+    // 每次发送前按会话绑定的 id 重读 Agent，拿到最新配置
+    await _agentManager.reloadCurrentAgents();
+
     _isSending = true;
     _isCancelling = false; // 重置取消标志
     notifyListeners();

@@ -48,7 +48,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
       child: IndexedStack(
         index: _tabIndex,
         children: [
-          HeroMode(enabled: _tabIndex == 0, child: const _CottageTab()),
+          HeroMode(enabled: _tabIndex == 0, child: _CottageTab()),
           HeroMode(enabled: _tabIndex == 1, child: const HomeScheduleScreen()),
           HeroMode(
             enabled: _tabIndex == 2,
@@ -145,6 +145,9 @@ class _CottageTabState extends State<_CottageTab> {
                               child: JellyLive2D(
                                 message: _live2dMessage,
                                 reaction: _live2dReaction,
+                                initialModel: modelDefinitionForArchive(
+                                  Live2DPlugin.instance.selected,
+                                ),
                                 typingInterval:
                                     Live2DPlugin.instance.bubbleTypingInterval,
                                 onTap: (hitAreaId, _) {
@@ -253,7 +256,8 @@ class Live2DChatInput extends StatefulWidget {
 }
 
 class _Live2DChatInputState extends State<Live2DChatInput> {
-  late final Future<ChatController?> _controllerFuture = _initialize();
+  Future<ChatController?>? _controllerFuture;
+  String? _initializedKey;
   ChatController? _controller;
   MessageService? _messageService;
   String? _lastReplyId;
@@ -334,14 +338,40 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     super.dispose();
   }
 
+  /// 选中的 Live2D 存档或其绑定的 Agent 变化后需要重建会话
+  String get _currentKey {
+    final archive = Live2DPlugin.instance.selected;
+    return '${archive?.id}:${archive?.agentId}';
+  }
+
+  void _resetController() {
+    final controller = _controller;
+    final messageService = _messageService;
+    _controller = null;
+    _messageService = null;
+    _lastReplyId = null;
+    _lastReplyContent = null;
+    messageService?.removeListener(_onMessagesChanged);
+    // 帧末再释放旧 controller，避免仍在显示它的 MessageInput 先行移除监听
+    if (controller != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final key = _currentKey;
+    if (_controllerFuture == null || _initializedKey != key) {
+      _initializedKey = key;
+      _resetController();
+      _controllerFuture = _initialize();
+    }
     return FutureBuilder<ChatController?>(
       future: _controllerFuture,
       builder: (context, snapshot) {
         final controller = snapshot.data;
         if (snapshot.hasError) return const Text('Live2D 聊天初始化失败');
-        if (controller == null) return const Text('请先在 Live2D 设置中选择 Agent');
+        if (controller == null) return const SizedBox.shrink();
         return MessageInput(controller: controller);
       },
     );

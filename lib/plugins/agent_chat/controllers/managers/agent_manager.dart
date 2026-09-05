@@ -71,6 +71,18 @@ class AgentManager {
     _currentConversation = conversation;
   }
 
+  /// 按会话绑定的 agentId/agentChain 重新加载最新配置，
+  /// Agent 被编辑后无需重建会话即可生效
+  Future<void> reloadCurrentAgents() async {
+    final conversation = _currentConversation;
+    if (conversation == null) return;
+    if (conversation.isChainMode && conversation.agentChain != null) {
+      await _loadAgentChain(conversation.agentChain!);
+    } else if (conversation.agentId != null) {
+      await _loadAgentInBackground(conversation.agentId!);
+    }
+  }
+
   /// 选择并加载 Agent (单 Agent 模式)
   Future<void> selectAgent(String agentId) async {
     try {

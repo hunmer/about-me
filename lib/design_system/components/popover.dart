@@ -25,6 +25,8 @@ class DSPopover extends StatefulWidget {
 class _DSPopoverState extends State<DSPopover> {
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
+  double _availableHeight = 360;
+  bool _openUpward = false;
 
   bool get _open => _entry != null;
 
@@ -46,6 +48,15 @@ class _DSPopoverState extends State<DSPopover> {
   }
 
   void _insertEntry() {
+    final box = context.findRenderObject() as RenderBox;
+    final size = box.size;
+    final top = box.localToGlobal(Offset.zero).dy;
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final below = viewportHeight - top - size.height;
+    final above = top;
+    _openUpward = below < 280 && above > below;
+    _availableHeight = (_openUpward ? above : below) - 16;
+
     final theme = AppTheme.of(context);
     _entry = OverlayEntry(
       builder:
@@ -60,9 +71,11 @@ class _DSPopoverState extends State<DSPopover> {
               ),
               CompositedTransformFollower(
                 link: _link,
-                targetAnchor: Alignment.bottomCenter,
-                followerAnchor: Alignment.topCenter,
-                offset: const Offset(0, 10),
+                targetAnchor:
+                    _openUpward ? Alignment.topCenter : Alignment.bottomCenter,
+                followerAnchor:
+                    _openUpward ? Alignment.bottomCenter : Alignment.topCenter,
+                offset: Offset(0, _openUpward ? -10 : 10),
                 child: AppTheme(
                   data: theme,
                   child: TweenAnimationBuilder<double>(
@@ -80,6 +93,8 @@ class _DSPopoverState extends State<DSPopover> {
                         ),
                     child: _PopoverCard(
                       width: widget.width,
+                      maxHeight: _availableHeight.clamp(120, viewportHeight),
+                      openUpward: _openUpward,
                       contentBuilder: widget.contentBuilder,
                       close: _close,
                     ),
@@ -109,11 +124,15 @@ class _DSPopoverState extends State<DSPopover> {
 class _PopoverCard extends StatelessWidget {
   const _PopoverCard({
     required this.width,
+    required this.maxHeight,
+    required this.openUpward,
     required this.contentBuilder,
     required this.close,
   });
 
   final double width;
+  final double maxHeight;
+  final bool openUpward;
   final Widget Function(BuildContext context, VoidCallback close)
   contentBuilder;
   final VoidCallback close;
@@ -121,38 +140,38 @@ class _PopoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final card = ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Container(
+        width: width,
+        padding: EdgeInsets.all(theme.spacing.md),
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: theme.radii.lg,
+          border: Border.all(color: theme.stroke, width: 1.4),
+          boxShadow: theme.shadows.float,
+        ),
+        child: contentBuilder(context, close),
+      ),
+    );
+    final triangle = Transform.translate(
+      offset: Offset(0, openUpward ? 6 : -6),
+      child: Transform.rotate(
+        angle: 0.785398,
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: theme.surface,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ),
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // 气泡卡主体
-        Container(
-          width: width,
-          padding: EdgeInsets.all(theme.spacing.md),
-          decoration: BoxDecoration(
-            color: theme.surface,
-            borderRadius: theme.radii.lg,
-            border: Border.all(color: theme.stroke, width: 1.4),
-            boxShadow: theme.shadows.float,
-          ),
-          child: contentBuilder(context, close),
-        ),
-        // 小三角
-        Transform.translate(
-          offset: const Offset(0, -6),
-          child: Transform.rotate(
-            angle: 0.785398,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: theme.surface,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-        ),
-      ],
+      children: openUpward ? [triangle, card] : [card, triangle],
     );
   }
 }

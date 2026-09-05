@@ -1,23 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../live2d_online_model_page.dart';
 import '../live2d_online_models.dart';
 import 'jelly_live2d_crop_dialog.dart';
 import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70)});
+  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70), this.motionRequest});
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
@@ -27,6 +28,10 @@ class JellyLive2D extends StatefulWidget {
   final int? reaction;
   final bool streaming;
   final Duration typingInterval;
+
+  /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
+  /// 模型未就绪时挂起，加载完成后自动播放
+  final ValueListenable<Live2DMotionDefinition?>? motionRequest;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -49,6 +54,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   late Live2DModelDefinition _selectedModel = widget.initialModel ?? _models.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
+  Live2DMotionDefinition? _pendingMotion;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -95,6 +101,15 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (widget.reaction != null && widget.reaction != oldWidget.reaction) {
       _playReaction();
     }
+    // 宿主传入的模型（来自存档）变化后重新加载
+    final nextModel = widget.initialModel;
+    if (nextModel != null && !_isSameModel(nextModel, _selectedModel)) {
+      _selectModel(nextModel);
+    }
+    if (widget.motionRequest != oldWidget.motionRequest) {
+      oldWidget.motionRequest?.removeListener(_handleMotionRequest);
+      widget.motionRequest?.addListener(_handleMotionRequest);
+    }
   }
 
   Future<void> _playReaction() async {
@@ -117,6 +132,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _controller.onContextMenu = _showControls;
     // 点击事件同样由原生侧经 onTap 转发（含 hit area 判定结果）
     _controller.onTap = _handleTap;
+    _controller.addListener(_onViewStateChanged);
+    widget.motionRequest?.addListener(_handleMotionRequest);
     _loadSavedSize();
     _loadSavedCropRegion(_selectedModel);
     _loadModel(_selectedModel);
@@ -124,6 +141,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   @override
   void dispose() {
+    widget.motionRequest?.removeListener(_handleMotionRequest);
+    _controller.removeListener(_onViewStateChanged);
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();
     _size.dispose();
@@ -162,12 +181,16 @@ class _JellyLive2DState extends State<JellyLive2D> {
     return '$_cropPrefKeyPrefix$identity';
   }
 
+  /// 模型身份按目录 + 文件名判定（在线模型每次都会生成新实例，不能比较引用）
+  bool _isSameModel(Live2DModelDefinition a, Live2DModelDefinition b) =>
+      a.modelDir == b.modelDir && a.modelFile == b.modelFile;
+
   Future<void> _loadSavedCropRegion(Live2DModelDefinition model) async {
     final prefs = await SharedPreferences.getInstance();
     final region = JellyLive2DCropRegion.parse(
       prefs.getString(_cropPrefKey(model)),
     );
-    if (!mounted || model != _selectedModel) return;
+    if (!mounted || _isSameModel(model, _selectedModel)) return;
     setState(() => _cropRegion = region);
   }
 
@@ -344,7 +367,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   }
 
   Future<void> _selectModel(Live2DModelDefinition model) async {
-    if (model == _selectedModel ||
+    if (_isSameModel(model, _selectedModel) ||
         _isSwitchingModel ||
         _controller.value.isLoadingModel) {
       return;
@@ -355,6 +378,40 @@ class _JellyLive2DState extends State<JellyLive2D> {
     });
     await _loadSavedCropRegion(model);
     await _loadModel(model);
+  }
+
+  /// 外部动作请求：模型未就绪时挂起，由 [_onViewStateChanged] 在加载完成后播放
+  void _handleMotionRequest() {
+    final motion = widget.motionRequest?.value;
+    if (motion == null) return;
+    if (_isSwitchingModel || !_controller.value.isLoaded) {
+      _pendingMotion = motion;
+      return;
+    }
+    _startMotion(motion);
+  }
+
+  void _onViewStateChanged() {
+    final pending = _pendingMotion;
+    if (pending == null) return;
+    if (_controller.value.lastError != null) {
+      _pendingMotion = null;
+    } else if (!_isSwitchingModel && _controller.value.isLoaded) {
+      _pendingMotion = null;
+      _startMotion(pending);
+    }
+  }
+
+  Future<void> _startMotion(Live2DMotionDefinition motion) async {
+    try {
+      await _controller.startMotion(
+        group: motion.group,
+        index: motion.index,
+        priority: 3,
+      );
+    } on Live2DException catch (e) {
+      debugPrint('[JellyLive2D] motion request failed: ${e.message}');
+    }
   }
 
   Future<({Uint8List bytes, Size size})> _captureFullModel() async {
@@ -442,27 +499,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
     return error.message.split('\n').first.trim();
   }
 
-  Future<void> _openOnlineModels(BuildContext sheetContext) async {
-    Navigator.of(sheetContext).pop();
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) return;
-    final model = await Navigator.of(
-      context,
-      rootNavigator: true,
-    ).push<Live2DModelDefinition>(
-      PageRouteBuilder(
-        pageBuilder: (_, _, _) => const Live2DOnlineModelPage(),
-        transitionsBuilder:
-            (_, animation, _, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-      ),
-    );
-    if (model != null && mounted) await _selectModel(model);
+  /// 把选中档案持久化为默认显示，并立即切换到该档案的模型
+  Future<void> _selectArchive(Live2DArchive archive) async {
+    final plugin = Live2DPlugin.instance;
+    if (archive.id == plugin.selectedId) return;
+    plugin.selectedId = archive.id;
+    await plugin.save();
+    final model = modelDefinitionForArchive(archive);
+    if (model != null) await _selectModel(model);
   }
 
   void _showControls() {
@@ -490,41 +534,41 @@ class _JellyLive2DState extends State<JellyLive2D> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '切换模型',
-                style: DsTypography.heading.copyWith(color: theme.text),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              Wrap(
-                spacing: theme.spacing.sm,
-                runSpacing: theme.spacing.sm,
-                children: [
-                  for (final model in _models)
-                    DSChip(
-                      label: model.label,
-                      selected: model == _selectedModel,
-                      onSelected: (_) {
-                        Navigator.of(sheetContext).pop();
-                        _selectModel(model);
-                      },
+              StatefulBuilder(
+                builder: (sheetContext, setSheetState) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Live2D 档案',
+                      style: DsTypography.heading.copyWith(color: theme.text),
                     ),
-                ],
-              ),
-              SizedBox(height: theme.spacing.sm),
-              DSListItem(
-                title: '在线选择模型',
-                subtitle: '从 Eikanya 模型仓库加载 Cubism 3/4 模型',
-                leading: DsIcon(
-                  DsIconKind.download,
-                  size: 18,
-                  color: theme.primary,
+                    SizedBox(height: theme.spacing.sm),
+                    if (Live2DPlugin.instance.archives.isEmpty)
+                      Text(
+                        '暂无档案，请在 Live2D 设置中创建',
+                        style: DsTypography.body.copyWith(color: theme.textSub),
+                      )
+                    else
+                      Wrap(
+                        spacing: theme.spacing.sm,
+                        runSpacing: theme.spacing.sm,
+                        children: [
+                          for (final archive in Live2DPlugin.instance.archives)
+                            DSChip(
+                              label: archive.name,
+                              selected:
+                                  archive.id ==
+                                  Live2DPlugin.instance.selectedId,
+                              onSelected: (_) {
+                                setSheetState(() {});
+                                _selectArchive(archive);
+                              },
+                            ),
+                        ],
+                      ),
+                  ],
                 ),
-                trailing: DsIcon(
-                  DsIconKind.chevronRight,
-                  size: 18,
-                  color: theme.textSub,
-                ),
-                onTap: () => _openOnlineModels(sheetContext),
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
@@ -629,37 +673,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 '点击命中区域会触发随机动作',
                 style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
-              SizedBox(height: theme.spacing.xl),
-              Text(
-                '动作列表',
-                style: DsTypography.heading.copyWith(color: theme.text),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              if (_selectedModel.motions.isEmpty)
-                Text(
-                  '当前模型没有可用动作',
-                  style: DsTypography.body.copyWith(color: theme.textSub),
-                )
-              else
-                for (final motion in _selectedModel.motions) ...[
-                  DSListItem(
-                    title:
-                        motion.hasSound ? '${motion.label}（语音）' : motion.label,
-                    leading: DsIcon(
-                      DsIconKind.play,
-                      size: 18,
-                      color: theme.primary,
-                    ),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _controller.startMotion(
-                        group: motion.group,
-                        index: motion.index,
-                      );
-                    },
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                ],
             ],
           ),
         );
@@ -953,3 +966,19 @@ const List<Live2DModelDefinition> _models = [
 ];
 
 List<Live2DModelDefinition> get availableJellyLive2DModels => List.unmodifiable(_models);
+
+/// 把 Live2D 存档转换为视图层模型定义（小屋页签与设置页共用）：
+/// 优先匹配内置模型（带动作列表），否则按存档路径构造在线模型定义
+Live2DModelDefinition? modelDefinitionForArchive(Live2DArchive? value) {
+  if (value == null || value.modelLabel.isEmpty) return null;
+  return availableJellyLive2DModels
+          .where((model) => model.label == value.modelLabel)
+          .firstOrNull ??
+      Live2DModelDefinition(
+        label: value.modelLabel,
+        modelDir: value.modelDir,
+        modelFile: value.modelFile,
+        motions: const [],
+        isOnline: value.modelDir.startsWith('http'),
+      );
+}

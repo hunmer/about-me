@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/material.dart' show materialTextSelectionControls;
 import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
@@ -213,6 +214,8 @@ class _DSInputState extends State<DSInput>
                                           controller: _effectiveController,
                                           focusNode: _effectiveFocus,
                                           readOnly: !widget.enabled,
+                                          selectionControls:
+                                              materialTextSelectionControls,
                                           maxLines: widget.maxLines,
                                           minLines: widget.minLines,
                                           inputFormatters:

@@ -30,8 +30,12 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               Live2DPlugin.defaultTypingIntervalMs)
           .toDouble();
   late bool _autoReadEnabled = plugin.autoReadEnabled;
-  String? _selectedTTSServiceId = plugin.ttsServiceId;
+  late String? _selectedTTSServiceId = plugin.ttsServiceId;
   TTSServiceConfig? _selectedTTSService;
+
+  /// 向预览中的 JellyLive2D 发送动作播放请求（置空再赋值以便重复触发同一动作）
+  final ValueNotifier<Live2DMotionDefinition?> _motionRequest =
+      ValueNotifier<Live2DMotionDefinition?>(null);
 
   @override
   void initState() {
@@ -95,6 +99,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
 
   @override
   void dispose() {
+    _motionRequest.dispose();
     nameController.dispose();
     super.dispose();
   }
@@ -209,19 +214,8 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     });
   }
 
-  Live2DModelDefinition? modelFor(Live2DArchive? value) {
-    if (value == null || value.modelLabel.isEmpty) return null;
-    return availableJellyLive2DModels
-            .where((model) => model.label == value.modelLabel)
-            .firstOrNull ??
-        Live2DModelDefinition(
-          label: value.modelLabel,
-          modelDir: value.modelDir,
-          modelFile: value.modelFile,
-          motions: const [],
-          isOnline: value.modelDir.startsWith('http'),
-        );
-  }
+  Live2DModelDefinition? modelFor(Live2DArchive? value) =>
+      modelDefinitionForArchive(value);
 
   @override
   Widget build(BuildContext context) {
@@ -383,11 +377,33 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                 child: JellyLive2D(
                   key: ValueKey('${current.modelDir}${current.modelFile}'),
                   initialModel: modelFor(current),
+                  motionRequest: _motionRequest,
                   typingInterval: Duration(
                     milliseconds: _typingIntervalMs.round(),
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                '动作列表（点击在预览中播放）',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if ((modelFor(current)?.motions ?? const []).isEmpty)
+                const Text('当前模型没有可用动作')
+              else
+                for (final motion in modelFor(current)!.motions)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.play_arrow),
+                    title: Text(
+                      motion.hasSound ? '${motion.label}（语音）' : motion.label,
+                    ),
+                    onTap: () {
+                      _motionRequest.value = null;
+                      _motionRequest.value = motion;
+                    },
+                  ),
             ],
           ],
         ],

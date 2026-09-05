@@ -30,6 +30,8 @@ class Live2DPlugin extends BasePlugin {
 
   Future<void> speakReply(String reply) async {
     if (!autoReadEnabled || reply.trim().isEmpty) return;
+    // 聊天请求失败（❌）或用户取消（🛑）的错误提示不朗读
+    if (reply.startsWith('❌') || reply.startsWith('🛑')) return;
     try {
       await TTSPlugin.instance.speak(
         reply,

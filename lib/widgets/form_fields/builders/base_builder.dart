@@ -165,21 +165,30 @@ Widget buildSelectField(
             DSPopover(
               width: 264,
               contentBuilder:
-                  (ctx, close) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final item in items)
-                        _SelectOptionRow(
-                          selected: item.value == fieldState.value,
-                          onTap: () {
-                            close();
-                            fieldState.didChange(item.value);
-                            config.onChanged?.call(item.value);
-                          },
-                          child: item.child,
-                        ),
-                    ],
+                  (ctx, close) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      // 给弹出层留出上下边距，避免选项较多时超出视口。
+                      maxHeight: MediaQuery.sizeOf(ctx).height * 0.6,
+                    ),
+                    child: Scrollbar(
+                      thumbVisibility: true,
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        children: [
+                          for (final item in items)
+                            _SelectOptionRow(
+                              selected: item.value == fieldState.value,
+                              onTap: () {
+                                close();
+                                fieldState.didChange(item.value);
+                                config.onChanged?.call(item.value);
+                              },
+                              child: item.child,
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
               child: trigger,
             )
