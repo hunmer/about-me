@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -47,10 +49,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
         index: _tabIndex,
         children: [
           HeroMode(enabled: _tabIndex == 0, child: const _CottageTab()),
-          HeroMode(
-            enabled: _tabIndex == 1,
-            child: const HomeScheduleScreen(),
-          ),
+          HeroMode(enabled: _tabIndex == 1, child: const HomeScheduleScreen()),
           HeroMode(
             enabled: _tabIndex == 2,
             child: const HomeScreen(asRoot: false),
@@ -114,62 +113,63 @@ class _CottageTabState extends State<_CottageTab> {
         child: SafeArea(
           bottom: false,
           child: LayoutBuilder(
-            builder: (context, viewport) => SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-              // 内容不足一屏时也撑满视口高度，让底部卡片组贴住悬浮导航栏；
-              // 视口高度需减去导航栏避让高度，底部卡片才不会被压在导航栏下面
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: viewport.maxHeight - bottomInset),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
+            builder:
+                (context, viewport) => SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+                  // 内容不足一屏时也撑满视口高度，让底部卡片组贴住悬浮导航栏；
+                  // 视口高度需减去导航栏避让高度，底部卡片才不会被压在导航栏下面
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: viewport.maxHeight - bottomInset,
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(height: theme.spacing.lg),
-                        _buildHeader(theme),
-                        SizedBox(height: theme.spacing.xl),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: theme.spacing.lg),
+                            _buildHeader(theme),
+                            SizedBox(height: theme.spacing.xl),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 富余空间都在角色区之上，Live2D 角色贴着底部卡片组
+                            SizedBox(height: theme.spacing.md),
+                            // 点击命中角色本体（hit area）算一次陪伴互动
+                            Center(
+                              child: JellyLive2D(
+                                message: _live2dMessage,
+                                reaction: _live2dReaction,
+                                typingInterval:
+                                    Live2DPlugin.instance.bubbleTypingInterval,
+                                onTap: (hitAreaId, _) {
+                                  if (hitAreaId != null) {
+                                    _companion.recordInteraction();
+                                  }
+                                },
+                              ),
+                            ),
+                            Live2DChatInput(onReply: _scheduleLive2dReply),
+                            SizedBox(height: theme.spacing.lg),
+                            JellyCompanionCard(controller: _companion),
+                            SizedBox(height: theme.spacing.lg),
+                            JellyStoreBanner(
+                              title: '插件商店上新',
+                              subtitle: '新插件限时免费领',
+                              onTap: () {},
+                            ),
+                            SizedBox(height: theme.spacing.lg),
+                          ],
+                        ),
                       ],
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 富余空间都在角色区之上，Live2D 角色贴着底部卡片组
-                        SizedBox(height: theme.spacing.md),
-                        // 点击命中角色本体（hit area）算一次陪伴互动
-                        Center(
-                          child: JellyLive2D(
-                            message: _live2dMessage,
-                            reaction: _live2dReaction,
-                            typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
-                            onTap: (hitAreaId, _) {
-                              if (hitAreaId != null) {
-                                _companion.recordInteraction();
-                              }
-                            },
-                          ),
-                        ),
-                        Live2DChatInput(
-                          onReply: _scheduleLive2dReply,
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        JellyCompanionCard(controller: _companion),
-                        SizedBox(height: theme.spacing.lg),
-                        JellyStoreBanner(
-                          title: '插件商店上新',
-                          subtitle: '新插件限时免费领',
-                          onTap: () {},
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
           ),
         ),
       ),
@@ -182,7 +182,9 @@ class _CottageTabState extends State<_CottageTab> {
     if (_live2dReplyFrameScheduled) return;
     _live2dReplyFrameScheduled = true;
     if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-      debugPrint('[Live2DChat] deferred reply update during ${SchedulerBinding.instance.schedulerPhase.name}');
+      debugPrint(
+        '[Live2DChat] deferred reply update during ${SchedulerBinding.instance.schedulerPhase.name}',
+      );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _live2dReplyFrameScheduled = false;
@@ -222,11 +224,7 @@ class _CottageTabState extends State<_CottageTab> {
                     icon: _stats[i].$1,
                     label: _stats[i].$2,
                     value: _stats[i].$3,
-                    color: [
-                      theme.warning,
-                      theme.success,
-                      theme.primary,
-                    ][i],
+                    color: [theme.warning, theme.success, theme.primary][i],
                     onAdd: () {},
                   ),
                 ),
@@ -243,7 +241,6 @@ class _CottageTabState extends State<_CottageTab> {
     (DsIconKind.calendarCheck, '连续打卡', '26 天'),
     (DsIconKind.book, '本月记录', '128 条'),
   ];
-
 }
 
 class Live2DChatInput extends StatefulWidget {
@@ -283,12 +280,16 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       await agentChat.conversationService.updateConversation(conversation);
     }
 
-    final messageService = MessageService(storage: Live2DPlugin.instance.storage);
+    final messageService = MessageService(
+      storage: Live2DPlugin.instance.storage,
+    );
     final controller = ChatController(
       conversation: conversation,
       messageService: messageService,
       conversationService: agentChat.conversationService,
-      messageDetailService: MessageDetailService(storage: Live2DPlugin.instance.storage),
+      messageDetailService: MessageDetailService(
+        storage: Live2DPlugin.instance.storage,
+      ),
       templateService: ToolTemplateService(Live2DPlugin.instance.storage),
       getSettings: () => AgentChatPlugin.instance.settings,
     );
@@ -301,7 +302,9 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
 
   void _onMessagesChanged() {
     final messages = _messageService?.currentMessages ?? const [];
-    final latestUserIndex = messages.lastIndexWhere((message) => message.isUser);
+    final latestUserIndex = messages.lastIndexWhere(
+      (message) => message.isUser,
+    );
     if (latestUserIndex < 0) return;
     for (var index = messages.length - 1; index > latestUserIndex; index--) {
       final message = messages[index];
@@ -319,6 +322,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       _lastReplyId = message.id;
       _lastReplyContent = reply;
       if (mounted) widget.onReply(reply, false);
+      unawaited(Live2DPlugin.instance.speakReply(reply));
       break;
     }
   }

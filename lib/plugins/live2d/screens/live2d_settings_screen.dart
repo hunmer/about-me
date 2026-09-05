@@ -5,6 +5,9 @@ import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
@@ -22,16 +25,72 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   List<AIAgent> agents = [];
   Live2DArchive? archive;
   bool _showPreview = false;
-  late double _typingIntervalMs = (plugin.settings['typingIntervalMs'] as int? ?? Live2DPlugin.defaultTypingIntervalMs).toDouble();
+  late double _typingIntervalMs =
+      (plugin.settings['typingIntervalMs'] as int? ??
+              Live2DPlugin.defaultTypingIntervalMs)
+          .toDouble();
+  late bool _autoReadEnabled = plugin.autoReadEnabled;
+  String? _selectedTTSServiceId = plugin.ttsServiceId;
+  TTSServiceConfig? _selectedTTSService;
 
   @override
   void initState() {
     super.initState();
-    archive = plugin.selected ?? (plugin.archives.isNotEmpty ? plugin.archives.first : null);
+    archive =
+        plugin.selected ??
+        (plugin.archives.isNotEmpty ? plugin.archives.first : null);
     if (archive != null) nameController.text = archive!.name;
     AgentController().loadAgents().then((value) {
       if (mounted) setState(() => agents = value);
     });
+    _loadSelectedTTSService();
+  }
+
+  Future<void> _loadSelectedTTSService() async {
+    try {
+      final manager = TTSPlugin.instance.managerService;
+      final service =
+          _selectedTTSServiceId == null
+              ? await manager.getDefaultService()
+              : await manager.getServiceById(_selectedTTSServiceId!);
+      if (mounted) setState(() => _selectedTTSService = service);
+    } catch (error) {
+      debugPrint('加载 Live2D 播报语音失败: $error');
+    }
+  }
+
+  Future<void> _setAutoReadEnabled(bool enabled) async {
+    setState(() => _autoReadEnabled = enabled);
+    await plugin.updateSettings({'autoReadEnabled': enabled});
+  }
+
+  Future<void> _openTTSSettings() async {
+    final result = await showTTSSettingsDialog(
+      context,
+      initialEnabled: _autoReadEnabled,
+      initialServiceId: _selectedTTSServiceId,
+    );
+    if (!mounted || result == null) return;
+    setState(() {
+      _autoReadEnabled = result.enabled;
+      _selectedTTSServiceId = result.serviceId;
+    });
+    await plugin.updateSettings({
+      'autoReadEnabled': result.enabled,
+      'ttsServiceId': result.serviceId,
+    });
+    await _loadSelectedTTSService();
+  }
+
+  String get _selectedVoiceLabel {
+    final service = _selectedTTSService;
+    if (service == null) {
+      return _selectedTTSServiceId == null ? '使用默认语音' : '所选语音不可用';
+    }
+    final voice = service.voice ?? service.voiceId;
+    return voice == null || voice.isEmpty
+        ? service.name
+        : '${service.name} · $voice';
   }
 
   @override
@@ -42,9 +101,16 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
 
   Future<void> createArchive() async {
     if (_showPreview) setState(() => _showPreview = false);
-    final created = Live2DArchive.create(modelLabel: 'Mao', modelDir: 'assets/models/mao/', modelFile: 'mao_pro.model3.json');
+    final created = Live2DArchive.create(
+      modelLabel: 'Mao',
+      modelDir: 'assets/models/mao/',
+      modelFile: 'mao_pro.model3.json',
+    );
     await plugin.upsert(created);
-    setState(() { archive = created; nameController.text = created.name; });
+    setState(() {
+      archive = created;
+      nameController.text = created.name;
+    });
   }
 
   Future<void> chooseAgent() async {
@@ -53,15 +119,29 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
       setState(() => _showPreview = false);
       await Future<void>.delayed(Duration.zero);
     }
-    final selected = archive?.agentId == null ? <Map<String, String>>[] : [{'id': archive!.agentId!, 'name': agents.where((a) => a.id == archive!.agentId).firstOrNull?.name ?? ''}];
+    final selected =
+        archive?.agentId == null
+            ? <Map<String, String>>[]
+            : [
+              {
+                'id': archive!.agentId!,
+                'name':
+                    agents
+                        .where((a) => a.id == archive!.agentId)
+                        .firstOrNull
+                        ?.name ??
+                    '',
+              },
+            ];
     final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => AgentListDrawer(
-        selectedAgents: selected,
-        allowMultipleSelection: false,
-        onAgentSelected: (_) {},
-      ),
+      builder:
+          (_) => AgentListDrawer(
+            selectedAgents: selected,
+            allowMultipleSelection: false,
+            onAgentSelected: (_) {},
+          ),
     );
     if (!mounted || result == null || result.isEmpty || archive == null) return;
     setState(() => archive!.agentId = result.first['id']);
@@ -70,10 +150,15 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   Future<void> saveArchive() async {
     final current = archive;
     if (current == null) return;
-    current.name = nameController.text.trim().isEmpty ? 'Live2D' : nameController.text.trim();
+    current.name =
+        nameController.text.trim().isEmpty
+            ? 'Live2D'
+            : nameController.text.trim();
     await plugin.upsert(current);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已保存')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已保存')));
       setState(() {});
     }
   }
@@ -99,14 +184,21 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     if (current == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除存档'),
-        content: Text('确定删除“${current.name}”吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
-        ],
-      ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('删除存档'),
+            content: Text('确定删除“${current.name}”吗？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('删除'),
+              ),
+            ],
+          ),
     );
     if (confirmed != true) return;
     await plugin.deleteArchive(current.id);
@@ -119,21 +211,54 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
 
   Live2DModelDefinition? modelFor(Live2DArchive? value) {
     if (value == null || value.modelLabel.isEmpty) return null;
-    return availableJellyLive2DModels.where((model) => model.label == value.modelLabel).firstOrNull ??
-        Live2DModelDefinition(label: value.modelLabel, modelDir: value.modelDir, modelFile: value.modelFile, motions: const [], isOnline: value.modelDir.startsWith('http'));
+    return availableJellyLive2DModels
+            .where((model) => model.label == value.modelLabel)
+            .firstOrNull ??
+        Live2DModelDefinition(
+          label: value.modelLabel,
+          modelDir: value.modelDir,
+          modelFile: value.modelFile,
+          motions: const [],
+          isOnline: value.modelDir.startsWith('http'),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     final current = archive;
-    final selectedAgent = agents.where((agent) => agent.id == current?.agentId).firstOrNull;
+    final selectedAgent =
+        agents.where((agent) => agent.id == current?.agentId).firstOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Live2D 设置'), actions: [if (current != null) IconButton(onPressed: deleteCurrentArchive, icon: const Icon(Icons.delete_outline)), IconButton(onPressed: saveArchive, icon: const Icon(Icons.save))]),
+      appBar: AppBar(
+        title: const Text('Live2D 设置'),
+        actions: [
+          if (current != null)
+            IconButton(
+              onPressed: deleteCurrentArchive,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          IconButton(onPressed: saveArchive, icon: const Icon(Icons.save)),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(children: [const Expanded(child: Text('Live2D 存档', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), TextButton.icon(onPressed: createArchive, icon: const Icon(Icons.add), label: const Text('新建'))]),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Live2D 存档',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: createArchive,
+                icon: const Icon(Icons.add),
+                label: const Text('新建'),
+              ),
+            ],
+          ),
           if (plugin.archives.isNotEmpty)
             SizedBox(
               height: 48,
@@ -159,12 +284,76 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               ),
             ),
           if (current != null) ...[
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: '名称')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: '名称'),
+            ),
             const SizedBox(height: 16),
-            ListTile(title: const Text('Live2D 模型'), subtitle: Text(current.modelLabel), trailing: const Icon(Icons.chevron_right), onTap: () async { if (_showPreview) { setState(() => _showPreview = false); await Future<void>.delayed(Duration.zero); } final model = await showModalBottomSheet<Live2DModelDefinition>(context: context, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: availableJellyLive2DModels.map((model) => ListTile(title: Text(model.label), onTap: () => Navigator.pop(context, model))).toList())); if (model != null) setState(() { current.modelLabel = model.label; current.modelDir = model.modelDir; current.modelFile = model.modelFile; }); }),
-            Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: chooseOnlineModel, icon: const Icon(Icons.cloud_download), label: const Text('从在线模型仓库选择'))),
+            ListTile(
+              title: const Text('Live2D 模型'),
+              subtitle: Text(current.modelLabel),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                if (_showPreview) {
+                  setState(() => _showPreview = false);
+                  await Future<void>.delayed(Duration.zero);
+                }
+                final model = await showModalBottomSheet<Live2DModelDefinition>(
+                  context: context,
+                  builder:
+                      (_) => ListView(
+                        padding: const EdgeInsets.all(16),
+                        children:
+                            availableJellyLive2DModels
+                                .map(
+                                  (model) => ListTile(
+                                    title: Text(model.label),
+                                    onTap: () => Navigator.pop(context, model),
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                );
+                if (model != null)
+                  setState(() {
+                    current.modelLabel = model.label;
+                    current.modelDir = model.modelDir;
+                    current.modelFile = model.modelFile;
+                  });
+              },
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: chooseOnlineModel,
+                icon: const Icon(Icons.cloud_download),
+                label: const Text('从在线模型仓库选择'),
+              ),
+            ),
             const SizedBox(height: 16),
-            ListTile(title: const Text('人格 Agent'), subtitle: Text(selectedAgent?.name ?? '未选择'), trailing: const Icon(Icons.chevron_right), onTap: chooseAgent),
+            ListTile(
+              title: const Text('人格 Agent'),
+              subtitle: Text(selectedAgent?.name ?? '未选择'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: chooseAgent,
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('AI 回复语音播报'),
+              subtitle: const Text('回复完成后自动朗读'),
+              value: _autoReadEnabled,
+              onChanged: _setAutoReadEnabled,
+            ),
+            if (_autoReadEnabled)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.record_voice_over),
+                title: const Text('播报语音'),
+                subtitle: Text(_selectedVoiceLabel),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _openTTSSettings,
+              ),
             const SizedBox(height: 16),
             Text('文字展示速度：${_typingIntervalMs.round()} 毫秒/字'),
             Slider(
@@ -174,7 +363,10 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               divisions: 18,
               label: '${_typingIntervalMs.round()} ms',
               onChanged: (value) => setState(() => _typingIntervalMs = value),
-              onChangeEnd: (value) => plugin.updateSettings({'typingIntervalMs': value.round()}),
+              onChangeEnd:
+                  (value) => plugin.updateSettings({
+                    'typingIntervalMs': value.round(),
+                  }),
             ),
             const SizedBox(height: 16),
             Text('模型：${current.modelLabel}'),
@@ -191,7 +383,9 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                 child: JellyLive2D(
                   key: ValueKey('${current.modelDir}${current.modelFile}'),
                   initialModel: modelFor(current),
-                  typingInterval: Duration(milliseconds: _typingIntervalMs.round()),
+                  typingInterval: Duration(
+                    milliseconds: _typingIntervalMs.round(),
+                  ),
                 ),
               ),
             ],

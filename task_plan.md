@@ -16,6 +16,13 @@ Create a Live2D plugin with archive settings, prompt editor integration, Jelly H
 - [completed] Add AgentListDrawer creation action and search filtering
 - [completed] Auto-select newly created Agent after editor returns
 - [completed] Auto-close drawer and return newly selected Agent
+- [in_progress] Add Live2D auto-read setting and TTS service selection
+- [pending] Trigger TTS once when a Live2D AI reply completes
+- [pending] Run focused analysis and tests for Live2D TTS integration
 
 ## Errors Encountered
-None.
+| Error | Attempt | Resolution |
+|-------|---------|------------|
+| Parallel focused read returned exit code 1 without output | 1 | Split into direct reads; likely an `rg` no-match exit code rather than a code failure. |
+| Parallel read again aborted on an `rg` no-match exit code | 2 | Stop grouping fallible searches; append `if ($LASTEXITCODE -eq 1) { exit 0 }` for no-match searches. |
+| First business patch left an incomplete `Marker` placeholder in the TTS loader | 1 | Immediately replaced it with the complete service lookup and settings methods before validation. |
