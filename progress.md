@@ -176,3 +176,19 @@ tracker/record_dialog（initialRecordedAt）、9 插件 ×3 l10n 文件
 
 ### 下一步
 - 用户跑 app 验证（清单见 task_plan.md「手动验证清单」）
+
+## 会话: 2026-09-05（Live2D 显示裁剪区域）
+
+- 已恢复既有 planning-with-files 上下文。
+- 已追加 Phase 19-22，当前进行截图能力、裁剪 API 和持久化方案勘察。
+- 已确认项目与 pub.dev 最新版均为 `crop_your_image 2.0.0`。
+- 已确认 Windows 渲染为 Flutter Texture，可尝试 RepaintBoundary 截图；非 Texture 平台需错误兜底。
+- 已确认 `onMoved` 可直接取得原图坐标；选区采用固定 1:2 比例并保存归一化 Rect。
+- Phase 19 完成；方案为固定源视口 RepaintBoundary 截图、归一化选区、实时 Clip/Transform 映射、按模型键持久化。
+- 新增裁剪区域模型、裁剪对话框和 3 个区域换算测试；首次 analyze 发现 `DotControl(size:)` API 不存在，已按 2.0.0 源码修正。
+- 首轮区域测试 2/3 通过；变换结果仅因 `-0.0` 严格相等失败，已改为浮点容差断言。
+- 主组件已接入完整源画面截图、菜单入口、按模型持久化和实时裁剪映射；Phase 20-21 完成。
+- 新增区域测试现为 3/3 通过，4 个相关文件 analyze 0 issues；开始最终回归与清理。
+- 已移除上一轮尺寸问题的 `[DEBUG-live2d-baseline]` 临时日志；`git diff --check` 通过。
+- 最终相关测试 6/6 通过（在线模型 3 + 裁剪区域 3），相关文件 analyze 0 issues。
+- Windows Debug 构建在复制 WebView2Loader.dll 时被用户运行中的 PID 20568 锁定；未终止用户进程，需用户热重启做 Texture 截图与裁剪交互验收。

@@ -41,6 +41,20 @@
 - SDK `CubismMotion.parse` 会按 Meta 声明的 segment/point 数预分配数组，说明仅关闭一致性检查并不安全；重算 Meta 是必要修复。
 - `l2d00055` 不声明 `Idle` 组，所有动作在空组，循环动作通过文件名 `*_loop.motion3.json` 表示。runtime 自动待机固定调用 `Idle`，因此还需在 Idle 组缺失时优先从空组中选择文件名含 `loop` 的动作。
 
+## 11. Live2D 显示裁剪区域（2026-09-05）
+
+- 用户要求右键菜单新增裁剪设置：对话框展示完整模型图片，使用 `crop_your_image` 选择区域，并应用到主页显示。
+- 项目已依赖 `crop_your_image ^2.0.0`，pub.dev 最新版本同为 2.0.0，无需改依赖。
+- Windows Live2D 是 Flutter `Texture`，可用独立 `RepaintBoundary.toImage()` 捕获；macOS/iOS 为原生平台视图，Flutter 图层截图可能为空，必须检测并显示错误。
+- `crop_your_image` 2.0.0 支持 `InitialRectBuilder.withArea(ImageBasedRect)`、`onMoved(ViewportBasedRect)`、自由比例选区和外部 `CropController`。
+- 本功能不需要保存裁后 PNG；应保存选区在完整预览图中的归一化坐标，再映射为实时 Live2D 的平移/缩放。
+- 本地 2.0.0 源码确认 `onMoved` 签名为 `(viewportRect, imageRect)`，第二个参数就是实际原图坐标 `rectToCrop`；可直接除以原图宽高得到归一化 Rect。
+- 裁剪框固定为完整 Live2D 视口的 1:2 比例，避免应用到实时画面时拉伸；完整区域为 `(0,0,1,1)`，重置删除该模型的自定义值。
+- 实时映射使用固定 180x360 源视口：先把归一化选区平移到原点并按 `1 / rect.width` 放大，再裁到源视口；外层继续复用人物尺寸缩放与 Windows 水平/底线补偿。
+- 截图会抽样检查 RGBA alpha；平台视图未被 Flutter 截入时拒绝打开空白编辑器并展示可读错误。
+- 持久化键为模型目录+文件名的 base64url，避免本地/在线同名模型互相覆盖；完整区域通过删除键恢复默认。
+- Windows Debug 构建在最终复制 WebView2Loader.dll 时被用户正在运行的 app PID 20568 锁定；Dart analyze 与测试已通过，实际 Texture 截图仍需用户热重启后验收。
+
 ## 1. 主页卡片双体系
 - **旧体系**: `BasePlugin.buildCardView()` (~28 插件实现) → `PluginGrid`/`PluginCard`，
   现仅悬浮球选择器 (core/floating_ball/widgets/plugin_overlay_selector.dart) 和

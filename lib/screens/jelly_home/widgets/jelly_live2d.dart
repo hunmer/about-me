@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../live2d_online_model_page.dart';
 import '../live2d_online_models.dart';
+import 'jelly_live2d_crop_dialog.dart';
+import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
@@ -27,11 +33,15 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const double _minSize = 200;
   static const double _maxSize = 560;
   static const double _sizeStep = 40;
+  static const double _modelViewportAspectRatio = 0.5;
   static const String _sizePrefKey = 'jelly_live2d.size';
+  static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
   final Live2DViewController _controller = Live2DViewController();
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
+  final GlobalKey _modelCaptureKey = GlobalKey();
   Live2DModelDefinition _selectedModel = _models.first;
+  JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
@@ -76,6 +86,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // 点击事件同样由原生侧经 onTap 转发（含 hit area 判定结果）
     _controller.onTap = _handleTap;
     _loadSavedSize();
+    _loadSavedCropRegion(_selectedModel);
     _loadModel(_selectedModel);
   }
 
@@ -109,6 +120,33 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _size.value = _defaultSize;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_sizePrefKey, _defaultSize);
+  }
+
+  String _cropPrefKey(Live2DModelDefinition model) {
+    final identity = base64UrlEncode(
+      utf8.encode('${model.modelDir}${model.modelFile}'),
+    );
+    return '$_cropPrefKeyPrefix$identity';
+  }
+
+  Future<void> _loadSavedCropRegion(Live2DModelDefinition model) async {
+    final prefs = await SharedPreferences.getInstance();
+    final region = JellyLive2DCropRegion.parse(
+      prefs.getString(_cropPrefKey(model)),
+    );
+    if (!mounted || model != _selectedModel) return;
+    setState(() => _cropRegion = region);
+  }
+
+  Future<void> _saveCropRegion(JellyLive2DCropRegion region) async {
+    setState(() => _cropRegion = region);
+    final prefs = await SharedPreferences.getInstance();
+    final key = _cropPrefKey(_selectedModel);
+    if (region.isFull) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, region.encode());
+    }
   }
 
   /// 切换可点击区域（HitAreas）红色叠加层；模型未加载或平台不支持时忽略
@@ -263,8 +301,80 @@ class _JellyLive2DState extends State<JellyLive2D> {
         _controller.value.isLoadingModel) {
       return;
     }
-    setState(() => _selectedModel = model);
+    setState(() {
+      _selectedModel = model;
+      _cropRegion = const JellyLive2DCropRegion.full();
+    });
+    await _loadSavedCropRegion(model);
     await _loadModel(model);
+  }
+
+  Future<({Uint8List bytes, Size size})> _captureFullModel() async {
+    if (!_controller.value.isLoaded || _isSwitchingModel) {
+      throw StateError('模型尚未加载完成');
+    }
+
+    await WidgetsBinding.instance.endOfFrame;
+    final boundary =
+        _modelCaptureKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+    if (boundary == null) throw StateError('无法访问模型画面');
+
+    final image = await boundary.toImage(pixelRatio: 2);
+    try {
+      final rgba = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final pixels = rgba?.buffer.asUint8List();
+      if (pixels == null || !_containsVisiblePixel(pixels)) {
+        throw StateError('当前平台不支持捕获 Live2D 画面');
+      }
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (png == null) throw StateError('模型画面编码失败');
+      return (
+        bytes: png.buffer.asUint8List(),
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+      );
+    } finally {
+      image.dispose();
+    }
+  }
+
+  bool _containsVisiblePixel(Uint8List rgba) {
+    const pixelStride = 4;
+    const sampleStride = pixelStride * 16;
+    for (var i = 3; i < rgba.length; i += sampleStride) {
+      if (rgba[i] > 8) return true;
+    }
+    return false;
+  }
+
+  Future<void> _openCropEditor(BuildContext sheetContext) async {
+    Navigator.of(sheetContext).pop();
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+
+    try {
+      final capture = await _captureFullModel();
+      if (!mounted) return;
+      final region = await showJellyLive2DCropDialog(
+        context: context,
+        image: capture.bytes,
+        imageSize: capture.size,
+        initialRegion: _cropRegion,
+      );
+      if (region != null && mounted) await _saveCropRegion(region);
+    } catch (error) {
+      if (!mounted) return;
+      await showDSDialog<void>(
+        context: context,
+        builder:
+            (dialogContext) => DSDialog(
+              title: '无法设置裁剪区域',
+              message: error.toString().replaceFirst('Bad state: ', ''),
+              confirmText: '知道了',
+              onConfirm: () => Navigator.of(dialogContext).pop(),
+            ),
+      );
+    }
   }
 
   String _loadStageLabel(String? stage) {
@@ -428,6 +538,30 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
+                '显示区域',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              DSListItem(
+                title: '设置显示裁剪区域',
+                subtitle: _cropRegion.isFull ? '当前显示完整模型' : '已应用自定义裁剪区域',
+                leading: DsIcon(
+                  DsIconKind.image,
+                  size: 18,
+                  color: theme.primary,
+                ),
+                trailing: DsIcon(
+                  DsIconKind.chevronRight,
+                  size: 18,
+                  color: theme.textSub,
+                ),
+                onTap:
+                    _controller.value.isLoaded && !_isSwitchingModel
+                        ? () => _openCropEditor(sheetContext)
+                        : null,
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
                 '可点击区域',
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
@@ -514,7 +648,47 @@ class _JellyLive2DState extends State<JellyLive2D> {
                             ? 0
                             : 1,
                     duration: const Duration(milliseconds: 160),
-                    child: Live2DView(controller: _controller),
+                    child: OverflowBox(
+                      alignment: Alignment.bottomCenter,
+                      maxWidth: double.infinity,
+                      maxHeight: double.infinity,
+                      child: Transform.translate(
+                        // Windows 纹理视图随外层左上角移动：水平抵消一半
+                        // 尺寸差以保持居中，垂直抵消完整尺寸差以固定脚底。
+                        offset: Offset(
+                          (size - _defaultSize) / 2,
+                          size - _defaultSize,
+                        ),
+                        child: Transform.scale(
+                          scale: size / _defaultSize,
+                          alignment: Alignment.bottomCenter,
+                          // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
+                          // 视口同时为全身模型保留足够的纵向空间。
+                          child: SizedBox(
+                            width: _defaultSize * _modelViewportAspectRatio,
+                            height: _defaultSize,
+                            child: ClipRect(
+                              child: Transform.translate(
+                                offset: _cropRegion.sourceTranslation(
+                                  const Size(
+                                    _defaultSize * _modelViewportAspectRatio,
+                                    _defaultSize,
+                                  ),
+                                ),
+                                child: Transform.scale(
+                                  scale: _cropRegion.zoom,
+                                  alignment: Alignment.topLeft,
+                                  child: RepaintBoundary(
+                                    key: _modelCaptureKey,
+                                    child: Live2DView(controller: _controller),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   ValueListenableBuilder<Live2DViewState>(
                     valueListenable: _controller,

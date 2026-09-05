@@ -307,6 +307,33 @@
 - 日期条无限滚动 / 月份跳转
 - 排序选项持久化
 
+## 追加任务：Live2D 显示裁剪区域（2026-09-05）
+
+### 目标
+- Live2D 右键菜单增加“设置显示裁剪区域”。
+- 对话框展示当前模型完整画面，并使用 `crop_your_image` 选择显示区域。
+- 裁剪选区按模型持久化，并应用于主页 Live2D 显示。
+
+### Phase 19: 能力与 API 勘察 [complete]
+- [x] 19.1 核对 Live2D 平台视图截图能力与现有渲染链路
+- [x] 19.2 核对 `crop_your_image` 最新 API、平台约束与项目依赖
+- [x] 19.3 明确裁剪坐标、默认值、按模型持久化键
+
+### Phase 20: 截图与裁剪数据 [complete]
+- [x] 20.1 获取完整模型预览图片
+- [x] 20.2 定义裁剪区域模型并按模型读写
+- [x] 20.3 将裁剪区域映射到 Live2D 显示变换
+
+### Phase 21: 裁剪对话框与菜单 [complete]
+- [x] 21.1 增加右键菜单入口
+- [x] 21.2 使用 `crop_your_image` 实现裁剪选区、确认、重置、取消
+- [x] 21.3 处理加载、错误和模型切换状态
+
+### Phase 22: 验证与收尾 [complete]
+- [x] 22.1 单元/Widget 测试
+- [x] 22.2 format、analyze、相关测试
+- [x] 22.3 更新 findings/progress 并给出手动验收步骤
+
 ## 关键事实 (来自代码勘察)
 - 主页面用新 HomeGrid(home_screen_view.dart:205,337,406)；旧 PluginGrid/buildCardView 仅悬浮球在用，不动
 - 条目 UI 现状：待办条目内联在 TodoWeekView._buildDayCard 的 itemBuilder；日记条目在
@@ -322,4 +349,8 @@
 ## 错误记录
 | 错误 | 阶段 | 解决方案 |
 |------|------|----------|
-| (暂无) | - | - |
+| `DotControl` 不接受 `size:` 参数 | Phase 20 | 按本地 2.0.0 源码改为仅传 `color`，尺寸由裁剪器回调约束 |
+| 变换测试中 `Offset(-0.0, -0.0)` 与 `Offset.zero` 严格比较失败 | Phase 20 | 改为分别对 dx/dy 使用浮点容差断言 |
+| 裁剪对话框调用点补丁出现函数名拼接错误 | Phase 20 | 编译前检查时发现，改回 `showJellyLive2DCropDialog(context: ...)` |
+| Flutter 验证时依赖解析 TLS 握手中断，且一次分析路径字符串拼接异常 | Phase 22 | 使用已解析依赖的 `--no-pub` 命令分别重跑正确路径 |
+| Windows Debug 构建无法复制 `WebView2Loader.dll` | Phase 22 | 用户当前运行的 `flutter_application_1` PID 20568 锁定文件；不终止用户进程，保留手动热重启验收 |
