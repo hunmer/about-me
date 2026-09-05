@@ -11,7 +11,6 @@ Future<void> restoreFloatingBallState() async {
   try {
     // 仅在 Android 平台恢复悬浮球
     if (!UniversalPlatform.isAndroid) {
-      debugPrint('跳过悬浮球恢复（非 Android 平台）');
       return;
     }
 

@@ -34,6 +34,7 @@ import 'screens/script_edit_screen.dart';
 import 'screens/script_store_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 part 'scripts_center_data_selectors.dart';
 
@@ -177,8 +178,6 @@ class ScriptsCenterPlugin extends BasePlugin {
 
   @override
   Future<void> initialize() async {
-    print('📦 初始化 ScriptsCenterPlugin...');
-
     try {
       // 初始化服务层
       _scriptLoader = ScriptLoader(storage);
@@ -210,10 +209,6 @@ class ScriptsCenterPlugin extends BasePlugin {
       // 初始化脚本商场
       await _scriptStoreManager.initialize();
 
-      print('✅ ScriptsCenterPlugin初始化成功');
-      print('   - 已加载 ${_scriptManager.scriptCount} 个脚本');
-      print('   - 已启用 ${_scriptManager.enabledScriptCount} 个脚本');
-
       // 注册数据选择器
       registerDataSelectors();
     } catch (e) {
@@ -243,8 +238,6 @@ class ScriptsCenterPlugin extends BasePlugin {
 
       // 初始化文件夹
       await _scriptManager.initializeFolders(folders);
-
-      print('✅ 初始化了 ${folders.length} 个默认文件夹');
     } catch (e) {
       print('❌ 初始化默认文件夹失败: $e');
       rethrow;
@@ -264,8 +257,6 @@ class ScriptsCenterPlugin extends BasePlugin {
       _setupTriggers();
       _runAutoRunScripts();
     });
-
-    print('✅ ScriptsCenterPlugin已注册到应用');
   }
 
   /// 执行自动运行脚本
@@ -281,30 +272,21 @@ class ScriptsCenterPlugin extends BasePlugin {
               .toList();
 
       if (autoRunScripts.isEmpty) {
-        print('ℹ️ 没有自动运行脚本');
         return;
       }
 
-      print('🚀 执行自动运行脚本...');
-
       for (var script in autoRunScripts) {
         try {
-          print('   ⚡ 执行: ${script.name}');
           final result = await _scriptExecutor.execute(script.id);
 
           if (!result.success) {
             print('   ⚠️ 脚本执行失败: ${script.name}');
             print('      错误: ${result.error}');
-          } else {
-            print('   ✅ 脚本执行成功: ${script.name}');
-            print('      耗时: ${result.duration.inMilliseconds}ms');
           }
         } catch (e) {
           print('   ❌ 脚本执行异常: ${script.name}, 错误: $e');
         }
       }
-
-      print('✅ 自动运行脚本执行完成');
     } catch (e) {
       print('❌ 执行自动运行脚本失败: $e');
     }

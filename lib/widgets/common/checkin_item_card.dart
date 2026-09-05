@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 打卡项目卡片组件
 ///
@@ -58,7 +59,7 @@ class CheckinItemCardWidget extends StatefulWidget {
       item: itemJson != null ? CheckinItem.fromJson(itemJson) : CheckinItem(
         name: props['name'] as String? ?? '',
         icon: props['icon'] != null
-            ? IconData(props['icon'] as int, fontFamily: 'MaterialIcons')
+            ? dynamicIconData(props['icon'] as int, fontFamily: 'MaterialIcons')
             : Icons.check_circle,
       ),
       index: props['index'] as int? ?? 0,

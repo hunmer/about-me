@@ -40,8 +40,6 @@ class ReminderPlugin extends BasePlugin {
 
     // 初始化调度器
     _scheduler = ReminderScheduler();
-
-    debugPrint('[ReminderPlugin] 插件初始化完成');
   }
 
   @override
@@ -51,7 +49,6 @@ class ReminderPlugin extends BasePlugin {
   ) async {
     // 启动调度器
     _scheduler.start();
-    debugPrint('[ReminderPlugin] 调度器已启动');
   }
 
   @override

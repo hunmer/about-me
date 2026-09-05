@@ -10,6 +10,7 @@ import 'package:aboutme/core/services/plugin_data_selector/models/selector_resul
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import '../../tracker_plugin.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 渲染目标数据
 Widget renderGoalData(
@@ -96,7 +97,7 @@ class TrackerGoalSelectorWidget extends StatelessWidget {
                       ),
                       // goal.icon 为持久化 codePoint 字符串，保留 Material IconData
                       child: Icon(
-                        IconData(
+                        dynamicIconData(
                           int.tryParse(iconCode) ?? 57455,
                           fontFamily: 'MaterialIcons',
                         ),

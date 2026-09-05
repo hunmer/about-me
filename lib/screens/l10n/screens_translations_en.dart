@@ -130,13 +130,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_quickRegister': 'Quick Register',
   'screens_bulletScheme': '• @scheme',
 
-  // js_console
-  'screens_jsConsole': 'JS Console',
-  'screens_loadingExamples': 'Loading examples...',
-  'screens_noAvailableExamples': 'No available examples',
-  'screens_selectExampleFile': 'Select example file: ',
-  'screens_allExamples': 'All Examples',
-
   // json_dynamic_test
   'screens_jsonDynamicUITest': 'JSON Dynamic UI Test',
   'screens_loadFile': 'Load File',
@@ -148,7 +141,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_test': 'Test',
 
   // settings_screen
-  'screens_testJavaScriptAPI': 'Test JavaScript API functionality',
   'screens_jsonDynamicWidgetTest': 'JSON Dynamic Widget Test',
   'screens_testAndPreviewDynamicUI': 'Test and preview dynamic UI components',
   'screens_testIOSStyleNavigation': 'Test iOS style navigation bar component',

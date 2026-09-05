@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 时间线事件数据模型
 class TimelineEvent {
@@ -139,7 +140,7 @@ class SpecialEvent {
   factory SpecialEvent.fromJson(Map<String, dynamic> json) {
     return SpecialEvent(
       title: json['title'] as String,
-      icon: IconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
     );
   }
 

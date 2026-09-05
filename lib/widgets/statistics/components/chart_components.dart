@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 通用卡片构建器
 Widget buildStatisticsCard({
@@ -275,7 +276,7 @@ class RankingList extends StatelessWidget {
                   alignment: Alignment.center,
                   child: item.icon != null
                       ? Icon(
-                          IconData(int.parse(item.icon!), fontFamily: 'MaterialIcons'),
+                          dynamicIconData(int.parse(item.icon!), fontFamily: 'MaterialIcons'),
                           size: 16,
                           color: color,
                         )

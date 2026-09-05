@@ -75,8 +75,6 @@ class TrackerSyncer extends PluginWidgetSyncer {
 
       // 更新目标进度小组件
       await SystemWidgetService.instance.updateWidget('tracker_goal');
-
-      debugPrint('Synced tracker_goal widget with ${items.length} goals');
     } catch (e) {
       debugPrint('Failed to sync tracker_goal widget: $e');
     }

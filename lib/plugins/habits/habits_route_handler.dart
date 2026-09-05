@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯插件路由处理器
 class HabitsRouteHandler extends PluginRouteHandler {
@@ -234,7 +235,7 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
                   children: [
                     Icon(
                       _habit.icon != null
-                          ? IconData(
+                          ? dynamicIconData(
                             int.parse(_habit.icon!),
                             fontFamily: 'MaterialIcons',
                           )

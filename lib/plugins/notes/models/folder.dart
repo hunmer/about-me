@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Folder {
   final String id;
@@ -39,7 +40,7 @@ class Folder {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       color: Color(json['color'] as int? ?? Colors.blue.value),
-      icon: IconData(json['icon'] as int? ?? Icons.folder.codePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['icon'] as int? ?? Icons.folder.codePoint, fontFamily: 'MaterialIcons'),
     );
   }
 }

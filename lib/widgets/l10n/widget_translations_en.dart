@@ -8,8 +8,6 @@ const Map<String, String> enUS = {
   'widget_enableAutoRead': 'Enable Auto Read',
   'widget_enableAutoReadDescription':
       'Automatically read message content after AI reply is complete',
-  'widget_jsConsole': 'JS Console',
-  'widget_jsConsoleDescription': 'Test JavaScript API functionality',
   'widget_jsonDynamicWidget': 'JSON Dynamic Widget Test',
   'widget_jsonDynamicWidgetDescription': 'Test and preview dynamic UI components',
   'widget_superCupertinoNavigation': 'Super Cupertino Navigation Test',

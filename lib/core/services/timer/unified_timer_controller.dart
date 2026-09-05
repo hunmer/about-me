@@ -421,8 +421,6 @@ class UnifiedTimerController {
           state.start();
         }
       }
-
-      print('Loaded ${_timers.length} active timers');
     } catch (e) {
       print('Error loading active timers: $e');
       _timers.clear();

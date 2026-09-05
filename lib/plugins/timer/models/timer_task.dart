@@ -5,6 +5,7 @@ import '../../../../core/notification_controller.dart';
 import '../../../../core/event/event_manager.dart';
 import '../../../../core/services/timer/unified_timer_controller.dart';
 import '../../../../core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class TimerTaskEventArgs extends EventArgs {
   final TimerTask task;
@@ -47,7 +48,7 @@ class TimerTask {
     // 使用预定义的MaterialIcons常量
     final icon =
         json['icon'] != null
-            ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+            ? dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons')
             : Icons.timer_rounded;
 
     return TimerTask(

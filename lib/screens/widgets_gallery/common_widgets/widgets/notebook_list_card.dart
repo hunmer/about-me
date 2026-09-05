@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 笔记本列表卡片小组件
 ///
@@ -38,7 +39,7 @@ class NotebookListCardWidget extends StatefulWidget {
             id: data['id'] as String? ?? '',
             title: data['title'] as String? ?? '',
             icon: data['icon'] is String
-                ? IconData(int.parse(data['icon'] as String), fontFamily: 'MaterialIcons')
+                ? dynamicIconData(int.parse(data['icon'] as String), fontFamily: 'MaterialIcons')
                 : Icons.book,
             color: data['color'] != null ? Color(data['color'] as int) : null,
             nodeCount: data['nodeCount'] as int? ?? 0,

@@ -69,8 +69,6 @@ class TodoSyncer extends PluginWidgetSyncer {
 
       // 更新待办列表小组件
       await SystemWidgetService.instance.updateWidget('todo_list');
-
-      debugPrint('Synced todo_list widget with ${items.length} tasks');
     } catch (e) {
       debugPrint('Failed to sync todo_list widget: $e');
     }
@@ -200,8 +198,6 @@ class TodoSyncer extends PluginWidgetSyncer {
 
       // 更新小组件
       await SystemWidgetService.instance.updateWidget('todo_quadrant');
-
-      debugPrint('Synced todo_quadrant widget with ${allTasks.length} tasks');
     } catch (e) {
       debugPrint('Failed to sync todo_quadrant widget: $e');
     }

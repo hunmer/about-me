@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/tracker/models/record.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'package:aboutme/plugins/tracker/widgets/timer_dialog.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoalCard extends StatelessWidget {
   final Goal goal;
@@ -254,7 +255,7 @@ class GoalCard extends StatelessWidget {
       child: Center(
         // goal.icon 为持久化 codePoint 字符串，保留 Material IconData
         child: Icon(
-          IconData(int.parse(goal.icon), fontFamily: 'MaterialIcons'),
+          dynamicIconData(int.parse(goal.icon), fontFamily: 'MaterialIcons'),
           size: 20,
           color: tint,
         ),

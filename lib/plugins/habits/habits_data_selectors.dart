@@ -36,7 +36,7 @@ void _registerDataSelectors() {
                   subtitle: '$duration 分钟 · $count 次完成',
                   icon:
                       habit.icon != null
-                          ? IconData(
+                          ? dynamicIconData(
                             int.parse(habit.icon!),
                             fontFamily: 'MaterialIcons',
                           )
@@ -414,7 +414,7 @@ class _HabitStatsConfigFormState extends State<_HabitStatsConfigForm> {
                                           ),
                                           child: Icon(
                                             habit.icon != null
-                                                ? IconData(
+                                                ? dynamicIconData(
                                                   int.parse(habit.icon!),
                                                   fontFamily: 'MaterialIcons',
                                                 )

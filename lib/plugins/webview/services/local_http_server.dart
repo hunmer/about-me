@@ -56,9 +56,6 @@ class LocalHttpServer {
         return false;
       }
 
-      debugPrint('[LocalHttpServer] 服务器启动成功: $serverUrl');
-      debugPrint('[LocalHttpServer] 根目录: $_rootDir');
-
       // 监听请求
       _server!.listen(_handleRequest);
       _isRunning = true;

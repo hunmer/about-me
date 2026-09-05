@@ -55,7 +55,6 @@ mixin JSBridgePlugin on PluginBase {
     try {
       final apis = defineJSAPI();
       if (apis.isEmpty) {
-        print('[$id] 没有定义 JS API');
         return;
       }
 

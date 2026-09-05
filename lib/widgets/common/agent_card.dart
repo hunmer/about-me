@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// Agent 卡片组件（公共小组件版本）
 ///
@@ -253,7 +254,7 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
               color: effectiveColor,
             ),
             child: Icon(
-              IconData(widget.iconCodePoint!, fontFamily: 'MaterialIcons'),
+              dynamicIconData(widget.iconCodePoint!, fontFamily: 'MaterialIcons'),
               size: availableSize * 0.5,
               color: Colors.white,
             ),

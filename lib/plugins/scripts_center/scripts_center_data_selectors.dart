@@ -31,7 +31,7 @@ void registerDataSelectors() {
               // 解析图标
               IconData scriptIcon;
               try {
-                scriptIcon = IconData(
+                scriptIcon = dynamicIconData(
                   int.parse(script.icon, radix: 16),
                   fontFamily: 'MaterialIcons',
                 );
@@ -63,6 +63,4 @@ void registerDataSelectors() {
       ],
     ),
   );
-
-  print('✅ 脚本选择器注册成功');
 }

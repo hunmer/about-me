@@ -211,7 +211,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     // 应用从后台恢复到前台时同步待处理的小组件变更
     if (state == AppLifecycleState.resumed) {
-      debugPrint('应用恢复到前台，同步待处理的小组件变更');
       PluginWidgetSyncHelper.instance.syncPendingTaskChangesOnStartup();
       PluginWidgetSyncHelper.instance.syncPendingCalendarEventsOnStartup();
       PluginWidgetSyncHelper.instance.syncPendingGoalChangesOnStartup();

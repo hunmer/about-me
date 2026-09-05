@@ -413,10 +413,6 @@ class AppStoreManager extends ChangeNotifier {
           }
         }
       }
-
-      debugPrint(
-        'Loaded ${_installedApps.length} installed apps from filesystem',
-      );
     } catch (e) {
       debugPrint('Failed to load installed apps from filesystem: $e');
       _installedApps = {};

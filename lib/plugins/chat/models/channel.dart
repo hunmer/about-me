@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/utils/color_extension.dart';
 import 'message.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Channel {
   final String id;
@@ -108,7 +109,7 @@ class Channel {
   }) {
 
     // 解析图标，提供默认图标
-    final IconData icon = IconData(
+    final IconData icon = dynamicIconData(
       json['icon'] as int? ?? Icons.chat.codePoint,
       fontFamily: json['iconFontFamily'] as String?,
       fontPackage: json['iconFontPackage'] as String?,

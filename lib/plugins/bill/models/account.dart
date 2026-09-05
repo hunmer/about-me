@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'bill.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/plugins/bill/controls/bill_controller.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Account {
   final String id;
@@ -35,7 +36,7 @@ class Account {
     return Account(
       id: json['id'] as String? ?? '',
       title: title,
-      icon: IconData(
+      icon: dynamicIconData(
         json['iconCodePoint'] as int? ?? Icons.account_balance.codePoint,
         fontFamily: json['iconFontFamily'] as String? ?? 'MaterialIcons',
         fontPackage: json['iconFontPackage'] as String?,

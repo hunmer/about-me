@@ -58,7 +58,7 @@ Widget wrapWithBackground({
     child: result,
   );
 
-  if (backgroundColor.alpha == 0xFF) {
+  if (backgroundColor.a == 1.0) {
     return childWithBackground;
   }
 

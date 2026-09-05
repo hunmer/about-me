@@ -72,7 +72,6 @@ class RouteHistoryManager extends NavigatorObserver {
 
           // 按时间倒序排序
           _history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-          debugPrint('路由历史管理器已加载 ${_history.length} 条记录');
         }
       }
     } catch (e) {
@@ -392,8 +391,6 @@ class RouteHistoryManager extends NavigatorObserver {
 
     // 异步保存
     _saveHistory();
-
-    debugPrint('RouteHistoryManager: 记录路由 $routeName，参数: $params');
   }
 
   // ==================== 当前路由上下文管理 ====================

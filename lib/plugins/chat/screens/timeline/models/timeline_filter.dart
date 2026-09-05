@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 时间线筛选器，用于筛选消息列表
 class TimelineFilter {
@@ -151,7 +152,7 @@ class TimelineFilter {
     return TimelineFilter(
       type: TimelineFilterType.values[json['type']],
       title: json['title'],
-      icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['icon'], fontFamily: 'MaterialIcons'),
       color: Color(json['color']),
       description: json['description'] ?? '',
       includeChannels: json['includeChannels'] ?? true,

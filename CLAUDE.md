@@ -33,7 +33,10 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 
 | 模块 | 职责摘要 | 文档 |
 |------|----------|------|
-| `lib/` | Flutter 应用代码（core / plugins×25 / screens / widgets，1943 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
+| `lib/` | Flutter 应用代码（core / plugins×25 / screens / widgets，1823 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
+| `lib/plugins/` | 插件层聚合索引：插件体系架构 + 25 插件职责/路由/约定 | [lib/plugins/CLAUDE.md](lib/plugins/CLAUDE.md) |
+| `lib/plugins/chat` | 频道式聊天/消息记录（109 文件，含 @AI 事件桥） | [lib/plugins/chat/CLAUDE.md](lib/plugins/chat/CLAUDE.md) |
+| `lib/plugins/agent_chat` | 一对一 AI 对话：三阶段工具调用/Agent 链/语音通话 | [lib/plugins/agent_chat/CLAUDE.md](lib/plugins/agent_chat/CLAUDE.md) |
 | `packages/` | 9 个子包聚合索引（3 个 Node 服务 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
 | `packages/server-nodejs` | 同步服务器（REST + WS + 管理面板 + 服务端插件系统） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
 | `packages/mcp-aboutme-server` | MCP 服务器（AI 工具接口，60+ 工具） | [packages/mcp-aboutme-server/CLAUDE.md](packages/mcp-aboutme-server/CLAUDE.md) |
@@ -60,8 +63,8 @@ graph TD
 
 ## 扫描状态
 
-- 更新时间：2026-09-02（第二轮：补扫 reminder / aboutme_widgets / admin-vue / online）
-- 已扫描：根清单与配置、`lib/` 结构与启动链（main.dart、app_initializer、route.dart）、3 个 Node 子包源码结构、`shared_models/` 全部文件、`packages/aboutme_widgets`（Dart API + Provider 全景）、`server-nodejs/admin-vue`（源码与 `/api/v1` 端点全集）、`online/`（小程序/脚本/Agent 清单与 preload 机制）、`lib/plugins/reminder`（全部 10 文件）、`docs/` 与 CI、脚本清单。
+- 更新时间：2026-09-05（第三轮：新建 lib/plugins 聚合文档 + chat/agent_chat 独立文档集，全量核实 25 插件）
+- 已扫描：前两轮全部范围（根配置、lib 启动链、3 个 Node 子包、shared_models、admin-vue、online、reminder）+ 本轮：25 个插件主类逐个验证（继承/mixin/路由/分层）、路由全集、home_widgets 覆盖、chat 与 agent_chat 内部实现、openai 结构、跨插件依赖网；test/ 出现 3 个冒烟测试（design_system/jelly/live2d），已更新测试章节。
 - 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制。
-- 未深扫（下次增量优先）：24 个插件内部实现（沿用旧版 CLAUDE.md）、其余 5 个原生插件的 android/ios 平台代码（intent/nfc/foreground_service/notifications/floating_ball）、`docs/` 正文、server-nodejs 各 handler 实现细节。
+- 未深扫（下次增量优先）：openai 与其余 22 个插件的 screens/widgets 内部（已有职责表）、5 个原生插件的 android/ios 平台代码、`docs/` 正文、server-nodejs handler 实现细节。
 - 详细覆盖度量与续跑建议见 [索引变更记录](claude/changelog.md)。

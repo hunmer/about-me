@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// Goods 插件 - 客户端 Repository 实现
 ///
@@ -59,7 +60,7 @@ class ClientGoodsRepository extends IGoodsRepository {
         title: dto.name,
         icon:
             dto.iconData != null
-                ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
+                ? dynamicIconData(dto.iconData!, fontFamily: 'MaterialIcons')
                 : Icons.inventory_2,
         iconColor: dto.iconColor != null ? Color(dto.iconColor!) : pluginColor,
         imageUrl: dto.description, // 使用 description 字段存储 imageUrl
@@ -90,7 +91,7 @@ class ClientGoodsRepository extends IGoodsRepository {
         title: dto.name,
         icon:
             dto.iconData != null
-                ? IconData(dto.iconData!, fontFamily: 'MaterialIcons')
+                ? dynamicIconData(dto.iconData!, fontFamily: 'MaterialIcons')
                 : null,
         iconColor: dto.iconColor != null ? Color(dto.iconColor!) : null,
         imageUrl: dto.description, // 临时使用 description 字段存储 imageUrl

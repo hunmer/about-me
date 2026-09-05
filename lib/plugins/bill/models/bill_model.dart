@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class BillModel {
   final String id;
@@ -71,7 +72,7 @@ class BillModel {
       title: map['title'],
       amount: map['amount'],
       date: DateTime.fromMillisecondsSinceEpoch(map['date']),
-      icon: IconData(
+      icon: dynamicIconData(
         map['iconCodePoint'],
         fontFamily: map['iconFontFamily'],
         fontPackage: map['iconFontPackage'],

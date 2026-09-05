@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 图片展示卡片小组件
 ///
@@ -62,7 +63,7 @@ class ImageDisplayCardWidget extends StatefulWidget {
       rating: (props['rating'] as num?)?.toDouble() ?? 0.0,
       icon:
           props['icon'] != null
-              ? IconData(props['icon'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(props['icon'] as int, fontFamily: 'MaterialIcons')
               : null,
       primaryColor:
           props['primaryColor'] != null

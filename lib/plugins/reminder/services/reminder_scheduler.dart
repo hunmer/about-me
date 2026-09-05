@@ -44,8 +44,6 @@ class ReminderScheduler {
     _checkTimer = Timer.periodic(_checkInterval, (_) {
       _checkMissedReminders();
     });
-
-    debugPrint('[ReminderScheduler] 调度器已启动');
   }
 
   /// 停止调度器

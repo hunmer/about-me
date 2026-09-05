@@ -51,14 +51,10 @@ class FloatingBallAdapter extends FloatingBallPlatformAdapter {
   }
 
   @override
-  Future<void> initialize() async {
-    debugPrint('FloatingBallAdapter initialized');
-  }
+  Future<void> initialize() async {}
 
   @override
-  Future<void> dispose() async {
-    debugPrint('FloatingBallAdapter disposed');
-  }
+  Future<void> dispose() async {}
 
   @override
   String get adapterName => 'FloatingBallAdapter';

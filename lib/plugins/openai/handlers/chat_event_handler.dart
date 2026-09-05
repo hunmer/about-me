@@ -261,7 +261,7 @@ class ChatEventHandler {
                 await _plugin.channelService.saveMessage(typingMessage);
 
                 // 添加额外的通知以确保UI更新
-                _plugin.notifyListeners();
+                _plugin.refresh();
 
                 // 通过事件系统广播消息更新事件
                 eventManager.broadcast(
@@ -288,7 +288,7 @@ class ChatEventHandler {
             await _plugin.channelService.saveMessage(typingMessage);
 
             // 确保UI更新
-            _plugin.notifyListeners();
+            _plugin.refresh();
 
             // 通过事件系统广播消息更新事件
             eventManager.broadcast(
@@ -329,7 +329,7 @@ class ChatEventHandler {
             await _plugin.channelService.saveMessage(typingMessage);
 
             // 立即通知UI更新
-            _plugin.notifyListeners();
+            _plugin.refresh();
 
             // 通过事件系统广播消息更新事件
             eventManager.broadcast(
@@ -342,7 +342,7 @@ class ChatEventHandler {
             await _plugin.channelService.saveMessage(typingMessage);
 
             // 最后再次通知UI更新
-            _plugin.notifyListeners();
+            _plugin.refresh();
           }
 
           // 延迟一下再清理资源，确保最后的更新被处理

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:shared_models/shared_models.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 enum CheckinCardStyle {
   weekly,
@@ -238,7 +239,7 @@ class CheckinItem {
       icon = materialIcons[iconCodePoint]!;
     } else {
       // 如果不在预定义列表中，直接创建IconData
-      icon = IconData(
+      icon = dynamicIconData(
         iconCodePoint,
         fontFamily: 'MaterialIcons',
       );

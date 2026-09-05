@@ -7,6 +7,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 目标选择器界面(用于小组件配置)
 ///
@@ -396,7 +397,7 @@ class _TrackerGoalSelectorScreenState extends State<TrackerGoalSelectorScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                IconData(
+                                dynamicIconData(
                                   int.parse(goal.icon),
                                   fontFamily: 'MaterialIcons',
                                 ),

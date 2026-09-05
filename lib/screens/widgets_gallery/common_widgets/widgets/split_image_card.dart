@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 图片分割卡片小组件
@@ -62,14 +63,14 @@ class SplitImageCardWidget extends StatefulWidget {
       bottomText: props['bottomText'] as String? ?? '',
       topIcon:
           props['topIconCode'] != null
-              ? IconData(
+              ? dynamicIconData(
                 props['topIconCode'] as int,
                 fontFamily: 'MaterialIcons',
               )
               : null,
       bottomIcon:
           props['bottomIconCode'] != null
-              ? IconData(
+              ? dynamicIconData(
                 props['bottomIconCode'] as int,
                 fontFamily: 'MaterialIcons',
               )

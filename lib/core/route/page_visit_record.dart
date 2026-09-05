@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 页面访问记录模型
 class PageVisitRecord {
@@ -56,7 +57,7 @@ class PageVisitRecord {
   /// 获取图标对象
   IconData? get icon {
     if (iconCodePoint == null) return null;
-    return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
+    return dynamicIconData(iconCodePoint!, fontFamily: 'MaterialIcons');
   }
 
   /// 创建副本（用于更新访问次数和时间）

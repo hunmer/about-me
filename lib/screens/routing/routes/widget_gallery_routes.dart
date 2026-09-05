@@ -115,7 +115,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/task_progress_card_examp
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_stat_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/aboutme_sf_calendar_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -730,11 +729,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/task_list_stat_card',
           handler: (settings) => RouteHelpers.createRoute(const TaskListStatCardExample(), settings: settings),
           description: '任务统计列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/aboutme_sf_calendar',
-          handler: (settings) => RouteHelpers.createRoute(const AboutmeSfCalendarExample(), settings: settings),
-          description: 'AboutmeSfCalendar 日历封装组件示例',
         ),
       ];
 }

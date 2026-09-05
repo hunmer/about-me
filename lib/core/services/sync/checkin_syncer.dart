@@ -115,10 +115,6 @@ class CheckinSyncer extends PluginWidgetSyncer {
 
       await SystemWidgetService.instance.updateWidget('checkin_item');
       await SystemWidgetService.instance.updateWidget('checkin_month');
-
-      debugPrint(
-        'Synced checkin widgets (item & month) with ${items.length} items',
-      );
     } catch (e) {
       debugPrint('Failed to sync checkin_item widget: $e');
     }
@@ -177,10 +173,6 @@ class CheckinSyncer extends PluginWidgetSyncer {
       );
 
       await SystemWidgetService.instance.updateWidget('checkin_weekly_list');
-
-      debugPrint(
-        'Synced checkin_weekly_list widget with ${items.length} items',
-      );
     } catch (e) {
       debugPrint('Failed to sync checkin_weekly widget: $e');
     }

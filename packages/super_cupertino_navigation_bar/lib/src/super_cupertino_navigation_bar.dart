@@ -568,8 +568,9 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                                             .searchBar!
                                                             .placeholderTextStyle
                                                             .color!
-                                                            .withOpacity(
-                                                                opacity),
+                                                            .withValues(
+                                                                alpha:
+                                                                    opacity),
                                                       ),
                                                       style: widget.appBar
                                                           .searchBar!.textStyle
@@ -677,7 +678,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                                               .standartAnimationDuration),
                                                       Center(
                                                         child: CupertinoButton(
-                                                          minSize: 0,
+                                                          minimumSize:
+                                                              Size.zero,
                                                           padding:
                                                               EdgeInsets.zero,
                                                           color: Colors
@@ -806,7 +808,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                                           .searchBar!
                                                           .placeholderTextStyle
                                                           .color!
-                                                          .withOpacity(opacity),
+                                                          .withValues(
+                                                              alpha: opacity),
                                                     ),
                                                     style: widget.appBar
                                                         .searchBar!.textStyle
@@ -898,7 +901,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                                           .standartAnimationDuration),
                                                   Center(
                                                     child: CupertinoButton(
-                                                      minSize: 0,
+                                                      minimumSize: Size.zero,
                                                       padding: EdgeInsets.zero,
                                                       color: Colors.transparent,
                                                       onPressed: () {

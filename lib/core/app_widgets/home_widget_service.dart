@@ -92,8 +92,6 @@ Future<void> initializeHomeWidgets() async {
     // 初始化布局管理器
     final layoutManager = HomeLayoutManager();
     await layoutManager.initialize();
-
-    debugPrint('主页小组件系统初始化完成');
   } catch (e) {
     debugPrint('主页小组件系统初始化失败: $e');
   }
@@ -103,7 +101,6 @@ Future<void> initializeHomeWidgets() async {
 Future<void> setupWidgetClickListener() async {
   // home_widget 插件只支持 Android 和 iOS 平台
   if (!UniversalPlatform.isAndroid && !UniversalPlatform.isIOS) {
-    debugPrint('跳过小组件点击监听器设置（当前平台不支持 home_widget 插件）');
     return;
   }
 
@@ -111,7 +108,6 @@ Future<void> setupWidgetClickListener() async {
   try {
     final widgetManager = MyWidgetManager();
     await widgetManager.init(null); // Android 不需要 App Group ID
-    debugPrint('aboutme_widgets 插件初始化成功');
   } catch (e) {
     debugPrint('aboutme_widgets 插件初始化失败: $e');
   }

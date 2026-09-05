@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 圆环数据模型
 class RingData {
@@ -23,7 +24,7 @@ class RingData {
       color: Color(json['color'] as int? ?? 0xFF000000),
       icon:
           json['iconCodePoint'] != null
-              ? IconData(
+              ? dynamicIconData(
                 json['iconCodePoint'] as int,
                 fontFamily: 'MaterialIcons',
               )

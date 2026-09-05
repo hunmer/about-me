@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// eGFR 健康指标数据模型
 class EgfrHealthData {
@@ -106,7 +107,7 @@ class ModernFlipCounterCard extends StatefulWidget {
       status: props['status'] as String? ?? 'Unknown',
       icon:
           props['icon'] != null
-              ? IconData(
+              ? dynamicIconData(
                 props['icon'] is int
                     ? props['icon'] as int
                     : int.parse(props['icon'].toString()),

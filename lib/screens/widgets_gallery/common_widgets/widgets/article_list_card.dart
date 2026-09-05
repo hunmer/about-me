@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../utils/image_helper.dart';
 
@@ -391,7 +392,7 @@ class _FeaturedSection extends StatelessWidget {
           color: Color(data.iconBackgroundColor ?? _defaultGoodsColor.value),
         ),
         child: Icon(
-          IconData(data.iconCodePoint!, fontFamily: 'MaterialIcons'),
+          dynamicIconData(data.iconCodePoint!, fontFamily: 'MaterialIcons'),
           color: Colors.white,
           size: iconSize,
         ),
@@ -626,7 +627,7 @@ class _ArticleListItem extends StatelessWidget {
           color: Color(data.iconBackgroundColor ?? _defaultGoodsColor.value),
         ),
         child: Icon(
-          IconData(data.iconCodePoint!, fontFamily: 'MaterialIcons'),
+          dynamicIconData(data.iconCodePoint!, fontFamily: 'MaterialIcons'),
           color: Colors.white,
           size: iconSize,
         ),

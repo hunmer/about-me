@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 计时器类型
 enum TimerType {
@@ -65,7 +66,7 @@ class TimerItemConfig {
       duration: Duration(milliseconds: json['duration'] as int),
       color: json['color'] != null ? Color(json['color'] as int) : null,
       icon: json['icon'] != null
-          ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+          ? dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons')
           : null,
     );
   }
@@ -326,7 +327,7 @@ class TimerState {
           : null,
       isCountdown: json['isCountdown'] as bool,
       color: Color(json['color'] as int),
-      icon: IconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
       stages: json['stages'] != null
           ? (json['stages'] as List)
               .map((stage) => TimerItemConfig.fromJson(stage))

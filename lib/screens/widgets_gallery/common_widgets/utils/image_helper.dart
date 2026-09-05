@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 公共图片构建器
 ///
@@ -178,7 +179,7 @@ class CommonImageBuilder {
           color: backgroundColor,
         ),
         child: Icon(
-          IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+          dynamicIconData(iconCodePoint, fontFamily: 'MaterialIcons'),
           color: Colors.white,
           size: size * 0.6,
         ),

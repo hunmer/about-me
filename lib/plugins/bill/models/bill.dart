@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Bill {
   final String id;
@@ -142,7 +143,7 @@ class Bill {
       note: json['note'] as String? ?? '',
       tag: json['tag'] as String?,
       accountId: json['accountId'] as String? ?? '',
-      icon: IconData(
+      icon: dynamicIconData(
         json['icon'] as int? ?? Icons.attach_money.codePoint,
         fontFamily: 'MaterialIcons',
       ),

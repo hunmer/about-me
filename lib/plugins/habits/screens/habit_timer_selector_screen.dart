@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯计时器选择器界面（用于小组件配置）
 ///
@@ -273,7 +274,7 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                       // 习惯图标
                       if (habit.icon != null)
                         Icon(
-                          IconData(
+                          dynamicIconData(
                             int.parse(habit.icon!),
                             fontFamily: 'MaterialIcons',
                           ),
@@ -352,7 +353,7 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
                   child:
                       selectedHabit?.icon != null
                           ? Icon(
-                            IconData(
+                            dynamicIconData(
                               int.parse(selectedHabit!.icon!),
                               fontFamily: 'MaterialIcons',
                             ),

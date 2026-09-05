@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 点阵追踪卡片数据模型
 ///
@@ -123,7 +124,7 @@ class DotTrackerCardData {
   }
 
   /// 获取图标
-  IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+  IconData get icon => dynamicIconData(iconCodePoint, fontFamily: 'MaterialIcons');
 }
 
 /// 点阵追踪卡片小组件

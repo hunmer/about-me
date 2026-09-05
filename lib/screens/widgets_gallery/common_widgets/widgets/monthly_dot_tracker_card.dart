@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/common/dot_tracker_card.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 月度点追踪卡片适配器
 ///
@@ -79,7 +80,7 @@ class MonthlyDotTrackerCardWidget extends StatelessWidget {
     }
 
     // 使用传入的图标
-    final icon = IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+    final icon = dynamicIconData(iconCodePoint, fontFamily: 'MaterialIcons');
 
     // 根据尺寸计算高度
     final constraints = size.getHeightConstraints();

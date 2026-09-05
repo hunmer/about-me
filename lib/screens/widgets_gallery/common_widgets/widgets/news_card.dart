@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../models/news_card_data.dart';
 import '../utils/image_helper.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 const Color _defaultGoodsColor = Color.fromARGB(255, 207, 77, 116);
 
@@ -178,7 +179,7 @@ class _NewsCardWidgetState extends State<NewsCardWidget>
                         ),
                         child: Center(
                           child: Icon(
-                            IconData(
+                            dynamicIconData(
                               widget.featuredNews.iconCodePoint!,
                               fontFamily: 'MaterialIcons',
                             ),
@@ -279,7 +280,7 @@ class _NewsCardWidgetState extends State<NewsCardWidget>
           color: Color(item.iconBackgroundColor ?? _defaultGoodsColor.value),
         ),
         child: Icon(
-          IconData(item.iconCodePoint!, fontFamily: 'MaterialIcons'),
+          dynamicIconData(item.iconCodePoint!, fontFamily: 'MaterialIcons'),
           color: Colors.white,
           size: iconSize,
         ),

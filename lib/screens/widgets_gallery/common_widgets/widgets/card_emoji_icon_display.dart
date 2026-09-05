@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/common/emotion_tracker_card.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 卡片表情图标展示小组件
 ///
@@ -49,7 +50,7 @@ class CardEmojiIconDisplay extends StatelessWidget {
           final emotionMap = emotionJson as Map<String, dynamic>;
           return DailyEmotion(
             day: emotionMap['day'] as String,
-            icon: IconData(
+            icon: dynamicIconData(
               emotionMap['iconCodePoint'] as int,
               fontFamily: 'MaterialIcons',
             ),

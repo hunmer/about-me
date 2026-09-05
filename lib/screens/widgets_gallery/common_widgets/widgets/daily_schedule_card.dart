@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 活动颜色枚举
 enum EventColor { orange, green, blue, red, gray }
@@ -73,7 +74,7 @@ class EventData {
   /// 解析图标
   static IconData? _parseIcon(int? codePoint) {
     if (codePoint == null) return null;
-    return IconData(codePoint, fontFamily: 'MaterialIcons');
+    return dynamicIconData(codePoint, fontFamily: 'MaterialIcons');
   }
 }
 

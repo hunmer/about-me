@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class CalendarEvent {
   final String id;
@@ -76,7 +77,7 @@ class CalendarEvent {
     description: json['description'] ?? '',
     startTime: DateTime.parse(json['startTime']),
     endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
-    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+    icon: dynamicIconData(json['icon'], fontFamily: 'MaterialIcons'),
     color: Color(json['color']),
     source: json['source'] ?? 'default',
     reminderMinutes: json['reminderMinutes'],

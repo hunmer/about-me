@@ -1,13 +1,14 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 渲染图标，支持 emoji 字符串和 MaterialIcons codePoint
 Widget _renderIcon(String icon, {double size = 28}) {
   // 尝试解析为 MaterialIcons codePoint
   final codePoint = int.tryParse(icon);
   if (codePoint != null) {
-    return Icon(IconData(codePoint, fontFamily: 'MaterialIcons'), size: size);
+    return Icon(dynamicIconData(codePoint, fontFamily: 'MaterialIcons'), size: size);
   }
   // 否则作为普通 emoji 字符串处理
   return Text(icon, style: TextStyle(fontSize: size));

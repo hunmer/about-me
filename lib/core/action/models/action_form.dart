@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 表单字段类型枚举
 enum FormFieldType {
@@ -204,7 +205,7 @@ class FormFieldConfig {
 
   static dynamic _decodeValue(dynamic value) {
     if (value is Map && value.containsKey('codePoint')) {
-      return IconData(
+      return dynamicIconData(
         value['codePoint'] as int,
         fontFamily: value['fontFamily'] as String?,
       );
@@ -246,7 +247,7 @@ class FormFieldOption {
       label: json['label'] as String,
       description: json['description'] as String?,
       icon: json['iconCodePoint'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['iconCodePoint'] as int,
               fontFamily: json['iconFontFamily'] as String?,
             )

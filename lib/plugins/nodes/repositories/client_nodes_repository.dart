@@ -8,6 +8,7 @@ import 'package:shared_models/shared_models.dart';
 import '../controllers/nodes_controller.dart';
 import '../models/node.dart' as local;
 import '../models/notebook.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Nodes Repository 实现
 class ClientNodesRepository extends INodesRepository {
@@ -59,7 +60,7 @@ class ClientNodesRepository extends INodesRepository {
       // 将 DTO 转换为 Notebook
       final icon =
           dto.icon != null
-              ? IconData(dto.icon, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(dto.icon, fontFamily: 'MaterialIcons')
               : Icons.book;
       final color = dto.color != null ? Color(dto.color) : Colors.blue;
 
@@ -89,7 +90,7 @@ class ClientNodesRepository extends INodesRepository {
       // 将 DTO 转换为 Notebook
       final icon =
           dto.icon != null
-              ? IconData(dto.icon, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(dto.icon, fontFamily: 'MaterialIcons')
               : existingNotebook.icon;
       final color =
           dto.color != null ? Color(dto.color) : existingNotebook.color;

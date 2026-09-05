@@ -16,6 +16,7 @@ import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/screens/bill_edit_screen.dart';
 import 'utils.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 构建 2x2 详细卡片组件（概览组件）
 Widget buildOverviewWidget(BuildContext context, Map<String, dynamic> config) {
@@ -68,7 +69,7 @@ Widget renderBillStatsData(
   final accountIconData = data['accountIcon'] as int?;
   final accountIcon =
       accountIconData != null
-          ? IconData(accountIconData, fontFamily: 'MaterialIcons')
+          ? dynamicIconData(accountIconData, fontFamily: 'MaterialIcons')
           : Icons.account_balance_wallet;
   final periodLabel = data['periodLabel'] as String? ?? '本月';
   final periodStart = data['periodStart'] as String?;

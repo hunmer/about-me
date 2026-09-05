@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class TimerDialog extends StatefulWidget {
   final Habit habit;
@@ -125,7 +126,7 @@ class _TimerDialogState extends State<TimerDialog> {
                     ),
                     child: Icon(
                       widget.habit.icon != null
-                          ? IconData(
+                          ? dynamicIconData(
                             int.parse(widget.habit.icon!),
                             fontFamily: 'MaterialIcons',
                           )

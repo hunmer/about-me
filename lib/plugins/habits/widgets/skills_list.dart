@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_detail_page.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class SkillsList extends StatefulWidget {
   final SkillController skillController;
@@ -458,7 +459,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
                                                 radius: 24,
                                                 backgroundColor: theme.primary,
                                                 child: Icon(
-                                                  IconData(
+                                                  dynamicIconData(
                                                     int.parse(skill.icon!),
                                                     fontFamily: 'MaterialIcons',
                                                   ),

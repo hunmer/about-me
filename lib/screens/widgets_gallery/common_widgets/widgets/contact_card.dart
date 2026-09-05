@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 联系人卡片小组件
 class ContactCardWidget extends StatelessWidget {
@@ -71,7 +72,7 @@ class ContactCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final icon = IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+    final icon = dynamicIconData(iconCodePoint, fontFamily: 'MaterialIcons');
     final color = Color(iconColorValue);
 
     return Material(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 快捷记账预设数据模型
 class BillShortcut {
@@ -63,7 +64,7 @@ class BillShortcut {
       amount:
           json['amount'] != null ? (json['amount'] as num).toDouble() : null,
       isExpense: json['isExpense'] as bool,
-      icon: IconData(
+      icon: dynamicIconData(
         json['iconCodePoint'] as int,
         fontFamily: json['iconFontFamily'] as String?,
         fontPackage: json['iconFontPackage'] as String?,

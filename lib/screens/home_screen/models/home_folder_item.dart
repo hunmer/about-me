@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 import 'home_item.dart';
 
 /// 主页文件夹
@@ -41,7 +42,7 @@ class HomeFolderItem extends HomeItem {
     return HomeFolderItem(
       id: json['id'] as String,
       name: json['name'] as String,
-      icon: IconData(
+      icon: dynamicIconData(
         json['icon'] as int,
         fontFamily: json['iconFontFamily'] as String? ?? 'MaterialIcons',
       ),

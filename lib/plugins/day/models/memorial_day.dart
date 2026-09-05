@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class MemorialDay {
   final String id;
@@ -66,7 +67,7 @@ class MemorialDay {
       sortIndex: json['sortIndex'] ?? 0,
       icon:
           json['icon'] != null
-              ? IconData(json['icon'], fontFamily: 'MaterialIcons')
+              ? dynamicIconData(json['icon'], fontFamily: 'MaterialIcons')
               : null,
       iconColor: json['iconColor'] != null ? Color(json['iconColor']) : null,
     );

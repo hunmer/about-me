@@ -13,6 +13,7 @@ import 'package:aboutme/widgets/picker/color_picker_section.dart';
 import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoalEditPage extends StatefulWidget {
   final TrackerController controller;
@@ -239,7 +240,7 @@ class _GoalEditPageState extends State<GoalEditPage> {
                     child: CircleIconPicker(
                       currentIcon:
                           icon ??
-                          IconData(
+                          dynamicIconData(
                             int.tryParse(_initialIcon) ?? 0xe145,
                             fontFamily: 'MaterialIcons',
                           ),

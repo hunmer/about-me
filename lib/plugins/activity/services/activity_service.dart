@@ -438,8 +438,6 @@ class ActivityService {
         debugPrint('[ActivityService] 已插入 ${yesterdaySampleActivities.length} 个昨日示例活动');
 
         debugPrint('[ActivityService] 默认数据初始化完成！');
-      } else {
-        debugPrint('[ActivityService] 检测到已有数据，跳过默认数据插入');
       }
     } catch (e) {
       debugPrint('[ActivityService] 初始化默认数据失败: $e');

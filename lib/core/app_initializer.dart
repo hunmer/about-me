@@ -257,9 +257,6 @@ Future<void> _initializeBackgroundServices() async {
     unawaited(
       JSBridgeManager.instance
           .initialize()
-          .then((_) {
-            debugPrint('JS Bridge 初始化成功');
-          })
           .catchError((e) {
             debugPrint('JS Bridge 初始化失败: $e');
           }),
@@ -269,9 +266,6 @@ Future<void> _initializeBackgroundServices() async {
     unawaited(
       SpeechRecognitionConfigService.instance
           .initialize()
-          .then((_) {
-            debugPrint('语音识别配置服务初始化成功');
-          })
           .catchError((e) {
             debugPrint('语音识别配置服务初始化失败: $e');
           }),
@@ -318,9 +312,6 @@ Future<void> _initializeBackgroundServices() async {
     unawaited(
       FcmService.instance
           .initialize()
-          .then((_) {
-            debugPrint('FCM 推送服务初始化成功');
-          })
           .catchError((e) {
             debugPrint('FCM 推送服务初始化失败: $e');
           }),
@@ -511,10 +502,8 @@ void _navigateToWidgetUri(String url) {
 /// 初始化悬浮球动作管理器
 Future<void> _initializeFloatingBallActions() async {
   try {
-    debugPrint('初始化悬浮球动作管理器...');
     final actionManager = ActionManager();
     await actionManager.initialize();
-    debugPrint('悬浮球动作管理器初始化完成');
   } catch (e, stack) {
     debugPrint('悬浮球动作管理器初始化失败: $e');
     debugPrint('堆栈: $stack');
@@ -559,8 +548,6 @@ late PermissionController _permissionController;
 /// 在应用启动完成后，导航器可用时调用
 Future<void> initializeFlutterFloatingBall() async {
   try {
-    debugPrint('初始化Flutter悬浮球...');
-
     // 等待一小段时间确保导航器已初始化
     await Future.delayed(const Duration(milliseconds: 100));
 
@@ -593,13 +580,8 @@ Future<void> initializeFlutterFloatingBall() async {
         // 检查悬浮球是否启用，如果启用则显示
         final isEnabled = await floatingBallService.manager.isEnabled();
         if (isEnabled) {
-          debugPrint('悬浮球已启用，显示悬浮球');
           await floatingBallService.show(context);
-        } else {
-          debugPrint('悬浮球未启用，跳过显示');
         }
-
-        debugPrint('Flutter悬浮球初始化完成');
       } catch (e, stack) {
         debugPrint('Flutter悬浮球初始化失败: $e');
         debugPrint('堆栈: $stack');
@@ -617,10 +599,7 @@ Future<void> _initializeApiForwardingService() async {
   try {
     final config = await ApiForwardingConfig.load();
     if (config.autoConnect && config.enabled && config.isValid) {
-      debugPrint('[API转发] 检测到自动连接已启用，正在启动服务...');
       await ApiForwardingService.instance.start(config);
-    } else {
-      debugPrint('[API转发] 自动连接未启用或配置无效，跳过启动');
     }
   } catch (e) {
     debugPrint('[API转发] 自动启动失败: $e');

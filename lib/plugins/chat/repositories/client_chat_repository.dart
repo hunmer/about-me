@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Chat Repository 实现
 class ClientChatRepository extends IChatRepository {
@@ -70,7 +71,7 @@ class ClientChatRepository extends IChatRepository {
         title: dto.title,
         icon:
             dto.iconCodePoint != null
-                ? IconData(
+                ? dynamicIconData(
                   dto.iconCodePoint!,
                   fontFamily: dto.iconFontFamily ?? 'MaterialIcons',
                 )

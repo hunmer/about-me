@@ -76,7 +76,6 @@ class JSBridgeManager {
       await _registerGlobalAPI();
 
       _initialized = true;
-      print('JS Bridge 初始化成功');
 
       // 使用 Get.context 全局注册 UI 处理器
       _registerUIHandlersGlobal();

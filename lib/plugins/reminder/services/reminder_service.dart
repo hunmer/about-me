@@ -63,7 +63,6 @@ class ReminderService {
       // 调度通知
       await _notificationService.scheduleReminderNotification(reminder);
     }
-    debugPrint('[ReminderService] 已恢复 ${_reminders.where((r) => r.isEnabled).length} 个提醒的调度');
   }
 
   /// 添加提醒

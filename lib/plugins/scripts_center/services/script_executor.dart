@@ -54,7 +54,6 @@ class ScriptExecutor {
       await _injectScriptCenterAPI();
 
       _isInitialized = true;
-      print('✅ ScriptExecutor初始化成功（使用 JSBridgeManager）');
     } catch (e) {
       print('❌ ScriptExecutor初始化失败: $e');
       rethrow;
@@ -70,7 +69,6 @@ class ScriptExecutor {
 
     while (stopwatch.elapsed < maxWaitTime) {
       if (_jsBridge.isSupported) {
-        print('✅ JS Bridge 初始化完成，耗时 ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
 
@@ -124,8 +122,6 @@ class ScriptExecutor {
         }
       })();
     ''');
-
-    print('✅ 脚本中心 API 注入成功');
   }
 
   /// 处理获取脚本配置

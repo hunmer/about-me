@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 卡片类型枚举
 enum CardType {
@@ -44,7 +45,7 @@ class WebViewCard {
 
   /// 获取 Material 图标
   IconData? get icon =>
-      iconCodePoint != null ? IconData(iconCodePoint!, fontFamily: 'MaterialIcons') : null;
+      iconCodePoint != null ? dynamicIconData(iconCodePoint!, fontFamily: 'MaterialIcons') : null;
 
   /// 获取显示用的 URL（本地文件显示文件名）
   String get displayUrl {

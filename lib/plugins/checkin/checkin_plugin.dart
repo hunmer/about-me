@@ -21,6 +21,7 @@ import 'screens/checkin_stats_screen/checkin_stats_screen.dart';
 import 'screens/checkin_form_screen.dart';
 import 'controllers/checkin_list_controller.dart';
 import 'repositories/client_checkin_repository.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 part 'checkin_js_api.dart';
 part 'checkin_data_selectors.dart';
@@ -492,7 +493,7 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
   /// 将 CheckinItemDto 转换为 CheckinItem
   CheckinItem _dtoToCheckinItem(CheckinItemDto dto) {
     // 将 icon codePoint 转换为 IconData
-    final icon = IconData(dto.icon, fontFamily: 'MaterialIcons');
+    final icon = dynamicIconData(dto.icon, fontFamily: 'MaterialIcons');
     // 将 color int 转换为 Color
     final color = Color(dto.color);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 每日情绪数据模型
 class DailyEmotion {
@@ -41,7 +42,7 @@ class DailyEmotion {
   factory DailyEmotion.fromJson(Map<String, dynamic> json) {
     return DailyEmotion(
       day: json['day'] as String,
-      icon: IconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
       emotionType: EmotionType.values.firstWhere(
         (e) => e.name == json['emotionType'],
         orElse: () => EmotionType.neutral,

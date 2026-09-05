@@ -911,7 +911,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
     // 等待布局保存完成，确保配置正确写入后再刷新界面
     await layoutManager.saveLayout();
     // 强制通知监听器刷新，确保新创建的小组件能正确读取配置
-    layoutManager.notifyListeners();
+    layoutManager.notifyUpdate();
 
     Navigator.of(context).pop();
 

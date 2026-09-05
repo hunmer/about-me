@@ -8,6 +8,7 @@ import 'package:shared_models/shared_models.dart';
 import 'package:aboutme/plugins/todo/controllers/task_controller.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 import 'package:aboutme/plugins/todo/models/subtask.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Todo Repository 实现
 class ClientTodoRepository implements ITodoRepository {
@@ -526,7 +527,7 @@ class ClientTodoRepository implements ITodoRepository {
         final iconData = metadata['icon'] as Map<String, dynamic>;
         if (iconData.containsKey('codePoint') &&
             iconData.containsKey('fontFamily')) {
-          icon = IconData(
+          icon = dynamicIconData(
             iconData['codePoint'] as int,
             fontFamily: iconData['fontFamily'] as String,
           );

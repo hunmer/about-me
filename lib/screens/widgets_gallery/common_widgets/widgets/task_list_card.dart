@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 任务列表卡片小组件
 ///
@@ -61,7 +62,7 @@ class TaskListCardWidget extends StatefulWidget {
     return TaskListCardWidget(
       icon:
           props['icon'] is String
-              ? IconData(
+              ? dynamicIconData(
                 int.parse(props['icon'] as String),
                 fontFamily: 'MaterialIcons',
               )

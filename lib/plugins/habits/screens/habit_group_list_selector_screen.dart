@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/skill.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯分组列表小组件配置界面
 ///
@@ -410,7 +411,7 @@ class _HabitGroupListSelectorScreenState
                                         child:
                                             habit.icon != null
                                                 ? Icon(
-                                                  IconData(
+                                                  dynamicIconData(
                                                     int.tryParse(habit.icon!) ??
                                                         Icons.star.codePoint,
                                                     fontFamily: 'MaterialIcons',

@@ -18,6 +18,9 @@ class HomeLayoutManager extends ChangeNotifier {
   factory HomeLayoutManager() => _instance;
   HomeLayoutManager._internal();
 
+  /// 通知外部监听者布局已更新
+  void notifyUpdate() => notifyListeners();
+
   /// 主页项目列表
   List<HomeItem> _items = [];
   List<HomeItem> get items => List.unmodifiable(_items);

@@ -19,6 +19,7 @@ import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class HabitForm extends StatefulWidget {
   final Habit? initialHabit;
@@ -79,7 +80,7 @@ class _HabitFormState extends State<HabitForm> {
             initialValue:
                 habit?.icon != null
                     ? {
-                      'icon': IconData(
+                      'icon': dynamicIconData(
                         int.parse(habit!.icon!),
                         fontFamily: 'MaterialIcons',
                       ),
@@ -187,7 +188,7 @@ class _HabitFormState extends State<HabitForm> {
   Widget _buildIconPicker(Habit? habit) {
     IconData? icon =
         habit?.icon != null
-            ? IconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons')
+            ? dynamicIconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons')
             : Icons.check_rounded;
     Color color = Colors.blue;
 

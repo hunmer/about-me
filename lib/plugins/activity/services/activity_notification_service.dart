@@ -31,7 +31,6 @@ class ActivityNotificationService {
     try {
       // 仅在Android平台启用
       if (!PlatformUtils.isAndroid) {
-        debugPrint('[ActivityNotificationService] 非Android平台，跳过初始化');
         return;
       }
 
@@ -39,7 +38,6 @@ class ActivityNotificationService {
       _startPeriodicUpdate();
 
       _isInitialized = true;
-      debugPrint('[ActivityNotificationService] 初始化完成');
     } catch (e) {
       debugPrint('[ActivityNotificationService] 初始化失败: $e');
     }

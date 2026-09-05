@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Prompt {
   String type; // system, user, assistant
@@ -157,7 +158,7 @@ class AIAgent {
       model: json['model'] as String? ?? 'gpt-3.5-turbo',
       icon:
           json['icon'] != null
-              ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons')
               : null,
       iconColor:
           json['iconColor'] != null ? Color(json['iconColor'] as int) : null,

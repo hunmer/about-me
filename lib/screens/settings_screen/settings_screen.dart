@@ -680,27 +680,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
           ListTile(
-            leading: const Icon(Icons.code),
-            title: Text('screens_jsConsole'.tr),
-            subtitle: Text('screens_testJavaScriptAPI'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/js_console');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_month),
-            title: const Text('AboutmeSfCalendar 测试'),
-            subtitle: const Text('Syncfusion 日历封装组件测试'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/widgets_gallery/aboutme_sf_calendar',
-              );
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.cloud_sync),
             title: const Text('转发数据服务'),
             subtitle: Text(

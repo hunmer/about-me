@@ -60,7 +60,6 @@ import 'package:aboutme/plugins/todo/views/todo_bottombar_view.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
 import 'package:aboutme/plugins/activity/screens/activity_daily_config_screen.dart';
-import 'package:aboutme/screens/js_console/js_console_screen.dart';
 import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart';
 import 'package:aboutme/screens/notification_test/notification_test_page.dart';
 import 'package:aboutme/screens/data_selector_test/data_selector_test_screen.dart';
@@ -135,8 +134,7 @@ class AppRoutes extends NavigatorObserver {
   static const String activity = '/activity';
   static const String checkin = '/checkin';
   static const String settings = '/settings';
-  static const String jsConsole = '/js_console';
-  static const String jsonDynamicTest = '/json_dynamic_test';
+    static const String jsonDynamicTest = '/json_dynamic_test';
   static const String notificationTest = '/notification_test';
   static const String backgroundAnnouncementTest = '/background_announcement_test';
   static const String superCupertinoTest = '/super_cupertino_test';
@@ -294,7 +292,6 @@ class AppRoutes extends NavigatorObserver {
     tracker: (context) => const TrackerMainView(),
     floatingBall: (context) => const FloatingBallScreen(),
     activityDailyConfig: (context) => const ActivityDailyConfigScreen(widgetId: 0),
-    jsConsole: (context) => const JSConsoleScreen(),
     jsonDynamicTest: (context) => const JsonDynamicTestScreen(),
     notificationTest: (context) => const NotificationTestPage(),
     backgroundAnnouncementTest: (context) => const BackgroundAnnouncementTestScreen(),

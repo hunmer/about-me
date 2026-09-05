@@ -124,13 +124,6 @@ final Map<String, String> screensTranslationsJp = {
   'screens_quickRegister': 'クイック登録',
   'screens_bulletScheme': '• @scheme',
 
-  // js_console
-  'screens_jsConsole': 'JSコンソール',
-  'screens_loadingExamples': 'サンプルを読み込み中...',
-  'screens_noAvailableSamples': '利用可能なサンプルがありません',
-  'screens_selectExampleFile': 'サンプルファイルを選択: ',
-  'screens_allExamples': 'すべてのサンプル',
-
   // json_dynamic_test
   'screens_jsonDynamicUITest': 'JSON 動的UIテスト',
   'screens_loadFile': 'ファイルを読み込む',
@@ -142,7 +135,6 @@ final Map<String, String> screensTranslationsJp = {
   'screens_test': 'テスト',
 
   // settings_screen
-  'screens_testJavaScriptAPI': 'JavaScript API機能をテスト',
   'screens_jsonDynamicWidgetTest': 'JSON ダイナミックWidgetテスト',
   'screens_testAndPreviewDynamicUI': '動的UIコンポーネントをテスト・プレビュー',
   'screens_testIOSStyleNavigation': 'iOSスタイルナビゲーションバーコンポーネントをテスト',

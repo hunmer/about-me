@@ -2,6 +2,7 @@ import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'goods_item.dart';
 import 'path_constants.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Warehouse {
   final String id;
@@ -38,7 +39,7 @@ class Warehouse {
       title: json['title'] as String,
       icon:
           json['iconData'] != null
-              ? IconData(json['iconData'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(json['iconData'] as int, fontFamily: 'MaterialIcons')
               : Icons.inventory_2,
       iconColor:
           json['iconColor'] != null

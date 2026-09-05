@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 动作实例状态
 enum ActionInstanceStatus {
@@ -123,7 +124,7 @@ class ActionInstance {
       customTitle: json['customTitle'] as String?,
       customDescription: json['customDescription'] as String?,
       customIcon: json['customIconCodePoint'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['customIconCodePoint'] as int,
               fontFamily: json['customIconFontFamily'] as String?,
             )

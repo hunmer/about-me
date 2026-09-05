@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'custom_activity_event_model.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 enum ContactGender {
   male,
@@ -78,7 +79,7 @@ class Contact {
       id: json['id'] as String,
       name: json['name'] as String,
       avatar: json['avatar'] as String?,
-      icon: IconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
       iconColor: Color(json['iconColor'] as int),
       phone: json['phone'] as String,
       organization: json['organization'] as String?,
@@ -106,7 +107,7 @@ class Contact {
     return Contact(
       id: '',
       name: '',
-      icon: IconData(Icons.person.codePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(Icons.person.codePoint, fontFamily: 'MaterialIcons'),
       iconColor: Colors.grey,
       phone: '',
     );

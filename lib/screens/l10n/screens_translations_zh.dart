@@ -124,13 +124,6 @@ final Map<String, String> screensTranslationsZh = {
   'screens_quickRegister': '快速注册',
   'screens_bulletScheme': '• @scheme',
 
-  // js_console
-  'screens_jsConsole': 'JS Console',
-  'screens_loadingExamples': '加载示例中...',
-  'screens_noAvailableExamples': '没有可用示例',
-  'screens_selectExampleFile': '选择示例文件: ',
-  'screens_allExamples': '全部示例',
-
   // json_dynamic_test
   'screens_jsonDynamicUITest': 'JSON 动态 UI 测试',
   'screens_loadFile': '加载文件',
@@ -142,7 +135,6 @@ final Map<String, String> screensTranslationsZh = {
   'screens_test': '测试',
 
   // settings_screen
-  'screens_testJavaScriptAPI': '测试 JavaScript API 功能',
   'screens_jsonDynamicWidgetTest': 'JSON Dynamic Widget 测试',
   'screens_testAndPreviewDynamicUI': '测试和预览动态 UI 组件',
   'screens_testIOSStyleNavigation': '测试 iOS 风格导航栏组件',

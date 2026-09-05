@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 标签数据模型
 class TagItem {
@@ -104,7 +105,7 @@ class TagItem {
       // 从 codePoint 解析图标
       final codePoint = int.tryParse(iconString);
       if (codePoint != null) {
-        return IconData(codePoint, fontFamily: 'MaterialIcons');
+        return dynamicIconData(codePoint, fontFamily: 'MaterialIcons');
       }
       return Icons.label;
     } catch (e) {

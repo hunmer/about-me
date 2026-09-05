@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/action/action_executor.dart';
 import 'action_form.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 动作分类枚举
 enum ActionCategory {
@@ -103,7 +104,7 @@ class ActionDefinition {
         orElse: () => ActionCategory.custom,
       ),
       icon: json['iconCodePoint'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['iconCodePoint'] as int,
               fontFamily: json['iconFontFamily'] as String?,
             )

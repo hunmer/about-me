@@ -11,6 +11,7 @@ import '../models/timer_task.dart';
 import '../models/timer_item.dart';
 import '../storage/timer_controller.dart';
 import '../../../../core/services/timer/models/timer_state.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Timer Repository 实现
 class ClientTimerRepository extends ITimerRepository {
@@ -359,7 +360,7 @@ class ClientTimerRepository extends ITimerRepository {
       id: dto.id,
       name: dto.name,
       color: Color(dto.color),
-      icon: IconData(dto.iconCodePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(dto.iconCodePoint, fontFamily: 'MaterialIcons'),
       timerItems: dto.timerItems.map(_dtoToTimerItem).toList(),
       createdAt: dto.createdAt,
       repeatCount: dto.repeatCount,

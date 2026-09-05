@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 图标名称映射（常用图标）
 const Map<String, IconData> iconNameMap = {
@@ -31,7 +32,7 @@ IconData parseIcon(String? iconString) {
   // 尝试解析为十六进制数字（Material Icons codepoint）
   try {
     final codePoint = int.parse(iconString, radix: 16);
-    return IconData(codePoint, fontFamily: 'MaterialIcons');
+    return dynamicIconData(codePoint, fontFamily: 'MaterialIcons');
   } catch (e) {
     // 解析失败，尝试图标名称映射
     return iconNameMap[iconString] ?? Icons.code;

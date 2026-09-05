@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 签到项目卡片小组件
 ///
@@ -66,7 +67,7 @@ class CheckinItemCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(size.getIconSize() * 0.3),
                 ),
                 child: Icon(
-                  IconData(iconCode, fontFamily: 'MaterialIcons'),
+                  dynamicIconData(iconCode, fontFamily: 'MaterialIcons'),
                   color: itemColor,
                   size: size.getIconSize(),
                 ),

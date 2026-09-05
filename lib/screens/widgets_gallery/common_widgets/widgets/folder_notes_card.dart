@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 文件夹笔记卡片数据模型
 class FolderNotesCardData {
@@ -127,7 +128,7 @@ class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
     final theme = Theme.of(context);
 
     final folderIcon =
-        IconData(widget.iconCodePoint, fontFamily: 'MaterialIcons');
+        dynamicIconData(widget.iconCodePoint, fontFamily: 'MaterialIcons');
     final folderColor = Color(widget.colorValue);
 
     // 获取小组件尺寸

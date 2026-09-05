@@ -80,8 +80,6 @@ class HabitsSyncer extends PluginWidgetSyncer {
 
       // 更新小组件
       await SystemWidgetService.instance.updateWidget('habit_timer');
-
-      debugPrint('Synced habit_timer widget with ${habits.length} habits');
     } catch (e) {
       debugPrint('Failed to sync habit_timer widget: $e');
     }
@@ -261,8 +259,6 @@ class HabitsSyncer extends PluginWidgetSyncer {
 
       // 通知系统刷新所有习惯周视图小组件
       await SystemWidgetService.instance.updateWidget('habits_weekly');
-
-      debugPrint('Synced ${widgetIds.length} habits weekly widgets');
     } catch (e) {
       debugPrint('Failed to sync habits weekly widgets: $e');
     }
@@ -315,10 +311,6 @@ class HabitsSyncer extends PluginWidgetSyncer {
 
       // 更新小组件
       await SystemWidgetService.instance.updateWidget('habit_group_list');
-
-      debugPrint(
-        'Synced habit_group_list widget with ${habits.length} habits and ${skills.length} groups',
-      );
     } catch (e) {
       debugPrint('Failed to sync habit_group_list widget: $e');
     }

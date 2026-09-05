@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 最近联系人卡片小组件
 class RecentContactCardWidget extends StatelessWidget {
@@ -182,7 +183,7 @@ class RecentContactCardWidget extends StatelessWidget {
     ThemeData theme,
   ) {
     final iconSize = size.getIconSize() * 0.5;
-    final icon = IconData(contact.iconCodePoint, fontFamily: 'MaterialIcons');
+    final icon = dynamicIconData(contact.iconCodePoint, fontFamily: 'MaterialIcons');
     final color = Color(contact.iconColorValue);
 
     if (contact.hasAvatar) {

@@ -21,6 +21,7 @@ import '../models/contact_model.dart';
 import '../models/interaction_record_model.dart';
 import '../models/filter_sort_config.dart';
 import '../controllers/contact_controller.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Contact Repository 实现
 class ClientContactRepository implements IContactRepository {
@@ -440,7 +441,7 @@ class ClientContactRepository implements IContactRepository {
       id: dto.id,
       name: dto.name,
       avatar: dto.avatar,
-      icon: IconData(dto.iconCodePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(dto.iconCodePoint, fontFamily: 'MaterialIcons'),
       iconColor: Color(dto.iconColorValue),
       phone: dto.phone,
       organization: dto.organization,

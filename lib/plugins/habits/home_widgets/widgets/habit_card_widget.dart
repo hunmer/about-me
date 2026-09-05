@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/common/habit_card.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// HabitCard 数据模型
 class HabitCardData {
@@ -662,11 +663,11 @@ class _HabitCardState extends State<HabitCard> {
   IconData get _icon {
     final iconCode = widget.data?.icon ?? widget.habit?.icon;
     if (iconCode != null) {
-      return IconData(int.parse(iconCode), fontFamily: 'MaterialIcons');
+      return dynamicIconData(int.parse(iconCode), fontFamily: 'MaterialIcons');
     }
     final skillIconCode = widget.skill?.icon;
     if (skillIconCode != null) {
-      return IconData(int.parse(skillIconCode), fontFamily: 'MaterialIcons');
+      return dynamicIconData(int.parse(skillIconCode), fontFamily: 'MaterialIcons');
     }
     return Icons.auto_awesome;
   }

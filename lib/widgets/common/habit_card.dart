@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/habits/home_widgets/widgets/habit_card_widget.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯卡片公共小组件
 ///
@@ -413,7 +414,7 @@ class HabitCardWidget extends StatelessWidget {
     final iconCode = data.icon;
     if (iconCode != null) {
       try {
-        return IconData(int.parse(iconCode), fontFamily: 'MaterialIcons');
+        return dynamicIconData(int.parse(iconCode), fontFamily: 'MaterialIcons');
       } catch (e) {
         return Icons.auto_awesome;
       }

@@ -7,8 +7,6 @@ const Map<String, String> zhCN = {
   'widget_confirm': '确定',
   'widget_enableAutoRead': '启用自动朗读',
   'widget_enableAutoReadDescription': 'AI回复完成后自动朗读消息内容',
-  'widget_jsConsole': 'JS Console',
-  'widget_jsConsoleDescription': '测试 JavaScript API 功能',
   'widget_jsonDynamicWidget': 'JSON Dynamic Widget 测试',
   'widget_jsonDynamicWidgetDescription': '测试和预览动态 UI 组件',
   'widget_superCupertinoNavigation': 'Super Cupertino Navigation 测试',

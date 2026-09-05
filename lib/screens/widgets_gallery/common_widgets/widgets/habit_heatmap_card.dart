@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯热力图每日数据
 class HabitHeatmapDailyData {
@@ -134,7 +135,7 @@ class HabitHeatmapCardWidget extends StatelessWidget {
           child:
               iconCode != null
                   ? Icon(
-                    IconData(int.parse(iconCode!), fontFamily: 'MaterialIcons'),
+                    dynamicIconData(int.parse(iconCode!), fontFamily: 'MaterialIcons'),
                     color: color,
                     size: 18,
                   )

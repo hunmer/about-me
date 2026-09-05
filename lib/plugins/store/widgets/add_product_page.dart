@@ -106,7 +106,7 @@ class _AddProductPageState extends State<AddProductPage> {
       widget.controller.products.removeWhere((p) => p.id == widget.product!.id);
       await widget.controller.saveProducts();
       await widget.controller.saveToStorage();
-      widget.controller.notifyListeners();
+      widget.controller.notifyUpdate();
       Navigator.pop(context);
     }
   }

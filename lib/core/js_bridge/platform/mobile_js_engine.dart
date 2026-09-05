@@ -671,8 +671,6 @@ class MobileJSEngine implements JSEngine {
   @override
   Future<JSResult> evaluate(String code) async {
     try {
-      print('[JS Debug] ========== 开始执行代码 ==========');
-
       // 生成唯一的执行 ID
       final executionId =
           '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
@@ -807,19 +805,10 @@ class MobileJSEngine implements JSEngine {
             final checkCode = "globalThis.__EVAL_RESULTS__['$executionId']";
             final checkResult = _runtime.evaluate(checkCode);
             resultStr = checkResult.stringResult;
-            print('[JS Debug] 第 ${retryCount + 1} 次轮询，获取到结果: $resultStr');
             break;
-          }
-
-          // 每 10 次输出调试信息
-          if (retryCount % 10 == 0 && retryCount > 0) {
-            print('[JS Debug] 第 $retryCount 次轮询，结果尚未准备好...');
           }
         } catch (e) {
           // 结果还未准备好，继续等待
-          if (retryCount % 20 == 0 && retryCount > 0) {
-            print('[JS Debug] 轮询异常: $e');
-          }
         }
 
         retryCount++;

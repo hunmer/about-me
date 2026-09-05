@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'action_instance.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 动作组操作符
 enum GroupOperator {
@@ -169,7 +170,7 @@ class ActionGroup {
       title: json['title'] as String,
       description: json['description'] as String?,
       icon: json['iconCodePoint'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['iconCodePoint'] as int,
               fontFamily: json['iconFontFamily'] as String?,
             )
@@ -599,7 +600,7 @@ class ActionGroupTemplate {
       name: json['name'] as String,
       description: json['description'] as String,
       icon: json['iconCodePoint'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['iconCodePoint'] as int,
               fontFamily: json['iconFontFamily'] as String?,
             )

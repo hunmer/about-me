@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'subtask.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 enum TaskPriority { q1, q2, q3, q4 }
 enum TaskStatus { todo, inProgress, done }
@@ -160,7 +161,7 @@ class Task {
           ? Duration(milliseconds: json['duration'])
           : null,
       icon: json['iconCodePoint'] != null && json['iconFontFamily'] != null
-          ? IconData(
+          ? dynamicIconData(
               json['iconCodePoint'],
               fontFamily: json['iconFontFamily'],
             )

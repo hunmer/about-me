@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'record_dialog.dart';
 import 'goal_edit_page.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoalDetailPage extends StatelessWidget {
   final Goal goal;
@@ -50,7 +51,7 @@ class GoalDetailPage extends StatelessWidget {
                 flutter.Row(
                   children: [
                     Icon(
-                      IconData(
+                      dynamicIconData(
                         int.parse(goal.icon),
                         fontFamily: 'MaterialIcons',
                       ),

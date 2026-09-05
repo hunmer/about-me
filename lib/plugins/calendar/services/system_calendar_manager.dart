@@ -24,7 +24,6 @@ class SystemCalendarManager {
   Future<bool> initialize() async {
     // 仅在移动端执行日历初始化
     if (!UniversalPlatform.isAndroid && !UniversalPlatform.isIOS) {
-      debugPrint('SystemCalendarManager: 非移动端平台，跳过初始化');
       return false;
     }
 

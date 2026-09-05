@@ -37,7 +37,6 @@ class FcmService {
   Future<void> initialize() async {
     // 仅在移动端启用
     if (!UniversalPlatform.isAndroid && !UniversalPlatform.isIOS) {
-      debugPrint('[FCM] 非移动平台，跳过初始化');
       return;
     }
 

@@ -5,6 +5,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯在某个日期的完成情况
 class HabitDayStatus {
@@ -165,7 +166,7 @@ class HabitDayCard extends StatelessWidget {
       );
     }
     return Icon(
-      IconData(codePoint, fontFamily: 'MaterialIcons'),
+      dynamicIconData(codePoint, fontFamily: 'MaterialIcons'),
       size: 18,
       color: done ? color : theme.textSub,
     );

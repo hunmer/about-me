@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'usage_record.dart';
 import 'custom_field.dart';
 import 'path_constants.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoodsItem {
   final String id;
@@ -111,7 +112,7 @@ class GoodsItem {
       thumbUrl: json['thumbUrl'] as String?, // 通过setter设置
       icon:
           json['iconData'] != null
-              ? IconData(json['iconData'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(json['iconData'] as int, fontFamily: 'MaterialIcons')
               : null,
       iconColor:
           json['iconColor'] != null ? Color(json['iconColor'] as int) : null,

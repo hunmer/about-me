@@ -19,6 +19,7 @@ import 'package:aboutme/plugins/habits/widgets/habits_bottom_bar.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/plugins/habits/repositories/client_habits_repository.dart';
 import 'package:shared_models/usecases/habits/habits_usecase.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 part 'habits_js_api.dart';
 part 'habits_data_selectors.dart';

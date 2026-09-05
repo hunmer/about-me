@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 指标数据模型
 class MetricData {
@@ -25,7 +26,7 @@ class MetricData {
     final valueStr = json['value'];
     final value = valueStr is int ? '$valueStr' : (valueStr as String? ?? '');
     return MetricData(
-      icon: IconData(iconValue ?? Icons.info.codePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(iconValue ?? Icons.info.codePoint, fontFamily: 'MaterialIcons'),
       value: value,
       label: json['label'] as String? ?? '',
       progress: (json['progress'] as num?)?.toDouble() ?? 0.0,

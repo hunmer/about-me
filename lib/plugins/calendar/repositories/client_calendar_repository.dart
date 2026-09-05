@@ -9,6 +9,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import '../controllers/calendar_controller.dart';
 import '../models/event.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 客户端 Calendar Repository 实现
 class ClientCalendarRepository extends ICalendarRepository {
@@ -300,7 +301,7 @@ class ClientCalendarRepository extends ICalendarRepository {
       description: dto.description,
       startTime: dto.startTime,
       endTime: dto.endTime,
-      icon: IconData(dto.icon, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(dto.icon, fontFamily: 'MaterialIcons'),
       color: Color(dto.color),
       source: dto.source,
       reminderMinutes: dto.reminderMinutes,

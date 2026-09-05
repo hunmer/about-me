@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 每日心情数据模型
 class DailyMood {
@@ -40,7 +41,7 @@ class DailyMood {
   factory DailyMood.fromJson(Map<String, dynamic> json) {
     return DailyMood(
       day: json['day'] as String,
-      icon: IconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
       moodType: MoodType.values.firstWhere(
         (e) => e.name == json['moodType'],
         orElse: () => MoodType.neutral,

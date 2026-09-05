@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 联系人性别枚举
 enum ContactCardGender {
@@ -297,7 +298,7 @@ class _ContactCardWidgetState extends State<ContactCardWidget> {
   /// 获取图标
   IconData _getIcon() {
     if (widget.data.iconCodePoint != null) {
-      return IconData(widget.data.iconCodePoint!, fontFamily: 'MaterialIcons');
+      return dynamicIconData(widget.data.iconCodePoint!, fontFamily: 'MaterialIcons');
     }
     return Icons.person;
   }

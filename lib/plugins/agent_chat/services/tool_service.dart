@@ -332,9 +332,6 @@ class ToolService {
       _cachedToolListPrompt = await _generateToolListPrompt();
 
       _initialized = true;
-      print(
-        '[ToolService] 初始化成功，加载了 ${_cachedToolBriefPrompt?.length ?? 0} 字符的简要索引',
-      );
     } catch (e) {
       print('[ToolService] 初始化失败: $e');
       _cachedToolBriefPrompt = _getFallbackBriefPrompt();
@@ -355,10 +352,6 @@ class ToolService {
       // 重新生成并缓存两种 Prompt
       _cachedToolBriefPrompt = _generateToolBriefPrompt();
       _cachedToolListPrompt = await _generateToolListPrompt();
-
-      print(
-        '[ToolService] 缓存已刷新，当前加载了 ${_cachedToolBriefPrompt?.length ?? 0} 字符的简要索引',
-      );
     } catch (e) {
       print('[ToolService] 刷新缓存失败: $e');
     }

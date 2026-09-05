@@ -3,6 +3,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String searchQuery;
@@ -161,7 +162,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       final codePoint = int.tryParse(goal.icon);
       if (codePoint != null) {
         return Icon(
-          IconData(codePoint, fontFamily: 'MaterialIcons'),
+          dynamicIconData(codePoint, fontFamily: 'MaterialIcons'),
           size: 20,
           color: theme.primary,
         );

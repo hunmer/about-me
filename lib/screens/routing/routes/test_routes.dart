@@ -1,6 +1,5 @@
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
-import 'package:aboutme/screens/js_console/js_console_screen.dart';
 import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart';
 import 'package:aboutme/screens/notification_test/notification_test_page.dart';
 import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
@@ -18,18 +17,6 @@ class TestRoutes implements RouteRegistry {
 
   @override
   List<RouteDefinition> get routes => [
-        // JS 控制台
-        RouteDefinition(
-          path: '/js_console',
-          handler: (settings) => RouteHelpers.createRoute(const JSConsoleScreen()),
-          description: 'JavaScript 控制台',
-        ),
-        RouteDefinition(
-          path: 'js_console',
-          handler: (settings) => RouteHelpers.createRoute(const JSConsoleScreen()),
-          description: 'JavaScript 控制台（别名）',
-        ),
-
         // JSON 动态测试
         RouteDefinition(
           path: '/json_dynamic_test',

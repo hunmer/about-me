@@ -191,7 +191,6 @@ flutter:
     - assets/models/ren/ren.4096/
     - assets/models/ren/motions/
     - assets/models/ren/expressions/
-    - lib/screens/js_console/examples/
     - lib/plugins/agent_chat/tools/
 
   # An image asset can refer to one or more resolution-specific "variants", see

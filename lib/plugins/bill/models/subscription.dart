@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Subscription {
   final String id;
@@ -148,7 +149,7 @@ class Subscription {
               : null,
       isActive: json['isActive'] as bool,
       note: json['note'] as String?,
-      icon: IconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
       iconColor: Color(json['iconColor'] as int),
       createdAt: DateTime.parse(json['createdAt'] as String),
       terminatedAt:

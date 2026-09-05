@@ -8,8 +8,6 @@ const Map<String, String> jpJP = {
   'widget_enableAutoRead': '自動読み上げを有効にする',
   'widget_enableAutoReadDescription':
       'AIの回答完了後に自動的にメッセージ内容を読み上げます',
-  'widget_jsConsole': 'JSコンソール',
-  'widget_jsConsoleDescription': 'JavaScript API機能をテスト',
   'widget_jsonDynamicWidget': 'JSON動的ウィジェットテスト',
   'widget_jsonDynamicWidgetDescription': '動的UIコンポーネントをテスト・プレビュー',
   'widget_superCupertinoNavigation': 'Super Cupertinoナビゲーションテスト',

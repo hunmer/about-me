@@ -34,6 +34,9 @@ class StoreCacheUpdatedEventArgs extends EventArgs {
 }
 
 class StoreController with ChangeNotifier {
+  /// 通知外部监听者数据已更新
+  void notifyUpdate() => notifyListeners();
+
   List<Product> _products = [];
   final List<Product> _archivedProducts = [];
   List<UserItem> _userItems = [];

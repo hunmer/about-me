@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/habits/models/habits_weekly_widget_config.dart';
 import 'package:aboutme/plugins/habits/models/habits_weekly_widget_data.dart';
 import 'package:aboutme/plugins/habits/services/habits_widget_service.dart';
 import 'package:aboutme/widgets/widget_config_editor/index.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 习惯周视图小组件配置界面
 ///
@@ -366,7 +367,7 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
         // 习惯图标
         if (habit.icon != null)
           Icon(
-            IconData(int.parse(habit.icon!), fontFamily: 'MaterialIcons'),
+            dynamicIconData(int.parse(habit.icon!), fontFamily: 'MaterialIcons'),
             size: 24,
             color: isSelected ? theme.primary : theme.textSub,
           )

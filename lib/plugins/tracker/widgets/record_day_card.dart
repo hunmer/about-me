@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 追踪单日卡片 - 展示某一天的目标记录
 ///
@@ -182,7 +183,7 @@ Widget _goalMaterialIcon(Goal goal, Color fallbackColor, {double size = 18}) {
     return Icon(Icons.flag_outlined, size: size);
   }
   return Icon(
-    IconData(codePoint, fontFamily: 'MaterialIcons'),
+    dynamicIconData(codePoint, fontFamily: 'MaterialIcons'),
     size: size,
     color: goal.iconColor != null ? Color(goal.iconColor!) : fallbackColor,
   );

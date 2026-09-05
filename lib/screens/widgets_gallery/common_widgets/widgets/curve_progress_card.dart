@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 曲线数据点模型
 class CurveDataPoint {
@@ -65,7 +66,7 @@ class CurveProgressCardWidget extends StatefulWidget {
       unit: props['unit'] as String? ?? '',
       icon:
           props['icon'] != null
-              ? IconData(props['icon'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(props['icon'] as int, fontFamily: 'MaterialIcons')
               : Icons.schedule,
       categoryLabel: props['categoryLabel'] as String? ?? 'Progress',
       lastUpdated: props['lastUpdated'] as String? ?? '',

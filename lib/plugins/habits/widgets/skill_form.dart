@@ -5,6 +5,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/habits/models/skill.dart';
 import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 技能表单 - 使用 FormBuilderWrapper 重构
 class SkillForm extends StatefulWidget {
@@ -35,7 +36,7 @@ class _SkillFormState extends State<SkillForm> {
     IconData? initialIcon;
     if (skill?.icon != null) {
       try {
-        initialIcon = IconData(int.parse(skill!.icon!), fontFamily: 'MaterialIcons');
+        initialIcon = dynamicIconData(int.parse(skill!.icon!), fontFamily: 'MaterialIcons');
       } catch (_) {
         initialIcon = Icons.check_rounded;
       }

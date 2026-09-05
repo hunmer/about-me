@@ -335,7 +335,6 @@ class CalendarController extends ChangeNotifier {
       if (!systemCalendar.isInitialized) {
         final initialized = await systemCalendar.initialize();
         if (!initialized) {
-          debugPrint('CalendarController: 系统日历管理器初始化失败，跳过同步');
           return;
         }
       }
@@ -403,7 +402,6 @@ class CalendarController extends ChangeNotifier {
       if (!systemCalendar.isInitialized) {
         final initialized = await systemCalendar.initialize();
         if (!initialized) {
-          debugPrint('CalendarController: 系统日历管理器初始化失败，跳过同步');
           return;
         }
       }

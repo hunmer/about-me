@@ -159,8 +159,6 @@ class ScriptManager extends ChangeNotifier {
 
       // 同步本地文件代码
       await _syncLocalScriptFiles();
-
-      print('✅ 从文件夹 ${_currentFolder!.name} 加载了 ${_scripts.length} 个脚本');
     } catch (e) {
       _lastError = '加载脚本失败: $e';
       print('❌ $_lastError');
