@@ -1,5 +1,23 @@
 # 任务计划：插件条目 UI 迁移为 home_grid 卡片 + 主页快速新建
 
+## 追加任务：Windows 编译依赖兼容修复（2026-09-05）
+
+### Phase 23: 依赖冲突诊断 [complete]
+- [x] 用 `flutter analyze` 复现 `ThemeData` 双类型与 `FilePicker.platform` 缺失
+- [x] 定位 `adaptive_theme 3.8.0` 的 `material_ui.ThemeData` 与 Flutter `ThemeData` 不兼容
+- [x] 定位 `file_picker` Git `master` 覆盖导致 API 漂移
+
+### Phase 24: 最小修复与验证 [complete]
+- [x] 24.1 固定兼容依赖，重新解析 lockfile
+- [x] 24.2 定向/全量 analyze 确认原始错误消失
+- [x] 24.3 Windows Debug 构建回归，项目测试 17/17
+
+### Phase 23 错误记录
+- 附件中的 CMake 内容为非阻塞警告；真正失败来自 Dart 依赖 API/类型不兼容。
+- 首次 `pubspec.yaml` 组合补丁因末段上下文校验失败，无部分写入；改用精确小范围补丁。
+- 首次回落 `file_picker 6.2.1` 时定向 analyze 通过，但全量 analyze 暴露 `saveFile(bytes:)` 不兼容；已改用官方 API 文档验证过的 10.3.0。
+- 默认 `git diff --check` 将 lockfile 新增 CRLF 行报为 trailing whitespace；文件本身全量使用 CRLF，`git -c core.whitespace=cr-at-eol diff --check` 通过。
+
 ## 追加任务：Live2D 在线模型与点击语音（2026-09-05）
 
 ### 目标

@@ -1,5 +1,16 @@
 # 进度日志
 
+## 会话: 2026-09-05（Windows 编译依赖兼容）
+- 已读取附件并用定向 analyze 复现：9 个 error。
+- 已确认两个根因：`adaptive_theme 3.8.0` 改用 `material_ui.ThemeData`；`file_picker` Git master 移除旧的 `.platform` API。
+- 当前进入 Phase 24：固定兼容版本并回归 Windows 构建。
+- 已固定 `adaptive_theme 3.7.2`、移除 `file_picker` Git master 覆盖并执行 pub get。
+- 原始定向 analyze 从 9 errors 恢复为 `No issues found`；开始全量 analyze 和 Windows Debug build。
+- 最终固定 `file_picker 10.3.0`，同时支持现有 `.platform` 和 `saveFile(bytes:)` API。
+- 验证完成：全量 analyze 0 error（129 条存量 warning/info）；`flutter test` 17/17；Windows Debug build 成功生成 `aboutme.exe`。
+- 构建仍输出 Firebase CMake 版本、flutter_inappwebview CMP0175、flutter_tts CMP0153 三类第三方 warning，不影响成功退出。
+
+
 ## 会话: 2026-09-05（Live2D 在线模型与点击语音）
 - 已读取交接文档与 galgenai `repoUtils.ts`，确认在线模型数据格式、CDN URL 规则和 macOS Live2D 调用链。
 - 已保留既有主页卡片规划历史，新增 Phase 12-15 跟踪本次实现。

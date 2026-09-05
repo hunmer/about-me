@@ -51,7 +51,7 @@ dependencies:
   path: ^1.8.3
   flutter_swipe_action_cell: ^3.1.6
   super_clipboard: ^0.9.1
-  file_picker: ^6.1.1
+  file_picker: 10.3.0
   flutter_quill: ^11.5.1
   flutter_quill_extensions: ^11.0.0
   intl: ^0.20.2
@@ -93,7 +93,7 @@ dependencies:
   flutter_shortcut_plus: ^1.0.1
   video_player: ^2.9.2
   video_player_win: ^3.2.1
-  adaptive_theme: ^3.7.0
+  adaptive_theme: 3.7.2
   flutter_js: ^0.8.1
   flutter_image_compress: ^2.3.0
   extended_tabs: ^5.0.0
@@ -158,10 +158,6 @@ dependency_overrides:
       path: packages/location_web
       ref: location-v8.0.1
   timezone: ^0.10.0
-  file_picker:
-    git:
-      url: https://github.com/miguelpruivo/flutter_file_picker.git
-      ref: master
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

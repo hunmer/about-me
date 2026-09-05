@@ -166,3 +166,12 @@ chat、agent_chat、openai、nfc、tts、webview、scripts_center、store、node
   （会触发 non_const warning，与既有代码一致）
 - day 插件快速新建预填：EditMemorialDayPage 只收整对象 → 传 MemorialDay(title:'', targetDate:date)，
   保存时 page 内重新生成 id
+# Windows 编译依赖冲突（2026-09-05）
+
+- 可重复信号：`flutter analyze lib/main.dart lib/utils/file_picker_helper.dart` 稳定产生 9 个 error。
+- `adaptive_theme 3.8.0` 的入参类型来自 `material_ui-1.1.1/lib/src/theme_data.dart`，项目主题来自 Flutter SDK，两者不可赋值。
+- `pubspec.yaml` 将 `file_picker ^6.1.1` 又用 Git `master` 覆盖；当前 master 已无 `FilePicker.platform`。
+- CMake CMP0175/CMP0153 和 Firebase SDK 最低版本提示均是 warning，不是此次 build exit 1 的根因。
+- pub.dev 版本元数据确认：`adaptive_theme 3.7.2` 仅依赖 Flutter + shared_preferences，`3.8.0` 新增 material_ui/cupertino_ui。
+- 移除 Git 覆盖后 `file_picker ^6.1.1` 解析为 `6.2.1`，保留 `FilePicker.platform` API；Flutter 3.44 会输出旧联邦插件声明 warning，需用 Windows build 判定是否阻塞。
+- 全量 analyze 发现 6.2.1 缺少项目所需 `saveFile(bytes:)`，不可用。官方 API 文档确认 10.3.0 同时具备 `.platform` 和 `bytes:`；10.3.11 已移除 `.platform`，因此精确固定 10.3.0。
