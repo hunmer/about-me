@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'builders/index.dart' show createRoundedContainerDecoration;
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 时间选择组件
 ///
 /// 功能特性：
-/// - 点击弹出时间选择器
-/// - 统一的样式和主题适配
+/// - 点击弹出时间选择器（DS 暂无时间选择器，保留 Material showTimePicker）
+/// - DS 果冻风格容器
 /// - 显示标签和时间值
 class TimePickerField extends StatelessWidget {
   /// 标签文本
@@ -20,16 +21,12 @@ class TimePickerField extends StatelessWidget {
   /// 是否启用
   final bool enabled;
 
-  /// 主题色
-  final Color primaryColor;
-
   const TimePickerField({
     super.key,
     required this.label,
     required this.time,
     this.onTimeChanged,
     this.enabled = true,
-    this.primaryColor = const Color(0xFF607AFB),
   });
 
   String _formatTime(TimeOfDay time) {
@@ -53,31 +50,23 @@ class TimePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = DSThemeBridge.resolve(context);
 
-    return InkWell(
-      onTap: enabled ? () => _selectTime(context) : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: createRoundedContainerDecoration(context),
+    return Pressable(
+      onPressed: enabled ? () => _selectTime(context) : null,
+      child: JellyBox(
+        radius: theme.radii.lg,
+        padding: EdgeInsets.all(theme.spacing.md),
         child: Column(
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: theme.spacing.xs),
             Text(
               _formatTime(time),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
           ],
         ),

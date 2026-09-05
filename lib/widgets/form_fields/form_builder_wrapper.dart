@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'form_field_wrapper.dart';
 import 'config.dart';
 import 'types.dart';
@@ -24,10 +25,16 @@ class FormBuilderWrapper extends StatefulWidget {
   final void Function(FormBuilderWrapperState state)? onStateReady;
 
   /// 自定义按钮构建器
-  final Widget Function(BuildContext context, VoidCallback onSubmit, VoidCallback onReset)? buttonBuilder;
+  final Widget Function(
+    BuildContext context,
+    VoidCallback onSubmit,
+    VoidCallback onReset,
+  )?
+  buttonBuilder;
 
   /// 表单内容构建器（可用于包裹额外内容）
-  final Widget Function(BuildContext context, List<Widget> fields)? contentBuilder;
+  final Widget Function(BuildContext context, List<Widget> fields)?
+  contentBuilder;
 
   const FormBuilderWrapper({
     super.key,
@@ -128,7 +135,9 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
         }
 
         if (isEmpty) {
-          _showValidationError(field.validationMessage ?? '${field.labelText ?? field.name}不能为空');
+          _showValidationError(
+            field.validationMessage ?? '${field.labelText ?? field.name}不能为空',
+          );
           return false;
         }
       }
@@ -168,7 +177,8 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
       final value = values[field.name];
       if (field.required && (value == null || value.toString().isEmpty)) {
         isValid = false;
-        errors[field.name] = field.validationMessage ?? '${field.labelText ?? field.name}不能为空';
+        errors[field.name] =
+            field.validationMessage ?? '${field.labelText ?? field.name}不能为空';
       }
     }
 
@@ -190,19 +200,7 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
   /// 显示验证错误提示
   void _showValidationError(String message) {
     if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: '知道了',
-          textColor: Theme.of(context).colorScheme.onError,
-          onPressed: () => scaffoldMessenger.hideCurrentSnackBar(),
-        ),
-      ),
-    );
+    showDSToast(context, message: message, type: DSToastType.danger);
   }
 
   void _resetForm() {
@@ -215,7 +213,10 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
   @override
   Widget build(BuildContext context) {
     // 构建字段列表
-    final fieldWidgets = widget.config.fields.map((config) => _buildFieldWrapper(config)).toList();
+    final fieldWidgets =
+        widget.config.fields
+            .map((config) => _buildFieldWrapper(config))
+            .toList();
 
     return FormBuilder(
       key: _actualFormKey,
@@ -227,10 +228,14 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
           else if (fieldWidgets.isEmpty)
             _buildEmptyState()
           else
-            ...fieldWidgets.expand((field) => [
-              field,
-              SizedBox(height: widget.config.fieldSpacing),
-            ]).toList()
+            ...fieldWidgets
+                .expand(
+                  (field) => [
+                    field,
+                    SizedBox(height: widget.config.fieldSpacing),
+                  ],
+                )
+                .toList()
               ..removeLast(),
           if (widget.config.showSubmitButton || widget.config.showResetButton)
             _buildButtons(),
@@ -241,26 +246,12 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   /// 构建空状态提示
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              widget.config.emptyStateMessage ?? '暂无字段',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: DSEmptyState(
+        emoji: '📭',
+        title: widget.config.emptyStateMessage ?? '暂无字段',
+        message: '可在配置中添加表单字段',
       ),
     );
   }
@@ -404,8 +395,8 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
     if (widget.config.submitButtonWidget != null) {
       return Padding(
         padding: const EdgeInsets.only(top: 16),
-        child: InkWell(
-          onTap: () async {
+        child: Pressable(
+          onPressed: () async {
             final fbState = _actualFormKey.currentState;
             if (fbState != null) {
               final isValid = fbState.saveAndValidate();
@@ -429,13 +420,16 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
           if (widget.config.showResetButton)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: TextButton(
+              child: DSButton(
+                label: widget.config.resetButtonText,
+                variant: DSButtonVariant.outline,
                 onPressed: _resetForm,
-                child: Text(widget.config.resetButtonText),
               ),
             ),
           if (widget.config.showSubmitButton)
-            FilledButton(
+            DSButton(
+              label: widget.config.submitButtonText,
+              variant: DSButtonVariant.primary,
               onPressed: () async {
                 final fbState = _actualFormKey.currentState;
                 if (fbState != null) {
@@ -447,7 +441,6 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
                   _submitFormInternal();
                 }
               },
-              child: Text(widget.config.submitButtonText),
             ),
         ],
       ),

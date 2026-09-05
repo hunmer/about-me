@@ -80,7 +80,8 @@ class ChipSelectorField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selectedOption.color?.withOpacity(0.1) ??
+          color:
+              selectedOption.color?.withOpacity(0.1) ??
               (selectedId != null ? Colors.orange.shade50 : null),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -120,37 +121,44 @@ class ChipSelectorField extends StatelessWidget {
   void _showSelector(BuildContext context) {
     SmoothBottomSheet.show(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectorTitle,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  selectorTitle,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      options.map((opt) {
+                        final isSelected = selectedId == opt.id;
+                        return ActionChip(
+                          label: Text(opt.label),
+                          backgroundColor:
+                              isSelected
+                                  ? (selectedBackgroundColor ??
+                                      Colors.orange.shade100)
+                                  : null,
+                          onPressed: () {
+                            onValueChanged(opt.id);
+                            Navigator.pop(context);
+                          },
+                        );
+                      }).toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: options.map((opt) {
-                final isSelected = selectedId == opt.id;
-                return ActionChip(
-                  label: Text(opt.label),
-                  backgroundColor: isSelected
-                      ? (selectedBackgroundColor ?? Colors.orange.shade100)
-                      : null,
-                  onPressed: () {
-                    onValueChanged(opt.id);
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

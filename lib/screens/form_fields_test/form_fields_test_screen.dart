@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart';
@@ -15,24 +17,24 @@ class FormFieldsTestScreen extends StatefulWidget {
   State<FormFieldsTestScreen> createState() => _FormFieldsTestScreenState();
 }
 
-class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _FormFieldsTestScreenState extends State<FormFieldsTestScreen> {
+  // material 导入仅服务表单字段配置数据（IconData/TimeOfDay/Color 初值与
+  // DropdownMenuItem，均为 form_fields 共享库的数据契约）；
+  // 屏幕自身 UI 已全部使用 DS 组件。
+  static const _tabLabels = ['文本输入', '选择器', '开关滑块', '列表标签', '其他', 'Picker'];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-  }
+  final PageController _pageController = PageController();
+  int _selectedTab = 0;
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
       title: const Text('表单字段组件测试'),
       largeTitle: '表单字段',
@@ -40,24 +42,23 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
         children: [
           // Tab 栏
           Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabs: const [
-                Tab(text: '文本输入'),
-                Tab(text: '选择器'),
-                Tab(text: '开关滑块'),
-                Tab(text: '列表标签'),
-                Tab(text: '其他'),
-                Tab(text: 'Picker选择器'),
-              ],
+            color: theme.surface,
+            child: DSTabs(
+              labels: _tabLabels,
+              selected: _selectedTab,
+              onChanged:
+                  (index) => _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                  ),
             ),
           ),
           // Tab 内容
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _selectedTab = index),
               children: [
                 _buildTextInputTab(),
                 _buildSelectorTab(),
@@ -125,11 +126,7 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
               name: 'notes',
               type: FormFieldType.textArea,
               hintText: '无边框模式的多行输入',
-              extra: {
-                'minLines': 2,
-                'maxLines': 4,
-                'inline': true,
-              },
+              extra: {'minLines': 2, 'maxLines': 4, 'inline': true},
             ),
           ],
           submitButtonText: '提交文本表单',
@@ -251,9 +248,7 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
               initialValue: 25.0,
               min: 0,
               max: 100,
-              extra: {
-                'valueText': '%',
-              },
+              extra: {'valueText': '%'},
             ),
           ],
           submitButtonText: '提交开关滑块表单',
@@ -402,10 +397,7 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
               name: 'calendarDate',
               type: FormFieldType.calendarStripPicker,
               initialValue: DateTime.now(),
-              extra: {
-                'allowFutureDates': false,
-                'useShortWeekDay': false,
-              },
+              extra: {'allowFutureDates': false, 'useShortWeekDay': false},
             ),
 
             // 图片选择器
@@ -440,52 +432,52 @@ class _FormFieldsTestScreenState extends State<FormFieldsTestScreen>
 
   /// 显示提交结果
   void _showResult(String title, Map<String, dynamic> values) {
-    showDialog(
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('$title - 提交结果'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: values.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${entry.key}: ',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _formatValue(entry.value),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return DSDialog(
+          title: '$title - 提交结果',
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 380),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final entry in values.entries)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: theme.spacing.xs),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${entry.key}: ',
+                            style: DsTypography.body.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.text,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              _formatValue(entry.value),
+                              style: DsTypography.body.copyWith(
+                                color: theme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                ],
+              ),
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // 可以复制到剪贴板或其他操作
-            },
-            child: const Text('复制'),
-          ),
-        ],
-      ),
+          cancelText: '关闭',
+          confirmText: '复制',
+        );
+      },
     );
   }
 

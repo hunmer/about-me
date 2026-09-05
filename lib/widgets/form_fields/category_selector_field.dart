@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 类别选择器组件
 ///
 /// 功能特性：
 /// - 水平滚动的类别列表
-/// - 圆形图标 + 标签文字
-/// - 统一的样式和主题适配
+/// - 圆形果冻图标 + 标签文字
 /// - 支持自定义图标映射
 class CategorySelectorField extends StatelessWidget {
   /// 可用的类别列表
@@ -14,7 +15,7 @@ class CategorySelectorField extends StatelessWidget {
   /// 当前选中的类别
   final String? selectedCategory;
 
-  /// 类别图标映射表
+  /// 类别图标映射表（持久化 IconData）
   final Map<String, IconData> categoryIcons;
 
   /// 类别选择变化的回调
@@ -46,7 +47,7 @@ class CategorySelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
 
     return SizedBox(
       height: height,
@@ -59,37 +60,35 @@ class CategorySelectorField extends StatelessWidget {
           final isSelected = category == selectedCategory;
           final icon = categoryIcons[category] ?? Icons.category;
 
-          return GestureDetector(
-            onTap: () => onCategoryChanged(category),
+          return Pressable(
+            onPressed: () => onCategoryChanged(category),
+            semanticLabel: category,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
                   width: iconContainerSize,
                   height: iconContainerSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected
-                        ? primaryColor
-                        : (isDark ? Colors.grey[800] : Colors.grey[100]),
+                    color: isSelected ? primaryColor : null,
+                    border: Border.all(color: theme.stroke, width: 1.4),
+                    boxShadow: isSelected ? theme.shadows.soft : null,
                   ),
                   child: Icon(
                     icon,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                    color: isSelected ? DsColors.white : theme.textSub,
                     size: iconSize,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   category,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? (isDark ? Colors.white : Colors.black87)
-                        : Colors.grey,
+                  style: DsTypography.caption.copyWith(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? theme.text : theme.textSub,
                   ),
                 ),
               ],

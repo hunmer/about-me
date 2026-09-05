@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../picker/circle_icon_picker.dart';
 
 /// 圆形图标选择器字段组件
 ///
-/// 集成 CircleIconPicker，提供图标和背景色选择功能
+/// 集成 CircleIconPicker，提供图标和背景色选择功能（其内部属共享基建）。
 class CircleIconPickerField extends StatelessWidget {
   /// 当前图标
   final IconData currentIcon;
@@ -35,6 +37,8 @@ class CircleIconPickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Center(
       child: Column(
         children: [
@@ -61,11 +65,7 @@ class CircleIconPickerField extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               labelText!,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.primary),
             ),
           ],
         ],

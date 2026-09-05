@@ -78,13 +78,16 @@ class ExpenseTypeSelectorField extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? bgOnSelected : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            )
-          ] : null,
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                  : null,
         ),
         alignment: Alignment.center,
         child: Text(

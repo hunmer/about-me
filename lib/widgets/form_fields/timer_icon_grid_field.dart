@@ -69,38 +69,45 @@ class TimerIconGridField extends StatelessWidget {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 1.0,
-      children: presetIcons.map((icon) {
-        final isSelected = selectedIcon == icon;
-        return InkWell(
-          onTap: enabled ? () {
-            if (icon == Icons.more_horiz) {
-              // 打开完整图标选择器
-              _openFullIconPicker(context);
-            } else {
-              onIconChanged?.call(icon);
-            }
-          } : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? primaryColor
-                  : (isDark ? Colors.grey[800] : Colors.grey[100]),
+      children:
+          presetIcons.map((icon) {
+            final isSelected = selectedIcon == icon;
+            return InkWell(
+              onTap:
+                  enabled
+                      ? () {
+                        if (icon == Icons.more_horiz) {
+                          // 打开完整图标选择器
+                          _openFullIconPicker(context);
+                        } else {
+                          onIconChanged?.call(icon);
+                        }
+                      }
+                      : null,
               borderRadius: BorderRadius.circular(8),
-              border: isSelected
-                  ? Border.all(color: primaryColor, width: 2)
-                  : null,
-            ),
-            child: Icon(
-              icon,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
-              size: 24,
-            ),
-          ),
-        );
-      }).toList(),
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      isSelected
+                          ? primaryColor
+                          : (isDark ? Colors.grey[800] : Colors.grey[100]),
+                  borderRadius: BorderRadius.circular(8),
+                  border:
+                      isSelected
+                          ? Border.all(color: primaryColor, width: 2)
+                          : null,
+                ),
+                child: Icon(
+                  icon,
+                  color:
+                      isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  size: 24,
+                ),
+              ),
+            );
+          }).toList(),
     );
   }
 

@@ -86,16 +86,21 @@ class _RemindersFieldState extends State<RemindersField> {
                 ),
               )
             else
-              Icon(Icons.alarm, size: 20, color: Theme.of(context).colorScheme.onSurface),
+              Icon(
+                Icons.alarm,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             Expanded(
               child: Text(
                 _getDisplayText(locale),
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontSize: 17,
-                  color: _reminders.isNotEmpty
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color:
+                      _reminders.isNotEmpty
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -123,73 +128,81 @@ class _RemindersFieldState extends State<RemindersField> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (modalContext) => StatefulBuilder(
-        builder: (modalContext, setModalState) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            height: 450,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder:
+          (modalContext) => StatefulBuilder(
+            builder: (modalContext, setModalState) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                height: 450,
+                child: Column(
                   children: [
-                    Text(
-                      widget.labelText ?? '提醒',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          widget.labelText ?? '提醒',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => _addReminder(setModalState),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () => _addReminder(setModalState),
+                    const Divider(),
+                    Expanded(
+                      child:
+                          _reminders.isEmpty
+                              ? Center(
+                                child: Text(
+                                  widget.hintText ?? '暂无提醒',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                itemCount: _reminders.length,
+                                itemBuilder: (context, index) {
+                                  final r = _reminders[index];
+                                  return ListTile(
+                                    leading: const Icon(Icons.alarm),
+                                    title: Text(
+                                      DateFormat.yMMMEd(
+                                        locale,
+                                      ).add_jm().format(r),
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () {
+                                        setState(
+                                          () => _reminders.removeAt(index),
+                                        );
+                                        widget.onRemoveReminder(index);
+                                        setModalState(() {});
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
                     ),
                   ],
                 ),
-                const Divider(),
-                Expanded(
-                  child: _reminders.isEmpty
-                      ? Center(
-                          child: Text(
-                            widget.hintText ?? '暂无提醒',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _reminders.length,
-                          itemBuilder: (context, index) {
-                            final r = _reminders[index];
-                            return ListTile(
-                              leading: const Icon(Icons.alarm),
-                              title: Text(
-                                DateFormat.yMMMEd(locale)
-                                    .add_jm()
-                                    .format(r),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() => _reminders.removeAt(index));
-                                  widget.onRemoveReminder(index);
-                                  setModalState(() {});
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                )
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
     );
   }
 
   /// 添加提醒
   Future<void> _addReminder(StateSetter setModalState) async {
-    final baseDate = _reminders.isNotEmpty
-        ? _reminders.last
-        : DateTime.now();
+    final baseDate = _reminders.isNotEmpty ? _reminders.last : DateTime.now();
 
     // 选择日期
     final pickedDate = await showDatePicker(

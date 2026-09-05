@@ -88,22 +88,28 @@ class SubscriptionCycleField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.surfaceVariant,
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
-          border: isSelected
-              ? Border.all(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3))
-              : null,
+          border:
+              isSelected
+                  ? Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.3),
+                  )
+                  : null,
         ),
         alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimaryContainer
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),

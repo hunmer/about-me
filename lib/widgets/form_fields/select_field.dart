@@ -89,18 +89,19 @@ class SelectField<T> extends StatelessWidget {
             Expanded(
               child: DropdownButtonFormField<T>(
                 value: value,
-                items: items.map((item) {
-                  // 确保菜单项文本右对齐
-                  return DropdownMenuItem<T>(
-                    value: item.value,
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      width: double.infinity,
-                      alignment: Alignment.centerRight,
-                      child: item.child,
-                    ),
-                  );
-                }).toList(),
+                items:
+                    items.map((item) {
+                      // 确保菜单项文本右对齐
+                      return DropdownMenuItem<T>(
+                        value: item.value,
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          width: double.infinity,
+                          alignment: Alignment.centerRight,
+                          child: item.child,
+                        ),
+                      );
+                    }).toList(),
                 onChanged: enabled ? onChanged : null,
                 validator: validator,
                 style: TextStyle(
@@ -140,9 +141,7 @@ class SelectField<T> extends StatelessWidget {
         helperText: helperText,
         helperStyle: helperStyle,
         prefixIcon: icon != null ? Icon(icon) : null,
-        hintStyle: TextStyle(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
@@ -157,10 +156,7 @@ class SelectField<T> extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerLow,

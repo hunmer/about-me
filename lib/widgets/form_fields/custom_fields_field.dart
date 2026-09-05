@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
@@ -7,7 +9,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 ///
 /// 功能特性：
 /// - 支持添加、编辑、删除键值对字段
-/// - 统一的表单字段样式
+/// - DS 果冻风格列表与对话框
 /// - 支持 inline 模式（label在左，字段列表在右）
 class CustomFieldsField extends StatefulWidget {
   /// 自定义字段列表
@@ -93,80 +95,24 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
-    // inline 模式
-    if (widget.inline) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.labelText != null) ...[
-            SizedBox(
-              width: widget.labelWidth,
-              child: Text(
-                widget.labelText!,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
-            child: Column(
-              children: [
-                if (_fields.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      '暂无自定义字段',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                else
-                  ..._buildFieldsList(),
-                _buildAddButton(theme),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    // 默认模式：独立卡片样式
+    // inline 模式与默认模式共用主体，仅 label 布局不同
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.labelText != null) ...[
-          Text(
-            widget.labelText!,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
+          SizedBox(
+            width: widget.inline ? widget.labelWidth : null,
+            child: Text(
+              widget.labelText!,
+              style: DsTypography.body.copyWith(color: theme.text),
             ),
           ),
           const SizedBox(height: 8),
         ],
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
+        JellyBox(
+          radius: theme.radii.lg,
           child: Column(
             children: [
               if (_fields.isEmpty)
@@ -174,14 +120,12 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     '暂无自定义字段',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 )
               else
                 ..._buildFieldsList(),
-              _buildAddButton(theme),
+              _buildAddButton(),
             ],
           ),
         ),
@@ -190,48 +134,64 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
   }
 
   List<Widget> _buildFieldsList() {
+    final theme = DSThemeBridge.resolve(context);
     final List<Widget> widgets = [];
 
     for (int i = 0; i < _fields.length; i++) {
       widgets.add(
-        ListTile(
-          title: Text(
-            _fields[i].key,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+        Pressable(
+          onPressed: () => _editField(i),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _fields[i].key,
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                      if (_fields[i].value.isNotEmpty) ...[
+                        SizedBox(height: 2),
+                        Text(
+                          _fields[i].value,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                _buildActionButton(
+                  icon: DsIconKind.edit,
+                  color: theme.primaryText,
+                  background: theme.primary.mixWhite(0.88),
+                  semanticLabel: '编辑',
+                  onTap: () => _editField(i),
+                ),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: DsIconKind.trash,
+                  color: theme.onDanger,
+                  background: theme.danger.mixWhite(0.88),
+                  semanticLabel: '删除',
+                  onTap: () => _deleteField(i),
+                ),
+              ],
             ),
           ),
-          subtitle: Text(
-            _fields[i].value,
-            style: const TextStyle(
-              fontSize: 14,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit, size: 20),
-                onPressed: () => _editField(i),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                onPressed: () => _deleteField(i),
-              ),
-            ],
-          ),
-          onTap: () => _editField(i),
         ),
       );
 
       // 在字段之间添加分隔线（除了最后一个）
       if (i < _fields.length - 1) {
         widgets.add(
-          const Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(height: 1, color: theme.stroke),
           ),
         );
       }
@@ -240,88 +200,108 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
     return widgets;
   }
 
-  Widget _buildAddButton(ThemeData theme) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _addField,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_circle_outline,
-                color: theme.colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                widget.addButtonText,
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
+  /// 小型果冻图标操作按钮
+  Widget _buildActionButton({
+    required DsIconKind icon,
+    required Color color,
+    required Color background,
+    required String semanticLabel,
+    required VoidCallback onTap,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: onTap,
+      semanticLabel: semanticLabel,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return JellyBox(
+          width: 34,
+          height: 34,
+          radius: theme.radii.md,
+          raised: !pressed,
+          color: background,
+          alignment: Alignment.center,
+          child: DsIcon(icon, size: 17, color: color),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddButton() {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: _addField,
+      semanticLabel: widget.addButtonText,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            DsIcon(DsIconKind.plus, size: 18, color: theme.primary),
+            const SizedBox(width: 8),
+            Text(
+              widget.addButtonText,
+              style: DsTypography.caption.copyWith(color: theme.primary),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _addField() async {
-    final TextEditingController keyController = TextEditingController();
-    final TextEditingController valueController = TextEditingController();
-
-    final bool? confirmed = await showDialog<bool>(
+  /// 添加/编辑共用的键值输入对话框
+  Future<bool?> _showFieldDialog({
+    required String title,
+    required TextEditingController keyController,
+    required TextEditingController valueController,
+  }) {
+    return showDSDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(widget.addDialogTitle),
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) {
+        final theme = DSThemeBridge.resolve(dialogContext);
+        return DSDialog(
+          title: title,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              DSInput(
                 controller: keyController,
-                decoration: InputDecoration(
-                  labelText: widget.fieldNameLabel,
-                  hintText: widget.fieldNameHint,
-                ),
+                label: widget.fieldNameLabel,
+                hint: widget.fieldNameHint,
               ),
-              const SizedBox(height: 16),
-              TextField(
+              SizedBox(height: theme.spacing.md),
+              DSInput(
                 controller: valueController,
-                decoration: InputDecoration(
-                  labelText: widget.fieldValueLabel,
-                  hintText: widget.fieldValueHint,
-                ),
+                label: widget.fieldValueLabel,
+                hint: widget.fieldValueHint,
                 maxLines: 2,
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                if (keyController.text.isNotEmpty &&
-                    valueController.text.isNotEmpty) {
-                  Navigator.of(context).pop(true);
-                } else {
-                  toastService.showToast(
-                    'goods_fieldNameAndValueCannotBeEmpty'.tr,
-                  );
-                }
-              },
-              child: Text('goods_confirm'.tr),
-            ),
-          ],
+          cancelText: 'goods_cancel'.tr,
+          confirmText: 'goods_confirm'.tr,
+          onConfirm: () {
+            if (keyController.text.isNotEmpty &&
+                valueController.text.isNotEmpty) {
+              Navigator.of(dialogContext).pop(true);
+            } else {
+              toastService.showToast('goods_fieldNameAndValueCannotBeEmpty'.tr);
+            }
+          },
         );
       },
+    );
+  }
+
+  void _addField() async {
+    final keyController = TextEditingController();
+    final valueController = TextEditingController();
+
+    final bool? confirmed = await _showFieldDialog(
+      title: widget.addDialogTitle,
+      keyController: keyController,
+      valueController: valueController,
     );
 
     if (confirmed == true) {
@@ -332,64 +312,19 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
         widget.onFieldsChanged(_fields);
       });
     }
+    keyController.dispose();
+    valueController.dispose();
   }
 
   void _editField(int index) async {
     final field = _fields[index];
-    final TextEditingController keyController = TextEditingController(
-      text: field.key,
-    );
-    final TextEditingController valueController = TextEditingController(
-      text: field.value,
-    );
+    final keyController = TextEditingController(text: field.key);
+    final valueController = TextEditingController(text: field.value);
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(widget.editDialogTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: keyController,
-                decoration: InputDecoration(
-                  labelText: widget.fieldNameLabel,
-                  hintText: widget.fieldNameHint,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: valueController,
-                decoration: InputDecoration(
-                  labelText: widget.fieldValueLabel,
-                  hintText: widget.fieldValueHint,
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                if (keyController.text.isNotEmpty &&
-                    valueController.text.isNotEmpty) {
-                  Navigator.of(context).pop(true);
-                } else {
-                  toastService.showToast(
-                    'goods_fieldNameAndValueCannotBeEmpty'.tr,
-                  );
-                }
-              },
-              child: Text('goods_confirm'.tr),
-            ),
-          ],
-        );
-      },
+    final bool? confirmed = await _showFieldDialog(
+      title: widget.editDialogTitle,
+      keyController: keyController,
+      valueController: valueController,
     );
 
     if (confirmed == true) {
@@ -401,27 +336,22 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
         widget.onFieldsChanged(_fields);
       });
     }
+    keyController.dispose();
+    valueController.dispose();
   }
 
   void _deleteField(int index) {
-    showDialog<bool>(
+    showDSDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(widget.deleteConfirmTitle),
-          content: Text(widget.deleteConfirmContent),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('goods_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('goods_delete'.tr),
-            ),
-          ],
-        );
-      },
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSDialog(
+            title: widget.deleteConfirmTitle,
+            message: widget.deleteConfirmContent,
+            cancelText: 'goods_cancel'.tr,
+            confirmText: 'goods_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+          ),
     ).then((confirmed) {
       if (confirmed == true) {
         setState(() {

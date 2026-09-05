@@ -132,9 +132,10 @@ class TextInputField extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                         isDense: true,
-                        contentPadding: suffix != null || suffixIcon != null
-                            ? const EdgeInsets.only(right: 8)
-                            : EdgeInsets.zero,
+                        contentPadding:
+                            suffix != null || suffixIcon != null
+                                ? const EdgeInsets.only(right: 8)
+                                : EdgeInsets.zero,
                         suffixIcon: suffixIcon,
                       ),
                     ),
@@ -166,9 +167,7 @@ class TextInputField extends StatelessWidget {
         helperStyle: helperStyle,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
-        hintStyle: TextStyle(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
@@ -183,10 +182,7 @@ class TextInputField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerLow,

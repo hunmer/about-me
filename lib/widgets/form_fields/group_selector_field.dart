@@ -63,10 +63,7 @@ class GroupSelectorField extends StatelessWidget {
         InkWell(
           onTap: enabled ? () => _showGroupSelector(context) : null,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
               color: isDark ? Colors.grey[800] : Colors.grey[50],
               border: Border.all(
@@ -80,9 +77,7 @@ class GroupSelectorField extends StatelessWidget {
                   child: Text(
                     selectedGroup ?? hintText!,
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
@@ -102,12 +97,13 @@ class GroupSelectorField extends StatelessWidget {
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(
-        builder: (context) => GroupSelectorDialog(
-          groups: groups,
-          initialSelectedGroup: selectedGroup,
-          onGroupRenamed: onGroupRenamed ?? (_, __) {},
-          onGroupDeleted: onGroupDeleted ?? (_) {},
-        ),
+        builder:
+            (context) => GroupSelectorDialog(
+              groups: groups,
+              initialSelectedGroup: selectedGroup,
+              onGroupRenamed: onGroupRenamed ?? (_, __) {},
+              onGroupDeleted: onGroupDeleted ?? (_) {},
+            ),
       ),
     );
 

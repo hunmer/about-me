@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 滑块选择组件
 ///
 /// 功能特性：
-/// - 统一的样式和主题适配
+/// - DS 果冻滑杆（渐变进度 + 星形滑块）
 /// - 支持标签和当前值显示
-/// - 可配置范围和刻度
-/// - 可选的快捷值按钮
+/// - 可配置范围
+/// - 可选的快捷值标签
 class SliderField extends StatelessWidget {
   /// 标签文本
   final String label;
@@ -23,7 +25,7 @@ class SliderField extends StatelessWidget {
   /// 当前值
   final double value;
 
-  /// 刻度数量
+  /// 刻度数量（DSSlider 为连续滑杆，此参数保留以兼容配置）
   final int? divisions;
 
   /// 值变化的回调
@@ -62,19 +64,16 @@ class SliderField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final effectivePrimary = primaryColor ?? colorScheme.primary;
+    final theme = DSThemeBridge.resolve(context);
 
-    return Container(
+    final clamped = value.clamp(min, max);
+    final ratio = max > min ? (clamped - min) / (max - min) : 0.0;
+    final effectiveOnChanged = enabled ? onChanged : null;
+
+    return JellyBox(
+      radius: theme.radii.lg,
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
-      ),
+      padding: EdgeInsets.all(theme.spacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -84,96 +83,48 @@ class SliderField extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
               Text(
                 valueText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
+                style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: theme.spacing.sm),
 
-          // Slider
-          SliderTheme(
-            data: SliderThemeData(
-              activeTrackColor: effectivePrimary,
-              inactiveTrackColor: effectivePrimary.withOpacity(0.2),
-              thumbColor: effectivePrimary,
-              overlayColor: effectivePrimary.withOpacity(0.2),
-              trackHeight: 4,
-            ),
-            child: Slider(
-              min: min,
-              max: max,
-              value: value.clamp(min, max),
-              divisions: divisions,
-              onChanged: enabled ? onChanged : null,
-            ),
+          // DSSlider（0.0 ~ 1.0 归一化）
+          DSSlider(
+            value: ratio,
+            activeColor: primaryColor,
+            onChanged:
+                effectiveOnChanged == null
+                    ? null
+                    : (r) => effectiveOnChanged(min + r * (max - min)),
           ),
 
-          // 快捷值按钮（如果提供）
+          // 快捷值标签（如果提供）
           if (quickValues != null &&
               quickValues!.isNotEmpty &&
               quickValueLabel != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: theme.spacing.md),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: quickValues!.map((quickValue) {
-                  final isSelected = (value - quickValue).abs() < 0.01;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap:
+                children: [
+                  for (final quickValue in quickValues!)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: DSChip(
+                        label: quickValueLabel!(quickValue),
+                        selected: (clamped - quickValue).abs() < 0.01,
+                        onSelected:
                             enabled && onQuickValueTap != null
-                                ? () => onQuickValueTap!(quickValue)
+                                ? (_) => onQuickValueTap!(quickValue)
                                 : null,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                isSelected
-                                    ? effectivePrimary
-                                    : effectivePrimary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color:
-                                  isSelected
-                                      ? effectivePrimary
-                                      : effectivePrimary.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            quickValueLabel!(quickValue),
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : effectivePrimary,
-                              fontSize: 13,
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
-                  );
-                }).toList(),
+                ],
               ),
             ),
           ],

@@ -112,71 +112,74 @@ class OptionSelectorField extends StatelessWidget {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       child: Row(
-          children: options.map((option) {
-            final isSelected = selectedId == option.id;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: InkWell(
-                onTap: () => onSelectionChanged(option.id),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: optionWidth,
-                  height: optionHeight,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? primaryColor
-                        : theme.colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? primaryColor
-                          : theme.colorScheme.outline.withOpacity(0.2),
+        children:
+            options.map((option) {
+              final isSelected = selectedId == option.id;
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: InkWell(
+                  onTap: () => onSelectionChanged(option.id),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: optionWidth,
+                    height: optionHeight,
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? primaryColor
+                              : theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color:
+                            isSelected
+                                ? primaryColor
+                                : theme.colorScheme.outline.withOpacity(0.2),
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                          if (option.useTextAsIcon)
-                            Text(
-                              option.label,
-                              style: TextStyle(
-                                fontSize: 32,
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : theme.colorScheme.onSurface,
-                              ),
-                            )
-                          else if (option.icon != null)
-                            Icon(
-                              option.icon,
-                              size: 32,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (option.useTextAsIcon)
+                          Text(
+                            option.label,
+                            style: TextStyle(
+                              fontSize: 32,
                               color:
                                   isSelected
                                       ? Colors.white
                                       : theme.colorScheme.onSurface,
                             ),
-                          if (!option.useTextAsIcon) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              option.label,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : theme.colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
+                          )
+                        else if (option.icon != null)
+                          Icon(
+                            option.icon,
+                            size: 32,
+                            color:
+                                isSelected
+                                    ? Colors.white
+                                    : theme.colorScheme.onSurface,
+                          ),
+                        if (!option.useTextAsIcon) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            option.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : theme.colorScheme.onSurface,
                             ),
-                          ],
-                    ],
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
       ),
     );
   }
@@ -189,27 +192,30 @@ class OptionSelectorField extends StatelessWidget {
         return Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: options.map((option) {
-            final isSelected = selectedId == option.id;
-            return InkWell(
-              onTap: () => onSelectionChanged(option.id),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: itemWidth,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? primaryColor
-                      : theme.colorScheme.surfaceContainerLow,
+          children:
+              options.map((option) {
+                final isSelected = selectedId == option.id;
+                return InkWell(
+                  onTap: () => onSelectionChanged(option.id),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? primaryColor
-                        : theme.colorScheme.outline.withOpacity(0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
+                  child: Container(
+                    width: itemWidth,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? primaryColor
+                              : theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color:
+                            isSelected
+                                ? primaryColor
+                                : theme.colorScheme.outline.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
                         if (option.useTextAsIcon)
                           Text(
                             option.label,
@@ -245,11 +251,11 @@ class OptionSelectorField extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                         ],
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
         );
       },
     );

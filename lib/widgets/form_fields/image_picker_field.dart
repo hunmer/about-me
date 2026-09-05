@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../picker/image_picker_dialog.dart';
 import '../adaptive_image.dart';
 
@@ -120,6 +122,7 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final imagePath = _imagePath;
 
     return Flex(
@@ -131,11 +134,8 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
             padding: const EdgeInsets.only(top: 12, right: 12),
             child: Text(
               widget.labelText!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color:
-                    widget.enabled
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              style: DsTypography.body.copyWith(
+                color: widget.enabled ? theme.text : theme.textSub,
               ),
             ),
           ),
@@ -159,39 +159,31 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                   if (widget.showSelectButton) ...[
                     const SizedBox(height: 8),
                     Center(
-                      child: GestureDetector(
-                        onTap: widget.enabled ? () => _showPicker(ctx) : null,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: widget.enabled
-                                ? Theme.of(ctx).colorScheme.primary.withOpacity(0.1)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: widget.enabled
-                                  ? Theme.of(ctx).colorScheme.primary
-                                  : Theme.of(ctx).colorScheme.outline.withOpacity(0.5),
-                            ),
+                      child: Pressable(
+                        onPressed:
+                            widget.enabled ? () => _showPicker(ctx) : null,
+                        semanticLabel: _getDisplayText(),
+                        child: JellyBox(
+                          radius: theme.radii.pill,
+                          color: theme.primary.mixWhite(0.9),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 10,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.image,
-                                size: 18,
-                                color: widget.enabled
-                                    ? Theme.of(ctx).colorScheme.primary
-                                    : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5),
+                              DsIcon(
+                                DsIconKind.image,
+                                size: 17,
+                                color: theme.primary,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 _getDisplayText(),
-                                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                                      color: widget.enabled
-                                          ? Theme.of(ctx).colorScheme.primary
-                                          : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5),
-                                    ),
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.primary,
+                                ),
                               ),
                             ],
                           ),

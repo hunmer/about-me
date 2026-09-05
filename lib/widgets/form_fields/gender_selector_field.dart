@@ -68,26 +68,28 @@ class GenderSelectorField extends StatelessWidget {
 
     return Expanded(
       child: GestureDetector(
-        onTap: enabled
-            ? () {
-                // 切换性别：如果已选中则取消选择，否则选中
-                onGenderChanged(isSelected ? null : gender);
-              }
-            : null,
+        onTap:
+            enabled
+                ? () {
+                  // 切换性别：如果已选中则取消选择，否则选中
+                  onGenderChanged(isSelected ? null : gender);
+                }
+                : null,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? theme.cardColor : null,
             borderRadius: BorderRadius.circular(6),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

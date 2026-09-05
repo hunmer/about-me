@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../picker/avatar_picker.dart';
 
 /// 头像选择器字段组件
 ///
-/// 集成 AvatarPicker，提供头像选择功能
+/// 集成 AvatarPicker，提供头像选择功能（AvatarPicker 属共享基建）。
 class AvatarPickerField extends StatelessWidget {
   /// 用户名（用于默认头像显示）
   final String username;
@@ -35,13 +37,18 @@ class AvatarPickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (username.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text('头像', style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(
+              '头像',
+              style: DsTypography.body.copyWith(color: theme.text),
+            ),
           ),
         Center(
           child: AvatarPicker(

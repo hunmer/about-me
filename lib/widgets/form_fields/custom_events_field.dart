@@ -81,10 +81,7 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.labelText != null) ...[
-          Text(
-            widget.labelText!,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(widget.labelText!, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
         ],
         ..._events.asMap().entries.map((entry) {
@@ -138,30 +135,32 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
           ),
           IconButton(
             icon: Icon(Icons.remove_circle, color: theme.colorScheme.error),
-            onPressed: widget.enabled
-                ? () {
-                    setState(() {
-                      _titleControllers[index]?.dispose();
-                      _titleControllers.remove(index);
-                      _events.removeAt(index);
-                      // 重新索引控制器
-                      final newControllers = <int, TextEditingController>{};
-                      for (int i = 0; i < _events.length; i++) {
-                        final oldController = _titleControllers[i > index ? i + 1 : i];
-                        if (oldController != null) {
-                          newControllers[i] = oldController;
-                        } else {
-                          // 如果控制器不存在，创建新的
-                          newControllers[i] = TextEditingController(
-                            text: _events[i].title,
-                          );
+            onPressed:
+                widget.enabled
+                    ? () {
+                      setState(() {
+                        _titleControllers[index]?.dispose();
+                        _titleControllers.remove(index);
+                        _events.removeAt(index);
+                        // 重新索引控制器
+                        final newControllers = <int, TextEditingController>{};
+                        for (int i = 0; i < _events.length; i++) {
+                          final oldController =
+                              _titleControllers[i > index ? i + 1 : i];
+                          if (oldController != null) {
+                            newControllers[i] = oldController;
+                          } else {
+                            // 如果控制器不存在，创建新的
+                            newControllers[i] = TextEditingController(
+                              text: _events[i].title,
+                            );
+                          }
                         }
-                      }
-                      _titleControllers = newControllers;
-                    });
-                    widget.onEventsChanged(_events);
-                  }
-                : null,
+                        _titleControllers = newControllers;
+                      });
+                      widget.onEventsChanged(_events);
+                    }
+                    : null,
           ),
         ],
       ),
@@ -170,47 +169,49 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
 
   Widget _buildColorPickerButton(int index, Color color) {
     return GestureDetector(
-      onTap: widget.enabled
-          ? () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                    'contact_pickColor'.tr,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  content: SingleChildScrollView(
-                    child: ColorPicker(
-                      pickerColor: color,
-                      onColorChanged: (newColor) {
-                        setState(() {
-                          _events[index] = CustomActivityEvent(
-                            id: _events[index].id,
-                            color: newColor,
-                            title: _events[index].title,
-                          );
-                        });
-                        widget.onEventsChanged(_events);
-                      },
-                      pickerAreaHeightPercent: 0.8,
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      child: Text(
-                        'contact_done'.tr,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
+      onTap:
+          widget.enabled
+              ? () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        title: Text(
+                          'contact_pickColor'.tr,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
+                        content: SingleChildScrollView(
+                          child: ColorPicker(
+                            pickerColor: color,
+                            onColorChanged: (newColor) {
+                              setState(() {
+                                _events[index] = CustomActivityEvent(
+                                  id: _events[index].id,
+                                  color: newColor,
+                                  title: _events[index].title,
+                                );
+                              });
+                              widget.onEventsChanged(_events);
+                            },
+                            pickerAreaHeightPercent: 0.8,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            child: Text(
+                              'contact_done'.tr,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ],
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              );
-            }
-          : null,
+                );
+              }
+              : null,
       child: Container(
         width: 28,
         height: 28,
@@ -223,21 +224,22 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
     return TextButton.icon(
       icon: Icon(Icons.add_circle, color: theme.colorScheme.primary),
       label: Text(widget.addButtonText),
-      onPressed: widget.enabled
-          ? () {
-              setState(() {
-                final newIndex = _events.length;
-                _events.add(
-                  CustomActivityEvent(
-                    color: theme.colorScheme.primary,
-                    title: '',
-                  ),
-                );
-                _titleControllers[newIndex] = TextEditingController();
-              });
-              widget.onEventsChanged(_events);
-            }
-          : null,
+      onPressed:
+          widget.enabled
+              ? () {
+                setState(() {
+                  final newIndex = _events.length;
+                  _events.add(
+                    CustomActivityEvent(
+                      color: theme.colorScheme.primary,
+                      title: '',
+                    ),
+                  );
+                  _titleControllers[newIndex] = TextEditingController();
+                });
+                widget.onEventsChanged(_events);
+              }
+              : null,
     );
   }
 }

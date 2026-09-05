@@ -91,11 +91,7 @@ class TimerItemsField extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.add,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.add, size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   addButtonText.tr,
@@ -134,10 +130,7 @@ class TimerItemsField extends StatelessWidget {
       decoration: createRoundedContainerDecoration(context),
       child: Row(
         children: [
-          Icon(
-            Icons.drag_indicator,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          Icon(Icons.drag_indicator, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

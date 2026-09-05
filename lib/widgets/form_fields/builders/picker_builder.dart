@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
 import '../date_picker_field.dart';
@@ -13,7 +15,11 @@ import '../image_picker_field.dart';
 import '../location_picker_field.dart';
 
 /// 构建日期选择框
-Widget buildDateField(FormFieldConfig config, GlobalKey fieldKey, BuildContext context) {
+Widget buildDateField(
+  FormFieldConfig config,
+  GlobalKey fieldKey,
+  BuildContext context,
+) {
   final extra = config.extra ?? {};
 
   return WrappedFormField(
@@ -25,31 +31,31 @@ Widget buildDateField(FormFieldConfig config, GlobalKey fieldKey, BuildContext c
     builder: (context, value, setValue) {
       return DatePickerField(
         date: value,
-        formattedDate: value != null
-            ? (extra['format'] != null
-                ? DateFormat(extra['format'] as String).format(value)
-                : DateFormat('yyyy-MM-dd').format(value))
-            : '',
+        formattedDate:
+            value != null
+                ? (extra['format'] != null
+                    ? DateFormat(extra['format'] as String).format(value)
+                    : DateFormat('yyyy-MM-dd').format(value))
+                : '',
         placeholder: config.hintText ?? '选择日期',
         labelText: config.labelText,
         inline: (extra['inline'] as bool?) ?? false,
-        onTap: config.enabled
-            ? () async {
-                final initialDate = value ?? DateTime.now();
-                final firstDate = extra['firstDate'] as DateTime? ?? DateTime(2000);
-                final lastDate = extra['lastDate'] as DateTime? ?? DateTime(2100);
+        onTap:
+            config.enabled
+                ? () async {
+                  final initialDate = value ?? DateTime.now();
 
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: initialDate,
-                  firstDate: firstDate,
-                  lastDate: lastDate,
-                );
-                if (picked != null) {
-                  setValue(picked);
+                  // DS 无日期范围约束参数，first/lastDate 仅作为兜底校验
+                  final picked = await showDSDatePickerDialog(
+                    context: context,
+                    initial: initialDate,
+                    theme: DSThemeBridge.resolve(context),
+                  );
+                  if (picked != null) {
+                    setValue(picked);
+                  }
                 }
-              }
-            : () {},
+                : () {},
       );
     },
   );
@@ -63,11 +69,12 @@ Widget buildTimeField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as TimeOfDay?,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => TimePickerField(
-      label: config.labelText ?? '选择时间',
-      time: value ?? TimeOfDay.now(),
-      onTimeChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => TimePickerField(
+          label: config.labelText ?? '选择时间',
+          time: value ?? TimeOfDay.now(),
+          onTimeChanged: setValue,
+        ),
   );
 }
 
@@ -91,10 +98,7 @@ Widget buildDateRangeField(FormFieldConfig config, GlobalKey fieldKey) {
   return WrappedFormField(
     key: fieldKey,
     name: config.name,
-    initialValue: {
-      'startDate': startDate,
-      'endDate': endDate,
-    },
+    initialValue: {'startDate': startDate, 'endDate': endDate},
     enabled: config.enabled,
     onChanged: config.onChanged,
     builder: (context, value, setValue) {
@@ -111,10 +115,7 @@ Widget buildDateRangeField(FormFieldConfig config, GlobalKey fieldKey) {
         lastDate: extra['lastDate'] as DateTime?,
         onDateRangeChanged: (range) {
           if (range != null) {
-            setValue({
-              'startDate': range.start,
-              'endDate': range.end,
-            });
+            setValue({'startDate': range.start, 'endDate': range.end});
           } else {
             setValue({'startDate': null, 'endDate': null});
           }
@@ -135,13 +136,14 @@ Widget buildIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as IconData? ?? Icons.help,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => IconPickerField(
-      currentIcon: value as IconData? ?? Icons.help,
-      labelText: config.labelText,
-      enabled: config.enabled,
-      enableIconToImage: enableIconToImage,
-      onIconChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => IconPickerField(
+          currentIcon: value as IconData? ?? Icons.help,
+          labelText: config.labelText,
+          enabled: config.enabled,
+          enableIconToImage: enableIconToImage,
+          onIconChanged: setValue,
+        ),
   );
 }
 
@@ -158,36 +160,43 @@ Widget buildAvatarPickerField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as String?,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => AvatarPickerField(
-      username: username,
-      currentAvatarPath: value as String?,
-      size: size,
-      saveDirectory: saveDirectory,
-      enabled: config.enabled,
-      onAvatarChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => AvatarPickerField(
+          username: username,
+          currentAvatarPath: value as String?,
+          size: size,
+          saveDirectory: saveDirectory,
+          enabled: config.enabled,
+          onAvatarChanged: setValue,
+        ),
   );
 }
 
 /// 构建圆形图标选择器字段
 Widget buildCircleIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
-  final initialBackgroundColor = extra['initialBackgroundColor'] as Color? ?? Colors.blue;
+  final initialBackgroundColor =
+      extra['initialBackgroundColor'] as Color? ?? Colors.blue;
   final showLabel = extra['showLabel'] as bool? ?? false;
   final labelText = extra['labelText'] as String? ?? config.labelText;
 
   return WrappedFormField(
     key: fieldKey,
     name: config.name,
-    initialValue: config.initialValue is Map
-        ? config.initialValue as Map<String, dynamic>
-        : {'icon': config.initialValue as IconData? ?? Icons.star, 'color': initialBackgroundColor},
+    initialValue:
+        config.initialValue is Map
+            ? config.initialValue as Map<String, dynamic>
+            : {
+              'icon': config.initialValue as IconData? ?? Icons.star,
+              'color': initialBackgroundColor,
+            },
     enabled: config.enabled,
     onChanged: config.onChanged,
     builder: (context, value, setValue) {
-      final data = value is Map<String, dynamic>
-          ? value
-          : {'icon': Icons.star, 'color': initialBackgroundColor};
+      final data =
+          value is Map<String, dynamic>
+              ? value
+              : {'icon': Icons.star, 'color': initialBackgroundColor};
 
       return CircleIconPickerField(
         currentIcon: data['icon'] as IconData? ?? Icons.star,
@@ -202,7 +211,10 @@ Widget buildCircleIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
 }
 
 /// 构建日历条日期选择器字段
-Widget buildCalendarStripPickerField(FormFieldConfig config, GlobalKey fieldKey) {
+Widget buildCalendarStripPickerField(
+  FormFieldConfig config,
+  GlobalKey fieldKey,
+) {
   final extra = config.extra ?? {};
   final allowFutureDates = extra['allowFutureDates'] as bool? ?? false;
   final useShortWeekDay = extra['useShortWeekDay'] as bool? ?? false;
@@ -213,13 +225,14 @@ Widget buildCalendarStripPickerField(FormFieldConfig config, GlobalKey fieldKey)
     initialValue: config.initialValue as DateTime? ?? DateTime.now(),
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => CalendarStripPickerField(
-      selectedDate: value as DateTime? ?? DateTime.now(),
-      enabled: config.enabled,
-      allowFutureDates: allowFutureDates,
-      useShortWeekDay: useShortWeekDay,
-      onDateChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => CalendarStripPickerField(
+          selectedDate: value as DateTime? ?? DateTime.now(),
+          enabled: config.enabled,
+          allowFutureDates: allowFutureDates,
+          useShortWeekDay: useShortWeekDay,
+          onDateChanged: setValue,
+        ),
   );
 }
 
@@ -263,26 +276,27 @@ Widget buildImagePickerField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => ImagePickerField(
+    builder:
+        (context, value, setValue) => ImagePickerField(
           currentImage: getInitialImagePath(value),
-      labelText: config.labelText,
-      hintText: config.hintText,
-      enabled: config.enabled,
-      saveDirectory: saveDirectory,
-      enableCrop: enableCrop,
-      cropAspectRatio: cropAspectRatio,
-      multiple: multiple,
-      enableCompression: enableCompression,
-      flex: flex,
-      previewWidth: previewWidth,
-      previewHeight: previewHeight,
-      defaultImagePath: defaultImagePath,
-      showShadow: showShadow,
-      borderRadius: borderRadius,
-      showLabel: showLabel,
-      showSelectButton: showSelectButton,
-      onImageChanged: setValue,
-    ),
+          labelText: config.labelText,
+          hintText: config.hintText,
+          enabled: config.enabled,
+          saveDirectory: saveDirectory,
+          enableCrop: enableCrop,
+          cropAspectRatio: cropAspectRatio,
+          multiple: multiple,
+          enableCompression: enableCompression,
+          flex: flex,
+          previewWidth: previewWidth,
+          previewHeight: previewHeight,
+          defaultImagePath: defaultImagePath,
+          showShadow: showShadow,
+          borderRadius: borderRadius,
+          showLabel: showLabel,
+          showSelectButton: showSelectButton,
+          onImageChanged: setValue,
+        ),
   );
 }
 
@@ -294,13 +308,14 @@ Widget buildLocationPickerField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as String?,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => LocationPickerField(
-      currentLocation: value as String?,
-      labelText: config.labelText,
-      hintText: config.hintText,
-      enabled: config.enabled,
-      isMobile: true,
-      onLocationChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => LocationPickerField(
+          currentLocation: value as String?,
+          labelText: config.labelText,
+          hintText: config.hintText,
+          enabled: config.enabled,
+          isMobile: true,
+          onLocationChanged: setValue,
+        ),
   );
 }

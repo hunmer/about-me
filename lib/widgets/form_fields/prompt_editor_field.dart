@@ -112,9 +112,7 @@ class _PromptEditorFieldState extends State<PromptEditorField> {
         ],
         // PromptEditor（自适应高度，最大500）
         Container(
-          constraints: const BoxConstraints(
-            maxHeight: 500,
-          ),
+          constraints: const BoxConstraints(maxHeight: 500),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             border: Border.all(
@@ -162,11 +160,13 @@ class WrappedPromptEditorField extends StatefulWidget {
   });
 
   @override
-  State<WrappedPromptEditorField> createState() => _WrappedPromptEditorFieldState();
+  State<WrappedPromptEditorField> createState() =>
+      _WrappedPromptEditorFieldState();
 }
 
 class _WrappedPromptEditorFieldState extends State<WrappedPromptEditorField> {
-  final GlobalKey<_PromptEditorFieldState> _fieldKey = GlobalKey<_PromptEditorFieldState>();
+  final GlobalKey<_PromptEditorFieldState> _fieldKey =
+      GlobalKey<_PromptEditorFieldState>();
 
   @override
   Widget build(BuildContext context) {

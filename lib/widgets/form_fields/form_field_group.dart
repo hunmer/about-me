@@ -62,24 +62,26 @@ class FormFieldGroup extends StatelessWidget {
     }
 
     return Container(
-      decoration: showBackground
-          ? BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(borderRadius),
-            )
-          : null,
-      child: showBackground
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(borderRadius),
-              child: Column(
+      decoration:
+          showBackground
+              ? BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(borderRadius),
+              )
+              : null,
+      child:
+          showBackground
+              ? ClipRRect(
+                borderRadius: BorderRadius.circular(borderRadius),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: childrenWithDividers,
+                ),
+              )
+              : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: childrenWithDividers,
               ),
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: childrenWithDividers,
-            ),
     );
   }
 }

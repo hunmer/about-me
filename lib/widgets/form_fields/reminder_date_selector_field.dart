@@ -34,15 +34,17 @@ class ReminderDateData {
   static ReminderDateData fromMap(Map<String, dynamic> map) {
     return ReminderDateData(
       type: ReminderDateType.values[map['type'] as int? ?? 0],
-      selectedDays: (map['selectedDays'] as List<dynamic>?)
+      selectedDays:
+          (map['selectedDays'] as List<dynamic>?)
               ?.map((e) => e as int)
               .toList() ??
           [],
-      time: map['time'] != null
-          ? TimeOfDay.fromDateTime(
-              DateTime.parse('1970-01-01 ${map['time']}'),
-            )
-          : null,
+      time:
+          map['time'] != null
+              ? TimeOfDay.fromDateTime(
+                DateTime.parse('1970-01-01 ${map['time']}'),
+              )
+              : null,
     );
   }
 
@@ -77,18 +79,17 @@ class ReminderDateData {
   ReminderDateData copyWithType(ReminderDateType newType) {
     return ReminderDateData(
       type: newType,
-      selectedDays: newType == ReminderDateType.daily || newType == ReminderDateType.none ? [] : _getDefaultDays(newType),
+      selectedDays:
+          newType == ReminderDateType.daily || newType == ReminderDateType.none
+              ? []
+              : _getDefaultDays(newType),
       time: newType == ReminderDateType.none ? null : time,
     );
   }
 
   // 复制并修改选中天
   ReminderDateData copyWithSelectedDays(List<int> newDays) {
-    return ReminderDateData(
-      type: type,
-      selectedDays: newDays,
-      time: time,
-    );
+    return ReminderDateData(type: type, selectedDays: newDays, time: time);
   }
 
   // 复制并修改时间
@@ -116,7 +117,13 @@ class ReminderDateData {
 // 辅助函数：将 TimeOfDay 转换为字符串
 String _timeOfDayToString(TimeOfDay time) {
   final now = DateTime.now();
-  final dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  final dateTime = DateTime(
+    now.year,
+    now.month,
+    now.day,
+    time.hour,
+    time.minute,
+  );
   return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 }
 
@@ -151,10 +158,12 @@ class ReminderDateSelectorField extends StatelessWidget {
 
     return WrappedFormField(
       name: name,
-      initialValue: initialValue ?? const ReminderDateData(
-        type: ReminderDateType.daily,
-        selectedDays: [1, 2, 3, 4, 5, 6, 7],
-      ),
+      initialValue:
+          initialValue ??
+          const ReminderDateData(
+            type: ReminderDateType.daily,
+            selectedDays: [1, 2, 3, 4, 5, 6, 7],
+          ),
       onChanged: (value) {
         onChanged?.call(value as ReminderDateData);
       },
@@ -169,15 +178,19 @@ class ReminderDateSelectorField extends StatelessWidget {
         // 切换日期选中状态
         void toggleDay(int day) {
           final isSelected = currentValue.selectedDays.contains(day);
-          final newDays = isSelected
-              ? currentValue.selectedDays.where((d) => d != day).toList()
-              : [...currentValue.selectedDays, day]..sort();
+          final newDays =
+              isSelected
+                    ? currentValue.selectedDays.where((d) => d != day).toList()
+                    : [...currentValue.selectedDays, day]
+                ..sort();
           setValue(currentValue.copyWithSelectedDays(newDays));
         }
 
         // 切换全选/全不选
         void toggleAll() {
-          final defaultDays = ReminderDateData._getDefaultDays(currentValue.type);
+          final defaultDays = ReminderDateData._getDefaultDays(
+            currentValue.type,
+          );
           if (currentValue.selectedDays.length == defaultDays.length) {
             setValue(currentValue.copyWithSelectedDays([]));
           } else {
@@ -233,19 +246,25 @@ class ReminderDateSelectorField extends StatelessWidget {
             const SizedBox(height: 12),
 
             // 日期选择区域（非 daily 且 非 none 时显示）
-            if (currentValue.type != ReminderDateType.daily && currentValue.type != ReminderDateType.none) ...[
+            if (currentValue.type != ReminderDateType.daily &&
+                currentValue.type != ReminderDateType.none) ...[
               // 星期/日期选择 + 全选按钮
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    currentValue.type == ReminderDateType.weekly ? '选择星期' : '选择日期',
+                    currentValue.type == ReminderDateType.weekly
+                        ? '选择星期'
+                        : '选择日期',
                     style: theme.textTheme.titleMedium,
                   ),
                   TextButton(
                     onPressed: toggleAll,
                     child: Text(
-                      currentValue.selectedDays.length == ReminderDateData._getDefaultDays(currentValue.type).length
+                      currentValue.selectedDays.length ==
+                              ReminderDateData._getDefaultDays(
+                                currentValue.type,
+                              ).length
                           ? '全不选'
                           : '全选',
                     ),
@@ -263,12 +282,16 @@ class ReminderDateSelectorField extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final day = index + 1;
-                      final isSelected = currentValue.selectedDays.contains(day);
+                      final isSelected = currentValue.selectedDays.contains(
+                        day,
+                      );
                       return FilterChip(
                         label: Text(weekDays[index]),
                         selected: isSelected,
                         showCheckmark: false,
-                        selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                        selectedColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.2,
+                        ),
                         onSelected: (_) => toggleDay(day),
                       );
                     },
@@ -289,7 +312,9 @@ class ReminderDateSelectorField extends StatelessWidget {
                       label: Text('$day'),
                       selected: isSelected,
                       showCheckmark: false,
-                      selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                      selectedColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.2,
+                      ),
                       onSelected: (_) => toggleDay(day),
                     );
                   }),
@@ -301,10 +326,7 @@ class ReminderDateSelectorField extends StatelessWidget {
             if (currentValue.type != ReminderDateType.none)
               Row(
                 children: [
-                  Text(
-                    '提醒时间',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                  Text('提醒时间', style: theme.textTheme.titleMedium),
                   const Spacer(),
                   FilledButton.tonalIcon(
                     onPressed: selectTime,

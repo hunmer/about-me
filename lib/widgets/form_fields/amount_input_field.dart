@@ -68,7 +68,8 @@ class _AmountInputFieldState extends State<AmountInputField> {
       _isUserInput = false;
       return;
     }
-    if (widget.amount != oldWidget.amount && _controller.text != _formatAmount(widget.amount)) {
+    if (widget.amount != oldWidget.amount &&
+        _controller.text != _formatAmount(widget.amount)) {
       // 延迟到下一帧执行，避免在 build 过程中 setState
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -153,9 +154,13 @@ class _AmountInputFieldState extends State<AmountInputField> {
                       isDense: true,
                       errorText: fieldState.errorText,
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+\.?\d{0,2}'),
+                      ),
                     ],
                     enabled: widget.enabled,
                     onChanged: (value) {

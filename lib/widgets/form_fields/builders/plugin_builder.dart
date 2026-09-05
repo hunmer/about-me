@@ -29,29 +29,29 @@ Widget buildPromptEditorField(FormFieldConfig config, GlobalKey fieldKey) {
     name: config.name,
     initialValue: config.initialValue as List<dynamic>?,
     enabled: config.enabled,
-    builder: (fieldState) => PromptEditorField(
-      name: config.name,
-      initialValue: fieldState.value,
-      enabled: config.enabled,
-      labelText: labelText,
-      onChanged: (v) {
-        fieldState.didChange(v);
-        config.onChanged?.call(v);
-      },
-    ),
+    builder:
+        (fieldState) => PromptEditorField(
+          name: config.name,
+          initialValue: fieldState.value,
+          enabled: config.enabled,
+          labelText: labelText,
+          onChanged: (v) {
+            fieldState.didChange(v);
+            config.onChanged?.call(v);
+          },
+        ),
   );
 }
 
 /// 构建图标头像行字段
 Widget buildIconAvatarRowField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
-  final avatarSaveDirectory = extra['avatarSaveDirectory'] as String? ?? 'openai/agent_avatars';
+  final avatarSaveDirectory =
+      extra['avatarSaveDirectory'] as String? ?? 'openai/agent_avatars';
 
-  final initialValue = config.initialValue as Map<String, dynamic>? ?? {
-    'icon': Icons.smart_toy,
-    'iconColor': Colors.blue,
-    'avatarUrl': null,
-  };
+  final initialValue =
+      config.initialValue as Map<String, dynamic>? ??
+      {'icon': Icons.smart_toy, 'iconColor': Colors.blue, 'avatarUrl': null};
 
   return FormBuilderField<Map<String, dynamic>>(
     key: fieldKey,
@@ -77,9 +77,13 @@ Widget buildIconAvatarRowField(FormFieldConfig config, GlobalKey fieldKey) {
 }
 
 /// 构建收支类型选择器字段
-Widget buildExpenseTypeSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
+Widget buildExpenseTypeSelectorField(
+  FormFieldConfig config,
+  GlobalKey fieldKey,
+) {
   final extra = config.extra ?? {};
-  final expenseColor = extra['expenseColor'] as Color? ?? const Color(0xFFE74C3C);
+  final expenseColor =
+      extra['expenseColor'] as Color? ?? const Color(0xFFE74C3C);
   final incomeColor = extra['incomeColor'] as Color? ?? const Color(0xFF2ECC71);
 
   return WrappedFormField(
@@ -88,12 +92,13 @@ Widget buildExpenseTypeSelectorField(FormFieldConfig config, GlobalKey fieldKey)
     initialValue: config.initialValue as bool? ?? true,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => ExpenseTypeSelectorField(
-      isExpense: value as bool? ?? true,
-      onTypeChanged: config.enabled ? setValue : (isExpense) {},
-      expenseColor: expenseColor,
-      incomeColor: incomeColor,
-    ),
+    builder:
+        (context, value, setValue) => ExpenseTypeSelectorField(
+          isExpense: value as bool? ?? true,
+          onTypeChanged: config.enabled ? setValue : (isExpense) {},
+          expenseColor: expenseColor,
+          incomeColor: incomeColor,
+        ),
   );
 }
 
@@ -109,40 +114,44 @@ Widget buildAmountInputField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as double?,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => AmountInputField(
-      amount: value as double?,
-      onAmountChanged: setValue,
-      currencySymbol: currencySymbol,
-      fontSize: fontSize,
-      enabled: config.enabled,
-      validator: config.required
-          ? (value) {
-              if (value == null || value.isEmpty) {
-                return config.validationMessage ?? '请输入金额';
-              }
-              final amount = double.tryParse(value);
-              if (amount == null) {
-                return '请输入有效的金额';
-              }
-              if (amount <= 0) {
-                return config.validationMessage ?? '金额必须大于0';
-              }
-              return null;
-            }
-          : null,
-    ),
+    builder:
+        (context, value, setValue) => AmountInputField(
+          amount: value as double?,
+          onAmountChanged: setValue,
+          currencySymbol: currencySymbol,
+          fontSize: fontSize,
+          enabled: config.enabled,
+          validator:
+              config.required
+                  ? (value) {
+                    if (value == null || value.isEmpty) {
+                      return config.validationMessage ?? '请输入金额';
+                    }
+                    final amount = double.tryParse(value);
+                    if (amount == null) {
+                      return '请输入有效的金额';
+                    }
+                    if (amount <= 0) {
+                      return config.validationMessage ?? '金额必须大于0';
+                    }
+                    return null;
+                  }
+                  : null,
+        ),
   );
 }
 
 /// 构建提醒时间列表字段
 Widget buildRemindersField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
-  final primaryColor = extra['primaryColor'] as Color? ?? const Color(0xFF607AFB);
+  final primaryColor =
+      extra['primaryColor'] as Color? ?? const Color(0xFF607AFB);
 
   return FormBuilderField<List<DateTime>>(
     key: fieldKey,
     name: config.name,
-    initialValue: (config.initialValue as List<dynamic>? ?? []).cast<DateTime>(),
+    initialValue:
+        (config.initialValue as List<dynamic>? ?? []).cast<DateTime>(),
     enabled: config.enabled,
     builder: (fieldState) {
       final reminders = fieldState.value ?? <DateTime>[];
@@ -167,7 +176,11 @@ Widget buildRemindersField(FormFieldConfig config, GlobalKey fieldKey) {
 }
 
 /// 构建子计时器列表字段
-Widget buildTimerItemsField(FormFieldConfig config, GlobalKey fieldKey, BuildContext context) {
+Widget buildTimerItemsField(
+  FormFieldConfig config,
+  GlobalKey fieldKey,
+  BuildContext context,
+) {
   return FormBuilderField<List<dynamic>>(
     key: fieldKey,
     name: config.name,
@@ -223,14 +236,16 @@ Widget buildTimerIconGridField(FormFieldConfig config, GlobalKey fieldKey) {
     builder: (context, value, setValue) {
       return TimerIconGridField(
         selectedIcon: value as IconData? ?? Icons.psychology,
-        presetIcons: presetIcons ?? const [
-          Icons.psychology,
-          Icons.auto_stories,
-          Icons.code,
-          Icons.fitness_center,
-          Icons.edit,
-          Icons.more_horiz,
-        ],
+        presetIcons:
+            presetIcons ??
+            const [
+              Icons.psychology,
+              Icons.auto_stories,
+              Icons.code,
+              Icons.fitness_center,
+              Icons.edit,
+              Icons.more_horiz,
+            ],
         enabled: config.enabled,
         primaryColor: config.primaryColor,
         onIconChanged: setValue,
@@ -247,11 +262,12 @@ Widget buildGenderSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => GenderSelectorField(
-      selectedGender: value,
-      onGenderChanged: setValue,
-      enabled: config.enabled,
-    ),
+    builder:
+        (context, value, setValue) => GenderSelectorField(
+          selectedGender: value,
+          onGenderChanged: setValue,
+          enabled: config.enabled,
+        ),
   );
 }
 
@@ -265,7 +281,8 @@ Widget buildCustomEventsField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: initialEvents.cast<CustomActivityEvent>(),
     enabled: config.enabled,
     builder: (fieldState) {
-      final events = fieldState.value ?? initialEvents.cast<CustomActivityEvent>();
+      final events =
+          fieldState.value ?? initialEvents.cast<CustomActivityEvent>();
 
       return CustomEventsField(
         events: events,
@@ -326,18 +343,20 @@ Widget buildChipSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
 
   final optionsRaw = extra['options'] as List<dynamic>?;
-  final options = optionsRaw?.map((e) {
-    if (e is ChipOption) return e;
-    if (e is Map<String, dynamic>) {
-      return ChipOption(
-        id: e['id'] as String,
-        label: e['label'] as String,
-        icon: e['icon'] as IconData?,
-        color: e['color'] as Color?,
-      );
-    }
-    return ChipOption(id: e.toString(), label: e.toString());
-  }).toList() ?? <ChipOption>[];
+  final options =
+      optionsRaw?.map((e) {
+        if (e is ChipOption) return e;
+        if (e is Map<String, dynamic>) {
+          return ChipOption(
+            id: e['id'] as String,
+            label: e['label'] as String,
+            icon: e['icon'] as IconData?,
+            color: e['color'] as Color?,
+          );
+        }
+        return ChipOption(id: e.toString(), label: e.toString());
+      }).toList() ??
+      <ChipOption>[];
 
   final hintText = extra['hintText'] as String? ?? config.hintText ?? '选择';
   final selectorTitle = extra['selectorTitle'] as String? ?? '选择';
@@ -351,17 +370,18 @@ Widget buildChipSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: config.initialValue as String?,
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => ChipSelectorField(
-      options: options,
-      selectedId: value as String?,
-      hintText: hintText,
-      selectorTitle: selectorTitle,
-      enabled: config.enabled,
-      selectedBackgroundColor: selectedBackgroundColor,
-      selectedForegroundColor: selectedForegroundColor,
-      icon: icon,
-      onValueChanged: setValue,
-    ),
+    builder:
+        (context, value, setValue) => ChipSelectorField(
+          options: options,
+          selectedId: value as String?,
+          hintText: hintText,
+          selectorTitle: selectorTitle,
+          enabled: config.enabled,
+          selectedBackgroundColor: selectedBackgroundColor,
+          selectedForegroundColor: selectedForegroundColor,
+          icon: icon,
+          onValueChanged: setValue,
+        ),
   );
 }
 
@@ -397,14 +417,16 @@ Widget buildReminderDateField(FormFieldConfig config, GlobalKey fieldKey) {
   return FormBuilderField<Map<String, dynamic>>(
     key: fieldKey,
     name: config.name,
-    initialValue: config.initialValue != null
-        ? (config.initialValue as ReminderDateData).toMap()
-        : null,
+    initialValue:
+        config.initialValue != null
+            ? (config.initialValue as ReminderDateData).toMap()
+            : null,
     enabled: config.enabled,
     builder: (fieldState) {
-      final initialData = fieldState.value != null
-          ? ReminderDateData.fromMap(fieldState.value!)
-          : const ReminderDateData(type: ReminderDateType.daily);
+      final initialData =
+          fieldState.value != null
+              ? ReminderDateData.fromMap(fieldState.value!)
+              : const ReminderDateData(type: ReminderDateType.daily);
 
       return ReminderDateSelectorField(
         name: config.name,

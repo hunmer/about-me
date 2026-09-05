@@ -32,7 +32,8 @@ abstract class FormFieldWrapper extends StatefulWidget {
 /// 表单字段状态基类
 ///
 /// 定义了表单字段必须实现的状态管理方法
-abstract class FormFieldWrapperState<T extends FormFieldWrapper> extends State<T> {
+abstract class FormFieldWrapperState<T extends FormFieldWrapper>
+    extends State<T> {
   /// 当前字段的值
   dynamic _value;
 
@@ -125,7 +126,12 @@ class WrappedFormFieldState extends FormFieldWrapperState<WrappedFormField> {
 /// 将现有表单组件包装，提供统一的状态管理接口
 class WrappedFormField extends FormFieldWrapper {
   /// 子组件构建器
-  final Widget Function(BuildContext context, dynamic value, ValueChanged setValue) builder;
+  final Widget Function(
+    BuildContext context,
+    dynamic value,
+    ValueChanged setValue,
+  )
+  builder;
 
   /// 获取当前值的回调
   final dynamic Function()? getValue;

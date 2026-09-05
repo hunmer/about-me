@@ -120,9 +120,7 @@ class TextAreaField extends StatelessWidget {
         hintText: hintText,
         helperText: helperText,
         helperStyle: helperStyle,
-        hintStyle: TextStyle(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
@@ -137,10 +135,7 @@ class TextAreaField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerLow,

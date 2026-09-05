@@ -15,28 +15,31 @@ Widget buildSwitchField(FormFieldConfig config, GlobalKey fieldKey) {
     name: config.name,
     initialValue: config.initialValue as bool? ?? false,
     enabled: config.enabled,
-    builder: (fieldState) => SwitchField(
-      value: fieldState.value ?? false,
-      title: config.labelText ?? '',
-      subtitle: config.hintText,
-      icon: config.prefixIcon,
-      inline: (extra['inline'] as bool?) ?? false,
-      onChanged: config.enabled
-          ? (v) {
-              fieldState.didChange(v);
-              config.onChanged?.call(v);
-              // 触发条件字段更新
-              config.onValueChanged?.call();
-            }
-          : null,
-    ),
+    builder:
+        (fieldState) => SwitchField(
+          value: fieldState.value ?? false,
+          title: config.labelText ?? '',
+          subtitle: config.hintText,
+          icon: config.prefixIcon,
+          inline: (extra['inline'] as bool?) ?? false,
+          onChanged:
+              config.enabled
+                  ? (v) {
+                    fieldState.didChange(v);
+                    config.onChanged?.call(v);
+                    // 触发条件字段更新
+                    config.onValueChanged?.call();
+                  }
+                  : null,
+        ),
   );
 }
 
 /// 构建滑块
 Widget buildSliderField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
-  final quickValueLabelFn = extra['quickValueLabel'] as String Function(double)?;
+  final quickValueLabelFn =
+      extra['quickValueLabel'] as String Function(double)?;
 
   return WrappedFormField(
     key: fieldKey,
@@ -45,7 +48,8 @@ Widget buildSliderField(FormFieldConfig config, GlobalKey fieldKey) {
     enabled: config.enabled,
     onChanged: config.onChanged,
     builder: (context, value, setValue) {
-      final displayValue = (extra['valueText'] as String?) ?? '${(value ?? 0).toInt()}';
+      final displayValue =
+          (extra['valueText'] as String?) ?? '${(value ?? 0).toInt()}';
 
       return SliderField(
         label: config.labelText ?? '',
@@ -57,11 +61,12 @@ Widget buildSliderField(FormFieldConfig config, GlobalKey fieldKey) {
         onChanged: config.enabled ? setValue : null,
         quickValues: config.quickValues,
         quickValueLabel: quickValueLabelFn,
-        onQuickValueTap: config.enabled
-            ? (v) {
-                setValue(v);
-              }
-            : null,
+        onQuickValueTap:
+            config.enabled
+                ? (v) {
+                  setValue(v);
+                }
+                : null,
       );
     },
   );
@@ -92,13 +97,14 @@ Widget buildColorField(FormFieldConfig config, GlobalKey fieldKey) {
     initialValue: toColor(config.initialValue),
     enabled: config.enabled,
     onChanged: config.onChanged,
-    builder: (context, value, setValue) => ColorSelectorField(
-      labelText: config.labelText ?? '选择颜色',
+    builder:
+        (context, value, setValue) => ColorSelectorField(
+          labelText: config.labelText ?? '选择颜色',
           selectedColor: toColor(value),
-      onColorChanged: config.enabled ? setValue : (_) {},
-      inline: (extra['inline'] as bool?) ?? false,
-      scrollable: (extra['scrollable'] as bool?) ?? false,
+          onColorChanged: config.enabled ? setValue : (_) {},
+          inline: (extra['inline'] as bool?) ?? false,
+          scrollable: (extra['scrollable'] as bool?) ?? false,
           labelWidth: toDouble(extra['labelWidth']),
-    ),
+        ),
   );
 }

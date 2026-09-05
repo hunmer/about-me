@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 列表添加组件
 ///
 /// 功能特性：
-/// - 显示列表项（可勾选、删除）
-/// - 底部有添加按钮和输入框
+/// - 显示列表项（DS 果冻复选框、可删除）
+/// - 底部有添加按钮和输入框（编辑原语）
 /// - 支持回车添加
 /// - 支持泛型，可与任何数据模型配合使用
 class ListAddField<T> extends StatelessWidget {
@@ -32,7 +34,7 @@ class ListAddField<T> extends StatelessWidget {
   /// 添加按钮的文本
   final String addButtonText;
 
-  /// 主题色
+  /// 主题色（保留以兼容配置；DS 件一律取主题令牌）
   final Color primaryColor;
 
   const ListAddField({
@@ -50,95 +52,31 @@ class ListAddField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return JellyBox(
+      radius: theme.radii.lg,
       child: Column(
         children: [
           // 列表项
-          if (items.isNotEmpty)
-            ...items.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final title = getTitle(item);
-              final isCompleted = getIsCompleted(item);
-
-              return Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.grey[200]!,
-                    ),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: isCompleted,
-                        onChanged: (_) => onToggle(index),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        activeColor: primaryColor,
-                        side: BorderSide(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.2)
-                              : Colors.grey[400]!,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          decoration: isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.grey[900],
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => onRemove(index),
-                      color: isDark ? Colors.grey[400] : Colors.grey[500],
-                    ),
-                  ],
-                ),
-              );
-            }),
+          for (var index = 0; index < items.length; index++)
+            _buildItemRow(context, theme, index),
           // 添加输入框
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                InkWell(
-                  onTap: onAdd,
-                  borderRadius: BorderRadius.circular(12),
+                Pressable(
+                  onPressed: onAdd,
+                  semanticLabel: addButtonText,
                   child: Row(
                     children: [
-                      Icon(Icons.add_circle_outline,
-                          color: primaryColor, size: 20),
+                      DsIcon(DsIconKind.plus, size: 18, color: theme.primary),
                       const SizedBox(width: 8),
                       Text(
                         addButtonText,
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.primary,
                         ),
                       ),
                     ],
@@ -148,19 +86,59 @@ class ListAddField<T> extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: controller,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.grey[900],
-                    ),
-                    decoration: const InputDecoration(
+                    style: DsTypography.body.copyWith(color: theme.text),
+                    decoration: InputDecoration(
                       hintText: '',
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
+                      hintStyle: DsTypography.body.copyWith(
+                        color: theme.textSub.withValues(alpha: 0.75),
+                      ),
                     ),
                     onSubmitted: (_) => onAdd(),
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemRow(BuildContext context, AppThemeData theme, int index) {
+    final item = items[index];
+    final title = getTitle(item);
+    final isCompleted = getIsCompleted(item);
+
+    return Container(
+      decoration: BoxDecoration(
+        border:
+            index < items.length - 1
+                ? Border(bottom: BorderSide(color: theme.stroke))
+                : null,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          DSCheckbox(value: isCompleted, onChanged: (_) => onToggle(index)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              title,
+              style: DsTypography.body.copyWith(
+                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                color: isCompleted ? theme.textSub : theme.text,
+              ),
+            ),
+          ),
+          Pressable(
+            onPressed: () => onRemove(index),
+            semanticLabel: '删除',
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: DsIcon(DsIconKind.close, size: 15, color: theme.textSub),
             ),
           ),
         ],

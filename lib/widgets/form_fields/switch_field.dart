@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 开关选择组件
 ///
 /// 功能特性：
-/// - 统一的样式和主题适配
+/// - DS 果冻开关（表情滑块 + カチッ回弹动画）
 /// - 支持标签、子标题和图标
 /// - 可配置启用状态
 /// - 支持 inline 模式（适用于 FormFieldGroup）
@@ -20,14 +22,11 @@ class SwitchField extends StatelessWidget {
   /// 子标题文本
   final String? subtitle;
 
-  /// 左侧图标
+  /// 左侧图标（持久化 IconData，由调用方配置）
   final IconData? icon;
 
   /// 是否启用
   final bool enabled;
-
-  /// 主题色
-  final Color primaryColor;
 
   /// 是否使用inline模式（无边框，适用于 FormFieldGroup）
   final bool inline;
@@ -40,99 +39,55 @@ class SwitchField extends StatelessWidget {
     this.subtitle,
     this.icon,
     this.enabled = true,
-    this.primaryColor = const Color(0xFF607AFB),
     this.inline = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
+    final effectiveOnChanged = enabled ? onChanged : null;
+
+    Widget content = Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 22, color: theme.textSub),
+          SizedBox(width: theme.spacing.md),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: DsTypography.body.copyWith(color: theme.text)),
+              if (subtitle != null) ...[
+                SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ],
+            ],
+          ),
+        ),
+        DSSwitch(value: value, onChanged: effectiveOnChanged),
+      ],
+    );
 
     // inline 模式：无边框，适用于 FormFieldGroup
     if (inline) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Switch.adaptive(
-              value: value,
-              onChanged: enabled ? onChanged : null,
-              activeColor: theme.colorScheme.primary,
-            ),
-          ],
-        ),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: content,
       );
     }
 
-    // 默认模式：独立卡片样式
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-        ),
+    // 默认模式：果冻卡片样式
+    return JellyBox(
+      radius: theme.radii.lg,
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spacing.md,
+        vertical: theme.spacing.sm,
       ),
-      child: SwitchListTile(
-        value: value,
-        onChanged: enabled ? onChanged : null,
-        title: Text(
-          title,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-                subtitle!,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                ),
-              )
-            : null,
-        secondary: icon != null
-            ? Icon(
-                icon,
-                color: theme.colorScheme.onSurfaceVariant,
-              )
-            : null,
-        activeColor: theme.colorScheme.primary,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 4,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
+      child: content,
     );
   }
 }

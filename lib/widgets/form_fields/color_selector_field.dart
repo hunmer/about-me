@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 颜色选择组件
 ///
 /// 功能特性：
 /// - 支持预设颜色选择
-/// - 统一的样式和主题适配
+/// - DS 果冻风格容器与选中对勾
 /// - 支持 inline 模式（label在左，颜色选择器在右）
 class ColorSelectorField extends StatelessWidget {
   /// 当前选中的颜色
@@ -63,7 +65,23 @@ class ColorSelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
+
+    Widget swatches({bool scroll = false}) {
+      final wrap = Wrap(
+        spacing: spacing,
+        runSpacing: spacing,
+        children: [for (final color in colors) _buildSwatch(context, color)],
+      );
+      if (!scroll) return wrap;
+      return SizedBox(
+        height: colorSize + 6,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: wrap,
+        ),
+      );
+    }
 
     // inline 模式：label 在左，颜色选择器在右
     if (inline) {
@@ -75,143 +93,79 @@ class ColorSelectorField extends StatelessWidget {
               width: labelWidth,
               child: Text(
                 labelText!,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
+                style: DsTypography.body.copyWith(color: theme.text),
               ),
             ),
             const SizedBox(height: 8),
           ],
-          // 单行滚动模式
-          if (scrollable)
-            SizedBox(
-              height: colorSize + 4,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  spacing: spacing,
-                  children: colors.map((color) {
-                    final isSelected = selectedColor.value == color.value;
-                    return GestureDetector(
-                      onTap: () => onColorChanged(color),
-                      child: Container(
-                        width: colorSize,
-                        height: colorSize,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: isSelected
-                              ? Border.all(color: Colors.black, width: 2)
-                              : null,
-                        ),
-                        child: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: color == Colors.white || color == Colors.yellow
-                                    ? Colors.black
-                                    : Colors.white,
-                                size: colorSize * 0.55,
-                              )
-                            : null,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            )
-          else
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: colors.map((color) {
-                final isSelected = selectedColor.value == color.value;
-                return GestureDetector(
-                  onTap: () => onColorChanged(color),
-                  child: Container(
-                    width: colorSize,
-                    height: colorSize,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: isSelected
-                          ? Border.all(color: Colors.black, width: 2)
-                          : null,
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            color: color == Colors.white || color == Colors.yellow
-                                ? Colors.black
-                                : Colors.white,
-                            size: colorSize * 0.55,
-                          )
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
+          swatches(scroll: scrollable),
         ],
       );
     }
 
-    // 默认模式：独立卡片样式
+    // 默认模式：果冻卡片样式
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (labelText != null) ...[
           Text(
             labelText!,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
-            ),
+            style: DsTypography.body.copyWith(color: theme.text),
           ),
           const SizedBox(height: 8),
         ],
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: colors.map((color) {
-              final isSelected = selectedColor.value == color.value;
-              return GestureDetector(
-                onTap: () => onColorChanged(color),
-                child: Container(
-                  width: colorSize,
-                  height: colorSize,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: isSelected
-                        ? Border.all(color: Colors.black, width: 2)
-                        : null,
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color == Colors.white || color == Colors.yellow
-                              ? Colors.black
-                              : Colors.white,
-                          size: colorSize * 0.55,
-                        )
-                      : null,
-                ),
-              );
-            }).toList(),
-          ),
+        JellyBox(
+          radius: theme.radii.lg,
+          padding: EdgeInsets.all(theme.spacing.md),
+          child: swatches(),
         ),
       ],
+    );
+  }
+
+  /// 单个颜色圆点：选中时描边 + 对勾
+  Widget _buildSwatch(BuildContext context, Color color) {
+    final theme = DSThemeBridge.resolve(context);
+    final isSelected = selectedColor.value == color.value;
+
+    return Pressable(
+      onPressed: () => onColorChanged(color),
+      semanticLabel:
+          '#${color.value.toRadixString(16).substring(2).toUpperCase()}',
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return AnimatedScale(
+          scale: pressed ? 0.88 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: colorSize,
+            height: colorSize,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? theme.primary : theme.stroke,
+                width: isSelected ? 2.5 : 1.4,
+              ),
+              boxShadow: isSelected ? theme.shadows.soft : null,
+            ),
+            child:
+                isSelected
+                    ? DsIcon(
+                      DsIconKind.check,
+                      size: colorSize * 0.55,
+                      // 浅色圆点上用深色对勾，保证对比度
+                      color:
+                          color.computeLuminance() > 0.6
+                              ? DsColors.black
+                              : DsColors.white,
+                    )
+                    : null,
+          ),
+        );
+      },
     );
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../picker/location_picker.dart';
-import 'builders/index.dart' show createRoundedContainerDecoration;
 
 /// 位置选择器字段组件
 ///
-/// 集成 LocationPicker，提供位置选择功能
+/// 集成 LocationPicker，提供位置选择功能（LocationPicker 属共享基建）；
+/// 触发器为 DS 果冻卡片。
 class LocationPickerField extends StatelessWidget {
   /// 当前位置地址
   final String? currentLocation;
@@ -36,10 +38,37 @@ class LocationPickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
-    return GestureDetector(
-      onTap:
+    Widget trigger = JellyBox(
+      height: 50,
+      radius: theme.radii.lg,
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
+      child: Row(
+        children: [
+          DsIcon(DsIconKind.pin, size: 20, color: theme.primary),
+          SizedBox(width: theme.spacing.md),
+          Expanded(
+            child: Text(
+              currentLocation ?? labelText ?? hintText ?? '选择位置',
+              style: DsTypography.body.copyWith(
+                color: currentLocation != null ? theme.text : theme.textSub,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (enabled)
+            DsIcon(DsIconKind.chevronDown, size: 18, color: theme.primary),
+        ],
+      ),
+    );
+    if (!enabled) {
+      trigger = Opacity(opacity: 0.55, child: IgnorePointer(child: trigger));
+    }
+
+    return Pressable(
+      onPressed:
           enabled
               ? () async {
                 final result = await showDialog<String>(
@@ -57,28 +86,7 @@ class LocationPickerField extends StatelessWidget {
                 }
               }
               : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: createRoundedContainerDecoration(context),
-        child: Row(
-          children: [
-            Icon(
-              Icons.location_on,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                currentLocation ?? labelText ?? hintText ?? '选择位置',
-                style: theme.textTheme.bodyMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (enabled) const Icon(Icons.arrow_drop_down),
-          ],
-        ),
-      ),
+      child: trigger,
     );
   }
 }

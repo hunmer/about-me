@@ -147,14 +147,15 @@ class _IconAvatarRowFieldState extends State<IconAvatarRowField> {
                     width: 2,
                   ),
                 ),
-                child: _avatarUrl != null && _avatarUrl!.isNotEmpty
-                    ? AdaptiveImage(
-                        imagePath: _avatarUrl,
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        shape: BoxShape.circle,
-                      )
+                child:
+                    _avatarUrl != null && _avatarUrl!.isNotEmpty
+                        ? AdaptiveImage(
+                          imagePath: _avatarUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          shape: BoxShape.circle,
+                        )
                         : Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
