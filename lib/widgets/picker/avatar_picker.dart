@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:math';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'image_picker_dialog.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/utils/image_utils.dart';
@@ -150,6 +152,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return GestureDetector(
       onTap: () => _pickImage(context),
       child: Container(
@@ -157,30 +160,31 @@ class _AvatarPickerState extends State<AvatarPicker> {
         height: widget.size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Theme.of(context).colorScheme.primaryContainer,
+          color: theme.primary.mixWhite(0.85),
+          border: Border.all(color: theme.primary.withValues(alpha: 0.35)),
         ),
-        child: _avatarPath != null
-            ? AdaptiveImage(
-                key: ValueKey(_avatarPath),
-                imagePath: _avatarPath,
-                width: widget.size,
-                height: widget.size,
-                fit: BoxFit.cover,
-                shape: BoxShape.circle,
-              )
-                : _buildDefaultAvatar(),
+        child:
+            _avatarPath != null
+                ? AdaptiveImage(
+                  key: ValueKey(_avatarPath),
+                  imagePath: _avatarPath,
+                  width: widget.size,
+                  height: widget.size,
+                  fit: BoxFit.cover,
+                  shape: BoxShape.circle,
+                )
+                : _buildDefaultAvatar(theme),
       ),
     );
   }
 
-  Widget _buildDefaultAvatar() {
+  Widget _buildDefaultAvatar(AppThemeData theme) {
     return Center(
       child: Text(
         widget.username.isNotEmpty ? widget.username[0].toUpperCase() : '?',
-        style: TextStyle(
+        style: DsTypography.title.copyWith(
           fontSize: widget.size * 0.5,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
+          color: theme.primaryText,
         ),
       ),
     );

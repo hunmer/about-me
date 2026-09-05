@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 日历条日期选择器组件
 ///
@@ -396,7 +398,9 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
     final viewportWidth = _scrollController.position.viewportDimension;
     // 将选中项居中显示
     final targetOffset =
-        (selectedIndex * itemSize) - (viewportWidth / 2) + (widget.itemWidth / 2);
+        (selectedIndex * itemSize) -
+        (viewportWidth / 2) +
+        (widget.itemWidth / 2);
 
     final clampedOffset = targetOffset.clamp(
       0.0,
@@ -467,57 +471,50 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
   Widget _buildDateItem(DateTime date) {
     final isSelected = _isSelected(date);
     final isToday = _isToday(date);
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
+    final selectedColor = widget.selectedColor ?? theme.primary;
 
-    return GestureDetector(
-      onTap: () => widget.onDateChanged(date),
+    return Pressable(
+      onPressed: () => widget.onDateChanged(date),
+      semanticLabel:
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       child: Container(
         width: widget.itemWidth,
         decoration: BoxDecoration(
-          color: isSelected
-              ? (widget.selectedColor ?? theme.primaryColor)
-              : (widget.unselectedColor ?? theme.cardColor),
+          color:
+              isSelected
+                  ? selectedColor
+                  : (widget.unselectedColor ?? theme.surface),
           borderRadius: BorderRadius.circular(16),
-          border: isToday && !isSelected
-              ? Border.all(
-                  color: widget.todayBorderColor ?? theme.primaryColor,
-                  width: 1,
-                )
-              : null,
-          boxShadow: isSelected
-              ? (widget.selectedShadow ??
-                  [
-                    BoxShadow(
-                      color: (widget.selectedColor ?? theme.primaryColor)
-                          .withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ])
-              : null,
+          border:
+              isToday && !isSelected
+                  ? Border.all(
+                    color: widget.todayBorderColor ?? theme.primary,
+                    width: 1.4,
+                  )
+                  : Border.all(color: theme.stroke),
+          boxShadow:
+              isSelected ? (widget.selectedShadow ?? theme.shadows.soft) : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               _getWeekDayName(date.weekday),
-              style: widget.weekDayTextStyle ??
-                  TextStyle(
-                    fontSize: 12,
-                    color: isSelected ? Colors.white : theme.hintColor,
+              style:
+                  widget.weekDayTextStyle ??
+                  DsTypography.caption.copyWith(
+                    color: isSelected ? theme.onPrimary : theme.textSub,
                     fontWeight: FontWeight.w500,
                   ),
             ),
             const SizedBox(height: 4),
             Text(
               date.day.toString(),
-              style: widget.dateTextStyle ??
-                  TextStyle(
-                    fontSize: 18,
-                    color: isSelected
-                        ? Colors.white
-                        : theme.textTheme.bodyLarge?.color,
-                    fontWeight: FontWeight.bold,
+              style:
+                  widget.dateTextStyle ??
+                  DsTypography.title.copyWith(
+                    color: isSelected ? theme.onPrimary : theme.text,
                   ),
             ),
           ],
@@ -528,23 +525,10 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
 
   /// 显示日期选择器
   Future<void> _showDatePicker() async {
-    final now = DateTime.now();
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDSDatePickerDialog(
       context: context,
-      initialDate: widget.selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: widget.allowFutureDates ? DateTime(2100) : now,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Theme.of(context).primaryColor,
-              brightness: Theme.of(context).brightness,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initial: widget.selectedDate,
+      theme: DSThemeBridge.resolve(context),
     );
     if (picked != null) {
       widget.onDateChanged(picked);
@@ -553,11 +537,10 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-      ),
+      decoration: BoxDecoration(color: theme.background),
       child: Row(
         children: [
           Expanded(
@@ -581,17 +564,19 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
           if (widget.showCalendarButton) ...[
             Padding(
               padding: widget.calendarButtonPadding,
-              child: GestureDetector(
-                onTap: _showDatePicker,
+              child: Pressable(
+                onPressed: _showDatePicker,
+                semanticLabel: '选择日期',
                 child: Container(
                   width: widget.itemWidth,
                   height: widget.height,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    Icons.calendar_month_rounded,
-                    color: Theme.of(context).primaryColor,
+                  child: DsIcon(
+                    DsIconKind.calendar,
+                    size: 26,
+                    color: theme.primary,
                   ),
                 ),
               ),

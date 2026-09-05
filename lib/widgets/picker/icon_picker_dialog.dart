@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../custom_dialog.dart';
 import 'package:aboutme/constants/app_icons.dart';
 
@@ -33,7 +35,7 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
   late List<IconData> _iconData;
   bool _convertToImage = false; // 是否转换为图片
 
-  // 使用预定义的图标映射表中的图标
+  // 使用预定义的图标映射表中的图标（持久化 IconData）
   late List<IconData> allIcons;
 
   @override
@@ -144,25 +146,18 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return CustomDialog(
       title: 'widget_selectIcon'.tr,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // 搜索框
-          TextField(
+          DSInput(
             controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'widget_searchIcons'.tr,
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
+            hint: 'widget_searchIcons'.tr,
+            prefix: DsIcon(DsIconKind.search, size: 20, color: theme.textSub),
             onChanged: (value) {
               if (_debounceTimer?.isActive ?? false) {
                 _debounceTimer?.cancel();
@@ -181,44 +176,42 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
           if (widget.enableIconToImage)
             Row(
               children: [
-                Checkbox(
+                DSCheckbox(
                   value: _convertToImage,
-                  onChanged: widget.forceConvertToImage
-                      ? null
-                      : (value) {
-                          setState(() {
-                            _convertToImage = value ?? false;
-                          });
-                        },
+                  onChanged:
+                      widget.forceConvertToImage
+                          ? null
+                          : (value) {
+                            setState(() {
+                              _convertToImage = value ?? false;
+                            });
+                          },
                 ),
-                Expanded(child: Text('widget_convertIconToImage'.tr)),
-                IconButton(
-                  icon: const Icon(Icons.help_outline),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            title: Text('widget_iconToImage'.tr),
-                            content: Text('widget_iconToImageDescription'.tr),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('widget_confirm'.tr),
-                              ),
-                            ],
-                          ),
-                    );
-                  },
-                  tooltip: 'widget_whatIsIconToImage'.tr,
+                Expanded(
+                  child: Text(
+                    'widget_convertIconToImage'.tr,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                ),
+                Pressable(
+                  onPressed: _showConvertHelp,
+                  semanticLabel: 'widget_whatIsIconToImage'.tr,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: DsIcon(
+                      DsIconKind.info,
+                      size: 18,
+                      color: theme.textSub,
+                    ),
+                  ),
                 ),
               ],
             ),
 
           if (widget.enableIconToImage) const SizedBox(height: 16),
 
-          // 图标网格
-          Container(
+          // 图标网格（果冻单元承载持久化 IconData）
+          ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.4,
             ),
@@ -234,14 +227,26 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
               itemBuilder: (context, index) {
                 final icon = _currentPageIcons[index];
                 final isSelected = icon == selectedIcon;
-                return IconButton(
-                  icon: Icon(icon),
-                  color:
-                      isSelected ? Theme.of(context).colorScheme.primary : null,
+                return Pressable(
                   onPressed: () {
                     setState(() {
                       selectedIcon = icon;
                     });
+                  },
+                  semanticLabel: 'icon',
+                  builder: (context, states) {
+                    final pressed = states.contains(WidgetState.pressed);
+                    return JellyBox(
+                      radius: theme.radii.md,
+                      color: isSelected ? theme.primary : null,
+                      raised: isSelected && !pressed,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        icon,
+                        size: 24,
+                        color: isSelected ? theme.onPrimary : theme.text,
+                      ),
+                    );
                   },
                 );
               },
@@ -252,23 +257,22 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed:
-                      _currentPage > 0
-                          ? () => setState(() => _currentPage--)
-                          : null,
+                _buildPageButton(
+                  icon: DsIconKind.chevronLeft,
+                  enabled: _currentPage > 0,
+                  onPressed: () => setState(() => _currentPage--),
                 ),
-                Text(
-                  '${_currentPage + 1}/$_totalPages',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    '${_currentPage + 1}/$_totalPages',
+                    style: DsTypography.body.copyWith(color: theme.textSub),
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed:
-                      _currentPage < _totalPages - 1
-                          ? () => setState(() => _currentPage++)
-                          : null,
+                _buildPageButton(
+                  icon: DsIconKind.chevronRight,
+                  enabled: _currentPage < _totalPages - 1,
+                  onPressed: () => setState(() => _currentPage++),
                 ),
               ],
             ),
@@ -276,11 +280,15 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
         ],
       ),
       actions: [
-        TextButton(
+        DSButton(
+          label: 'widget_cancel'.tr,
+          variant: DSButtonVariant.outline,
+          size: DSButtonSize.sm,
           onPressed: () => Navigator.pop(context),
-          child: Text('widget_cancel'.tr),
         ),
-        ElevatedButton(
+        DSButton(
+          label: 'widget_confirm'.tr,
+          size: DSButtonSize.sm,
           onPressed: () async {
             if (_convertToImage) {
               final result = await _convertIconToImage(selectedIcon);
@@ -289,9 +297,52 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
               Navigator.pop(context, selectedIcon);
             }
           },
-          child: Text('widget_confirm'.tr),
         ),
       ],
+    );
+  }
+
+  /// 翻页按钮
+  Widget _buildPageButton({
+    required DsIconKind icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: enabled ? onPressed : null,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return JellyBox(
+          width: 36,
+          height: 36,
+          radius: theme.radii.md,
+          raised: enabled && !pressed,
+          alignment: Alignment.center,
+          child: DsIcon(
+            icon,
+            size: 18,
+            color:
+                enabled
+                    ? theme.primaryText
+                    : theme.textSub.withValues(alpha: 0.5),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 图标转图片功能说明
+  void _showConvertHelp() {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSDialog(
+            title: 'widget_iconToImage'.tr,
+            message: 'widget_iconToImageDescription'.tr,
+            confirmText: 'widget_confirm'.tr,
+          ),
     );
   }
 }

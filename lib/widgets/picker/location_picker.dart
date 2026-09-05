@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 // 定义Position类
 class Position {
@@ -60,7 +62,9 @@ class _LocationPickerState extends State<LocationPicker> {
   Future<void> _loadApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _apiKey = prefs.getString('location_api_key') ?? 'dad6a772bf826842c3049e9c7198115c';
+      _apiKey =
+          prefs.getString('location_api_key') ??
+          'dad6a772bf826842c3049e9c7198115c';
     });
   }
 
@@ -203,123 +207,152 @@ class _LocationPickerState extends State<LocationPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Material(
+      color: theme.background,
+      borderRadius: theme.radii.xxl,
+      clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-        // 拖拽指示器
-        Center(
-          child: Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+          // 拖拽指示器
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.stroke,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-        ),
-        // 标题栏
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'app_cancel'.tr,
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              ),
-              Text(
-                'app_selectLocation'.tr,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                ),
-              ),
-              const SizedBox(width: 40), // 占位保持标题居中
-            ],
-          ),
-        ),
-        // 搜索框
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'location_picker_searchLocation'.tr,
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.my_location, color: Colors.blue),
-                onPressed: _getCurrentLocation,
-                tooltip: 'location_picker_getCurrentLocation'.tr,
-              ),
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          // 标题栏
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
             ),
-            onSubmitted: _searchLocation,
-          ),
-        ),
-        // 内容区域
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child:
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _searchResults.isNotEmpty
-                  ? ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _searchResults.length,
-                    separatorBuilder:
-                        (context, index) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final result = _searchResults[index];
-                      return ListTile(
-                        leading:
-                            result['isCurrent'] == true
-                                ? const Icon(
-                                  Icons.my_location,
-                                  color: Colors.blue,
-                                )
-                                : const Icon(Icons.place, color: Colors.grey),
-                        title: Text(
-                          result['name'],
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        subtitle: Text(
-                          result['address'],
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        onTap: () {
-                          widget.onLocationSelected(result['address']);
-                          Navigator.of(context).pop();
-                        },
-                      );
-                    },
-                  )
-                  : Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Pressable(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Text(
-                      '暂无搜索结果',
-                      style: TextStyle(color: Colors.grey[400]),
+                      'app_cancel'.tr,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
                     ),
                   ),
-        ),
-      ],
-    ),
+                ),
+                Text(
+                  'app_selectLocation'.tr,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                const SizedBox(width: 40), // 占位保持标题居中
+              ],
+            ),
+          ),
+          // 搜索框
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: DSInput(
+              controller: _searchController,
+              hint: 'location_picker_searchLocation'.tr,
+              onSubmitted: _searchLocation,
+              suffix: Pressable(
+                onPressed: _getCurrentLocation,
+                semanticLabel: 'location_picker_getCurrentLocation'.tr,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: DsIcon(DsIconKind.pin, size: 20, color: theme.primary),
+                ),
+              ),
+            ),
+          ),
+          // 内容区域
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child:
+                _isLoading
+                    ? Center(child: DSLoadingDots(color: theme.primary))
+                    : _searchResults.isNotEmpty
+                    ? ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _searchResults.length,
+                      separatorBuilder:
+                          (context, index) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(height: 1, color: theme.stroke),
+                          ),
+                      itemBuilder: (context, index) {
+                        final result = _searchResults[index];
+                        final isCurrent = result['isCurrent'] == true;
+                        return Pressable(
+                          onPressed: () {
+                            widget.onLocationSelected(result['address']);
+                            Navigator.of(context).pop();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                DsIcon(
+                                  DsIconKind.pin,
+                                  size: 22,
+                                  color:
+                                      isCurrent ? theme.primary : theme.textSub,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        result['name'],
+                                        style: DsTypography.body.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        result['address'],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                    : Center(
+                      child: Text(
+                        '暂无搜索结果',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ),
+          ),
+        ],
+      ),
     );
   }
 }
