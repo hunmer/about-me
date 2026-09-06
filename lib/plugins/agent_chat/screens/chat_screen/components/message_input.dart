@@ -199,7 +199,7 @@ class _MessageInputState extends State<MessageInput> {
     final theme = DSThemeBridge.resolve(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.surface,
+        borderRadius: theme.radii.xl,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -235,104 +235,22 @@ class _MessageInputState extends State<MessageInput> {
           // 输入框区域
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // 附件按钮
-                Pressable(
-                  onPressed: _showAttachmentMenu,
-                  semanticLabel: '添加附件',
-                  builder:
-                      (context, states) => SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.copy,
-                            size: 22,
-                            color: theme.textSub,
-                          ),
-                        ),
-                      ),
-                ),
-
-                // 输入框
-                Expanded(
-                  child: AgentChatTextInput(
-                    controller: _textController,
-                    focusNode: _focusNode,
-                    enabled: widget.controller.currentAgent != null,
-                    hintText: widget.controller.currentAgent != null
-                        ? '输入消息...'
-                        : '请先选择Agent...',
-                    suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Token统计
-                              if (widget.controller.inputText.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 4),
-                                  child: Text(
-                                    '~${widget.controller.inputTokenCount}',
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.textSub,
-                                    ),
-                                  ),
-                                ),
-                              // "你可以问"按钮
-                              if (widget.controller.currentAgent != null)
-                                Pressable(
-                                  onPressed: _showSuggestedQuestions,
-                                  semanticLabel: '你可以问',
-                                  builder:
-                                      (context, states) => Padding(
-                                        padding: const EdgeInsets.all(4),
-                                        child: DsIcon(
-                                          DsIconKind.star,
-                                          size: 20,
-                                          color: theme.warning,
-                                        ),
-                                      ),
-                                ),
-                            ],
-                        ),
-                    ),
-                  ),
-                ),
-
-                // 语音按钮（长按录音）
-                if (_recognitionService != null)
-                  PressToRecordButton(
-                    textController: _textController,
-                    recognitionService: _recognitionService!,
-                    enabled: widget.controller.currentAgent != null,
-                    tooltip: '长按录音',
-                    onRecognitionComplete: (text) {
-                      // 聚焦到输入框
-                      _focusNode.requestFocus();
-                    },
-                    onError: (error) {
-                      if (mounted) {
-                        toastService.showToast('语音识别失败: $error');
-                      }
-                    },
-                  )
-                else
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 附件按钮
                   Pressable(
-                    onPressed:
-                        widget.controller.currentAgent != null
-                            ? _showVoiceInputDialog
-                            : null,
-                    semanticLabel: '语音输入（未配置）',
+                    onPressed: _showAttachmentMenu,
+                    semanticLabel: '添加附件',
                     builder:
                         (context, states) => SizedBox(
                           width: 40,
                           height: 40,
                           child: Center(
                             child: DsIcon(
-                              DsIconKind.mic,
+                              DsIconKind.copy,
                               size: 22,
                               color: theme.textSub,
                             ),
@@ -340,27 +258,113 @@ class _MessageInputState extends State<MessageInput> {
                         ),
                   ),
 
-                // 发送/取消按钮
-                DSIconButton(
-                  icon:
-                      widget.controller.isSending
-                          ? DsIconKind
-                              .close // 显示取消图标
-                          : DsIconKind.send,
-                  size: 44,
-                  color:
-                      widget.controller.isSending
-                          ? theme
-                              .danger // 发送中显示红色
-                          : theme.primary,
-                  onPressed:
-                      widget.controller.isSending
-                          ? () =>
-                              widget.controller
-                                  .cancelSending() // 取消发送
-                          : (_canSendMessage() ? _sendMessage : null),
-                ),
-              ],
+                  // 输入框
+                  Expanded(
+                    child: AgentChatTextInput(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      enabled: widget.controller.currentAgent != null,
+                      backgroundColor: Colors.transparent,
+                      hintText: widget.controller.currentAgent != null
+                          ? '输入消息...'
+                          : '请先选择Agent...',
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Token统计
+                            if (widget.controller.inputText.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Text(
+                                  '~${widget.controller.inputTokenCount}',
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ),
+                            // "你可以问"按钮
+                            if (widget.controller.currentAgent != null)
+                              Pressable(
+                                onPressed: _showSuggestedQuestions,
+                                semanticLabel: '你可以问',
+                                builder:
+                                    (context, states) => Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: DsIcon(
+                                        DsIconKind.star,
+                                        size: 20,
+                                        color: theme.warning,
+                                      ),
+                                    ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 语音按钮（长按录音）
+                  if (_recognitionService != null)
+                    PressToRecordButton(
+                      textController: _textController,
+                      recognitionService: _recognitionService!,
+                      enabled: widget.controller.currentAgent != null,
+                      tooltip: '长按录音',
+                      onRecognitionComplete: (text) {
+                        // 聚焦到输入框
+                        _focusNode.requestFocus();
+                      },
+                      onError: (error) {
+                        if (mounted) {
+                          toastService.showToast('语音识别失败: $error');
+                        }
+                      },
+                    )
+                  else
+                    Pressable(
+                      onPressed:
+                          widget.controller.currentAgent != null
+                              ? _showVoiceInputDialog
+                              : null,
+                      semanticLabel: '语音输入（未配置）',
+                      builder:
+                          (context, states) => SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: DsIcon(
+                                DsIconKind.mic,
+                                size: 22,
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ),
+                    ),
+
+                  // 发送/取消按钮
+                  DSIconButton(
+                    icon:
+                        widget.controller.isSending
+                            ? DsIconKind
+                                .close // 显示取消图标
+                            : DsIconKind.send,
+                    size: 44,
+                    color:
+                        widget.controller.isSending
+                            ? theme
+                                .danger // 发送中显示红色
+                            : theme.primary,
+                    onPressed:
+                        widget.controller.isSending
+                            ? () =>
+                                widget.controller
+                                    .cancelSending() // 取消发送
+                            : (_canSendMessage() ? _sendMessage : null),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

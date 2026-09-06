@@ -13,6 +13,8 @@ class AgentChatTextInput extends StatelessWidget {
     this.suffixIcon,
     this.onSubmitted,
     this.textInputAction = TextInputAction.newline,
+    this.backgroundColor,
+    this.borderRadius,
   });
 
   final TextEditingController controller;
@@ -22,6 +24,8 @@ class AgentChatTextInput extends StatelessWidget {
   final Widget? suffixIcon;
   final ValueChanged<String>? onSubmitted;
   final TextInputAction textInputAction;
+  final Color? backgroundColor;
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +33,8 @@ class AgentChatTextInput extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
       decoration: BoxDecoration(
-        color: theme.surfaceAlt,
-        borderRadius: theme.radii.pill,
+        color: backgroundColor ?? theme.surfaceAlt,
+        borderRadius: borderRadius ?? theme.radii.pill,
       ),
       child: TextField(
         controller: controller,

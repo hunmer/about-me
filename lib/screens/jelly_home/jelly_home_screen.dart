@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
@@ -257,6 +258,22 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   String? _lastReplyId;
   String? _lastReplyContent;
 
+  @override
+  void initState() {
+    super.initState();
+    eventManager.subscribe('plugin_loaded', _onPluginLoaded);
+  }
+
+  void _onPluginLoaded(EventArgs args) {
+    if (args is! Value<String> || args.value != 'agent_chat' || !mounted) {
+      return;
+    }
+    setState(() {
+      _initializedKey = null;
+      _controllerFuture = null;
+    });
+  }
+
   Future<ChatController?> _initialize() async {
     final archive = Live2DPlugin.instance.selected;
     final agentId = archive?.agentId;
@@ -327,6 +344,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
 
   @override
   void dispose() {
+    eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
     _messageService?.removeListener(_onMessagesChanged);
     _controller?.dispose();
     super.dispose();
