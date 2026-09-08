@@ -9,6 +9,7 @@ import 'prompt_preset_screen.dart';
 import '../services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
 import '../openai_plugin.dart';
+import 'agent_resource_list_screen.dart';
 
 class PluginSettingsScreen extends StatefulWidget {
   const PluginSettingsScreen({super.key});
@@ -18,9 +19,6 @@ class PluginSettingsScreen extends StatefulWidget {
 }
 
 class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
-  late final TextEditingController _skillsController;
-  late final TextEditingController _mcpController;
-
   @override
   void initState() {
     super.initState();
@@ -33,35 +31,14 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     } catch (_) {
       slots = AgentLibResourceService.globalSlots;
     }
-    _skillsController = TextEditingController(text: slots.skills.join(', '));
-    _mcpController = TextEditingController(text: slots.mcpServers.join(', '));
   }
 
-  @override
-  void dispose() {
-    _skillsController.dispose();
-    _mcpController.dispose();
-    super.dispose();
-  }
-
-  void _saveSlots() {
-    final slots = AgentResourceSlots(
-      skills: _split(_skillsController.text),
-      mcpServers: _split(_mcpController.text),
-    );
+  void _saveSlots(AgentResourceSlots slots) {
     AgentLibResourceService.globalSlots = slots;
     OpenAIPlugin.instance.updateSettings(
       AgentLibResourceService.toSettings(slots),
     );
   }
-
-  List<String> _split(String value) =>
-      value
-          .split(RegExp(r'[,\n]'))
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toSet()
-          .toList();
 
   @override
   Widget build(BuildContext context) {
@@ -87,10 +64,72 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                 return ListView(
                   padding: EdgeInsets.all(theme.spacing.lg),
                   children: [
-                    _ResourceSlotSection(
-                      skillsController: _skillsController,
-                      mcpController: _mcpController,
-                      onChanged: _saveSlots,
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.layers,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'Skills',
+                      subtitle:
+                          '${AgentLibResourceService.globalSlots.skills.length} 个资源',
+                      showChevron: true,
+                      onTap:
+                          () => NavigationHelper.push(
+                            context,
+                            AgentResourceListScreen(
+                              type: AgentResourceType.skills,
+                              resources:
+                                  AgentLibResourceService.globalSlots.skills,
+                              onChanged: (items) {
+                                _saveSlots(
+                                  AgentResourceSlots(
+                                    skills: items,
+                                    mcpServers:
+                                        AgentLibResourceService
+                                            .globalSlots
+                                            .mcpServers,
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSListItem(
+                      leading: DsIcon(
+                        DsIconKind.block,
+                        size: 22,
+                        color: theme.primary,
+                      ),
+                      title: 'MCP Servers',
+                      subtitle:
+                          '${AgentLibResourceService.globalSlots.mcpServers.length} 个资源',
+                      showChevron: true,
+                      onTap:
+                          () => NavigationHelper.push(
+                            context,
+                            AgentResourceListScreen(
+                              type: AgentResourceType.mcpServers,
+                              resources:
+                                  AgentLibResourceService
+                                      .globalSlots
+                                      .mcpServers,
+                              onChanged: (items) {
+                                _saveSlots(
+                                  AgentResourceSlots(
+                                    skills:
+                                        AgentLibResourceService
+                                            .globalSlots
+                                            .skills,
+                                    mcpServers: items,
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                            ),
+                          ),
                     ),
                     SizedBox(height: theme.spacing.sm),
                     DSListItem(
@@ -147,47 +186,6 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
           );
         },
       ),
-    );
-  }
-}
-
-class _ResourceSlotSection extends StatelessWidget {
-  const _ResourceSlotSection({
-    required this.skillsController,
-    required this.mcpController,
-    required this.onChanged,
-  });
-
-  final TextEditingController skillsController;
-  final TextEditingController mcpController;
-  final VoidCallback onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExpansionTile(
-      leading: const Icon(Icons.extension_outlined),
-      title: const Text('AgentLib 资源插槽'),
-      subtitle: const Text('全局 Skills 与 MCP Server'),
-      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      children: [
-        TextField(
-          controller: skillsController,
-          decoration: const InputDecoration(
-            labelText: 'Skills',
-            hintText: 'skill-id, another-skill',
-          ),
-          onChanged: (_) => onChanged(),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: mcpController,
-          decoration: const InputDecoration(
-            labelText: 'MCP Servers',
-            hintText: 'https://example.com/mcp',
-          ),
-          onChanged: (_) => onChanged(),
-        ),
-      ],
     );
   }
 }

@@ -17,6 +17,8 @@ import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/services/test_service.dart';
 import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
+import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'model_search_screen.dart';
@@ -63,6 +65,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   // 预设相关（用于下拉选项）
   final PromptPresetService _presetService = PromptPresetService();
   List<PromptPreset> _presets = [];
+  List<AgentResourceItem> _selectedSkills = [];
+  List<AgentResourceItem> _selectedMcpServers = [];
 
   @override
   void initState() {
@@ -71,6 +75,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     _loadPresets();
     if (widget.agent != null) {
       _selectedProviderId = widget.agent!.serviceProviderId;
+      _selectedSkills = List.of(widget.agent!.resourceSlots.skills);
+      _selectedMcpServers = List.of(widget.agent!.resourceSlots.mcpServers);
     }
   }
 
@@ -150,8 +156,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
 
     final values = _formKey.currentState!.value;
     final resourceSlots = AgentResourceSlots(
-      skills: _splitResourceValues(values['resourceSkills']),
-      mcpServers: _splitResourceValues(values['resourceMcpServers']),
+      skills: _selectedSkills,
+      mcpServers: _selectedMcpServers,
     );
 
     // 从 iconAvatarRow 字段获取图标和头像
@@ -258,13 +264,45 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     }
   }
 
-  List<String> _splitResourceValues(dynamic value) =>
-      (value is String ? value : '')
-          .split(RegExp(r'[,\n]'))
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toSet()
-          .toList();
+  Future<void> _selectResources({required bool skills}) async {
+    final global =
+        skills
+            ? AgentLibResourceService.globalSlots.skills
+            : AgentLibResourceService.globalSlots.mcpServers;
+    final existing = skills ? _selectedSkills : _selectedMcpServers;
+    final resources = [
+      ...global,
+      ...existing.where((item) => !global.any((entry) => entry.id == item.id)),
+    ];
+    final selected = await showAgentResourceSelector(
+      context: context,
+      title: skills ? '选择 Skills' : '选择 MCP Servers',
+      resources: resources,
+      selected: existing,
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      if (skills) {
+        _selectedSkills = selected;
+      } else {
+        _selectedMcpServers = selected;
+      }
+    });
+  }
+
+  Widget _buildResourceSelector({required bool skills}) {
+    final selected = skills ? _selectedSkills : _selectedMcpServers;
+    return DSListItem(
+      leading: DsIcon(skills ? DsIconKind.layers : DsIconKind.block, size: 22),
+      title: skills ? 'AgentLib Skills' : 'AgentLib MCP Servers',
+      subtitle:
+          selected.isEmpty
+              ? '未选择'
+              : selected.map((item) => item.displayName).join('、'),
+      showChevron: true,
+      onTap: () => _selectResources(skills: skills),
+    );
+  }
 
   Future<void> _deleteAgent() async {
     // 确认删除对话框
@@ -449,6 +487,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
           (values['openingQuestions'] as List<dynamic>?)?.cast<String>() ?? [],
       messages: allMessages.isNotEmpty ? allMessages : null,
       apiFormat: values['apiFormat'] as String? ?? 'openai',
+      resourceSlots: AgentResourceSlots(
+        skills: _selectedSkills,
+        mcpServers: _selectedMcpServers,
+      ),
     );
 
     try {
@@ -544,6 +586,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  _buildResourceSelector(skills: true),
+                  const SizedBox(height: 8),
+                  _buildResourceSelector(skills: false),
+                  const SizedBox(height: 16),
                   FormBuilderWrapper(
                     formKey: _formKey,
                     buttonBuilder: (context, onSubmit, onReset) {
@@ -708,27 +754,6 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                             widget.agent?.headers ?? {},
                           ),
                           extra: {'minLines': 3, 'maxLines': 3},
-                        ),
-                        FormFieldConfig(
-                          name: 'resourceSkills',
-                          type: FormFieldType.text,
-                          labelText: 'AgentLib Skills',
-                          hintText: 'skill-id, another-skill',
-                          initialValue:
-                              widget.agent?.resourceSlots.skills.join(', ') ??
-                              '',
-                        ),
-                        FormFieldConfig(
-                          name: 'resourceMcpServers',
-                          type: FormFieldType.textArea,
-                          labelText: 'AgentLib MCP Servers',
-                          hintText: 'https://example.com/mcp',
-                          initialValue:
-                              widget.agent?.resourceSlots.mcpServers.join(
-                                ', ',
-                              ) ??
-                              '',
-                          extra: {'minLines': 2, 'maxLines': 3},
                         ),
                         // 标签
                         FormFieldConfig(
