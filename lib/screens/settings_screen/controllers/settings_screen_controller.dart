@@ -257,6 +257,8 @@ class SettingsScreenController extends ChangeNotifier {
     final lastCheck = _lastBackupCheckDate!;
 
     switch (_backupSchedule!.type) {
+      case BackupScheduleType.none:
+        return false;
       case BackupScheduleType.specificDate:
         // 只在指定日期当天检查
         return now.year == _backupSchedule!.date!.year &&

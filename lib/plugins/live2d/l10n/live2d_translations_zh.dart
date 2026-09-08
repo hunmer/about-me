@@ -23,4 +23,9 @@ const Map<String, String> live2dTranslationsZh = {
   'live2d_saved': '已保存',
   'live2d_deleteArchiveTitle': '删除存档',
   'live2d_deleteArchiveConfirm': '确定删除“@name”吗？',
+  // 主界面
+  'live2d_searchPlaceholder': '搜索 Live2D 存档',
+  'live2d_filterAllModels': '全部模型',
+  'live2d_noArchives': '还没有 Live2D 存档，点击右上角新建',
+  'live2d_noMatchArchives': '没有匹配的存档',
 };

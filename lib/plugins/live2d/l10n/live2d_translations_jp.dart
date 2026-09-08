@@ -23,4 +23,9 @@ const Map<String, String> live2dTranslationsJp = {
   'live2d_saved': '保存しました',
   'live2d_deleteArchiveTitle': 'プロフィールを削除',
   'live2d_deleteArchiveConfirm': '「@name」を削除しますか？',
+  // メイン画面
+  'live2d_searchPlaceholder': 'Live2D プロフィールを検索',
+  'live2d_filterAllModels': 'すべてのモデル',
+  'live2d_noArchives': 'Live2D プロフィールがありません。右上の + で作成',
+  'live2d_noMatchArchives': '一致するプロフィールがありません',
 };

@@ -14,7 +14,10 @@ import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
 
 class Live2DSettingsScreen extends StatefulWidget {
-  const Live2DSettingsScreen({super.key});
+  const Live2DSettingsScreen({super.key, this.initialArchiveId});
+
+  /// 进入设置界面时定位到的存档 id，默认使用当前选中存档
+  final String? initialArchiveId;
 
   @override
   State<Live2DSettingsScreen> createState() => _Live2DSettingsScreenState();
@@ -41,7 +44,9 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    archive =
+    archive = plugin.archives
+            .where((a) => a.id == widget.initialArchiveId)
+            .firstOrNull ??
         plugin.selected ??
         (plugin.archives.isNotEmpty ? plugin.archives.first : null);
     if (archive != null) nameController.text = archive!.name;

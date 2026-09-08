@@ -86,6 +86,8 @@ class _BackupTimePickerState extends State<BackupTimePicker> {
         return Column(children: [_buildTimePicker(), _buildDaySelector()]);
       case BackupScheduleType.monthly:
         return Column(children: [_buildTimePicker(), _buildMonthDaySelector()]);
+      case BackupScheduleType.none:
+        return const SizedBox.shrink();
     }
   }
 
@@ -209,7 +211,8 @@ enum BackupScheduleType {
   specificDate('指定日期'),
   daily('每天'),
   weekly('每周指定日'),
-  monthly('每月指定日');
+  monthly('每月指定日'),
+  none('不备份');
 
   final String displayName;
   const BackupScheduleType(this.displayName);

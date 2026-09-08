@@ -23,4 +23,9 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_saved': 'Saved',
   'live2d_deleteArchiveTitle': 'Delete profile',
   'live2d_deleteArchiveConfirm': 'Delete "@name"?',
+  // Main screen
+  'live2d_searchPlaceholder': 'Search Live2D profiles',
+  'live2d_filterAllModels': 'All models',
+  'live2d_noArchives': 'No Live2D profiles yet, tap + to create one',
+  'live2d_noMatchArchives': 'No matching profiles',
 };

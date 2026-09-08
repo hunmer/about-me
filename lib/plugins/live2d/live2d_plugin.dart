@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
 
 class Live2DPlugin extends BasePlugin {
@@ -181,7 +182,7 @@ class Live2DPlugin extends BasePlugin {
   }
 
   @override
-  Widget buildMainView(BuildContext context) => const Live2DSettingsScreen();
+  Widget buildMainView(BuildContext context) => const Live2DMainScreen();
   @override
   Widget buildSettingsView(BuildContext context) =>
       const Live2DSettingsScreen();
