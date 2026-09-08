@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/openai_compat.dart';
 import '../../models/conversation.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../services/tool_service.dart';
@@ -194,10 +194,7 @@ class ToolOrchestrator {
           if (toolRequest != null && toolRequest.isNotEmpty) {
             // 显示"正在查看工具用法..."
             final toolsText = toolRequest.join('、');
-            onUpdateMessage(
-              '🔍 正在查看 $toolsText 工具的用法...',
-              currentTokenCount,
-            );
+            onUpdateMessage('🔍 正在查看 $toolsText 工具的用法...', currentTokenCount);
           } else {
             // 还在生成 JSON，显示通用提示
             onUpdateMessage('🔍 正在识别需要的工具...', currentTokenCount);

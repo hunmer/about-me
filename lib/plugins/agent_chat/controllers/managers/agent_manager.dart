@@ -24,10 +24,7 @@ class AgentManager {
   /// 当前会话
   Conversation? _currentConversation;
 
-  AgentManager({
-    required this.context,
-    required this.conversationService,
-  });
+  AgentManager({required this.context, required this.conversationService});
 
   // ========== Getters ==========
 
@@ -93,8 +90,9 @@ class AgentManager {
         _currentAgent = await openAIPlugin.controller.getAgent(agentId);
 
         // 更新会话的 agentId
-        final updatedConversation =
-            _currentConversation!.copyWith(agentId: agentId);
+        final updatedConversation = _currentConversation!.copyWith(
+          agentId: agentId,
+        );
         await conversationService.updateConversation(updatedConversation);
 
         // 更新本地引用
@@ -250,7 +248,8 @@ class AgentManager {
         id: 'temp_tool_${config.providerId}_${config.modelId}',
         name: '工具调用 Agent (${config.modelName ?? config.modelId})',
         description: '临时创建的工具调用专用 Agent',
-        systemPrompt: '{tool_brief}{tool_detail}', // 两个阶段的占位符，根据 additionalPrompts 替换
+        systemPrompt:
+            '{tool_brief}{tool_detail}', // 两个阶段的占位符，根据 additionalPrompts 替换
         tags: const [],
         serviceProviderId: config.providerId,
         baseUrl: provider['baseUrl'] as String,

@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/agentlib.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
-import 'request_service.dart';
 import 'dart:developer' as developer;
 
 /// 文件处理服务
@@ -12,6 +11,27 @@ import 'dart:developer' as developer;
 /// 1. Assistants API 模式（OpenAI 官方服务）
 /// 2. 文件内容读取模式（其他服务商或降级方案）
 class FileProcessingService {
+  static Future<Map<String, dynamic>> _jsonRequest(
+    String method,
+    Uri uri,
+    Map<String, String> headers, {
+    Map<String, dynamic>? body,
+  }) async {
+    final request = http.Request(method, uri)
+      ..headers.addAll({'Content-Type': 'application/json', ...headers});
+    if (body != null) request.body = jsonEncode(body);
+    final response = await http.Client().send(request);
+    final raw = await response.stream.bytesToString();
+    final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AgentLibException('HTTP ${response.statusCode}', decoded);
+    }
+    return Map<String, dynamic>.from(decoded as Map);
+  }
+
+  static String _apiBase(String baseUrl) =>
+      baseUrl.replaceFirst(RegExp(r'/+$'), '');
+
   /// 上传文件到 OpenAI
   static Future<String?> _uploadFileToOpenAI(
     String apiKey,
@@ -96,8 +116,8 @@ class FileProcessingService {
           '';
       final baseUrl = agent.baseUrl;
 
-      // 获取 OpenAI 客户端
-      final client = RequestService.getClient(agent);
+      final authHeaders = {'Authorization': 'Bearer $apiKey', ...agent.headers};
+      final apiBase = _apiBase(baseUrl);
 
       // 1. 上传文件
       final fileIds = <String>[];
@@ -129,10 +149,13 @@ class FileProcessingService {
 
       // 2. 创建 vector store
       developer.log('创建 vector store', name: 'FileProcessingService');
-      final vectorStore = await client.createVectorStore(
-        request: CreateVectorStoreRequest(),
+      final vectorStore = await _jsonRequest(
+        'POST',
+        Uri.parse('$apiBase/vector_stores'),
+        authHeaders,
+        body: const {},
       );
-      final vectorStoreId = vectorStore.id;
+      final vectorStoreId = vectorStore['id'] as String;
       developer.log(
         'Vector store 已创建: $vectorStoreId',
         name: 'FileProcessingService',
@@ -140,28 +163,35 @@ class FileProcessingService {
 
       // 添加文件到 vector store
       for (final fileId in fileIds) {
-        await client.createVectorStoreFile(
-          vectorStoreId: vectorStoreId,
-          request: CreateVectorStoreFileRequest(fileId: fileId),
+        await _jsonRequest(
+          'POST',
+          Uri.parse('$apiBase/vector_stores/$vectorStoreId/files'),
+          authHeaders,
+          body: {'file_id': fileId},
         );
       }
       developer.log('文件已添加到 vector store', name: 'FileProcessingService');
 
       // 3. 创建 assistant
       developer.log('创建 assistant', name: 'FileProcessingService');
-      final assistant = await client.createAssistant(
-        request: CreateAssistantRequest(
-          model: AssistantModel.modelId(agent.model),
-          instructions: agent.systemPrompt,
-          tools: [AssistantTools.fileSearch(type: 'file_search')],
-          toolResources: ToolResources(
-            fileSearch: ToolResourcesFileSearch(
-              vectorStoreIds: [vectorStoreId],
-            ),
-          ),
-        ),
+      final assistant = await _jsonRequest(
+        'POST',
+        Uri.parse('$apiBase/assistants'),
+        authHeaders,
+        body: {
+          'model': agent.model,
+          'instructions': agent.effectiveSystemPrompt,
+          'tools': const [
+            {'type': 'file_search'},
+          ],
+          'tool_resources': {
+            'file_search': {
+              'vector_store_ids': [vectorStoreId],
+            },
+          },
+        },
       );
-      final assistantId = assistant.id;
+      final assistantId = assistant['id'] as String;
       developer.log(
         'Assistant 已创建: $assistantId',
         name: 'FileProcessingService',
@@ -169,101 +199,97 @@ class FileProcessingService {
 
       // 4. 创建 thread
       developer.log('创建 thread', name: 'FileProcessingService');
-      final thread = await client.createThread(request: CreateThreadRequest());
-      final threadId = thread.id;
+      final thread = await _jsonRequest(
+        'POST',
+        Uri.parse('$apiBase/threads'),
+        authHeaders,
+        body: const {},
+      );
+      final threadId = thread['id'] as String;
 
       // 5. 添加消息
-      await client.createThreadMessage(
-        threadId: threadId,
-        request: CreateMessageRequest(
-          role: MessageRole.user,
-          content: CreateMessageRequestContent.text(prompt),
-        ),
+      await _jsonRequest(
+        'POST',
+        Uri.parse('$apiBase/threads/$threadId/messages'),
+        authHeaders,
+        body: {'role': 'user', 'content': prompt},
       );
 
       // 6. 创建 run
       developer.log('创建 run', name: 'FileProcessingService');
-      final run = await client.createThreadRun(
-        threadId: threadId,
-        request: CreateRunRequest(assistantId: assistantId),
+      final run = await _jsonRequest(
+        'POST',
+        Uri.parse('$apiBase/threads/$threadId/runs'),
+        authHeaders,
+        body: {'assistant_id': assistantId},
       );
 
       // 7. 等待完成
-      RunObject runStatus = run;
-      while (runStatus.status == RunStatus.queued ||
-          runStatus.status == RunStatus.inProgress) {
+      var runStatus = run;
+      while (runStatus['status'] == 'queued' ||
+          runStatus['status'] == 'in_progress' ||
+          runStatus['status'] == 'cancelling') {
         await Future.delayed(const Duration(seconds: 2));
-        runStatus = await client.getThreadRun(
-          threadId: threadId,
-          runId: run.id,
+        runStatus = await _jsonRequest(
+          'GET',
+          Uri.parse('$apiBase/threads/$threadId/runs/${run['id']}'),
+          authHeaders,
         );
         developer.log(
-          'Run 状态: ${runStatus.status}',
+          'Run 状态: ${runStatus['status']}',
           name: 'FileProcessingService',
         );
       }
 
-      if (runStatus.status != RunStatus.completed) {
-        throw Exception('Run 失败，状态: ${runStatus.status}');
+      if (runStatus['status'] != 'completed') {
+        throw Exception('Run 失败，状态: ${runStatus['status']}');
       }
 
       // 8. 获取响应
-      final messages = await client.listThreadMessages(threadId: threadId);
+      final messages = await _jsonRequest(
+        'GET',
+        Uri.parse('$apiBase/threads/$threadId/messages'),
+        authHeaders,
+      );
+      final messageData =
+          (messages['data'] as List<dynamic>? ?? const [])
+              .cast<Map<String, dynamic>>();
 
-      if (messages.data.isEmpty) {
+      if (messageData.isEmpty) {
         throw Exception('未收到响应消息');
       }
 
       developer.log(
-        '收到 ${messages.data.length} 条消息',
+        '收到 ${messageData.length} 条消息',
         name: 'FileProcessingService',
       );
 
       // 提取所有助手消息的文本内容（合并所有文本片段）
       final textParts = <String>[];
 
-      for (final message in messages.data) {
+      for (final message in messageData) {
         developer.log(
-          '消息角色: ${message.role}, 内容数量: ${message.content.length}',
+          '消息角色: ${message['role']}, 内容数量: ${(message['content'] as List?)?.length ?? 0}',
           name: 'FileProcessingService',
         );
 
-        if (message.role == MessageRole.assistant) {
-          for (final content in message.content) {
+        if (message['role'] == 'assistant') {
+          for (final content
+              in (message['content'] as List<dynamic>? ?? const [])) {
             developer.log(
               '内容类型: ${content.runtimeType}',
               name: 'FileProcessingService',
             );
 
-            // 尝试多种方式提取文本
-            String? text;
+            final text =
+                ((content as Map<String, dynamic>)['text']
+                        as Map<String, dynamic>?)?['value']
+                    as String?;
 
-            // 方式1: 如果是 MessageContent.text 类型
-            if (content.mapOrNull(
-                  text: (textContent) {
-                    text = textContent.text.value;
-                    return true;
-                  },
-                ) ==
-                true) {
-              // 已通过 mapOrNull 提取
-            }
-            // 方式2: 直接类型检查（降级方案）
-            else {
-              try {
-                final dynamic dynContent = content;
-                if (dynContent.text != null && dynContent.text.value != null) {
-                  text = dynContent.text.value as String;
-                }
-              } catch (e) {
-                developer.log('提取文本失败: $e', name: 'FileProcessingService');
-              }
-            }
-
-            if (text != null && text!.isNotEmpty) {
-              textParts.add(text!);
+            if (text != null && text.isNotEmpty) {
+              textParts.add(text);
               developer.log(
-                '提取文本: ${text?.substring(0, text!.length > 50 ? 50 : text!.length)}...',
+                '提取文本: ${text.substring(0, text.length > 50 ? 50 : text.length)}...',
                 name: 'FileProcessingService',
               );
             }
@@ -275,21 +301,17 @@ class FileProcessingService {
         developer.log('警告：未找到助手响应文本，尝试获取第一条消息', name: 'FileProcessingService');
 
         // 降级方案：尝试获取第一条消息的所有内容
-        if (messages.data.isNotEmpty) {
-          final firstMessage = messages.data.first;
-          for (final content in firstMessage.content) {
-            String? text;
+        if (messageData.isNotEmpty) {
+          final firstMessage = messageData.first;
+          for (final content
+              in (firstMessage['content'] as List<dynamic>? ?? const [])) {
+            final text =
+                ((content as Map<String, dynamic>)['text']
+                        as Map<String, dynamic>?)?['value']
+                    as String?;
 
-            // 使用 mapOrNull 提取文本
-            content.mapOrNull(
-              text: (textContent) {
-                text = textContent.text.value;
-                return true;
-              },
-            );
-
-            if (text != null && text!.isNotEmpty) {
-              textParts.add(text!);
+            if (text != null && text.isNotEmpty) {
+              textParts.add(text);
             }
           }
         }
@@ -307,8 +329,14 @@ class FileProcessingService {
 
       // 9. 清理资源（可选）
       try {
-        await client.deleteAssistant(assistantId: assistantId);
-        await client.deleteVectorStore(vectorStoreId: vectorStoreId);
+        await http.delete(
+          Uri.parse('$apiBase/assistants/$assistantId'),
+          headers: authHeaders,
+        );
+        await http.delete(
+          Uri.parse('$apiBase/vector_stores/$vectorStoreId'),
+          headers: authHeaders,
+        );
         for (final fileId in fileIds) {
           await _deleteFileFromOpenAI(apiKey, baseUrl, fileId);
         }

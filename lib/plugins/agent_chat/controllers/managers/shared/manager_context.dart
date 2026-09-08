@@ -63,7 +63,10 @@ class ManagerContext {
   /// 用于日志和调试显示
   String formatContextMessages(List<ChatMessage> messages) {
     return messages
-        .map((msg) => '${msg.isUser ? "用户" : "AI"}: ${msg.content.substring(0, msg.content.length > 50 ? 50 : msg.content.length)}...')
+        .map(
+          (msg) =>
+              '${msg.isUser ? "用户" : "AI"}: ${msg.content.substring(0, msg.content.length > 50 ? 50 : msg.content.length)}...',
+        )
         .join('\n');
   }
 

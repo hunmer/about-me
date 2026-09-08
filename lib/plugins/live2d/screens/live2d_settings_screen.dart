@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
-import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
-import 'package:aboutme/plugins/openai/models/ai_agent.dart';
-import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
-import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
-import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
+import 'live2d_archive_form_screen.dart';
 
+/// Live2D 全局设置：选中存档切换、语音播报、打字速度、模型预览。
+/// 存档内容编辑（名称/模型/Agent/封面）在 [Live2DArchiveFormScreen]。
 class Live2DSettingsScreen extends StatefulWidget {
   const Live2DSettingsScreen({super.key, this.initialArchiveId});
 
@@ -25,8 +24,6 @@ class Live2DSettingsScreen extends StatefulWidget {
 
 class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   final plugin = Live2DPlugin.instance;
-  final nameController = TextEditingController();
-  List<AIAgent> agents = [];
   Live2DArchive? archive;
   bool _showPreview = false;
   late double _typingIntervalMs =
@@ -49,10 +46,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
             .firstOrNull ??
         plugin.selected ??
         (plugin.archives.isNotEmpty ? plugin.archives.first : null);
-    if (archive != null) nameController.text = archive!.name;
-    AgentController().loadAgents().then((value) {
-      if (mounted) setState(() => agents = value);
-    });
     _loadSelectedTTSService();
   }
 
@@ -108,120 +101,22 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   void dispose() {
     _motionRequest.dispose();
-    nameController.dispose();
     super.dispose();
   }
 
-  Future<void> createArchive() async {
-    if (_showPreview) setState(() => _showPreview = false);
-    final created = Live2DArchive.create(
-      modelLabel: 'Mao',
-      modelDir: 'assets/models/mao/',
-      modelFile: 'mao_pro.model3.json',
+  Future<void> _editCurrentArchive() async {
+    final id = plugin.selectedId;
+    if (id == null) return;
+    await NavigationHelper.push(
+      context,
+      Live2DArchiveFormScreen(archiveId: id),
     );
-    await plugin.upsert(created);
-    setState(() {
-      archive = created;
-      nameController.text = created.name;
-    });
-  }
-
-  Future<void> chooseAgent() async {
-    // 原生 Live2D 平台视图不能跨底部抽屉导航保持挂载，先主动卸载。
-    if (_showPreview) {
-      setState(() => _showPreview = false);
-      await Future<void>.delayed(Duration.zero);
-    }
-    final selected =
-        archive?.agentId == null
-            ? <Map<String, String>>[]
-            : [
-              {
-                'id': archive!.agentId!,
-                'name':
-                    agents
-                        .where((a) => a.id == archive!.agentId)
-                        .firstOrNull
-                        ?.name ??
-                    '',
-              },
-            ];
-    final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
-      context: context,
-      isScrollControlled: true,
-      builder:
-          (_) => AgentListDrawer(
-            selectedAgents: selected,
-            allowMultipleSelection: false,
-            onAgentSelected: (_) {},
-          ),
-    );
-    if (!mounted || result == null || result.isEmpty || archive == null) return;
-    setState(() => archive!.agentId = result.first['id']);
-  }
-
-  Future<void> saveArchive() async {
-    final current = archive;
-    if (current == null) return;
-    current.name =
-        nameController.text.trim().isEmpty
-            ? 'Live2D'
-            : nameController.text.trim();
-    await plugin.upsert(current);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('live2d_saved'.tr)));
-      setState(() {});
+      setState(() {
+        archive = plugin.selected;
+        _showPreview = false;
+      });
     }
-  }
-
-  Future<void> chooseOnlineModel() async {
-    if (_showPreview) {
-      setState(() => _showPreview = false);
-      await Future<void>.delayed(Duration.zero);
-    }
-    final model = await Navigator.of(context).push<Live2DModelDefinition>(
-      MaterialPageRoute(builder: (_) => const Live2DOnlineModelPage()),
-    );
-    if (!mounted || model == null || archive == null) return;
-    setState(() {
-      archive!.modelLabel = model.label;
-      archive!.modelDir = model.modelDir;
-      archive!.modelFile = model.modelFile;
-    });
-  }
-
-  Future<void> deleteCurrentArchive() async {
-    final current = archive;
-    if (current == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('live2d_deleteArchiveTitle'.tr),
-            content: Text(
-              'live2d_deleteArchiveConfirm'.trParams({'name': current.name}),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('core_cancel'.tr),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('core_delete'.tr),
-              ),
-            ],
-          ),
-    );
-    if (confirmed != true) return;
-    await plugin.deleteArchive(current.id);
-    if (!mounted) return;
-    setState(() {
-      archive = plugin.selected;
-      nameController.text = archive?.name ?? '';
-    });
   }
 
   Live2DModelDefinition? modelFor(Live2DArchive? value) =>
@@ -230,19 +125,17 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final current = archive;
-    final selectedAgent =
-        agents.where((agent) => agent.id == current?.agentId).firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('live2d_settingsTitle'.tr),
         actions: [
-          if (current != null)
+          if (plugin.selectedId != null)
             IconButton(
-              onPressed: deleteCurrentArchive,
-              icon: const Icon(Icons.delete_outline),
+              onPressed: _editCurrentArchive,
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'live2d_editArchiveTitle'.tr,
             ),
-          IconButton(onPressed: saveArchive, icon: const Icon(Icons.save)),
         ],
       ),
       body: ListView(
@@ -258,11 +151,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              TextButton.icon(
-                onPressed: createArchive,
-                icon: const Icon(Icons.add),
-                label: Text('live2d_newArchive'.tr),
               ),
             ],
           ),
@@ -282,7 +170,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                       if (_showPreview) _showPreview = false;
                       setState(() {
                         archive = item;
-                        nameController.text = item.name;
                         plugin.selectedId = item.id;
                       });
                     },
@@ -291,60 +178,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               ),
             ),
           if (current != null) ...[
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'live2d_nameLabel'.tr),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: Text('live2d_modelSection'.tr),
-              subtitle: Text(current.modelLabel),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                if (_showPreview) {
-                  setState(() => _showPreview = false);
-                  await Future<void>.delayed(Duration.zero);
-                }
-                final model = await showModalBottomSheet<Live2DModelDefinition>(
-                  context: context,
-                  builder:
-                      (_) => ListView(
-                        padding: const EdgeInsets.all(16),
-                        children:
-                            availableJellyLive2DModels
-                                .map(
-                                  (model) => ListTile(
-                                    title: Text(model.label),
-                                    onTap: () => Navigator.pop(context, model),
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                );
-                if (model != null)
-                  setState(() {
-                    current.modelLabel = model.label;
-                    current.modelDir = model.modelDir;
-                    current.modelFile = model.modelFile;
-                  });
-              },
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: chooseOnlineModel,
-                icon: const Icon(Icons.cloud_download),
-                label: Text('live2d_chooseOnlineModel'.tr),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: Text('live2d_agentSection'.tr),
-              subtitle: Text(selectedAgent?.name ?? 'live2d_noAgentSelected'.tr),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: chooseAgent,
-            ),
-            const SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('live2d_autoReadTitle'.tr),

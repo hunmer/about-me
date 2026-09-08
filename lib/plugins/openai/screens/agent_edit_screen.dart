@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/api_format.dart';
+import 'package:agentlib/agent_slots.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
@@ -148,6 +149,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     }
 
     final values = _formKey.currentState!.value;
+    final resourceSlots = AgentResourceSlots(
+      skills: _splitResourceValues(values['resourceSkills']),
+      mcpServers: _splitResourceValues(values['resourceMcpServers']),
+    );
 
     // 从 iconAvatarRow 字段获取图标和头像
     final iconAvatarData = values['iconAvatar'] as Map<String, dynamic>?;
@@ -196,6 +201,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
           (values['openingQuestions'] as List<dynamic>?)?.cast<String>() ?? [],
       messages: allMessages.isNotEmpty ? allMessages : null,
       apiFormat: values['apiFormat'] as String? ?? 'openai',
+      resourceSlots: resourceSlots,
     );
 
     try {
@@ -251,6 +257,14 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       }
     }
   }
+
+  List<String> _splitResourceValues(dynamic value) =>
+      (value is String ? value : '')
+          .split(RegExp(r'[,\n]'))
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toSet()
+          .toList();
 
   Future<void> _deleteAgent() async {
     // 确认删除对话框
@@ -694,6 +708,27 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                             widget.agent?.headers ?? {},
                           ),
                           extra: {'minLines': 3, 'maxLines': 3},
+                        ),
+                        FormFieldConfig(
+                          name: 'resourceSkills',
+                          type: FormFieldType.text,
+                          labelText: 'AgentLib Skills',
+                          hintText: 'skill-id, another-skill',
+                          initialValue:
+                              widget.agent?.resourceSlots.skills.join(', ') ??
+                              '',
+                        ),
+                        FormFieldConfig(
+                          name: 'resourceMcpServers',
+                          type: FormFieldType.textArea,
+                          labelText: 'AgentLib MCP Servers',
+                          hintText: 'https://example.com/mcp',
+                          initialValue:
+                              widget.agent?.resourceSlots.mcpServers.join(
+                                ', ',
+                              ) ??
+                              '',
+                          extra: {'minLines': 2, 'maxLines': 3},
                         ),
                         // 标签
                         FormFieldConfig(

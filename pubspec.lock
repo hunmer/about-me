@@ -52,6 +52,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.7.2"
+  agentlib:
+    dependency: "direct main"
+    description:
+      path: "packages/agentlib"
+      relative: true
+    source: path
+    version: "1.1.0"
   animated_flip_counter:
     dependency: "direct main"
     description:
@@ -428,22 +435,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.3"
-  fetch_api:
-    dependency: transitive
-    description:
-      name: fetch_api
-      sha256: "24cbd5616f3d4008c335c197bb90bfa0eb43b9e55c6de5c60d1f805092636034"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.1"
-  fetch_client:
-    dependency: transitive
-    description:
-      name: fetch_client
-      sha256: "2125ffb6325e0045cc3cbfca1a87e6defe9afa27d85dc14857c1cf3835a9a636"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.1"
   ffi:
     dependency: transitive
     description:
@@ -1407,14 +1398,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.5.0"
-  openai_dart:
-    dependency: "direct main"
-    description:
-      name: openai_dart
-      sha256: "1cc5ed0915fa7572b943de01cfa7a3e5cfe1e6a7f4d0d9a9374d046518e84575"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.5"
   package_config:
     dependency: transitive
     description:

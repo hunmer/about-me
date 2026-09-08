@@ -15,7 +15,7 @@
 | 存储 | `shared_preferences`、`path_provider`、`fs_shim`、`webdav_client` |
 | 网络 | `dio`、`http`、`web_socket_channel` |
 | 加密 | `encrypt`（AES-256-GCM 同步）、`crypto` |
-| AI | `openai_dart`、`intelligence` |
+| AI | 本地 `agentlib` transport、`intelligence` |
 | JS 引擎 | `flutter_js` |
 | 富文本/编辑器 | `flutter_quill`（+ extensions）、`flutter_markdown` |
 | 日历 | `syncfusion_flutter_calendar`、`device_calendar`、`timezone` |

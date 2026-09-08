@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/openai_compat.dart';
+import 'package:agentlib/agentlib.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/api_format.dart';
 import 'prompt_preset_service.dart';
@@ -11,12 +12,11 @@ import 'dart:developer' as developer;
 /// 统一的错误消息提取和修复方法
 ///
 /// 从异常对象中提取错误消息，并修复可能的UTF-8编码问题
-/// 特别处理 OpenAIClientException，提取其中的错误码和消息
+/// 提取 AgentLib 请求错误消息。
 String _extractErrorMessage(dynamic error) {
   String errorDetails = error.toString();
 
-  // 如果是 OpenAIClientException，尝试提取并修复错误消息
-  if (error is OpenAIClientException) {
+  if (error is AgentLibException) {
     try {
       final body = error.body;
       if (body != null && body is Map) {
@@ -138,6 +138,58 @@ String _formatMessagesForLog(List<ChatCompletionMessage> messages) {
 }
 
 class RequestService {
+  static AgentLibClient _agentLibClient(AIAgent agent) {
+    final apiKey =
+        agent.headers['Authorization']?.replaceAll('Bearer ', '') ??
+        agent.headers['api-key'] ??
+        '';
+    final headers = Map<String, String>.from(agent.headers);
+    if (apiKey.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $apiKey';
+      headers['api-key'] = apiKey;
+    }
+    return AgentLibClient(baseUrl: agent.baseUrl, headers: headers);
+  }
+
+  static Map<String, dynamic> _agentLibMessage(ChatCompletionMessage message) {
+    final content = message.content;
+    dynamic normalized = content;
+    if (content is ChatCompletionUserMessageContent) {
+      normalized = content.map(
+        parts:
+            (parts) =>
+                parts.value
+                    .map(
+                      (part) => part.map(
+                        text:
+                            (text) => <String, dynamic>{
+                              'type': 'text',
+                              'text': text.text,
+                            },
+                        image:
+                            (image) => <String, dynamic>{
+                              'type': 'image_url',
+                              'image_url': {'url': image.imageUrl.url},
+                            },
+                        audio:
+                            (_) => <String, dynamic>{
+                              'type': 'text',
+                              'text': '[audio]',
+                            },
+                        refusal:
+                            (_) => <String, dynamic>{
+                              'type': 'text',
+                              'text': '[refusal]',
+                            },
+                      ),
+                    )
+                    .toList(),
+        string: (string) => string.value,
+      );
+    }
+    return {'role': message.role.name, 'content': normalized};
+  }
+
   /// 获取有效的系统提示词
   /// 如果 agent 设置了 promptPresetId，则返回预设的内容
   /// 否则返回 agent 的 effectiveSystemPrompt（从 messages 中获取 system 类型的消息）
@@ -216,41 +268,6 @@ class RequestService {
     return result.toString();
   }
 
-  static final Map<String, OpenAIClient> _clients = {};
-
-  /// 获取或创建OpenAI客户端（公开方法，供其他服务使用）
-  static OpenAIClient getClient(AIAgent agent) => _getClient(agent);
-
-  /// 获取或创建OpenAI客户端（内部实现）
-  static OpenAIClient _getClient(AIAgent agent) {
-    // 从headers中提取API密钥
-    final apiKey =
-        agent.headers['Authorization']?.replaceAll('Bearer ', '') ??
-        agent.headers['api-key'] ??
-        '';
-
-    // 可选的组织ID
-    final organization = agent.headers['OpenAI-Organization'];
-
-    developer.log('创建新的OpenAI客户端: ${agent.id}', name: 'RequestService');
-    developer.log('baseUrl: ${agent.baseUrl}', name: 'RequestService');
-    developer.log('model: ${agent.model}', name: 'RequestService');
-
-    // 创建新的headers对象，合并api-key和Authorization
-    final Map<String, String> mergedHeaders = Map<String, String>.from(
-      agent.headers,
-    );
-    mergedHeaders['api-key'] = apiKey;
-    mergedHeaders['Authorization'] = 'Bearer $apiKey';
-    print(mergedHeaders);
-    return OpenAIClient(
-      apiKey: apiKey,
-      organization: organization,
-      baseUrl: agent.baseUrl,
-      headers: mergedHeaders,
-    );
-  }
-
   /// 发送聊天请求
   static Future<String> chat(
     String input,
@@ -260,13 +277,15 @@ class RequestService {
   }) async {
     // 根据 apiFormat 分发到不同的实现
     final apiFormat = ApiFormat.fromString(agent.apiFormat);
-    developer.log(
-      'chat: apiFormat=${apiFormat.value}',
-      name: 'RequestService',
-    );
+    developer.log('chat: apiFormat=${apiFormat.value}', name: 'RequestService');
 
     if (apiFormat == ApiFormat.anthropic) {
-      return await _chatAnthropic(input, agent, imageFile: imageFile, contextMessages: contextMessages);
+      return await _chatAnthropic(
+        input,
+        agent,
+        imageFile: imageFile,
+        contextMessages: contextMessages,
+      );
     }
 
     // OpenAI 格式（默认）
@@ -274,39 +293,39 @@ class RequestService {
       developer.log('开始聊天请求: ${agent.id}', name: 'RequestService');
       developer.log('用户输入: $input', name: 'RequestService');
 
-      final client = _getClient(agent);
-
       // 获取有效的系统提示词（可能是预设）
       final effectiveSystemPrompt = await getEffectiveSystemPrompt(agent);
 
       late final CreateChatCompletionRequest request;
+      late final List<ChatCompletionMessage> messages;
 
       if (imageFile != null) {
         // 读取图片文件并转换为base64
         final bytes = await imageFile.readAsBytes();
         final base64Image = base64Encode(bytes);
 
+        messages = [
+          ChatCompletionMessage.system(content: effectiveSystemPrompt),
+          ChatCompletionMessage.user(
+            content: ChatCompletionUserMessageContent.parts([
+              ChatCompletionMessageContentPart.text(text: input),
+              ChatCompletionMessageContentPart.image(
+                imageUrl: ChatCompletionMessageImageUrl(
+                  url: 'data:image/jpeg;base64,$base64Image',
+                ),
+              ),
+            ]),
+          ),
+        ];
         request = CreateChatCompletionRequest(
           model: ChatCompletionModel.modelId(agent.model),
-          messages: [
-            ChatCompletionMessage.system(content: effectiveSystemPrompt),
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.parts([
-                ChatCompletionMessageContentPart.text(text: input),
-                ChatCompletionMessageContentPart.image(
-                  imageUrl: ChatCompletionMessageImageUrl(
-                    url: 'data:image/jpeg;base64,$base64Image',
-                  ),
-                ),
-              ]),
-            ),
-          ],
+          messages: messages,
           temperature: 0.7,
           maxTokens: 4096,
         );
       } else {
         // 构建消息列表
-        final List<ChatCompletionMessage> messages = [
+        messages = [
           ChatCompletionMessage.system(content: effectiveSystemPrompt),
         ];
 
@@ -337,11 +356,16 @@ class RequestService {
       );
 
       final stopwatch = Stopwatch()..start();
-      final response = await client.createChatCompletion(request: request);
+      final responseContent = await _agentLibClient(agent).complete(
+        model: agent.model,
+        messages: messages.map(_agentLibMessage).toList(),
+        temperature: 0.7,
+        maxTokens: 1000,
+      );
       stopwatch.stop();
 
       final content =
-          response.choices.first.message.content ?? 'No response content';
+          responseContent.isEmpty ? 'No response content' : responseContent;
       developer.log(
         '收到响应: ${content.length}字符, 耗时: ${stopwatch.elapsedMilliseconds}ms',
         name: 'RequestService',
@@ -382,17 +406,18 @@ class RequestService {
             content = rawContent;
           } else if (rawContent is ChatCompletionUserMessageContent) {
             content = rawContent.map(
-              parts: (parts) => parts.value
-                  .map(
-                    (p) => p.map(
-                      text: (t) => t.text,
-                      image: (i) => '[图片]',
-                      audio: (a) => '[音频]',
-                      refusal: (r) => '',
-                    ),
-                  )
-                  .where((s) => s.isNotEmpty)
-                  .join(' '),
+              parts:
+                  (parts) => parts.value
+                      .map(
+                        (p) => p.map(
+                          text: (t) => t.text,
+                          image: (i) => '[图片]',
+                          audio: (a) => '[音频]',
+                          refusal: (r) => '',
+                        ),
+                      )
+                      .where((s) => s.isNotEmpty)
+                      .join(' '),
               string: (s) => s.value,
             );
           }
@@ -647,17 +672,18 @@ class RequestService {
               } else if (content is ChatCompletionUserMessageContent) {
                 // 处理 ChatCompletionUserMessageContent 类型
                 textContent = content.map(
-                  parts: (parts) => parts.value
-                      .map(
-                        (p) => p.map(
-                          text: (t) => t.text,
-                          image: (i) => '', // 跳过已有的图片
-                          audio: (a) => '',
-                          refusal: (r) => '',
-                        ),
-                      )
-                      .where((s) => s.isNotEmpty)
-                      .join(' '),
+                  parts:
+                      (parts) => parts.value
+                          .map(
+                            (p) => p.map(
+                              text: (t) => t.text,
+                              image: (i) => '', // 跳过已有的图片
+                              audio: (a) => '',
+                              refusal: (r) => '',
+                            ),
+                          )
+                          .where((s) => s.isNotEmpty)
+                          .join(' '),
                   string: (s) => s.value,
                 );
               }
@@ -684,8 +710,6 @@ class RequestService {
       }
 
       // 获取OpenAI客户端
-      final client = _getClient(agent);
-
       final request = CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(agent.model),
         messages: messages,
@@ -700,7 +724,13 @@ class RequestService {
       );
 
       final stopwatch = Stopwatch()..start();
-      final stream = client.createChatCompletionStream(request: request);
+      final stream = _agentLibClient(agent).stream(
+        model: agent.model,
+        messages: messages.map(_agentLibMessage).toList(),
+        temperature: 0.7,
+        maxTokens: agent.maxLength > 0 ? agent.maxLength : null,
+        responseFormat: responseFormat?.toJson(),
+      );
 
       int totalChars = 0;
       int chunkCount = 0;
@@ -746,8 +776,8 @@ class RequestService {
             return;
           }
 
-          final content = res.choices.first.delta.content;
-          if (content != null) {
+          final content = res;
+          if (content.isNotEmpty) {
             totalChars += content.length;
             chunkCount++;
             finalResponse += content;
@@ -886,10 +916,7 @@ class RequestService {
           },
           onComplete: () {
             succeeded = true;
-            developer.log(
-              '✅ 第 $attempt 次尝试成功',
-              name: 'RequestService',
-            );
+            developer.log('✅ 第 $attempt 次尝试成功', name: 'RequestService');
             onComplete();
           },
           vision: vision,
@@ -964,56 +991,27 @@ class RequestService {
         name: 'RequestService',
       );
 
-      final client = _getClient(agent);
-
-      // 转换参数为枚举值
-      ImageSize imageSize;
-      switch (size) {
-        case '1024x1024':
-          imageSize = ImageSize.v1024x1024;
-          break;
-        case '1024x1792':
-          imageSize = ImageSize.v1024x1792;
-          break;
-        case '1792x1024':
-          imageSize = ImageSize.v1792x1024;
-          break;
-        default:
-          imageSize = ImageSize.v1024x1024;
-      }
-
-      ImageQuality imageQuality;
-      switch (quality) {
-        case 'hd':
-          imageQuality = ImageQuality.hd;
-          break;
-        default:
-          imageQuality = ImageQuality.standard;
-      }
-
-      ImageStyle imageStyle;
-      switch (style) {
-        case 'vivid':
-          imageStyle = ImageStyle.vivid;
-          break;
-        default:
-          imageStyle = ImageStyle.natural;
-      }
-
-      final request = CreateImageRequest(
-        model: CreateImageRequestModel.modelId(model),
-        prompt: prompt,
-        n: n,
-        size: imageSize,
-        quality: imageQuality,
-        style: imageStyle,
-      );
-
       final stopwatch = Stopwatch()..start();
-      final response = await client.createImage(request: request);
+      final response = await _agentLibClient(agent).requestJson(
+        'images/generations',
+        body: {
+          'model': model,
+          'prompt': prompt,
+          'n': n,
+          'size': size,
+          'quality': quality,
+          'style': style,
+        },
+      );
       stopwatch.stop();
 
-      final urls = response.data.map((image) => image.url ?? '').toList();
+      final urls =
+          (response['data'] as List<dynamic>? ?? const [])
+              .map(
+                (image) =>
+                    (image as Map<String, dynamic>)['url'] as String? ?? '',
+              )
+              .toList();
       developer.log(
         '图像生成完成: ${urls.length}张图片, 耗时: ${stopwatch.elapsedMilliseconds}ms',
         name: 'RequestService',
@@ -1038,24 +1036,22 @@ class RequestService {
       developer.log('输入文本长度: ${input.length}字符', name: 'RequestService');
       developer.log('使用模型: $model', name: 'RequestService');
 
-      final client = _getClient(agent);
-
-      final request = CreateEmbeddingRequest(
-        model: EmbeddingModel.modelId(model),
-        input: EmbeddingInput.string(input),
-      );
-
       final stopwatch = Stopwatch()..start();
-      final response = await client.createEmbedding(request: request);
+      final response = await _agentLibClient(
+        agent,
+      ).requestJson('embeddings', body: {'model': model, 'input': input});
       stopwatch.stop();
 
-      final vector = response.data.first.embeddingVector;
+      final vector =
+          ((response['data'] as List<dynamic>).first
+                  as Map<String, dynamic>)['embedding']
+              as List<dynamic>;
       developer.log(
         '嵌入向量生成完成: ${vector.length}维, 耗时: ${stopwatch.elapsedMilliseconds}ms',
         name: 'RequestService',
       );
 
-      return vector;
+      return vector.map((value) => (value as num).toDouble()).toList();
     } catch (e) {
       final errorDetails = _extractErrorMessage(e);
       developer.log(
@@ -1069,11 +1065,6 @@ class RequestService {
 
   /// 清理客户端资源
   static void dispose() {
-    developer.log(
-      '清理所有OpenAI客户端资源: ${_clients.length}个客户端',
-      name: 'RequestService',
-    );
-    _clients.clear();
     AnthropicRequestService.dispose();
   }
 
@@ -1161,17 +1152,18 @@ class RequestService {
             content = rawContent;
           } else if (rawContent is ChatCompletionUserMessageContent) {
             content = rawContent.map(
-              parts: (parts) => parts.value
-                  .map(
-                    (p) => p.map(
-                      text: (t) => t.text,
-                      image: (i) => '[图片]',
-                      audio: (a) => '[音频]',
-                      refusal: (r) => '',
-                    ),
-                  )
-                  .where((s) => s.isNotEmpty)
-                  .join(' '),
+              parts:
+                  (parts) => parts.value
+                      .map(
+                        (p) => p.map(
+                          text: (t) => t.text,
+                          image: (i) => '[图片]',
+                          audio: (a) => '[音频]',
+                          refusal: (r) => '',
+                        ),
+                      )
+                      .where((s) => s.isNotEmpty)
+                      .join(' '),
               string: (s) => s.value,
             );
           }
@@ -1195,10 +1187,7 @@ class RequestService {
         '系统提示词长度: ${effectiveSystemPrompt.length}字符',
         name: 'RequestService',
       );
-      developer.log(
-        '消息数量: ${messages.length}条',
-        name: 'RequestService',
-      );
+      developer.log('消息数量: ${messages.length}条', name: 'RequestService');
 
       // 调用 AnthropicRequestService
       await AnthropicRequestService.streamResponse(

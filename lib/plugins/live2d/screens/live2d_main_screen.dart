@@ -6,10 +6,9 @@ import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
-import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'live2d_settings_screen.dart';
+import 'live2d_archive_form_screen.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
 class Live2DMainScreen extends StatefulWidget {
@@ -81,28 +80,12 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
     ];
   }
 
-  Future<void> _pickCover(Live2DArchive archive) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => ImagePickerDialog(
-        initialUrl: archive.coverPath,
-        saveDirectory: 'live2d_covers',
-        enableCrop: true,
-        cropAspectRatio: 16 / 9,
-      ),
-    );
-    if (result == null) return;
-    PaintingBinding.instance.imageCache.clear();
-    setState(() => archive.coverPath = result['url'] as String);
-    await plugin.save();
-  }
-
   Future<void> _openSettings(Live2DArchive archive) async {
     plugin.selectedId = archive.id;
     await plugin.save();
     await NavigationHelper.push(
       context,
-      Live2DSettingsScreen(initialArchiveId: archive.id),
+      Live2DArchiveFormScreen(archiveId: archive.id),
     );
     if (mounted) {
       setState(() {});
@@ -177,12 +160,10 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
         childAspectRatio: 0.82,
       ),
       itemCount: archives.length,
-      itemBuilder: (context, index) =>
-          _Live2DArchiveCard(
+      itemBuilder: (context, index) => _Live2DArchiveCard(
             archive: archives[index],
             agentName: agentNames[archives[index].agentId],
             onTap: () => _openSettings(archives[index]),
-            onCoverTap: () => _pickCover(archives[index]),
           ),
     );
   }
@@ -192,14 +173,12 @@ class _Live2DArchiveCard extends StatelessWidget {
   const _Live2DArchiveCard({
     required this.archive,
     required this.onTap,
-    required this.onCoverTap,
     this.agentName,
   });
 
   final Live2DArchive archive;
   final String? agentName;
   final VoidCallback onTap;
-  final VoidCallback onCoverTap;
 
   @override
   Widget build(BuildContext context) {
@@ -216,38 +195,12 @@ class _Live2DArchiveCard extends StatelessWidget {
           // 展开，必须用 AspectRatio 先确定封面高度
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                AdaptiveImage(
-                  key: ValueKey(archive.coverPath),
-                  imagePath: archive.coverPath,
-                  fit: BoxFit.cover,
-                  borderRadius: 0,
-                  defaultImage: _buildCoverPlaceholder(theme),
-                ),
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Material(
-                    color: theme.colorScheme.surface.withValues(alpha: 0.85),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: onCoverTap,
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          archive.coverPath == null
-                              ? Icons.add_photo_alternate_outlined
-                              : Icons.edit,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: AdaptiveImage(
+              key: ValueKey(archive.coverPath),
+              imagePath: archive.coverPath,
+              fit: BoxFit.cover,
+              borderRadius: 0,
+              defaultImage: _buildCoverPlaceholder(theme),
             ),
           ),
           Expanded(

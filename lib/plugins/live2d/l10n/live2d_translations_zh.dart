@@ -28,4 +28,9 @@ const Map<String, String> live2dTranslationsZh = {
   'live2d_filterAllModels': '全部模型',
   'live2d_noArchives': '还没有 Live2D 存档，点击右上角新建',
   'live2d_noMatchArchives': '没有匹配的存档',
+  // 存档编辑表单
+  'live2d_editArchiveTitle': '编辑存档',
+  'live2d_coverLabel': '封面',
+  'live2d_chooseCoverHint': '选择封面图片',
+  'live2d_saveButton': '保存',
 };

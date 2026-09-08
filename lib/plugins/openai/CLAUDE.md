@@ -126,7 +126,7 @@ Future<dynamic> executeToolApp({
 
 ### 外部依赖
 
-- `openai_dart`: OpenAI API 客户端
+- `agentlib`: AgentLib transport 与本地消息模型
 - `dio`: HTTP 请求（用于其他服务商）
 - `http`: 备用 HTTP 客户端
 

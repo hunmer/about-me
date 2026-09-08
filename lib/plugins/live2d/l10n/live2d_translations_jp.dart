@@ -28,4 +28,9 @@ const Map<String, String> live2dTranslationsJp = {
   'live2d_filterAllModels': 'すべてのモデル',
   'live2d_noArchives': 'Live2D プロフィールがありません。右上の + で作成',
   'live2d_noMatchArchives': '一致するプロフィールがありません',
+  // プロフィール編集フォーム
+  'live2d_editArchiveTitle': 'プロフィールを編集',
+  'live2d_coverLabel': 'カバー',
+  'live2d_chooseCoverHint': 'カバー画像を選択',
+  'live2d_saveButton': '保存',
 };

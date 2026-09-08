@@ -264,7 +264,7 @@ await RequestService.streamResponse(
 
 - `flutter_markdown: ^0.7.4` - Markdown渲染
 - `file_picker` - 文件选择（项目已有）
-- `openai_dart` - OpenAI API集成（通过openai插件）
+- `agentlib` - AgentLib API 集成（通过 openai 插件）
 - `timeago` - 相对时间显示
 
 ## 🤝 贡献指南

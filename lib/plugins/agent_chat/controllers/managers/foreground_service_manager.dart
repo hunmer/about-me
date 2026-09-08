@@ -115,8 +115,10 @@ class ChatForegroundServiceManager {
       final isInForeground = _isInChatScreen();
 
       // 获取设置: 是否显示 token
-      final showToken =
-          context.getSetting<bool>('showTokenInNotification', true);
+      final showToken = context.getSetting<bool>(
+        'showTokenInNotification',
+        true,
+      );
 
       FlutterForegroundTask.sendDataToTask({
         'action': 'generation_complete',
@@ -125,7 +127,8 @@ class ChatForegroundServiceManager {
         'preview': preview,
         'isInForeground': isInForeground,
         'showToken': showToken,
-        'tokenCount': tokenCount ?? TokenCounterService.estimateTokenCount(content),
+        'tokenCount':
+            tokenCount ?? TokenCounterService.estimateTokenCount(content),
       });
 
       debugPrint('✅ [ForegroundService] 已通知生成完成 (token: $tokenCount)');

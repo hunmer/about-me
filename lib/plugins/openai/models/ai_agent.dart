@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
+import 'package:agentlib/agent_slots.dart';
 
 class Prompt {
   String type; // system, user, assistant
@@ -40,6 +41,8 @@ class AIAgent {
   final List<String> openingQuestions; // 预设的开场白问题列表
   final List<Prompt>? messages; // 预设消息列表（system, user, assistant）
   final String apiFormat; // API 格式: 'openai' 或 'anthropic'
+  /// AgentLib 资源插槽：单 Agent skills/MCP 配置。
+  final AgentResourceSlots resourceSlots;
 
   /// 从 messages 中获取 system 类型的提示词
   /// 优先级：messages 中 type="system" 的第一条 > systemPrompt（兼容旧数据）
@@ -79,6 +82,7 @@ class AIAgent {
     this.openingQuestions = const [],
     this.messages,
     this.apiFormat = 'openai',
+    this.resourceSlots = const AgentResourceSlots(),
   });
 
   Map<String, dynamic> toJson() => {
@@ -108,6 +112,7 @@ class AIAgent {
     'openingQuestions': openingQuestions,
     'messages': messages?.map((msg) => msg.toJson()).toList(),
     'apiFormat': apiFormat,
+    'resourceSlots': resourceSlots.toJson(),
   };
 
   factory AIAgent.fromJson(Map<String, dynamic> json) {
@@ -158,7 +163,10 @@ class AIAgent {
       model: json['model'] as String? ?? 'gpt-3.5-turbo',
       icon:
           json['icon'] != null
-              ? dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+              ? dynamicIconData(
+                json['icon'] as int,
+                fontFamily: 'MaterialIcons',
+              )
               : null,
       iconColor:
           json['iconColor'] != null ? Color(json['iconColor'] as int) : null,
@@ -171,6 +179,9 @@ class AIAgent {
           const [],
       messages: messages,
       apiFormat: json['apiFormat'] as String? ?? 'openai',
+      resourceSlots: AgentResourceSlots.fromJson(
+        json['resourceSlots'] as Map<String, dynamic>?,
+      ),
     );
   }
 
@@ -201,6 +212,7 @@ class AIAgent {
     List<String>? openingQuestions,
     List<Prompt>? messages,
     String? apiFormat,
+    AgentResourceSlots? resourceSlots,
   }) {
     return AIAgent(
       id: id ?? this.id,
@@ -231,6 +243,7 @@ class AIAgent {
       openingQuestions: openingQuestions ?? this.openingQuestions,
       messages: messages ?? this.messages,
       apiFormat: apiFormat ?? this.apiFormat,
+      resourceSlots: resourceSlots ?? this.resourceSlots,
     );
   }
 }

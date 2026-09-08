@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/openai_compat.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/conversation.dart';
 import '../../models/agent_chain_node.dart';
@@ -399,7 +399,9 @@ class AgentChainExecutor {
           );
         },
         onThinking: (thinking) {
-          debugPrint('🧠 [链式调用-Agent ${agent.name}] 收到思考内容: ${thinking.length} 字符');
+          debugPrint(
+            '🧠 [链式调用-Agent ${agent.name}] 收到思考内容: ${thinking.length} 字符',
+          );
           thinkingBuffer.write(thinking);
           // 实时更新消息的 thinkingContent 字段
           context.messageService.updateAIMessageThinking(

@@ -104,7 +104,10 @@ class ToolExecutor {
               }
 
               // 更新步骤为成功（使用深拷贝）
-              final successSteps = updatedMessage.toolCall!.steps.map((s) => s.copyWith()).toList();
+              final successSteps =
+                  updatedMessage.toolCall!.steps
+                      .map((s) => s.copyWith())
+                      .toList();
               successSteps[i].result = result;
               successSteps[i].status = ToolCallStatus.success;
               updatedMessage = updatedMessage.copyWith(
@@ -119,7 +122,10 @@ class ToolExecutor {
               toolResultsBuffer.writeln();
             } catch (e) {
               // 更新步骤为失败（使用深拷贝）
-              final failedSteps = updatedMessage.toolCall!.steps.map((s) => s.copyWith()).toList();
+              final failedSteps =
+                  updatedMessage.toolCall!.steps
+                      .map((s) => s.copyWith())
+                      .toList();
               failedSteps[i].error = e.toString();
               failedSteps[i].status = ToolCallStatus.failed;
               updatedMessage = updatedMessage.copyWith(

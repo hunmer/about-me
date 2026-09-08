@@ -1,6 +1,6 @@
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/foundation.dart';
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/openai_compat.dart';
 import '../../models/saved_tool_template.dart';
 import '../../models/tool_call_step.dart';
 import '../../models/chat_message.dart';

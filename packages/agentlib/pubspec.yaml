@@ -1,0 +1,10 @@
+name: agentlib
+description: Local AgentLib transport facade for Aboutme.
+publish_to: none
+version: 1.1.0
+environment:
+  sdk: ^3.7.0
+dependencies:
+  http: ^1.3.0
+dev_dependencies:
+  test: ^1.25.0

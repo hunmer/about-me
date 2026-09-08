@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:openai_dart/openai_dart.dart';
+import 'package:agentlib/openai_compat.dart';
 import '../../models/conversation.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../services/tool_service.dart';
