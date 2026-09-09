@@ -9,6 +9,11 @@ import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
+import 'package:agentlib/agent_slots.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'suggested_questions_dialog.dart';
@@ -231,6 +236,42 @@ class _MessageInputState extends State<MessageInput> {
               (widget.controller.selectedToolTemplate != null ||
                   widget.controller.selectedFiles.isNotEmpty))
             _buildCurrentStatus(),
+
+          // 快捷入口：Agent 编辑与 Skills 选择
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              children: [
+                Pressable(
+                  onPressed:
+                      widget.controller.currentAgent != null
+                          ? _openAgentEdit
+                          : null,
+                  semanticLabel: '编辑Agent',
+                  builder:
+                      (context, states) => DsIcon(
+                        DsIconKind.bot,
+                        size: 20,
+                        color:
+                            widget.controller.currentAgent != null
+                                ? theme.primaryText
+                                : theme.textSub.withValues(alpha: 0.5),
+                      ),
+                ),
+                const SizedBox(width: 20),
+                Pressable(
+                  onPressed: _showSkillsMenu,
+                  semanticLabel: '选择Skill',
+                  builder:
+                      (context, states) => DsIcon(
+                        DsIconKind.book,
+                        size: 20,
+                        color: theme.primaryText,
+                      ),
+                ),
+              ],
+            ),
+          ),
 
           // 输入框区域
           Padding(
@@ -594,6 +635,98 @@ class _MessageInputState extends State<MessageInput> {
             ),
           ),
     );
+  }
+
+  /// 打开当前 Agent 编辑页
+  void _openAgentEdit() {
+    final AIAgent? agent = widget.controller.currentAgent;
+    if (agent == null) return;
+    NavigationHelper.push(context, AgentEditScreen(agent: agent));
+  }
+
+  /// 显示 Skills 选择菜单
+  void _showSkillsMenu() {
+    // 合并全局与当前 Agent 的 skills，按 id 去重
+    final skills = <String, AgentResourceItem>{};
+    for (final item in [
+      ...AgentLibResourceService.globalSlots.skills,
+      ...?widget.controller.currentAgent?.resourceSlots.skills,
+    ]) {
+      skills[item.id] = item;
+    }
+    final items = skills.values.where((item) => item.enabled).toList();
+
+    SmoothBottomSheet.show(
+      context: context,
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (context) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                    ),
+                    child: SafeArea(
+                      child:
+                          items.isEmpty
+                              ? Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Center(
+                                  child: Text(
+                                    '暂无可用的 Skill，可先在 Agent 编辑页添加',
+                                    style: DsTypography.body.copyWith(
+                                      color: DSThemeBridge.resolve(
+                                        context,
+                                      ).textSub,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                shrinkWrap: true,
+                                padding: const EdgeInsets.only(bottom: 8),
+                                itemCount: items.length,
+                                itemBuilder: (context, index) {
+                                  final skill = items[index];
+                                  return DSListItem(
+                                    leading: DsIcon(
+                                      DsIconKind.book,
+                                      size: 22,
+                                      color:
+                                          DSThemeBridge.resolve(
+                                            context,
+                                          ).primaryText,
+                                    ),
+                                    title: skill.displayName,
+                                    subtitle:
+                                        skill.tags.isEmpty
+                                            ? null
+                                            : skill.tags.join(' · '),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _insertSkillText(skill);
+                                    },
+                                  );
+                                },
+                              ),
+                    ),
+                  ),
+            ),
+          ),
+    );
+  }
+
+  /// 在输入框插入 use [xxx] skill
+  void _insertSkillText(AgentResourceItem skill) {
+    final insert = 'use [${skill.displayName}] skill';
+    final current = _textController.text;
+    final newText = current.isEmpty ? insert : '$current\n$insert';
+    _textController.text = newText;
+    _textController.selection = TextSelection.collapsed(
+      offset: newText.length,
+    );
+    widget.controller.setInputText(newText);
+    _focusNode.requestFocus();
   }
 
   /// 显示预设问题对话框

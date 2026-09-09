@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
@@ -26,10 +26,14 @@ Future<T?> showDSDialog<T>({
       pageBuilder:
           (c, animation, secondaryAnimation) => AppTheme(
             data: effectiveTheme,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 36),
-                child: builder(c),
+            // 透明 Material 仅供 TextField 等需要 Material 祖先的组件使用，不绘制背景
+            child: Material(
+              type: MaterialType.transparency,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 36),
+                  child: builder(c),
+                ),
               ),
             ),
           ),

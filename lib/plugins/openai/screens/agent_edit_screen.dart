@@ -586,10 +586,6 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildResourceSelector(skills: true),
-                  const SizedBox(height: 8),
-                  _buildResourceSelector(skills: false),
-                  const SizedBox(height: 16),
                   FormBuilderWrapper(
                     formKey: _formKey,
                     buttonBuilder: (context, onSubmit, onReset) {
@@ -798,6 +794,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  _buildResourceSelector(skills: true),
+                  const SizedBox(height: 8),
+                  _buildResourceSelector(skills: false),
                 ],
               ),
             ),
