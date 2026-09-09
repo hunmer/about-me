@@ -60,7 +60,6 @@ const Map<String, String> appTranslationsEn = {
   'app_selectBackupMethod': 'Please select backup method',
   'app_exportAppData': 'Export App Data',
   'app_fullBackup': 'Full Backup',
-  'app_webdavSync': 'WebDAV Sync',
   'app_setBackupSchedule': 'Set backup schedule',
 
   // Backup progress

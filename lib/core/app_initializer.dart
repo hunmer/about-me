@@ -31,10 +31,7 @@ import 'app_widgets/floating_ball_service.dart';
 import 'package:aboutme/screens/route.dart';
 import 'global_flags.dart';
 import 'services/toast_service.dart';
-import 'services/file_watch_sync_service.dart';
 import 'services/log_service.dart';
-import 'api_forwarding/api_forwarding_config.dart';
-import 'api_forwarding/api_forwarding_service.dart';
 import 'services/speech_recognition_config_service.dart';
 import 'services/fcm_service.dart';
 
@@ -244,7 +241,7 @@ Future<void> _initializeBackgroundServices() async {
     unawaited(NotificationController.requestPermission());
 
     // 初始化 ImageUtils
-    unawaited(ImageUtils.initializeSync());
+    unawaited(ImageUtils.initializeSync(storage: globalStorage));
 
     // 初始化路由历史管理器
     unawaited(RouteHistoryManager.instance.initialize(storage: globalStorage));
@@ -301,12 +298,6 @@ Future<void> _initializeBackgroundServices() async {
 
     // 恢复悬浮球状态
     unawaited(restoreFloatingBallState());
-
-    // 初始化文件监听同步服务（用于自动同步文件变更到服务器）
-    unawaited(fileWatchSyncService.initialize());
-
-    // 初始化 API 转发服务（如果配置了自动连接）
-    unawaited(_initializeApiForwardingService());
 
     // 初始化 FCM 推送服务
     unawaited(
@@ -593,15 +584,3 @@ Future<void> initializeFlutterFloatingBall() async {
   }
 }
 
-/// 初始化 API 转发服务
-/// 检查配置是否启用自动连接，如果是则启动服务
-Future<void> _initializeApiForwardingService() async {
-  try {
-    final config = await ApiForwardingConfig.load();
-    if (config.autoConnect && config.enabled && config.isValid) {
-      await ApiForwardingService.instance.start(config);
-    }
-  } catch (e) {
-    debugPrint('[API转发] 自动启动失败: $e');
-  }
-}

@@ -60,7 +60,6 @@ const Map<String, String> appTranslationsZh = {
   'app_selectBackupMethod': '请选择备份方式',
   'app_exportAppData': '导出应用数据',
   'app_fullBackup': '完整备份',
-  'app_webdavSync': 'WebDAV同步',
   'app_setBackupSchedule': '设置备份计划',
 
   // Backup progress

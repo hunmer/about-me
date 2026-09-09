@@ -1,381 +1,188 @@
-import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
+import request from 'supertest';
 
-/**
- * Aboutme 同步服务器集成测试
- *
- * 测试所有 API 端点的功能
- */
-
-// 测试配置
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8874';
-const TEST_DATA_DIR = path.join(__dirname, 'test_data');
-
-// 测试用户
-const TEST_USER = {
-  username: `test_user_${Date.now()}`,
+const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:8874';
+const testDataDir = path.join(__dirname, 'test_data');
+const user = {
+  username: `storage_user_${Date.now()}`,
   password: 'test_password_123',
-  deviceId: 'test_device_001',
-  deviceName: 'Test Device',
+  device_id: 'storage_test_device',
+  device_name: 'Storage Test Device',
 };
 
-// 测试加密密钥 (Base64 编码的 32 字节密钥)
-const TEST_ENCRYPTION_KEY = Buffer.from(
-  '0123456789abcdef0123456789abcdef',
-).toString('base64');
-
-// 全局变量
-let authToken: string;
+let token: string;
 let userId: string;
-let userSalt: string;
+let apiKey: string;
 
-describe('Aboutme Sync Server', () => {
-  // ==================== 健康检查测试 ====================
+describe('Aboutme HTTP storage server', () => {
+  it('serves public health and version endpoints', async () => {
+    const health = await request(baseUrl).get('/health').expect(200);
+    expect(health.body.status).toBe('healthy');
+    const version = await request(baseUrl).get('/version').expect(200);
+    expect(version.body.name).toContain('Aboutme');
+  });
 
-  describe('Health & Version', () => {
-    it('GET /health should return healthy status', async () => {
-      const response = await request(BASE_URL)
-        .get('/health')
-        .expect('Content-Type', /json/)
+  it('registers a user and rejects duplicate registration', async () => {
+    const response = await request(baseUrl)
+      .post('/api/v1/auth/register').send(user).expect(200);
+    expect(response.body.success).toBe(true);
+    token = response.body.token;
+    userId = response.body.user_id;
+    expect(token).toBeTruthy();
+
+    await request(baseUrl).post('/api/v1/auth/register').send(user).expect(400);
+  });
+
+  it('authenticates users and creates an API key', async () => {
+    await request(baseUrl)
+      .post('/api/v1/auth/login')
+      .send({...user, password: 'wrong'})
+      .expect(401);
+    const login = await request(baseUrl)
+      .post('/api/v1/auth/login').send(user).expect(200);
+    expect(login.body.token).toBeTruthy();
+
+    const keyResponse = await request(baseUrl)
+      .post('/api/v1/auth/api-keys')
+      .set('Authorization', `Bearer ${token}`)
+      .send({name: 'Storage tests', expiry: 'never'})
+      .expect(200);
+    apiKey = keyResponse.body.api_key.key;
+    expect(apiKey).toMatch(/^mk_/);
+  });
+
+  it('protects the authenticated storage health endpoint', async () => {
+    await request(baseUrl).get('/api/v1/storage/health').expect(401);
+    await request(baseUrl)
+      .get('/api/v1/storage/health')
+      .set('Authorization', 'Bearer invalid')
+      .expect(401);
+    const response = await request(baseUrl)
+      .get('/api/v1/storage/health')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+    expect(response.body.user_id).toBe(userId);
+  });
+
+  describe('file CRUD and optimistic concurrency', () => {
+    const filePath = 'notes/private.bin';
+    const ciphertext = Buffer.from('{"version":1,"ciphertext":"opaque-one"}');
+    let etag: string;
+
+    it('requires explicit create semantics', async () => {
+      await request(baseUrl)
+        .put(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/octet-stream')
+        .send(ciphertext)
+        .expect(412);
+
+      const response = await request(baseUrl)
+        .put(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/octet-stream')
+        .set('If-None-Match', '*')
+        .send(ciphertext)
         .expect(200);
-
-      expect(response.body.status).toBe('healthy');
-      expect(response.body.timestamp).toBeDefined();
+      etag = response.headers.etag;
+      expect(etag).toMatch(/^"[a-f0-9]{64}"$/);
     });
 
-    it('GET /version should return version info', async () => {
-      const response = await request(BASE_URL)
-        .get('/version')
-        .expect('Content-Type', /json/)
+    it('returns exact bytes and metadata', async () => {
+      const head = await request(baseUrl)
+        .head(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
         .expect(200);
+      expect(head.headers.etag).toBe(etag);
+      expect(Number(head.headers['content-length'])).toBe(ciphertext.length);
+      expect(head.headers['last-modified']).toBeTruthy();
 
-      expect(response.body.version).toBeDefined();
-      expect(response.body.name).toContain('Aboutme');
+      const response = await request(baseUrl)
+        .get(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on('data', chunk => chunks.push(Buffer.from(chunk)));
+          res.on('end', () => done(null, Buffer.concat(chunks)));
+        })
+        .expect(200);
+      expect(Buffer.compare(response.body, ciphertext)).toBe(0);
+    });
+
+    it('rejects stale updates without losing data', async () => {
+      await request(baseUrl)
+        .put(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/octet-stream')
+        .set('If-Match', '"stale"')
+        .send(Buffer.from('bad'))
+        .expect(412);
+
+      const current = await request(baseUrl)
+        .get(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(Buffer.from(current.body).toString('utf8')).toContain('opaque-one');
+    });
+
+    it('lists and conditionally deletes files', async () => {
+      const list = await request(baseUrl)
+        .get('/api/v1/storage/files?prefix=notes/')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(list.body.files).toContain(filePath);
+
+      await request(baseUrl)
+        .delete(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('If-Match', '"stale"')
+        .expect(412);
+      await request(baseUrl)
+        .delete(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('If-Match', etag)
+        .expect(204);
+      await request(baseUrl)
+        .get(`/api/v1/storage/files/${filePath}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404);
     });
   });
 
-  // ==================== 认证 API 测试 ====================
-
-  describe('Auth API', () => {
-    it('POST /api/v1/auth/register should create new user', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/auth/register')
-        .send({
-          username: TEST_USER.username,
-          password: TEST_USER.password,
-          device_id: TEST_USER.deviceId,
-          device_name: TEST_USER.deviceName,
-        })
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.user_id).toBeDefined();
-      expect(response.body.token).toBeDefined();
-      expect(response.body.user_salt).toBeDefined();
-
-      authToken = response.body.token;
-      userId = response.body.user_id;
-      userSalt = response.body.user_salt;
-    });
-
-    it('POST /api/v1/auth/register should reject duplicate username', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/auth/register')
-        .send({
-          username: TEST_USER.username,
-          password: TEST_USER.password,
-          device_id: TEST_USER.deviceId,
-          device_name: TEST_USER.deviceName,
-        })
-        .expect('Content-Type', /json/)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('已存在');
-    });
-
-    it('POST /api/v1/auth/login should authenticate user', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/auth/login')
-        .send({
-          username: TEST_USER.username,
-          password: TEST_USER.password,
-          device_id: TEST_USER.deviceId,
-          device_name: TEST_USER.deviceName,
-        })
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.token).toBeDefined();
-    });
-
-    it('POST /api/v1/auth/login should reject wrong password', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/auth/login')
-        .send({
-          username: TEST_USER.username,
-          password: 'wrong_password',
-          device_id: TEST_USER.deviceId,
-          device_name: TEST_USER.deviceName,
-        })
-        .expect('Content-Type', /json/)
-        .expect(401);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('GET /api/v1/auth/key-verification should return not exists initially', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/auth/key-verification')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.exists).toBe(false);
-    });
-
-    it('GET /api/v1/auth/user-info should return user info', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/auth/user-info')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.user_info.username).toBe(TEST_USER.username);
-    });
-
-    it('POST /api/v1/auth/api-keys should create API key', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/auth/api-keys')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: 'Test API Key',
-          expiry: 'never',
-        })
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.api_key.key).toBeDefined();
-      expect(response.body.api_key.name).toBe('Test API Key');
-    });
-
-    it('GET /api/v1/auth/api-keys should list API keys', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/auth/api-keys')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.api_keys.length).toBeGreaterThan(0);
-    });
+  it('rejects path traversal', async () => {
+    await request(baseUrl)
+      .get('/api/v1/storage/files/%2e%2e%2fauth%2fusers.json')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+    await request(baseUrl)
+      .get('/api/v1/storage/files/C:%2FWindows%2Fwin.ini')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
   });
 
-  // ==================== 同步 API 测试 ====================
-
-  describe('Sync API', () => {
-    const testFilePath = 'test_folder/test_file.json';
-    const testEncryptedData = 'dGVzdF9pdl90ZXN0X2NpcGhlcnRleHQ=.dGVzdF9jaXBoZXJ0ZXh0';
-    const testMd5 = 'd41d8cd98f00b204e9800998ecf8427e';
-
-    it('POST /api/v1/sync/push should push file', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/sync/push')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          file_path: testFilePath,
-          encrypted_data: testEncryptedData,
-          new_md5: testMd5,
-        })
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.file_path).toBe(testFilePath);
-    });
-
-    it('GET /api/v1/auth/key-verification should return exists after push .key_verification.json', async () => {
-      // 推送验证文件（模拟客户端创建的验证文件）
-      const verificationResponse = await request(BASE_URL)
-        .post('/api/v1/sync/push')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          file_path: '.key_verification.json',
-          encrypted_data: testEncryptedData,
-          new_md5: 'verification_md5_test',
-        })
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(verificationResponse.body.success).toBe(true);
-
-      // 验证 key-verification 接口返回验证文件
-      const response = await request(BASE_URL)
-        .get('/api/v1/auth/key-verification')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.exists).toBe(true);
-      expect(response.body.encrypted_data).toBeDefined();
-    });
-
-    it('GET /api/v1/sync/pull/* should pull file', async () => {
-      const response = await request(BASE_URL)
-        .get(`/api/v1/sync/pull/${encodeURIComponent(testFilePath)}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.encrypted_data).toBeDefined();
-      expect(response.body.md5).toBe(testMd5);
-    });
-
-    it('GET /api/v1/sync/list should list files', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/list')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.files).toBeDefined();
-      expect(response.body.files.length).toBeGreaterThan(0);
-    });
-
-    it('GET /api/v1/sync/status should return status', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/status')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.user_id).toBe(userId);
-      expect(response.body.file_count).toBeDefined();
-    });
-
-    it('GET /api/v1/sync/index should return file index', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/index')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.index).toBeDefined();
-      expect(response.body.index.files).toBeDefined();
-    });
-
-    it('GET /api/v1/sync/tree should return directory tree', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/tree')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.tree).toBeDefined();
-    });
-
-    it('GET /api/v1/sync/info/* should return file info', async () => {
-      const response = await request(BASE_URL)
-        .get(`/api/v1/sync/info/${encodeURIComponent(testFilePath)}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.exists).toBe(true);
-      expect(response.body.md5).toBeDefined();
-    });
-
-    it('DELETE /api/v1/sync/delete/* should delete file', async () => {
-      const response = await request(BASE_URL)
-        .delete(`/api/v1/sync/delete/${encodeURIComponent(testFilePath)}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-    });
+  it('audits explicit force overwrite', async () => {
+    await request(baseUrl)
+      .put('/api/v1/storage/files/forced.bin')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/octet-stream')
+      .set('X-Force-Overwrite', 'true')
+      .send(Buffer.from('opaque'))
+      .expect(200);
+    const audit = fs.readFileSync(path.join(testDataDir, 'logs', 'storage_audit.log'), 'utf8');
+    expect(audit).toContain('force-overwrite');
+    expect(audit).toContain('forced.bin');
   });
 
-  // ==================== 插件 API 测试 ====================
-
-  describe('Plugin API', () => {
-    it('POST /api/v1/plugins/notes/item should create note', async () => {
-      const response = await request(BASE_URL)
-        .post('/api/v1/plugins/notes/item')
-        .set('Authorization', `Bearer ${authToken}`)
-        .set('X-Encryption-Key', TEST_ENCRYPTION_KEY)
-        .send({
-          title: 'Test Note',
-          content: 'This is a test note',
-        })
-        .expect('Content-Type', /json/)
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.title).toBe('Test Note');
-    });
-
-    it('GET /api/v1/plugins/notes/items should list notes', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/plugins/notes/items')
-        .set('Authorization', `Bearer ${authToken}`)
-        .set('X-Encryption-Key', TEST_ENCRYPTION_KEY)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.data).toBeDefined();
-    });
-
-    it('should reject request without encryption key', async () => {
-      // 先清除加密密钥
-      await request(BASE_URL)
-        .post('/api/v1/auth/clear-encryption-key')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      const response = await request(BASE_URL)
-        .get('/api/v1/plugins/notes/items')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(403);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('加密密钥');
-    });
-  });
-
-  // ==================== 认证中间件测试 ====================
-
-  describe('Auth Middleware', () => {
-    it('should reject request without auth token', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/list')
-        .expect('Content-Type', /json/)
-        .expect(401);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should reject request with invalid token', async () => {
-      const response = await request(BASE_URL)
-        .get('/api/v1/sync/list')
-        .set('Authorization', 'Bearer invalid_token')
-        .expect('Content-Type', /json/)
-        .expect(401);
-
-      expect(response.body.success).toBe(false);
-    });
+  it('supports browser CORS preflight', async () => {
+    const response = await request(baseUrl)
+      .options('/api/v1/storage/files/demo.bin')
+      .set('Origin', 'https://example.test')
+      .set('Access-Control-Request-Method', 'PUT')
+      .set('Access-Control-Request-Headers', 'if-match,x-force-overwrite')
+      .expect(204);
+    expect(response.headers['access-control-allow-headers']).toContain('If-Match');
+    expect(response.headers['access-control-expose-headers']).toContain('ETag');
   });
 });

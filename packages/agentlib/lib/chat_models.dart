@@ -25,34 +25,34 @@ class ChatCompletionMessage {
 abstract class ChatCompletionUserMessageContent {
   const ChatCompletionUserMessageContent();
   factory ChatCompletionUserMessageContent.string(String value) =
-      _StringContent;
+      StringContent;
   factory ChatCompletionUserMessageContent.parts(
     List<ChatCompletionMessageContentPart> value,
-  ) = _PartsContent;
+  ) = PartsContent;
 
   T map<T>({
-    required T Function(_PartsContent value) parts,
-    required T Function(_StringContent value) string,
+    required T Function(PartsContent value) parts,
+    required T Function(StringContent value) string,
   });
 }
 
-class _StringContent extends ChatCompletionUserMessageContent {
-  const _StringContent(this.value);
+class StringContent extends ChatCompletionUserMessageContent {
+  const StringContent(this.value);
   final String value;
   @override
   T map<T>({
-    required T Function(_PartsContent value) parts,
-    required T Function(_StringContent value) string,
+    required T Function(PartsContent value) parts,
+    required T Function(StringContent value) string,
   }) => string(this);
 }
 
-class _PartsContent extends ChatCompletionUserMessageContent {
-  const _PartsContent(this.value);
+class PartsContent extends ChatCompletionUserMessageContent {
+  const PartsContent(this.value);
   final List<ChatCompletionMessageContentPart> value;
   @override
   T map<T>({
-    required T Function(_PartsContent value) parts,
-    required T Function(_StringContent value) string,
+    required T Function(PartsContent value) parts,
+    required T Function(StringContent value) string,
   }) => parts(this);
 }
 

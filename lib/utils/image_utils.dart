@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -15,6 +16,8 @@ enum ImageType {
 class ImageUtils {
   /// 缓存的应用文档目录路径，用于同步方法
   static String? _appDocumentDirectoryPath;
+  static StorageManager? _storage;
+  static final Map<String, String> _materializedPaths = {};
 
   /// 将图片保存到应用数据目录，并返回相对路径
   /// [imageFile] 源图片文件
@@ -22,6 +25,12 @@ class ImageUtils {
   /// 返回相对于应用数据目录的路径
   static Future<String> saveImage(File imageFile, String saveDirectory) async {
     try {
+      if (_storage?.isRemote == true) {
+        final fileName = '${const Uuid().v4()}${path.extension(imageFile.path)}';
+        final storagePath = '${saveDirectory.replaceAll(r'\', '/')}/$fileName';
+        await _storage!.writeBytes(storagePath, await imageFile.readAsBytes());
+        return './$storagePath';
+      }
       // 获取应用文档目录
       final appDir = await StorageManager.getApplicationDocumentsDirectory();
       final imagesDir = Directory(
@@ -58,6 +67,12 @@ class ImageUtils {
     String extension = '.jpg',
   }) async {
     try {
+      if (_storage?.isRemote == true) {
+        final fileName = '${const Uuid().v4()}$extension';
+        final storagePath = '${saveDirectory.replaceAll(r'\', '/')}/$fileName';
+        await _storage!.writeBytes(storagePath, Uint8List.fromList(imageBytes));
+        return './$storagePath';
+      }
       // 获取应用文档目录
       final appDir = await StorageManager.getApplicationDocumentsDirectory();
       final imagesDir = Directory(
@@ -88,6 +103,14 @@ class ImageUtils {
   static Future<String> getAbsolutePath(String? relativePath) async {
     if (relativePath == null || relativePath.isEmpty) {
       return '';
+    }
+
+    if (_storage?.isRemote == true && relativePath.startsWith('./')) {
+      final storagePath = relativePath.substring(2).replaceAll(r'\', '/');
+      final file = await _storage!.materializeToTemporaryFile(storagePath);
+      if (file == null) return '';
+      _materializedPaths[relativePath] = file.path;
+      return file.path;
     }
 
     // 如果已经是绝对路径，直接返回
@@ -140,6 +163,12 @@ class ImageUtils {
         return false;
       }
 
+      if (_storage?.isRemote == true) {
+        await _storage!.deleteFile(relativePath.substring(2).replaceAll(r'\', '/'));
+        _materializedPaths.remove(relativePath);
+        return true;
+      }
+
       final absolutePath = await getAbsolutePath(relativePath);
       final file = File(absolutePath);
 
@@ -162,6 +191,9 @@ class ImageUtils {
     if (relativePath == null || relativePath.isEmpty) {
       return '';
     }
+
+    final materialized = _materializedPaths[relativePath];
+    if (materialized != null) return materialized;
 
     // 如果已经是绝对路径，直接返回
     if (path.isAbsolute(relativePath)) {
@@ -244,7 +276,8 @@ class ImageUtils {
   /// 初始化同步方法所需的缓存
   ///
   /// 建议在应用启动时调用此方法，以确保同步方法能够正常工作
-  static Future<void> initializeSync() async {
+  static Future<void> initializeSync({StorageManager? storage}) async {
+    _storage = storage ?? _storage;
     final appDir = await StorageManager.getApplicationDocumentsDirectory();
     _appDocumentDirectoryPath = appDir.path;
     debugPrint('ImageUtils: 应用目录路径已缓存: $_appDocumentDirectoryPath');

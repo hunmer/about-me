@@ -88,8 +88,6 @@ import '../plugins/webview/l10n/webview_translations_jp.dart';
 import '../screens/settings_screen/l10n/settings_screen_translations_zh.dart';
 import '../screens/settings_screen/l10n/settings_screen_translations_en.dart';
 import '../screens/settings_screen/l10n/settings_screen_translations_jp.dart';
-import '../screens/settings_screen/widgets/l10n/webdav_translations_zh.dart';
-import '../screens/settings_screen/widgets/l10n/webdav_translations_en.dart';
 import '../screens/settings_screen/screens/data_management_translations_zh.dart';
 import '../screens/settings_screen/screens/data_management_translations_en.dart';
 import '../plugins/agent_chat/l10n/agent_chat_translations_zh.dart';
@@ -242,9 +240,6 @@ class UnifiedTranslations extends Translations {
     zhDict.addAll(settingsScreenTranslationsZh);
     enDict.addAll(settingsScreenTranslationsEn);
     jpDict.addAll(settingsScreenTranslationsJp);
-
-    zhDict.addAll(webdavTranslationsZh);
-    enDict.addAll(webdavTranslationsEn);
 
     zhDict.addAll(dataManagementTranslationsZh);
     enDict.addAll(dataManagementTranslationsEn);

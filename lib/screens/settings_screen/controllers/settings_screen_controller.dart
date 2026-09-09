@@ -9,7 +9,6 @@ import 'base_settings_controller.dart';
 import 'export_controller.dart';
 import 'import_controller.dart';
 import 'full_backup_controller.dart';
-import 'webdav_sync_controller.dart';
 import 'auto_update_controller.dart';
 import 'package:aboutme/widgets/backup_time_picker.dart';
 
@@ -18,7 +17,6 @@ class SettingsScreenController extends ChangeNotifier {
   late ExportController _exportController;
   late ImportController _importController;
   late FullBackupController _fullBackupController;
-  late WebDAVSyncController _webdavSyncController;
   late AutoUpdateController _autoUpdateController;
   late SharedPreferences _prefs;
   BackupSchedule? _backupSchedule;
@@ -37,7 +35,6 @@ class SettingsScreenController extends ChangeNotifier {
     _exportController = ExportController(context);
     _importController = ImportController(context);
     _fullBackupController = FullBackupController(context);
-    _webdavSyncController = WebDAVSyncController(context);
     _autoUpdateController = AutoUpdateController(context);
     await _loadPluginStates();
     _initialized = true;
@@ -128,12 +125,6 @@ class SettingsScreenController extends ChangeNotifier {
   // 全量数据备份与恢复
   Future<void> exportAllData() => _fullBackupController.exportAllData();
   Future<void> importAllData() => _fullBackupController.importAllData();
-
-  // WebDAV同步相关
-  bool get isWebDAVConnected => _webdavSyncController.isConnected;
-  Future<bool> uploadAllToWebDAV() => _webdavSyncController.uploadAllToWebDAV();
-  Future<bool> downloadAllFromWebDAV() =>
-      _webdavSyncController.downloadAllFromWebDAV();
 
   // 自动打开最后使用的插件设置
   bool get autoOpenLastPlugin => globalPluginManager.autoOpenLastPlugin;

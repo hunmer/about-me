@@ -23,16 +23,6 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_fullRestoreTitle': '完整恢复',
   'settings_screen_fullRestoreSubtitle': '从备份恢复整个应用数据（覆盖现有数据）',
 
-  // WebDAV 同步
-  'settings_screen_webDAVTitle': 'WebDAV 同步',
-  'settings_screen_webDAVConnected': '已连接',
-  'settings_screen_webDAVDisconnected': '未连接',
-
-  // 服务器同步
-  'settings_screen_serverSyncTitle': '服务器同步',
-  'settings_screen_serverSyncConnected': '已登录',
-  'settings_screen_serverSyncDisconnected': '未登录',
-
   // 悬浮球设置
   'settings_screen_floatingBallTitle': '悬浮球设置',
   'settings_screen_floatingBallEnabled': '已启用',

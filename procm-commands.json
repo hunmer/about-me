@@ -22,7 +22,7 @@
       "args": ["run", "dev"],
       "cwd": "packages/server-nodejs",
       "group": "aboutme",
-      "desc": "Sync server (REST + WS + admin panel) on port 8874, ts-node-dev hot reload"
+      "desc": "Storage server (REST + admin panel) on port 8874, ts-node-dev hot reload"
     },
     "mcp-server": {
       "script": "npm",
@@ -30,13 +30,6 @@
       "cwd": "packages/mcp-aboutme-server",
       "group": "aboutme",
       "desc": "Aboutme MCP server (60+ AI tools), tsx dev mode"
-    },
-    "forwarding": {
-      "script": "npm",
-      "args": ["run", "dev"],
-      "cwd": "packages/api_forwarding_server",
-      "group": "aboutme",
-      "desc": "WebSocket pairing/forwarding server on port 8654"
     }
   }
 }

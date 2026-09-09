@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:aboutme/core/services/backup_service.dart';
 import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
@@ -9,21 +8,16 @@ import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import './controllers/settings_screen_controller.dart';
-import './widgets/webdav_settings_dialog.dart';
-import './widgets/api_forwarding_settings_dialog.dart';
+import './widgets/storage_backend_settings_dialog.dart';
 import './widgets/speech_recognition_settings_dialog.dart';
-import './controllers/webdav_controller.dart';
 import 'package:aboutme/core/floating_ball/settings_screen.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 import 'package:aboutme/screens/settings_screen/screens/data_management_screen.dart';
-import 'package:aboutme/screens/settings_screen/screens/device_sync_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
 import 'package:aboutme/screens/about_screen/about_screen.dart';
-import 'package:aboutme/screens/settings_screen/models/server_sync_config.dart';
 import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
 import 'package:aboutme/screens/settings_screen/widgets/permission_request_dialog.dart';
-import 'package:aboutme/core/api_forwarding/api_forwarding_config.dart';
-import 'package:aboutme/core/api_forwarding/api_forwarding_service.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -41,19 +35,12 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late SettingsScreenController _controller;
-  late WebDAVController _webdavController;
-  bool _isWebDAVConnected = false;
-  bool _isServerSyncLoggedIn = false;
-  bool _isApiForwardingConnected = false;
   bool _isSpeechRecognitionConfigured = false;
-
-  StreamSubscription? _apiForwardingSubscription;
 
   @override
   void initState() {
     super.initState();
     _controller = SettingsScreenController();
-    _webdavController = WebDAVController();
 
     _controller.addListener(() {
       if (mounted) {
@@ -63,14 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     // 初始化语音识别配置服务
     _initSpeechRecognitionConfig();
-    // 检查WebDAV配置
-    _checkWebDAVConfig();
-    // 检查服务器同步配置
-    _checkServerSyncConfig();
-    // 检查 API 转发连接状态
-    _checkApiForwardingStatus();
-    // 监听 API 转发状态变化
-    _listenToApiForwardingEvents();
   }
 
   // 初始化语音识别配置服务
@@ -116,78 +95,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    _apiForwardingSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  // 检查WebDAV配置
-  Future<void> _checkWebDAVConfig() async {
-    final config = await _webdavController.getWebDAVConfig();
-    if (mounted) {
-      setState(() {
-        _isWebDAVConnected = config?['isConnected'] == true;
-      });
-    }
-  }
-
-  // 检查服务器同步配置
-  Future<void> _checkServerSyncConfig() async {
-    final config = await ServerSyncConfig.load();
-    if (mounted) {
-      setState(() {
-        _isServerSyncLoggedIn = config.isLoggedIn;
-      });
-    }
-  }
-
-  // 检查 API 转发连接状态
-  void _checkApiForwardingStatus() {
-    if (mounted) {
-      setState(() {
-        _isApiForwardingConnected = ApiForwardingService.instance.isConnected;
-      });
-    }
-  }
-
-  // 监听 API 转发事件
-  void _listenToApiForwardingEvents() {
-    _apiForwardingSubscription = ApiForwardingService.instance.eventStream
-        .listen((event) {
-          if (mounted) {
-            final type = event['type'] as String?;
-            if (type == 'connected' ||
-                type == 'disconnected' ||
-                type == 'stopped') {
-              setState(() {
-                _isApiForwardingConnected = type == 'connected';
-              });
-            }
-          }
-        });
-  }
-
   late BackupService _backupService;
-
-  // 显示WebDAV设置对话框
-  Future<void> _showWebDAVSettings() async {
-    final config = await _webdavController.getWebDAVConfig();
-    if (!mounted) return;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => WebDAVSettingsDialog(
-            controller: _webdavController,
-            initialConfig: config,
-          ),
-    );
-
-    if (result == true) {
-      // 重新检查WebDAV状态
-      await _checkWebDAVConfig();
-    }
-  }
 
   // 显示定位 API Key 设置对话框
   Future<void> _showLocationApiKeyDialog() async {
@@ -442,42 +354,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.cloud),
-            title: Text('settings_screen_webDAVTitle'.tr),
-            subtitle: Text(
-              _isWebDAVConnected
-                  ? 'settings_screen_webDAVConnected'.tr
-                  : 'settings_screen_webDAVDisconnected'.tr,
-            ),
-            trailing:
-                _isWebDAVConnected
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : null,
-            onTap: () {
-              if (mounted) {
-                _showWebDAVSettings();
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.sync),
-            title: Text('settings_screen_serverSyncTitle'.tr),
-            subtitle: Text(
-              _isServerSyncLoggedIn
-                  ? 'settings_screen_serverSyncConnected'.tr
-                  : 'settings_screen_serverSyncDisconnected'.tr,
-            ),
-            trailing:
-                _isServerSyncLoggedIn
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : const Icon(Icons.chevron_right),
-            onTap: () {
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DeviceSyncScreen(),
-                  ),
-                ).then((_) => _checkServerSyncConfig());
+            title: const Text('数据存储后端'),
+            subtitle: Text(globalStorage.isRemote ? 'HTTP 服务器' : '本地文件'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final changed = await showDialog<bool>(
+                context: context,
+                builder: (context) => const StorageBackendSettingsDialog(),
+              );
+              if (changed == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('设置已保存，请重新启动应用')),
+                );
               }
             },
           ),
@@ -679,37 +567,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.cloud_sync),
-            title: const Text('转发数据服务'),
-            subtitle: Text(
-              _isApiForwardingConnected ? '已连接到转发服务器' : '配置 API 转发服务，支持前端访问',
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_isApiForwardingConnected)
-                  const Icon(Icons.check_circle, color: Colors.green),
-                const Icon(Icons.arrow_forward_ios),
-              ],
-            ),
-            onTap: () async {
-              final config = await ApiForwardingConfig.load();
-              if (!mounted) return;
-
-              final result = await showDialog<bool>(
-                context: context,
-                builder:
-                    (context) =>
-                        ApiForwardingSettingsDialog(initialConfig: config),
-              );
-
-              if (result == true) {
-                // 重新检查连接状态
-                setState(() {});
-              }
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.notifications_active),
             title: const Text('Toast 测试'),

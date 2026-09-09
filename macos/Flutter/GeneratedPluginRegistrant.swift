@@ -16,6 +16,7 @@ import flutter_app_group_directory
 import flutter_image_compress_macos
 import flutter_inappwebview_macos
 import flutter_js
+import flutter_secure_storage_macos
 import flutter_tts
 import irondash_engine_context
 import live2d_flutter
@@ -41,6 +42,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
   InAppWebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "InAppWebViewFlutterPlugin"))
   FlutterJsPlugin.register(with: registry.registrar(forPlugin: "FlutterJsPlugin"))
+  FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
   FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
   IrondashEngineContextPlugin.register(with: registry.registrar(forPlugin: "IrondashEngineContextPlugin"))
   FlutterLive2dPlugin.register(with: registry.registrar(forPlugin: "FlutterLive2dPlugin"))

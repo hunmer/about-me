@@ -60,7 +60,6 @@ const Map<String, String> appTranslationsJp = {
   'app_selectBackupMethod': 'バックアップ方法を選択してください',
   'app_exportAppData': 'アプリデータをエクスポート',
   'app_fullBackup': '完全バックアップ',
-  'app_webdavSync': 'WebDAV同期',
   'app_setBackupSchedule': 'バックアップスケジュールを設定',
 
   // Backup progress

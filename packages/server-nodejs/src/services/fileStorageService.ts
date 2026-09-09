@@ -1,12 +1,24 @@
 import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
+import crypto from 'crypto';
 import { FileInfo, FolderNode, FileIndex, EncryptedFile, UserInfo } from '../types';
 
 /** 索引文件名 */
 const INDEX_FILE_NAME = '.file_index.json';
 /** 索引版本 */
 const INDEX_VERSION = 1;
+const STORAGE_DIR_NAME = '.storage';
+
+export interface RawFileMetadata {
+  etag: string;
+  size: number;
+  modifiedAt: Date;
+}
+
+export type ConditionalWriteResult =
+  | { status: 'written'; metadata: RawFileMetadata }
+  | { status: 'precondition_failed'; metadata: RawFileMetadata | null };
 
 /**
  * 文件存储服务 - 纯文件系统存储
@@ -25,6 +37,7 @@ const INDEX_VERSION = 1;
 export class FileStorageService {
   private baseDir: string;
   private indexCache: Map<string, FileIndex> = new Map();
+  private rawFileLocks = new Map<string, Promise<void>>();
 
   constructor(baseDir: string) {
     this.baseDir = baseDir;
@@ -63,6 +76,204 @@ export class FileStorageService {
    */
   getUserDir(userId: string): string {
     return path.join(this.baseDir, 'users', userId);
+  }
+
+  private getStorageDir(userId: string): string {
+    return path.join(this.getUserDir(userId), STORAGE_DIR_NAME);
+  }
+
+  /** 将不可信相对路径限制在用户的 Storage API 数据目录中。 */
+  private resolveStoragePath(userId: string, filePath: string): string {
+    if (!filePath || filePath.includes('\\') || path.isAbsolute(filePath)) {
+      throw new Error('INVALID_STORAGE_PATH');
+    }
+
+    const segments = filePath.split('/');
+    if (segments.some(segment => !segment || segment === '.' || segment === '..')) {
+      throw new Error('INVALID_STORAGE_PATH');
+    }
+
+    const root = path.resolve(this.getStorageDir(userId));
+    const resolved = path.resolve(root, ...segments);
+    if (resolved === root || !resolved.startsWith(`${root}${path.sep}`)) {
+      throw new Error('INVALID_STORAGE_PATH');
+    }
+    return resolved;
+  }
+
+  private async assertNoSymlink(root: string, target: string): Promise<void> {
+    let current = root;
+    const relative = path.relative(root, target);
+    for (const segment of relative.split(path.sep)) {
+      current = path.join(current, segment);
+      try {
+        const stats = await fs.promises.lstat(current);
+        if (stats.isSymbolicLink()) throw new Error('INVALID_STORAGE_PATH');
+      } catch (error: any) {
+        if (error?.code === 'ENOENT') return;
+        throw error;
+      }
+    }
+  }
+
+  private metadataFrom(data: Buffer, stats: fs.Stats): RawFileMetadata {
+    return {
+      etag: `\"${crypto.createHash('sha256').update(data).digest('hex')}\"`,
+      size: data.length,
+      modifiedAt: stats.mtime,
+    };
+  }
+
+  private async withRawFileLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.rawFileLocks.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>(resolve => { release = resolve; });
+    this.rawFileLocks.set(key, current);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.rawFileLocks.get(key) === current) this.rawFileLocks.delete(key);
+    }
+  }
+
+  async readRawFile(
+    userId: string,
+    filePath: string,
+  ): Promise<{ data: Buffer; metadata: RawFileMetadata } | null> {
+    const root = path.resolve(this.getStorageDir(userId));
+    const fullPath = this.resolveStoragePath(userId, filePath);
+    await this.assertNoSymlink(root, fullPath);
+    try {
+      const data = await fs.promises.readFile(fullPath);
+      const stats = await fs.promises.stat(fullPath);
+      return { data, metadata: this.metadataFrom(data, stats) };
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') return null;
+      throw error;
+    }
+  }
+
+  async getRawFileMetadata(userId: string, filePath: string): Promise<RawFileMetadata | null> {
+    const result = await this.readRawFile(userId, filePath);
+    return result?.metadata ?? null;
+  }
+
+  async writeRawFile(
+    userId: string,
+    filePath: string,
+    data: Buffer,
+    conditions: { ifMatch?: string; ifNoneMatch?: string; force?: boolean } = {},
+  ): Promise<ConditionalWriteResult> {
+    return this.withRawFileLock(`${userId}:${filePath}`, () =>
+      this.writeRawFileUnlocked(userId, filePath, data, conditions));
+  }
+
+  private async writeRawFileUnlocked(
+    userId: string,
+    filePath: string,
+    data: Buffer,
+    conditions: { ifMatch?: string; ifNoneMatch?: string; force?: boolean },
+  ): Promise<ConditionalWriteResult> {
+    const root = path.resolve(this.getStorageDir(userId));
+    const fullPath = this.resolveStoragePath(userId, filePath);
+    await fs.promises.mkdir(root, { recursive: true });
+    await this.assertNoSymlink(root, fullPath);
+
+    const existing = await this.getRawFileMetadata(userId, filePath);
+    if (!conditions.force) {
+      if (conditions.ifMatch && existing?.etag !== conditions.ifMatch) {
+        return { status: 'precondition_failed', metadata: existing };
+      }
+      if (conditions.ifNoneMatch === '*' && existing) {
+        return { status: 'precondition_failed', metadata: existing };
+      }
+      if (!conditions.ifMatch && conditions.ifNoneMatch !== '*') {
+        return { status: 'precondition_failed', metadata: existing };
+      }
+    }
+
+    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+    await this.assertNoSymlink(root, path.dirname(fullPath));
+    const tempPath = path.join(
+      path.dirname(fullPath),
+      `.${path.basename(fullPath)}.${process.pid}.${crypto.randomUUID()}.tmp`,
+    );
+    try {
+      await fs.promises.writeFile(tempPath, data, { flag: 'wx' });
+      await fs.promises.rename(tempPath, fullPath);
+    } finally {
+      await fs.promises.rm(tempPath, { force: true }).catch(() => undefined);
+    }
+
+    const stats = await fs.promises.stat(fullPath);
+    return { status: 'written', metadata: this.metadataFrom(data, stats) };
+  }
+
+  async deleteRawFile(
+    userId: string,
+    filePath: string,
+    conditions: { ifMatch?: string; force?: boolean } = {},
+  ): Promise<'deleted' | 'not_found' | 'precondition_failed'> {
+    return this.withRawFileLock(`${userId}:${filePath}`, () =>
+      this.deleteRawFileUnlocked(userId, filePath, conditions));
+  }
+
+  private async deleteRawFileUnlocked(
+    userId: string,
+    filePath: string,
+    conditions: { ifMatch?: string; force?: boolean },
+  ): Promise<'deleted' | 'not_found' | 'precondition_failed'> {
+    const existing = await this.getRawFileMetadata(userId, filePath);
+    if (!existing) return 'not_found';
+    if (!conditions.force && (!conditions.ifMatch || existing.etag !== conditions.ifMatch)) {
+      return 'precondition_failed';
+    }
+    const fullPath = this.resolveStoragePath(userId, filePath);
+    await fs.promises.unlink(fullPath);
+    return 'deleted';
+  }
+
+  async listRawFiles(userId: string, prefix = ''): Promise<string[]> {
+    const root = path.resolve(this.getStorageDir(userId));
+    const normalizedPrefix = prefix.replace(/\/+$/, '');
+    if (normalizedPrefix) this.resolveStoragePath(userId, normalizedPrefix);
+    if (!fs.existsSync(root)) return [];
+
+    const files: string[] = [];
+    const walk = async (dir: string): Promise<void> => {
+      for (const entry of await fs.promises.readdir(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isSymbolicLink()) continue;
+        if (entry.isDirectory()) await walk(fullPath);
+        if (entry.isFile()) {
+          const relative = path.relative(root, fullPath).replace(/\\/g, '/');
+          if (!normalizedPrefix || relative.startsWith(normalizedPrefix)) files.push(relative);
+        }
+      }
+    };
+    await walk(root);
+    return files.sort();
+  }
+
+  async clearRawFiles(userId: string, prefix: string): Promise<number> {
+    const normalizedPrefix = prefix.replace(/\/+$/, '');
+    if (!normalizedPrefix) throw new Error('INVALID_STORAGE_PATH');
+    const files = await this.listRawFiles(userId, normalizedPrefix);
+    await Promise.all(files.map(file => fs.promises.unlink(this.resolveStoragePath(userId, file))));
+    return files.length;
+  }
+
+  async logStorageAudit(params: {
+    userId: string;
+    action: string;
+    filePath: string;
+    details?: string;
+  }): Promise<void> {
+    const logFile = path.join(this.baseDir, 'logs', 'storage_audit.log');
+    const entry = JSON.stringify({ timestamp: new Date().toISOString(), ...params });
+    await fs.promises.appendFile(logFile, `${entry}\n`, 'utf8');
   }
 
   /**

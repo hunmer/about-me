@@ -92,6 +92,7 @@ class FileMessage {
     String? systemFileName,
     String? originalFileName,
     String? thumbPath,
+    String? relativeStoragePath,
   }) async {
     final stats = await file.stat();
     final fileService = FileService();
@@ -101,7 +102,9 @@ class FileMessage {
     final fileName = originalFileName ?? path.basename(file.path);
 
     // 确保文件路径使用正确的相对路径格式
-    String relativePath = await ImageUtils.toRelativePath(file.path);
+    String relativePath = relativeStoragePath == null
+        ? await ImageUtils.toRelativePath(file.path)
+        : './${relativeStoragePath.replaceAll(r'\', '/')}';
     // 确保路径以 './' 开头
     if (!relativePath.startsWith('./')) {
       relativePath = './${relativePath.replaceFirst('app_data/', '')}';

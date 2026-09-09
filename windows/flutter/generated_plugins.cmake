@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   flutter_inappwebview_windows
   flutter_js
+  flutter_secure_storage_windows
   flutter_tts
   irondash_engine_context
   live2d_flutter

@@ -36,7 +36,7 @@ Android、iOS、Web、Windows、macOS、Linux 全平台覆盖
 <td align="center" width="33%">
 
 ### 🔒 本地优先
-支持 WebDAV 同步，数据掌控在用户手中
+支持可选的端到端加密 HTTP 存储，数据掌控在用户手中
 
 </td>
 </tr>

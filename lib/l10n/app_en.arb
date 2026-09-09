@@ -7,7 +7,6 @@
   "selectBackupMethod": "Please select backup method",
   "exportAppData": "Export App Data",
   "fullBackup": "Full Backup",
-  "webdavSync": "WebDAV Sync",
   "selectDate": "select Date",
   "showAll": "show All",
   "ok": "OK",

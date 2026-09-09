@@ -23,16 +23,6 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_fullRestoreTitle': 'Full Restore',
   'settings_screen_fullRestoreSubtitle': 'Restore entire app data from backup (overwrites existing data)',
 
-  // WebDAV sync
-  'settings_screen_webDAVTitle': 'WebDAV Sync',
-  'settings_screen_webDAVConnected': 'Connected',
-  'settings_screen_webDAVDisconnected': 'Disconnected',
-
-  // Server sync
-  'settings_screen_serverSyncTitle': 'Server Sync',
-  'settings_screen_serverSyncConnected': 'Logged in',
-  'settings_screen_serverSyncDisconnected': 'Not logged in',
-
   // Floating ball settings
   'settings_screen_floatingBallTitle': 'Floating Ball Settings',
   'settings_screen_floatingBallEnabled': 'Enabled',

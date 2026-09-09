@@ -41,9 +41,9 @@ dependencies:
   uuid: ^4.3.3
   device_info_plus: ^11.0.0
   shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
   collection: ^1.17.0
   audioplayers: 6.5.0
-  webdav_client: ^1.2.1
   dio: ^5.4.1
   cupertino_icons: ^1.0.8
   logging: ^1.2.0
@@ -142,6 +142,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  test: ^1.25.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

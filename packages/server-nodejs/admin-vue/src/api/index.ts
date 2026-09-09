@@ -232,8 +232,8 @@ export const devicesApi = {
 // 同步 API
 export const syncApi = {
   getFiles: (directory?: string): Promise<{ success: boolean; files: SyncFileInfo[] }> => {
-    const params = directory ? `?directory=${encodeURIComponent(directory)}` : ''
-    return apiClient.request(`/api/v1/sync/list${params}`)
+    const params = directory ? `?prefix=${encodeURIComponent(directory)}` : ''
+    return apiClient.request(`/api/v1/storage/files${params}`)
   },
 
   getStatus: (): Promise<{
@@ -243,11 +243,14 @@ export const syncApi = {
     total_size_bytes: number
     total_size_mb: string
     timestamp: string
-  }> => apiClient.request('/api/v1/sync/status'),
+  }> => apiClient.request('/api/v1/storage/files').then(response => ({
+    success: true, user_id: '', file_count: (response as { files: string[] }).files.length,
+    total_size_bytes: 0, total_size_mb: '0.00', timestamp: new Date().toISOString()
+  })),
 
   deleteFile: (filePath: string): Promise<ApiResponse> =>
-    apiClient.request(`/api/v1/sync/delete/${encodeURIComponent(filePath)}`, {
-      method: 'DELETE'
+    apiClient.request(`/api/v1/storage/files/${encodeURIComponent(filePath)}`, {
+      method: 'DELETE', headers: { 'X-Force-Overwrite': 'true' }
     }),
 
   downloadDecrypted: (
@@ -255,7 +258,7 @@ export const syncApi = {
     encryptionKey: string
   ): Promise<{ success: boolean; data: unknown }> =>
     apiClient.request(
-      `/api/v1/sync/pull-decrypted/${encodeURIComponent(filePath)}`,
+      `/api/v1/storage/files/${encodeURIComponent(filePath)}`,
       {},
       { 'X-Encryption-Key': encryptionKey }
     ),
@@ -265,7 +268,7 @@ export const syncApi = {
     filePath: string,
     encryptionKey: string
   ): Promise<Blob> => {
-    const url = `${apiClient.getBaseUrl()}/api/v1/sync/pull-decrypted/${encodeURIComponent(filePath)}`
+    const url = `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeURIComponent(filePath)}`
     const headers: Record<string, string> = {
       'X-Encryption-Key': encryptionKey
     }
@@ -296,12 +299,12 @@ export const syncApi = {
     metadata?: { file_count: number; total_size_mb: string }
     error?: string
   }> =>
-    apiClient.request('/api/v1/sync/export', {
+    apiClient.request('/api/v1/storage/files', {
       method: 'POST'
     }),
 
   getDownloadUrl: (fileName: string): string =>
-    `${apiClient.getBaseUrl()}/api/v1/sync/download/${encodeURIComponent(fileName)}`,
+    `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeURIComponent(fileName)}`,
 
   downloadExportFile: (fileName: string): Promise<Blob> =>
     apiClient.downloadFile(syncApi.getDownloadUrl(fileName))

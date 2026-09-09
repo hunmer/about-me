@@ -131,13 +131,15 @@ class Live2DPlugin extends BasePlugin {
 
   Future<void> deleteArchive(String id) async {
     archives.removeWhere((item) => item.id == id);
-    if (selectedId == id)
+    if (selectedId == id) {
       selectedId = archives.isEmpty ? null : archives.first.id;
+    }
     final controller = AgentChatPlugin.instance.conversationController;
     final conversation = controller?.conversationService
         .getTemporaryConversationForRoute('live2d:$id');
-    if (conversation != null)
+    if (conversation != null) {
       await controller!.conversationService.deleteConversation(conversation.id);
+    }
     await save();
   }
 

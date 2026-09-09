@@ -26,6 +26,16 @@ export const config = {
   corsOrigins: (process.env.CORS_ORIGINS || '*').split(','),
   /** 最大请求体大小 */
   maxRequestSize: process.env.MAX_REQUEST_SIZE || '10mb',
+  /** Storage API 单文件大小上限（字节） */
+  maxStorageFileSizeBytes: parseInt(
+    process.env.MAX_STORAGE_FILE_SIZE_BYTES || String(10 * 1024 * 1024),
+    10,
+  ),
+  /** Storage API 每用户每分钟请求上限 */
+  storageRateLimitPerMinute: parseInt(
+    process.env.STORAGE_RATE_LIMIT_PER_MINUTE || '240',
+    10,
+  ),
   /** 是否启用日志 */
   enableLogging: process.env.ENABLE_LOGGING?.toLowerCase() !== 'false',
   /** 管理员用户名 */

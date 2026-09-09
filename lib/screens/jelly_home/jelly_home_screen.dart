@@ -14,7 +14,6 @@ import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_profile_card.dart';
 import 'widgets/jelly_stat_card.dart';
-import 'widgets/jelly_store_banner.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';

@@ -5,20 +5,17 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import http from 'http';
-import WebSocket from 'ws';
 import multer from 'multer';
 import { config, printConfig } from './config/serverConfig';
 import { FileStorageService } from './services/fileStorageService';
 import { AuthService } from './services/authService';
 import { PluginDataService } from './services/pluginDataService';
 import { PluginService } from './services/pluginService';
-import { WebSocketManager } from './services/webSocketManager';
-import { FileWatcherService } from './services/fileWatcherService';
 import { authMiddleware, apiEnabledMiddleware } from './middleware';
 import { createAuthRoutes } from './routes/authRoutes';
-import { createSyncRoutes } from './routes/syncRoutes';
 import { createPluginRoutesIndex } from './routes/pluginRoutes';
 import { createPluginSystemRoutes } from './routes/pluginSystemRoutes';
+import { createStorageRoutes } from './routes/storageRoutes';
 
 // 文件上传配置
 const upload = multer({
@@ -58,7 +55,7 @@ function getMimeType(fileName: string): string {
 
 async function main() {
   console.log('====================================');
-  console.log('  Aboutme Sync Server (Node.js)');
+  console.log('  Aboutme HTTP Storage Server (Node.js)');
   console.log('====================================');
   console.log('');
 
@@ -93,18 +90,6 @@ async function main() {
   await pluginService.initialize();
   console.log('插件系统服务初始化完成');
 
-  const webSocketManager = WebSocketManager.getInstance();
-  console.log('WebSocket 管理器初始化完成');
-
-  const fileWatcherService = new FileWatcherService(
-    storageService,
-    webSocketManager,
-    config.dataDir,
-    { pollIntervalMs: 2000 },
-  );
-  await fileWatcherService.start();
-  console.log('文件监听服务初始化完成');
-
   // 3. 创建 Express 应用
   const app = express();
 
@@ -119,8 +104,9 @@ async function main() {
       : config.corsOrigins;
     app.use(cors({
       origin: corsOrigin,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Origin', 'Content-Type', 'Authorization', 'X-API-Key', 'X-Encryption-Key', 'X-Device-ID'],
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Origin', 'Content-Type', 'Authorization', 'X-API-Key', 'X-Encryption-Key', 'X-Device-ID', 'If-Match', 'If-None-Match', 'X-Force-Overwrite'],
+      exposedHeaders: ['ETag', 'Content-Length', 'Last-Modified'],
       credentials: true,
     }));
   }
@@ -147,7 +133,7 @@ async function main() {
   app.get('/version', (req, res) => {
     res.json({
       version: '1.0.0',
-      name: 'Aboutme Sync Server (Node.js)',
+      name: 'Aboutme HTTP Storage Server (Node.js)',
     });
   });
 
@@ -155,9 +141,14 @@ async function main() {
   const authRoutes = createAuthRoutes(authService, pluginDataService, storageService, config.allowRegister);
   app.use('/api/v1/auth', authRoutes);
 
-  // 同步路由 (需要认证)
-  const syncRoutes = createSyncRoutes(storageService, pluginDataService);
-  app.use('/api/v1/sync', authMiddleware(authService), syncRoutes);
+  app.use(
+    '/api/v1/storage',
+    authMiddleware(authService),
+    createStorageRoutes(storageService, {
+      maxFileSizeBytes: config.maxStorageFileSizeBytes,
+      rateLimitPerMinute: config.storageRateLimitPerMinute,
+    }),
+  );
 
   // 插件路由 (需要认证 + API 启用)
   const pluginRoutes = createPluginRoutesIndex(pluginDataService);
@@ -178,76 +169,6 @@ async function main() {
 
   // 5. 创建 HTTP 服务器
   const server = http.createServer(app);
-
-  // WebSocket 服务器
-  const wss = new WebSocket.Server({ noServer: true });
-
-  // WebSocket 升级处理
-  server.on('upgrade', (request, socket, head) => {
-    const parsedUrl = new URL(request.url || '', `http://${request.headers.host}`);
-    const pathname = parsedUrl.pathname;
-
-    if (pathname === '/api/v1/sync/ws') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        handleWebSocketConnection(ws, request);
-      });
-    } else {
-      socket.destroy();
-    }
-  });
-
-  // WebSocket 连接处理
-  function handleWebSocketConnection(ws: WebSocket, request: http.IncomingMessage) {
-    console.log('收到 WebSocket 连接请求');
-
-    // 设置认证超时
-    let authenticated = false;
-    const authTimeout = setTimeout(() => {
-      if (!authenticated) {
-        ws.send(JSON.stringify({ type: 'auth_error', error: '认证超时' }));
-        ws.close();
-      }
-    }, 5000);
-
-    ws.on('message', (data: Buffer) => {
-      if (authenticated) return;
-
-      try {
-        const message = JSON.parse(data.toString());
-        if (message.type === 'auth') {
-          const token = message.token;
-          const deviceId = message.device_id;
-
-          if (!token || !deviceId) {
-            ws.send(JSON.stringify({ type: 'auth_error', error: '缺少认证参数' }));
-            ws.close();
-            return;
-          }
-
-          // 验证 Token
-          const wsUserId = authService.getUserIdFromToken(token);
-          if (!wsUserId) {
-            ws.send(JSON.stringify({ type: 'auth_error', error: '无效的 Token' }));
-            ws.close();
-            return;
-          }
-
-          clearTimeout(authTimeout);
-          authenticated = true;
-
-          // 发送认证成功消息
-          ws.send(JSON.stringify({ type: 'auth_success', user_id: wsUserId }));
-
-          // 注册到 WebSocket 管理器
-          webSocketManager.registerChannel(wsUserId, deviceId, ws);
-          console.log(`WebSocket 认证成功: userId=${wsUserId}, deviceId=${deviceId}`);
-        }
-      } catch (e) {
-        ws.send(JSON.stringify({ type: 'auth_error', error: '认证失败' }));
-        ws.close();
-      }
-    });
-  }
 
   // 管理界面静态文件服务
   const adminDir = path.join(__dirname, 'admin');
@@ -300,7 +221,7 @@ async function main() {
     // 简单的根路由
     app.get('/', (req, res) => {
       res.json({
-        name: 'Aboutme Sync Server',
+        name: 'Aboutme HTTP Storage Server',
         version: '1.0.0',
         status: 'running',
       });
@@ -320,10 +241,8 @@ async function main() {
     console.log('  POST /api/v1/auth/register - 用户注册');
     console.log('  POST /api/v1/auth/login    - 用户登录');
     console.log('  POST /api/v1/auth/verify-encryption-key - 验证加密密钥');
-    console.log('  POST /api/v1/sync/push     - 推送文件 (需认证)');
-    console.log('  GET  /api/v1/sync/pull/*   - 拉取文件 (需认证)');
-    console.log('  GET  /api/v1/sync/list     - 文件列表 (需认证)');
-    console.log('  WS   /api/v1/sync/ws       - WebSocket 实时同步');
+    console.log('  GET  /api/v1/storage/health - 存储连接检查 (需认证)');
+    console.log('  *    /api/v1/storage/files  - 加密文件存储 (需认证)');
     console.log('');
     console.log('插件 API (需认证 + X-Encryption-Key 请求头):');
     for (const pluginId of pluginRoutes.keys()) {
@@ -333,10 +252,8 @@ async function main() {
   });
 
   // 优雅关闭
-  process.on('SIGINT', async () => {
+  process.on('SIGINT', () => {
     console.log('收到关闭信号，正在停止服务器...');
-    await fileWatcherService.stop();
-    await webSocketManager.closeAll();
     server.close(() => {
       console.log('服务器已停止');
       process.exit(0);

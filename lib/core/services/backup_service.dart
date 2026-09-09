@@ -63,10 +63,6 @@ class BackupService {
                 onPressed: () => Navigator.pop(context, 'full'),
                 child: Text('app_fullBackup'.tr),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, 'webdav'),
-                child: Text('app_webdavSync'.tr),
-              ),
             ],
           ),
     );
@@ -78,9 +74,6 @@ class BackupService {
           break;
         case 'full':
           _controller.exportAllData();
-          break;
-        case 'webdav':
-          _controller.uploadAllToWebDAV();
           break;
       }
     }

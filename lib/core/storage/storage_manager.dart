@@ -6,37 +6,46 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'storage_interface.dart';
 import 'mobile_storage.dart';
 import 'web_storage.dart' as web_storage;
+import 'http_storage.dart';
+import 'storage_backend_config.dart';
 
 /// 轻量级存储管理器
 class StorageManager {
   final _cache = <String, dynamic>{};
-  late final StorageInterface _storage =
+  StorageManager({
+    StorageInterface? storage,
+    StorageBackendConfigStore? configStore,
+  }) : _storage = storage ?? _defaultStorage(),
+       _storageWasInjected = storage != null,
+       _configStore = configStore ?? LocalStorageBackendConfigStore();
+
+  StorageInterface _storage;
+  final bool _storageWasInjected;
+  final StorageBackendConfigStore _configStore;
+
+  static StorageInterface _defaultStorage() =>
       kIsWeb ? web_storage.WebStorage.instance : MobileStorage.instance;
 
-  /// 保存WebDAV配置
-  Future<void> saveWebDAVConfig({
-    required String url,
-    required String username,
-    required String password,
-    required String dataPath,
-    required bool enabled,
-    bool? autoSync,
-  }) async {
-    final config = {
-      'url': url,
-      'username': username,
-      'password': password,
-      'dataPath': dataPath,
-      'enabled': enabled,
-      if (autoSync != null) 'autoSync': autoSync,
-    };
-    await _storage.saveJson('webdav_config.json', config);
-  }
+  static StorageInterface get localBackend => _defaultStorage();
 
-  /// 获取WebDAV配置
-  Future<Map<String, dynamic>?> getWebDAVConfig() async {
-    final config = await _storage.loadJson('webdav_config.json');
-    return Map<String, dynamic>.from(config);
+  bool get isRemote => _storage is HttpStorage;
+  StorageInterface get backend => _storage;
+
+  /// 将共享文件物化到本地临时目录，供只接受真实路径的系统 API 使用。
+  Future<File?> materializeToTemporaryFile(String storagePath) async {
+    if (!isRemote) {
+      final appData = await getApplicationDataDirectory();
+      final file = File(path.join(appData.path, storagePath));
+      return await file.exists() ? file : null;
+    }
+    final bytes = await readBytes(storagePath);
+    if (bytes == null) return null;
+    final tempRoot = await path_provider.getTemporaryDirectory();
+    final safePath = storagePath.replaceAll('\\', '/');
+    final target = File(path.join(tempRoot.path, 'aboutme_remote_cache', safePath));
+    await target.parent.create(recursive: true);
+    await target.writeAsBytes(bytes, flush: true);
+    return target;
   }
 
   /// 保存数据
@@ -92,7 +101,14 @@ class StorageManager {
   void clearCache() => _cache.clear();
 
   /// 初始化存储管理器
-  Future<void> initialize() async {}
+  Future<void> initialize() async {
+    if (_storageWasInjected) return;
+    final config = await _configStore.load();
+    if (config.isHttpEnabled) {
+      _storage = HttpStorage.fromConfig(config);
+    }
+    _cache.clear();
+  }
 
   /// 读取数据 (别名方法)
   Future<dynamic> read(String key, [dynamic defaultValue]) =>
@@ -241,15 +257,15 @@ class StorageManager {
 
   // 私有方法
   Future<void> _saveString(String key, String value) async {
-    _cache[key] = value;
+    if (!isRemote) _cache[key] = value;
     await _storage.saveData(key, value);
   }
 
   Future<String> _readString(String key) async {
-    if (_cache.containsKey(key)) return _cache[key] as String;
+    if (!isRemote && _cache.containsKey(key)) return _cache[key] as String;
     final content = await _storage.loadData(key);
     if (content == null) throw Exception('数据不存在: $key');
-    _cache[key] = content;
+    if (!isRemote) _cache[key] = content;
     return content;
   }
 

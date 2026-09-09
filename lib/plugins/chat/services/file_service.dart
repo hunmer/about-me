@@ -5,13 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 
 // 用于返回保存文件的结果
 class SaveFileResult {
   final File savedFile;
   final String systemFileName;
+  final String? storagePath;
 
-  SaveFileResult(this.savedFile, this.systemFileName);
+  SaveFileResult(this.savedFile, this.systemFileName, {this.storagePath});
 }
 
 class FileService {
@@ -48,6 +50,7 @@ class FileService {
         saveResult.savedFile,
         systemFileName: saveResult.systemFileName,
         originalFileName: originalFileName, // 传递原始文件名
+        relativeStoragePath: saveResult.storagePath,
       );
 
       // 验证文件路径
@@ -81,6 +84,15 @@ class FileService {
     final extension = path.extension(sourceFile.path);
     final uuid = const Uuid().v4();
     final uniqueFileName = '$uuid$extension';
+    final storage = PluginManager.instance.storageManager;
+    if (storage?.isRemote == true) {
+      final parts = ['chat', 'chat_files', if (subdirectory != null) subdirectory, uniqueFileName];
+      final storagePath = parts.join('/');
+      await storage!.writeBytes(storagePath, await sourceFile.readAsBytes());
+      final materialized = await storage.materializeToTemporaryFile(storagePath);
+      if (materialized == null) throw StateError('远端附件物化失败: $storagePath');
+      return SaveFileResult(materialized, uniqueFileName, storagePath: storagePath);
+    }
     final targetFile = File(path.join(targetDir, uniqueFileName));
 
     // 复制文件到目标目录

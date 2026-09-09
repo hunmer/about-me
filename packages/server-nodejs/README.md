@@ -1,12 +1,11 @@
-# Aboutme Sync Server (Node.js + TypeScript)
+# Aboutme HTTP Storage Server (Node.js + TypeScript)
 
-基于 Node.js + TypeScript 的 Aboutme 同步服务器
+基于 Node.js + TypeScript 的 Aboutme 端到端加密 HTTP 存储服务器
 
 ## 功能特性
       - ✅ 端到端加密（AES-256-GCM）
       - ✅ JWT 认证 + API Key 支持
-      - ✅ 文件同步（push/pull/list/delete)
-      - ✅ WebSocket 实时同步
+      - ✅ 加密文件 CRUD、ETag 并发控制和审计日志
       - ✅ 19 个插件的 RESTful API
       - ✅ **插件系统（安装/启用/禁用/卸载、 before/after 钩子)
       - ✅ 纯文件存储（无需数据库）
@@ -19,8 +18,7 @@
 
 - ✅ 端到端加密（AES-256-GCM）
 - ✅ JWT 认证 + API Key 支持
-- ✅ 文件同步（push/pull/list/delete）
-- ✅ WebSocket 实时同步
+- ✅ 加密文件 CRUD、ETag 并发控制和审计日志
 - ✅ 19 个插件的 RESTful API
 - ✅ 纯文件存储（无需数据库）
 - ✅ ZIP 数据导出
@@ -130,21 +128,13 @@ npm start
 | `/api-keys/:id` | DELETE | 撤销 API Key |
 | `/user-info` | GET | 获取用户信息 |
 
-### 同步 API (`/api/v1/sync`)
+### Storage API (`/api/v1/storage`)
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/push` | POST | 推送加密文件 |
-| `/pull/*` | GET | 拉取加密文件 |
-| `/list` | GET | 文件列表 |
-| `/delete/*` | DELETE | 删除文件 |
-| `/batch-delete` | POST | 批量删除 |
-| `/status` | GET | 同步状态 |
-| `/tree` | GET | 目录树 |
-| `/index` | GET | 文件索引 |
-| `/export` | POST | 导出 ZIP |
-| `/download/*` | GET | 下载导出文件 |
-| `/ws` | WS | WebSocket 实时同步 |
+| `/health` | GET | 认证后的连接检查 |
+| `/files/{path}` | GET/HEAD/PUT/DELETE | 加密字节 CRUD 与 ETag 条件操作 |
+| `/files?prefix=...` | GET/DELETE | 前缀文件列表/清除 |
 
 ### 插件 API (`/api/v1/plugins/:pluginId`)
 
@@ -283,14 +273,13 @@ server-nodejs/
 │   │   ├── encryptionService.ts # 加密服务
 │   │   ├── fileStorageService.ts # 文件存储
 │   │   ├── pluginDataService.ts # 插件数据
-│   │   ├── webSocketManager.ts # WebSocket
-│   │   └── fileWatcherService.ts # 文件监听
+│   │   └── fileStorageService.ts # 文件存储与条件写入
 │   ├── middleware/
 │   │   ├── authMiddleware.ts # 认证中间件
 │   │   └── apiEnabledMiddleware.ts # API 启用检查
 │   ├── routes/
 │   │   ├── authRoutes.ts     # 认证路由
-│   │   ├── syncRoutes.ts     # 同步路由
+│   │   ├── storageRoutes.ts  # 存储路由
 │   │   └── pluginRoutes/     # 插件路由
 │   └── types/
 │       └── index.ts          # 类型定义
