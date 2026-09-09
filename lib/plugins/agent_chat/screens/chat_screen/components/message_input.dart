@@ -260,11 +260,22 @@ class _MessageInputState extends State<MessageInput> {
                 ),
                 const SizedBox(width: 20),
                 Pressable(
-                  onPressed: _showSkillsMenu,
+                  onPressed: () => _showResourceMenu(skills: true),
                   semanticLabel: '选择Skill',
                   builder:
                       (context, states) => DsIcon(
                         DsIconKind.book,
+                        size: 20,
+                        color: theme.primaryText,
+                      ),
+                ),
+                const SizedBox(width: 20),
+                Pressable(
+                  onPressed: () => _showResourceMenu(skills: false),
+                  semanticLabel: '选择MCP',
+                  builder:
+                      (context, states) => DsIcon(
+                        DsIconKind.block,
                         size: 20,
                         color: theme.primaryText,
                       ),
@@ -644,17 +655,22 @@ class _MessageInputState extends State<MessageInput> {
     NavigationHelper.push(context, AgentEditScreen(agent: agent));
   }
 
-  /// 显示 Skills 选择菜单
-  void _showSkillsMenu() {
-    // 合并全局与当前 Agent 的 skills，按 id 去重
-    final skills = <String, AgentResourceItem>{};
+  /// 显示 Skills/MCP 选择菜单
+  void _showResourceMenu({required bool skills}) {
+    // 合并全局与当前 Agent 的同类资源，按 id 去重
+    final resources = <String, AgentResourceItem>{};
     for (final item in [
-      ...AgentLibResourceService.globalSlots.skills,
-      ...?widget.controller.currentAgent?.resourceSlots.skills,
+      ...skills
+          ? AgentLibResourceService.globalSlots.skills
+          : AgentLibResourceService.globalSlots.mcpServers,
+      ...?skills
+          ? widget.controller.currentAgent?.resourceSlots.skills
+          : widget.controller.currentAgent?.resourceSlots.mcpServers,
     ]) {
-      skills[item.id] = item;
+      resources[item.id] = item;
     }
-    final items = skills.values.where((item) => item.enabled).toList();
+    final items = resources.values.where((item) => item.enabled).toList();
+    final label = skills ? 'Skill' : 'MCP';
 
     SmoothBottomSheet.show(
       context: context,
@@ -673,7 +689,7 @@ class _MessageInputState extends State<MessageInput> {
                                 padding: const EdgeInsets.all(24),
                                 child: Center(
                                   child: Text(
-                                    '暂无可用的 Skill，可先在 Agent 编辑页添加',
+                                    '暂无可用的 $label，可先在 Agent 编辑页添加',
                                     style: DsTypography.body.copyWith(
                                       color: DSThemeBridge.resolve(
                                         context,
@@ -687,24 +703,26 @@ class _MessageInputState extends State<MessageInput> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 itemCount: items.length,
                                 itemBuilder: (context, index) {
-                                  final skill = items[index];
+                                  final item = items[index];
                                   return DSListItem(
                                     leading: DsIcon(
-                                      DsIconKind.book,
+                                      skills
+                                          ? DsIconKind.book
+                                          : DsIconKind.block,
                                       size: 22,
                                       color:
                                           DSThemeBridge.resolve(
                                             context,
                                           ).primaryText,
                                     ),
-                                    title: skill.displayName,
+                                    title: item.displayName,
                                     subtitle:
-                                        skill.tags.isEmpty
+                                        item.tags.isEmpty
                                             ? null
-                                            : skill.tags.join(' · '),
+                                            : item.tags.join(' · '),
                                     onTap: () {
                                       Navigator.pop(context);
-                                      _insertSkillText(skill);
+                                      _insertResourceText(item, skills);
                                     },
                                   );
                                 },
@@ -716,9 +734,9 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
-  /// 在输入框插入 use [xxx] skill
-  void _insertSkillText(AgentResourceItem skill) {
-    final insert = 'use [${skill.displayName}] skill';
+  /// 在输入框插入 use [xxx] skill / mcp
+  void _insertResourceText(AgentResourceItem item, bool skills) {
+    final insert = 'use [${item.displayName}] ${skills ? 'skill' : 'mcp'}';
     final current = _textController.text;
     final newText = current.isEmpty ? insert : '$current\n$insert';
     _textController.text = newText;
