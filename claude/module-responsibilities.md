@@ -53,7 +53,7 @@
 | 模块 | 职责 |
 |------|------|
 | `packages/server-nodejs` | 同步服务器：Express + TS，JWT/API Key 认证、端到端加密、文件同步、WebSocket 实时同步、19 插件 REST API、服务端插件系统、Vue3 管理面板 |
-| `packages/mcp-aboutme-server` | MCP 服务器：向 AI 工具暴露 12 个插件域、60+ 工具 |
+| `packages/server-nodejs/src/mcp/` | 内置 MCP 端点（/mcp，Streamable HTTP）：向 AI 工具暴露 12 个插件域、60+ 工具 |
 | `packages/api_forwarding_server` | WebSocket 转发服务器：Web 前端 ↔ Flutter 客户端配对通信（端口 8654） |
 | `packages/floating_ball_plugin` | 系统级悬浮球原生插件 |
 | `packages/aboutme_foreground_service` | 前台服务（封装 flutter_foreground_task） |

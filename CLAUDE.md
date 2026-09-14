@@ -38,8 +38,7 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 | `lib/plugins/chat` | 频道式聊天/消息记录（109 文件，含 @AI 事件桥） | [lib/plugins/chat/CLAUDE.md](lib/plugins/chat/CLAUDE.md) |
 | `lib/plugins/agent_chat` | 一对一 AI 对话：三阶段工具调用/Agent 链/语音通话 | [lib/plugins/agent_chat/CLAUDE.md](lib/plugins/agent_chat/CLAUDE.md) |
 | `packages/` | 9 个子包聚合索引（3 个 Node 服务 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
-| `packages/server-nodejs` | 同步服务器（REST + WS + 管理面板 + 服务端插件系统） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
-| `packages/mcp-aboutme-server` | MCP 服务器（AI 工具接口，60+ 工具） | [packages/mcp-aboutme-server/CLAUDE.md](packages/mcp-aboutme-server/CLAUDE.md) |
+| `packages/server-nodejs` | 同步服务器（REST + WS + 管理面板 + 服务端插件系统 + MCP 端点 /mcp） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
 | `packages/api_forwarding_server` | WebSocket 配对转发服务器（端口 8654） | [packages/api_forwarding_server/CLAUDE.md](packages/api_forwarding_server/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
 | `scripts/` | 多平台构建与发布脚本 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
@@ -53,7 +52,6 @@ graph TD
     Root --> Shared["shared_models/"]
     Root --> Docs["docs/ · online/ · scripts/"]
     Pkg --> Srv["server-nodejs 同步服务器"]
-    Pkg --> MCP["mcp-aboutme-server"]
     Pkg --> FWD["api_forwarding_server"]
     Pkg --> Native["6 个原生插件"]
     Lib --> Core["core 核心层"]

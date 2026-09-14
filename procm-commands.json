@@ -22,14 +22,7 @@
       "args": ["run", "dev"],
       "cwd": "packages/server-nodejs",
       "group": "aboutme",
-      "desc": "Storage server (REST + admin panel) on port 8874, ts-node-dev hot reload"
-    },
-    "mcp-server": {
-      "script": "npm",
-      "args": ["run", "dev"],
-      "cwd": "packages/mcp-aboutme-server",
-      "group": "aboutme",
-      "desc": "Aboutme MCP server (60+ AI tools), tsx dev mode"
+      "desc": "Storage server (REST + admin panel + MCP /mcp) on port 8874, ts-node-dev hot reload"
     }
   }
 }

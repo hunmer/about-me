@@ -37,7 +37,7 @@
 | `aboutme_foreground_service/` | 37 | Flutter 原生插件（前台服务） |
 | `aboutme_notifications/` | 34 | Flutter 原生插件（通知） |
 | `floating_ball_plugin/` | 33 | Flutter 原生插件（悬浮球） |
-| `mcp-aboutme-server/` | 13 | MCP 服务器 |
+| `server-nodejs/src/mcp/` | 5 | 内置 MCP 端点（/mcp，Streamable HTTP） |
 | `api_forwarding_server/` | 9 | API 转发服务器 |
 
 ## 其他目录

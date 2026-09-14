@@ -8,7 +8,7 @@
 |------|----------|----------|------|
 | Flutter 应用（`lib/`） | ⚠️ 3 个冒烟测试（`test/`） | ❌ 无 | `design_system_bridge_smoke_test.dart`（CustomBottomBar + DS 主题桥 + home_grid）、`jelly_live2d_crop_region_test.dart`、`live2d_online_models_test.dart`；运行 `flutter test` |
 | server-nodejs | ✅ jest | ✅ supertest 接口测试 | `tests/api.test.ts` + `globalSetup/globalTeardown`（`npm test`，`--runInBand` 串行执行） |
-| mcp-aboutme-server | ❌ 无 | ❌ 无 | 提供 `npm run inspector`（MCP Inspector）手动调试 |
+| server-nodejs (MCP) | ✅ `tests/mcp.test.ts` | ❌ 无 | 可用 MCP Inspector 连接 `http://localhost:8874/mcp` 手动调试 |
 | api_forwarding_server | ❌ 无 | ❌ 无 | — |
 
 ## 质量工具

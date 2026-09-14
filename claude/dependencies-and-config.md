@@ -38,7 +38,7 @@
 ## Node 子包依赖要点
 
 - **server-nodejs**：`express` + `express-ws`/`ws`（HTTP/WS）、`jsonwebtoken`（JWT）、`firebase-admin`（FCM 推送）、`winston`（日志）、`adm-zip`/`archiver`（ZIP 导出与插件安装）、`chokidar`（文件监听）、`hookable`（插件钩子）、`multer`（上传）；构建期 `typescript ^5.5`、`jest` + `supertest`。管理面板 `admin-vue/`：Vue ^3.5 + `naive-ui` + `pinia` + Vite ^8。
-- **mcp-aboutme-server**：`@modelcontextprotocol/sdk` ^1.0、`dotenv`。
+- **server-nodejs（含内置 MCP）**：`@modelcontextprotocol/sdk` ^1.24（Streamable HTTP transport，使用其 CJS 构建）。
 - **api_forwarding_server**：`ws`、`uuid`，零其他运行时依赖。
 
 ## 配置文件清单

@@ -89,7 +89,7 @@ export class FileStorageService {
     }
 
     const segments = filePath.split('/');
-    if (segments.some(segment => !segment || segment === '.' || segment === '..')) {
+    if (segments.some(segment => !segment || segment === '.' || segment === '..' || /^[a-zA-Z]:$/.test(segment))) {
       throw new Error('INVALID_STORAGE_PATH');
     }
 

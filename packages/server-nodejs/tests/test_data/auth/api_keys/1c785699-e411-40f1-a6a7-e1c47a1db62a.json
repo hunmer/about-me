@@ -1,0 +1,12 @@
+[
+  {
+    "id": "4f2acfd4-9203-4c07-816c-d38923556962",
+    "userId": "1c785699-e411-40f1-a6a7-e1c47a1db62a",
+    "name": "MCP tests",
+    "key": "mk_jM3rXPOv2zzaM1q-pI2049erzRIyIxOBaxY8Exb9l-M",
+    "keyHash": "e9dbf6dc0f696b9fe62d2737bc1b25882daf9001b4b1237c9fc37c410c2778d8",
+    "createdAt": "2026-09-14T06:13:18.278Z",
+    "isRevoked": false,
+    "lastUsedAt": "2026-09-14T06:13:18.343Z"
+  }
+]

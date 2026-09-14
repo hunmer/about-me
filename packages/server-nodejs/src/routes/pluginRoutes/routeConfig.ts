@@ -168,12 +168,13 @@ export const PLUGIN_ROUTE_CONFIGS: PluginRouteConfig[] = [
     pluginId: 'calendar',
     routes: [
       { method: 'get', path: '/events', handler: 'getList', resourceName: 'events' },
+      // 静态路由需先于参数路由注册, 否则 /events/search 会被 /events/:id 抢先匹配
+      { method: 'get', path: '/events/search', handler: 'search', resourceName: 'events' },
       { method: 'get', path: '/events/:id', handler: 'getById', resourceName: 'events' },
       { method: 'post', path: '/events', handler: 'create', resourceName: 'events' },
       { method: 'put', path: '/events/:id', handler: 'update', resourceName: 'events' },
       { method: 'delete', path: '/events/:id', handler: 'delete', resourceName: 'events' },
       { method: 'post', path: '/events/:id/complete', handler: 'completeEvent', resourceName: 'events' },
-      { method: 'get', path: '/events/search', handler: 'search', resourceName: 'events' },
     ],
   },
 
@@ -182,11 +183,12 @@ export const PLUGIN_ROUTE_CONFIGS: PluginRouteConfig[] = [
     pluginId: 'contact',
     routes: [
       { method: 'get', path: '/contacts', handler: 'getList', resourceName: 'contacts' },
+      // 静态路由需先于参数路由注册, 否则 /contacts/search 会被 /contacts/:id 抢先匹配
+      { method: 'get', path: '/contacts/search', handler: 'search', resourceName: 'contacts' },
       { method: 'get', path: '/contacts/:id', handler: 'getById', resourceName: 'contacts' },
       { method: 'post', path: '/contacts', handler: 'create', resourceName: 'contacts' },
       { method: 'put', path: '/contacts/:id', handler: 'update', resourceName: 'contacts' },
       { method: 'delete', path: '/contacts/:id', handler: 'delete', resourceName: 'contacts' },
-      { method: 'get', path: '/contacts/search', handler: 'search', resourceName: 'contacts' },
       { method: 'get', path: '/stats/total-contacts', handler: 'getStats', resourceName: 'contacts' },
     ],
   },

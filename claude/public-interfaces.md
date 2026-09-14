@@ -21,7 +21,7 @@
 - 服务端插件系统：`routes/pluginSystemRoutes.ts`——插件安装（ZIP 上传/商店）、启用/禁用/卸载、before/after 钩子（hookable）。
 - 实时通道：`WebSocketManager`（express-ws），配合 `FileWatcherService` 实现文件变更实时同步。
 
-## MCP 工具（`packages/mcp-aboutme-server`）
+## MCP 工具（server-nodejs 内置端点 `POST /mcp`，Streamable HTTP）
 
 - 工具命名：`aboutme_{plugin}_{action}`，定义于 `src/tools/index.ts`。
 - 覆盖 12 个插件域、60+ 工具：chat（频道/消息增删改查、搜索）、notes、activity（含今日统计）、goods、bill（含统计）、todo（含完成/今日/过期）、diary、checkin、calendar、contact、tracker、day。

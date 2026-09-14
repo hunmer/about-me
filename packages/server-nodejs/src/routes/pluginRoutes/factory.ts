@@ -30,7 +30,7 @@ export { createCrudHandlers } from './crud';
 /**
  * 为指定插件创建处理器
  */
-function createHandlersForPlugin(
+export function createHandlersForPlugin(
   pluginDataService: PluginDataService,
   pluginId: string
 ): PluginHandlers {

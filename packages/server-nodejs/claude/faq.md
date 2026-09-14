@@ -12,7 +12,7 @@ A：面板是独立 Vue 工程。`npm run build` 会先 `build:admin`；只跑 `
 A：`DATA_DIR`（默认 `./data`）纯文件存储。备份即拷目录；管理面板支持 ZIP 导出（adm-zip/archiver）。
 
 **Q：如何给 AI 工具（MCP）开权限？**
-A：管理面板生成 API Key（`mk_live_` 前缀），配置到 `packages/mcp-aboutme-server/.env` 的 `ABOUTME_API_KEY` 与 `ABOUTME_ENCRYPTION_KEY`。
+A：管理面板生成 API Key（`mk_live_` 前缀），AI 客户端连接内置 MCP 端点 `POST /mcp` 时通过请求头 `X-API-Key` 与 `X-Encryption-Key` 传递。
 
 **Q：如何新增一个插件域的 REST API？**
 A：`src/routes/pluginRoutes/handlers/<name>.ts` 写 handler → `handlers/index.ts` 注册 → `factory.ts` 自动生成路由。详见 [开发约定](conventions.md)。

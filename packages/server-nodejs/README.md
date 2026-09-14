@@ -260,6 +260,61 @@ base64(iv).base64(ciphertext + authTag)
 - IV 长度: 16 字节
 - 密钥长度: 32 字节 (256-bit)
 
+## MCP 端点 (AI 工具)
+
+服务器内置 MCP (Model Context Protocol) 端点，供 AI 客户端（Claude、Cursor、Cherry Studio 等）以 Streamable HTTP 方式访问个人数据，无需独立进程：
+
+```http
+POST http://localhost:8874/mcp
+```
+
+### 认证
+
+与插件 API 相同，每个请求需携带：
+
+```http
+X-API-Key: mk_live_your_api_key
+X-Encryption-Key: your_base64_encryption_key
+```
+
+MCP 客户端的权限等同于其认证身份的权限。工具调用在进程内直达插件处理器（无回环 HTTP 请求），数据经 `X-Encryption-Key` 端到端加密。
+
+### 客户端配置示例
+
+```json
+{
+  "mcpServers": {
+    "aboutme": {
+      "type": "http",
+      "url": "http://localhost:8874/mcp",
+      "headers": {
+        "X-API-Key": "mk_live_your_api_key",
+        "X-Encryption-Key": "your_base64_encryption_key"
+      }
+    }
+  }
+}
+```
+
+### 可用工具
+
+覆盖 12 个插件、60+ 工具，命名规则为 `aboutme_<插件>_<操作>`：
+
+- **Chat** - 频道/消息管理（获取、创建、发送、搜索等）
+- **Notes** - 笔记管理
+- **Activity** - 活动记录与统计
+- **Goods** - 物品/仓库管理
+- **Bill** - 账单/账户管理
+- **Todo** - 任务管理
+- **Diary** - 日记管理
+- **Checkin** - 签到管理
+- **Calendar** - 日历事件
+- **Contact** - 联系人管理
+- **Tracker** - 目标追踪
+- **Day** - 纪念日管理
+
+完整工具列表可通过 `tools/list` 获取。
+
 ## 项目结构
 
 ```
@@ -281,10 +336,18 @@ server-nodejs/
 │   │   ├── authRoutes.ts     # 认证路由
 │   │   ├── storageRoutes.ts  # 存储路由
 │   │   └── pluginRoutes/     # 插件路由
+│   ├── mcp/                  # MCP 端点 (Streamable HTTP)
+│   │   ├── index.ts          # /mcp 路由 (认证 + 无状态 transport)
+│   │   ├── server.ts         # MCP Server 工厂 (工具分发)
+│   │   ├── invoker.ts        # 进程内插件处理器调用器
+│   │   ├── client.ts         # 插件 API 客户端 (进程内直调)
+│   │   ├── tools.ts          # 工具定义 (60+)
+│   │   └── types.ts          # 类型定义
 │   └── types/
 │       └── index.ts          # 类型定义
 ├── tests/
-│   └── api.test.ts           # 集成测试
+│   ├── api.test.ts           # 集成测试
+│   └── mcp.test.ts           # MCP 端点测试
 ├── package.json
 ├── tsconfig.json
 ├── jest.config.js

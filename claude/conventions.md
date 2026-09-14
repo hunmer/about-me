@@ -18,7 +18,7 @@ npm run build            # 含 admin-vue 构建 + tsc + 拷贝 plugins/admin
 npm test                 # jest --runInBand
 npm run lint             # eslint src/**/*.ts
 
-# MCP 服务器（packages/mcp-aboutme-server）
+# MCP 端点（packages/server-nodejs/src/mcp/，挂载于主服务器 /mcp，Streamable HTTP）
 npm run build && npm start
 npm run inspector        # MCP Inspector 调试
 
@@ -57,4 +57,4 @@ npm run inspector        # MCP Inspector 调试
 | server-nodejs | `JWT_SECRET` / `TOKEN_EXPIRY_DAYS` | JWT 配置（未设置时使用开发默认值并告警） |
 | server-nodejs | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 管理面板账号，默认 admin/admin123 |
 | server-nodejs | `ALLOW_REGISTER` / `ENABLE_CORS` / `CORS_ORIGINS` / `MAX_REQUEST_SIZE` | 注册与 CORS 开关 |
-| mcp-aboutme-server | `ABOUTME_SERVER_URL` / `ABOUTME_API_KEY` / `ABOUTME_ENCRYPTION_KEY` | 指向 server-nodejs 的地址与密钥 |
+| server-nodejs (MCP) | 无额外变量 | MCP 端点随主服务器启动，认证走请求头 `X-API-Key` / `X-Encryption-Key`，工具进程内直调插件处理器 |

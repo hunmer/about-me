@@ -1,14 +1,134 @@
 {
   "users": [
     {
-      "id": "62dea257-badb-4b2b-b059-48a338503291",
+      "id": "d6cdd30b-808d-420b-b753-c09f83bd3ec3",
       "username": "admin",
-      "passwordHash": "U75lzkPpebjQk0HHO0fXFJYSkrcmE+iK7Toyxu1e1zcyeU+MbuqigluGr4nmHN+z+6BXOEA7rwNMLaY8e3mT8A==",
-      "salt": "oMeteDbZO72CaU1Ykgf4hg==",
-      "createdAt": "2026-03-20T06:54:55.336Z",
+      "passwordHash": "2CojtRomYdR14OPGzizONZFMgRkM3eqxuoLNcF8hC6RRbbx2EaDpJ70Waxb7P7R6ZC6CLsgCo2+BgnuIHtAycQ==",
+      "salt": "igokxe1/x7owNiPAZpJJsg==",
+      "createdAt": "2026-09-14T06:13:08.611Z",
       "isAdmin": true,
       "devices": []
+    },
+    {
+      "id": "3633458c-7a25-4137-a7a7-3f24c3e93e87",
+      "username": "mcp_user_1789366388997",
+      "passwordHash": "fMk8oPOIKFNNGfgCndXF/ER9L+U2FzReyf3n7pBGaYrSVhMivMT8GD6Qz4cJ8vx8n5bpDigyw2+Q2oxBKMYTsA==",
+      "salt": "oIx+RwkSqmPp3oNek/hZhg==",
+      "createdAt": "2026-09-14T06:13:09.025Z",
+      "devices": [
+        {
+          "deviceId": "mcp_test_device",
+          "deviceName": "MCP Test Device",
+          "createdAt": "2026-09-14T06:13:09.025Z"
+        }
+      ]
+    },
+    {
+      "id": "c683f50c-9d4c-487e-b617-b0a7b0ae38cf",
+      "username": "storage_user_1789366389131",
+      "passwordHash": "K4GgcCINTXLh3EWX28V4dSKHzfh30yLRB1bOX5nLqRA9a5JMMD5ZCSIp+6d/mLrI405Nj43nMfnH3rApERpdNA==",
+      "salt": "k1PNHyEVfIxazsfN38Y8Jw==",
+      "createdAt": "2026-09-14T06:13:09.147Z",
+      "devices": [
+        {
+          "deviceId": "storage_test_device",
+          "deviceName": "Storage Test Device",
+          "createdAt": "2026-09-14T06:13:09.147Z",
+          "lastSyncAt": "2026-09-14T06:13:09.166Z"
+        }
+      ],
+      "lastLoginAt": "2026-09-14T06:13:09.166Z"
+    },
+    {
+      "id": "1c785699-e411-40f1-a6a7-e1c47a1db62a",
+      "username": "mcp_user_1789366398229",
+      "passwordHash": "HEb0MrQdf+G+tRgZSX+UQodQz1XbGKbdhjiaCcklbMbqsy44Z2mdA3r/mlqvDrv2ISoN9jFeZtzYKNULBrq01g==",
+      "salt": "j1lJjgvoChQV98CiSLQzFg==",
+      "createdAt": "2026-09-14T06:13:18.268Z",
+      "devices": [
+        {
+          "deviceId": "mcp_test_device",
+          "deviceName": "MCP Test Device",
+          "createdAt": "2026-09-14T06:13:18.268Z"
+        }
+      ]
+    },
+    {
+      "id": "4a2227c4-1766-45ca-bd09-be280d72f30c",
+      "username": "storage_user_1789366398384",
+      "passwordHash": "BcDuex6VDulF2pqIQXB/aa6ffD3HJ44zuJTNblIVo7e7h3AJOZDKLDZqC8mF2hcFCeYnvMwaNW/2JyD24ktqUQ==",
+      "salt": "3BMoEEZjPl+1vkzjUUGhSg==",
+      "createdAt": "2026-09-14T06:13:18.397Z",
+      "devices": [
+        {
+          "deviceId": "storage_test_device",
+          "deviceName": "Storage Test Device",
+          "createdAt": "2026-09-14T06:13:18.397Z",
+          "lastSyncAt": "2026-09-14T06:13:18.411Z"
+        }
+      ],
+      "lastLoginAt": "2026-09-14T06:13:18.411Z"
+    },
+    {
+      "id": "403396a5-19b4-4c00-bf76-52c8f86e5b57",
+      "username": "mcp_user_1789366430405",
+      "passwordHash": "kZKB5vf6KkkeQqHF63g5wo3NBRUHw0bLoBAoXy8/LJa1SmkzoWs6JarWoLB2Qff4kheqgmFFbwnDaz1bCp4xog==",
+      "salt": "6Steym/NPUEdGGwMVklhhA==",
+      "createdAt": "2026-09-14T06:13:50.432Z",
+      "devices": [
+        {
+          "deviceId": "mcp_test_device",
+          "deviceName": "MCP Test Device",
+          "createdAt": "2026-09-14T06:13:50.432Z"
+        }
+      ]
+    },
+    {
+      "id": "d7711473-fdf7-48e5-b997-d5421392fbd9",
+      "username": "storage_user_1789366430547",
+      "passwordHash": "jJEDqueoXQKo6OtFikt4nPWB0dJTUT1sLfD0KUUukOtPSKYQvLVCXeTbidn5D8pF2Q0n3TxSJ+lddyGzfS4UKg==",
+      "salt": "ivEcpeDFii60KcFVeedAEw==",
+      "createdAt": "2026-09-14T06:13:50.565Z",
+      "devices": [
+        {
+          "deviceId": "storage_test_device",
+          "deviceName": "Storage Test Device",
+          "createdAt": "2026-09-14T06:13:50.565Z",
+          "lastSyncAt": "2026-09-14T06:13:50.577Z"
+        }
+      ],
+      "lastLoginAt": "2026-09-14T06:13:50.577Z"
+    },
+    {
+      "id": "eb2b9aa4-17e6-426b-96d4-1e9467fd6dda",
+      "username": "mcp_user_1789366864183",
+      "passwordHash": "Sz1EHMq4i83nSS8hpLBeWdRyqINw3SMJ8wZtY4atpO/5frkXL43jJuktOnb0p9656ngI1Q0q/JV3+EGxJkrpjA==",
+      "salt": "+Tmk0JdaqWmyUtIS+s7akg==",
+      "createdAt": "2026-09-14T06:21:04.222Z",
+      "devices": [
+        {
+          "deviceId": "mcp_test_device",
+          "deviceName": "MCP Test Device",
+          "createdAt": "2026-09-14T06:21:04.222Z"
+        }
+      ]
+    },
+    {
+      "id": "a39ae1cd-c1ac-40cd-8f8a-67c5459d606e",
+      "username": "storage_user_1789366864340",
+      "passwordHash": "36sGlvSVqH1Ie4wO3mEZwpElDKJXp+/KjZoHuY8+M6ukmkbWPj1fyxx+C0aSHnkv42+3PMVSAKLYNodSvabU8w==",
+      "salt": "KXk3IpG4ZTLwj+NUQYPzQA==",
+      "createdAt": "2026-09-14T06:21:04.352Z",
+      "devices": [
+        {
+          "deviceId": "storage_test_device",
+          "deviceName": "Storage Test Device",
+          "createdAt": "2026-09-14T06:21:04.352Z",
+          "lastSyncAt": "2026-09-14T06:21:04.367Z"
+        }
+      ],
+      "lastLoginAt": "2026-09-14T06:21:04.367Z"
     }
   ],
-  "updated_at": "2026-03-20T06:54:55.336Z"
+  "updated_at": "2026-09-14T06:21:04.367Z"
 }

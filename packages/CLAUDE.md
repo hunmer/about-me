@@ -22,7 +22,7 @@
 | 模块 | 类型 | 职责摘要 | 文档 |
 |------|------|----------|------|
 | `server-nodejs/` | Node 服务 | 同步服务器：REST/WS、认证、E2E 加密、19 插件 API、服务端插件系统、Vue3 管理面板 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
-| `mcp-aboutme-server/` | Node 服务 | MCP 服务器：向 AI 暴露 12 插件域 60+ 工具 | [mcp-aboutme-server/CLAUDE.md](mcp-aboutme-server/CLAUDE.md) |
+| `server-nodejs/src/mcp/` | server-nodejs 内置 | MCP 端点（/mcp，Streamable HTTP）：向 AI 暴露 12 插件域 60+ 工具 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
 | `api_forwarding_server/` | Node 服务 | WebSocket 配对转发（Web 前端 ↔ Flutter 客户端） | [api_forwarding_server/CLAUDE.md](api_forwarding_server/CLAUDE.md) |
 | `floating_ball_plugin/` | 原生插件 | 系统级悬浮球 | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
 | `aboutme_foreground_service/` | 原生插件 | 前台服务（封装 flutter_foreground_task） | 无独立文档 |

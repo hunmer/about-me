@@ -16,6 +16,7 @@ import { createAuthRoutes } from './routes/authRoutes';
 import { createPluginRoutesIndex } from './routes/pluginRoutes';
 import { createPluginSystemRoutes } from './routes/pluginSystemRoutes';
 import { createStorageRoutes } from './routes/storageRoutes';
+import { createMcpRouter } from './mcp';
 
 // 文件上传配置
 const upload = multer({
@@ -105,8 +106,8 @@ async function main() {
     app.use(cors({
       origin: corsOrigin,
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Origin', 'Content-Type', 'Authorization', 'X-API-Key', 'X-Encryption-Key', 'X-Device-ID', 'If-Match', 'If-None-Match', 'X-Force-Overwrite'],
-      exposedHeaders: ['ETag', 'Content-Length', 'Last-Modified'],
+      allowedHeaders: ['Origin', 'Content-Type', 'Authorization', 'X-API-Key', 'X-Encryption-Key', 'X-Device-ID', 'If-Match', 'If-None-Match', 'X-Force-Overwrite', 'Mcp-Session-Id', 'Mcp-Protocol-Version', 'Last-Event-ID'],
+      exposedHeaders: ['ETag', 'Content-Length', 'Last-Modified', 'Mcp-Session-Id'],
       credentials: true,
     }));
   }
@@ -166,6 +167,10 @@ async function main() {
   const pluginSystemRoutes = createPluginSystemRoutes(pluginService, authService);
   app.use('/api/v1/system', upload.single('plugin'), pluginSystemRoutes);
   console.log('插件系统管理路由已挂载: /api/v1/system/plugins');
+
+  // MCP 端点 (需要认证 + 加密密钥)
+  app.use('/mcp', createMcpRouter(authService, pluginDataService));
+  console.log('MCP 端点已挂载: /mcp');
 
   // 5. 创建 HTTP 服务器
   const server = http.createServer(app);
@@ -248,6 +253,9 @@ async function main() {
     for (const pluginId of pluginRoutes.keys()) {
       console.log(`  /api/v1/plugins/${pluginId}`);
     }
+    console.log('');
+    console.log('MCP 端点 (需认证 + X-Encryption-Key 请求头):');
+    console.log('  POST /mcp                - AI 工具 (Streamable HTTP)');
     console.log('');
   });
 

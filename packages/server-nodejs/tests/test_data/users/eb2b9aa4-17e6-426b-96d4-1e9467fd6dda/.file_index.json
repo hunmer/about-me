@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-14T06:21:04.287Z",
+  "files": {
+    "chat/channel/bd4727c1-46c6-43f4-82eb-bbdac607c9c5.json": {
+      "md5": "7985ffb54e31761bcae8a78e8958ace9",
+      "size": 425,
+      "updatedAt": "2026-09-14T06:21:04.284Z"
+    },
+    "chat/messages/bd4727c1-46c6-43f4-82eb-bbdac607c9c5.json": {
+      "md5": "394daf1a187e2f2a82ac593c04a0f637",
+      "size": 189,
+      "updatedAt": "2026-09-14T06:21:04.286Z"
+    },
+    "chat/channels.json": {
+      "md5": "79de7f47cb9876b7a17df16859725fb8",
+      "size": 237,
+      "updatedAt": "2026-09-14T06:21:04.287Z"
+    }
+  }
+}

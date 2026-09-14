@@ -18,7 +18,7 @@ graph LR
     App[Flutter 客户端<br/>Android/iOS/桌面/Web] -->|REST + WebSocket<br/>AES-256-GCM 端到端加密| Server[server-nodejs<br/>默认端口 8874]
     App -->|WebDAV| Cloud[WebDAV 网盘]
     Server --> Admin[admin-vue 管理面板<br/>Vue3 + Naive UI]
-    AI[AI 客户端 / MCP Host] -->|stdio MCP 协议| MCP[mcp-aboutme-server]
+    AI[AI 客户端 / MCP Host] -->|HTTP /mcp 端点| MCP["server-nodejs 内置 MCP"]
     MCP -->|REST + API Key| Server
     Web[Web 前端] <-->|WebSocket 配对| FWD[api_forwarding_server<br/>端口 8654]
     FWD <--> App

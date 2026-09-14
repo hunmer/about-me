@@ -48,8 +48,8 @@ export class PluginService {
   private unsubscribers: Map<string, (() => void)[]> = new Map();
 
   constructor(dataDir: string) {
-    this.dataDir = dataDir;
-    this.pluginsDir = path.join(dataDir, PLUGINS_DIR);
+    this.dataDir = path.resolve(dataDir);
+    this.pluginsDir = path.join(this.dataDir, PLUGINS_DIR);
     this.registryPath = path.join(dataDir, REGISTRY_FILE);
     this.storeConfigPath = path.join(dataDir, STORE_CONFIG_FILE);
     this.registry = { plugins: {}, updatedAt: new Date().toISOString() };
@@ -67,10 +67,14 @@ export class PluginService {
     // 加载注册表
     await this.loadRegistry();
 
-    // 自动加载已启用的插件
+    // 自动加载已启用的插件（单个插件失败不阻断服务器启动）
     for (const [uuid, plugin] of Object.entries(this.registry.plugins)) {
       if (plugin.status === 'enabled') {
-        await this.loadPlugin(uuid);
+        try {
+          await this.loadPlugin(uuid);
+        } catch (error) {
+          console.error(`[PluginService] 插件 ${plugin.title} 加载失败，已跳过:`, error);
+        }
       }
     }
   }
@@ -358,6 +362,10 @@ export class PluginService {
       try {
         const content = fs.readFileSync(this.registryPath, 'utf8');
         this.registry = JSON.parse(content);
+        // 数据目录可能被迁移过，pluginPath 一律以当前插件目录为准
+        for (const uuid of Object.keys(this.registry.plugins)) {
+          this.registry.plugins[uuid].pluginPath = path.join(this.pluginsDir, uuid);
+        }
       } catch (error) {
         console.error('加载插件注册表失败:', error);
         this.registry = { plugins: {}, updatedAt: new Date().toISOString() };
@@ -382,9 +390,9 @@ export class PluginService {
 
     // 清除 require 缓存
     const entryPath = path.join(plugin.pluginPath, ENTRY_FILE);
-    delete require.cache[require.resolve(entryPath)];
 
     try {
+      delete require.cache[require.resolve(entryPath)];
       // 加载 BasePlugin 基类
       const { BasePlugin } = require('../plugins/BasePlugin');
 

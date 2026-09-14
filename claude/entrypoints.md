@@ -26,7 +26,7 @@
 | 服务 | 入口 | 启动 |
 |------|------|------|
 | 同步服务器 | `packages/server-nodejs/src/index.ts`（CLI 入口 `bin/aboutme-server.js`，npm 包名 `@hunmer/aboutme-server`） | `npm run dev` / `npm start`（默认端口 8874） |
-| MCP 服务器 | `packages/mcp-aboutme-server/src/index.ts`（stdio 传输） | `npm run build && npm start` |
+| MCP 端点 | `packages/server-nodejs/src/mcp/index.ts`（Streamable HTTP，挂载于主服务器 `/mcp`） | 随 server-nodejs 启动 |
 | API 转发服务器 | `packages/api_forwarding_server/src/index.ts`（WebSocket，端口 8654） | `npm run dev` |
 
 `server-nodejs` 的 `main()` 顺序：读取配置（`src/config/serverConfig.ts`）→ 初始化 `FileStorageService`（data 目录）→ AuthService / PluginDataService / PluginService / WebSocketManager / FileWatcherService → 挂载 `authRoutes`、`syncRoutes`、`pluginRoutes`、`pluginSystemRoutes` → 静态托管管理面板 `admin/`。

@@ -36,5 +36,5 @@ push / pull / list / delete；内容经 `encryptionService`（AES-256-GCM）端�
 ## 消费方
 
 - Flutter 客户端（同步设置中配置服务器地址）。
-- `packages/mcp-aboutme-server`（`ABOUTME_SERVER_URL` + API Key）。
+- 内置 MCP 端点 `POST /mcp`（Streamable HTTP，请求头 `X-API-Key` + `X-Encryption-Key`）。
 - 管理面板 `/admin`（浏览器）：其消费的 `/api/v1` 端点全集见 [admin-vue 对外接口](../admin-vue/claude/public-interfaces.md)。

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "79bd712d-4fc9-4fd6-9879-7d4bda307e7a",
+    "userId": "a39ae1cd-c1ac-40cd-8f8a-67c5459d606e",
+    "name": "Storage tests",
+    "key": "mk_W20KnlnelEKFwEUljMD0djkAtc7Puqk_JvnHnWIpPQA",
+    "keyHash": "1c6d69709245fe42cd5528aa7c74a1724d8db1f805ce23394e2752c62f3f07a0",
+    "createdAt": "2026-09-14T06:21:04.370Z",
+    "isRevoked": false,
+    "lastUsedAt": "2026-09-14T06:21:04.374Z"
+  }
+]
