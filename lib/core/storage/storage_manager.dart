@@ -105,7 +105,13 @@ class StorageManager {
     if (_storageWasInjected) return;
     final config = await _configStore.load();
     if (config.isHttpEnabled) {
-      _storage = HttpStorage.fromConfig(config);
+      try {
+        _storage = HttpStorage.fromConfig(config);
+      } catch (e) {
+        // 已保存的远端配置失效（如凭据丢失）时回退本地存储，
+        // 避免启动即崩溃；用户可在设置中重新保存远端配置
+        debugPrint('[StorageManager] 远端存储配置无效，回退本地存储: $e');
+      }
     }
     _cache.clear();
   }
