@@ -1,12 +1,12 @@
 # Aboutme
 
-Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 25 个功能插件（聊天、日记、账单、习惯、AI 对话等），数据本地优先存储，支持 WebDAV 与自建服务器的端到端加密同步。
+Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 26 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠等），数据本地优先存储，经自建服务器做端到端加密同步（默认首页为果冻小屋 `/jelly_home`）。
 
-本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 6 个原生能力子包、3 个 Node.js/TypeScript 服务（同步服务器、MCP 服务器、API 转发服务器）、共享模型包（`shared_models/`）与 71 篇专题文档（`docs/`）。技术栈：Flutter/Dart ^3.7 + GetX + flutter_js，Node ≥ 18（Express、MCP SDK）。
+本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 1 个 Node.js 同步服务器、8 个 Dart 子包（agentlib AI 传输库、super_cupertino_navigation_bar、6 个原生插件）、共享模型包（`shared_models/`）与 67 篇专题文档（`docs/`）。技术栈：Flutter/Dart ^3.7 + GetX + flutter_js，Node ≥ 18（Express、MCP SDK）。
 
 ## 约定的规则
 
-- 同步服务器在 `packages/server-nodejs`（默认端口 **8874**）；旧文档中 `cd server && dart run ...` 已失效，勿再引用。
+- 同步服务器在 `packages/server-nodejs`（默认端口 **8874**）；旧文档中 `cd server && dart run ...`、`api_forwarding_server`、独立 mcp-aboutme-server、WebDAV 同步均已失效/删除，勿再引用。
 - 新插件必须注册到 `lib/core/builtin_plugins.dart`；JS API 命名 `get{Entity}s` / `create{Entity}` / `update{Entity}` / `delete{Entity}`；推荐 UseCase 分层（接口放 `shared_models/`）。
 - Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛（无测试目录）。
 - `tree-shake-icons: false` 是硬性要求（动态 IconData）；Web 平台部分库走条件导入存根。
@@ -33,36 +33,36 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 
 | 模块 | 职责摘要 | 文档 |
 |------|----------|------|
-| `lib/` | Flutter 应用代码（core / plugins×25 / screens / widgets，1823 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
-| `lib/plugins/` | 插件层聚合索引：插件体系架构 + 25 插件职责/路由/约定 | [lib/plugins/CLAUDE.md](lib/plugins/CLAUDE.md) |
+| `lib/` | Flutter 应用代码（core / plugins×26 / screens / widgets，1877 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
+| `lib/plugins/` | 插件层聚合索引：插件体系架构 + 26 插件职责/路由/约定 | [lib/plugins/CLAUDE.md](lib/plugins/CLAUDE.md) |
 | `lib/plugins/chat` | 频道式聊天/消息记录（109 文件，含 @AI 事件桥） | [lib/plugins/chat/CLAUDE.md](lib/plugins/chat/CLAUDE.md) |
 | `lib/plugins/agent_chat` | 一对一 AI 对话：三阶段工具调用/Agent 链/语音通话 | [lib/plugins/agent_chat/CLAUDE.md](lib/plugins/agent_chat/CLAUDE.md) |
-| `packages/` | 9 个子包聚合索引（3 个 Node 服务 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
+| `lib/screens/jelly_home` | 果冻小屋主页（**应用默认启动页**，四页签 + Live2D 伙伴） | 无独立文档（见 [lib/screens/CLAUDE.md](lib/screens/CLAUDE.md)） |
+| `packages/` | 9 个子包聚合索引（1 个 Node 服务 + agentlib/super_cupertino + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
 | `packages/server-nodejs` | 同步服务器（REST + WS + 管理面板 + 服务端插件系统 + MCP 端点 /mcp） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
-| `packages/api_forwarding_server` | WebSocket 配对转发服务器（端口 8654） | [packages/api_forwarding_server/CLAUDE.md](packages/api_forwarding_server/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
 | `scripts/` | 多平台构建与发布脚本 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
 | `online/` | WebView 小程序仓库（4 应用）、在线脚本与 Agent 配置 | [online/CLAUDE.md](online/CLAUDE.md) |
-| `docs/` | 71 篇专题文档（小组件/快捷方式/计时器/原生插件实现等） | 未扫描（主题分类见 [文件地图](claude/file-map.md)） |
+| `docs/` | 67 篇专题文档（小组件/快捷方式/计时器/原生插件实现等） | 未扫描（主题分类见 [文件地图](claude/file-map.md)） |
 
 ```mermaid
 graph TD
     Root["Aboutme 仓库"] --> Lib["lib/ 客户端"]
     Root --> Pkg["packages/"]
     Root --> Shared["shared_models/"]
-    Root --> Docs["docs/ · online/ · scripts/"]
-    Pkg --> Srv["server-nodejs 同步服务器"]
-    Pkg --> FWD["api_forwarding_server"]
+    Root --> Docs["docs/ · online/ · scripts/ · handoff/"]
+    Pkg --> Srv["server-nodejs 同步服务器（含 /mcp）"]
+    Pkg --> Dart["agentlib · super_cupertino"]
     Pkg --> Native["6 个原生插件"]
     Lib --> Core["core 核心层"]
-    Lib --> Plugins["plugins ×25"]
-    Lib --> UI["screens · widgets"]
+    Lib --> Plugins["plugins ×26"]
+    Lib --> UI["screens（jelly_home 首页）· widgets"]
 ```
 
 ## 扫描状态
 
-- 更新时间：2026-09-05（第三轮：新建 lib/plugins 聚合文档 + chat/agent_chat 独立文档集，全量核实 25 插件）
-- 已扫描：前两轮全部范围（根配置、lib 启动链、3 个 Node 子包、shared_models、admin-vue、online、reminder）+ 本轮：25 个插件主类逐个验证（继承/mixin/路由/分层）、路由全集、home_widgets 覆盖、chat 与 agent_chat 内部实现、openai 结构、跨插件依赖网；test/ 出现 3 个冒烟测试（design_system/jelly/live2d），已更新测试章节。
+- 更新时间：2026-09-14（第四轮：结构变更增量——删除 api_forwarding_server / mcp-aboutme-server / WebDAV，新增 live2d 插件、jelly_home 默认首页、agentlib 包、form_fields 表单库；修复根索引失效链接）
+- 已扫描：前三轮全部范围 + 本轮对上述结构变更逐项核实（builtin_plugins 注册表、路由 initialRoute、pubspec 依赖 diff、MCP tools.ts 工具计数、storage 后端、test/ 清单）。
 - 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制。
-- 未深扫（下次增量优先）：openai 与其余 22 个插件的 screens/widgets 内部（已有职责表）、5 个原生插件的 android/ios 平台代码、`docs/` 正文、server-nodejs handler 实现细节。
+- 未深扫（下次增量优先）：live2d 插件与 jelly_home 屏内部实现、`lib/widgets/form_fields` 组件清单、agentlib API 面、server-nodejs 新增 service/handler 细节、`docs/` 正文。
 - 详细覆盖度量与续跑建议见 [索引变更记录](claude/changelog.md)。

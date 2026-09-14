@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import {
-  NTabs, NTabPane, NCard, NButton, NSpace, NIcon, NEmpty, NSpin, NModal, NInput, useDialog, useMessage }
- from 'naive-ui'
-import {
-  ExtensionPuzzleOutline,
-  CloudDownloadOutline,
-  SettingsOutline,
-  TrashOutline,
-  PlayCircleOutline,
-  RefreshOutline,
-} from '@vicons/ionicons5'
+import { ref, computed, onMounted } from 'vue'
 import { usePluginsStore } from '@/stores/plugins'
+import { useMessage } from '@/composables/useMessage'
+import { useDialog } from '@/composables/useDialog'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import type { InstalledPlugin, StorePlugin } from '@/api/types'
 
 type PluginSubTab = 'installed' | 'store'
@@ -26,24 +26,34 @@ const activeSubTab = ref<PluginSubTab>('installed')
 const showConfigModal = ref(false)
 const storeConfigURL = ref('')
 const syncInterval = ref(0)
-
-const pluginTabs: { id: PluginSubTab; label: string; icon: typeof ExtensionPuzzleOutline }[] = [
-  { id: 'installed', label: '已安装', icon: ExtensionPuzzleOutline },
-  { id: 'store', label: '插件商店', icon: CloudDownloadOutline },
-]
+const searchQuery = ref('')
 
 // 初始化数据
 onMounted(async () => {
-  await Promise.all([
-    pluginsStore.fetchInstalledPlugins(),
-    pluginsStore.fetchStoreConfig(),
-  ])
+  await Promise.all([pluginsStore.fetchInstalledPlugins(), pluginsStore.fetchStoreConfig()])
 })
 
-// 切换子标签页
-function handleSubTabChange(value: PluginSubTab): void {
-  activeSubTab.value = value
-}
+// 已安装插件搜索过滤
+const filteredInstalled = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return pluginsStore.installedPlugins
+  return pluginsStore.installedPlugins.filter(
+    p =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+  )
+})
+
+// 商店插件搜索过滤
+const filteredStore = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return pluginsStore.storePlugins
+  return pluginsStore.storePlugins.filter(
+    p =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+  )
+})
 
 // 刷新商店
 async function handleRefreshStore(): Promise<void> {
@@ -65,7 +75,7 @@ async function handleSaveConfig(): Promise<void> {
   }
   const success = await pluginsStore.updateStoreConfig({
     storeURL: storeConfigURL.value,
-    syncInterval: syncInterval.value,
+    syncInterval: syncInterval.value
   })
   if (success) {
     message.success('配置已保存')
@@ -132,392 +142,353 @@ async function handleDisable(plugin: InstalledPlugin): Promise<void> {
 }
 
 // 卸载插件
-async function handleUninstall(plugin: InstalledPlugin): Promise<void> {
+function handleUninstall(plugin: InstalledPlugin): void {
   dialog.warning({
     title: '确认卸载',
     content: `确定要卸载 "${plugin.title}" 吗？此操作不可恢复。`,
-    positiveText: '确认',
+    type: 'error',
+    positiveText: '确认卸载',
+    negativeText: '取消',
     onPositiveClick: async () => {
       const success = await pluginsStore.uninstallPlugin(plugin.uuid)
       if (success) {
         message.success(`${plugin.title} 已卸载`)
       }
-    },
+    }
   })
 }
 
-// 获取状态标签
-function getStatusLabel(plugin: InstalledPlugin): string {
-  if (plugin.status === 'enabled') return '已启用'
-  if (plugin.status === 'disabled') return '已禁用'
-  return '已安装'
-}
+// 卡片配色（按索引轮换）
+const cardPalette = [
+  { box: 'bg-primary/10 text-primary', tag: 'text-primary' },
+  { box: 'bg-secondary-container/50 text-secondary', tag: 'text-secondary' },
+  { box: 'bg-tertiary-container/40 text-tertiary', tag: 'text-tertiary' },
+  { box: 'bg-primary-container/40 text-primary', tag: 'text-primary' }
+]
 
-// 获取状态样式类
-function getStatusClass(plugin: InstalledPlugin): string {
-  if (plugin.status === 'enabled') return 'enabled'
-  if (plugin.status === 'disabled') return 'disabled'
-  return 'installed'
+function palette(index: number) {
+  return cardPalette[index % cardPalette.length]
 }
 </script>
 
 <template>
-  <div class="plugins-container">
-    <!-- Tab Navigation -->
-    <NTabs v-model:value="activeSubTab" type="line" animated @update:value="handleSubTabChange">
-      <NTabPane v-for="tab in pluginTabs" :key="tab.id" :name="tab.id">
-        <template #tab>
-          <NSpace align="center" :size="6">
-            <NIcon :component="tab.icon" />
-            {{ tab.label }}
-          </NSpace>
-        </template>
-      </NTabPane>
-    </NTabs>
-
-    <!-- Content Area -->
-    <div class="tab-content">
-      <!-- Installed Plugins -->
-      <div v-show="activeSubTab === 'installed'" class="plugin-section">
-        <div class="section-header">
-          <NSpace justify="space-between" align="center">
-            <span>已安装插件 ({{ pluginsStore.installedPlugins.length }})</span>
-            <NSpace>
-              <input
-                ref="fileInputRef"
-                type="file"
-                accept=".zip"
-                style="display: none"
-                @change="handleFileSelect"
-              />
-              <NButton size="small" @click="triggerFileSelect">
-                选择文件
-              </NButton>
-              <NButton size="small" :disabled="!fileInput" @click="handleUpload" :loading="pluginsStore.loading">
-                <template #icon>
-                  <NIcon :component="CloudDownloadOutline" />
-                </template>
-                上传插件
-              </NButton>
-              <span v-if="fileInput" class="file-name">{{ fileInput.name }}</span>
-            </NSpace>
-          </NSpace>
-        </div>
-
-        <div v-if="pluginsStore.loading" class="loading-container">
-          <NSpin size="medium" />
-          <span>加载中...</span>
-        </div>
-        <div v-else-if="pluginsStore.installedPlugins.length === 0" class="empty-state">
-          <NEmpty description="暂无已安装的插件">
-            <template #extra>
-              <NButton @click="handleOpenConfig">
-                <template #icon>
-                  <NIcon :component="SettingsOutline" />
-                </template>
-                配置商店
-              </NButton>
-            </template>
-          </NEmpty>
-        </div>
-        <div v-else class="plugin-grid">
-          <NCard
-            v-for="plugin in pluginsStore.installedPlugins"
-            :key="plugin.uuid"
-            :title="plugin.title"
-            hoverable
-            class="plugin-card"
-          >
-            <template #header-extra>
-              <NSpace align="center" :size="8">
-                <span class="plugin-status" :class="getStatusClass(plugin)">
-                  {{ getStatusLabel(plugin) }}
-                </span>
-              </NSpace>
-            </template>
-            <div class="plugin-info">
-              <div class="plugin-author">作者: {{ plugin.author }}</div>
-              <div class="plugin-desc">{{ plugin.description }}</div>
-              <div class="plugin-meta">
-                <span>版本: {{ plugin.version }}</span>
-                <span v-if="plugin.website">
-                  <a :href="plugin.website" target="_blank">官网</a>
-                </span>
-              </div>
-            </div>
-            <div class="plugin-actions">
-              <NSpace>
-                <NButton
-                  v-if="plugin.status === 'enabled'"
-                  type="warning"
-                  size="small"
-                  @click="handleDisable(plugin)"
-                >
-                  <template #icon>
-                    <NIcon :component="PlayCircleOutline" />
-                  </template>
-                  禁用
-                </NButton>
-                <NButton
-                  v-else
-                  type="success"
-                  size="small"
-                  @click="handleEnable(plugin)"
-                >
-                  <template #icon>
-                    <NIcon :component="PlayCircleOutline" />
-                  </template>
-                  启用
-                </NButton>
-                <NButton
-                  type="error"
-                  size="small"
-                  @click="handleUninstall(plugin)"
-                >
-                  <template #icon>
-                    <NIcon :component="TrashOutline" />
-                  </template>
-                  卸载
-                </NButton>
-              </NSpace>
-            </div>
-          </NCard>
-        </div>
+  <section class="w-full py-8">
+    <!-- 头部控制区 -->
+    <div class="mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-on-surface lg:text-3xl">插件与生态模块</h1>
       </div>
 
-      <!-- Store Plugins -->
-      <div v-show="activeSubTab === 'store'" class="plugin-section">
-        <div v-if="pluginsStore.loading" class="loading-container">
-          <NSpin size="medium" />
-          <span>加载中...</span>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative min-w-[220px]">
+          <span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-on-surface-variant">search</span>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="检索已安装或商店插件..."
+            class="w-full rounded-lg bg-surface-container/70 py-2 pl-9 pr-4 text-xs text-on-surface transition-all placeholder:text-on-surface-variant/60 focus:bg-surface-container-high focus:outline-none"
+          />
         </div>
-        <div v-else-if="!pluginsStore.storeConfig.storeURL" class="empty-state">
-          <NEmpty description="请先配置商店 URL">
-            <template #extra>
-              <NButton @click="handleOpenConfig">
-                <template #icon>
-                  <NIcon :component="SettingsOutline" />
-                </template>
-                配置商店
-              </NButton>
-            </template>
-          </NEmpty>
-        </div>
-        <div v-else>
-          <div class="section-header">
-            <NSpace justify="space-between" align="center">
-              <span>商店插件 ({{ pluginsStore.storePlugins.length }})</span>
-              <NButton
-                size="small"
-                @click="handleRefreshStore"
-                :loading="pluginsStore.loading"
-              >
-                <template #icon>
-                  <NIcon :component="RefreshOutline" />
-                </template>
-              </NButton>
-            </NSpace>
-          </div>
 
-          <div class="plugin-grid">
-            <NCard
-              v-for="plugin in pluginsStore.storePlugins"
-              :key="plugin.uuid"
-              :title="plugin.title"
-              hoverable
-              class="plugin-card"
-            >
-              <div class="plugin-header">
-                <span class="plugin-title-text">{{ plugin.title }}</span>
-                <NButton
-                  v-if="pluginsStore.isInstalled(plugin.uuid)"
-                  type="success"
-                  size="small"
-                  disabled
-                >
-                  <template #icon>
-                    <NIcon :component="CloudDownloadOutline" />
-                  </template>
-                  已安装
-                </NButton>
-                <NButton
-                  v-else
-                  type="primary"
-                  size="small"
-                  @click="handleInstallFromStore(plugin)"
-                  :loading="pluginsStore.loading"
-                >
-                  <template #icon>
-                    <NIcon :component="CloudDownloadOutline" />
-                  </template>
-                  安装
-                </NButton>
-              </div>
-              <div class="plugin-info">
-                <div class="plugin-author">作者: {{ plugin.author }}</div>
-                <div class="plugin-desc">{{ plugin.description }}</div>
-                <div class="plugin-meta">
-                  <span>版本: {{ plugin.version }}</span>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".zip"
+          class="hidden"
+          @change="handleFileSelect"
+        />
+        <Button variant="secondary" size="sm" @click="triggerFileSelect">
+          <span class="material-symbols-outlined text-base text-primary">upload_file</span>
+          <span>上传插件 (ZIP)</span>
+        </Button>
+        <Button
+          v-if="fileInput"
+          variant="glass"
+          size="sm"
+          :disabled="pluginsStore.loading"
+          @click="handleUpload"
+        >
+          <span class="max-w-[160px] truncate">{{ fileInput.name }}</span>
+          <span class="material-symbols-outlined text-base">cloud_upload</span>
+        </Button>
+        <Button variant="glass" size="sm" @click="handleOpenConfig">
+          <span class="material-symbols-outlined text-base">hub</span>
+          <span>配置商店源</span>
+        </Button>
+      </div>
+    </div>
+
+    <!-- 子导航 Tabs -->
+    <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div class="flex w-fit items-center gap-1.5 rounded-xl bg-surface-container-lowest/80 p-1 backdrop-blur-xl">
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-medium transition-all"
+          :class="
+            activeSubTab === 'installed'
+              ? 'bg-primary-container font-semibold text-on-primary-container shadow-md'
+              : 'text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface'
+          "
+          @click="activeSubTab = 'installed'"
+        >
+          <span class="material-symbols-outlined text-sm">widgets</span>
+          <span>已安装</span>
+          <span class="rounded-full px-1.5 py-0.5 text-[10px]" :class="activeSubTab === 'installed' ? 'bg-primary/20 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">
+            {{ pluginsStore.installedPlugins.length }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-medium transition-all"
+          :class="
+            activeSubTab === 'store'
+              ? 'bg-primary-container font-semibold text-on-primary-container shadow-md'
+              : 'text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface'
+          "
+          @click="activeSubTab = 'store'"
+        >
+          <span class="material-symbols-outlined text-sm">shopping_bag</span>
+          <span>插件商店</span>
+          <span class="rounded-full px-1.5 py-0.5 text-[10px]" :class="activeSubTab === 'store' ? 'bg-primary/20 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">
+            {{ pluginsStore.storePlugins.length }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 已安装视图 -->
+    <div v-show="activeSubTab === 'installed'" class="flex flex-col gap-6">
+      <div v-if="pluginsStore.loading" class="flex items-center justify-center gap-3 py-20 text-on-surface-variant">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        <span class="font-mono text-xs">加载插件清单中...</span>
+      </div>
+
+      <div v-else-if="filteredInstalled.length === 0" class="flex flex-col items-center gap-4 rounded-xl bg-surface-container/40 py-16 text-on-surface-variant backdrop-blur-xl">
+        <span class="material-symbols-outlined text-5xl opacity-30">widgets</span>
+        <span class="font-mono text-xs">暂无已安装的插件</span>
+        <Button variant="glass" size="sm" @click="handleOpenConfig">
+          <span class="material-symbols-outlined text-base">settings</span>
+          <span>配置商店</span>
+        </Button>
+      </div>
+
+      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="(plugin, index) in filteredInstalled"
+          :key="plugin.uuid"
+          class="group flex flex-col justify-between rounded-xl bg-surface-container/60 p-5 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-surface-container/85"
+          :class="plugin.status === 'disabled' ? 'opacity-80' : ''"
+        >
+          <div>
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-xl shadow-inner" :class="palette(index).box">
+                  <span class="material-symbols-outlined text-2xl">extension</span>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold leading-snug text-on-surface transition-colors group-hover:text-primary">
+                    {{ plugin.title }}
+                  </h3>
+                  <span class="font-mono text-[11px] text-on-surface-variant">{{ plugin.author }}</span>
                 </div>
               </div>
-            </NCard>
+              <div class="flex flex-col items-end gap-1">
+                <span
+                  v-if="plugin.status === 'enabled'"
+                  class="flex items-center gap-1 rounded bg-primary/20 px-2 py-0.5 font-mono text-[10px] font-medium text-primary"
+                >
+                  <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                  已启用
+                </span>
+                <span
+                  v-else-if="plugin.status === 'disabled'"
+                  class="flex items-center gap-1 rounded bg-surface-variant px-2 py-0.5 font-mono text-[10px] font-medium text-on-surface-variant"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-outline" />
+                  已禁用
+                </span>
+                <span v-else class="rounded bg-tertiary-container/40 px-2 py-0.5 font-mono text-[10px] font-medium text-tertiary">
+                  已安装
+                </span>
+                <span class="font-mono text-[10px] text-on-surface-variant/80">v{{ plugin.version }}</span>
+              </div>
+            </div>
+
+            <p class="mb-4 line-clamp-2 text-xs leading-relaxed text-on-surface-variant">
+              {{ plugin.description }}
+            </p>
+
+            <div class="mb-4 flex items-center justify-between rounded-lg bg-surface-container-lowest/50 px-3 py-2 font-mono text-[11px] text-on-surface-variant/80">
+              <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm" :class="palette(index).tag">security</span>
+                <span>UUID: {{ plugin.uuid.slice(0, 8) }}...</span>
+              </div>
+              <a
+                v-if="plugin.website"
+                class="inline-flex items-center gap-1 text-primary hover:underline"
+                :href="plugin.website"
+                target="_blank"
+              >
+                <span>官方主页</span>
+                <span class="material-symbols-outlined text-xs">north_east</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-3">
+            <div class="flex items-center gap-2">
+              <Button
+                v-if="plugin.status === 'enabled'"
+                variant="secondary"
+                size="xs"
+                @click="handleDisable(plugin)"
+              >
+                <span class="material-symbols-outlined text-sm">pause</span>
+                <span>禁用</span>
+              </Button>
+              <Button
+                v-else
+                size="xs"
+                class="bg-primary-container text-on-primary-container shadow-none hover:bg-primary/30"
+                @click="handleEnable(plugin)"
+              >
+                <span class="material-symbols-outlined text-sm">play_arrow</span>
+                <span>启用</span>
+              </Button>
+            </div>
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error-container/40"
+              @click="handleUninstall(plugin)"
+            >
+              <span class="material-symbols-outlined text-sm">delete_forever</span>
+              <span>卸载</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Config Modal -->
-    <NModal
-      v-model:show="showConfigModal"
-      preset="dialog"
-      title="商店配置"
-      positive-text="保存"
-      @positive-click="handleSaveConfig"
-    >
-      <NSpace vertical :size="16">
-        <NInput
-          v-model:value="storeConfigURL"
-          placeholder="商店 JSON URL"
-        />
-        <div class="config-hint">
-          输入插件商店的 JSON 文件 URL，服务器将定期从此 URL 获取可用插件列表
+    <!-- 商店视图 -->
+    <div v-show="activeSubTab === 'store'" class="flex flex-col gap-6">
+      <div v-if="pluginsStore.loading" class="flex items-center justify-center gap-3 py-20 text-on-surface-variant">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        <span class="font-mono text-xs">加载商店列表中...</span>
+      </div>
+
+      <div v-else-if="!pluginsStore.storeConfig.storeURL" class="flex flex-col items-center gap-4 rounded-xl bg-surface-container/40 py-16 text-on-surface-variant backdrop-blur-xl">
+        <span class="material-symbols-outlined text-5xl opacity-30">shopping_bag</span>
+        <span class="font-mono text-xs">请先配置商店 URL</span>
+        <Button variant="glass" size="sm" @click="handleOpenConfig">
+          <span class="material-symbols-outlined text-base">settings</span>
+          <span>配置商店</span>
+        </Button>
+      </div>
+
+      <template v-else>
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs text-on-surface-variant">
+            商店插件 ({{ filteredStore.length }})
+          </span>
+          <Button variant="ghost" size="xs" :disabled="pluginsStore.loading" @click="handleRefreshStore">
+            <span class="material-symbols-outlined text-base" :class="{ 'animate-spin': pluginsStore.loading }">refresh</span>
+            <span>刷新商店</span>
+          </Button>
         </div>
-      </NSpace>
-    </NModal>
-  </div>
+
+        <div v-if="filteredStore.length === 0" class="flex flex-col items-center gap-3 rounded-xl bg-surface-container/40 py-16 text-on-surface-variant backdrop-blur-xl">
+          <span class="material-symbols-outlined text-5xl opacity-30">shopping_bag</span>
+          <span class="font-mono text-xs">商店列表为空 · 点击刷新获取</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            v-for="(plugin, index) in filteredStore"
+            :key="plugin.uuid"
+            class="flex flex-col justify-between rounded-xl bg-surface-container/60 p-5 shadow-lg backdrop-blur-xl transition-all hover:bg-surface-container/85"
+          >
+            <div>
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl" :class="palette(index).box">
+                  <span class="material-symbols-outlined">extension</span>
+                </div>
+                <span class="rounded bg-surface-variant px-2 py-0.5 font-mono text-[10px] text-on-surface-variant">
+                  v{{ plugin.version }}
+                </span>
+              </div>
+              <h3 class="mb-1 text-sm font-bold text-on-surface">{{ plugin.title }}</h3>
+              <p class="mb-3 font-mono text-[11px] text-on-surface-variant">by {{ plugin.author }}</p>
+              <p class="mb-4 line-clamp-2 text-xs text-on-surface-variant">{{ plugin.description }}</p>
+            </div>
+
+            <Button
+              v-if="pluginsStore.isInstalled(plugin.uuid)"
+              variant="secondary"
+              size="sm"
+              class="w-full"
+              disabled
+            >
+              <span class="material-symbols-outlined text-base">check_circle</span>
+              <span>已安装</span>
+            </Button>
+            <Button
+              v-else
+              size="sm"
+              class="w-full"
+              :disabled="pluginsStore.loading"
+              @click="handleInstallFromStore(plugin)"
+            >
+              <span class="material-symbols-outlined text-base">download</span>
+              <span>{{ pluginsStore.loading ? '安装中...' : '安装此插件' }}</span>
+            </Button>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- 商店配置弹窗 -->
+    <Dialog v-model:open="showConfigModal">
+      <DialogContent class="max-w-md">
+        <DialogHeader class="flex-row items-center gap-3 space-y-0">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <span class="material-symbols-outlined text-xl">hub</span>
+          </div>
+          <div>
+            <DialogTitle>商店配置</DialogTitle>
+            <DialogDescription class="mt-0.5">
+              服务器将定期从该地址拉取插件列表
+            </DialogDescription>
+          </div>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-on-surface-variant">商店 JSON URL</label>
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined pointer-events-none absolute left-3 text-lg text-on-surface-variant">link</span>
+              <input
+                v-model="storeConfigURL"
+                type="url"
+                placeholder="https://example.com/plugins.json"
+                class="w-full rounded-lg bg-surface-container py-2.5 pl-10 pr-4 font-mono text-sm text-on-surface transition-all placeholder:text-on-surface-variant/40 focus:bg-surface-bright focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5 rounded-xl bg-surface-container-lowest/50 p-3 text-xs leading-relaxed text-on-surface-variant">
+            <span class="material-symbols-outlined mt-0.5 shrink-0 text-base text-primary">info</span>
+            <p>输入插件商店的 JSON 文件 URL，服务器将定期从此 URL 获取可用插件列表。</p>
+          </div>
+        </div>
+
+        <DialogFooter class="gap-2.5">
+          <Button variant="ghost" size="sm" @click="showConfigModal = false">取消</Button>
+          <Button size="sm" @click="handleSaveConfig">
+            <span class="material-symbols-outlined text-base">save</span>
+            <span>保存配置</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </section>
 </template>
-
-<style scoped>
-.plugins-container {
-  padding: 0;
-}
-
-.tab-content {
-  margin-top: 16px;
-  min-height: 300px;
-}
-
-.section-header {
-  margin-bottom: 16px;
-}
-
-.plugin-section {
-  padding: 16px;
-  background: #fff;
-  border-radius: 8px;
-}
-
-.plugin-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 40px;
-  color: #666;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 40px;
-  color: #999;
-}
-
-.plugin-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
- .plugin-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.plugin-status {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
- .plugin-status.enabled {
-  background-color: #e8f5e9;
-  color: #1a7f37;
-}
-
-.plugin-status.disabled {
-  background-color: #fff3e0;
-  color: #f59e0b;
-}
-
-.plugin-status.installed {
-  background-color: #e3f2fd;
-  color: #1890ff;
-}
-
-.plugin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.plugin-title-text {
-  font-weight: 500;
-}
-
-.plugin-info {
-  margin: 12px 0;
-  font-size: 13px;
-  color: #666;
-}
-
-.plugin-author {
-  margin-bottom: 4px;
-}
-
-.plugin-desc {
-  margin-bottom: 8px;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-    text-align: center;
-}
-
-.plugin-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #999;
-  justify-content: center;
-}
-
-.plugin-actions {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
-}
-
-.config-hint {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.file-name {
-  font-size: 12px;
-  color: #666;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-</style>

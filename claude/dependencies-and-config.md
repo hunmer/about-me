@@ -4,15 +4,15 @@
 
 ## SDK 与运行时
 
-- Dart `^3.7.0` / Flutter（`pubspec.yaml`，版本 `2.1.3+160323`）
-- Node.js `>= 18`（三个 Node 子包一致要求）
+- Dart `^3.7.0` / Flutter（`pubspec.yaml`，版本 `0.0.1`）
+- Node.js `>= 18`（server-nodejs）
 
 ## Flutter 关键依赖（按用途分组）
 
 | 用途 | 依赖 |
 |------|------|
 | 状态/路由 | `get`（GetX ^4.7.3）、`provider` |
-| 存储 | `shared_preferences`、`path_provider`、`fs_shim`、`webdav_client` |
+| 存储 | `shared_preferences`、`path_provider`、`fs_shim`、`flutter_secure_storage` |
 | 网络 | `dio`、`http`、`web_socket_channel` |
 | 加密 | `encrypt`（AES-256-GCM 同步）、`crypto` |
 | AI | 本地 `agentlib` transport、`intelligence` |
@@ -27,7 +27,7 @@
 
 ### 路径依赖（workspace 内子包）
 
-`floating_ball_plugin`、`aboutme_widgets`、`aboutme_foreground_service`、`aboutme_notifications`、`aboutme_intent`、`aboutme_nfc`（均位于 `packages/`）与 `shared_models`。
+`agentlib`、`super_cupertino_navigation_bar`、`floating_ball_plugin`、`aboutme_widgets`、`aboutme_foreground_service`、`aboutme_notifications`、`aboutme_intent`、`aboutme_nfc`（均位于 `packages/`）与 `shared_models`。
 
 ### dependency_overrides
 
@@ -39,7 +39,7 @@
 
 - **server-nodejs**：`express` + `express-ws`/`ws`（HTTP/WS）、`jsonwebtoken`（JWT）、`firebase-admin`（FCM 推送）、`winston`（日志）、`adm-zip`/`archiver`（ZIP 导出与插件安装）、`chokidar`（文件监听）、`hookable`（插件钩子）、`multer`（上传）；构建期 `typescript ^5.5`、`jest` + `supertest`。管理面板 `admin-vue/`：Vue ^3.5 + `naive-ui` + `pinia` + Vite ^8。
 - **server-nodejs（含内置 MCP）**：`@modelcontextprotocol/sdk` ^1.24（Streamable HTTP transport，使用其 CJS 构建）。
-- **api_forwarding_server**：`ws`、`uuid`，零其他运行时依赖。
+- **agentlib**（Dart）：仅依赖 `http` ^1.3.0；dev 依赖 `test`。
 
 ## 配置文件清单
 

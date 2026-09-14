@@ -30,6 +30,7 @@
 | nfc | card_handlers/{read,custom_write,checkin,goods_usage,habit_timer,tracker_progress} · models · widgets · nfc_controller | h |
 | database | controllers · models · services · widgets · repositories | js sm（h 为根级单文件） |
 | reminder | screens/{list,form} · services · models | 无路由/无 h/无 js |
+| live2d | l10n · models · screens/{live2d_main,live2d_settings,online_models} | 路由 `/live2d`（设置页）/无 h/无 js |
 
 ## 根级文件
 

@@ -16,11 +16,10 @@
 | `plugin_manager.dart` / `plugin_base.dart` / `builtin_plugins.dart` | 插件系统三件套 |
 | `app_initializer.dart` | 启动初始化与 `AppStartupState` |
 | `config_manager.dart` | 应用/插件配置 |
-| `storage/` + `storage_service.dart` | 存储抽象（IO / IndexedDB） |
+| `storage/` + `storage_service.dart` | 存储抽象（IO / IndexedDB）+ HTTP 远程存储后端（http_storage.dart） |
 | `event/` | 全局事件总线 |
 | `js_bridge/` | flutter_js 封装与双向通信 |
 | `floating_ball/` · `action/` | 悬浮球、自定义动作 |
-| `api_forwarding/` | API 转发客户端（配 api_forwarding_server） |
 | `app_widgets/` | 桌面小组件宿主（home_widget_service、floating_ball_service） |
 | `route/` · `routing/` | 路由历史、插件路由处理 |
 | `services/` | FCM、日志、剪贴板、快捷方式、统一计时器、plugin_widget_sync_helper、toast、文件监听同步等 |
@@ -28,7 +27,7 @@
 | `analysis/` · `data_filter/` · `l10n/` · `navigation/` · `utils/` · `widgets/` · `app_widgets/` | 其余子系统 |
 | 文档 | [core/CLAUDE.md](../core/CLAUDE.md)（旧版格式） |
 
-## plugins/ 插件层（25 个）
+## plugins/ 插件层（26 个）
 
 | 插件 | 入口 | 文档（旧版格式） |
 |------|------|------|
@@ -57,6 +56,7 @@
 | tracker | `tracker/tracker_plugin.dart` | [tracker/CLAUDE.md](../plugins/tracker/CLAUDE.md) |
 | tts | `tts/tts_plugin.dart` | [tts/CLAUDE.md](../plugins/tts/CLAUDE.md) |
 | webview | `webview/webview_plugin.dart` | [webview/CLAUDE.md](../plugins/webview/CLAUDE.md) |
+| live2d | `live2d/live2d_plugin.dart` | 无独立文档（见 [plugins/CLAUDE.md](../plugins/CLAUDE.md)） |
 
 根级公共文件：`plugins/base_plugin.dart`、`plugins/plugin_widget.dart`。
 
@@ -64,13 +64,13 @@
 
 | 路径 | 说明 |
 |------|------|
-| `route.dart` + `routing/` | 路由汇总与注册表 |
+| `route.dart` + `routing/` | 路由汇总与注册表（`AppRoutes.initialRoute` → `/jelly_home`） |
+| `jelly_home/` | 果冻小屋主页（**应用默认启动页**，四页签 + Live2D 伙伴 companion_controller） |
 | `home_screen/` · `settings_screen/` · `about_screen/` · `log_screen/` | 主要页面 |
-| `js_console/` | JS 控制台（examples 随 assets 打包） |
 | `widgets_gallery/` · `pages/` | 组件展示廊、通用页面 |
 | `*_test` / `test_screens`（intent_test、notification_test、form_fields_test、data_selector_test、json_dynamic_test、toast_test） | 测试/演示页面 |
 | `floating_widget_screen/` · `l10n/` | 悬浮组件界面、翻译 |
-| 文档 | [screens/CLAUDE.md](../screens/CLAUDE.md)、[home_screen](../screens/home_screen/CLAUDE.md)、[settings_screen](../screens/settings_screen/CLAUDE.md)、[js_console](../screens/js_console/CLAUDE.md)（旧版格式） |
+| 文档 | [screens/CLAUDE.md](../screens/CLAUDE.md)、[home_screen](../screens/home_screen/CLAUDE.md)、[settings_screen](../screens/settings_screen/CLAUDE.md)（旧版格式） |
 
 ## widgets/ 组件层
 

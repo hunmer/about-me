@@ -1,13 +1,13 @@
 # packages/ 子包集合
 
-`packages/` 汇集 Aboutme 的 9 个子包，分两类：**3 个 Node.js/TypeScript 服务**（同步服务器、MCP 服务器、API 转发服务器）与 **6 个 Flutter 原生插件**（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。原生插件经根 `pubspec.yaml` 的 path 依赖被客户端直接引用；Node 服务独立部署。
+`packages/` 汇集 Aboutme 的 9 个子包，分三类：**1 个 Node.js/TypeScript 服务**（同步服务器 server-nodejs，内置 MCP 端点与管理面板）、**2 个本地 Dart 库**（agentlib AI 传输门面、super_cupertino_navigation_bar 导航 UI）与 **6 个 Flutter 原生插件**（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。Dart 子包经根 `pubspec.yaml` 的 path 依赖被客户端直接引用；Node 服务独立部署。
 
 ## 约定的规则
 
-- 修改原生插件 Dart API 后需在客户端同步更新调用处（path 依赖，无版本缓冲）。
-- Node 子包各自独立 `npm install` / `npm run build`；server-nodejs 的 `npm run build` 内含 admin-vue 面板构建。
+- 修改 Dart 子包公开 API 后需在客户端同步更新调用处（path 依赖，无版本缓冲）。
+- server-nodejs 独立 `npm install` / `npm run build`（内含 admin-vue 面板构建）。
 - 原生插件的平台代码（android/ ios/）改动需同时在客户端宿主工程验证。
-- 部署端口约定：server-nodejs **8874**，api_forwarding_server **8654**。
+- 部署端口约定：server-nodejs **8874**（历史包 api_forwarding_server 8654 / mcp-aboutme-server 已删除，勿再引用）。
 
 ## 文件索引
 
@@ -22,8 +22,9 @@
 | 模块 | 类型 | 职责摘要 | 文档 |
 |------|------|----------|------|
 | `server-nodejs/` | Node 服务 | 同步服务器：REST/WS、认证、E2E 加密、19 插件 API、服务端插件系统、Vue3 管理面板 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
-| `server-nodejs/src/mcp/` | server-nodejs 内置 | MCP 端点（/mcp，Streamable HTTP）：向 AI 暴露 12 插件域 60+ 工具 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
-| `api_forwarding_server/` | Node 服务 | WebSocket 配对转发（Web 前端 ↔ Flutter 客户端） | [api_forwarding_server/CLAUDE.md](api_forwarding_server/CLAUDE.md) |
+| `server-nodejs/src/mcp/` | server-nodejs 内置 | MCP 端点（/mcp，Streamable HTTP）：向 AI 暴露 12 插件域 75 工具 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
+| `agentlib/` | Dart 库 | OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient，openai 插件消费） | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
+| `super_cupertino_navigation_bar/` | Dart 库 | iOS 风格大标题导航栏 UI 库 | 无独立文档（`docs/SUPER_CUPERTINO_*`） |
 | `floating_ball_plugin/` | 原生插件 | 系统级悬浮球 | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
 | `aboutme_foreground_service/` | 原生插件 | 前台服务（封装 flutter_foreground_task） | 无独立文档 |
 | `aboutme_notifications/` | 原生插件 | 通知管理（封装 awesome_notifications） | 无独立文档 |
@@ -33,7 +34,7 @@
 
 ## 扫描状态
 
-- 更新时间：2026-09-02（第二轮：补扫 aboutme_widgets 与 admin-vue）
-- 已扫描：9 个子包的 pubspec/package.json、server-nodejs 与 mcp、api_forwarding 的源码结构、`aboutme_widgets` Dart API 与 Provider 全景、`server-nodejs/admin-vue` 全部源码与端点清单。
-- 未深扫：其余 5 个原生插件（intent/nfc/foreground_service/notifications/floating_ball）的 android/ios 平台代码；server-nodejs 各 handler 实现细节与 plugins 运行时目录。
+- 更新时间：2026-09-14（第四轮增量：删除 api_forwarding_server / mcp-aboutme-server，新增 agentlib / super_cupertino_navigation_bar 条目）
+- 已扫描：9 个现存子包的 pubspec/package.json、server-nodejs 与内置 mcp 的源码结构、`aboutme_widgets` Dart API 与 Provider 全景、`server-nodejs/admin-vue` 源码与端点清单、agentlib 导出面（4 个 Dart 文件）。
+- 未深扫：其余 5 个原生插件（intent/nfc/foreground_service/notifications/floating_ball）的 android/ios 平台代码；server-nodejs 各 handler 实现细节与 plugins 运行时目录；super_cupertino_navigation_bar 源码。
 - 下一步建议：为 `aboutme_intent`（121 文件）与 `aboutme_nfc`（113 文件）补充独立文档。

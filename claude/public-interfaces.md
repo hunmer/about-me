@@ -4,7 +4,7 @@
 
 ## 应用内路由（Flutter）
 
-- 汇总入口：`lib/screens/route.dart`（`AppRoutes.initialRoute / routes / generateRoute`）。
+- 汇总入口：`lib/screens/route.dart`（`AppRoutes.initialRoute / routes / generateRoute`）；**初始路由为 `/jelly_home`（果冻小屋）**。
 - 各插件路由注册表：`lib/screens/routing/routes/*_routes.dart`（core / test / widget_gallery / chat / diary / agent_chat / bill / calendar / notes / store / habits / tracker / activity / calendar_album / contact / todo / webview / plugin_common）。
 - 部分插件自带 RouteHandler（checkin / todo / goods / habits / tracker），由 `core/routing/plugin_route_handler.dart` 分发。
 
@@ -23,14 +23,9 @@
 
 ## MCP 工具（server-nodejs 内置端点 `POST /mcp`，Streamable HTTP）
 
-- 工具命名：`aboutme_{plugin}_{action}`，定义于 `src/tools/index.ts`。
-- 覆盖 12 个插件域、60+ 工具：chat（频道/消息增删改查、搜索）、notes、activity（含今日统计）、goods、bill（含统计）、todo（含完成/今日/过期）、diary、checkin、calendar、contact、tracker、day。
-- 通过 `src/client/aboutme-client.ts` 调用 server-nodejs 的 REST API（API Key + 加密）。
-
-## API 转发协议（`packages/api_forwarding_server`）
-
-- WebSocket 端口 8654；Web 前端与 Flutter 客户端用**相同的配对密钥**（形如 `ABCD-1234-EFGH-5678`）连接即完成配对。
-- 消息双向转发：前端请求 → 服务器 → 客户端（JSBridge API）→ 服务器 → 前端响应；含心跳检测。协议详情见该包 `README.md` 的"消息协议"章节。
+- 工具命名：`aboutme_{plugin}_{action}`，定义于 `src/mcp/tools.ts`。
+- 覆盖 12 个插件域、75 个工具：chat（频道/消息增删改查、搜索）、notes、activity（含今日统计）、goods、bill（含统计）、todo（含完成/今日/过期）、diary、checkin、calendar、contact、tracker、day。
+- 通过 `src/mcp/client.ts`（`AboutmeClient`）在进程内直调 server-nodejs 插件处理器（请求头 `X-API-Key` / `X-Encryption-Key` 认证）。
 
 ## Web 小程序清单（`online/`）
 

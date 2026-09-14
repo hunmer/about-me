@@ -29,7 +29,7 @@ runZonedGuarded
 ## `core/app_initializer.dart`
 
 - `AppStartupState`（单例 ChangeNotifier）：`coreReady` / `pluginsReady` / `fullyReady` 三段状态 + `loadingMessage`，驱动启动页。
-- `initializeApp()` 初始化链（关键对象）：`StorageManager` → `globalConfigManager` → `PluginManager`（`BuiltinPlugins.createAll()` 装载 25 插件）→ `JSBridgeManager` → `aboutme_foreground_service` / `aboutme_notifications` → `ShortcutManager`、`FloatingBallService`、`ApiForwardingService`、`FCMService`、权限引导（移动端）等。
+- `initializeApp()` 初始化链（关键对象）：`StorageManager` → `globalConfigManager` → `PluginManager`（`BuiltinPlugins.createAll()` 装载 26 插件）→ `JSBridgeManager` → `aboutme_foreground_service` / `aboutme_notifications` → `ShortcutManager`、`FloatingBallService`、`FCMService`、权限引导（移动端）等。
 - 首帧后（`WidgetsBinding.addPostFrameCallback`）：自动更新检查、Flutter 侧悬浮球初始化。
 
 ## 路由挂载：`screens/route.dart`

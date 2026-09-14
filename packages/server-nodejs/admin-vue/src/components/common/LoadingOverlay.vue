@@ -1,32 +1,35 @@
 <script setup lang="ts">
-import { NSpin, NSpace } from 'naive-ui'
 import { useUIStore } from '@/stores/ui'
 
 const uiStore = useUIStore()
 </script>
 
 <template>
-  <div v-if="uiStore.loading" class="loading-overlay">
-    <NSpace vertical align="center" :size="16">
-      <NSpin size="large" />
-      <span style="color: white; font-size: 0.95rem">
-        {{ uiStore.loadingMessage || '加载中...' }}
-      </span>
-    </NSpace>
-  </div>
+  <Transition
+    enter-active-class="transition-opacity duration-200"
+    enter-from-class="opacity-0"
+    leave-active-class="transition-opacity duration-200"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="uiStore.loading"
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-background/70 backdrop-blur-sm"
+    >
+      <div
+        class="flex flex-col items-center gap-4 rounded-2xl bg-surface-container/90 px-10 py-8 shadow-2xl backdrop-blur-2xl"
+      >
+        <div class="relative flex h-10 w-10 items-center justify-center">
+          <span
+            class="absolute inset-0 rounded-full bg-primary/20 blur-md"
+          />
+          <span
+            class="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+          />
+        </div>
+        <span class="text-xs font-mono text-on-surface-variant">
+          {{ uiStore.loadingMessage || '处理中...' }}
+        </span>
+      </div>
+    </div>
+  </Transition>
 </template>
-
-<style scoped>
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-</style>

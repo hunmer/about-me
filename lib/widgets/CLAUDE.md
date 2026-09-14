@@ -42,6 +42,10 @@
 - **SimpleGroupSelector**：简单分组选择器，仅支持选择
 - **BackupTimePicker**：备份时间选择器，支持多种计划类型
 
+### 2.5 表单字段库（`form_fields/`，50 文件，2026-09 新增）
+
+统一的插件表单字段组件库，`FormFieldConfig` 配置驱动，覆盖金额输入、头像/图标/颜色/日期/日期范围选择、分类与标签 chip、日历条、自定义字段、事件多选等 20+ 字段类型；`builders/` 提供字段构建器。消费方为各插件的编辑表单（bill、todo、habits 等）；示例页见 `screens/form_fields_test/` 与 `screens/widgets_gallery/`。
+
 ### 3. 对话框类
 - **TagManagerDialog**：标签管理对话框，功能强大的标签管理系统
 - **CustomDialog**：自定义对话框，处理键盘遮挡
@@ -625,6 +629,12 @@ lib/widgets/
 ├── app_bar_widget.dart                         # 应用栏组件
 ├── app_drawer.dart                             # 应用抽屉
 │
+├── form_fields/                                # 表单字段库（50 文件，FormFieldConfig 驱动）
+│   ├── config.dart / types.dart                # 字段配置与类型定义
+│   ├── *_field.dart                            # 各字段组件（amount/avatar/calendar_strip/
+│                                              #   category/chip/circle_icon/color/date/...）
+│   └── builders/                               # 字段构建器
+│
 ├── markdown_editor/                            # Quill 富文本编辑器模块
 │   ├── index.dart                              # 导出文件
 │   ├── quill_editor.dart                       # 编辑器实现
@@ -943,4 +953,4 @@ try {
 **相关文档**：
 - [lib/core - 核心功能](../core/CLAUDE.md)
 - [lib/plugins - 插件系统](../plugins/CLAUDE.md)
-- [lib/l10n - 国际化](../l10n/CLAUDE.md)
+- `lib/l10n/` - 国际化（无独立 CLAUDE.md）

@@ -1,23 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import {
-  NConfigProvider,
-  NMessageProvider,
-  NDialogProvider,
-  NLayout,
-  NLayoutContent,
-  NNotificationProvider
-} from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
 import { useFilesStore } from '@/stores/files'
 import { apiClient } from '@/api'
 
-import NaiveProviderContent from '@/components/common/NaiveProviderContent.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import TabNavigation from '@/components/layout/TabNavigation.vue'
-import LoginForm from '@/components/login/LoginForm.vue'
-import RegisterForm from '@/components/login/RegisterForm.vue'
+import AuthPanel from '@/components/login/AuthPanel.vue'
 import OverviewTab from '@/components/overview/OverviewTab.vue'
 import FilesTab from '@/components/files/FilesTab.vue'
 import ApiKeysTab from '@/components/api-keys/ApiKeysTab.vue'
@@ -25,13 +15,14 @@ import PluginsTab from '@/components/plugins/PluginsTab.vue'
 import DevicesTab from '@/components/devices/DevicesTab.vue'
 import SettingsTab from '@/components/settings/SettingsTab.vue'
 import LoadingOverlay from '@/components/common/LoadingOverlay.vue'
+import Toaster from '@/components/common/Toaster.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const authStore = useAuthStore()
 const uiStore = useUIStore()
 const filesStore = useFilesStore()
 
-// 登录/注册模式切换
-const authMode = ref<'login' | 'register'>('login')
+// 注册成功后回填的凭据
 const prefillCredentials = ref<{ username: string; password: string } | null>(null)
 
 onMounted(async () => {
@@ -62,89 +53,61 @@ async function checkServerHealth(): Promise<void> {
   uiStore.setServerStatus(isOnline ? 'online' : 'offline')
 }
 
-// 注册成功后切换到登录页并预填充凭据
 function handleRegistered(username: string, password: string): void {
   prefillCredentials.value = { username, password }
-  authMode.value = 'login'
 }
 </script>
 
 <template>
-  <NConfigProvider>
-    <NMessageProvider>
-      <NDialogProvider>
-        <NNotificationProvider>
-          <NaiveProviderContent>
-            <NLayout class="app-layout">
-              <!-- Header -->
-              <AppHeader v-if="authStore.isLoggedIn" />
+  <div class="relative flex min-h-screen flex-col bg-background">
+    <!-- 全局环境光晕 -->
+    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div class="absolute -top-48 left-1/4 h-[350px] w-[600px] rounded-full bg-primary/10 blur-[140px]" />
+      <div class="absolute top-1/3 -right-32 h-[350px] w-[500px] rounded-full bg-tertiary/5 blur-[120px]" />
+    </div>
 
-              <!-- Main Content -->
-              <NLayoutContent class="main-content">
-                <!-- Auth Forms -->
-                <template v-if="!authStore.isLoggedIn">
-                  <LoginForm
-                    v-if="authMode === 'login'"
-                    :prefill-username="prefillCredentials?.username"
-                    :prefill-password="prefillCredentials?.password"
-                    @switch-to-register="authMode = 'register'"
-                  />
-                  <RegisterForm
-                    v-else
-                    @switch-to-login="authMode = 'login'"
-                    @registered="handleRegistered"
-                  />
-                </template>
+    <!-- 登录 / 注册 -->
+    <AuthPanel
+      v-if="!authStore.isLoggedIn"
+      :prefill-username="prefillCredentials?.username"
+      :prefill-password="prefillCredentials?.password"
+      @registered="handleRegistered"
+    />
 
-                <!-- Dashboard -->
-                <template v-else>
-                  <TabNavigation />
+    <!-- 控制台 -->
+    <template v-else>
+      <header
+        class="fixed inset-x-0 top-0 z-50 h-28 bg-surface/75 shadow-[0_1px_12px_rgba(0,0,0,0.4)] backdrop-blur-2xl"
+      >
+        <div class="mx-auto flex h-16 items-center">
+          <AppHeader />
+        </div>
+        <div class="mx-auto flex h-12 items-center">
+          <TabNavigation />
+        </div>
+      </header>
 
-                  <div class="tab-content">
-                    <OverviewTab v-show="uiStore.activeTab === 'overview'" />
-                    <FilesTab v-show="uiStore.activeTab === 'files'" />
-                    <ApiKeysTab v-show="uiStore.activeTab === 'apikeys'" />
-                    <PluginsTab v-show="uiStore.activeTab === 'plugins'" />
-                    <DevicesTab v-show="uiStore.activeTab === 'devices'" />
-                    <SettingsTab v-show="uiStore.activeTab === 'settings'" />
-                  </div>
-                </template>
-              </NLayoutContent>
+      <main class="relative z-10 w-full min-h-screen flex-1 bg-background pt-28">
+        <div class="tab-content mx-auto w-full max-w-7xl px-6 py-6">
+          <OverviewTab v-show="uiStore.activeTab === 'overview'" />
+          <FilesTab v-show="uiStore.activeTab === 'files'" />
+          <ApiKeysTab v-show="uiStore.activeTab === 'apikeys'" />
+          <PluginsTab v-show="uiStore.activeTab === 'plugins'" />
+          <DevicesTab v-show="uiStore.activeTab === 'devices'" />
+          <SettingsTab v-show="uiStore.activeTab === 'settings'" />
+        </div>
 
-              <!-- Loading Overlay -->
-              <LoadingOverlay />
-            </NLayout>
-          </NaiveProviderContent>
-        </NNotificationProvider>
-      </NDialogProvider>
-    </NMessageProvider>
-  </NConfigProvider>
+        <footer class="relative z-10 mt-16 w-full bg-surface-container-lowest/70 py-6 backdrop-blur-lg">
+          <div class="mx-auto max-w-7xl px-6 text-center font-mono text-xs text-on-surface-variant">
+            <span>© {{ new Date().getFullYear() }} Aboutme Sync Server</span>
+          </div>
+        </footer>
+      </main>
+    </template>
+
+    <!-- 全局浮层 -->
+    <LoadingOverlay />
+    <Toaster />
+    <AppDialog />
+  </div>
 </template>
-
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  background-color: #f5f5f5;
-}
-
-.app-layout {
-  min-height: 100vh;
-}
-
-.main-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.tab-content {
-  margin-top: 16px;
-}
-</style>

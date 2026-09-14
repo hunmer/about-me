@@ -45,7 +45,7 @@ npm run inspector        # MCP Inspector 调试
 - **旧文档中的 `server/` 目录已不存在**：Dart 版同步服务器已移除，现行服务器是 `packages/server-nodejs`（默认端口 **8874**，不是旧文档写的 8080）。遇到 `cd server && dart run bin/server.dart` 一类指令一律视为过时。
 - `flutter_config.yaml` 设置 `tree-shake-icons: false`，因为项目使用动态 `IconData`；不要在构建中开启图标树摇。
 - Web 平台差异：`StyledToast` 等库用条件导入（`if (dart.library.io)`）提供存根实现，改动平台相关代码时注意。
-- `Aboutme.ipa`、`build/`、`dist/`、`.dart_tool/` 均为生成物，不要手工编辑或提交。
+- `build/`、`dist/`、`.dart_tool/`、各平台构建产物均为生成物，不要手工编辑或提交。
 - `.claude/hooks/` 下存在 auto-commit 等钩子脚本；Agent 不应主动执行 git 提交、分支、reset 等操作。
 
 ## 环境变量

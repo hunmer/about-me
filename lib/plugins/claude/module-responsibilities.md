@@ -1,15 +1,16 @@
-# 插件职责速查（25 个）
+# 插件职责速查（26 个）
 
 > 所属：`lib/plugins/` · [返回索引](../CLAUDE.md)
-> 括号内为 Dart 文件数（2026-09-05 统计）。主文件均为 `<id>/<id>_plugin.dart`。
+> 括号内为 Dart 文件数（2026-09-14 统计）。主文件均为 `<id>/<id>_plugin.dart`。
 
 ## AI 类
 
 | 插件 | 职责 | 要点 |
 |------|------|------|
 | **chat**（109） | 本地频道式聊天/消息记录 | 频道-消息模型、时间线、标签；被 openai 的 ChatEventHandler 监听实现 @AI 回复；[独立文档](../chat/CLAUDE.md) |
-| **agent_chat**（90） | 一对一 AI 对话 | 三阶段工具调用、Agent 链、语音通话循环、腾讯 ASR WebSocket；[独立文档](../agent_chat/CLAUDE.md) |
-| **openai**（63） | AI 服务基础设施 | AIAgent/ServiceProvider/PromptPreset 管理，OpenAI 兼容 + Anthropic 双格式流式请求；被 agent_chat 强依赖 |
+| **agent_chat**（91） | 一对一 AI 对话 | 三阶段工具调用、Agent 链、语音通话循环、腾讯 ASR WebSocket；[独立文档](../agent_chat/CLAUDE.md) |
+| **openai**（63） | AI 服务基础设施 | AIAgent/ServiceProvider/PromptPreset 管理，OpenAI 兼容 + Anthropic 双格式流式请求（传输经本地 `agentlib` 包）；被 agent_chat 强依赖 |
+| **live2d**（9） | Live2D 看板娘桌宠 | 气泡对话（经 agent_chat/openai 请求链）、TTS 自动朗读、在线模型仓库；jelly_home 首页的伙伴卡片消费它 |
 
 ## 记录与生活类
 

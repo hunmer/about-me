@@ -5,6 +5,9 @@
 **Q：同步服务器在哪里？旧文档说 `cd server && dart run bin/server.dart`？**
 A：过时。Dart 版 `server/` 目录已删除，现行服务器是 `packages/server-nodejs`（Node.js + TypeScript，默认端口 **8874**）。启动：`cd packages/server-nodejs && npm run dev`。
 
+**Q：`api_forwarding_server` / `mcp-aboutme-server` / WebDAV 同步去哪了？**
+A：均已删除（2026-09-09 前后）。MCP 能力并入 server-nodejs 内置端点 `POST /mcp`；WebDAV 同步被自建服务器 HTTP 存储后端（`lib/core/storage/http_storage.dart`）取代，`webdav_client` 依赖已移除。旧文档提及这些内容的章节一律视为过时。
+
 **Q：如何新增一个功能插件？**
 A：① `lib/plugins/<name>/` 创建 `*_plugin.dart` 继承 `BasePlugin`（可 mixin `JSBridgePlugin`）；② 在 `lib/core/builtin_plugins.dart` 的 `_builders` 注册；③ 在 `lib/screens/routing/routes/<name>_routes.dart` 注册路由并在 `route.dart` 汇总；④ 需要同步/复用时在 `shared_models/` 定义 Repository 接口与 UseCase；⑤ 需要服务端 API 时在 `packages/server-nodejs/src/routes/pluginRoutes/handlers/` 添加 handler。
 
@@ -30,7 +33,7 @@ A：`./scripts/build.sh`（读 `scripts/release_config.json` 选平台）；`scr
 A：MCP 已内置于 server-nodejs，AI 客户端通过 HTTP 连接 `POST /mcp`，每个请求携带请求头 `X-API-Key`（管理面板生成，`mk_live_` 前缀）与 `X-Encryption-Key`。详见 `packages/server-nodejs/README.md` 的 MCP 章节。
 
 **Q：`findings.md` / `progress.md` / `task_plan.md` 是什么？**
-A：历史工作底稿（同时 `packages/server-nodejs/` 下也有一份），非产品文档，可忽略。
+A：历史工作底稿，根目录下已清理；`packages/server-nodejs/` 下如仍有一份同样可忽略。`handoff/` 为 Agent 会话交接底稿。
 
 **Q：改服务端后管理面板没更新？**
 A：管理面板是独立的 Vue 工程（`packages/server-nodejs/admin-vue/`），`npm run build` 会先执行 `build:admin` 再拷贝到 `dist/admin`；单独改 TS 不会重建面板。

@@ -7,18 +7,18 @@
 | 子系统 | 职责 |
 |--------|------|
 | `plugin_manager.dart` / `plugin_base.dart` / `builtin_plugins.dart` | 插件注册、生命周期、访问追踪 |
-| `storage/` / `storage_service.dart` | 跨平台文件存储抽象（IO / Web IndexedDB） |
+| `storage/` / `storage_service.dart` | 跨平台文件存储抽象（IO / Web IndexedDB）+ HTTP 远程存储后端（`http_storage.dart`） |
 | `config_manager.dart` | 应用级与插件级配置 |
 | `event/` | 全局事件总线，插件间通信 |
 | `js_bridge/` | JavaScript 引擎（flutter_js）与双向通信 |
 | `floating_ball/` | 悬浮球组件与动作管理 |
 | `action/` | 自定义动作与快捷操作 |
-| `api_forwarding/` | 与 api_forwarding_server 配对的转发客户端 |
 | `app_widgets/` / `services/plugin_widget_sync_helper.dart` | 桌面小组件宿主与数据同步 |
+| `services/sync/` | 23 个插件域的双向同步器（*_syncer.dart） |
 | `services/` | FCM、日志、剪贴板、快捷方式、统一计时器等服务 |
 | `routing/` / `route/` | 路由历史与插件路由处理 |
 
-## 功能插件（`lib/plugins/`，25 个内置插件）
+## 功能插件（`lib/plugins/`，26 个内置插件）
 
 | 插件 | 职责 | 旧版文档 |
 |------|------|----------|
@@ -47,14 +47,16 @@
 | tracker | 目标追踪：量化目标、数据记录 | [查看](../lib/plugins/tracker/CLAUDE.md) |
 | tts | 文本转语音：系统 TTS + HTTP API | [查看](../lib/plugins/tts/CLAUDE.md) |
 | webview | WebView：浏览器、应用商店 | [查看](../lib/plugins/webview/CLAUDE.md) |
+| live2d | Live2D 看板娘桌宠：气泡对话（经 agent_chat/openai）、TTS 自动朗读、在线模型仓库 | 无独立文档（见 [lib/plugins/CLAUDE.md](../lib/plugins/CLAUDE.md)） |
 
 ## 服务端与子包（`packages/`，详见 [packages/CLAUDE.md](../packages/CLAUDE.md)）
 
 | 模块 | 职责 |
 |------|------|
 | `packages/server-nodejs` | 同步服务器：Express + TS，JWT/API Key 认证、端到端加密、文件同步、WebSocket 实时同步、19 插件 REST API、服务端插件系统、Vue3 管理面板 |
-| `packages/server-nodejs/src/mcp/` | 内置 MCP 端点（/mcp，Streamable HTTP）：向 AI 工具暴露 12 个插件域、60+ 工具 |
-| `packages/api_forwarding_server` | WebSocket 转发服务器：Web 前端 ↔ Flutter 客户端配对通信（端口 8654） |
+| `packages/server-nodejs/src/mcp/` | 内置 MCP 端点（/mcp，Streamable HTTP）：向 AI 工具暴露 12 个插件域、75 个工具 |
+| `packages/agentlib` | 本地 Dart 包：OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient），被 openai 插件等使用 |
+| `packages/super_cupertino_navigation_bar` | 本地 Dart 包：iOS 风格大标题导航栏 UI 库 |
 | `packages/floating_ball_plugin` | 系统级悬浮球原生插件 |
 | `packages/aboutme_foreground_service` | 前台服务（封装 flutter_foreground_task） |
 | `packages/aboutme_notifications` | 通知管理（封装 awesome_notifications） |
@@ -68,7 +70,8 @@
 |------|------|
 | `shared_models/` | 客户端/服务端共享 Dart 模型：Repository 接口、UseCase、同步协议、工具类 |
 | `online/` | WebView 小程序仓库（4 应用 + preload 工具注册）、在线脚本、AI Agent 配置（[文档](../online/CLAUDE.md)） |
-| `docs/` | 71 篇专题文档：小组件、快捷方式、统一计时器、Live Activities、各原生插件实现等 |
+| `docs/` | 67 篇专题文档：小组件、快捷方式、统一计时器、Live Activities、各原生插件实现等 |
+| `handoff/` | Agent 会话交接底稿（设计系统迁移、Live2D 迭代、agentlib/store 跟进） |
 | `scripts/` | 多平台构建与发布脚本（有自己的 [scripts/CLAUDE.md](../scripts/CLAUDE.md)） |
 | `tool_templates/` | 插件工具模板（bill / calendar_album / store） |
 | `android/ ios/ macos/ linux/ windows/ web/` | 各平台宿主工程 |

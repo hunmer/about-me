@@ -1,5 +1,6 @@
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 import { existsSync } from 'node:fs'
@@ -31,7 +32,7 @@ export default defineConfig(({ command }) => {
 
   return {
     base: '/admin/',
-    plugins: [vue(),
+    plugins: [vue(), tailwindcss(),
     // 只在开发环境启用 Vue DevTools
     ...(isProduction ? [] : [vueDevTools({
       launchEditor: getEditor()

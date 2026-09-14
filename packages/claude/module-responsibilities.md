@@ -7,8 +7,16 @@
 | 子包 | 核心能力 |
 |------|-----------|
 | `server-nodejs/` | 用户注册/登录（JWT）与 API Key；文件 push/pull/list/delete（AES-256-GCM 端到端加密）；19 个插件域 REST API（工厂 + handler 模式）；服务端插件系统（ZIP/商店安装、启停、before/after 钩子）；WebSocket 实时同步（chokidar 文件监听）；FCM 推送；ZIP 数据导出；Vue3 + Naive UI 管理面板 |
-| `mcp-aboutme-server/` | MCP stdio 服务器；`aboutme_{plugin}_{action}` 工具集（chat/notes/activity/goods/bill/todo/diary/checkin/calendar/contact/tracker/day，60+ 工具）；AboutmeClient 经 API Key + 加密调用 server |
-| `api_forwarding_server/` | 配对密钥匹配（前端 ↔ 客户端）；请求/响应双向转发；心跳检测；会话管理（session.ts） |
+| `server-nodejs/src/mcp/` | 内置 MCP 端点（/mcp，Streamable HTTP）；`aboutme_{plugin}_{action}` 工具集（chat/notes/activity/goods/bill/todo/diary/checkin/calendar/contact/tracker/day，75 工具）；`client.ts` 的 AboutmeClient 进程内直调插件处理器 |
+
+> 已删除：`mcp-aboutme-server/`（独立 stdio MCP）、`api_forwarding_server/`（WebSocket 配对转发）。
+
+## 本地 Dart 库（2 个）
+
+| 子包 | 职责 | 客户端消费点 |
+|------|------|--------------|
+| `agentlib/` | OpenAI 兼容 HTTP/SSE 传输门面：`AgentLibClient`、`agent_slots`、`chat_models`、`openai_compat` | `lib/plugins/openai`（AI Agent 请求） |
+| `super_cupertino_navigation_bar/` | iOS 风格大标题导航栏组件库 | `lib/widgets/super_cupertino_navigation_wrapper/`、bill 统计屏等 |
 
 ## Flutter 原生插件（6 个）
 

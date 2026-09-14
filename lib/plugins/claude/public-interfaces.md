@@ -7,7 +7,7 @@
 两套机制汇合于 `lib/screens/route.dart`：
 
 1. **声明式路由** `lib/screens/routing/routes/*_routes.dart`（RouteRegistry 列表 + AppRoutes 静态路径常量），覆盖 activity/habits/notes/store/bill/todo/calendar_album/webview/tracker/calendar/contact/diary 等。
-2. **通用主页路由** `plugin_common_routes.dart`：`/activity /checkin /tts /nodes /openai /scripts_center /timer /timer_details /contact /database /day /goods /common_widget_selector`。
+2. **通用主页路由** `plugin_common_routes.dart`：`/activity /checkin /tts /nodes /openai /scripts_center /timer /timer_details /contact /database /day /goods /common_widget_selector /live2d`。
 3. **命令式深链** `PluginRouteHandler`（仅 5 个）：checkin（`/checkin_item_selector`、`/checkin_item`）、todo（`/todo_task_detail?taskId=`、`/todo_list_selector`、`/todo_list`）、goods（`/goods/warehouse_detail`、`/goods/item_detail`、`/goods/usage`）、habits（`/habit/timer?habitId=&action=start_timer|show_dialog`）、tracker（`/tracker`、`/tracker/progress`）——主要承接桌面小组件与 NFC 扫描跳转。
 4. 其余插件统一经 `/plugin/<id>` 由 PluginManager 打开。
 
@@ -29,6 +29,7 @@
 | diary | `/diary`、`/diary_detail`、`/diary/editor` |
 | timer | `/timer`、`/timer_details` |
 | chat / agent_chat / openai / database / nodes / day / tts / scripts_center / checkin | 见上文通用路由与 `/plugin/<id>` |
+| live2d | `/live2d`（设置页，注册于 plugin_common_routes） |
 | nfc / reminder | 无路由 |
 
 ## JS API（JSBridgeManager 命名空间）
@@ -37,7 +38,7 @@
 - 规模示例：timer 13 个（含 startTimer/pauseTimer/stopTimer/resetTimer/getTimerStatus/getHistory）；todo 16 个（含 getTodayTasks/getOverdueTasks/completeTask）；database 15+（`_jsQuery/_jsGetCount/_jsFindRecordBy` 等结构化查询）。
 - openai：`getAgents`、`getAgent`、`sendMessage`（流式收集，最多 10 次重试）、`getProviders`、`testProvider`。
 - **chat**：part 文件 `chat_js_api.dart` 有完整实现（getChannels/createChannel/sendMessage/getMessagesByDate/...），但主类 `defineJSAPI()` 当前返回空 map——**未实际注册**，属迁移中间态。
-- 无 JS API 的插件：agent_chat、scripts_center、reminder、nfc（scripts_center 本身是脚本的执行方）。
+- 无 JS API 的插件：agent_chat、scripts_center、reminder、nfc、live2d（scripts_center 本身是脚本的执行方）。
 - 详细 API 文档：多个插件目录内有 `JS_API.md` / `JS_API_DOC.md`（notes、store、todo、timer、tracker）。
 
 ## 数据选择器（PluginDataSelectorService）

@@ -1,278 +1,237 @@
 <script setup lang="ts">
-import { h, ref, computed, onMounted } from 'vue'
-import {
-  NCard,
-  NButton,
-  NEmpty,
-  NTree,
-  NIcon,
-  NSpace,
-  NPopconfirm,
-  type TreeOption,
-  useMessage
-} from 'naive-ui'
-import {
-  FolderOutline,
-  FolderOpenOutline,
-  DocumentOutline
-} from '@vicons/ionicons5'
+import { ref, computed, onMounted, provide } from 'vue'
 import JSZip from 'jszip'
 import { useFilesStore } from '@/stores/files'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
+import { useMessage } from '@/composables/useMessage'
+import { useDialog } from '@/composables/useDialog'
 import { syncApi } from '@/api'
 import { formatSize, formatTime } from '@/utils/format'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import FileTreeNode from './FileTreeNode.vue'
+import type { FileNode } from './types'
 
 const filesStore = useFilesStore()
 const authStore = useAuthStore()
 const uiStore = useUIStore()
 const message = useMessage()
+const dialog = useDialog()
 
-// 选中的键（用于文件操作）
-const checkedKeys = ref<string[]>([])
+// 树形数据
+const treeData = ref<FileNode[]>([])
+const expandedPaths = ref<Set<string>>(new Set())
+const checkedFiles = ref<Set<string>>(new Set())
+const searchQuery = ref('')
+const refreshing = ref(false)
 
-// 展开的键
-const expandedKeysRef = ref<string[]>([])
+// 路径 → 节点索引
+const nodeMap = new Map<string, FileNode>()
 
-// 树形数据（响应式）
-const treeDataRef = ref<TreeOption[]>([])
-
-// 已加载的目录缓存
-const loadedDirectories = new Set<string>()
-
-// 从节点中递归提取所有文件路径
-function extractAllFilePaths(nodes: TreeOption[]): string[] {
-  const filePaths: string[] = []
+function indexNodes(nodes: FileNode[]): void {
   for (const node of nodes) {
-    const nodeWithType = node as TreeOption & { isFolder?: boolean }
-    if (nodeWithType.isFolder) {
-      if (node.children) {
-        filePaths.push(...extractAllFilePaths(node.children))
-      }
-    } else {
-      filePaths.push(node.key as string)
-    }
+    nodeMap.set(node.path, node)
+    if (node.children) indexNodes(node.children)
   }
-  return filePaths
 }
 
-// 递归加载目录下的所有文件
-async function loadAllFilesRecursively(dirPath: string): Promise<string[]> {
-  const filePaths: string[] = []
-
-  async function loadDir(path: string): Promise<void> {
-    try {
-      const response = await syncApi.getFiles(path)
-      const files = response.files || []
-
-      for (const file of files) {
-        if (file.is_folder) {
-          await loadDir(file.path)
-        } else {
-          filePaths.push(file.path)
-        }
-      }
-    } catch (err) {
-      console.error(`Failed to load directory ${path}:`, err)
-    }
-  }
-
-  await loadDir(dirPath)
-  return filePaths
-}
-
-// 计算选中的文件（包含文件夹内的所有文件）
-const selectedFiles = computed(() => {
-  const filePaths: string[] = []
-
-  for (const key of checkedKeys.value) {
-    const findNode = (nodes: TreeOption[], targetKey: string): TreeOption | null => {
-      for (const node of nodes) {
-        if (node.key === targetKey) return node
-        if (node.children) {
-          const found = findNode(node.children, targetKey)
-          if (found) return found
-        }
-      }
-      return null
-    }
-    const node = findNode(treeDataRef.value, key)
-    if (!node) continue
-
-    const nodeWithType = node as TreeOption & { isFolder?: boolean }
-    if (nodeWithType.isFolder) {
-      // 文件夹：提取已加载的子文件
-      if (node.children) {
-        filePaths.push(...extractAllFilePaths(node.children))
-      }
-    } else {
-      filePaths.push(key)
-    }
-  }
-
-  return filePaths
-})
-
-const hasSelectedFiles = computed(() => selectedFiles.value.length > 0)
-
-// 将 API 返回的文件数据转换为 TreeOption
-function convertFileToTreeOption(file: {
+// 将 API 返回数据转换为节点
+function convertFile(file: {
   path: string
   size?: number | null
   updated_at?: string
   is_folder?: boolean
   is_binary?: boolean
-}): TreeOption {
+}): FileNode {
   const parts = file.path.split('/').filter(p => p)
-  const name = parts[parts.length - 1] || file.path
-  const isFolder = file.is_folder ?? false
-
-  const option: TreeOption = {
-    key: file.path,
-    label: name,
-    // 使用 prefix 显示图标
-    prefix: () => h(NIcon, { size: 18 }, {
-      default: () => h(isFolder ? FolderOutline : DocumentOutline)
-    }),
-    // 自定义属性
-    isFolder,
-    isBinary: file.is_binary ?? false,
+  return {
+    path: file.path,
+    name: parts[parts.length - 1] || file.path,
+    isFolder: file.is_folder ?? false,
     size: file.size ?? undefined,
-    updatedAt: file.updated_at
+    updatedAt: file.updated_at,
+    isBinary: file.is_binary ?? false,
+    children: file.is_folder ? [] : undefined,
+    childrenLoaded: false
   }
-
-  // 文件夹设置为非叶子节点，支持异步加载
-  if (isFolder) {
-    option.isLeaf = false
-  }
-
-  return option
 }
 
-// 加载根目录文件
+// 加载根目录（仅顶层）
 async function loadRootFiles(): Promise<void> {
   try {
     const response = await syncApi.getFiles()
     const files = response.files || []
-
-    // 只保留顶层文件/文件夹（路径中不含 / 的）
     const rootFiles = files.filter(f => {
       const parts = f.path.split('/').filter(p => p)
       return parts.length === 1
     })
-
-    treeDataRef.value = rootFiles.map(convertFileToTreeOption)
-
-    // 标记根目录已加载
-    loadedDirectories.add('')
+    treeData.value = rootFiles.map(convertFile)
+    indexNodes(treeData.value)
   } catch (err) {
     console.error('Failed to load root files:', err)
   }
 }
 
-// 异步加载子节点
-async function handleLoad(node: TreeOption): Promise<void> {
-  const path = node.key as string
-
-  // 如果已经加载过，直接返回
-  if (loadedDirectories.has(path)) {
-    return
-  }
-
+// 加载目录子节点
+async function loadChildren(node: FileNode): Promise<void> {
+  if (node.childrenLoaded) return
   try {
-    const response = await syncApi.getFiles(path)
+    const response = await syncApi.getFiles(node.path)
     const files = response.files || []
-
-    // 转换为 TreeOption
-    node.children = files.map(convertFileToTreeOption)
-
-    // 标记已加载
-    loadedDirectories.add(path)
+    node.children = files.map(convertFile)
+    node.childrenLoaded = true
+    indexNodes(node.children)
   } catch (err) {
     console.error('Failed to load children:', err)
     node.children = []
+    node.childrenLoaded = true
   }
 }
 
-// 更新展开状态时切换文件夹图标
-function handleUpdateExpandedKeys(
-  keys: Array<string | number>,
-  _option: Array<TreeOption | null>,
-  meta: {
-    node: TreeOption | null
-    action: 'expand' | 'collapse' | 'filter'
-  }
-) {
-  expandedKeysRef.value = keys as string[]
+// 展开 / 收起（搜索过滤产生节点副本，操作需回溯到原始节点）
+function resolveOriginal(node: FileNode): FileNode {
+  return nodeMap.get(node.path) ?? node
+}
 
-  // 切换文件夹图标
-  if (!meta.node) return
-  const node = meta.node as TreeOption & { isFolder?: boolean }
+async function toggleExpand(inputNode: FileNode): Promise<void> {
+  const node = resolveOriginal(inputNode)
   if (!node.isFolder) return
-
-  switch (meta.action) {
-    case 'expand':
-      node.prefix = () => h(NIcon, { size: 18 }, {
-        default: () => h(FolderOpenOutline)
-      })
-      break
-    case 'collapse':
-      node.prefix = () => h(NIcon, { size: 18 }, {
-        default: () => h(FolderOutline)
-      })
-      break
+  if (expandedPaths.value.has(node.path)) {
+    expandedPaths.value.delete(node.path)
+    expandedPaths.value = new Set(expandedPaths.value)
+  } else {
+    await loadChildren(node)
+    expandedPaths.value.add(node.path)
+    expandedPaths.value = new Set(expandedPaths.value)
   }
 }
 
-// 渲染后缀（操作按钮）
-function renderSuffix({ option }: { option: TreeOption }) {
-  const node = option as TreeOption & { isFolder?: boolean; size?: number; updatedAt?: string }
-
-  if (node.isFolder) {
-    return h('span', { class: 'tree-info' }, `${option.children?.length || 0} 项`)
+// 递归加载目录下所有节点（勾选文件夹时使用）
+async function loadAllRecursively(node: FileNode): Promise<void> {
+  await loadChildren(node)
+  for (const child of node.children || []) {
+    if (child.isFolder) await loadAllRecursively(child)
   }
-
-  return h(NSpace, { size: 8, align: 'center' }, {
-    default: () => [
-      h('span', { class: 'tree-info' }, formatSize(node.size)),
-      h('span', { class: 'tree-info' }, formatTime(node.updatedAt)),
-      h(NSpace, { size: 4 }, {
-        default: () => [
-          h(NButton, {
-            size: 'tiny',
-            onClick: (e: Event) => {
-              e.stopPropagation()
-              handleDownload(node.key as string)
-            }
-          }, { default: () => '下载' }),
-          h(NPopconfirm, {
-            onPositiveClick: () => handleDelete(node.key as string)
-          }, {
-            default: () => `确定要删除 ${node.key} 吗？此操作不可恢复。`,
-            trigger: () => h(NButton, {
-              size: 'tiny',
-              type: 'error',
-              onClick: (e: Event) => e.stopPropagation()
-            }, { default: () => '删除' })
-          })
-        ]
-      })
-    ]
-  })
 }
 
+function collectFilePaths(node: FileNode): string[] {
+  if (!node.isFolder) return [node.path]
+  const result: string[] = []
+  for (const child of node.children || []) {
+    result.push(...collectFilePaths(child))
+  }
+  return result
+}
+
+// 勾选文件
+function toggleFileCheck(node: FileNode): void {
+  const next = new Set(checkedFiles.value)
+  if (next.has(node.path)) next.delete(node.path)
+  else next.add(node.path)
+  checkedFiles.value = next
+}
+
+// 勾选文件夹（递归加载全部子文件）
+async function toggleFolderCheck(inputNode: FileNode): Promise<void> {
+  const node = resolveOriginal(inputNode)
+  await loadAllRecursively(node)
+  const paths = collectFilePaths(node)
+  const allChecked = paths.length > 0 && paths.every(p => checkedFiles.value.has(p))
+  const next = new Set(checkedFiles.value)
+  for (const p of paths) {
+    if (allChecked) next.delete(p)
+    else next.add(p)
+  }
+  checkedFiles.value = next
+}
+
+// 全选 / 取消全选（仅已加载节点）
+async function toggleAll(): Promise<void> {
+  const paths: string[] = []
+  const walk = async (nodes: FileNode[]): Promise<void> => {
+    for (const node of nodes) {
+      if (node.isFolder) {
+        await loadChildren(node)
+        await walk(node.children || [])
+      } else {
+        paths.push(node.path)
+      }
+    }
+  }
+  await walk(treeData.value)
+
+  if (checkedFiles.value.size >= paths.length && paths.every(p => checkedFiles.value.has(p))) {
+    checkedFiles.value = new Set()
+  } else {
+    checkedFiles.value = new Set(paths)
+  }
+}
+
+const someChecked = computed(() => checkedFiles.value.size > 0)
+const allChecked = computed(() => {
+  if (checkedFiles.value.size === 0) return false
+  let total = 0
+  const walk = (nodes: FileNode[]): void => {
+    for (const node of nodes) {
+      if (node.isFolder) walk(node.children || [])
+      else total++
+    }
+  }
+  walk(treeData.value)
+  return total > 0 && checkedFiles.value.size >= total
+})
+
+const selectedFilePaths = computed(() => [...checkedFiles.value])
+const selectedBytes = computed(() =>
+  selectedFilePaths.value.reduce((sum, p) => sum + (nodeMap.get(p)?.size ?? 0), 0)
+)
+
+// 短格式占用大小（环形仪表内展示）
+const shortTotalSize = computed(() => formatSize(filesStore.stats.totalSize))
+
+// 已加载的目录数
+const loadedFolderCount = computed(() => {
+  let count = 0
+  for (const node of nodeMap.values()) {
+    if (node.isFolder) count++
+  }
+  return count
+})
+
+// 搜索过滤：名称匹配或后代匹配
+function nodeMatches(node: FileNode, query: string): boolean {
+  if (!query) return true
+  if (node.name.toLowerCase().includes(query)) return true
+  return (node.children || []).some(c => nodeMatches(c, query))
+}
+
+const visibleTree = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return treeData.value
+  const filter = (nodes: FileNode[]): FileNode[] =>
+    nodes
+      .filter(n => nodeMatches(n, q))
+      .map(n => ({ ...n, children: n.children ? filter(n.children) : undefined }))
+  return filter(treeData.value)
+})
+
+// 刷新
 async function handleRefresh(): Promise<void> {
+  refreshing.value = true
   uiStore.setLoading(true, '刷新文件列表...')
   try {
-    // 清空缓存
-    loadedDirectories.clear()
-    expandedKeysRef.value = []
+    nodeMap.clear()
+    expandedPaths.value = new Set()
+    checkedFiles.value = new Set()
     await loadRootFiles()
+    await filesStore.loadFiles()
     message.success('文件列表已刷新')
   } catch (err) {
     message.error(err instanceof Error ? err.message : '刷新失败')
   } finally {
     uiStore.setLoading(false)
+    refreshing.value = false
   }
 }
 
@@ -289,9 +248,10 @@ function isBinaryFile(filePath: string): boolean {
   return binaryExtensions.includes(ext)
 }
 
-async function handleDownload(filePath: string): Promise<void> {
+// 单文件下载（解密）
+async function downloadFile(filePath: string): Promise<void> {
   if (!authStore.encryptionKey) {
-    message.error('请先设置加密密钥')
+    message.error('请先在设置页配置加密密钥')
     return
   }
 
@@ -300,7 +260,6 @@ async function handleDownload(filePath: string): Promise<void> {
     const fileName = filePath.split('/').pop() || 'file'
 
     if (isBinaryFile(filePath)) {
-      // 二进制文件：直接下载 Blob
       const blob = await syncApi.downloadDecryptedBinary(filePath, authStore.encryptionKey)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -309,7 +268,6 @@ async function handleDownload(filePath: string): Promise<void> {
       a.click()
       URL.revokeObjectURL(url)
     } else {
-      // 文本文件：下载 JSON
       const result = await syncApi.downloadDecrypted(filePath, authStore.encryptionKey)
       const blob = new Blob([JSON.stringify((result as { data: unknown }).data, null, 2)], {
         type: 'application/json'
@@ -331,82 +289,61 @@ async function handleDownload(filePath: string): Promise<void> {
   }
 }
 
-async function handleDelete(filePath: string): Promise<void> {
-  uiStore.setLoading(true, '删除文件...')
-  try {
-    await filesStore.deleteFile(filePath)
-    await handleRefresh()
-    message.success('文件已删除')
-    uiStore.addActivity('delete', `删除了文件 ${filePath}`)
-  } catch (err) {
-    message.error(err instanceof Error ? err.message : '删除失败')
-  } finally {
-    uiStore.setLoading(false)
-  }
+function handleDownload(node: FileNode): void {
+  void downloadFile(node.path)
 }
 
-// 处理选中更新 - 选中文件夹时递归加载子文件
-async function handleUpdateCheckedKeys(
-  keys: Array<string | number>,
-  _options: Array<TreeOption | null>,
-  meta: { action: 'check' | 'uncheck'; node: TreeOption | null }
-): Promise<void> {
-  const newKeys = keys as string[]
-
-  // 检测新选中的文件夹
-  if (meta.action === 'check' && meta.node) {
-    const node = meta.node as TreeOption & { isFolder?: boolean }
-    if (node.isFolder) {
-      // 递归加载该文件夹下的所有文件
-      const filePaths = await loadAllFilesRecursively(node.key as string)
-
-      // 将文件路径添加到选中列表（去重）
-      const existingKeys = new Set(newKeys)
-      for (const path of filePaths) {
-        if (!existingKeys.has(path)) {
-          newKeys.push(path)
-        }
+// 删除确认
+function handleDelete(node: FileNode): void {
+  dialog.warning({
+    title: '确认删除文件',
+    content: `确定要永久删除 ${node.path} 吗？此操作不可恢复。`,
+    type: 'error',
+    positiveText: '确认永久删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      uiStore.setLoading(true, '删除文件...')
+      try {
+        await filesStore.deleteFile(node.path)
+        await handleRefresh()
+        message.success('文件已删除')
+        uiStore.addActivity('delete', `删除了文件 ${node.path}`)
+      } catch (err) {
+        message.error(err instanceof Error ? err.message : '删除失败')
+      } finally {
+        uiStore.setLoading(false)
       }
     }
-  }
-
-  checkedKeys.value = newKeys
+  })
 }
 
-// 批量下载选中的文件（打包成 ZIP）
-async function handleBatchDownload(): Promise<void> {
+// 批量下载（ZIP 打包）
+async function batchDownload(paths: string[]): Promise<void> {
   if (!authStore.encryptionKey) {
-    message.error('请先设置加密密钥')
+    message.error('请先在设置页配置加密密钥')
     return
   }
-
-  if (selectedFiles.value.length === 0) {
+  if (paths.length === 0) {
     message.warning('请先选择要下载的文件')
     return
   }
-
-  const files = selectedFiles.value
-
-  // 单个文件直接下载
-  if (files.length === 1) {
-    await handleDownload(files[0])
+  if (paths.length === 1) {
+    await downloadFile(paths[0])
     return
   }
 
-  uiStore.setLoading(true, `正在下载 ${files.length} 个文件并打包...`)
+  uiStore.setLoading(true, `正在下载 ${paths.length} 个文件并打包...`)
 
   const zip = new JSZip()
   let successCount = 0
   let failCount = 0
 
-  for (const filePath of files) {
+  for (const filePath of paths) {
     try {
       if (isBinaryFile(filePath)) {
-        // 二进制文件：直接使用 Blob
         const blob = await syncApi.downloadDecryptedBinary(filePath, authStore.encryptionKey)
         zip.file(filePath, blob)
       } else {
-        // 文本文件：使用 JSON 格式
         const result = await syncApi.downloadDecrypted(filePath, authStore.encryptionKey)
         const content = JSON.stringify((result as { data: unknown }).data, null, 2)
         zip.file(filePath, content)
@@ -424,7 +361,6 @@ async function handleBatchDownload(): Promise<void> {
   }
 
   try {
-    // 生成 ZIP 文件
     const zipBlob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(zipBlob)
     const a = document.createElement('a')
@@ -434,143 +370,289 @@ async function handleBatchDownload(): Promise<void> {
     a.click()
     URL.revokeObjectURL(url)
 
-    uiStore.setLoading(false)
-
     if (failCount === 0) {
       message.success(`成功下载 ${successCount} 个文件（已打包）`)
     } else {
       message.warning(`下载完成：${successCount} 个成功，${failCount} 个失败（已打包）`)
     }
     uiStore.addActivity('download', `批量下载了 ${successCount} 个文件`)
-  } catch (err) {
-    uiStore.setLoading(false)
+  } catch {
     message.error('打包失败')
+  } finally {
+    uiStore.setLoading(false)
+    checkedFiles.value = new Set()
   }
-
-  checkedKeys.value = []
 }
 
-// 批量删除选中的文件
-async function handleBatchDelete(): Promise<void> {
-  if (selectedFiles.value.length === 0) {
-    message.warning('请先选择要删除的文件')
+// 文件夹快速导出
+async function handleExportFolder(inputNode: FileNode): Promise<void> {
+  const node = resolveOriginal(inputNode)
+  uiStore.setLoading(true, '递归加载目录...')
+  await loadAllRecursively(node)
+  const paths = collectFilePaths(node)
+  if (paths.length === 0) {
+    uiStore.setLoading(false)
+    message.warning('该目录下没有文件')
     return
   }
-
-  uiStore.setLoading(true, `正在删除 ${selectedFiles.value.length} 个文件...`)
-
-  let successCount = 0
-  let failCount = 0
-
-  for (const filePath of selectedFiles.value) {
-    try {
-      await filesStore.deleteFile(filePath)
-      successCount++
-    } catch {
-      failCount++
-    }
-  }
-
-  uiStore.setLoading(false)
-
-  if (successCount > 0 && failCount === 0) {
-    message.success(`成功删除 ${successCount} 个文件`)
-  } else if (successCount > 0 && failCount > 0) {
-    message.warning(`删除完成：${successCount} 个成功，${failCount} 个失败`)
-  } else {
-    message.error('所有文件删除失败')
-  }
-
-  checkedKeys.value = []
-  await handleRefresh()
+  await batchDownload(paths)
 }
 
-// 初始加载
+// 批量删除
+function handleBatchDelete(): void {
+  const count = selectedFilePaths.value.length
+  dialog.warning({
+    title: '批量删除确认',
+    content: `警告：您正在批量清除选定的 ${count} 个文件 (共 ${formatSize(selectedBytes.value)})，所有操作不可恢复。`,
+    type: 'error',
+    positiveText: `全部永久删除 (${count})`,
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      uiStore.setLoading(true, `正在删除 ${count} 个文件...`)
+      let successCount = 0
+      let failCount = 0
+
+      for (const filePath of selectedFilePaths.value) {
+        try {
+          await filesStore.deleteFile(filePath)
+          successCount++
+        } catch {
+          failCount++
+        }
+      }
+
+      uiStore.setLoading(false)
+
+      if (successCount > 0 && failCount === 0) {
+        message.success(`成功删除 ${successCount} 个文件`)
+      } else if (successCount > 0 && failCount > 0) {
+        message.warning(`删除完成：${successCount} 个成功，${failCount} 个失败`)
+      } else {
+        message.error('所有文件删除失败')
+      }
+
+      checkedFiles.value = new Set()
+      await handleRefresh()
+    }
+  })
+}
+
+function clearSelection(): void {
+  checkedFiles.value = new Set()
+}
+
+// 注入上下文给递归树节点
+provide('fileTreeCtx', {
+  expandedPaths,
+  checkedFiles,
+  nodeMap,
+  toggleExpand,
+  toggleFolderCheck,
+  toggleFileCheck,
+  onDownload: handleDownload,
+  onDelete: handleDelete,
+  onExportFolder: handleExportFolder,
+  onToggleAll: toggleAll,
+  allChecked,
+  someChecked,
+  formatSize,
+  formatTime
+})
+
 onMounted(() => {
   loadRootFiles()
 })
 </script>
 
 <template>
-  <NCard title="文件管理">
-    <template #header-extra>
-      <NButton size="small" @click="handleRefresh">
-        刷新
-      </NButton>
-    </template>
-
-    <!-- 批量操作栏 -->
-    <div class="batch-actions">
-      <span class="selection-info">
-        {{ hasSelectedFiles ? `已选择 ${selectedFiles.length} 个文件` : '选择文件进行批量操作' }}
-      </span>
-      <NSpace>
-        <NButton
-          size="small"
-          :disabled="!hasSelectedFiles"
-          @click="handleBatchDownload"
-        >
-          下载选中
-        </NButton>
-        <NPopconfirm
-          :disabled="!hasSelectedFiles"
-          @positive-click="handleBatchDelete"
-        >
-          <template #trigger>
-            <NButton
-              size="small"
-              type="error"
-              :disabled="!hasSelectedFiles"
+  <div class="flex w-full flex-col gap-6">
+    <!-- 顶部统计 & 存储概览 -->
+    <div class="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
+      <!-- 文件元数据头卡 -->
+      <div class="relative overflow-hidden rounded-xl bg-surface/80 p-6 shadow-md backdrop-blur-xl lg:col-span-8">
+        <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div class="z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-on-surface">云端加密文件仓库</h1>
+          </div>
+          <div class="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="refreshing"
+              @click="handleRefresh"
             >
-              删除选中
-            </NButton>
-          </template>
-          确定要删除选中的 {{ selectedFiles.length }} 个文件吗？此操作不可恢复。
-        </NPopconfirm>
-      </NSpace>
+              <span class="material-symbols-outlined text-base" :class="{ 'animate-spin': refreshing }">refresh</span>
+              <span>刷新文件列表</span>
+            </Button>
+            <Button variant="glass" size="sm" @click="toggleAll()">
+              <span class="material-symbols-outlined text-base">select_all</span>
+              <span>{{ allChecked ? '取消全选' : '全选文件' }}</span>
+            </Button>
+          </div>
+        </div>
+
+        <!-- 遥测条 -->
+        <div class="z-10 mt-6 grid grid-cols-3 gap-3 rounded-lg bg-surface-container-low/70 p-3">
+          <div class="flex flex-col">
+            <span class="font-mono text-[10px] uppercase text-on-surface-variant">总同步对象</span>
+            <span class="mt-0.5 font-mono text-base font-bold text-on-surface">{{ filesStore.stats.totalFiles }} 个项</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-mono text-[10px] uppercase text-on-surface-variant">占用空间</span>
+            <span class="mt-0.5 font-mono text-base text-on-surface">{{ filesStore.formattedTotalSize }}</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-mono text-[10px] uppercase text-on-surface-variant">密钥状态</span>
+            <span
+              class="mt-0.5 flex items-center gap-1 font-mono text-base"
+              :class="authStore.hasEncryptionKey ? 'text-tertiary' : 'text-error'"
+            >
+              <span class="material-symbols-outlined text-xs">verified</span>
+              <span>{{ authStore.hasEncryptionKey ? '就绪' : '未配置' }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 存储容量 widget -->
+      <div class="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface/80 p-6 shadow-md backdrop-blur-xl lg:col-span-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span class="material-symbols-outlined text-lg">pie_chart</span>
+          </div>
+          <span class="text-xs font-semibold leading-tight text-on-surface">同步存储占用</span>
+        </div>
+
+        <div class="my-4 flex items-center gap-5">
+          <!-- 环形仪表 -->
+          <div class="relative h-20 w-20 shrink-0">
+            <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
+              <path
+                class="text-surface-variant"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.5"
+              />
+              <path
+                class="text-primary"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="3.5"
+              />
+            </svg>
+            <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span class="font-mono text-xs font-bold text-on-surface">{{ shortTotalSize }}</span>
+            </div>
+          </div>
+          <div class="flex flex-1 flex-col gap-2 font-mono text-xs">
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">文件</span>
+              <span class="text-on-surface">{{ filesStore.stats.totalFiles }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">目录</span>
+              <span class="text-on-surface">{{ loadedFolderCount }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div v-if="!treeDataRef.length">
-      <NEmpty description="暂无同步文件" />
+    <!-- 搜索 & 过滤工具栏 -->
+    <div class="flex flex-col items-stretch justify-between gap-3 rounded-xl bg-surface/80 p-3 shadow-sm backdrop-blur-xl md:flex-row md:items-center">
+      <div class="flex flex-1 items-center gap-3">
+        <div class="relative max-w-md flex-1">
+          <span class="material-symbols-outlined pointer-events-none absolute left-3 top-2.5 text-lg text-on-surface-variant">search</span>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索文件名或路径..."
+            class="w-full rounded-lg bg-surface-container-low py-2 pl-9 pr-8 text-xs text-on-surface transition-all placeholder:text-on-surface-variant/60 focus:bg-surface-container focus:outline-none"
+          />
+        </div>
+      </div>
+      <div class="flex items-center gap-2 rounded-lg bg-primary-container/30 px-3 py-1.5 text-on-primary-container">
+        <span class="material-symbols-outlined text-sm text-primary">account_tree</span>
+        <span class="text-[11px] font-medium">选中目录自动递归包含其子项</span>
+        <div class="ml-1 h-1.5 w-1.5 rounded-full bg-primary" />
+      </div>
     </div>
 
-    <NTree
-      v-else
-      block-line
-      show-line
-      :data="treeDataRef"
-      :expanded-keys="expandedKeysRef"
-      :checked-keys="checkedKeys"
-      :on-load="handleLoad"
-      expand-on-click
-      checkable
-      selectable
-      :on-update:checked-keys="handleUpdateCheckedKeys"
-      :on-update:expanded-keys="handleUpdateExpandedKeys"
-      :render-suffix="renderSuffix"
-    />
-  </NCard>
+    <!-- 主文件树面板 -->
+    <div class="flex flex-col overflow-hidden rounded-xl bg-surface/80 shadow-md backdrop-blur-2xl">
+      <!-- 表头 -->
+      <div class="grid grid-cols-12 items-center gap-3 bg-surface-container-low px-6 py-3.5 font-mono text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+        <div class="flex col-span-6 items-center gap-3 md:col-span-5">
+          <Checkbox
+            :model-value="allChecked ? true : someChecked ? 'indeterminate' : false"
+            @update:model-value="toggleAll()"
+          />
+          <span>名称 / 路径</span>
+        </div>
+        <div class="col-span-3 text-right md:col-span-2">大小</div>
+        <div class="col-span-3 text-right md:col-span-3">最近同步时间</div>
+        <div class="hidden justify-end pr-2 md:flex md:col-span-2">操作选项</div>
+      </div>
+
+      <!-- 树内容 -->
+      <div class="flex flex-col">
+        <div v-if="visibleTree.length === 0" class="flex flex-col items-center gap-3 py-14 text-on-surface-variant">
+          <span class="material-symbols-outlined text-5xl opacity-30">folder_off</span>
+          <span class="font-mono text-xs">暂无同步文件 · 等待客户端推送</span>
+        </div>
+        <FileTreeNode
+          v-for="node in visibleTree"
+          :key="node.path"
+          :node="node"
+          :depth="0"
+        />
+      </div>
+    </div>
+
+    <!-- 浮动批量操作栏 -->
+    <Transition
+      enter-active-class="transition-all duration-300"
+      enter-from-class="translate-y-16 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition-all duration-300"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-16 opacity-0"
+    >
+      <aside
+        v-if="checkedFiles.size > 0"
+        aria-label="批量操作栏"
+        class="fixed bottom-8 left-1/2 z-40 flex w-auto max-w-2xl -translate-x-1/2 items-center gap-4 rounded-2xl bg-surface-container-high/90 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+      >
+        <div class="flex items-center gap-2.5 pr-2">
+          <div class="h-2.5 w-2.5 animate-pulse rounded-full bg-primary" />
+          <span class="font-mono text-xs font-bold text-on-surface">
+            已选 {{ checkedFiles.size }} 项 ({{ formatSize(selectedBytes) }})
+          </span>
+        </div>
+        <div class="h-6 w-px bg-outline-variant" />
+        <div class="flex items-center gap-2">
+          <Button size="sm" @click="batchDownload(selectedFilePaths)">
+            <span class="material-symbols-outlined text-sm">folder_zip</span>
+            <span>打包下载 (ZIP)</span>
+          </Button>
+          <Button variant="destructive" size="sm" @click="handleBatchDelete">
+            <span class="material-symbols-outlined text-sm">delete_sweep</span>
+            <span>删除 ({{ checkedFiles.size }})</span>
+          </Button>
+        </div>
+        <button
+          type="button"
+          class="ml-1 rounded-lg p-1 text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface"
+          title="清空选择"
+          @click="clearSelection"
+        >
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </aside>
+    </Transition>
+  </div>
 </template>
-
-<style scoped>
-.batch-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  background: #f9fafb;
-  border-radius: 6px;
-}
-
-.selection-info {
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.tree-info {
-  color: #6b7280;
-  font-size: 0.875rem;
-  white-space: nowrap;
-}
-</style>

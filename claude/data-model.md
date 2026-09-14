@@ -19,7 +19,8 @@
 
 ## 同步模型
 
-- 双通道：WebDAV（`webdav_client`）或自建 `server-nodejs`；实现说明见 `docs/bidirectional_sync_implementation.md`。
+- 远程通道统一为自建 `server-nodejs` 的 HTTP 存储后端（`lib/core/storage/http_storage.dart` + `storage_backend_config.dart`）；**WebDAV 通道与 `webdav_client` 依赖已移除**。
+- 各插件域同步器：`lib/core/services/sync/*_syncer.dart`（activity、agent_chat、bill、calendar、calendar_album、chat、checkin、contact、database、day、diary、goods、habits、nodes、notes、openai、plugin_widget、store、timer、todo、tracker 等 23 个）。
 - 端到端加密：客户端 `encrypt`（AES-256-GCM）↔ 服务端 `encryptionService.ts`；API Key（`mk_live_` 前缀）用于第三方/MCP 访问。
 - 实时同步：服务端 `FileWatcherService`（chokidar）监听 data 目录变更 → `WebSocketManager` 推送。
 

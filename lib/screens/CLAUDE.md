@@ -13,12 +13,23 @@
 | 模块 | 说明 | 文档 |
 |-----|------|-----|
 | home_screen | 主屏幕，插件卡片布局和小组件系统 | [查看](home_screen/CLAUDE.md) |
-| js_console | JavaScript 控制台 | [查看](js_console/CLAUDE.md) |
 | settings_screen | 设置界面 | [查看](settings_screen/CLAUDE.md) |
 
 ---
 
 ## 模块列表
+
+### 0. jelly_home (果冻小屋主页，**应用默认启动页**)
+
+**职责**: 应用默认首页（`AppRoutes.initialRoute` → `/jelly_home`），底部导航在四个页签间切换内容（不切换路由）：小屋（果冻风布局）/ 日程（日期数据视图）/ 看板（固定布局网格）/ 我的（设置）
+
+**主要文件**:
+- `jelly_home_screen.dart` - 主页入口
+- `companion_controller.dart` - Live2D 伙伴控制器（经 agent_chat/openai 请求链对话，TTS 朗读）
+- `live2d_online_models.dart` / `live2d_online_model_page.dart` - 在线 Live2D 模型浏览
+- `widgets/` - jelly_bottom_nav、jelly_companion_card、jelly_live2d、jelly_profile_card、jelly_stat_card
+
+---
 
 ### 1. home_screen (主屏幕)
 
@@ -40,21 +51,9 @@
 
 ---
 
-### 2. js_console (JavaScript 控制台)
+### 2. js_console (JavaScript 控制台，**已删除**)
 
-**职责**: JavaScript 代码执行和调试控制台
-
-**主要文件**:
-- `js_console_screen.dart` - 控制台界面
-- `controllers/js_console_controller.dart` - 控制器
-- `widgets/code_editor.dart` - 代码编辑器
-- `widgets/output_viewer.dart` - 输出查看器
-- `widgets/example_buttons.dart` - 示例按钮
-
-**功能**:
-- 代码编辑和执行
-- 输出显示
-- 示例代码快速插入
+> 该屏幕目录已从仓库移除，JS 调试能力由 `scripts_center` 插件与 JS Bridge 承担；保留此条目仅为导航历史参考。
 
 ---
 
@@ -67,21 +66,17 @@
 - `screens/data_management_screen.dart` - 数据管理界面
 - `screens/live_activities_test_screen.dart` - Live Activities 测试
 - `controllers/settings_screen_controller.dart` - 设置控制器
-- `controllers/webdav_controller.dart` - WebDAV 控制器
-- `controllers/webdav_sync_controller.dart` - 同步控制器
-- `controllers/export_controller.dart` - 导出控制器
-- `controllers/import_controller.dart` - 导入控制器
+- `controllers/base_settings_controller.dart` - 控制器基类
+- `controllers/export_controller.dart` / `import_controller.dart` - 导出/导入控制器
+- `controllers/full_backup_controller.dart` - 全量备份控制器（远程备份走 server-nodejs HTTP 存储后端，WebDAV 控制器已删除）
+- `controllers/live_activities_controller.dart` - Live Activities 控制器
 - `controllers/auto_update_controller.dart` - 自动更新控制器
 - `controllers/rebuild_controller.dart` - 重建控制器
 - `controllers/permission_controller.dart` - 权限控制器
-- `widgets/webdav_settings_section.dart` - WebDAV 设置
 - `widgets/server_sync_settings_section.dart` - 服务器同步设置
-- `widgets/folder_selection_dialog.dart` - 文件夹选择对话框
-- `widgets/plugin_selection_dialog.dart` - 插件选择对话框
+- `widgets/folder_selection_dialog.dart` / `plugin_selection_dialog.dart` - 选择对话框
 - `widgets/backup_progress_dialog.dart` - 备份进度对话框
 - `widgets/permission_request_dialog.dart` - 权限请求对话框
-- `models/webdav_config.dart` - WebDAV 配置模型
-- `models/server_sync_config.dart` - 服务器同步配置模型
 
 **详细文档**: [settings_screen/CLAUDE.md](settings_screen/CLAUDE.md)
 
@@ -185,9 +180,10 @@
 
 | 路径 | 屏幕 | 说明 |
 |-----|------|------|
-| `/` | HomeScreen | 主屏幕（默认） |
+| `/jelly_home` | JellyHomeScreen | 果冻小屋（**默认首页**，`AppRoutes.initialRoute`） |
+| `/` | HomeScreen | 插件卡片主屏幕 |
+| `/live2d` | Live2DSettingsScreen | Live2D 设置 |
 | `/settings` | SettingsScreen | 设置界面 |
-| `/js_console` | JSConsoleScreen | JavaScript 控制台 |
 | `/widgets_gallery` | WidgetsGalleryScreen | 组件展示 |
 | `/floating_ball` | FloatingBallScreen | 悬浮球设置 |
 | `/about` | AboutScreen | 关于界面 |
