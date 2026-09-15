@@ -9,7 +9,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/circle_icon_picker_examp
 import 'package:aboutme/screens/widgets_gallery/screens/calendar_strip_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/image_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/location_picker_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/backup_time_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/aboutme_editor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/data_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/enhanced_calendar_example.dart';
@@ -170,11 +169,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/location_picker',
           handler: (settings) => RouteHelpers.createRoute(const LocationPickerExample(), settings: settings),
           description: '位置选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/backup_time_picker',
-          handler: (settings) => RouteHelpers.createRoute(const BackupTimePickerExample(), settings: settings),
-          description: '备份时间选择器示例',
         ),
         RouteDefinition(
           path: '/widgets_gallery/aboutme_editor',

@@ -42,7 +42,6 @@ const Map<String, String> appTranslationsEn = {
   'app_week': 'Week',
   'app_month': 'Month',
   'app_date': 'Date',
-  'app_day': 'Day @day',
 
   // Display options
   'app_showAll': 'show All',
@@ -56,11 +55,7 @@ const Map<String, String> appTranslationsEn = {
   'app_selectLocation': 'Select location',
 
   // Backup and export
-  'app_backupOptions': 'Backup Options',
   'app_selectBackupMethod': 'Please select backup method',
-  'app_exportAppData': 'Export App Data',
-  'app_fullBackup': 'Full Backup',
-  'app_setBackupSchedule': 'Set backup schedule',
 
   // Backup progress
   'app_backupInProgress': 'Backup in progress',

@@ -1,4 +1,3 @@
-import 'package:aboutme/core/services/backup_service.dart';
 import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
@@ -87,7 +86,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _initializeAsync() async {
     await _controller.initializeControllers(context);
-    _backupService = BackupService(_controller, context);
     if (mounted) {
       setState(() {});
     }
@@ -98,8 +96,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _controller.dispose();
     super.dispose();
   }
-
-  late BackupService _backupService;
 
   // 显示定位 API Key 设置对话框
   Future<void> _showLocationApiKeyDialog() async {
@@ -228,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final bool showPermissionEntry =
         UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
-    if (!_controller.isInitialized() || _backupService == null) {
+    if (!_controller.isInitialized()) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -414,12 +410,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pushNamed(context, '/floating_ball');
               },
             ),
-          ListTile(
-            leading: const Icon(Icons.schedule),
-            title: Text('settings_screen_autoBackupTitle'.tr),
-            subtitle: Text('settings_screen_autoBackupSubtitle'.tr),
-            onTap: _backupService.showBackupScheduleDialog,
-          ),
           ListTile(
             leading: const Icon(Icons.alarm),
             title: const Text('定时提醒'),
@@ -651,15 +641,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pushNamed(context, '/live_activities_test');
               },
             ),
-          ListTile(
-            leading: const Icon(Icons.input),
-            title: const Text('表单字段组件测试'),
-            subtitle: const Text('测试 form_fields 组件库'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/form_fields_test');
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.category),
             title: const Text('通用组件示例'),

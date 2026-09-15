@@ -42,7 +42,6 @@ const Map<String, String> appTranslationsZh = {
   'app_week': '周',
   'app_month': '月',
   'app_date': '日期',
-  'app_day': '第@day天',
 
   // Display options
   'app_showAll': '显示全部',
@@ -56,11 +55,7 @@ const Map<String, String> appTranslationsZh = {
   'app_selectLocation': '选择位置',
 
   // Backup and export
-  'app_backupOptions': '备份选项',
   'app_selectBackupMethod': '请选择备份方式',
-  'app_exportAppData': '导出应用数据',
-  'app_fullBackup': '完整备份',
-  'app_setBackupSchedule': '设置备份计划',
 
   // Backup progress
   'app_backupInProgress': '正在备份',

@@ -7,7 +7,6 @@ import 'package:aboutme/screens/data_selector_test/data_selector_test_screen.dar
 import 'package:aboutme/screens/toast_test/toast_test_screen.dart';
 import 'package:aboutme/screens/test_screens/swipe_action_test_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/live_activities_test_screen.dart';
-import 'package:aboutme/screens/form_fields_test/form_fields_test_screen.dart';
 import 'package:aboutme/screens/log_screen/log_screen.dart';
 
 /// 测试页面路由注册表
@@ -99,18 +98,6 @@ class TestRoutes implements RouteRegistry {
           path: 'live_activities_test',
           handler: (settings) => RouteHelpers.createRoute(const LiveActivitiesTestScreen()),
           description: 'Live Activities 测试（别名）',
-        ),
-
-        // 表单字段测试
-        RouteDefinition(
-          path: '/form_fields_test',
-          handler: (settings) => RouteHelpers.createRoute(const FormFieldsTestScreen()),
-          description: '表单字段测试',
-        ),
-        RouteDefinition(
-          path: 'form_fields_test',
-          handler: (settings) => RouteHelpers.createRoute(const FormFieldsTestScreen()),
-          description: '表单字段测试（别名）',
         ),
 
         // 日志屏幕

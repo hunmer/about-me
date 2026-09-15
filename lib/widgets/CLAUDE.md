@@ -40,7 +40,6 @@
 - **ColorPickerSection**：颜色选择器，提供常用颜色
 - **GroupSelectorDialog**：分组选择器，支持增删改
 - **SimpleGroupSelector**：简单分组选择器，仅支持选择
-- **BackupTimePicker**：备份时间选择器，支持多种计划类型
 
 ### 2.5 表单字段库（`form_fields/`，50 文件，2026-09 新增）
 
@@ -587,40 +586,6 @@ showDialog(
 
 ---
 
-### BackupTimePicker
-
-备份时间选择器，支持多种备份计划。
-
-#### BackupScheduleType 类型
-
-```dart
-enum BackupScheduleType {
-  specificDate,  // 指定日期
-  daily,         // 每天
-  weekly,        // 每周指定日
-  monthly,       // 每月指定日
-}
-```
-
-#### 使用示例
-
-```dart
-import 'package:aboutme/widgets/backup_time_picker.dart';
-
-showDialog(
-  context: context,
-  builder: (context) => BackupTimePicker(
-    initialSchedule: _currentSchedule,
-    onScheduleSelected: (schedule) {
-      setState(() => _backupSchedule = schedule);
-      _saveSchedule(schedule);
-    },
-  ),
-);
-```
-
----
-
 ## 目录结构
 
 ```
@@ -675,7 +640,6 @@ lib/widgets/
 ├── color_picker_section.dart                   # 颜色选择器
 ├── group_selector_dialog.dart                  # 分组选择器（完整功能）
 ├── simple_group_selector.dart                  # 简单分组选择器
-├── backup_time_picker.dart                     # 备份时间选择器
 │
 └── l10n/                                       # 本地化文件
     ├── group_selector_localizations.dart

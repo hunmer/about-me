@@ -28,10 +28,6 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_floatingBallEnabled': '已启用',
   'settings_screen_floatingBallDisabled': '已禁用',
 
-  // 自动备份设置
-  'settings_screen_autoBackupTitle': '自动备份设置',
-  'settings_screen_autoBackupSubtitle': '设置自动备份计划',
-
   // 插件管理
   'settings_screen_pluginManagementTitle': '插件管理',
   'settings_screen_pluginManagementSubtitle': '控制各插件是否在启动时加载',

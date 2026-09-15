@@ -28,10 +28,6 @@ const Map<String, String> settingsScreenTranslationsJp = {
   'settings_screen_floatingBallEnabled': '有効',
   'settings_screen_floatingBallDisabled': '無効',
 
-  // Auto backup settings
-  'settings_screen_autoBackupTitle': '自動バックアップ設定',
-  'settings_screen_autoBackupSubtitle': '自動バックアップスケジュールを設定',
-
   // Plugin management
   'settings_screen_pluginManagementTitle': 'プラグイン管理',
   'settings_screen_pluginManagementSubtitle': '起動時に読み込むプラグインを選択',

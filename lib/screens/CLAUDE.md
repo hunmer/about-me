@@ -114,7 +114,6 @@
   - `calendar_strip_picker_example.dart` - 日历条选择器示例
   - `image_picker_example.dart` - 图片选择器示例
   - `location_picker_example.dart` - 位置选择器示例
-  - `backup_time_picker_example.dart` - 备份时间选择器示例
   - `aboutme_editor_example.dart` - 编辑器示例
   - `data_selector_example.dart` - 数据选择器示例
   - `enhanced_calendar_example.dart` - 增强日历示例

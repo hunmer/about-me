@@ -10,7 +10,6 @@ import 'export_controller.dart';
 import 'import_controller.dart';
 import 'full_backup_controller.dart';
 import 'auto_update_controller.dart';
-import 'package:aboutme/widgets/backup_time_picker.dart';
 
 class SettingsScreenController extends ChangeNotifier {
   final BaseSettingsController _baseController;
@@ -19,8 +18,6 @@ class SettingsScreenController extends ChangeNotifier {
   late FullBackupController _fullBackupController;
   late AutoUpdateController _autoUpdateController;
   late SharedPreferences _prefs;
-  BackupSchedule? _backupSchedule;
-  DateTime? _lastBackupCheckDate;
   BuildContext? _context;
   bool _initialized = false;
   final Map<String, bool> _pluginEnabledStates = {};
@@ -43,60 +40,12 @@ class SettingsScreenController extends ChangeNotifier {
 
   Future<void> initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
-    await _loadBackupSchedule();
-    await _loadLastBackupCheckDate();
     enableLogging = _prefs.getBool('enable_logging') ?? false;
     _locationApiKey = _prefs.getString('location_api_key') ?? 'dad6a772bf826842c3049e9c7198115c';
 
     // 加载剪切板自动读取配置（默认关闭）
     _clipboardAutoRead = _prefs.getBool('clipboard_auto_read') ?? false;
     ClipboardService.instance.autoReadEnabled = _clipboardAutoRead;
-  }
-
-  Future<void> _loadBackupSchedule() async {
-    final type = _prefs.getInt('backup_schedule_type');
-    if (type != null) {
-      _backupSchedule = BackupSchedule(
-        type: BackupScheduleType.values[type],
-        date:
-            _prefs.getString('backup_date') != null
-                ? DateTime.parse(_prefs.getString('backup_date')!)
-                : null,
-        time:
-            _prefs.getString('backup_time') != null
-                ? TimeOfDay(
-                  hour: int.parse(
-                    _prefs.getString('backup_time')!.split(':')[0],
-                  ),
-                  minute: int.parse(
-                    _prefs.getString('backup_time')!.split(':')[1],
-                  ),
-                )
-                : null,
-        days:
-            _prefs.getStringList('backup_days')?.map(int.parse).toList() ?? [],
-        monthDays:
-            _prefs
-                .getStringList('backup_month_days')
-                ?.map(int.parse)
-                .toList() ??
-            [],
-      );
-    } else {
-      // 设置默认备份计划 - 每天凌晨2点备份
-      _backupSchedule = BackupSchedule(
-        type: BackupScheduleType.daily,
-        time: TimeOfDay(hour: 2, minute: 0),
-      );
-      await setBackupSchedule(_backupSchedule!);
-    }
-  }
-
-  Future<void> _loadLastBackupCheckDate() async {
-    final dateStr = _prefs.getString('last_backup_check_date');
-    if (dateStr != null) {
-      _lastBackupCheckDate = DateTime.parse(dateStr);
-    }
   }
 
   void toggleTheme(context) => ThemeController.toggleTheme(context);
@@ -209,108 +158,4 @@ class SettingsScreenController extends ChangeNotifier {
       _pluginEnabledStates.putIfAbsent(pluginId, () => true);
     }
   }
-
-  // 备份相关方法
-  Future<void> setBackupSchedule(BackupSchedule schedule) async {
-    _backupSchedule = schedule;
-    await _prefs.setInt('backup_schedule_type', schedule.type.index);
-    if (schedule.date != null) {
-      await _prefs.setString('backup_date', schedule.date!.toIso8601String());
-    }
-    if (schedule.time != null) {
-      await _prefs.setString(
-        'backup_time',
-        '${schedule.time!.hour}:${schedule.time!.minute}',
-      );
-    }
-    await _prefs.setStringList(
-      'backup_days',
-      schedule.days.map((e) => e.toString()).toList(),
-    );
-    await _prefs.setStringList(
-      'backup_month_days',
-      schedule.monthDays.map((e) => e.toString()).toList(),
-    );
-
-    // 设置计划时不立即备份，只更新最后检查时间为现在
-    await resetBackupCheckDate();
-    notifyListeners();
-  }
-
-  Future<bool> shouldPerformBackup() async {
-    if (_backupSchedule == null) return false;
-    if (_lastBackupCheckDate == null) {
-      await resetBackupCheckDate(); // 首次设置时初始化检查时间
-      return false;
-    }
-
-    final now = DateTime.now();
-    final lastCheck = _lastBackupCheckDate!;
-
-    switch (_backupSchedule!.type) {
-      case BackupScheduleType.none:
-        return false;
-      case BackupScheduleType.specificDate:
-        // 只在指定日期当天检查
-        return now.year == _backupSchedule!.date!.year &&
-            now.month == _backupSchedule!.date!.month &&
-            now.day == _backupSchedule!.date!.day &&
-            now.isAfter(lastCheck);
-      case BackupScheduleType.daily:
-        // 每天检查，且时间已过设定的时间点
-        final scheduledTime =
-            _backupSchedule!.time ?? TimeOfDay(hour: 0, minute: 0);
-        final scheduledDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          scheduledTime.hour,
-          scheduledTime.minute,
-        );
-        return now.isAfter(scheduledDateTime) &&
-            now.difference(lastCheck).inDays >= 1;
-      case BackupScheduleType.weekly:
-        // 每周指定日检查，且时间已过设定的时间点
-        final currentDay = now.weekday;
-        final scheduledTime =
-            _backupSchedule!.time ?? TimeOfDay(hour: 0, minute: 0);
-        final scheduledDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          scheduledTime.hour,
-          scheduledTime.minute,
-        );
-        return _backupSchedule!.days.contains(currentDay) &&
-            now.isAfter(scheduledDateTime) &&
-            now.difference(lastCheck).inDays >= 1;
-      case BackupScheduleType.monthly:
-        // 每月指定日检查，且时间已过设定的时间点
-        final currentDay = now.day;
-        final scheduledTime =
-            _backupSchedule!.time ?? TimeOfDay(hour: 0, minute: 0);
-        final scheduledDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          scheduledTime.hour,
-          scheduledTime.minute,
-        );
-        return _backupSchedule!.monthDays.contains(currentDay) &&
-            now.isAfter(scheduledDateTime) &&
-            now.difference(lastCheck).inDays >= 1;
-    }
-  }
-
-  Future<void> resetBackupCheckDate() async {
-    _lastBackupCheckDate = DateTime.now();
-    await _prefs.setString(
-      'last_backup_check_date',
-      _lastBackupCheckDate!.toIso8601String(),
-    );
-    notifyListeners();
-  }
-
-  // 获取当前备份计划
-  BackupSchedule? get backupSchedule => _backupSchedule;
 }

@@ -139,7 +139,6 @@ class AppRoutes extends NavigatorObserver {
   static const String backgroundAnnouncementTest = '/background_announcement_test';
   static const String superCupertinoTest = '/super_cupertino_test';
   static const String overlayTest = '/overlay_test';
-  static const String formFieldsTest = '/form_fields_test';
   static const String widgetsGallery = '/widgets_gallery';
   static const String designSystem = '/design_system';
   static const String jellyHome = '/jelly_home';

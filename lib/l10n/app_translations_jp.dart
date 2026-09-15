@@ -42,7 +42,6 @@ const Map<String, String> appTranslationsJp = {
   'app_week': '週',
   'app_month': '月',
   'app_date': '日付',
-  'app_day': '@day日目',
 
   // Display options
   'app_showAll': 'すべて表示',
@@ -56,11 +55,7 @@ const Map<String, String> appTranslationsJp = {
   'app_selectLocation': '場所を選択',
 
   // Backup and export
-  'app_backupOptions': 'バックアップオプション',
   'app_selectBackupMethod': 'バックアップ方法を選択してください',
-  'app_exportAppData': 'アプリデータをエクスポート',
-  'app_fullBackup': '完全バックアップ',
-  'app_setBackupSchedule': 'バックアップスケジュールを設定',
 
   // Backup progress
   'app_backupInProgress': 'バックアップ中',

@@ -28,10 +28,6 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_floatingBallEnabled': 'Enabled',
   'settings_screen_floatingBallDisabled': 'Disabled',
 
-  // Auto backup settings
-  'settings_screen_autoBackupTitle': 'Auto Backup Settings',
-  'settings_screen_autoBackupSubtitle': 'Set auto backup schedule',
-
   // Plugin management
   'settings_screen_pluginManagementTitle': 'Plugin Management',
   'settings_screen_pluginManagementSubtitle': 'Choose which plugins load on startup',
