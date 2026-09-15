@@ -69,6 +69,14 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   // DS 果冻导航(选中块 46 + 间距 + 文案 + 内边距)实测约 80,初值贴近避免首帧遮挡
   double _bottomBarHeight = 80;
 
+  /// 滚动隐藏状态(仅移动端 hideOnScroll 生效),驱动注入 padding 收放
+  bool _barHidden = false;
+
+  void _setBarHidden(bool hidden) {
+    if (_barHidden == hidden) return;
+    setState(() => _barHidden = hidden);
+  }
+
   /// 调度底部栏高度测量
   void _scheduleBottomBarHeightMeasurement() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -149,20 +157,19 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                 defaultTargetPlatform != TargetPlatform.windows &&
                 defaultTargetPlatform != TargetPlatform.linux,
             scrollOpposite: false,
-            onBottomBarHidden: () {},
-            onBottomBarShown: () {},
+            onBottomBarHidden: () => _setBarHidden(true),
+            onBottomBarShown: () => _setBarHidden(false),
             body:
                 (context, controller) => MediaQuery(
                   data: mediaQuery.copyWith(
                     padding: mediaQuery.padding.copyWith(
                       bottom:
-                          _bottomBarHeight +
-                          widget.offset +
+                          (_barHidden ? 0 : _bottomBarHeight + widget.offset) +
                           mediaQuery.padding.bottom,
                     ),
                   ),
                   // body 全屏绘制,页面背景延伸到悬浮 bar 下方,
-                  // 内容通过注入的 padding.bottom 自行避让
+                  // 内容通过注入的 padding.bottom 自行避让(bar 隐藏时收起,只留安全区)
                   child: widget.body(context, controller),
                 ),
             child: Stack(
