@@ -16,6 +16,12 @@ export interface RawFileMetadata {
   modifiedAt: Date;
 }
 
+export interface RawFileEntry {
+  path: string;
+  size: number;
+  updated_at: string;
+}
+
 export type ConditionalWriteResult =
   | { status: 'written'; metadata: RawFileMetadata }
   | { status: 'precondition_failed'; metadata: RawFileMetadata | null };
@@ -235,13 +241,13 @@ export class FileStorageService {
     return 'deleted';
   }
 
-  async listRawFiles(userId: string, prefix = ''): Promise<string[]> {
+  async listRawFiles(userId: string, prefix = ''): Promise<RawFileEntry[]> {
     const root = path.resolve(this.getStorageDir(userId));
     const normalizedPrefix = prefix.replace(/\/+$/, '');
     if (normalizedPrefix) this.resolveStoragePath(userId, normalizedPrefix);
     if (!fs.existsSync(root)) return [];
 
-    const files: string[] = [];
+    const files: RawFileEntry[] = [];
     const walk = async (dir: string): Promise<void> => {
       for (const entry of await fs.promises.readdir(dir, { withFileTypes: true })) {
         const fullPath = path.join(dir, entry.name);
@@ -249,18 +255,21 @@ export class FileStorageService {
         if (entry.isDirectory()) await walk(fullPath);
         if (entry.isFile()) {
           const relative = path.relative(root, fullPath).replace(/\\/g, '/');
-          if (!normalizedPrefix || relative.startsWith(normalizedPrefix)) files.push(relative);
+          if (!normalizedPrefix || relative.startsWith(normalizedPrefix)) {
+            const stat = await fs.promises.stat(fullPath);
+            files.push({ path: relative, size: stat.size, updated_at: stat.mtime.toISOString() });
+          }
         }
       }
     };
     await walk(root);
-    return files.sort();
+    return files.sort((a, b) => a.path.localeCompare(b.path));
   }
 
   async clearRawFiles(userId: string, prefix: string): Promise<number> {
     const normalizedPrefix = prefix.replace(/\/+$/, '');
     if (!normalizedPrefix) throw new Error('INVALID_STORAGE_PATH');
-    const files = await this.listRawFiles(userId, normalizedPrefix);
+    const files = (await this.listRawFiles(userId, normalizedPrefix)).map(entry => entry.path);
     await Promise.all(files.map(file => fs.promises.unlink(this.resolveStoragePath(userId, file))));
     return files.length;
   }

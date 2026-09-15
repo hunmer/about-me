@@ -132,9 +132,8 @@ function sumSize(node: FileNode): number {
   <div
     v-else
     class="group grid grid-cols-12 items-center gap-3 px-6 py-2.5 transition-colors hover:bg-surface-container/50"
-    :style="{ paddingLeft: `${depth * 4}px` }"
   >
-    <div class="col-span-6 flex min-w-0 items-center gap-3 md:col-span-5" :style="{ marginLeft: `${depth * 14}px` }">
+    <div class="col-span-6 flex min-w-0 items-center gap-3 md:col-span-5" :style="{ paddingLeft: `${depth * 16}px` }">
       <Checkbox
         :model-value="ctx?.checkedFiles.value.has(node.path) ?? false"
         @update:model-value="ctx?.toggleFileCheck(node)"
@@ -179,7 +178,7 @@ function sumSize(node: FileNode): number {
     v-if="node.isFolder && expanded"
     class="flex flex-col bg-surface-container-lowest/40"
   >
-    <div v-if="!node.childrenLoaded && childCount === 0" class="px-6 py-2.5" :style="{ paddingLeft: `${(depth + 1) * 14 + 24}px` }">
+    <div v-if="!node.childrenLoaded && childCount === 0" class="px-6 py-2.5" :style="{ paddingLeft: `${(depth + 1) * 16 + 24}px` }">
       <span class="font-mono text-[11px] text-on-surface-variant">加载中...</span>
     </div>
     <FileTreeNode

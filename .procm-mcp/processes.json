@@ -1,0 +1,85 @@
+{
+  "processes": [
+    {
+      "id": "hOsHLOr6",
+      "name": "server-nodejs",
+      "script": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "D:/about-me/packages/server-nodejs",
+      "status": "running",
+      "pid": 8340,
+      "exitCode": null,
+      "error": null,
+      "desc": "Node.js �洢������ (port 8874)",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789449265292,
+      "lastStartedAt": 1789451177830,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\hOsHLOr6-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\hOsHLOr6-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "nRxcc1Ym",
+      "name": "flutter-web",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "8875",
+        "--web-hostname",
+        "127.0.0.1"
+      ],
+      "cwd": "D:/about-me",
+      "status": "running",
+      "pid": 10376,
+      "exitCode": null,
+      "error": null,
+      "desc": "Flutter Web ʵ�� (web-server, port 8875)",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789449290660,
+      "lastStartedAt": 1789451184956,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\nRxcc1Ym-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\nRxcc1Ym-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "yuODD6-i",
+      "name": "flutter-client",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "running",
+      "pid": 3160,
+      "exitCode": null,
+      "error": null,
+      "desc": "Flutter Windows ����ͻ��� (debug)",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789449290816,
+      "lastStartedAt": 1789451184979,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\yuODD6-i-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\yuODD6-i-stderr.log",
+      "envs": {}
+    }
+  ]
+}

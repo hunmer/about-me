@@ -57,16 +57,57 @@ function convertFile(file: {
   }
 }
 
-// 加载根目录（仅顶层）
+// 从全量文件列表递归建树：API 只返回文件条目，目录节点由路径前缀推导
+function buildTree(entries: { path: string; size?: number; updated_at?: string }[], prefix: string): FileNode[] {
+  const folders = new Map<string, { node: FileNode; entries: typeof entries }>()
+  const fileNodes: FileNode[] = []
+
+  for (const entry of entries) {
+    const rest = prefix ? entry.path.slice(prefix.length + 1) : entry.path
+    if (!rest) continue
+    const slash = rest.indexOf('/')
+    if (slash === -1) {
+      fileNodes.push({
+        path: entry.path,
+        name: rest,
+        isFolder: false,
+        size: entry.size,
+        updatedAt: entry.updated_at,
+        children: undefined,
+        childrenLoaded: true
+      })
+    } else {
+      const dirName = rest.slice(0, slash)
+      const dirPath = prefix ? `${prefix}/${dirName}` : dirName
+      let folder = folders.get(dirPath)
+      if (!folder) {
+        folder = {
+          node: { path: dirPath, name: dirName, isFolder: true, children: [], childrenLoaded: true },
+          entries: []
+        }
+        folders.set(dirPath, folder)
+      }
+      folder.entries.push(entry)
+    }
+  }
+
+  const nodes: FileNode[] = []
+  for (const { node, entries: subEntries } of folders.values()) {
+    node.children = buildTree(subEntries, node.path)
+    nodes.push(node)
+  }
+  nodes.push(...fileNodes)
+  return nodes.sort((a, b) => {
+    if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+}
+
+// 加载根目录（由全量文件列表构建整棵树，目录展开无需再请求）
 async function loadRootFiles(): Promise<void> {
   try {
     const response = await syncApi.getFiles()
-    const files = response.files || []
-    const rootFiles = files.filter(f => {
-      const parts = f.path.split('/').filter(p => p)
-      return parts.length === 1
-    })
-    treeData.value = rootFiles.map(convertFile)
+    treeData.value = buildTree(response.files || [], '')
     indexNodes(treeData.value)
   } catch (err) {
     console.error('Failed to load root files:', err)

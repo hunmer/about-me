@@ -212,7 +212,10 @@ class HttpStorage implements StorageInterface {
     final response = await _request(() => _client.get(_filesUri(null, prefix), headers: _headers));
     if (response.statusCode != 200) _throwFor(response);
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    return (body['files'] as List<dynamic>).cast<String>();
+    // 服务器返回 {path,size,updated_at} 对象数组，本地实现返回字符串数组，两者都兼容
+    return (body['files'] as List<dynamic>)
+        .map((e) => e is String ? e : (e as Map<String, dynamic>)['path'] as String)
+        .toList();
   }
 
   @override

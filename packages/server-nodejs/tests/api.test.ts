@@ -132,7 +132,7 @@ describe('Aboutme HTTP storage server', () => {
         .get('/api/v1/storage/files?prefix=notes/')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
-      expect(list.body.files).toContain(filePath);
+      expect(list.body.files.map((f: { path: string }) => f.path)).toContain(filePath);
 
       await request(baseUrl)
         .delete(`/api/v1/storage/files/${filePath}`)

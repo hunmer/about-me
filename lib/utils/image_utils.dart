@@ -1,6 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:aboutme/core/storage/storage_image_provider.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
@@ -152,6 +153,17 @@ class ImageUtils {
       // 添加 app_data 前缀
       return path.join(appDir.path, 'app_data', pathWithoutPrefix);
     }
+  }
+
+  /// 从存储中读取文件的原始字节（远端=HTTP 下载解密，Web=IndexedDB）。
+  /// [relativePath] 支持 './xxx' 或不含前缀的存储相对路径。
+  static Future<Uint8List?> readStorageBytes(String? relativePath) async {
+    if (relativePath == null || relativePath.isEmpty) return null;
+    final storage = _storage ?? StorageManager();
+    final storagePath = relativePath.startsWith('./')
+        ? relativePath.substring(2)
+        : relativePath;
+    return storage.readBytes(storagePath.replaceAll(r'\', '/'));
   }
 
   /// 删除指定的图片文件
@@ -376,6 +388,15 @@ class ImageUtils {
         }
         return AssetImage(assetPath);
       case ImageType.file:
+        // 远端存储或 Web 平台: './xxx' 指向存储中的文件(密文/IndexedDB)，
+        // 无法同步构造本地 FileImage，改经 StorageManager 异步拉取解密
+        if ((kIsWeb || _storage?.isRemote == true) &&
+            imagePath!.startsWith('./')) {
+          return StorageImageProvider(
+            _storage ?? StorageManager(),
+            imagePath.substring(2),
+          );
+        }
         // 对于文件路径，需要转换为绝对路径
         String filePath = imagePath!;
         if (!path.isAbsolute(filePath)) {
