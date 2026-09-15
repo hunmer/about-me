@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
@@ -29,6 +30,9 @@ import 'package:aboutme/core/floating_ball/floating_ball_service.dart';
 import 'app_widgets/home_widget_service.dart';
 import 'app_widgets/floating_ball_service.dart';
 import 'package:aboutme/screens/route.dart';
+import 'package:aboutme/core/storage/storage_backend_config.dart';
+import 'package:aboutme/screens/settings_screen/widgets/storage_backend_settings_dialog.dart';
+import 'package:aboutme/utils/blob_url.dart';
 import 'global_flags.dart';
 import 'services/toast_service.dart';
 import 'services/log_service.dart';
@@ -581,6 +585,41 @@ Future<void> initializeFlutterFloatingBall() async {
   } catch (e, stack) {
     debugPrint('Flutter悬浮球初始化失败: $e');
     debugPrint('堆栈: $stack');
+  }
+}
+
+/// Web 平台要求配置 HTTP 存储服务器（浏览器 IndexedDB 仅作未配置时的临时后端）。
+/// 未配置时在 UI 就绪后弹出设置对话框，保存成功后自动刷新页面生效；
+/// 用户取消则本次会话继续使用本地 IndexedDB，下次启动再次提醒。
+Future<void> ensureWebStorageBackend() async {
+  if (!kIsWeb) return;
+  try {
+    final config = await LocalStorageBackendConfigStore().load();
+    if (config.isHttpEnabled) return;
+
+    await Future.delayed(const Duration(milliseconds: 500));
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      debugPrint('[WebStorage] 导航器未就绪，跳过存储后端配置提醒');
+      return;
+    }
+
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: const StorageBackendSettingsDialog(),
+      ),
+    );
+    if (saved == true) {
+      debugPrint('[WebStorage] 存储后端已配置，刷新页面生效');
+      reloadPage();
+    } else {
+      debugPrint('[WebStorage] 用户跳过配置，本次会话使用浏览器本地存储');
+    }
+  } catch (e) {
+    debugPrint('[WebStorage] 存储后端配置检查失败: $e');
   }
 }
 

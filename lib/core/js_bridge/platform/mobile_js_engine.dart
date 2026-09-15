@@ -570,7 +570,9 @@ class MobileJSEngine implements JSEngine {
         // 确保 ToolConfigManager 已初始化
         if (!ToolConfigManager.instance.isInitialized) {
           print('[ToolRegistry] ToolConfigManager 未初始化，等待初始化...');
-          await ToolConfigManager.instance.initialize();
+          await ToolConfigManager.instance.initialize(
+            storage: globalStorage,
+          );
           print('[ToolRegistry] ✓ ToolConfigManager 初始化完成');
         }
 

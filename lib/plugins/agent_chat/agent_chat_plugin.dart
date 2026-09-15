@@ -105,7 +105,7 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
     await _routeConfigService!.initialize();
 
     // 初始化工具服务
-    await ToolService.initialize();
+    await ToolService.initialize(storage: storage);
 
     // 初始化小组件服务
     await AgentChatWidgetService.initialize();

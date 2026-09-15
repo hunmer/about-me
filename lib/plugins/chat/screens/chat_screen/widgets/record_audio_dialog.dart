@@ -1,16 +1,26 @@
 import 'dart:io';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/utils/blob_url.dart';
 
 class RecordAudioDialog extends StatefulWidget {
   final Function(File audioFile, Duration duration) onStop;
 
-  const RecordAudioDialog({super.key, required this.onStop});
+  /// Web 平台录音回调：无本地文件，返回字节内容和文件名
+  final Function(Uint8List bytes, String fileName, Duration duration)?
+      onStopBytes;
+
+  const RecordAudioDialog({
+    super.key,
+    required this.onStop,
+    this.onStopBytes,
+  });
 
   @override
   State<RecordAudioDialog> createState() => _RecordAudioDialogState();
@@ -85,10 +95,15 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
   }
 
   Future<void> _startRecording() async {
-    // 获取临时目录
-    final tempDir = await getTemporaryDirectory();
+    // Web 平台 record 插件忽略本地路径，仅桌面需要临时目录
+    final String filePath;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final filePath = path.join(tempDir.path, 'audio_$timestamp.m4a');
+    if (kIsWeb) {
+      filePath = 'audio_$timestamp.webm';
+    } else {
+      final tempDir = await getTemporaryDirectory();
+      filePath = path.join(tempDir.path, 'audio_$timestamp.m4a');
+    }
 
     // 配置录音参数
     await _audioRecorder.start(
@@ -128,8 +143,18 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
     try {
       final path = await _audioRecorder.stop();
       if (path != null) {
-        final file = File(path);
-        widget.onStop(file, _duration);
+        if (kIsWeb) {
+          // Web 上 stop() 返回 blob URL，读取字节后走字节回调
+          final bytes = await readBlobBytes(path);
+          final extension = path.split('.').last.toLowerCase();
+          final fileName = extension.isEmpty || extension.contains('/')
+              ? 'audio.webm'
+              : 'audio.$extension';
+          widget.onStopBytes?.call(bytes, fileName, _duration);
+        } else {
+          final file = File(path);
+          widget.onStop(file, _duration);
+        }
       }
     } catch (e) {
       if (mounted) {

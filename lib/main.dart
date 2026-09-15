@@ -196,6 +196,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _setupAutoUpdate();
       // 初始化Flutter悬浮球
       await initializeFlutterFloatingBall();
+      // Web 平台检查 HTTP 存储服务器配置，未配置则弹设置对话框
+      unawaited(ensureWebStorageBackend());
     });
   }
 

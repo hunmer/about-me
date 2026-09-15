@@ -6,8 +6,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 
 /// 工具配置管理器（单例）
@@ -15,6 +14,14 @@ class ToolConfigManager {
   // 单例模式
   static final ToolConfigManager instance = ToolConfigManager._();
   ToolConfigManager._();
+
+  // 存储管理器（跨平台: 本地文件/HTTP 远端/Web IndexedDB）
+  StorageManager? _storage;
+
+  // 工具配置在存储中的路径前缀
+  static const String _toolsPrefix = 'agent_chat/tools';
+
+  StorageManager get _manager => _storage ??= StorageManager();
 
   // 内存缓存
   List<List<String>> _toolIndex = [];
@@ -75,18 +82,15 @@ class ToolConfigManager {
 
   /// 初始化配置管理器
   ///
-  /// 首次启动时会从 assets 复制配置到数据目录
-  Future<void> initialize() async {
+  /// 首次启动时会从 assets 复制配置到存储
+  Future<void> initialize({StorageManager? storage}) async {
     if (_initialized) return;
+    if (storage != null) _storage = storage;
 
     try {
-      final dataDir = await _getDataDirectory();
-      final toolsDir = Directory(path.join(dataDir.path, 'tools'));
-
-      // 检查数据目录是否存在，不存在则创建并复制 assets
-      if (!await toolsDir.exists()) {
-        await toolsDir.create(recursive: true);
-        await _copyAssetsToDataDirectory(toolsDir);
+      // 以索引文件是否存在判断是否已初始化过（与旧版本地文件位置兼容）
+      if (!await _manager.fileExists('$_toolsPrefix/index.json')) {
+        await _copyAssetsToStorage();
       }
 
       // 加载工具索引和配置
@@ -99,15 +103,9 @@ class ToolConfigManager {
     }
   }
 
-  /// 获取数据目录
-  Future<Directory> _getDataDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    return Directory(path.join(appDir.path, 'app_data', 'agent_chat'));
-  }
-
-  /// 从 assets 复制配置文件到数据目录
-  Future<void> _copyAssetsToDataDirectory(Directory toolsDir) async {
-    print('🔄 首次启动：复制工具配置到数据目录...');
+  /// 从 assets 复制配置文件到存储
+  Future<void> _copyAssetsToStorage() async {
+    print('🔄 首次启动：复制工具配置到存储...');
 
     // 复制各插件配置文件
     for (final pluginId in _pluginIds) {
@@ -115,8 +113,10 @@ class ToolConfigManager {
         final configData = await rootBundle.loadString(
           'lib/plugins/agent_chat/tools/$pluginId.json',
         );
-        final configFile = File(path.join(toolsDir.path, '$pluginId.json'));
-        await configFile.writeAsString(configData);
+        await _manager.writeString(
+          '$_toolsPrefix/$pluginId.json',
+          configData,
+        );
         print('✅ 复制 $pluginId.json');
       } catch (e) {
         print('⚠️ 复制 $pluginId.json 失败: $e');
@@ -124,13 +124,13 @@ class ToolConfigManager {
     }
 
     // 重新生成 index.json（基于实际的工具配置）
-    await _regenerateToolIndex(toolsDir);
+    await _regenerateToolIndex();
 
     print('✅ 工具配置复制完成');
   }
 
   /// 重新生成工具索引
-  Future<void> _regenerateToolIndex(Directory toolsDir) async {
+  Future<void> _regenerateToolIndex() async {
     print('🔄 重新生成工具索引...');
 
     final newIndex = <List<String>>[];
@@ -138,11 +138,10 @@ class ToolConfigManager {
     // 遍历所有插件配置文件
     for (final pluginId in _pluginIds) {
       try {
-        final configFile = File(path.join(toolsDir.path, '$pluginId.json'));
-        if (!await configFile.exists()) continue;
-
-        final content = await configFile.readAsString();
-        final Map<String, dynamic> jsonData = json.decode(content);
+        final jsonData = await _manager.readJson(
+          '$_toolsPrefix/$pluginId.json',
+        );
+        if (jsonData is! Map<String, dynamic>) continue;
 
         // 为每个工具创建索引条目
         jsonData.forEach((methodName, toolData) {
@@ -181,9 +180,8 @@ class ToolConfigManager {
 
     // 保存新的索引文件
     try {
-      final indexFile = File(path.join(toolsDir.path, 'index.json'));
       final content = const JsonEncoder.withIndent('  ').convert(newIndex);
-      await indexFile.writeAsString(content);
+      await _manager.writeString('$_toolsPrefix/index.json', content);
       print('✅ 工具索引已生成 (共 ${newIndex.length} 个工具)');
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
@@ -199,15 +197,12 @@ class ToolConfigManager {
     }
   }
 
-  /// 从文件加载工具索引
+  /// 从存储加载工具索引
   Future<void> _loadToolIndexFromFile() async {
     try {
-      final dataDir = await _getDataDirectory();
-      final indexFile = File(path.join(dataDir.path, 'tools', 'index.json'));
+      final jsonData = await _manager.readJson('$_toolsPrefix/index.json');
 
-      if (await indexFile.exists()) {
-        final content = await indexFile.readAsString();
-        final List<dynamic> jsonData = json.decode(content);
+      if (jsonData is List && jsonData.isNotEmpty) {
         _toolIndex =
             jsonData
                 .map(
@@ -228,14 +223,11 @@ class ToolConfigManager {
   /// 加载插件配置
   Future<void> _loadPluginConfig(String pluginId) async {
     try {
-      final dataDir = await _getDataDirectory();
-      final configFile = File(
-        path.join(dataDir.path, 'tools', '$pluginId.json'),
+      final jsonData = await _manager.readJson(
+        '$_toolsPrefix/$pluginId.json',
       );
 
-      if (await configFile.exists()) {
-        final content = await configFile.readAsString();
-        final Map<String, dynamic> jsonData = json.decode(content);
+      if (jsonData is Map<String, dynamic>) {
         _pluginTools[pluginId] = PluginToolSet.fromJson(pluginId, jsonData);
       } else {
         print('⚠️ $pluginId.json 不存在');
@@ -245,14 +237,9 @@ class ToolConfigManager {
     }
   }
 
-  /// 保存插件配置到文件
+  /// 保存插件配置到存储
   Future<void> _savePluginConfig(String pluginId) async {
     try {
-      final dataDir = await _getDataDirectory();
-      final configFile = File(
-        path.join(dataDir.path, 'tools', '$pluginId.json'),
-      );
-
       final toolSet = _pluginTools[pluginId];
       if (toolSet == null) {
         print('⚠️ 插件 $pluginId 不存在');
@@ -261,21 +248,18 @@ class ToolConfigManager {
 
       final jsonData = toolSet.toJson();
       final content = const JsonEncoder.withIndent('  ').convert(jsonData);
-      await configFile.writeAsString(content);
+      await _manager.writeString('$_toolsPrefix/$pluginId.json', content);
     } catch (e) {
       print('❌ 保存 $pluginId 配置失败: $e');
       rethrow;
     }
   }
 
-  /// 保存工具索引到文件
+  /// 保存工具索引到存储
   Future<void> _saveToolIndex() async {
     try {
-      final dataDir = await _getDataDirectory();
-      final indexFile = File(path.join(dataDir.path, 'tools', 'index.json'));
-
       final content = const JsonEncoder.withIndent('  ').convert(_toolIndex);
-      await indexFile.writeAsString(content);
+      await _manager.writeString('$_toolsPrefix/index.json', content);
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
       rethrow;
@@ -530,17 +514,11 @@ class ToolConfigManager {
   /// 恢复默认配置
   Future<void> resetToDefault() async {
     try {
-      final dataDir = await _getDataDirectory();
-      final toolsDir = Directory(path.join(dataDir.path, 'tools'));
+      // 清空存储中的现有工具配置
+      await _manager.clearPrefix(_toolsPrefix);
 
-      // 删除现有配置
-      if (await toolsDir.exists()) {
-        await toolsDir.delete(recursive: true);
-      }
-
-      // 重新创建并复制 assets
-      await toolsDir.create(recursive: true);
-      await _copyAssetsToDataDirectory(toolsDir);
+      // 重新从 assets 复制
+      await _copyAssetsToStorage();
 
       // 重新加载配置
       await _loadAllConfigs();

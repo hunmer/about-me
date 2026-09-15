@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -116,6 +117,20 @@ class FileService {
   Future<File> saveAudio(File audioFile) async {
     final saveResult = await _saveFile(audioFile, subdirectory: 'audios');
     return saveResult.savedFile;
+  }
+
+  /// 保存音频字节为聊天附件（Web 录音等无本地文件场景），
+  /// 返回 './chat/chat_files/audios/xxx' 相对存储路径
+  Future<String> saveAudioBytes(List<int> bytes, String fileName) async {
+    final uuid = const Uuid().v4();
+    final ext = path.extension(fileName).isEmpty
+        ? '.webm'
+        : path.extension(fileName);
+    final storagePath = 'chat/chat_files/audios/$uuid$ext';
+    final storage = PluginManager.instance.storageManager;
+    if (storage == null) throw StateError('StorageManager 未初始化');
+    await storage.writeBytes(storagePath, Uint8List.fromList(bytes));
+    return './$storagePath';
   }
 
   // 删除文件

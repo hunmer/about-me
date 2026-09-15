@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -6,8 +7,8 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 /// 语音通话配置对话框
@@ -334,7 +335,10 @@ class _VoiceCallConfigDialogState extends State<VoiceCallConfigDialog> {
                       image:
                           _backgroundImagePath != null
                               ? DecorationImage(
-                                image: FileImage(File(_backgroundImagePath!)),
+                                // 兼容旧配置的绝对路径与新的存储相对路径
+                                image: ImageUtils.createImageProvider(
+                                  _backgroundImagePath,
+                                ),
                                 fit: BoxFit.cover,
                               )
                               : null,
@@ -403,26 +407,34 @@ class _VoiceCallConfigDialogState extends State<VoiceCallConfigDialog> {
         allowCompression: false,
       );
 
-      if (result != null && result.files.single.path != null) {
-        final sourcePath = result.files.single.path!;
+      if (result == null || result.files.isEmpty) return;
+      final platformFile = result.files.single;
 
-        // 将图片复制到应用目录
-        final appDir = await getApplicationDocumentsDirectory();
-        final voiceCallDir = Directory('${appDir.path}/voice_call_bg');
-        if (!await voiceCallDir.exists()) {
-          await voiceCallDir.create(recursive: true);
-        }
-
-        final fileName =
-            'bg_${DateTime.now().millisecondsSinceEpoch}${path.extension(sourcePath)}';
-        final destPath = '${voiceCallDir.path}/$fileName';
-
-        await File(sourcePath).copy(destPath);
-
-        setState(() {
-          _backgroundImagePath = destPath;
-        });
+      // Web 上 FilePicker 只返回字节（path 为 null），统一经字节保存
+      final Uint8List imageBytes;
+      final String fileExtension;
+      if (platformFile.bytes != null) {
+        imageBytes = platformFile.bytes!;
+        fileExtension = path.extension(platformFile.name).isEmpty
+            ? '.png'
+            : path.extension(platformFile.name);
+      } else if (platformFile.path != null) {
+        imageBytes = await File(platformFile.path!).readAsBytes();
+        fileExtension = path.extension(platformFile.path!);
+      } else {
+        return;
       }
+
+      // 经统一存储保存（远端=HTTP 上传，Web=IndexedDB，本地=应用目录）
+      final relativePath = await ImageUtils.saveBytesToAppDirectory(
+        imageBytes,
+        'voice_call_bg',
+        extension: fileExtension,
+      );
+
+      setState(() {
+        _backgroundImagePath = relativePath;
+      });
     } catch (e) {
       debugPrint('选择背景图失败: $e');
       if (mounted) {

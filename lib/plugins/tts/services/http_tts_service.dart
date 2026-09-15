@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:logging/logging.dart';
 import 'tts_base_service.dart';
@@ -149,6 +150,13 @@ class HttpTTSService extends TTSBaseService {
   /// 从字节数组播放音频
   Future<void> _playAudioFromBytes(List<int> audioBytes) async {
     try {
+      if (kIsWeb) {
+        // Web 无本地临时文件，直接从字节播放（audioplayers Web 走 blob）
+        await _audioPlayer.play(BytesSource(Uint8List.fromList(audioBytes)));
+        await _audioPlayer.onPlayerComplete.first;
+        return;
+      }
+
       // 保存到临时文件
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/tts_temp_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}');

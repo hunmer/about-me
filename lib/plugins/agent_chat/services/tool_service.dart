@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
 import 'tool_config_manager.dart';
 import 'package:aboutme/plugins/webview/services/js_tool_service.dart';
 
@@ -320,12 +321,12 @@ class ToolService {
   };
 
   /// 初始化工具服务（加载所有工具配置）
-  static Future<void> initialize() async {
+  static Future<void> initialize({StorageManager? storage}) async {
     if (_initialized) return;
 
     try {
       // 初始化 ToolConfigManager
-      await ToolConfigManager.instance.initialize();
+      await ToolConfigManager.instance.initialize(storage: storage);
 
       // 生成并缓存两种 Prompt
       _cachedToolBriefPrompt = _generateToolBriefPrompt();
