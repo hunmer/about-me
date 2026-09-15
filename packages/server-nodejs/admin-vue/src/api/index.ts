@@ -233,7 +233,16 @@ export const devicesApi = {
 export const syncApi = {
   getFiles: (directory?: string): Promise<{ success: boolean; files: SyncFileInfo[] }> => {
     const params = directory ? `?prefix=${encodeURIComponent(directory)}` : ''
-    return apiClient.request(`/api/v1/storage/files${params}`)
+    // 服务端 /storage/files 返回的是路径字符串数组，这里转换为前端使用的对象结构
+    return apiClient.request<{ files: string[] }>(`/api/v1/storage/files${params}`).then(response => ({
+      success: true,
+      files: (response.files || []).map(path => ({
+        path,
+        size: 0,
+        updated_at: '',
+        is_folder: false
+      }))
+    }))
   },
 
   getStatus: (): Promise<{

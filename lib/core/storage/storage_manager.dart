@@ -150,9 +150,9 @@ class StorageManager {
     return await path_provider.getApplicationDocumentsDirectory();
   }
 
-  /// 获取应用数据目录（包含 app_data 前缀）
-  /// 所有插件数据都存储在这个目录下
-  Future<Directory> getApplicationDataDirectory() async {
+  /// 静态获取应用数据目录（包含 app_data 前缀）
+  /// 桌面端(如Windows)的文档目录是用户公共目录，应用数据都在其 app_data 子目录下
+  static Future<Directory> appDataDirectory() async {
     if (kIsWeb) {
       // Web 平台返回虚拟目录
       return Directory('aboutme_app');
@@ -160,6 +160,10 @@ class StorageManager {
     final appDir = await getApplicationDocumentsDirectory();
     return Directory(path.join(appDir.path, 'app_data'));
   }
+
+  /// 获取应用数据目录（包含 app_data 前缀）
+  /// 所有插件数据都存储在这个目录下
+  Future<Directory> getApplicationDataDirectory() => appDataDirectory();
 
   /// 创建目录
   Future<void> createDirectory(String path) async {

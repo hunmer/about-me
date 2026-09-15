@@ -25,7 +25,7 @@ class StorageException implements Exception {
   final int? statusCode;
 
   @override
-  String toString() => 'StorageException($kind): $message';
+  String toString() => 'StorageException($kind${statusCode == null ? '' : ', HTTP $statusCode'}): $message';
 }
 
 class HttpStorage implements StorageInterface {
@@ -37,7 +37,6 @@ class HttpStorage implements StorageInterface {
     http.Client? client,
     this.timeout = const Duration(seconds: 15),
   }) : _baseUri = Uri.parse(serverUrl.replaceFirst(RegExp(r'/$'), '')),
-       _authType = authType,
        _credential = credential,
        _client = client ?? http.Client(),
        _key = _decodeKey(encryptionKey);
@@ -54,7 +53,6 @@ class HttpStorage implements StorageInterface {
   }
 
   final Uri _baseUri;
-  final StorageAuthType _authType;
   final String _credential;
   final http.Client _client;
   final encrypt.Key _key;
@@ -71,18 +69,19 @@ class HttpStorage implements StorageInterface {
     }
   }
 
-  Map<String, String> get _headers => {
-    if (_authType == StorageAuthType.jwt) 'Authorization': 'Bearer $_credential'
-    else 'X-API-Key': _credential,
-  };
+  /// HTTP 存储统一通过 X-API-Key 认证。
+  Map<String, String> get _headers => {'X-API-Key': _credential};
 
   Uri _filesUri([String? path, String? prefix]) {
     final root = '${_baseUri.toString()}/api/v1/storage/files';
     if (path != null) {
-      final encoded = path.split('/').map(Uri.encodeComponent).join('/');
+      // 本地文件路径在 Windows 上可能包含反斜杠；HTTP API 统一使用正斜杠。
+      final normalizedPath = path.replaceAll('\\', '/');
+      final encoded = normalizedPath.split('/').map(Uri.encodeComponent).join('/');
       return Uri.parse('$root/$encoded');
     }
-    return Uri.parse(root).replace(queryParameters: prefix == null ? null : {'prefix': prefix});
+    final normalizedPrefix = prefix?.replaceAll('\\', '/');
+    return Uri.parse(root).replace(queryParameters: normalizedPrefix == null ? null : {'prefix': normalizedPrefix});
   }
 
   Uint8List _encrypt(Uint8List bytes) {
@@ -133,7 +132,12 @@ class HttpStorage implements StorageInterface {
     if (code >= 500) {
       throw StorageException(StorageErrorKind.server, '存储服务器错误', statusCode: code);
     }
-    throw StorageException(StorageErrorKind.invalidRequest, '存储请求失败', statusCode: code);
+    final detail = response.body.trim();
+    throw StorageException(
+      StorageErrorKind.invalidRequest,
+      detail.isEmpty ? '存储请求失败' : '存储请求失败：$detail',
+      statusCode: code,
+    );
   }
 
   Future<String?> _fetchVersion(String path) async {

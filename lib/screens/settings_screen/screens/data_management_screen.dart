@@ -32,7 +32,10 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
   Future<void> _loadDocumentsDirectory() async {
     try {
-      final dir = await StorageManager.getApplicationDocumentsDirectory();
+      final dir = await StorageManager.appDataDirectory();
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
       setState(() {
         currentDirectory = dir;
         directoryStack.push(dir);
@@ -149,7 +152,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
     if (selectedPaths.isEmpty) return;
 
-    final appDir = await StorageManager.getApplicationDocumentsDirectory();
+    final appDir = await StorageManager.appDataDirectory();
     final targetDir = await showDialog<Directory>(
       context: context,
       builder:
@@ -445,8 +448,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          currentDirectory?.path.split('/').last ??
-              'data_management_dataManagementTitle'.tr,
+          currentDirectory != null
+              ? path.basename(currentDirectory!.path)
+              : 'data_management_dataManagementTitle'.tr,
         ),
         leading:
             directoryStack.length > 1

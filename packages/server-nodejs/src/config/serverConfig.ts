@@ -33,7 +33,9 @@ export const config = {
   ),
   /** Storage API 每用户每分钟请求上限 */
   storageRateLimitPerMinute: parseInt(
-    process.env.STORAGE_RATE_LIMIT_PER_MINUTE || '240',
+    // 应用启动阶段多个插件会并发读取大量小文件；240 次不足以覆盖
+    // 一次正常启动，默认提高到 1200，仍可通过环境变量收紧限制。
+    process.env.STORAGE_RATE_LIMIT_PER_MINUTE || '1200',
     10,
   ),
   /** 是否启用日志 */

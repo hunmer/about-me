@@ -23,7 +23,7 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
   final _store = LocalStorageBackendConfigStore();
   StorageBackendType _type = StorageBackendType.local;
   StorageBackendType _originalType = StorageBackendType.local;
-  StorageAuthType _authType = StorageAuthType.jwt;
+  StorageAuthType _authType = StorageAuthType.apiKey;
   bool _loading = true;
   String? _status;
 
@@ -167,20 +167,15 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
                           validator: (value) => value == null || value.trim().isEmpty ? '请输入服务器地址' : null,
                         ),
                         const SizedBox(height: 12),
-                        DropdownButtonFormField<StorageAuthType>(
-                          initialValue: _authType,
-                          decoration: const InputDecoration(labelText: '认证方式'),
-                          items: const [
-                            DropdownMenuItem(value: StorageAuthType.jwt, child: Text('JWT Token')),
-                            DropdownMenuItem(value: StorageAuthType.apiKey, child: Text('API Key')),
-                          ],
-                          onChanged: (value) => setState(() => _authType = value!),
+                        const InputDecorator(
+                          decoration: InputDecoration(labelText: '认证方式'),
+                          child: Text('API Key'),
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _credentialController,
                           obscureText: true,
-                          decoration: InputDecoration(labelText: _authType == StorageAuthType.jwt ? 'Token' : 'API Key'),
+                          decoration: const InputDecoration(labelText: 'API Key'),
                           validator: (value) => value == null || value.trim().isEmpty ? '请输入认证凭据' : null,
                         ),
                         const SizedBox(height: 12),

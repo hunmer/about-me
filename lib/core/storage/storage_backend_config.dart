@@ -4,13 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum StorageBackendType { local, http }
 
+/// jwt 保留用于兼容旧配置；HTTP 存储实际统一使用 API Key。
 enum StorageAuthType { jwt, apiKey }
 
 class StorageBackendConfig {
   const StorageBackendConfig({
     this.type = StorageBackendType.local,
     this.serverUrl = '',
-    this.authType = StorageAuthType.jwt,
+    this.authType = StorageAuthType.apiKey,
     this.credential = '',
     this.encryptionKey = '',
     this.userId = '',
@@ -66,13 +67,12 @@ class LocalStorageBackendConfigStore implements StorageBackendConfigStore {
   Future<StorageBackendConfig> load() async {
     final prefs = await SharedPreferences.getInstance();
     final typeName = prefs.getString(_typeKey);
-    final authName = prefs.getString(_authTypeKey);
     return StorageBackendConfig(
       type: typeName == StorageBackendType.http.name
           ? StorageBackendType.http : StorageBackendType.local,
       serverUrl: prefs.getString(_serverUrlKey) ?? '',
-      authType: authName == StorageAuthType.apiKey.name
-          ? StorageAuthType.apiKey : StorageAuthType.jwt,
+      // JWT 认证已移除；旧配置中的值统一按 API Key 处理。
+      authType: StorageAuthType.apiKey,
       credential: await _readSecret(_credentialKey),
       encryptionKey: await _readSecret(_encryptionKey),
       userId: prefs.getString(_userIdKey) ?? '',

@@ -37,10 +37,19 @@ abstract class PluginBase {
   /// 存储管理器实例
   StorageManager? _storage;
 
+  /// 诊断用：存储管理器是否已注入
+  bool get hasStorage => _storage != null;
+
   /// 获取存储管理器
   /// 如果未设置存储管理器会抛出详细异常
   StorageManager get storage {
-    return _storage!;
+    final value = _storage;
+    if (value == null) {
+      throw StateError(
+        '插件($id#${hashCode}) 在 setStorageManager 之前访问了 storage',
+      );
+    }
+    return value;
   }
 
   /// 插件配置

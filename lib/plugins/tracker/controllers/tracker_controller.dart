@@ -12,14 +12,18 @@ class TrackerController with ChangeNotifier {
 
   Future<void> loadInitialData() async {
     final plugin = TrackerPlugin.instance;
+    debugPrint(
+      '[Tracker] loadInitialData: controller=$hashCode, '
+      'plugin=${plugin.hashCode}, storageReady=${plugin.hasStorage}',
+    );
     try {
       final savedGoals = await plugin.storage.read('tracker/goals.json') ?? {};
       if (savedGoals.containsKey('goals')) {
         _goals =
             (savedGoals['goals'] as List).map((g) => Goal.fromJson(g)).toList();
       }
-    } catch (e) {
-      debugPrint('加载目标数据失败: $e');
+    } catch (e, st) {
+      debugPrint('加载目标数据失败: $e\n$st');
     }
 
     try {
@@ -31,8 +35,8 @@ class TrackerController with ChangeNotifier {
                 .map((r) => Record.fromJson(r))
                 .toList();
       }
-    } catch (e) {
-      debugPrint('加载记录数据失败: $e');
+    } catch (e, st) {
+      debugPrint('加载记录数据失败: $e\n$st');
     }
 
     // 如果没有数据，插入默认数据
@@ -178,8 +182,8 @@ class TrackerController with ChangeNotifier {
         'goals': _goals.map((g) => g.toJson()).toList(),
         'lastUpdated': DateTime.now().toIso8601String(),
       });
-    } catch (e) {
-      debugPrint('保存目标数据失败: $e');
+    } catch (e, st) {
+      debugPrint('保存目标数据失败: $e\n保存目标数据堆栈: $st');
     }
   }
 
@@ -190,8 +194,8 @@ class TrackerController with ChangeNotifier {
         'records': _records.map((r) => r.toJson()).toList(),
         'lastUpdated': DateTime.now().toIso8601String(),
       });
-    } catch (e) {
-      debugPrint('保存记录数据失败: $e');
+    } catch (e, st) {
+      debugPrint('保存记录数据失败: $e\n保存记录数据堆栈: $st');
     }
   }
 
