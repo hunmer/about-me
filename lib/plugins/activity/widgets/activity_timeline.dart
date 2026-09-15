@@ -532,9 +532,11 @@ class ActivityTimeline extends StatelessWidget {
           ),
         ),
         ListView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: listHorizontalPadding,
-            vertical: 16.0,
+          padding: EdgeInsets.fromLTRB(
+            listHorizontalPadding,
+            16.0,
+            listHorizontalPadding,
+            16.0 + MediaQuery.paddingOf(context).bottom,
           ),
           children: slices,
         ),

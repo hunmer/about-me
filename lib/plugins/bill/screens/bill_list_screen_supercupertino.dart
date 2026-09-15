@@ -723,6 +723,8 @@ class _BillListScreenSupercupertinoState
             DSThemeBridge(
               child: DSEmptyState(emoji: '🗓️', title: '请选择一天查看账单'),
             ),
+          // 悬浮底部栏预留
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );
@@ -762,7 +764,12 @@ class _BillListScreenSupercupertinoState
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: filteredBills.length,
       itemBuilder: (context, index) {
         final bill = filteredBills[index];

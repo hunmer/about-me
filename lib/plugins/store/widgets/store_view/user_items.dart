@@ -157,7 +157,9 @@ class _UserItemsState extends State<UserItems> {
                 },
               )
               : MasonryGridView.count(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.fromLTRB(
+                  8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+                ),
                 crossAxisCount: 2,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
@@ -373,7 +375,9 @@ class _UserItemsState extends State<UserItems> {
 
     // 显示搜索结果
     return MasonryGridView.count(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(
+        8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+      ),
       crossAxisCount: 2,
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,

@@ -75,7 +75,12 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
           filteredWarehouses.isEmpty && _searchQuery.isNotEmpty
               ? _buildEmptySearchView()
               : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  96 + MediaQuery.paddingOf(context).bottom,
+                ),
                 itemCount: filteredWarehouses.length,
                 separatorBuilder:
                     (context, index) => const SizedBox(height: 16),

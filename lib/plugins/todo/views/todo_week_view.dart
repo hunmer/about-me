@@ -40,7 +40,12 @@ class TodoWeekView extends StatelessWidget {
               childAspectRatio: 0.8,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.fromLTRB(
+                4,
+                4,
+                4,
+                4 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: List.generate(7, (index) {
                 return _buildDayCard(
                   context,

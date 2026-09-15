@@ -101,6 +101,8 @@ class TodoFourQuadrantView extends StatelessWidget {
                     ],
                   ),
                 ),
+                // 悬浮底部栏遮挡区域预留
+                SizedBox(height: MediaQuery.paddingOf(context).bottom),
               ],
             ),
           );

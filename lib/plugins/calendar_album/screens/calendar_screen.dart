@@ -285,7 +285,9 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final entry = _searchResults[index];
@@ -919,7 +921,9 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.fromLTRB(
+                  0, 16, 0, 16 + MediaQuery.paddingOf(context).bottom,
+                ),
                 itemCount: _months.length,
                 itemBuilder: (context, index) {
                   final month = _months[index];

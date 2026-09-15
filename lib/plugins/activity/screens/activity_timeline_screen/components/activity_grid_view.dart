@@ -633,6 +633,8 @@ class _ActivityGridViewState extends State<ActivityGridView> {
               },
             ),
           ),
+          // 悬浮底部栏预留，避免最后一行网格被遮挡
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );

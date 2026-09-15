@@ -314,6 +314,8 @@ class _BillStatsScreenSupercupertinoState
                 ],
               ),
             ),
+            // 悬浮底部栏预留
+            SizedBox(height: MediaQuery.paddingOf(context).bottom),
           ],
         ),
       ),

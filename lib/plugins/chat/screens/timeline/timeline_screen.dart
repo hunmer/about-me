@@ -177,7 +177,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildListView() {
     return ListView.builder(
       controller: _controller.scrollController,
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(
+        8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount:
           _controller.displayMessages.length +
           (_controller.hasMoreMessages ? 1 : 0),
@@ -238,7 +240,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
       controller: _controller.scrollController,
       slivers: [
         SliverPadding(
-          padding: EdgeInsets.all(padding),
+          padding: EdgeInsets.fromLTRB(
+            padding, padding, padding,
+            padding + MediaQuery.paddingOf(context).bottom,
+          ),
           sliver: SliverMasonryGrid(
             delegate: SliverChildBuilderDelegate(
               (context, index) {

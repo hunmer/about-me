@@ -55,7 +55,10 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
           return Scaffold(
             backgroundColor: Colors.transparent,
             body: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.only(
+                top: 8,
+                bottom: 8 + MediaQuery.paddingOf(context).bottom,
+              ),
               itemCount: widget.completedTasks.length,
               itemBuilder: (context, index) {
                 final task = widget.completedTasks[index];

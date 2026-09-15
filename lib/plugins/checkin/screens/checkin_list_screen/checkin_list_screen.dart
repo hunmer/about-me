@@ -104,7 +104,9 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                 filteredItems.isEmpty
                     ? const EmptyState()
                     : SingleChildScrollView(
-                      padding: const EdgeInsets.only(bottom: 80),
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.paddingOf(context).bottom,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: StaggeredGrid.count(
@@ -208,7 +210,9 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
 
     if (controller.isSearching && searchResults.isNotEmpty) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 80),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom,
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: StaggeredGrid.count(

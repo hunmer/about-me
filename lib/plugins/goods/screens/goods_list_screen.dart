@@ -630,7 +630,12 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
               ? LayoutBuilder(
                 builder: (context, constraints) {
                   return MasonryGridView.count(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      16 + MediaQuery.paddingOf(context).bottom,
+                    ),
                     crossAxisCount: constraints.maxWidth > 600 ? 3 : 2, // 响应式列数
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
@@ -650,7 +655,9 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                 },
               )
               : ListView.builder(
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom,
+                ),
                 itemCount: allItems.length,
                 itemBuilder: (context, index) {
                   final item = allItems[index]['item'] as GoodsItem;

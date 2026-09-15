@@ -328,7 +328,12 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final result = _searchResults[index];

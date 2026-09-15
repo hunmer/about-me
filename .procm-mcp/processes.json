@@ -39,9 +39,9 @@
         "127.0.0.1"
       ],
       "cwd": "D:/about-me",
-      "status": "running",
+      "status": "exited",
       "pid": 25204,
-      "exitCode": null,
+      "exitCode": 1,
       "error": null,
       "desc": "Flutter Web ʵ�� (web-server, port 8875)",
       "group": null,
@@ -50,7 +50,7 @@
       "favorite": false,
       "startedAt": 1789449290660,
       "lastStartedAt": 1789463180811,
-      "stoppedAt": null,
+      "stoppedAt": 1789464026168,
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\nRxcc1Ym-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\nRxcc1Ym-stderr.log",
       "envs": {}
@@ -65,9 +65,9 @@
         "windows"
       ],
       "cwd": "D:/about-me",
-      "status": "running",
+      "status": "exited",
       "pid": 20260,
-      "exitCode": null,
+      "exitCode": 0,
       "error": null,
       "desc": "Flutter Windows ����ͻ��� (debug)",
       "group": null,

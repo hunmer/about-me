@@ -118,7 +118,9 @@ class _TagsScreenState extends State<TagsScreen> {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.fromLTRB(
+        16, 8, 16, 8 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: _filteredTags.length,
       itemBuilder: (context, index) {
         return TagCard(

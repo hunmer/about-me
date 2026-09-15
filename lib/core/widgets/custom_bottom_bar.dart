@@ -152,24 +152,18 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
             onBottomBarHidden: () {},
             onBottomBarShown: () {},
             body:
-                (context, controller) => Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: _bottomBarHeight),
-                        child: widget.body(context, controller),
-                      ),
+                (context, controller) => MediaQuery(
+                  data: mediaQuery.copyWith(
+                    padding: mediaQuery.padding.copyWith(
+                      bottom:
+                          _bottomBarHeight +
+                          widget.offset +
+                          mediaQuery.padding.bottom,
                     ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        height: _bottomBarHeight,
-                        color: theme.background,
-                      ),
-                    ),
-                  ],
+                  ),
+                  // body 全屏绘制,页面背景延伸到悬浮 bar 下方,
+                  // 内容通过注入的 padding.bottom 自行避让
+                  child: widget.body(context, controller),
                 ),
             child: Stack(
               key: widget.bottomBarKey,

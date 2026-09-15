@@ -411,7 +411,9 @@ class _PointsHistoryState extends State<PointsHistory> {
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.fromLTRB(
+                      8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+                    ),
                     itemCount:
                         _displayedLogs.length +
                         (_currentPage * _pageSize < _filteredLogs.length

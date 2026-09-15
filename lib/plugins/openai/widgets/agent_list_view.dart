@@ -13,7 +13,12 @@ class AgentListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        8,
+        8,
+        8 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: agents.length,
       itemBuilder: (context, index) {
         return AgentListItem(agent: agents[index]);

@@ -41,7 +41,12 @@ class HabitSearchResultsWidget extends StatelessWidget {
     final skillController = habitsPlugin?.getSkillController();
 
     return MasonryGridView.count(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        8,
+        8,
+        8 + MediaQuery.paddingOf(context).bottom,
+      ),
       crossAxisCount: 2,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
@@ -334,7 +339,12 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
     final skillController = habitsPlugin?.getSkillController();
 
     return MasonryGridView.count(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        8,
+        8,
+        8 + MediaQuery.paddingOf(context).bottom,
+      ),
       crossAxisCount: 2,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,

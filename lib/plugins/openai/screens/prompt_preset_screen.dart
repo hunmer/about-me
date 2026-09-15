@@ -227,7 +227,12 @@ class _PromptPresetScreenState extends State<PromptPresetScreen> {
               builder: (context) {
                 final theme = DSThemeBridge.resolve(context);
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    16 + MediaQuery.paddingOf(context).bottom,
+                  ),
                   itemCount: _filteredPresets.length,
                   itemBuilder: (context, index) {
                     final preset = _filteredPresets[index];

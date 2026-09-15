@@ -669,7 +669,12 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
               // 使用简单的列表视图显示搜索结果
               return ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
                 itemCount: searchTasks.length,
                 separatorBuilder:
                     (context, index) => const SizedBox(height: 16),

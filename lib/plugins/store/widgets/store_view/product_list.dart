@@ -100,7 +100,9 @@ class _ProductListState extends State<ProductList> {
             },
           )
           : MasonryGridView.count(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.fromLTRB(
+              8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+            ),
             crossAxisCount: 2,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
