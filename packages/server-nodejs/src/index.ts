@@ -257,6 +257,25 @@ async function main() {
     console.log('MCP 端点 (需认证 + X-Encryption-Key 请求头):');
     console.log('  POST /mcp                - AI 工具 (Streamable HTTP)');
     console.log('');
+
+    // 自预热: 触发认证/存储路由链的懒加载, 消除首批真实请求的冷启动阻塞。
+    // 请求预期返回 401/404 无妨, 目的只是让模块链提前加载执行。
+    const warmupPaths = ['/health', '/api/v1/storage/health', '/api/v1/storage/files/__warmup__'];
+    setTimeout(async () => {
+      try {
+        await Promise.all(
+          warmupPaths.map(async (p) => {
+            const res = await fetch(`http://127.0.0.1:${config.port}${p}`, {
+              headers: { 'X-API-Key': 'warmup' },
+            });
+            await res.arrayBuffer();
+          }),
+        );
+        console.log(`预热完成: ${warmupPaths.join(', ')}`);
+      } catch (err) {
+        console.log(`预热失败(忽略): ${err}`);
+      }
+    }, 100);
   });
 
   // 优雅关闭

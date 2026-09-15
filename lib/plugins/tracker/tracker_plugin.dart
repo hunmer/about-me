@@ -141,7 +141,10 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
 
   // 构造函数中初始化实例
   TrackerPlugin() {
-    _instance = this;
+    // 首个实例成为单例：BuiltinPlugins.createAll() 可能被重复调用
+    // (如设置页枚举插件)，新实例无条件覆盖会导致未注入 storage 的
+    // 裸实例替换已注册实例
+    _instance ??= this;
   }
 
   // 获取插件实例的静态方法

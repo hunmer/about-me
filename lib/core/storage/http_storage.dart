@@ -108,12 +108,18 @@ class HttpStorage implements StorageInterface {
     }
   }
 
-  Future<http.Response> _request(Future<http.Response> request) async {
+  Future<http.Response> _request(Future<http.Response> Function() request, {bool retry = true}) async {
     try {
-      return await request.timeout(timeout);
+      return await request().timeout(timeout);
     } on TimeoutException {
       throw const StorageException(StorageErrorKind.offline, '连接存储服务器超时');
     } on http.ClientException catch (error) {
+      if (retry) {
+        // 连接层失败(服务器冷启动窗口/keep-alive 连接被服务端关闭)时
+        // 重建连接重试一次; 写操作有 If-Match 版本保护, 重放安全
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        return _request(request, retry: false);
+      }
       throw StorageException(StorageErrorKind.offline, '无法连接存储服务器: $error');
     }
   }
@@ -141,7 +147,7 @@ class HttpStorage implements StorageInterface {
   }
 
   Future<String?> _fetchVersion(String path) async {
-    final response = await _request(_client.head(_filesUri(path), headers: _headers));
+    final response = await _request(() => _client.head(_filesUri(path), headers: _headers));
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
@@ -151,13 +157,13 @@ class HttpStorage implements StorageInterface {
 
   Future<void> testConnection() async {
     final uri = Uri.parse('${_baseUri.toString()}/api/v1/storage/health');
-    final response = await _request(_client.get(uri, headers: _headers));
+    final response = await _request(() => _client.get(uri, headers: _headers));
     if (response.statusCode != 200) _throwFor(response);
   }
 
   @override
   Future<Uint8List?> readBytes(String path) async {
-    final response = await _request(_client.get(_filesUri(path), headers: _headers));
+    final response = await _request(() => _client.get(_filesUri(path), headers: _headers));
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
@@ -173,14 +179,14 @@ class HttpStorage implements StorageInterface {
       'Content-Type': 'application/octet-stream',
       if (version == null) 'If-None-Match': '*' else 'If-Match': version,
     };
-    final response = await _request(_client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)));
+    final response = await _request(() => _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)));
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
     if (etag != null) _versions[path] = etag;
   }
 
   Future<void> forceWriteBytes(String path, Uint8List bytes) async {
-    final response = await _request(_client.put(
+    final response = await _request(() => _client.put(
       _filesUri(path),
       headers: {..._headers, 'Content-Type': 'application/octet-stream', 'X-Force-Overwrite': 'true'},
       body: _encrypt(bytes),
@@ -194,7 +200,7 @@ class HttpStorage implements StorageInterface {
   Future<void> deleteFile(String path) async {
     final version = _versions[path] ?? await _fetchVersion(path);
     if (version == null) return;
-    final response = await _request(_client.delete(
+    final response = await _request(() => _client.delete(
       _filesUri(path), headers: {..._headers, 'If-Match': version},
     ));
     if (response.statusCode != 204 && response.statusCode != 404) _throwFor(response);
@@ -203,7 +209,7 @@ class HttpStorage implements StorageInterface {
 
   @override
   Future<List<String>> getKeysWithPrefix(String prefix) async {
-    final response = await _request(_client.get(_filesUri(null, prefix), headers: _headers));
+    final response = await _request(() => _client.get(_filesUri(null, prefix), headers: _headers));
     if (response.statusCode != 200) _throwFor(response);
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     return (body['files'] as List<dynamic>).cast<String>();
@@ -211,7 +217,7 @@ class HttpStorage implements StorageInterface {
 
   @override
   Future<void> clearWithPrefix(String prefix) async {
-    final response = await _request(_client.delete(_filesUri(null, prefix), headers: _headers));
+    final response = await _request(() => _client.delete(_filesUri(null, prefix), headers: _headers));
     if (response.statusCode != 200) _throwFor(response);
     _versions.removeWhere((key, _) => key.startsWith(prefix));
   }

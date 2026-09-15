@@ -80,6 +80,9 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
   PointAwardEvent? _pointAwardEvent;
   bool _isInitialized = false;
 
+  /// 插件是否已完成初始化（注册失败的插件在 widget 同步前需检查）
+  bool get isInitialized => _isInitialized;
+
   /// UseCase 实例（UseCase 架构）
   late final StoreUseCase _useCase;
 

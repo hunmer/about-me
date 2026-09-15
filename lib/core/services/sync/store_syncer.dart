@@ -10,7 +10,8 @@ class StoreSyncer extends PluginWidgetSyncer {
   Future<void> sync() async {
     await syncSafely('store', () async {
       final plugin = PluginManager.instance.getPlugin('store') as StorePlugin?;
-      if (plugin == null) return;
+      // 注册失败(如存储离线)的插件未完成初始化, 跳过同步避免断言失败
+      if (plugin == null || !plugin.isInitialized) return;
 
       final totalProducts = plugin.controller.getGoodsCount();
       final todayRedeemCount = plugin.controller.getTodayRedeemCount();
