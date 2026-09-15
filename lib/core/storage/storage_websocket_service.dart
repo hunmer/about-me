@@ -34,6 +34,9 @@ class StorageWebSocketService {
         scheme: base.scheme == 'https' ? 'wss' : 'ws',
         path: '${base.path.replaceFirst(RegExp(r'/$'), '')}/api/v1/storage/ws',
       );
+      debugPrint(
+        '[SyncDebug][WS] connecting uri=$uri device=${_shortId(deviceId)}',
+      );
       final channel = WebSocketChannel.connect(uri);
       _channel = channel;
       channel.stream.listen(
@@ -49,8 +52,9 @@ class StorageWebSocketService {
           'device_id': deviceId,
         }),
       );
+      debugPrint('[SyncDebug][WS] auth sent device=${_shortId(deviceId)}');
     } catch (error) {
-      debugPrint('[StorageWS] connect failed: $error');
+      debugPrint('[SyncDebug][WS] connect failed error=$error');
       _scheduleReconnect();
     }
   }
@@ -58,18 +62,32 @@ class StorageWebSocketService {
   void _onMessage(dynamic raw) {
     try {
       final message = jsonDecode(raw as String) as Map<String, dynamic>;
-      if (message['type'] != 'file_updated') return;
+      final type = message['type'] as String?;
+      if (type == 'auth_success') {
+        debugPrint(
+          '[SyncDebug][WS] authenticated device=${_shortId(deviceId)}',
+        );
+        return;
+      }
+      if (type != 'file_updated') {
+        debugPrint('[SyncDebug][WS] ignored message type=$type');
+        return;
+      }
       final data = message['data'] as Map<String, dynamic>?;
       final path = data?['file_path'] as String?;
       if (path == null || path.isEmpty) return;
+      debugPrint(
+        '[SyncDebug][WS] update received path=$path source=${_shortId(data?['source_device_id'] as String?)}',
+      );
       unawaited(RouteRefreshManager().onFileSynced(path));
     } catch (error) {
-      debugPrint('[StorageWS] invalid message: $error');
+      debugPrint('[SyncDebug][WS] invalid message error=$error');
     }
   }
 
   void _scheduleReconnect([Object? _]) {
     if (_closed || _reconnectTimer?.isActive == true) return;
+    debugPrint('[SyncDebug][WS] reconnect scheduled in=3s');
     _reconnectTimer = Timer(const Duration(seconds: 3), _connectNow);
   }
 
@@ -78,6 +96,7 @@ class StorageWebSocketService {
     _reconnectTimer = null;
     final channel = _channel;
     _channel = null;
+    if (channel != null) debugPrint('[SyncDebug][WS] disconnecting');
     await channel?.sink.close();
   }
 
@@ -85,4 +104,11 @@ class StorageWebSocketService {
     _closed = true;
     await disconnect();
   }
+
+  String _shortId(String? value) =>
+      value == null || value.isEmpty
+          ? '-'
+          : value.length <= 8
+          ? value
+          : value.substring(0, 8);
 }

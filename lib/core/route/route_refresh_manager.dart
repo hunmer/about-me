@@ -73,9 +73,10 @@ class RouteRefreshManager {
   Future<void> onFileSynced(String filePath) async {
     final pluginId = _getPluginForFile(filePath);
     if (pluginId == null) {
-      _log('未找到文件对应的插件: $filePath');
+      _log('[SyncDebug][Refresh] no plugin path=$filePath');
       return;
     }
+    _log('[SyncDebug][Refresh] start plugin=$pluginId path=$filePath');
 
     // 防抖检查
     final now = DateTime.now();
@@ -83,7 +84,9 @@ class RouteRefreshManager {
     if (lastRefresh != null) {
       final diff = now.difference(lastRefresh).inMilliseconds;
       if (diff < _debounceIntervalMs) {
-        _log('防抖：跳过刷新 $pluginId (${diff}ms < ${_debounceIntervalMs}ms)');
+        _log(
+          '[SyncDebug][Refresh] debounced plugin=$pluginId elapsed=${diff}ms',
+        );
         return;
       }
     }
@@ -97,10 +100,7 @@ class RouteRefreshManager {
         if (plugin.supportsFileRefresh(filePath)) {
           try {
             refreshSuccess = await plugin.refreshData(
-              PluginRefreshDataArgs(
-                filePath: filePath,
-                source: 'sync',
-              ),
+              PluginRefreshDataArgs(filePath: filePath, source: 'sync'),
             );
             _log('插件数据刷新${refreshSuccess ? "成功" : "失败"}: $pluginId');
           } catch (e) {
@@ -110,14 +110,18 @@ class RouteRefreshManager {
           _log('插件不支持该文件的刷新: $filePath');
         }
       }
+    } else {
+      _log('[SyncDebug][Refresh] plugin manager unavailable plugin=$pluginId');
     }
 
     // 2. 检查当前路由是否匹配，如果在插件页面内则触发 UI 刷新事件
     if (_isCurrentRoute(pluginId)) {
-      _log('当前路由匹配，触发 UI 刷新事件: $pluginId');
+      _log(
+        '[SyncDebug][Refresh] ui refresh plugin=$pluginId success=$refreshSuccess',
+      );
       _triggerRefresh(pluginId, refreshSuccess);
     } else {
-      _log('当前路由不匹配，跳过 UI 刷新事件: $pluginId');
+      _log('[SyncDebug][Refresh] ui skipped plugin=$pluginId');
     }
   }
 
@@ -149,8 +153,8 @@ class RouteRefreshManager {
 
     // 2. 检查路由是否包含插件ID
     return currentRoute.contains('/$pluginId') ||
-           currentRoute == pluginId ||
-           currentRoute.endsWith('/$pluginId');
+        currentRoute == pluginId ||
+        currentRoute.endsWith('/$pluginId');
   }
 
   /// 触发插件刷新
@@ -164,7 +168,11 @@ class RouteRefreshManager {
     // 同时广播通用的数据更新事件
     EventManager.instance.broadcast(
       'sync_data_updated',
-      SyncDataUpdatedArgs(filePath: '', source: 'websocket', pluginId: pluginId),
+      SyncDataUpdatedArgs(
+        filePath: '',
+        source: 'websocket',
+        pluginId: pluginId,
+      ),
     );
 
     _log('已触发刷新事件: $pluginId');
@@ -193,10 +201,8 @@ class PluginRefreshArgs extends EventArgs {
   final String pluginId;
   final bool success;
 
-  PluginRefreshArgs({
-    required this.pluginId,
-    this.success = false,
-  }) : super('plugin_refresh');
+  PluginRefreshArgs({required this.pluginId, this.success = false})
+    : super('plugin_refresh');
 }
 
 /// 同步数据更新事件参数

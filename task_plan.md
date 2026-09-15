@@ -23,3 +23,4 @@ HTTP 存储后端配置成功后建立 WS；服务端按 API Key 所属账号向
 ## 完成
 - 插件 API 统一广播已接入，Node tsc 与 Jest 22 项测试通过，服务端已重新由 procm 启动。
 - 已诊断并修复跨设备 UI 状态文件的 412：客户端 HTTP 存储采用最后写入覆盖；Flutter 存储测试和静态检查通过。
+- 已增加 `[SyncDebug]` 跨设备更新链路日志，Flutter 静态检查与 Node TypeScript 检查通过；服务端已重启并确认两台设备 WS 连接。
