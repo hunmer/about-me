@@ -221,11 +221,10 @@ class HttpStorage implements StorageInterface {
 
   @override
   Future<void> writeBytes(String path, Uint8List bytes) async {
-    final version = _versions[path] ?? await _fetchVersion(path);
     final headers = <String, String>{
       ..._headers,
       'Content-Type': 'application/octet-stream',
-      if (version == null) 'If-None-Match': '*' else 'If-Match': version,
+      'X-Force-Overwrite': 'true',
     };
     final response = await _request(
       () =>
@@ -237,30 +236,15 @@ class HttpStorage implements StorageInterface {
   }
 
   Future<void> forceWriteBytes(String path, Uint8List bytes) async {
-    final response = await _request(
-      () => _client.put(
-        _filesUri(path),
-        headers: {
-          ..._headers,
-          'Content-Type': 'application/octet-stream',
-          'X-Force-Overwrite': 'true',
-        },
-        body: _encrypt(bytes),
-      ),
-    );
-    if (response.statusCode != 200) _throwFor(response);
-    final etag = response.headers['etag'];
-    if (etag != null) _versions[path] = etag;
+    await writeBytes(path, bytes);
   }
 
   @override
   Future<void> deleteFile(String path) async {
-    final version = _versions[path] ?? await _fetchVersion(path);
-    if (version == null) return;
     final response = await _request(
       () => _client.delete(
         _filesUri(path),
-        headers: {..._headers, 'If-Match': version},
+        headers: {..._headers, 'X-Force-Overwrite': 'true'},
       ),
     );
     if (response.statusCode != 204 && response.statusCode != 404) {

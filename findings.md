@@ -13,3 +13,4 @@
 - 最小协议可采用：WS `/api/v1/storage/ws?api_key=...&device_id=...`；服务端认证后登记 `{userId, deviceId}`；写/删成功广播 `{type:'file_updated', data:{file_path,...}}` 给同 userId 且不同 deviceId 的连接。
 - 插件 API 全部由 `createPluginRoutes` 统一执行；成功的 POST/PUT/PATCH/DELETE 可广播 `${pluginId}/`，客户端按插件目录映射刷新。
 - MCP 使用 `createInternalInvoker` 直调插件处理器、绕过 Express 插件路由，需要在 invoker 成功写操作处单独回调广播。
+- 412 根因已确认是客户端 HTTP 存储的 ETag 条件写入；冲突文件为跨设备 UI 状态 `configs/plugin_manager.json`、`configs/route_history.json`，与 WS 刷新无关。

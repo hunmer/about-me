@@ -10,3 +10,4 @@
 - 验证通过：Flutter analyze（5 文件）、Node `tsc --noEmit`、Node Jest（22 tests）。
 - 后续优化：统一插件路由成功写操作广播 `${pluginId}/` 事件，覆盖插件 API 直接写入。
 - MCP 进程内写操作也已接入相同广播回调。
+- 按用户要求移除客户端 HTTP 存储的条件写入，改为最后写入覆盖，避免跨设备 UI 状态产生 412。

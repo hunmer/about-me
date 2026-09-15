@@ -12,21 +12,23 @@ void main() {
 
   test('validates remote configuration and requires HTTPS', () {
     expect(
-      () => const StorageBackendConfig(
-        type: StorageBackendType.http,
-        serverUrl: 'http://remote.example',
-        credential: 'token',
-        encryptionKey: key,
-      ).validate(),
+      () =>
+          const StorageBackendConfig(
+            type: StorageBackendType.http,
+            serverUrl: 'http://remote.example',
+            credential: 'token',
+            encryptionKey: key,
+          ).validate(),
       throwsA(isA<FormatException>()),
     );
     expect(
-      () => const StorageBackendConfig(
-        type: StorageBackendType.http,
-        serverUrl: 'https://remote.example',
-        credential: 'token',
-        encryptionKey: key,
-      ).validate(),
+      () =>
+          const StorageBackendConfig(
+            type: StorageBackendType.http,
+            serverUrl: 'https://remote.example',
+            credential: 'token',
+            encryptionKey: key,
+          ).validate(),
       returnsNormally,
     );
   });
@@ -37,7 +39,7 @@ void main() {
     final client = MockClient((request) async {
       if (request.method == 'HEAD') return http.Response('', 404);
       if (request.method == 'PUT') {
-        expect(request.headers['If-None-Match'], '*');
+        expect(request.headers['X-Force-Overwrite'], 'true');
         stored = request.bodyBytes;
         expect(utf8.decode(stored!), isNot(contains('private text')));
         return http.Response('', 200, headers: {'etag': etag});
@@ -59,12 +61,15 @@ void main() {
     expect(await storage.readString('notes/data.json'), 'private text');
   });
 
-  test('maps stale ETag responses to a conflict exception', () async {
+  test('uses force overwrite instead of conditional writes', () async {
     var calls = 0;
     final client = MockClient((request) async {
       calls++;
-      if (request.method == 'HEAD') return http.Response('', 200, headers: {'etag': '"old"'});
-      return http.Response('{"error":"conflict"}', 412);
+      expect(request.method, 'PUT');
+      expect(request.headers['X-Force-Overwrite'], 'true');
+      expect(request.headers.containsKey('If-Match'), isFalse);
+      expect(request.headers.containsKey('If-None-Match'), isFalse);
+      return http.Response('', 200, headers: {'etag': '"new"'});
     });
     final storage = HttpStorage(
       serverUrl: 'https://storage.example',
@@ -74,13 +79,8 @@ void main() {
       client: client,
     );
 
-    await expectLater(
-      storage.writeBytes('data.bin', Uint8List.fromList([1, 2, 3])),
-      throwsA(isA<StorageException>().having(
-        (error) => error.kind, 'kind', StorageErrorKind.conflict,
-      )),
-    );
-    expect(calls, 2);
+    await storage.writeBytes('data.bin', Uint8List.fromList([1, 2, 3]));
+    expect(calls, 1);
   });
 
   test('reports offline and authentication failures explicitly', () async {
@@ -93,9 +93,13 @@ void main() {
     );
     await expectLater(
       unauthorized.testConnection(),
-      throwsA(isA<StorageException>().having(
-        (error) => error.kind, 'kind', StorageErrorKind.unauthorized,
-      )),
+      throwsA(
+        isA<StorageException>().having(
+          (error) => error.kind,
+          'kind',
+          StorageErrorKind.unauthorized,
+        ),
+      ),
     );
 
     final offline = HttpStorage(
@@ -107,9 +111,13 @@ void main() {
     );
     await expectLater(
       offline.testConnection(),
-      throwsA(isA<StorageException>().having(
-        (error) => error.kind, 'kind', StorageErrorKind.offline,
-      )),
+      throwsA(
+        isA<StorageException>().having(
+          (error) => error.kind,
+          'kind',
+          StorageErrorKind.offline,
+        ),
+      ),
     );
   });
 }
