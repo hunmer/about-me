@@ -22,6 +22,7 @@ import { authMiddleware } from '../middleware';
 import { AboutmeClient } from './client';
 import { createMcpServer } from './server';
 import { createInternalInvoker } from './invoker';
+import { StorageWebSocketService } from '../services/storageWebSocketService';
 
 /**
  * JSON-RPC 错误响应
@@ -43,9 +44,9 @@ function jsonRpcError(res: Response, code: number, message: string): void {
 export function createMcpRouter(
   authService: AuthService,
   pluginDataService: PluginDataService,
+  webSocket?: StorageWebSocketService,
 ): Router {
   const router = Router();
-  const invoke = createInternalInvoker(pluginDataService);
 
   // 认证: X-API-Key 或 Bearer JWT (OPTIONS 预检由中间件内部跳过)
   router.use(authMiddleware(authService));
@@ -65,6 +66,10 @@ export function createMcpRouter(
   });
 
   router.post('/', async (req: Request, res: Response) => {
+    const sourceDeviceId = req.header('X-Device-ID') || undefined;
+    const invoke = createInternalInvoker(pluginDataService, (userId, pluginId) => {
+      webSocket?.broadcastFileUpdate(userId, sourceDeviceId, `${pluginId}/`);
+    });
     // 无状态模式: 每个请求创建新的 transport 和 server 实例
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,

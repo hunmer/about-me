@@ -6,6 +6,7 @@ import 'package:aboutme/core/storage/http_storage.dart';
 import 'package:aboutme/core/storage/storage_backend_config.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/storage/storage_migration_service.dart';
+import 'package:aboutme/core/storage/storage_websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,10 +14,12 @@ class StorageBackendSettingsDialog extends StatefulWidget {
   const StorageBackendSettingsDialog({super.key});
 
   @override
-  State<StorageBackendSettingsDialog> createState() => _StorageBackendSettingsDialogState();
+  State<StorageBackendSettingsDialog> createState() =>
+      _StorageBackendSettingsDialogState();
 }
 
-class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDialog> {
+class _StorageBackendSettingsDialogState
+    extends State<StorageBackendSettingsDialog> {
   final _formKey = GlobalKey<FormState>();
   final _serverController = TextEditingController();
   final _credentialController = TextEditingController();
@@ -63,9 +66,13 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
 
   Future<void> _test() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() { _loading = true; _status = null; });
+    setState(() {
+      _loading = true;
+      _status = null;
+    });
     try {
       await HttpStorage.fromConfig(_config()).testConnection();
+      await StorageWebSocketService.instance.connect(_config());
       if (mounted) {
         setState(() => _status = '连接成功');
       }
@@ -85,43 +92,72 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
         _keyController.text.trim() != _originalKey.trim()) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('更改加密密钥'),
-          content: const Text('使用新密钥后，之前使用旧密钥加密的数据将无法解密。请确认已备份旧密钥。'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
-          ],
-        ),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('更改加密密钥'),
+              content: const Text('使用新密钥后，之前使用旧密钥加密的数据将无法解密。请确认已备份旧密钥。'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('继续'),
+                ),
+              ],
+            ),
       );
       if (confirmed != true) return;
     }
     if (_type != _originalType) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('切换数据存储后端'),
-          content: const Text('切换不会迁移或删除现有数据。请先完成数据导出，并确认当前没有未完成的写入。保存后需要重新启动应用。'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
-          ],
-        ),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('切换数据存储后端'),
+              content: const Text(
+                '切换不会迁移或删除现有数据。请先完成数据导出，并确认当前没有未完成的写入。保存后需要重新启动应用。',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('继续'),
+                ),
+              ],
+            ),
       );
       if (confirmed != true) return;
     }
     setState(() => _loading = true);
     try {
       await _store.save(_config());
+      if (_type == StorageBackendType.http) {
+        await StorageWebSocketService.instance.connect(_config());
+      } else {
+        await StorageWebSocketService.instance.dispose();
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
-      if (mounted) setState(() { _loading = false; _status = '保存失败：$error'; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _status = '保存失败：$error';
+        });
+      }
     }
   }
 
   Future<void> _migrate() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() { _loading = true; _status = '正在迁移…'; });
+    setState(() {
+      _loading = true;
+      _status = '正在迁移…';
+    });
     try {
       final destination = HttpStorage.fromConfig(_config());
       await destination.testConnection();
@@ -133,7 +169,9 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
         },
       );
       if (mounted) {
-        setState(() => _status = '迁移完成：${result.migrated} 个文件，跳过 ${result.skipped} 个');
+        setState(
+          () => _status = '迁移完成：${result.migrated} 个文件，跳过 ${result.skipped} 个',
+        );
       }
     } catch (error) {
       if (mounted) setState(() => _status = '迁移失败：$error');
@@ -144,10 +182,15 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
 
   void _generateKey() {
     final random = Random.secure();
-    _keyController.text = base64Encode(List<int>.generate(32, (_) => random.nextInt(256)));
+    _keyController.text = base64Encode(
+      List<int>.generate(32, (_) => random.nextInt(256)),
+    );
   }
 
-  Future<void> _copyField(TextEditingController controller, String label) async {
+  Future<void> _copyField(
+    TextEditingController controller,
+    String label,
+  ) async {
     final value = controller.text.trim();
     if (value.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: value));
@@ -169,94 +212,148 @@ class _StorageBackendSettingsDialogState extends State<StorageBackendSettingsDia
       title: const Text('数据存储后端'),
       content: SizedBox(
         width: 480,
-        child: _loading && _serverController.text.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SegmentedButton<StorageBackendType>(
-                        segments: const [
-                          ButtonSegment(value: StorageBackendType.local, icon: Icon(Icons.folder), label: Text('本地文件')),
-                          ButtonSegment(value: StorageBackendType.http, icon: Icon(Icons.cloud), label: Text('HTTP 服务器')),
+        child:
+            _loading && _serverController.text.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SegmentedButton<StorageBackendType>(
+                          segments: const [
+                            ButtonSegment(
+                              value: StorageBackendType.local,
+                              icon: Icon(Icons.folder),
+                              label: Text('本地文件'),
+                            ),
+                            ButtonSegment(
+                              value: StorageBackendType.http,
+                              icon: Icon(Icons.cloud),
+                              label: Text('HTTP 服务器'),
+                            ),
+                          ],
+                          selected: {_type},
+                          onSelectionChanged:
+                              _loading
+                                  ? null
+                                  : (value) =>
+                                      setState(() => _type = value.first),
+                        ),
+                        if (_type == StorageBackendType.http) ...[
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _serverController,
+                            decoration: const InputDecoration(
+                              labelText: '服务器地址',
+                              hintText: 'https://example.com',
+                            ),
+                            validator:
+                                (value) =>
+                                    value == null || value.trim().isEmpty
+                                        ? '请输入服务器地址'
+                                        : null,
+                          ),
+                          const SizedBox(height: 12),
+                          const InputDecorator(
+                            decoration: InputDecoration(labelText: '认证方式'),
+                            child: Text('API Key'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _credentialController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'API Key',
+                              suffixIcon: IconButton(
+                                tooltip: '复制 API Key',
+                                icon: const Icon(Icons.copy),
+                                onPressed:
+                                    () => _copyField(
+                                      _credentialController,
+                                      'API Key',
+                                    ),
+                              ),
+                            ),
+                            validator:
+                                (value) =>
+                                    value == null || value.trim().isEmpty
+                                        ? '请输入认证凭据'
+                                        : null,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _keyController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: '端到端加密密钥',
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: '复制加密密钥',
+                                    icon: const Icon(Icons.copy),
+                                    onPressed:
+                                        () =>
+                                            _copyField(_keyController, '加密密钥'),
+                                  ),
+                                  IconButton(
+                                    tooltip: '生成加密密钥',
+                                    icon: const Icon(Icons.refresh),
+                                    onPressed: _generateKey,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            validator:
+                                (value) =>
+                                    value == null || value.trim().isEmpty
+                                        ? '请输入加密密钥'
+                                        : null,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _userIdController,
+                            decoration: const InputDecoration(
+                              labelText: '用户标识（可选）',
+                            ),
+                          ),
                         ],
-                        selected: {_type},
-                        onSelectionChanged: _loading ? null : (value) => setState(() => _type = value.first),
-                      ),
-                      if (_type == StorageBackendType.http) ...[
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _serverController,
-                          decoration: const InputDecoration(labelText: '服务器地址', hintText: 'https://example.com'),
-                          validator: (value) => value == null || value.trim().isEmpty ? '请输入服务器地址' : null,
-                        ),
-                        const SizedBox(height: 12),
-                        const InputDecorator(
-                          decoration: InputDecoration(labelText: '认证方式'),
-                          child: Text('API Key'),
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _credentialController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: 'API Key',
-                            suffixIcon: IconButton(
-                              tooltip: '复制 API Key',
-                              icon: const Icon(Icons.copy),
-                              onPressed: () => _copyField(_credentialController, 'API Key'),
-                            ),
+                        if (_status != null) ...[
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(_status!),
                           ),
-                          validator: (value) => value == null || value.trim().isEmpty ? '请输入认证凭据' : null,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _keyController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: '端到端加密密钥',
-                            suffixIcon: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  tooltip: '复制加密密钥',
-                                  icon: const Icon(Icons.copy),
-                                  onPressed: () => _copyField(_keyController, '加密密钥'),
-                                ),
-                                IconButton(
-                                  tooltip: '生成加密密钥',
-                                  icon: const Icon(Icons.refresh),
-                                  onPressed: _generateKey,
-                                ),
-                              ],
-                            ),
-                          ),
-                          validator: (value) => value == null || value.trim().isEmpty ? '请输入加密密钥' : null,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _userIdController,
-                          decoration: const InputDecoration(labelText: '用户标识（可选）'),
-                        ),
+                        ],
                       ],
-                      if (_status != null) ...[
-                        const SizedBox(height: 12),
-                        Align(alignment: Alignment.centerLeft, child: Text(_status!)),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
       ),
       actions: [
-        TextButton(onPressed: _loading ? null : () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
         if (_type == StorageBackendType.http)
-          OutlinedButton.icon(onPressed: _loading ? null : _test, icon: const Icon(Icons.wifi_tethering), label: const Text('测试连接')),
+          OutlinedButton.icon(
+            onPressed: _loading ? null : _test,
+            icon: const Icon(Icons.wifi_tethering),
+            label: const Text('测试连接'),
+          ),
         if (_type == StorageBackendType.http)
-          OutlinedButton.icon(onPressed: _loading ? null : _migrate, icon: const Icon(Icons.upload), label: const Text('迁移本地数据')),
-        FilledButton.icon(onPressed: _loading ? null : _save, icon: const Icon(Icons.save), label: const Text('保存')),
+          OutlinedButton.icon(
+            onPressed: _loading ? null : _migrate,
+            icon: const Icon(Icons.upload),
+            label: const Text('迁移本地数据'),
+          ),
+        FilledButton.icon(
+          onPressed: _loading ? null : _save,
+          icon: const Icon(Icons.save),
+          label: const Text('保存'),
+        ),
       ],
     );
   }

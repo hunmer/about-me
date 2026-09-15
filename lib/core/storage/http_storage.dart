@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:http/http.dart' as http;
+import 'device_identity.dart';
 
 import 'storage_backend_config.dart';
 import 'storage_interface.dart';
@@ -25,7 +26,8 @@ class StorageException implements Exception {
   final int? statusCode;
 
   @override
-  String toString() => 'StorageException($kind${statusCode == null ? '' : ', HTTP $statusCode'}): $message';
+  String toString() =>
+      'StorageException($kind${statusCode == null ? '' : ', HTTP $statusCode'}): $message';
 }
 
 class HttpStorage implements StorageInterface {
@@ -41,7 +43,10 @@ class HttpStorage implements StorageInterface {
        _client = client ?? http.Client(),
        _key = _decodeKey(encryptionKey);
 
-  factory HttpStorage.fromConfig(StorageBackendConfig config, {http.Client? client}) {
+  factory HttpStorage.fromConfig(
+    StorageBackendConfig config, {
+    http.Client? client,
+  }) {
     config.validate();
     return HttpStorage(
       serverUrl: config.serverUrl,
@@ -70,45 +75,68 @@ class HttpStorage implements StorageInterface {
   }
 
   /// HTTP 存储统一通过 X-API-Key 认证。
-  Map<String, String> get _headers => {'X-API-Key': _credential};
+  Map<String, String> get _headers => {
+    'X-API-Key': _credential,
+    'X-Device-ID': DeviceIdentity.id,
+  };
 
   Uri _filesUri([String? path, String? prefix]) {
     final root = '${_baseUri.toString()}/api/v1/storage/files';
     if (path != null) {
       // 本地文件路径在 Windows 上可能包含反斜杠；HTTP API 统一使用正斜杠。
       final normalizedPath = path.replaceAll('\\', '/');
-      final encoded = normalizedPath.split('/').map(Uri.encodeComponent).join('/');
+      final encoded = normalizedPath
+          .split('/')
+          .map(Uri.encodeComponent)
+          .join('/');
       return Uri.parse('$root/$encoded');
     }
     final normalizedPrefix = prefix?.replaceAll('\\', '/');
-    return Uri.parse(root).replace(queryParameters: normalizedPrefix == null ? null : {'prefix': normalizedPrefix});
+    return Uri.parse(root).replace(
+      queryParameters:
+          normalizedPrefix == null ? null : {'prefix': normalizedPrefix},
+    );
   }
 
   Uint8List _encrypt(Uint8List bytes) {
     final iv = encrypt.IV.fromSecureRandom(12);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_key, mode: encrypt.AESMode.gcm));
+    final encrypter = encrypt.Encrypter(
+      encrypt.AES(_key, mode: encrypt.AESMode.gcm),
+    );
     final ciphertext = encrypter.encryptBytes(bytes, iv: iv);
-    return Uint8List.fromList(utf8.encode(jsonEncode({
-      'version': 1,
-      'iv': iv.base64,
-      'ciphertext': ciphertext.base64,
-    })));
+    return Uint8List.fromList(
+      utf8.encode(
+        jsonEncode({
+          'version': 1,
+          'iv': iv.base64,
+          'ciphertext': ciphertext.base64,
+        }),
+      ),
+    );
   }
 
   Uint8List _decrypt(Uint8List envelopeBytes) {
     try {
-      final envelope = jsonDecode(utf8.decode(envelopeBytes)) as Map<String, dynamic>;
+      final envelope =
+          jsonDecode(utf8.decode(envelopeBytes)) as Map<String, dynamic>;
       if (envelope['version'] != 1) throw const FormatException('不支持的密文版本');
       final iv = encrypt.IV.fromBase64(envelope['iv'] as String);
-      final ciphertext = encrypt.Encrypted.fromBase64(envelope['ciphertext'] as String);
-      final encrypter = encrypt.Encrypter(encrypt.AES(_key, mode: encrypt.AESMode.gcm));
+      final ciphertext = encrypt.Encrypted.fromBase64(
+        envelope['ciphertext'] as String,
+      );
+      final encrypter = encrypt.Encrypter(
+        encrypt.AES(_key, mode: encrypt.AESMode.gcm),
+      );
       return Uint8List.fromList(encrypter.decryptBytes(ciphertext, iv: iv));
     } catch (error) {
       throw StorageException(StorageErrorKind.invalidData, '远端数据无法解密: $error');
     }
   }
 
-  Future<http.Response> _request(Future<http.Response> Function() request, {bool retry = true}) async {
+  Future<http.Response> _request(
+    Future<http.Response> Function() request, {
+    bool retry = true,
+  }) async {
     try {
       return await request().timeout(timeout);
     } on TimeoutException {
@@ -127,16 +155,32 @@ class HttpStorage implements StorageInterface {
   Never _throwFor(http.Response response) {
     final code = response.statusCode;
     if (code == 401 || code == 403) {
-      throw StorageException(StorageErrorKind.unauthorized, '认证失败', statusCode: code);
+      throw StorageException(
+        StorageErrorKind.unauthorized,
+        '认证失败',
+        statusCode: code,
+      );
     }
     if (code == 404) {
-      throw StorageException(StorageErrorKind.notFound, '文件不存在', statusCode: code);
+      throw StorageException(
+        StorageErrorKind.notFound,
+        '文件不存在',
+        statusCode: code,
+      );
     }
     if (code == 409 || code == 412) {
-      throw StorageException(StorageErrorKind.conflict, '远端文件已被其他客户端修改', statusCode: code);
+      throw StorageException(
+        StorageErrorKind.conflict,
+        '远端文件已被其他客户端修改',
+        statusCode: code,
+      );
     }
     if (code >= 500) {
-      throw StorageException(StorageErrorKind.server, '存储服务器错误', statusCode: code);
+      throw StorageException(
+        StorageErrorKind.server,
+        '存储服务器错误',
+        statusCode: code,
+      );
     }
     final detail = response.body.trim();
     throw StorageException(
@@ -147,7 +191,9 @@ class HttpStorage implements StorageInterface {
   }
 
   Future<String?> _fetchVersion(String path) async {
-    final response = await _request(() => _client.head(_filesUri(path), headers: _headers));
+    final response = await _request(
+      () => _client.head(_filesUri(path), headers: _headers),
+    );
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
@@ -163,7 +209,9 @@ class HttpStorage implements StorageInterface {
 
   @override
   Future<Uint8List?> readBytes(String path) async {
-    final response = await _request(() => _client.get(_filesUri(path), headers: _headers));
+    final response = await _request(
+      () => _client.get(_filesUri(path), headers: _headers),
+    );
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
@@ -179,18 +227,27 @@ class HttpStorage implements StorageInterface {
       'Content-Type': 'application/octet-stream',
       if (version == null) 'If-None-Match': '*' else 'If-Match': version,
     };
-    final response = await _request(() => _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)));
+    final response = await _request(
+      () =>
+          _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)),
+    );
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
     if (etag != null) _versions[path] = etag;
   }
 
   Future<void> forceWriteBytes(String path, Uint8List bytes) async {
-    final response = await _request(() => _client.put(
-      _filesUri(path),
-      headers: {..._headers, 'Content-Type': 'application/octet-stream', 'X-Force-Overwrite': 'true'},
-      body: _encrypt(bytes),
-    ));
+    final response = await _request(
+      () => _client.put(
+        _filesUri(path),
+        headers: {
+          ..._headers,
+          'Content-Type': 'application/octet-stream',
+          'X-Force-Overwrite': 'true',
+        },
+        body: _encrypt(bytes),
+      ),
+    );
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
     if (etag != null) _versions[path] = etag;
@@ -200,27 +257,39 @@ class HttpStorage implements StorageInterface {
   Future<void> deleteFile(String path) async {
     final version = _versions[path] ?? await _fetchVersion(path);
     if (version == null) return;
-    final response = await _request(() => _client.delete(
-      _filesUri(path), headers: {..._headers, 'If-Match': version},
-    ));
-    if (response.statusCode != 204 && response.statusCode != 404) _throwFor(response);
+    final response = await _request(
+      () => _client.delete(
+        _filesUri(path),
+        headers: {..._headers, 'If-Match': version},
+      ),
+    );
+    if (response.statusCode != 204 && response.statusCode != 404) {
+      _throwFor(response);
+    }
     _versions.remove(path);
   }
 
   @override
   Future<List<String>> getKeysWithPrefix(String prefix) async {
-    final response = await _request(() => _client.get(_filesUri(null, prefix), headers: _headers));
+    final response = await _request(
+      () => _client.get(_filesUri(null, prefix), headers: _headers),
+    );
     if (response.statusCode != 200) _throwFor(response);
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     // 服务器返回 {path,size,updated_at} 对象数组，本地实现返回字符串数组，两者都兼容
     return (body['files'] as List<dynamic>)
-        .map((e) => e is String ? e : (e as Map<String, dynamic>)['path'] as String)
+        .map(
+          (e) =>
+              e is String ? e : (e as Map<String, dynamic>)['path'] as String,
+        )
         .toList();
   }
 
   @override
   Future<void> clearWithPrefix(String prefix) async {
-    final response = await _request(() => _client.delete(_filesUri(null, prefix), headers: _headers));
+    final response = await _request(
+      () => _client.delete(_filesUri(null, prefix), headers: _headers),
+    );
     if (response.statusCode != 200) _throwFor(response);
     _versions.removeWhere((key, _) => key.startsWith(prefix));
   }
@@ -235,7 +304,8 @@ class HttpStorage implements StorageInterface {
   }
 
   @override
-  Future<void> saveData(String key, String value) => writeBytes(key, Uint8List.fromList(utf8.encode(value)));
+  Future<void> saveData(String key, String value) =>
+      writeBytes(key, Uint8List.fromList(utf8.encode(value)));
 
   @override
   Future<void> removeData(String key) => deleteFile(key);
@@ -243,11 +313,14 @@ class HttpStorage implements StorageInterface {
   @override
   Future<dynamic> loadJson(String key, [dynamic defaultValue]) async {
     final value = await loadData(key);
-    return value == null || value.isEmpty ? defaultValue ?? {} : jsonDecode(value);
+    return value == null || value.isEmpty
+        ? defaultValue ?? {}
+        : jsonDecode(value);
   }
 
   @override
-  Future<void> saveJson(String key, dynamic data) => saveData(key, jsonEncode(data));
+  Future<void> saveJson(String key, dynamic data) =>
+      saveData(key, jsonEncode(data));
 
   @override
   Future<void> createDirectory(String path) async {}
@@ -255,10 +328,13 @@ class HttpStorage implements StorageInterface {
   @override
   Future<String> readString(String path) async {
     final value = await loadData(path);
-    if (value == null) throw StorageException(StorageErrorKind.notFound, '文件不存在: $path');
+    if (value == null) {
+      throw StorageException(StorageErrorKind.notFound, '文件不存在: $path');
+    }
     return value;
   }
 
   @override
-  Future<void> writeString(String path, String content) => saveData(path, content);
+  Future<void> writeString(String path, String content) =>
+      saveData(path, content);
 }

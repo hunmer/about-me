@@ -51,7 +51,10 @@ function matchRoute(pattern: string, subPath: string): Record<string, string> | 
 /**
  * 创建进程内调用器
  */
-export function createInternalInvoker(pluginDataService: PluginDataService): InternalInvoke {
+export function createInternalInvoker(
+  pluginDataService: PluginDataService,
+  onMutation?: (userId: string, pluginId: string) => void,
+): InternalInvoke {
   const handlersCache = new Map<string, PluginHandlers>();
 
   return async (userId, encryptionKey, method, apiPath, query, body) => {
@@ -106,6 +109,9 @@ export function createInternalInvoker(pluginDataService: PluginDataService): Int
     try {
       const result = await handler(userId, encryptionKey, params);
       if (result.isSuccess) {
+        if (['post', 'put', 'delete'].includes(method)) {
+          onMutation?.(userId, pluginId);
+        }
         return { success: true, data: result.data, timestamp };
       }
       return { success: false, error: result.message, timestamp };

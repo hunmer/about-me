@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PluginDataService } from '../../services/pluginDataService';
 import { createPluginRoutes, createPluginRoutesIndex as createRoutesIndex, getSupportedPlugins as getPlugins } from './factory';
 import { PLUGIN_ROUTE_CONFIGS, getPluginRouteConfig } from './routeConfig';
+import { StorageWebSocketService } from '../../services/storageWebSocketService';
 
 // 重新导出路由配置
 export { PLUGIN_ROUTE_CONFIGS, getPluginRouteConfig } from './routeConfig';
@@ -9,8 +10,11 @@ export { PLUGIN_ROUTE_CONFIGS, getPluginRouteConfig } from './routeConfig';
 /**
  * 创建所有插件路由
  */
-export function createPluginRoutesIndex(pluginDataService: PluginDataService): Map<string, Router> {
-  return createRoutesIndex(pluginDataService);
+export function createPluginRoutesIndex(
+  pluginDataService: PluginDataService,
+  webSocket?: StorageWebSocketService,
+): Map<string, Router> {
+  return createRoutesIndex(pluginDataService, webSocket);
 }
 
 /**

@@ -80,6 +80,81 @@
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\yuODD6-i-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\yuODD6-i-stderr.log",
       "envs": {}
+    },
+    {
+      "id": "sTuo2Tf5",
+      "name": "server",
+      "script": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "D:\\about-me\\packages\\server-nodejs",
+      "status": "exited",
+      "pid": 13636,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Storage server (REST + admin panel + MCP /mcp) on port 8874, ts-node-dev hot reload",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789458576901,
+      "lastStartedAt": 1789458576901,
+      "stoppedAt": 1789459166360,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\sTuo2Tf5-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\sTuo2Tf5-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "aUSlVKm9",
+      "name": "server",
+      "script": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "D:\\about-me\\packages\\server-nodejs",
+      "status": "exited",
+      "pid": 24676,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Storage server (REST + admin panel + MCP /mcp) on port 8874, ts-node-dev hot reload",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789460013553,
+      "lastStartedAt": 1789460013553,
+      "stoppedAt": 1789460467435,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\aUSlVKm9-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\aUSlVKm9-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "t0dyXoyp",
+      "name": "server",
+      "script": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "D:\\about-me\\packages\\server-nodejs",
+      "status": "running",
+      "pid": 17152,
+      "exitCode": null,
+      "error": null,
+      "desc": "Storage server (REST + admin panel + MCP /mcp) on port 8874, ts-node-dev hot reload",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1789460509313,
+      "lastStartedAt": 1789460509313,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\t0dyXoyp-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\NraUjY(13868)\\processes\\t0dyXoyp-stderr.log",
+      "envs": {}
     }
   ]
 }

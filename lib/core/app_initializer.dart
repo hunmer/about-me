@@ -31,6 +31,9 @@ import 'app_widgets/home_widget_service.dart';
 import 'app_widgets/floating_ball_service.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/core/storage/storage_backend_config.dart';
+import 'package:aboutme/core/storage/device_identity.dart';
+import 'package:aboutme/core/storage/storage_websocket_service.dart';
+import 'package:aboutme/core/route/route_refresh_manager.dart';
 import 'package:aboutme/screens/settings_screen/widgets/storage_backend_settings_dialog.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'global_flags.dart';
@@ -164,6 +167,7 @@ Future<void> initializeApp() async {
   try {
     // === 核心初始化（必须同步完成） ===
     // 创建并初始化存储管理器
+    await DeviceIdentity.initialize();
     globalStorage = StorageManager();
     await globalStorage.initialize();
 
@@ -180,6 +184,11 @@ Future<void> initializeApp() async {
     // 初始化插件管理器（不注册插件）
     globalPluginManager = PluginManager();
     await globalPluginManager.setStorageManager(globalStorage);
+    RouteRefreshManager().setPluginManager(globalPluginManager);
+    final backendConfig = await LocalStorageBackendConfigStore().load();
+    if (backendConfig.isHttpEnabled) {
+      unawaited(StorageWebSocketService.instance.connect(backendConfig));
+    }
 
     // 设置全局错误处理器
     FlutterError.onError = (details) {
@@ -256,20 +265,16 @@ Future<void> _initializeBackgroundServices() async {
 
     // 初始化 JS Bridge
     unawaited(
-      JSBridgeManager.instance
-          .initialize()
-          .catchError((e) {
-            debugPrint('JS Bridge 初始化失败: $e');
-          }),
+      JSBridgeManager.instance.initialize().catchError((e) {
+        debugPrint('JS Bridge 初始化失败: $e');
+      }),
     );
 
     // 初始化语音识别配置服务
     unawaited(
-      SpeechRecognitionConfigService.instance
-          .initialize()
-          .catchError((e) {
-            debugPrint('语音识别配置服务初始化失败: $e');
-          }),
+      SpeechRecognitionConfigService.instance.initialize().catchError((e) {
+        debugPrint('语音识别配置服务初始化失败: $e');
+      }),
     );
 
     // === 注册插件（核心功能，可配置） ===
@@ -305,11 +310,9 @@ Future<void> _initializeBackgroundServices() async {
 
     // 初始化 FCM 推送服务
     unawaited(
-      FcmService.instance
-          .initialize()
-          .catchError((e) {
-            debugPrint('FCM 推送服务初始化失败: $e');
-          }),
+      FcmService.instance.initialize().catchError((e) {
+        debugPrint('FCM 推送服务初始化失败: $e');
+      }),
     );
 
     // 延迟执行权限检查和小组件同步
@@ -437,7 +440,9 @@ void _navigateToWidgetUri(String url) {
               RouteSettings(name: routePath, arguments: arguments),
             );
             navigator.push(route);
-            debugPrint('导航成功：路由栈现在有两层 (${AppRoutes.initialRoute} -> $routePath)');
+            debugPrint(
+              '导航成功：路由栈现在有两层 (${AppRoutes.initialRoute} -> $routePath)',
+            );
 
             // 导航成功后清除初始URI状态
             AppStartupState.instance.clearInitialWidgetUri();
@@ -607,10 +612,11 @@ Future<void> ensureWebStorageBackend() async {
     final saved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => PopScope(
-        canPop: false,
-        child: const StorageBackendSettingsDialog(),
-      ),
+      builder:
+          (_) => PopScope(
+            canPop: false,
+            child: const StorageBackendSettingsDialog(),
+          ),
     );
     if (saved == true) {
       debugPrint('[WebStorage] 存储后端已配置，刷新页面生效');
@@ -622,4 +628,3 @@ Future<void> ensureWebStorageBackend() async {
     debugPrint('[WebStorage] 存储后端配置检查失败: $e');
   }
 }
-

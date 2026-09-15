@@ -5,6 +5,7 @@ import { PluginRouteConfig, PLUGIN_ROUTE_CONFIGS } from './routeConfig';
 import { PluginHandlers, PluginResult } from './types';
 import { errorResponse, resultToResponse } from './utils';
 import { createCrudHandlers } from './crud';
+import { StorageWebSocketService } from '../../services/storageWebSocketService';
 
 // 导入专用处理器
 import {
@@ -110,7 +111,8 @@ function extractQueryParams(req: Request): Record<string, unknown> {
  */
 export function createPluginRoutes(
   pluginDataService: PluginDataService,
-  config: PluginRouteConfig
+  config: PluginRouteConfig,
+  webSocket?: StorageWebSocketService,
 ): Router {
   const router = Router();
   const handlers = createHandlersForPlugin(pluginDataService, config.pluginId);
@@ -147,6 +149,13 @@ export function createPluginRoutes(
         const params = { ...queryParams, ...pathParams, ...bodyParams };
 
         const result = await handler(userId, encryptionKey, params, req);
+        if (result.isSuccess && ['post', 'put', 'patch', 'delete'].includes(method)) {
+          webSocket?.broadcastFileUpdate(
+            userId,
+            req.header('X-Device-ID') || undefined,
+            `${config.pluginId}/`,
+          );
+        }
         resultToResponse(res, result, method === 'post' ? 201 : 200);
       } catch (e) {
         errorResponse(res, 500, `服务器错误: ${e}`);
@@ -161,12 +170,13 @@ export function createPluginRoutes(
  * 创建所有插件路由
  */
 export function createPluginRoutesIndex(
-  pluginDataService: PluginDataService
+  pluginDataService: PluginDataService,
+  webSocket?: StorageWebSocketService,
 ): Map<string, Router> {
   const routes = new Map<string, Router>();
 
   for (const config of PLUGIN_ROUTE_CONFIGS) {
-    const router = createPluginRoutes(pluginDataService, config);
+    const router = createPluginRoutes(pluginDataService, config, webSocket);
     routes.set(config.pluginId, router);
   }
 

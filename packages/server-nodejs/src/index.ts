@@ -16,6 +16,7 @@ import { createAuthRoutes } from './routes/authRoutes';
 import { createPluginRoutesIndex } from './routes/pluginRoutes';
 import { createPluginSystemRoutes } from './routes/pluginSystemRoutes';
 import { createStorageRoutes } from './routes/storageRoutes';
+import { StorageWebSocketService } from './services/storageWebSocketService';
 import { createMcpRouter } from './mcp';
 
 // 文件上传配置
@@ -90,6 +91,7 @@ async function main() {
   const pluginService = new PluginService(config.dataDir);
   await pluginService.initialize();
   console.log('插件系统服务初始化完成');
+  const storageWebSocket = new StorageWebSocketService(authService);
 
   // 3. 创建 Express 应用
   const app = express();
@@ -148,11 +150,11 @@ async function main() {
     createStorageRoutes(storageService, {
       maxFileSizeBytes: config.maxStorageFileSizeBytes,
       rateLimitPerMinute: config.storageRateLimitPerMinute,
-    }),
+    }, storageWebSocket),
   );
 
   // 插件路由 (需要认证 + API 启用)
-  const pluginRoutes = createPluginRoutesIndex(pluginDataService);
+  const pluginRoutes = createPluginRoutesIndex(pluginDataService, storageWebSocket);
   for (const [pluginId, router] of pluginRoutes) {
     app.use(
       `/api/v1/plugins/${pluginId}`,
@@ -169,11 +171,12 @@ async function main() {
   console.log('插件系统管理路由已挂载: /api/v1/system/plugins');
 
   // MCP 端点 (需要认证 + 加密密钥)
-  app.use('/mcp', createMcpRouter(authService, pluginDataService));
+  app.use('/mcp', createMcpRouter(authService, pluginDataService, storageWebSocket));
   console.log('MCP 端点已挂载: /mcp');
 
   // 5. 创建 HTTP 服务器
   const server = http.createServer(app);
+  storageWebSocket.attach(server);
 
   // 管理界面静态文件服务
   const adminDir = path.join(__dirname, 'admin');

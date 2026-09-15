@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { getAuthContextFromRequest, getUserIdFromContext } from '../middleware/authMiddleware';
 import { FileStorageService, RawFileMetadata } from '../services/fileStorageService';
+import { StorageWebSocketService } from '../services/storageWebSocketService';
 
 function setMetadataHeaders(
   res: Response,
@@ -22,6 +23,7 @@ function storagePath(req: Request): string {
 export function createStorageRoutes(
   storage: FileStorageService,
   options: { maxFileSizeBytes: number; rateLimitPerMinute: number },
+  webSocket?: StorageWebSocketService,
 ) {
   const router = express.Router();
   const windows = new Map<string, { startedAt: number; count: number }>();
@@ -67,6 +69,7 @@ export function createStorageRoutes(
         userId: getUserIdFromContext(req)!, action: 'clear-prefix', filePath: prefix,
         details: `deleted=${deleted}`,
       });
+      webSocket?.broadcastFileUpdate(getUserIdFromContext(req)!, req.header('X-Device-ID') || undefined, prefix);
       res.json({ deleted });
     } catch (error: any) {
       res.status(error?.message === 'INVALID_STORAGE_PATH' ? 400 : 500).json({ error: '无法清除文件' });
@@ -120,6 +123,7 @@ export function createStorageRoutes(
           });
         }
         setMetadataHeaders(res, result.metadata, false);
+        webSocket?.broadcastFileUpdate(getUserIdFromContext(req)!, req.header('X-Device-ID') || undefined, filePath);
         res.status(200).end();
       } catch (error: any) {
         res.status(error?.message === 'INVALID_STORAGE_PATH' ? 400 : 500).json({ error: '无法写入文件' });
@@ -142,6 +146,7 @@ export function createStorageRoutes(
           userId: getUserIdFromContext(req)!, action: 'force-delete', filePath,
         });
       }
+      webSocket?.broadcastFileUpdate(getUserIdFromContext(req)!, req.header('X-Device-ID') || undefined, filePath);
       res.status(204).end();
     } catch (error: any) {
       res.status(error?.message === 'INVALID_STORAGE_PATH' ? 400 : 500).json({ error: '无法删除文件' });
