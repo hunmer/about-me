@@ -19,6 +19,8 @@ import 'package:aboutme/plugins/openai/services/test_service.dart';
 import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
+import 'package:aboutme/plugins/openai/aliveness/widgets/aliveness_settings_section.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'model_search_screen.dart';
@@ -67,6 +69,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   List<PromptPreset> _presets = [];
   List<AgentResourceItem> _selectedSkills = [];
   List<AgentResourceItem> _selectedMcpServers = [];
+  AlivenessConfig _alivenessConfig = const AlivenessConfig();
 
   @override
   void initState() {
@@ -77,6 +80,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       _selectedProviderId = widget.agent!.serviceProviderId;
       _selectedSkills = List.of(widget.agent!.resourceSlots.skills);
       _selectedMcpServers = List.of(widget.agent!.resourceSlots.mcpServers);
+      _alivenessConfig =
+          widget.agent!.alivenessConfig ?? const AlivenessConfig();
     }
   }
 
@@ -208,6 +213,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       messages: allMessages.isNotEmpty ? allMessages : null,
       apiFormat: values['apiFormat'] as String? ?? 'openai',
       resourceSlots: resourceSlots,
+      alivenessConfig: _alivenessConfig,
     );
 
     try {
@@ -491,6 +497,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         skills: _selectedSkills,
         mcpServers: _selectedMcpServers,
       ),
+      alivenessConfig: _alivenessConfig,
     );
 
     try {
@@ -798,6 +805,14 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                   _buildResourceSelector(skills: true),
                   const SizedBox(height: 8),
                   _buildResourceSelector(skills: false),
+                  const SizedBox(height: 8),
+                  AlivenessSettingsSection(
+                    config: _alivenessConfig,
+                    agentId: widget.agent?.id,
+                    agentName: widget.agent?.name ?? '',
+                    onChanged:
+                        (c) => setState(() => _alivenessConfig = c),
+                  ),
                 ],
               ),
             ),

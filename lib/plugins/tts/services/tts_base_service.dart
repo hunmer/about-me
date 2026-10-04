@@ -31,6 +31,12 @@ abstract class TTSBaseService {
   /// 停止朗读
   Future<void> stop();
 
+  /// 合成语音写入指定文件（语音消息等"生成不播放"场景）。
+  /// 返回写入的文件路径；服务不支持时返回 null。
+  Future<String?> synthesizeToFile(String text, String filePath) async {
+    return null;
+  }
+
   /// 暂停朗读
   Future<void> pause();
 

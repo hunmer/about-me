@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:agentlib/agent_slots.dart';
+import '../aliveness/models/aliveness_config.dart';
 
 class Prompt {
   String type; // system, user, assistant
@@ -44,6 +45,9 @@ class AIAgent {
   /// AgentLib 资源插槽：单 Agent skills/MCP 配置。
   final AgentResourceSlots resourceSlots;
 
+  /// 「活人感」增强配置：null = 从未配置 = 关闭（走原有直接生成路径）
+  final AlivenessConfig? alivenessConfig;
+
   /// 从 messages 中获取 system 类型的提示词
   /// 优先级：messages 中 type="system" 的第一条 > systemPrompt（兼容旧数据）
   String get effectiveSystemPrompt {
@@ -83,6 +87,7 @@ class AIAgent {
     this.messages,
     this.apiFormat = 'openai',
     this.resourceSlots = const AgentResourceSlots(),
+    this.alivenessConfig,
   });
 
   Map<String, dynamic> toJson() => {
@@ -113,6 +118,8 @@ class AIAgent {
     'messages': messages?.map((msg) => msg.toJson()).toList(),
     'apiFormat': apiFormat,
     'resourceSlots': resourceSlots.toJson(),
+    if (alivenessConfig != null)
+      'alivenessConfig': alivenessConfig!.toJson(),
   };
 
   factory AIAgent.fromJson(Map<String, dynamic> json) {
@@ -182,6 +189,14 @@ class AIAgent {
       resourceSlots: AgentResourceSlots.fromJson(
         json['resourceSlots'] as Map<String, dynamic>?,
       ),
+      alivenessConfig:
+          json['alivenessConfig'] == null
+              ? null
+              : AlivenessConfig.fromJson(
+                Map<String, dynamic>.from(
+                  json['alivenessConfig'] as Map<dynamic, dynamic>,
+                ),
+              ),
     );
   }
 
@@ -213,6 +228,7 @@ class AIAgent {
     List<Prompt>? messages,
     String? apiFormat,
     AgentResourceSlots? resourceSlots,
+    AlivenessConfig? alivenessConfig,
   }) {
     return AIAgent(
       id: id ?? this.id,
@@ -244,6 +260,7 @@ class AIAgent {
       messages: messages ?? this.messages,
       apiFormat: apiFormat ?? this.apiFormat,
       resourceSlots: resourceSlots ?? this.resourceSlots,
+      alivenessConfig: alivenessConfig ?? this.alivenessConfig,
     );
   }
 }

@@ -174,6 +174,20 @@ class TTSPlugin extends BasePlugin {
     );
   }
 
+  /// 合成语音写入指定文件（语音消息场景，不播放）。
+  /// 返回文件路径；服务不支持或失败时返回 null。
+  Future<String?> synthesizeToFile(
+    String text, {
+    String? serviceId,
+    required String filePath,
+  }) {
+    return managerService.synthesizeToFile(
+      text,
+      serviceId: serviceId,
+      filePath: filePath,
+    );
+  }
+
   /// 添加到队列
   ///
   /// [text] 要朗读的文本

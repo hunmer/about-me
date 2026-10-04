@@ -211,6 +211,35 @@ class TTSManagerService extends ChangeNotifier {
     }
   }
 
+  /// 合成语音写入指定文件（语音消息场景，不播放）。
+  /// 返回文件路径；服务不支持或失败时返回 null。
+  Future<String?> synthesizeToFile(
+    String text, {
+    String? serviceId,
+    required String filePath,
+  }) async {
+    try {
+      final config = serviceId != null
+          ? await getServiceById(serviceId)
+          : await getDefaultService();
+      if (config == null) {
+        _log.warning('未找到可用的 TTS 服务');
+        return null;
+      }
+
+      final service = _createService(config);
+      await service.initialize();
+      try {
+        return await service.synthesizeToFile(text, filePath);
+      } finally {
+        await service.dispose();
+      }
+    } catch (e) {
+      _log.severe('合成语音文件失败: $e');
+      return null;
+    }
+  }
+
   // ============ 队列管理 ============
 
   /// 获取队列副本

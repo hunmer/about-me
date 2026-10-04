@@ -56,40 +56,7 @@ class HttpTTSService extends TTSBaseService {
 
       _log.info('HTTP TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
 
-      // 替换URL中的占位符
-      final requestUrl = _replacePlaceholders(config.url ?? '', text: text);
-
-      // 替换请求体中的占位符
-      final requestBodyData = config.requestBody != null
-          ? _replacePlaceholders(config.requestBody!, text: text)
-          : null;
-
-      _log.info('请求URL: $requestUrl');
-
-      // 发送请求
-      final response = await _dio.post(
-        requestUrl,
-        data: requestBodyData,
-        options: Options(
-          responseType: config.responseType == 'audio'
-              ? ResponseType.bytes
-              : ResponseType.json,
-          headers: config.headers,
-        ),
-      );
-
-      // 处理响应
-      List<int> audioBytes;
-
-      if (config.responseType == 'audio') {
-        // 直接获取音频字节
-        audioBytes = response.data as List<int>;
-        _log.info('收到音频字节: ${audioBytes.length} bytes');
-      } else {
-        // 从JSON提取音频数据
-        audioBytes = _extractAudioFromJson(response.data);
-        _log.info('从JSON提取音频: ${audioBytes.length} bytes');
-      }
+      final audioBytes = await _synthesizeBytes(text);
 
       // 播放音频
       await _playAudioFromBytes(audioBytes);
@@ -103,6 +70,49 @@ class HttpTTSService extends TTSBaseService {
       _isPlaying = false;
       _isPaused = false;
     }
+  }
+
+  @override
+  Future<String?> synthesizeToFile(String text, String filePath) async {
+    final audioBytes = await _synthesizeBytes(text);
+    final file = File(filePath);
+    await file.create(recursive: true);
+    await file.writeAsBytes(audioBytes);
+    return filePath;
+  }
+
+  /// 请求 TTS 服务并返回音频字节（speak 与 synthesizeToFile 共用）
+  Future<List<int>> _synthesizeBytes(String text) async {
+    // 替换URL中的占位符
+    final requestUrl = _replacePlaceholders(config.url ?? '', text: text);
+
+    // 替换请求体中的占位符
+    final requestBodyData = config.requestBody != null
+        ? _replacePlaceholders(config.requestBody!, text: text)
+        : null;
+
+    _log.info('请求URL: $requestUrl');
+
+    // 发送请求
+    final response = await _dio.post(
+      requestUrl,
+      data: requestBodyData,
+      options: Options(
+        responseType: config.responseType == 'audio'
+            ? ResponseType.bytes
+            : ResponseType.json,
+        headers: config.headers,
+      ),
+    );
+
+    if (config.responseType == 'audio') {
+      final bytes = response.data as List<int>;
+      _log.info('收到音频字节: ${bytes.length} bytes');
+      return bytes;
+    }
+    final bytes = _extractAudioFromJson(response.data);
+    _log.info('从JSON提取音频: ${bytes.length} bytes');
+    return bytes;
   }
 
   /// 替换占位符

@@ -92,47 +92,7 @@ class MiniMaxTTSService extends TTSBaseService {
 
       _log.info('MiniMax TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
 
-      // 构建请求体
-      final requestBody = _buildRequestBody(text);
-
-      _log.info('MiniMax 请求: model=${requestBody['model']}, voiceId=${config.voiceId}');
-
-      // 发送请求
-      final response = await _dio.post(
-        _baseUrl,
-        data: requestBody,
-        options: Options(
-          responseType: ResponseType.json,
-        ),
-      );
-
-      // 解析响应
-      final responseData = response.data as Map<String, dynamic>;
-
-      // 检查响应状态
-      final baseResp = responseData['base_resp'] as Map<String, dynamic>?;
-      if (baseResp != null) {
-        final statusCode = baseResp['status_code'] as int?;
-        final statusMsg = baseResp['status_msg'] as String?;
-        if (statusCode != 0) {
-          throw Exception('MiniMax API 错误: $statusCode - $statusMsg');
-        }
-      }
-
-      // 提取音频数据
-      final data = responseData['data'] as Map<String, dynamic>?;
-      if (data == null) {
-        throw Exception('MiniMax 响应数据为空');
-      }
-
-      final audioHex = data['audio'] as String?;
-      if (audioHex == null || audioHex.isEmpty) {
-        throw Exception('MiniMax 音频数据为空');
-      }
-
-      // Hex 解码为字节
-      final audioBytes = _hexToBytes(audioHex);
-      _log.info('收到音频字节: ${audioBytes.length} bytes');
+      final audioBytes = await _synthesizeBytes(text);
 
       // 播放音频
       await _playAudioFromBytes(audioBytes);
@@ -149,8 +109,59 @@ class MiniMaxTTSService extends TTSBaseService {
   }
 
   /// 构建请求体
-  Map<String, dynamic> _buildRequestBody(String text) {
-    return {
+  @override
+  Future<String?> synthesizeToFile(String text, String filePath) async {
+    final audioBytes = await _synthesizeBytes(text);
+    final file = File(filePath);
+    await file.create(recursive: true);
+    await file.writeAsBytes(audioBytes);
+    return filePath;
+  }
+
+  /// 请求 MiniMax 并返回音频字节（speak 与 synthesizeToFile 共用）
+  Future<List<int>> _synthesizeBytes(String text) async {
+    // 构建请求体
+    final requestBody = _buildRequestBody(text);
+
+    _log.info('MiniMax 请求: model=${requestBody['model']}, voiceId=${config.voiceId}');
+
+    // 发送请求
+    final response = await _dio.post(
+      _baseUrl,
+      data: requestBody,
+      options: Options(responseType: ResponseType.json),
+    );
+
+    // 解析响应
+    final responseData = response.data as Map<String, dynamic>;
+
+    // 检查响应状态
+    final baseResp = responseData['base_resp'] as Map<String, dynamic>?;
+    if (baseResp != null) {
+      final statusCode = baseResp['status_code'] as int?;
+      final statusMsg = baseResp['status_msg'] as String?;
+      if (statusCode != 0) {
+        throw Exception('MiniMax API 错误: $statusCode - $statusMsg');
+      }
+    }
+
+    // 提取音频数据
+    final data = responseData['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw Exception('MiniMax 响应数据为空');
+    }
+
+    final audioHex = data['audio'] as String?;
+    if (audioHex == null || audioHex.isEmpty) {
+      throw Exception('MiniMax 音频数据为空');
+    }
+
+    final audioBytes = _hexToBytes(audioHex);
+    _log.info('收到音频字节: ${audioBytes.length} bytes');
+    return audioBytes;
+  }
+
+  Map<String, dynamic> _buildRequestBody(String text) {    return {
       'model': config.model ?? 'speech-2.8-hd',
       'text': text,
       'stream': false,

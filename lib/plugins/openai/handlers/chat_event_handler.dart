@@ -5,6 +5,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:agentlib/openai_compat.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/aliveness/aliveness_orchestrator.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
@@ -89,14 +90,23 @@ class ChatEventHandler {
     // 为每个被@的AI agent创建独立的异步任务处理回复
     final List<Future<void>> agentTasks = [];
     for (final agentData in agents) {
-      // 创建独立的异步任务
-      final task = _processAgentResponse(
-        agentData,
-        message,
-        absoluteFilePath,
-        hasImage,
-      );
-      agentTasks.add(task);
+      // 活人感分流：agent 开启「活人感」增强时走缓冲-决策-分条编排路径
+      final agent = await _agentController.getAgent(agentData['id']);
+      if (agent?.alivenessConfig?.enabled == true) {
+        agentTasks.add(
+          AlivenessOrchestrator.instance.handleUserMessage(
+            agent!,
+            message,
+            absoluteFilePath: absoluteFilePath,
+            hasImage: hasImage,
+          ),
+        );
+      } else {
+        // 原有直接生成路径
+        agentTasks.add(
+          _processAgentResponse(agentData, message, absoluteFilePath, hasImage),
+        );
+      }
     }
     // 并行执行所有agent的任务
     await Future.wait(agentTasks);
@@ -382,6 +392,9 @@ class ChatEventHandler {
   }
 
   void dispose() {
+    // 清理活人感缓冲计时器
+    AlivenessOrchestrator.instance.dispose();
+
     // 获取所有消息ID的副本，因为我们会在循环中修改集合
     final messageIds = _messageControllers.keys.toList();
 

@@ -15,6 +15,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/proactive_service.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
 import 'repositories/client_openai_repository.dart';
@@ -103,6 +104,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 初始化聊天事件处理器
     _chatEventHandler.initialize();
+
+    // 启动活人感主动消息调度（周期检查开环/闲置触发，含三重硬限制）
+    ProactiveService.instance.start();
 
     // 初始化 UseCase
     _initializeUseCase();
@@ -312,6 +316,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> uninstall() async {
     // Clean up plugin data
     await storage.delete(storageDir);
+
+    // 停止主动消息调度
+    ProactiveService.instance.stop();
 
     // 清理事件处理器
     _chatEventHandler.dispose();

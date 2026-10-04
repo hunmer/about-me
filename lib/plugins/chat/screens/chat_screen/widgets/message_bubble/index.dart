@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' show Colors, Theme;
 import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -322,6 +323,19 @@ class _MessageBubbleState extends State<MessageBubble> {
                               _currentMessage.createdAt,
                           isEdited: _currentMessage.updatedAt != null,
                         ),
+                        // 自己的消息被 AI 已读时显示标记（活人感已读机制）
+                        if (_isCurrentUser &&
+                            (_currentMessage.metadata?['readBy']
+                                    as List<dynamic>?)
+                                ?.isNotEmpty ==
+                                true) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            '已读',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontSize: 10, color: Colors.blueGrey),
+                          ),
+                        ],
                       ],
                     ),
                   ],
