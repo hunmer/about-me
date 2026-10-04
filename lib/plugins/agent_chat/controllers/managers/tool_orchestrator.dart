@@ -16,6 +16,31 @@ import 'shared/manager_context.dart';
 /// - 第二阶段：工具执行代码生成
 /// 这个类被 AIRequestHandler 和 AgentChainExecutor 共用
 class ToolOrchestrator {
+  /// json_schema 强约束仅被部分 provider 支持（DeepSeek 返回 HTTP 400
+  /// "This response_format type is unavailable"），按 baseUrl 判断降级
+  static bool _supportsJsonSchema(AIAgent agent) =>
+      !agent.baseUrl.toLowerCase().contains('deepseek');
+
+  /// 第一阶段（工具识别）的响应格式：支持则 json_schema 强约束，
+  /// 否则降级 json_object（结构约束由提示词承担）
+  static ResponseFormat? _toolPhaseResponseFormat(
+    AIAgent agent,
+    bool enableToolCalling,
+  ) {
+    if (!enableToolCalling || !agent.enableFunctionCalling) return null;
+    if (_supportsJsonSchema(agent)) {
+      return ResponseFormat.jsonSchema(
+        jsonSchema: JsonSchemaObject(
+          name: 'ToolRequest',
+          description: '工具需求请求',
+          strict: true,
+          schema: ToolService.toolRequestSchema,
+        ),
+      );
+    }
+    return ResponseFormat.jsonObject();
+  }
+
   final ManagerContext context;
   final Conversation conversation;
 
@@ -132,6 +157,15 @@ class ToolOrchestrator {
       final toolBriefPrompt = ToolService.getToolBriefPrompt();
       if (toolBriefPrompt.isNotEmpty) {
         additionalPrompts = {'tool_brief': toolBriefPrompt};
+        // 不支持 json_schema 的 provider 降级为 json_object 时，
+        // 输出结构约束改由提示词承担（json_object 要求提示中含 json 说明）
+        if (!_supportsJsonSchema(agent)) {
+          additionalPrompts['tool_brief'] =
+              '$toolBriefPrompt\n'
+              '你必须只输出一个 json 对象，格式为 '
+              '{"needed_tools": ["工具ID1", "工具ID2"]}；'
+              '不需要任何工具时输出 {"needed_tools": []}。不要输出其他任何内容。';
+        }
       }
 
       if (toolDetectionConfig != null && getToolAgent != null) {
@@ -165,18 +199,12 @@ class ToolOrchestrator {
       vision: imageFiles.isNotEmpty,
       filePath: imageFiles.isNotEmpty ? imageFiles.first.path : null,
       additionalPrompts: additionalPrompts,
-      // 如果启用工具调用，使用 JSON Schema 强制返回工具请求格式
-      responseFormat:
-          enableToolCalling && agent.enableFunctionCalling
-              ? ResponseFormat.jsonSchema(
-                jsonSchema: JsonSchemaObject(
-                  name: 'ToolRequest',
-                  description: '工具需求请求',
-                  strict: true,
-                  schema: ToolService.toolRequestSchema,
-                ),
-              )
-              : null,
+      // 如果启用工具调用，强制返回工具请求 JSON 格式：
+      // - 默认用 json_schema 强约束（Structred Outputs）
+      // - DeepSeek 等 provider 不支持 json_schema（HTTP 400
+      //   "This response_format type is unavailable"），降级为 json_object，
+      //   结构约束由提示词承担
+      responseFormat: _toolPhaseResponseFormat(agent, enableToolCalling),
       shouldCancel: isCancelling,
       onToken: (token) {
         buffer.write(token);

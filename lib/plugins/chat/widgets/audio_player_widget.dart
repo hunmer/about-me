@@ -200,7 +200,11 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                 width: 36,
                 height: 36,
                 child: Center(
-                  child: DSLoadingDots(size: 10, color: primaryColor),
+                  // FittedBox 防止 dots 在小约束下布局溢出
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: DSLoadingDots(size: 10, color: primaryColor),
+                  ),
                 ),
               )
               : GestureDetector(

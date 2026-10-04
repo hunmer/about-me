@@ -22,6 +22,9 @@ class FileAttachment {
   /// 缩略图路径（仅图片）
   final String? thumbnailPath;
 
+  /// 音频时长秒（仅语音附件）
+  final int? durationSeconds;
+
   FileAttachment({
     required this.id,
     required this.filePath,
@@ -29,6 +32,7 @@ class FileAttachment {
     required this.fileType,
     required this.fileSize,
     this.thumbnailPath,
+    this.durationSeconds,
   });
 
   /// 创建图片附件
@@ -63,6 +67,23 @@ class FileAttachment {
     );
   }
 
+  /// 创建语音附件（AI 语音消息）
+  factory FileAttachment.audio({
+    required String filePath,
+    required String fileName,
+    required int fileSize,
+    int durationSeconds = 0,
+  }) {
+    return FileAttachment(
+      id: _uuid.v4(),
+      filePath: filePath,
+      fileName: fileName,
+      fileType: 'audio',
+      fileSize: fileSize,
+      durationSeconds: durationSeconds,
+    );
+  }
+
   /// 从JSON反序列化
   factory FileAttachment.fromJson(Map<String, dynamic> json) {
     return FileAttachment(
@@ -72,6 +93,7 @@ class FileAttachment {
       fileType: json['fileType'] as String,
       fileSize: json['fileSize'] as int,
       thumbnailPath: json['thumbnailPath'] as String?,
+      durationSeconds: json['durationSeconds'] as int?,
     );
   }
 
@@ -84,6 +106,7 @@ class FileAttachment {
       'fileType': fileType,
       'fileSize': fileSize,
       'thumbnailPath': thumbnailPath,
+      if (durationSeconds != null) 'durationSeconds': durationSeconds,
     };
   }
 
@@ -92,6 +115,9 @@ class FileAttachment {
 
   /// 是否为文档
   bool get isDocument => fileType == 'document';
+
+  /// 是否为语音
+  bool get isAudio => fileType == 'audio';
 
   /// 获取格式化的文件大小
   String get formattedSize {

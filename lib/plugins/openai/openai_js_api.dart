@@ -3,6 +3,21 @@ part of 'openai_plugin.dart';
 // JS API 实现 - 私有方法
 // defineJSAPI() 方法在主插件类中实现
 
+/// 查询 AI 对用户的长期记忆（活人感记忆工具，供 LLM 按需调用）
+Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
+  final memory = MemoryService.instance;
+  final agentId = (params['agentId'] as String?) ?? memory.currentAgentId;
+  if (agentId == null) {
+    return jsonEncode({'error': '缺少必需参数: agentId'});
+  }
+  try {
+    final results = await memory.searchForTool(agentId, params['query'] as String?);
+    return jsonEncode(results);
+  } catch (e) {
+    return jsonEncode({'error': e.toString()});
+  }
+}
+
 /// 获取所有 AI 助手列表
 /// 支持分页参数: offset, count
 Future<String> _jsGetAgents(Map<String, dynamic> params) async {

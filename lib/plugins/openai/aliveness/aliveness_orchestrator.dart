@@ -79,16 +79,21 @@ class AlivenessOrchestrator {
     if (typingMessage == null) return;
 
     try {
-      // 1) 记忆激活扩散：按本次缓冲内容"想起"相关往事（PRD 5.3.1）
+      // 1) 记忆：核心常驻（元问题兜底）+ 话题激活扩散（PRD 5.3.1）
       final bufferText = buffer.messages.map((m) => m.content).join('\n');
+      final coreMemory = await _memory.buildCoreMemorySummary(
+        agent.id,
+        halfLifeDays: config.forgettingHalfLifeDays,
+      );
       final memorySummary = await _memory.buildMemorySummary(
         agent.id,
         bufferText,
         halfLifeDays: config.forgettingHalfLifeDays,
       );
-      debugPrint('[Aliveness][记忆] 激活扩散 | '
-          '命中=${memorySummary.isEmpty ? 0 : memorySummary.split('\n').length}条 '
-          '${memorySummary.isEmpty ? "" : "摘要=\"${memorySummary.replaceAll("\n", " / ")}\""}');
+      debugPrint(
+        '[Aliveness][记忆] 核心常驻=${coreMemory.isEmpty ? 0 : coreMemory.split('\n').length}条 '
+        '话题激活=${memorySummary.isEmpty ? 0 : memorySummary.split('\n').length}条',
+      );
 
       // 2) 决策（Jev 优先，失败走规则）：探索问题从未问池中选择
       final state = _states.cached(agent.id);
@@ -149,7 +154,9 @@ class AlivenessOrchestrator {
         buffer,
         state,
         decision,
+        config: config,
         memorySummary: memorySummary,
+        coreMemory: coreMemory,
       );
 
       // 5) 流式生成（复用主 LLM 通道），onToken 实时更新占位消息
@@ -255,18 +262,30 @@ class AlivenessOrchestrator {
     AlivenessBuffer buffer,
     AgentState state,
     DecisionResult decision, {
+    required AlivenessConfig config,
     String memorySummary = '',
+    String coreMemory = '',
   }) async {
     final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
+    final coreBlock = coreMemory.isEmpty
+        ? ''
+        : '\n【关于用户你一直记得的事】（用户问起你的了解时，'
+            '基于这些内容自然地回答，不要说不知道）\n$coreMemory\n';
     final memoryBlock = memorySummary.isEmpty
         ? ''
-        : '\n【你想起的关于用户的往事】\n$memorySummary\n';
+        : '\n【当前话题让你想起的往事】\n$memorySummary\n';
     final exploreBlock = decision.exploreQuestion == null
         ? ''
         : '\n【探索指令】在回复的末尾，自然地问用户一个问题："${decision.exploreQuestion}"'
             '。要顺着聊天内容带出来，不要突兀。\n';
-    final systemContent = '$basePrompt\n\n${_injectState(state)}$memoryBlock'
-        '$exploreBlock\n${_strategyInstruction(decision.strategy, state)}';
+    final voiceBlock =
+        (agent.alivenessConfig?.voiceEnabled ?? false)
+            ? '\n【语音能力】你拥有发送语音消息的能力：系统会自动把合适的回复转成语音送达，'
+                '无需你生成音频或说明。当用户明确要求"发语音/说给我听"时，正常用文字回复并答应即可，'
+                '语音会随后自动跟上。绝不要说"我发不了语音"。'
+            : '';
+    final systemContent = '$basePrompt\n\n${_injectState(state, config.maxBubbles)}$coreBlock$memoryBlock'
+        '$exploreBlock$voiceBlock\n${_strategyInstruction(decision.strategy, state)}';
 
     final messages = <ChatCompletionMessage>[
       ChatCompletionMessage.system(content: systemContent),
@@ -343,10 +362,14 @@ class AlivenessOrchestrator {
     }
   }
 
-  String _injectState(AgentState state) =>
+  String _injectState(AgentState state, int maxBubbles) =>
       '【你当前的状态】${state.describe()}。'
       '你的回复节奏和语气要符合这个状态：疲惫时回复简短、不想多聊；'
-      '心情好时可以更活泼；和不熟的人说话保持礼貌但有边界。';
+      '心情好时可以更活泼；和不熟的人说话保持礼貌但有边界。\n'
+      '【消息格式】你通过聊天软件发消息：每一行是一条独立的消息（会以多条气泡发出），'
+      '像真人连发一样，想发几条就写几行（最多 $maxBubbles 行）。'
+      '每一行必须是完整表达一个意思的短句，绝不要把一句话拆到多行，'
+      '也不要输出列表编号或项目符号；单条消息内不要换行，不要使用任何 markdown 格式。';
 
   String _strategyInstruction(ReplyStrategy strategy, AgentState state) {
     switch (strategy) {
@@ -360,7 +383,7 @@ class AlivenessOrchestrator {
         return '【回复方式】先简短自然地接住对方的话，然后主动把话题引到一件'
             '你突然想到的事上，用"对了"、"说起来"这类真人过渡语。';
       case ReplyStrategy.normal:
-        return '【回复方式】用自然聊天口吻回复，1~3句话，像真人发消息那样说话，'
+        return '【回复方式】用自然聊天口吻发 1~3 条短消息，像真人发消息那样说话，'
             '不要客套、不要总结陈词。';
     }
   }

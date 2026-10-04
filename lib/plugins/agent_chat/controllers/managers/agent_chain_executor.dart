@@ -78,6 +78,7 @@ class AgentChainExecutor {
     required String userInput,
     required List<File> files,
     SavedToolTemplate? selectedTemplate,
+    String? alivenessSystemSuffix,
   }) async {
     // 从服务中获取最新的会话数据，避免使用过时的快照
     final latestConversation = context.conversationService.getConversation(
@@ -158,6 +159,7 @@ class AgentChainExecutor {
           previousMessages: chainMessages,
           enableToolCalling: agent.enableFunctionCalling,
           conv: latestConversation,
+          alivenessSystemSuffix: alivenessSystemSuffix,
         );
 
         // 调用当前 agent
@@ -224,6 +226,7 @@ class AgentChainExecutor {
     required List<ChatMessage> previousMessages,
     bool enableToolCalling = false,
     Conversation? conv,
+    String? alivenessSystemSuffix,
   }) {
     // 使用传入的会话或默认的 conversation
     final targetConversation = conv ?? conversation;
@@ -249,6 +252,11 @@ class AgentChainExecutor {
     // 添加系统提示词
     if (systemPrompt.isNotEmpty) {
       messages.add(ChatCompletionMessage.system(content: systemPrompt));
+    }
+
+    // 活人感注入段（状态/记忆/策略指令），置于系统提示词之后
+    if (alivenessSystemSuffix != null && alivenessSystemSuffix.isNotEmpty) {
+      messages.add(ChatCompletionMessage.system(content: alivenessSystemSuffix));
     }
 
     // 添加预设消息（在 system prompt 之后）

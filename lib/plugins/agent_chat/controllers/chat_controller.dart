@@ -11,8 +11,9 @@ import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
 import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
-import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/aliveness_hook.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/token_counter_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
@@ -94,6 +95,29 @@ class ChatController extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
+
+  /// 活人感缓冲思考中（标题显示"正在输入中"，无消息占位）
+  bool _isThinking = false;
+  bool get isThinking => _isThinking;
+
+  /// 活人感生成隐藏窗口：本轮生成的 AI 消息在处理完（分条/语音合成）前
+  /// 不进入 UI，处理完毕一次性揭示，避免"完整文本闪现再拆条"的跳变
+  bool _alivenessFlushActive = false;
+  DateTime? _alivenessFlushStartedAt;
+
+  bool get alivenessFlushActive => _alivenessFlushActive;
+
+  void beginAlivenessFlush() {
+    _alivenessFlushActive = true;
+    _alivenessFlushStartedAt = DateTime.now();
+    notifyListeners();
+  }
+
+  void revealAlivenessMessages() {
+    if (!_alivenessFlushActive) return;
+    _alivenessFlushActive = false;
+    notifyListeners();
+  }
   bool get isCancelling => _isCancelling;
 
   /// 当前 Agent (通过 AgentManager 获取)
@@ -106,9 +130,26 @@ class ChatController extends ChangeNotifier {
   bool get isChainMode => _agentManager.isChainMode;
 
   List<ChatMessage> get messages {
-    // 只返回顶级消息（没有父消息ID的消息）
+    // 只返回顶级消息（没有父消息ID的消息）；
+    // 隐藏生成中的空占位（正在输入状态改由标题显示）
     final allMessages = messageService.currentMessages;
-    final topLevel = allMessages.where((msg) => msg.parentId == null).toList();
+    final flushStart = _alivenessFlushStartedAt;
+    final topLevel = allMessages
+        .where((msg) => msg.parentId == null)
+        .where(
+          (msg) =>
+              !(!msg.isUser &&
+                  msg.isGenerating &&
+                  msg.content.trim().isEmpty),
+        )
+        .where(
+          (msg) =>
+              !(_alivenessFlushActive &&
+                  !msg.isUser &&
+                  flushStart != null &&
+                  msg.timestamp.isAfter(flushStart)),
+        )
+        .toList();
 
     return topLevel;
   }
@@ -440,13 +481,55 @@ class ChatController extends ChangeNotifier {
           template: selectedTemplate,
         );
       } else {
-        // 统一使用链式调用逻辑
-        // 单agent会被 AgentManager 包装成长度为1的链，确保工具调用正常触发
-        await _agentChainExecutor.executeChain(
-          userInput: userInput,
-          files: files,
-          selectedTemplate: null, // 工具模板已单独处理
+        // 活人感接管：开启活人感的单 agent 会话先缓冲思考再生成
+        final handled = await AgentChatAlivenessHook.instance.onUserMessage(
+          conversation: conversation,
+          userMessage: userMessage,
+          messageService: messageService,
+          onReveal: revealAlivenessMessages,
+          onFlushGenerate: (mergedText, systemSuffix) async {
+            _isThinking = false;
+            _isSending = true;
+            beginAlivenessFlush();
+            try {
+              await _agentChainExecutor.executeChain(
+                userInput: mergedText,
+                files: files,
+                selectedTemplate: null,
+                alivenessSystemSuffix: systemSuffix,
+              );
+            } catch (e) {
+              // 生成失败：立即关窗兜底，避免消息永久隐藏
+              revealAlivenessMessages();
+              rethrow;
+            } finally {
+              _isSending = false;
+              notifyListeners();
+            }
+            // 返回本次生成的完整回复与其消息 ID（分条直接定位替换）
+            final messages = messageService.currentMessages
+                .where((m) => m.conversationId == conversation.id)
+                .toList();
+            for (final m in messages.reversed) {
+              if (!m.isUser && !m.isGenerating && m.content.trim().isNotEmpty) {
+                return AgentChatGenerationResult(m.content, m.id);
+              }
+            }
+            return null;
+          },
         );
+        if (handled) {
+          _isThinking = true;
+          notifyListeners();
+        } else {
+          // 统一使用链式调用逻辑
+          // 单agent会被 AgentManager 包装成长度为1的链，确保工具调用正常触发
+          await _agentChainExecutor.executeChain(
+            userInput: userInput,
+            files: files,
+            selectedTemplate: null, // 工具模板已单独处理
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ 发送消息失败: $e');

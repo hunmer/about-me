@@ -6,6 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
+import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
@@ -13,9 +17,25 @@ import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:uuid/uuid.dart';
 
-/// 语音主动发送（PRD 5.1.5 / Phase 4）：
-/// 决策层判定 useVoice 后，把回复文本经 TTS 合成为音频文件，
-/// 以 chat 语音消息（MessageType.audio）追加发送。
+/// 合成产物：音频已存入 chat 音频目录
+class SynthesizedVoice {
+  final String storagePath; // './chat/chat_files/audios/xxx.mp3'
+  final String absolutePath;
+  final int byteLength;
+  final Duration duration;
+  SynthesizedVoice({
+    required this.storagePath,
+    required this.absolutePath,
+    required this.byteLength,
+    required this.duration,
+  });
+}
+
+/// 语音主动发送（PRD 5.1.5）：
+/// 决策层判定 useVoice 后，把回复文本经 TTS 合成为音频。
+/// 两个聊天体系共用合成核心：
+/// - chat 频道：以 MessageType.audio 消息发送（chat 语音消息）
+/// - agent_chat：以 FileAttachment.audio 附件追加（复用同一播放器 UI）
 class VoiceService {
   VoiceService._();
   static final VoiceService instance = VoiceService._();
@@ -25,20 +45,15 @@ class VoiceService {
   ChatPlugin get _plugin =>
       PluginManager.instance.getPlugin('chat')! as ChatPlugin;
 
-  /// 将 [text] 合成语音并发送到频道。失败返回 false（静默降级，不影响文字消息）。
-  Future<bool> sendVoiceMessage({
-    required String agentId,
-    required String channelId,
-    required User aiUser,
-    required String text,
+  /// 合成核心：TTS → 临时文件 → chat 音频目录，返回绝对/相对路径与时长
+  Future<SynthesizedVoice?> synthesize(
+    String text, {
     String? ttsServiceId,
-    String? replyToId,
   }) async {
     try {
       final ttsPlugin = PluginManager.instance.getPlugin('tts');
-      if (ttsPlugin is! TTSPlugin) return false;
+      if (ttsPlugin is! TTSPlugin) return null;
 
-      // 1) 合成到临时文件（http/minimax 服务支持；system 服务不支持时放弃）
       final tempDir = Directory.systemTemp;
       final tempPath =
           '${tempDir.path}/aliveness_voice_${DateTime.now().millisecondsSinceEpoch}.mp3';
@@ -49,12 +64,10 @@ class VoiceService {
       );
       if (synthesized == null) {
         debugPrint('[Aliveness][语音] TTS 服务不支持合成文件，跳过语音消息');
-        return false;
+        return null;
       }
 
-      // 2) 转存到 chat 音频目录（相对存储路径）
       final bytes = await File(synthesized).readAsBytes();
-      debugPrint('[Aliveness][语音] 合成成功 | ${bytes.length} 字节 时长解析中');
       final fileService = FileService();
       final storagePath = await fileService.saveAudioBytes(
         bytes,
@@ -64,10 +77,36 @@ class VoiceService {
         await File(synthesized).delete();
       } catch (_) {}
 
-      // 3) 解析真实时长（失败则按 mp3 128kbps 估算）
       final duration = await _resolveDuration(storagePath, bytes.length);
+      debugPrint('[Aliveness][语音] 合成成功 | ${bytes.length} 字节 '
+          '${duration.inSeconds}s');
+      return SynthesizedVoice(
+        storagePath: storagePath,
+        absolutePath: await _toAbsolute(storagePath),
+        byteLength: bytes.length,
+        duration: duration,
+      );
+    } catch (e) {
+      debugPrint('[Aliveness][语音] 合成失败: $e');
+      return null;
+    }
+  }
 
-      // 4) 构造语音消息（结构与录音消息一致）
+  // ---------- chat 频道版：语音消息 ----------
+
+  /// 失败静默降级，不影响文字消息。
+  Future<bool> sendVoiceMessage({
+    required String agentId,
+    required String channelId,
+    required User aiUser,
+    required String text,
+    String? ttsServiceId,
+    String? replyToId,
+  }) async {
+    try {
+      final voice = await synthesize(text, ttsServiceId: ttsServiceId);
+      if (voice == null) return false;
+
       final message = await Message.create(
         id: 'ai_voice_${agentId}_${DateTime.now().millisecondsSinceEpoch}',
         content: '[语音] $text',
@@ -80,13 +119,13 @@ class VoiceService {
             'id': _uuid.v4(),
             'name': 'tts_voice.mp3',
             'originalName': 'tts_voice.mp3',
-            'path': storagePath,
-            'size': bytes.length,
+            'path': voice.storagePath,
+            'size': voice.byteLength,
             'extension': '.mp3',
             'mimeType': 'audio/mpeg',
             'type': 'audio',
             'isAudio': true,
-            'duration': duration.inSeconds,
+            'duration': voice.duration.inSeconds,
             'createdAt': DateTime.now().toIso8601String(),
           },
           'isAI': true,
@@ -102,11 +141,51 @@ class VoiceService {
         'chat_message_updated',
         Value<Message>(message),
       );
-      debugPrint('[Aliveness][语音] 已发送语音消息 | 时长=${duration.inSeconds}s '
-          '路径=$storagePath');
+      debugPrint('[Aliveness][语音] chat 频道语音消息已发送');
       return true;
     } catch (e) {
       debugPrint('[Aliveness][语音] 发送失败: $e');
+      return false;
+    }
+  }
+
+  // ---------- agent_chat 版：语音附件消息 ----------
+
+  /// 追加一条带语音附件的 AI 消息（复用 chat 的音频播放器 UI）
+  Future<bool> sendVoiceMessageToConversation({
+    required String agentId,
+    required Conversation conversation,
+    required MessageService messageService,
+    required String text,
+    String? ttsServiceId,
+  }) async {
+    try {
+      final voice = await synthesize(text, ttsServiceId: ttsServiceId);
+      if (voice == null) return false;
+
+      final attachment = FileAttachment.audio(
+        filePath: voice.absolutePath,
+        fileName: '语音消息.mp3',
+        fileSize: voice.byteLength,
+        durationSeconds: voice.duration.inSeconds,
+      );
+
+      final message = ChatMessage(
+        id: _uuid.v4(),
+        conversationId: conversation.id,
+        content: '',
+        isUser: false,
+        timestamp: DateTime.now(),
+        attachments: [attachment],
+        isGenerating: false,
+        generatedByAgentId: agentId,
+        metadata: {'isVoiceVersion': true},
+      );
+      await messageService.addMessage(message);
+      debugPrint('[Aliveness][语音] agent_chat 语音附件消息已发送');
+      return true;
+    } catch (e) {
+      debugPrint('[Aliveness][语音] agent_chat 发送失败: $e');
       return false;
     }
   }
@@ -127,9 +206,9 @@ class VoiceService {
   }
 
   Future<String> _toAbsolute(String storagePath) async {
-    // storagePath 形如 './chat/chat_files/audios/x.mp3'，基于应用文档目录还原
+    // storagePath 形如 './chat/chat_files/audios/x.mp3'（storageManager 以 app_data 为基准）
     final normalized = storagePath.replaceAll('./', '');
     final appDir = await StorageManager.getApplicationDocumentsDirectory();
-    return '${appDir.path}/$normalized';
+    return '${appDir.path}/app_data/$normalized';
   }
 }

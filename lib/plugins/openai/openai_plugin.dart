@@ -15,6 +15,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/proactive_service.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
@@ -84,6 +85,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       'getAgents': _jsGetAgents,
       'getAgent': _jsGetAgent,
       'sendMessage': _jsSendMessage,
+
+      // 活人感记忆查询（LLM 工具调用）
+      'search_memory': _jsSearchMemory,
 
       // 服务商管理
       'getProviders': _jsGetProviders,

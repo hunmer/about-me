@@ -16,6 +16,10 @@ class MemoryService {
   MemoryService._();
   static final MemoryService instance = MemoryService._();
 
+  /// 当前活跃 agent 上下文（工具调用时无法携带会话信息，
+  /// 由编排器/hook 在每次回复前设置）
+  String? currentAgentId;
+
   final _store = AlivenessStore.instance;
   final _uuid = const Uuid();
 
@@ -117,6 +121,25 @@ class MemoryService {
     }
     await saveFragments(agentId, fragments);
     return activated.map((f) => '· ${f.content}').join('\n');
+  }
+
+  /// 核心记忆（常驻注入）：按权重取 Top-N（含手动标记，永不淡忘）。
+  /// 解决"问我的兴趣/喜好"这类元问题——激活扩散依赖话题命中，
+  /// 元问题不会命中任何 tag，必须常驻一份高权重记忆。
+  Future<String> buildCoreMemorySummary(
+    String agentId, {
+    int k = 3,
+    int halfLifeDays = 14,
+  }) async {
+    final fragments = await loadFragments(agentId);
+    final available = fragments.where((f) => !f.archived).toList()
+      ..sort(
+        (a, b) => b
+            .weight(halfLifeDays: halfLifeDays)
+            .compareTo(a.weight(halfLifeDays: halfLifeDays)),
+      );
+    if (available.isEmpty) return '';
+    return available.take(k).map((f) => '· ${f.content}').join('\n');
   }
 
   // ---------- 遗忘 ----------
@@ -232,6 +255,45 @@ class MemoryService {
     final end = text.lastIndexOf('}');
     if (end <= start) return null;
     return text.substring(start, end + 1);
+  }
+
+  /// 记忆查询工具（LLM 按需调用）：关键词激活检索，无命中回退核心记忆。
+  /// 返回可直接 JSON 化的列表。
+  Future<List<Map<String, dynamic>>> searchForTool(
+    String agentId,
+    String? query,
+  ) async {
+    final fragments = await loadFragments(agentId);
+    final q = query?.trim() ?? '';
+    List<MemoryFragment> hits;
+    if (q.isEmpty) {
+      hits = fragments.where((f) => !f.archived).toList()
+        ..sort(
+          (a, b) => b
+              .weight()
+              .compareTo(a.weight()),
+        );
+    } else {
+      hits = activate(fragments, q, k: 8);
+      if (hits.isEmpty) {
+        // 关键词未命中时回退核心记忆，保证工具总有产出
+        hits = fragments.where((f) => !f.archived).toList()
+          ..sort(
+            (a, b) => b
+                .weight()
+                .compareTo(a.weight()),
+          );
+      }
+    }
+    return hits.take(8).map((f) {
+      return {
+        'content': f.content,
+        'tags': f.tags,
+        'importance': f.weight().toStringAsFixed(2),
+        'userMarked': f.userMarked,
+        'createdAt': '${f.createdAt.month}/${f.createdAt.day}',
+      };
+    }).toList();
   }
 
   /// 用户手动标记消息重要（消息长按菜单可挂）

@@ -261,17 +261,17 @@ class _ChatScreenState extends State<ChatScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {});
+          // 在以下情况自动滚动到底部（需等 setState 重建后的下一帧，
+          // 否则 maxScrollExtent 还是旧值导致滚不到真正底部）：
+          // 1. 有新消息添加时
+          // 2. 从空消息列表变为有消息时（首次进入或清空后）
+          if (hasNewMessage || wasEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _scrollToBottom(animated: true);
+            });
+          }
         }
       });
-
-      // 在以下情况自动滚动到底部：
-      // 1. 有新消息添加时
-      // 2. 从空消息列表变为有消息时（首次进入或清空后）
-      if (hasNewMessage || wasEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
-        });
-      }
 
       // 检查是否有新的AI消息完成，如果开启了自动朗读则进行朗读
       if (_autoReadEnabled) {
@@ -571,9 +571,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+  void _scrollToBottom({bool animated = false}) {
+    if (!_scrollController.hasClients) return;
+    final target = _scrollController.position.maxScrollExtent;
+    if (animated) {
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _scrollController.jumpTo(target);
     }
   }
 
@@ -593,6 +601,10 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: _AgentChatAppBar(
         title: widget.conversation.title,
+        isTyping:
+            _controller.isSending ||
+            _controller.isThinking ||
+            _controller.alivenessFlushActive,
         isChainMode: _isChainMode,
         agentDisplayText: _getAgentDisplayText(),
         hasValidAgent: _hasValidAgent(),
@@ -751,7 +763,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
                                   final message = _controller.messages[index];
 
-                                  return Padding(
+                                  return _BubbleEntrance(
+                                    isNew: message.timestamp.isAfter(
+                                      DateTime.now().subtract(
+                                        const Duration(seconds: 5),
+                                      ),
+                                    ),
+                                    alignRight: message.isUser,
+                                    child: Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
                                     child: MessageBubble(
                                       message: message,
@@ -827,6 +846,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                               : null,
                                       messageService:
                                           _controller.messageService,
+                                    ),
                                     ),
                                   );
                                 },
@@ -1610,6 +1630,7 @@ class _ChatScreenState extends State<ChatScreen> {
 /// 聊天页顶部栏（自绘果冻风，替代 Material AppBar）
 class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final bool isTyping;
   final bool isChainMode;
   final String agentDisplayText;
   final bool hasValidAgent;
@@ -1627,6 +1648,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const _AgentChatAppBar({
     required this.title,
+    this.isTyping = false,
     required this.isChainMode,
     required this.agentDisplayText,
     required this.hasValidAgent,
@@ -1686,6 +1708,31 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    // 正在输入状态（替代 agent 信息显示）
+                                    if (isTyping) ...[
+                                      SizedBox(
+                                        width: 8,
+                                        height: 8,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: theme.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          '正在输入中…',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ] else ...[
                                     // 显示模式图标
                                     DsIcon(
                                       isChainMode
@@ -1710,6 +1757,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                         ),
                                       ),
                                     ),
+                                    ],
                                     const SizedBox(width: 4),
                                     DsIcon(
                                       DsIconKind.chevronDown,
@@ -2010,5 +2058,46 @@ class VoiceCallTaskHandler extends TaskHandler {
         );
       }
     }
+  }
+}
+
+
+/// 新消息气泡入场动画：淡入 + 轻微上移/缩放。
+/// 仅对"5 秒内到达"的新消息播放，历史消息滚动回看时不重播。
+class _BubbleEntrance extends StatelessWidget {
+  final Widget child;
+  final bool isNew;
+  final bool alignRight;
+
+  const _BubbleEntrance({
+    required this.child,
+    required this.isNew,
+    required this.alignRight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isNew) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      child: child,
+      builder: (context, t, child) {
+        return Opacity(
+          opacity: t.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * 14),
+            child: Transform.scale(
+              scale: 0.96 + 0.04 * t,
+              alignment: alignRight
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
   }
 }

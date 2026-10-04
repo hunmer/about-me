@@ -43,6 +43,7 @@ class ToolConfigManager {
     'diary',
     'goods',
     'habits',
+    'memory', // 活人感记忆查询
     'nodes',
     'notes',
     'store',
@@ -91,6 +92,10 @@ class ToolConfigManager {
       // 以索引文件是否存在判断是否已初始化过（与旧版本地文件位置兼容）
       if (!await _manager.fileExists('$_toolsPrefix/index.json')) {
         await _copyAssetsToStorage();
+      } else {
+        // 增量同步：新版本新增的工具描述文件补拷给老安装（不覆盖已有文件，
+        // 用户对描述的本地自定义不受影响），有变化时重建索引
+        await _syncMissingToolFiles();
       }
 
       // 加载工具索引和配置
@@ -100,6 +105,28 @@ class ToolConfigManager {
     } catch (e) {
       print('❌ ToolConfigManager 初始化失败: $e');
       rethrow;
+    }
+  }
+
+  /// 补拷缺失的工具描述文件（版本升级新增工具时分发给老安装）
+  Future<void> _syncMissingToolFiles() async {
+    var copied = false;
+    for (final pluginId in _pluginIds) {
+      final path = '$_toolsPrefix/$pluginId.json';
+      if (await _manager.fileExists(path)) continue;
+      try {
+        final configData = await rootBundle.loadString(
+          'lib/plugins/agent_chat/tools/$pluginId.json',
+        );
+        await _manager.writeString(path, configData);
+        copied = true;
+        print('✅ 增量补拷 $pluginId.json');
+      } catch (_) {
+        // assets 中无此文件则跳过
+      }
+    }
+    if (copied) {
+      await _regenerateToolIndex();
     }
   }
 

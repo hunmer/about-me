@@ -72,26 +72,23 @@ class _FloatingBallWidgetState extends State<FloatingBallWidget> {
 
   /// 处理手势动作
   void _handleGesture(FloatingBallGesture gesture) async {
-    print('[悬浮球Widget] 手势触发: ${gesture.name}');
-
     // 长按手势不触发动作，避免与长按移动功能冲突
     if (gesture == FloatingBallGesture.longPress) {
-      print('[悬浮球Widget] 跳过 longPress 手势');
       return;
     }
 
     // 使用 Get.context 获取当前有效的 Navigator context
     final navigatorContext = Get.context;
     if (navigatorContext != null && navigatorContext.mounted) {
-      print('[悬浮球Widget] 开始执行动作: ${gesture.name}');
       final actionManager = ActionManager();
-      final result = await actionManager.executeGestureAction(gesture, navigatorContext);
-
-      print(
-        '[悬浮球Widget] 动作执行结果: success=${result.success}, error=${result.error}',
+      final result = await actionManager.executeGestureAction(
+        gesture,
+        navigatorContext,
       );
-    } else {
-      print('[悬浮球Widget] 无法获取有效的 Navigator context');
+
+      // print(
+      //   '[悬浮球Widget] 动作执行结果: success=${result.success}, error=${result.error}',
+      // );
     }
   }
 

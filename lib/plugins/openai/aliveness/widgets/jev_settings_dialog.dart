@@ -21,9 +21,6 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
   final thresholdCtrl = TextEditingController(
     text: '${settings['confidenceThreshold'] ?? 0.65}',
   );
-  final voiceServiceCtrl = TextEditingController(
-    text: settings['voiceServiceId'] as String? ?? '',
-  );
   var keepAlive = settings['keepAliveEnabled'] as bool? ?? false;
 
   await showDialog(
@@ -73,13 +70,6 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
                 value: keepAlive,
                 onChanged: (v) => setDialogState(() => keepAlive = v),
               ),
-              TextField(
-                controller: voiceServiceCtrl,
-                decoration: const InputDecoration(
-                  labelText: '全局语音 TTS 服务 ID（可选）',
-                  hintText: '留空使用默认 TTS 服务；agent 可单独指定声线',
-                ),
-              ),
             ],
           ),
         ),
@@ -102,7 +92,8 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
                     : modelCtrl.text.trim(),
                 'confidenceThreshold': threshold.clamp(0.0, 1.0),
                 'keepAliveEnabled': keepAlive,
-                'voiceServiceId': voiceServiceCtrl.text.trim(),
+                // 语音声线已改为 per-agent 配置（编辑页 TTS 选择器），保留旧值兼容
+                'voiceServiceId': settings['voiceServiceId'],
               });
               // 立即同步前台保活状态
               if (keepAlive) {

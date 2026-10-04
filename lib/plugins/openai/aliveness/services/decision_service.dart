@@ -47,9 +47,10 @@ class DecisionService {
   final _store = AlivenessStore.instance;
   final _rng = Random();
   final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(milliseconds: 1500),
-    receiveTimeout: const Duration(milliseconds: 1500),
-    sendTimeout: const Duration(milliseconds: 1500),
+    // Jev 实测响应 2~4s（含 TLS 握手），1.5s 会频繁连接超时；超时仍回退本地规则
+    connectTimeout: const Duration(seconds: 5),
+    receiveTimeout: const Duration(seconds: 6),
+    sendTimeout: const Duration(seconds: 5),
   ));
 
   Future<DecisionResult> decide({
@@ -59,10 +60,29 @@ class DecisionService {
     required AlivenessConfig config,
     List<String> unaskedQuestions = const [],
     DateTime? lastExploreAt,
+  }) {
+    return decideTexts(
+      agentId: agentId,
+      state: state,
+      bufferedTexts: bufferedMessages.map((m) => m.content).toList(),
+      config: config,
+      unaskedQuestions: unaskedQuestions,
+      lastExploreAt: lastExploreAt,
+    );
+  }
+
+  /// 纯文本版决策入口（agent_chat 等无 chat Message 模型的调用方使用）
+  Future<DecisionResult> decideTexts({
+    required String agentId,
+    required AgentState state,
+    required List<String> bufferedTexts,
+    required AlivenessConfig config,
+    List<String> unaskedQuestions = const [],
+    DateTime? lastExploreAt,
   }) async {
     final fallback = _ruleBasedDecision(
       state,
-      bufferedMessages,
+      bufferedTexts,
       config,
       unaskedQuestions: unaskedQuestions,
       lastExploreAt: lastExploreAt,
@@ -85,7 +105,7 @@ class DecisionService {
         threshold:
             (settings['confidenceThreshold'] as num?)?.toDouble() ?? 0.65,
         state: state,
-        bufferedMessages: bufferedMessages,
+        bufferedTexts: bufferedTexts,
         config: config,
         unaskedQuestions: unaskedQuestions,
       );
@@ -116,11 +136,11 @@ class DecisionService {
     required String model,
     required double threshold,
     required AgentState state,
-    required List<Message> bufferedMessages,
+    required List<String> bufferedTexts,
     required AlivenessConfig config,
     List<String> unaskedQuestions = const [],
   }) async {
-    final stateMap = _buildState(state, bufferedMessages);
+    final stateMap = _buildState(state, bufferedTexts);
     final exploreOptions = unaskedQuestions.take(6).toList();
     final response = await _dio.post<Map<String, dynamic>>(
       baseUrl,
@@ -267,10 +287,10 @@ class DecisionService {
     );
   }
 
-  Map<String, dynamic> _buildState(AgentState state, List<Message> messages) {
+  Map<String, dynamic> _buildState(AgentState state, List<String> texts) {
     final now = DateTime.now();
     return {
-      'user_messages_buffer': messages.map((m) => m.content).toList(),
+      'user_messages_buffer': texts,
       'character_energy': state.energy,
       'intimacy_level': state.intimacy,
       'current_mood': state.mood > 0.2
@@ -326,12 +346,15 @@ class DecisionService {
 
   DecisionResult _ruleBasedDecision(
     AgentState state,
-    List<Message> messages,
+    List<String> messages,
     AlivenessConfig config, {
     List<String> unaskedQuestions = const [],
     DateTime? lastExploreAt,
   }) {
-    final totalLength = messages.fold<int>(0, (sum, m) => sum + m.content.length);
+    final totalLength = messages.fold<int>(
+      0,
+      (sum, m) => sum + m.length,
+    );
     final complex = totalLength > 50 || messages.length >= 3;
 
     // 是否回复：低能量且低亲密度时可以"已读不回"一轮，但亲密度高时始终回复

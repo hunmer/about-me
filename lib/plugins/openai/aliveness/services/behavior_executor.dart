@@ -21,49 +21,52 @@ class BehaviorExecutor {
   ChatPlugin get _plugin =>
       PluginManager.instance.getPlugin('chat')! as ChatPlugin;
 
-  /// 按换行与句末标点把完整回复切为 1~maxBubbles 条。
-  /// 过短的碎片向后合并，避免"嗯"+"。"这类拆得过碎。
+  /// 按换行拆为多条消息（提示词已要求 AI 用换行分隔多条消息）。
+  /// 保护：清理 markdown 列表符号；过短行（语气词/单字）并入前一条，
+  /// 避免 AI 把一句话拆成碎行导致消息破碎。超 [maxBubbles] 行时合并尾部；
+  /// 完全没有换行时按句末标点兜底拆分。
   List<String> splitIntoBubbles(String content, int maxBubbles) {
     final normalized = content.trim();
     if (normalized.isEmpty) return [normalized];
 
-    // 先按换行粗分
-    final lines = normalized
+    var target = maxBubbles.clamp(1, 5);
+
+    // 优先：每行一条（AI 主动分条），并清理行首列表符号
+    var lines = normalized
         .split(RegExp(r'\n+'))
         .map((l) => l.trim())
+        .map((l) => l.replaceFirst(RegExp(r'^([-*•]|\d+[.、)])\s*'), ''))
         .where((l) => l.isNotEmpty)
         .toList();
 
-    // 行内再按句末标点细分
-    final sentences = <String>[];
-    for (final line in lines) {
-      final parts = line
+    // 兜底：完全没有换行时按句末标点拆
+    if (lines.length <= 1) {
+      lines = normalized
           .split(RegExp(r'(?<=[。！？!?~…])\s*'))
           .map((p) => p.trim())
           .where((p) => p.isNotEmpty)
           .toList();
-      sentences.addAll(parts.isEmpty ? [line] : parts);
     }
-    if (sentences.isEmpty) return [normalized];
+    if (lines.length <= 1) return [normalized];
 
-    // 目标条数 = min(maxBubbles, 句子数)，再均衡合并
-    var target = min(maxBubbles, sentences.length);
-    if (target < 1) target = 1;
-
-    final bubbles = <String>[sentences.first];
-    var remaining = sentences.length - 1;
-    var slots = target - 1;
-    for (var i = 1; i < sentences.length; i++) {
-      // 剩余句子足够填满槽位时新开一条，否则并入当前条（均匀分布）
-      if (slots > 0 && remaining >= slots) {
-        bubbles.add(sentences[i]);
-        slots--;
+    // 短行保护：单字语气碎片（"嗯""哈"）并入前一条，正常短句仍独立成条
+    final merged = <String>[lines.first];
+    for (var i = 1; i < lines.length; i++) {
+      if (lines[i].length < 2) {
+        merged[merged.length - 1] = '${merged.last}${lines[i]}';
       } else {
-        bubbles[bubbles.length - 1] = '${bubbles.last}${sentences[i]}';
+        merged.add(lines[i]);
       }
-      remaining--;
     }
-    return bubbles;
+    lines = merged;
+
+    // 超过目标条数：尾部行并入最后一条，不丢内容
+    if (lines.length > target) {
+      final head = lines.sublist(0, target - 1);
+      head.add(lines.sublist(target - 1).join(''));
+      return head;
+    }
+    return lines;
   }
 
   /// 依次发送多条：第一条更新 [typingMessage]，其余新建消息并带随机延迟。

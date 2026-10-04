@@ -18,6 +18,7 @@ import 'tool_detail_dialog.dart';
 import 'tool_call_steps.dart';
 import 'chain_message_container.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 
 /// 消息气泡组件
 ///
@@ -77,6 +78,14 @@ class MessageBubble extends StatelessWidget {
     final isUser = message.isUser;
     final isToolCallMessage =
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
+    // 纯语音消息：无文字内容且附件全部为音频 → 无气泡边框、无空内容区
+    final isVoiceOnly =
+        !isToolCallMessage &&
+        (message.matchedTemplateIds == null ||
+            message.matchedTemplateIds!.isEmpty) &&
+        message.content.trim().isEmpty &&
+        message.attachments.isNotEmpty &&
+        message.attachments.every((a) => a.isAudio);
     final theme = DSThemeBridge.resolve(context);
 
     // 气泡内含 DS 组件(内部调 AppTheme.of),宿主屏幕 body 无 AppTheme 祖树,根部自包桥免疫
@@ -96,17 +105,23 @@ class MessageBubble extends StatelessWidget {
                 children: [
                   // 消息气泡
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isUser
-                              ? theme.primary.mixWhite(0.85)
-                              : theme.surfaceAlt,
-                      borderRadius: theme.radii.md,
-                    ),
+                    padding:
+                        isVoiceOnly
+                            ? EdgeInsets.zero
+                            : const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                    decoration:
+                        isVoiceOnly
+                            ? null
+                            : BoxDecoration(
+                              color:
+                                  isUser
+                                      ? theme.primary.mixWhite(0.85)
+                                      : theme.surfaceAlt,
+                              borderRadius: theme.radii.md,
+                            ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -138,13 +153,13 @@ class MessageBubble extends StatelessWidget {
                               message.matchedTemplateIds!.isNotEmpty)
                             // 显示模版选择按钮
                             _buildTemplateSelectionUI()
-                          else
+                          else if (!isVoiceOnly)
                             // 总是显示消息内容（包括正在生成中的内容）
                             _buildMessageContent(),
 
-                          // 附件显示
+                          // 附件显示（纯语音消息直接裸露，无内容间距）
                           if (message.attachments.isNotEmpty) ...[
-                            const SizedBox(height: 8),
+                            if (!isVoiceOnly) const SizedBox(height: 8),
                             _buildAttachments(),
                           ],
                         ],
@@ -172,6 +187,15 @@ class MessageBubble extends StatelessWidget {
                         _formatTime(message.timestamp),
                         style: TextStyle(fontSize: 11, color: theme.textSub),
                       ),
+
+                      // 已读标记（活人感：AI 已读用户消息）
+                      if (isUser && message.metadata?['readAt'] != null) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '已读',
+                          style: TextStyle(fontSize: 10, color: theme.textSub),
+                        ),
+                      ],
 
                       // 显示思考过程按钮（仅当有思考内容且不是用户消息时显示）
                       if (!isUser &&
@@ -424,6 +448,24 @@ class MessageBubble extends StatelessWidget {
             // 图片附件显示缩略图
             if (attachment.isImage) {
               return _buildImageAttachment(attachment);
+            }
+
+            // 语音附件复用 chat 的音频播放器（AI 语音消息）
+            if (attachment.isAudio) {
+              return Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return SizedBox(
+                    width: 220,
+                    child: AudioPlayerWidget(
+                      audioPath: attachment.filePath,
+                      durationInSeconds: attachment.durationSeconds ?? 0,
+                      primaryColor: theme.primary,
+                      backgroundColor: theme.textSub,
+                    ),
+                  );
+                },
+              );
             }
 
             // 非图片附件显示文件信息

@@ -100,10 +100,35 @@ void main() {
       expect(bubbles.length, 1);
     });
 
-    test('换行优先拆分', () {
+    test('换行优先：每行一条（AI 主动分条）', () {
       const text = '吃了吗\n刚点了外卖\n等下到';
       final bubbles = executor.splitIntoBubbles(text, 5);
       expect(bubbles.length, 3);
+      expect(bubbles, ['吃了吗', '刚点了外卖', '等下到']);
+    });
+
+    test('超过上限时尾部行合并且内容无丢失', () {
+      const text = '第一句话完整表达\n第二句话也完整\n第三句话继续\n第四句收尾\n第五句补充\n最后一句';
+      final bubbles = executor.splitIntoBubbles(text, 3);
+      expect(bubbles.length, 3);
+      expect(bubbles.first, '第一句话完整表达');
+      expect(bubbles.last, '第三句话继续第四句收尾第五句补充最后一句');
+      // 内容无丢失（换行被消费，其余字符全保留）
+      expect(bubbles.join(), text.replaceAll('\n', ''));
+    });
+
+    test('单字语气碎片并入前一条，正常短句独立成条', () {
+      const text = '我今天遇到件好笑的事\n嗯\n就是楼下那只猫学会开冰箱了';
+      final bubbles = executor.splitIntoBubbles(text, 5);
+      expect(bubbles.length, 2);
+      expect(bubbles.first, '我今天遇到件好笑的事嗯');
+      expect(bubbles.last, '就是楼下那只猫学会开冰箱了');
+    });
+
+    test('markdown 列表符号被清理', () {
+      const text = '1. 今天好累啊\n2. 加班到现在';
+      final bubbles = executor.splitIntoBubbles(text, 5);
+      expect(bubbles, ['今天好累啊', '加班到现在']);
     });
   });
 
