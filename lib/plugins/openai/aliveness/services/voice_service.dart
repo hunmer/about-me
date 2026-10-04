@@ -48,12 +48,13 @@ class VoiceService {
         filePath: tempPath,
       );
       if (synthesized == null) {
-        debugPrint('[VoiceService] TTS 服务不支持合成文件，跳过语音消息');
+        debugPrint('[Aliveness][语音] TTS 服务不支持合成文件，跳过语音消息');
         return false;
       }
 
       // 2) 转存到 chat 音频目录（相对存储路径）
       final bytes = await File(synthesized).readAsBytes();
+      debugPrint('[Aliveness][语音] 合成成功 | ${bytes.length} 字节 时长解析中');
       final fileService = FileService();
       final storagePath = await fileService.saveAudioBytes(
         bytes,
@@ -101,9 +102,11 @@ class VoiceService {
         'chat_message_updated',
         Value<Message>(message),
       );
+      debugPrint('[Aliveness][语音] 已发送语音消息 | 时长=${duration.inSeconds}s '
+          '路径=$storagePath');
       return true;
     } catch (e) {
-      debugPrint('[VoiceService] 语音消息发送失败: $e');
+      debugPrint('[Aliveness][语音] 发送失败: $e');
       return false;
     }
   }

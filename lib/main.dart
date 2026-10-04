@@ -9,6 +9,7 @@ import 'package:aboutme/core/services/log_service.dart';
 import 'package:aboutme/core/services/fcm_service.dart';
 import 'package:aboutme/firebase_options.dart';
 import 'package:procm_sdk_dart/procm_sdk_dart.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 // GetX 统一翻译导入
 import 'package:aboutme/l10n/unified_translations.dart';
@@ -43,6 +44,9 @@ void main() {
       // 0. 确保 WidgetsFlutterBinding 初始化（必须在任何平台通道操作之前）
       // 必须在 runZonedGuarded 内部调用，以避免 Zone 不匹配错误
       WidgetsFlutterBinding.ensureInitialized();
+
+      // 注册 timeago 中文消息，避免 locale=zh 时回退英文并打印警告
+      timeago.setLocaleMessages('zh', timeago.ZhMessages());
 
       // 0.1 初始化 Firebase（必须在其他代码之前）
       await Firebase.initializeApp(

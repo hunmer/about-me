@@ -1,6 +1,9 @@
 /// 「活人感」增强配置：挂在每个 AIAgent 上，随 agent 持久化于 agents.json。
 /// null / enabled=false 时 ChatEventHandler 走原有直接生成路径。
 class AlivenessConfig {
+  /// copyWith 的哨兵值：区分"未传参"与"显式传 null"
+  static const _unset = Object();
+
   /// 总开关
   final bool enabled;
 
@@ -31,6 +34,9 @@ class AlivenessConfig {
   /// 主动语音决策开关（Phase 4）
   final bool voiceEnabled;
 
+  /// 语音消息使用的 TTS 服务 ID（null = 跟随全局配置的 voiceServiceId）
+  final String? ttsServiceId;
+
   const AlivenessConfig({
     this.enabled = false,
     this.bufferMinSec = 8,
@@ -45,6 +51,7 @@ class AlivenessConfig {
     this.proactiveDailyLimit = 3,
     this.quietHours = const [23, 8],
     this.voiceEnabled = false,
+    this.ttsServiceId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -63,11 +70,15 @@ class AlivenessConfig {
       'quietHours': quietHours,
     },
     'voice': {'enabled': voiceEnabled},
+    if (ttsServiceId != null) 'ttsServiceId': ttsServiceId,
   };
 
   factory AlivenessConfig.fromJson(Map<String, dynamic> json) {
-    final proactive = json['proactive'] as Map<String, dynamic>?;
-    final voice = json['voice'] as Map<String, dynamic>?;
+    // 嵌套对象经 json 解码后可能是 _Map<dynamic, dynamic>，显式转换避免 downcast 崩溃
+    Map<String, dynamic>? asMap(dynamic v) =>
+        v is Map ? Map<String, dynamic>.from(v) : null;
+    final proactive = asMap(json['proactive']);
+    final voice = asMap(json['voice']);
     return AlivenessConfig(
       enabled: json['enabled'] as bool? ?? false,
       bufferMinSec: json['bufferMinSec'] as int? ?? 8,
@@ -86,6 +97,7 @@ class AlivenessConfig {
               .toList() ??
           const [23, 8],
       voiceEnabled: voice?['enabled'] as bool? ?? false,
+      ttsServiceId: json['ttsServiceId'] as String?,
     );
   }
 
@@ -103,6 +115,7 @@ class AlivenessConfig {
     int? proactiveDailyLimit,
     List<int>? quietHours,
     bool? voiceEnabled,
+    Object? ttsServiceId = _unset,
   }) {
     return AlivenessConfig(
       enabled: enabled ?? this.enabled,
@@ -118,6 +131,10 @@ class AlivenessConfig {
       proactiveDailyLimit: proactiveDailyLimit ?? this.proactiveDailyLimit,
       quietHours: quietHours ?? this.quietHours,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
+      // sentinel 模式：允许显式传 null 恢复"跟随全局"
+      ttsServiceId: ttsServiceId == _unset
+          ? this.ttsServiceId
+          : ttsServiceId as String?,
     );
   }
 }

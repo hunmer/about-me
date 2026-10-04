@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
@@ -70,8 +70,13 @@ class DecisionService {
     try {
       final settings = await _store.loadSettings();
       final apiKey = settings['jevApiKey'] as String?;
-      if (apiKey == null || apiKey.isEmpty) return fallback;
+      if (apiKey == null || apiKey.isEmpty) {
+        debugPrint('[Aliveness][决策] 未配置 Jev Key，使用本地规则 | '
+            '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s');
+        return fallback;
+      }
 
+      final sw = Stopwatch()..start();
       final jevResult = await _callJev(
         baseUrl: settings['jevBaseUrl'] as String? ??
             'https://api.typesafe.ai/v1/systemone',
@@ -84,9 +89,21 @@ class DecisionService {
         config: config,
         unaskedQuestions: unaskedQuestions,
       );
-      return jevResult ?? fallback;
+      sw.stop();
+      if (jevResult == null) {
+        debugPrint('[Aliveness][决策] Jev 返回空结果(${sw.elapsedMilliseconds}ms)，'
+            '回退本地规则');
+        return fallback;
+      }
+      debugPrint('[Aliveness][决策] Jev 完成(${sw.elapsedMilliseconds}ms) | '
+          '回复=${jevResult.shouldReplyNow} 延迟=${jevResult.delaySeconds}s '
+          '策略=${jevResult.strategy.name} 转移话题=${jevResult.shiftTopic} '
+          '语音=${jevResult.useVoice} 用户情绪=${jevResult.userEmotion.toStringAsFixed(2)} '
+          '探索=${jevResult.exploreQuestion ?? "无"}');
+      return jevResult;
     } catch (e) {
-      developer.log('Jev 决策失败，使用本地规则: $e', name: 'DecisionService');
+      debugPrint('[Aliveness][决策] Jev 调用失败，回退本地规则 | '
+          '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s | 错误: $e');
       return fallback;
     }
   }
@@ -183,13 +200,27 @@ class DecisionService {
     if (answers == null || answers.isEmpty) return null;
 
     // ---- 解析各决策项，任何一项置信度不足则该项退回保守值 ----
-    final shouldReplyNow =
-        _readNoul(answers['should_reply_now']) > 0.35 || answers.isEmpty;
+    final replyNoul = _readNoul(answers['should_reply_now']);
+    final shouldReplyNow = replyNoul > 0.35 || answers.isEmpty;
 
+    final delayAnswer = answers['delay_seconds'] as Map?;
     final delayRaw = _readChoice(answers['delay_seconds'], threshold);
     final delaySeconds = int.tryParse(delayRaw ?? '0') ?? 0;
+    if (delayAnswer != null &&
+        ((delayAnswer['confidence'] as num?)?.toDouble() ?? 0) < threshold) {
+      debugPrint('[Aliveness][决策] 延迟项置信度不足'
+          '(${delayAnswer['confidence']} < $threshold)，回退 0s');
+    }
 
+    final strategyAnswer = answers['reply_strategy'] as Map?;
     final strategyRaw = _readChoice(answers['reply_strategy'], threshold);
+    if (strategyAnswer != null &&
+        strategyRaw == null &&
+        strategyAnswer['choice'] != null) {
+      debugPrint('[Aliveness][决策] 策略项置信度不足'
+          '(${strategyAnswer['confidence']} < $threshold)，'
+          'Jev 倾向 ${strategyAnswer['choice']} 但回退"正常"');
+    }
     final strategy = switch (strategyRaw) {
       '极简' => ReplyStrategy.minimal,
       '详细' => ReplyStrategy.detailed,
@@ -204,6 +235,12 @@ class DecisionService {
     final shiftTopic = _readNoul(answers['should_shift_topic']) > 0.55;
 
     final emotionScore = _readScore(answers['user_emotion']);
+    debugPrint('[Aliveness][决策] 原始概率 | 回复noul=$replyNoul '
+        '转移noul=${_readNoul(answers['should_shift_topic'])} '
+        '语音noul=${_readNoul(answers['use_voice'])} '
+        '情绪score=$emotionScore 延迟选择=${delayAnswer?['choice']}'
+        '(conf ${delayAnswer?['confidence']}) '
+        '策略选择=${strategyAnswer?['choice']}(conf ${strategyAnswer?['confidence']})');
 
     // 偏好探索：两个问题都命中且不是"不探索"才采纳
     String? exploreQuestion;

@@ -14,14 +14,20 @@ class AlivenessStore {
   String _dir(String agentId) =>
       '${OpenAIPlugin.instance.storageDir}/aliveness/$agentId';
 
+  /// storage.read 底层返回 dynamic（实际为 dynamic map），
+  /// 必须显式转换，否则在 await 边界触发隐式 downcast 崩溃
+  Map<String, dynamic> _asStringMap(dynamic data) =>
+      Map<String, dynamic>.from(data as Map);
   // ---------- per-agent 状态 ----------
 
   Future<AgentState> loadState(String agentId) async {
     final data = await OpenAIPlugin.instance.storage.read(
       '${_dir(agentId)}/state.json',
     );
-    if (data.isEmpty) return AgentState(updatedAt: DateTime.now());
-    return AgentState.fromJson(data);
+    if (data == null || data.isEmpty) {
+      return AgentState(updatedAt: DateTime.now());
+    }
+    return AgentState.fromJson(_asStringMap(data));
   }
 
   Future<void> saveState(String agentId, AgentState state) async {
@@ -37,7 +43,9 @@ class AlivenessStore {
     final data = await OpenAIPlugin.instance.storage.read(
       '${_dir(agentId)}/stats.json',
     );
-    return data.isEmpty ? <String, dynamic>{} : data;
+    return data is Map && data.isNotEmpty
+        ? _asStringMap(data)
+        : <String, dynamic>{};
   }
 
   Future<void> saveStats(
@@ -56,7 +64,7 @@ class AlivenessStore {
     final data = await OpenAIPlugin.instance.storage.read(
       '${_dir(agentId)}/memory/fragments.json',
     );
-    return data;
+    return data is Map ? _asStringMap(data) : <String, dynamic>{};
   }
 
   Future<void> saveMemory(String agentId, Map<String, dynamic> data) async {
@@ -70,7 +78,7 @@ class AlivenessStore {
     final data = await OpenAIPlugin.instance.storage.read(
       '${_dir(agentId)}/memory/open_loops.json',
     );
-    return data;
+    return data is Map ? _asStringMap(data) : <String, dynamic>{};
   }
 
   Future<void> saveOpenLoops(String agentId, Map<String, dynamic> data) async {
@@ -85,7 +93,8 @@ class AlivenessStore {
   Future<void> appendDecision(String agentId, Map<String, dynamic> entry) async {
     final path = '${_dir(agentId)}/decisions.log';
     final data = await OpenAIPlugin.instance.storage.read(path);
-    final List<dynamic> logs = data['logs'] as List<dynamic>? ?? [];
+    final List<dynamic> logs =
+        data is Map ? (data['logs'] as List<dynamic>? ?? []) : [];
     logs.add({
       'ts': DateTime.now().toIso8601String(),
       ...entry,
@@ -100,7 +109,7 @@ class AlivenessStore {
     final data = await OpenAIPlugin.instance.storage.read(
       '${_dir(agentId)}/decisions.log',
     );
-    return data['logs'] as List<dynamic>? ?? [];
+    return data is Map ? (data['logs'] as List<dynamic>? ?? []) : [];
   }
 
   // ---------- 全局决策层（Jev）配置 ----------
@@ -109,14 +118,14 @@ class AlivenessStore {
     final data = await OpenAIPlugin.instance.storage.read(
       '${OpenAIPlugin.instance.storageDir}/aliveness/settings.json',
     );
-    return data.isEmpty
-        ? {
+    return data is Map && data.isNotEmpty
+        ? _asStringMap(data)
+        : {
           'jevBaseUrl': 'https://api.typesafe.ai/v1/systemone',
           'jevApiKey': _defaultJevApiKey,
           'jevModel': 'jev-latest',
           'confidenceThreshold': 0.65,
-        }
-        : data;
+        };
   }
 
   Future<void> saveSettings(Map<String, dynamic> settings) async {

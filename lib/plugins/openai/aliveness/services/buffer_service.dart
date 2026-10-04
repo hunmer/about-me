@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -67,6 +69,9 @@ class BufferService {
     buffer ??= AlivenessBuffer(agentId: agentId, channelId: channelId);
     _buffers[key] = buffer;
     buffer.messages.add(userMessage);
+    debugPrint('[Aliveness][缓冲] ${isNew ? "开始新缓冲" : "并入缓冲并重置计时"} | '
+        'agent=$agentId 频道=$channelId 累计=${buffer.messages.length}条 '
+        '内容="${_truncate(userMessage.content)}"');
 
     if (isNew) {
       // 2) 创建"正在想…"占位消息（保持在场感，避免界面无响应）
@@ -101,12 +106,21 @@ class BufferService {
     // 3) 启动/重置缓冲计时器
     buffer.timer?.cancel();
     final seconds = _bufferSeconds(config, intimacy);
+    debugPrint('[Aliveness][缓冲] 本次等待 ${seconds}s 后统一回复 '
+        '(亲密度=${intimacy.toStringAsFixed(2)} 惰性=${config.laziness})');
     buffer.timer = Timer(Duration(seconds: seconds), () {
       final b = _buffers.remove(key);
       b?.timer?.cancel();
-      if (b != null) onFlush(b);
+      if (b != null) {
+        debugPrint('[Aliveness][缓冲] 计时结束，进入决策生成 | '
+            'agent=$agentId 共${b.messages.length}条消息');
+        onFlush(b);
+      }
     });
   }
+
+  String _truncate(String text, [int len = 30]) =>
+      text.length <= len ? text : '${text.substring(0, len)}…';
 
   /// 记录 agent 上次互动频道与时间（供主动消息定位目标频道）
   Future<void> _recordLastChannel(String agentId, String channelId) async {
@@ -128,6 +142,7 @@ class BufferService {
     if (!readBy.contains(agentId)) readBy.add(agentId);
     message.metadata!['readBy'] = readBy;
     message.metadata!['readAt'] = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[Aliveness][已读] $agentId 已读消息 ${message.id}');
     await _plugin.channelService.saveMessage(message);
     EventManager.instance.broadcast('chat_message_updated', Value<Message>(message));
   }

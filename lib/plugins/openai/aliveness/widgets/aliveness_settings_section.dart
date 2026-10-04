@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/decision_log_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/memory_manager_screen.dart';
+import 'package:aboutme/plugins/openai/aliveness/widgets/jev_settings_dialog.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
 
 /// Agent 编辑页的「活人感增强」配置分组：总开关 + 核心参数。
 /// 通过 onChanged 回调同步给外部 state，随 agent 一起保存。
@@ -27,6 +32,27 @@ class AlivenessSettingsSection extends StatefulWidget {
 }
 
 class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
+  List<TTSServiceConfig> _ttsServices = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTtsServices();
+  }
+
+  Future<void> _loadTtsServices() async {
+    try {
+      final plugin = PluginManager.instance.getPlugin('tts');
+      if (plugin is! TTSPlugin) return;
+      final services = await plugin.managerService.getAllServices();
+      if (mounted) {
+        setState(() => _ttsServices = services);
+      }
+    } catch (_) {
+      // TTS 插件未启用时选择器显示空列表
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final config = widget.config;
@@ -147,6 +173,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     onChanged: (v) =>
                         widget.onChanged(config.copyWith(voiceEnabled: v)),
                   ),
+                  if (config.voiceEnabled)
+                    _buildTtsSelector(theme, config),
                   const Divider(height: 24),
                   // 主动消息
                   SwitchListTile(
@@ -189,6 +217,11 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton.icon(
+                        onPressed: () => showJevSettingsDialog(context),
+                        icon: const Icon(Icons.tune, size: 16),
+                        label: const Text('决策模型'),
+                      ),
+                      TextButton.icon(
                         onPressed: widget.agentId == null
                             ? null
                             : () => NavigationHelper.push(
@@ -221,6 +254,58 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// 语音消息的 TTS 服务选择：system 类型只能当场播放、不支持合成文件，禁用并标注
+  Widget _buildTtsSelector(ThemeData theme, AlivenessConfig config) {
+    final selected = config.ttsServiceId;
+    final validSelection =
+        selected == null || _ttsServices.any((s) => s.id == selected);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text('语音声线（TTS）', style: theme.textTheme.bodyMedium),
+          ),
+          Expanded(
+            child: DropdownButton<String?>(
+              isExpanded: true,
+              value: validSelection ? selected : null,
+              hint: _ttsServices.isEmpty
+                  ? const Text('未找到 TTS 服务')
+                  : const Text('跟随全局设置'),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('跟随全局设置'),
+                ),
+                for (final s in _ttsServices)
+                  DropdownMenuItem<String?>(
+                    value: s.id,
+                    enabled: s.type != TTSServiceType.system,
+                    child: Text(
+                      s.type == TTSServiceType.system
+                          ? '${s.name}（不支持语音消息）'
+                          : s.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: s.type == TTSServiceType.system
+                            ? theme.disabledColor
+                            : null,
+                      ),
+                    ),
+                  ),
+              ],
+              onChanged: (id) =>
+                  widget.onChanged(config.copyWith(ttsServiceId: id)),
+            ),
+          ),
         ],
       ),
     );

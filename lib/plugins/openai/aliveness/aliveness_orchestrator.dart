@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 import 'package:agentlib/openai_compat.dart';
 
@@ -86,6 +86,9 @@ class AlivenessOrchestrator {
         bufferText,
         halfLifeDays: config.forgettingHalfLifeDays,
       );
+      debugPrint('[Aliveness][记忆] 激活扩散 | '
+          '命中=${memorySummary.isEmpty ? 0 : memorySummary.split('\n').length}条 '
+          '${memorySummary.isEmpty ? "" : "摘要=\"${memorySummary.replaceAll("\n", " / ")}\""}');
 
       // 2) 决策（Jev 优先，失败走规则）：探索问题从未问池中选择
       final state = _states.cached(agent.id);
@@ -125,6 +128,8 @@ class AlivenessOrchestrator {
 
       // 3) 已读不回：删除占位消息，仅保留已读标记（受亲密度保护，防冷暴力）
       if (!decision.shouldReplyNow && state.intimacy > 0.4) {
+        debugPrint('[Aliveness][回复] 决策为已读不回（亲密度 '
+            '${state.intimacy.toStringAsFixed(2)}），删除占位消息');
         await _plugin.channelService.deleteMessage(typingMessage);
         _plugin.refresh();
         return;
@@ -132,6 +137,7 @@ class AlivenessOrchestrator {
 
       // 4) 决策出的额外延迟：占位消息保持"正在想…"
       if (decision.delaySeconds > 0) {
+        debugPrint('[Aliveness][延迟] 决策延迟 ${decision.delaySeconds}s 后再回复');
         typingMessage.content = '正在想…';
         await _plugin.channelService.saveMessage(typingMessage);
         await Future.delayed(Duration(seconds: decision.delaySeconds));
@@ -178,6 +184,8 @@ class AlivenessOrchestrator {
         contentBuffer.toString(),
       );
       if (fullContent.trim().isEmpty) return;
+      debugPrint('[Aliveness][生成] 完成 | 长度=${fullContent.length}字 '
+          '策略=${decision.strategy.name} | 内容="${fullContent.length > 60 ? "${fullContent.substring(0, 60)}…" : fullContent}"');
       final bubbles = _executor.splitIntoBubbles(fullContent, config.maxBubbles);
       final aiUser = typingMessage.user;
       await _executor.sendBubbles(
@@ -191,13 +199,15 @@ class AlivenessOrchestrator {
 
       // 6.5) 语音主动发送（PRD 5.1.5）：决策判定后以语音形式追加同内容消息
       if (decision.useVoice && config.voiceEnabled) {
+        debugPrint('[Aliveness][语音] 决策判定以语音追加回复 | '
+            '服务=${config.ttsServiceId ?? "全局默认"}');
         unawaited(
           VoiceService.instance.sendVoiceMessage(
             agentId: agent.id,
             channelId: buffer.channelId,
             aiUser: aiUser,
             text: fullContent,
-            ttsServiceId: await _voiceServiceId(),
+            ttsServiceId: config.ttsServiceId ?? await _voiceServiceId(),
             replyToId: typingMessage.replyToId,
           ),
         );
@@ -210,24 +220,28 @@ class AlivenessOrchestrator {
           generatedLength: fullContent.length.toDouble(),
           userEmotion: decision.userEmotion,
           userMessageCount: buffer.messages.length,
-        ),
+        ).then((next) => debugPrint(
+            '[Aliveness][状态] 演化完成 | 能量=${next.energy.toStringAsFixed(2)} '
+            '亲密度=${next.intimacy.toStringAsFixed(2)} '
+            '心情=${next.mood.toStringAsFixed(2)}')),
       );
       unawaited(
         _memory.extractFromConversation(
           agent,
           userText: bufferText,
           assistantText: fullContent,
-        ),
+        ).then((_) => debugPrint('[Aliveness][记忆] 对话提取与遗忘整理已执行')),
       );
       unawaited(_memory.applyForgetting(
         agent.id,
         halfLifeDays: config.forgettingHalfLifeDays,
       ));
       if (decision.exploreQuestion != null) {
+        debugPrint('[Aliveness][探索] 已注入探索问题: ${decision.exploreQuestion}');
         unawaited(_recordExplored(agent.id, decision.exploreQuestion!, stats));
       }
     } catch (e) {
-      developer.log('活人感编排失败: $e', name: 'AlivenessOrchestrator');
+      debugPrint('[Aliveness][错误] 编排失败: $e');
       typingMessage.metadata?.addAll({'isError': true, 'isCompleted': true});
       await _plugin.channelService.saveMessage(typingMessage);
       _plugin.refresh();

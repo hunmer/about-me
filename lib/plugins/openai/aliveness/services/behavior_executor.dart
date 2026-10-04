@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -74,6 +76,8 @@ class BehaviorExecutor {
     required AlivenessConfig config,
   }) async {
     if (bubbles.isEmpty) return;
+    debugPrint('[Aliveness][分条] 共 ${bubbles.length} 条 | '
+        '1."${bubbles.first.length > 25 ? "${bubbles.first.substring(0, 25)}…" : bubbles.first}"');
 
     // 第一条：替换占位消息内容
     typingMessage.content = bubbles.first;
@@ -96,6 +100,8 @@ class BehaviorExecutor {
                     .clamp(1, 10000) +
                 1,
           );
+      debugPrint('[Aliveness][分条] 第${i + 1}条 延迟${delayMs}ms | '
+          '"${bubbles[i].length > 25 ? "${bubbles[i].substring(0, 25)}…" : bubbles[i]}"');
       await Future.delayed(Duration(milliseconds: delayMs));
 
       final message = await Message.create(

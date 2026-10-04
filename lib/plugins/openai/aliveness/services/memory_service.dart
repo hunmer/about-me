@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
@@ -129,7 +131,10 @@ class MemoryService {
         archived++;
       }
     }
-    if (archived > 0) await saveFragments(agentId, fragments);
+    if (archived > 0) {
+      debugPrint('[Aliveness][记忆] 遗忘整理 | 归档 $archived 条低权重碎片');
+      await saveFragments(agentId, fragments);
+    }
     return archived;
   }
 
@@ -160,12 +165,14 @@ class MemoryService {
       final fragments = await loadFragments(agent.id);
       final existing = fragments.map((f) => f.content).toSet();
       final memories = data['memories'] as List<dynamic>? ?? [];
+      var added = 0;
       for (final m in memories.take(3)) {
         final map = Map<String, dynamic>.from(m as Map);
         final content = (map['content'] as String?)?.trim();
         if (content == null || content.isEmpty || existing.contains(content)) {
           continue;
         }
+        added++;
         fragments.add(
           MemoryFragment(
             id: _uuid.v4(),
@@ -184,11 +191,14 @@ class MemoryService {
       }
       // 只保留最近 200 条未归档 + 全部归档的，防膨胀
       await saveFragments(agent.id, fragments);
+      debugPrint('[Aliveness][记忆] LLM 提取完成 | 新增碎片=$added/候选${memories.length} '
+          '总碎片=${fragments.length}');
 
       // 开环事件
       final loops = await loadOpenLoops(agent.id);
       loops.removeWhere((l) => l.isStale);
       final newLoops = data['openLoops'] as List<dynamic>? ?? [];
+      var loopsAdded = 0;
       for (final l in newLoops.take(1)) {
         final map = Map<String, dynamic>.from(l as Map);
         final desc = (map['description'] as String?)?.trim();
@@ -201,10 +211,17 @@ class MemoryService {
             followUpBy: DateTime.now().add(Duration(days: days.clamp(1, 7))),
           ),
         );
+        loopsAdded++;
+        debugPrint('[Aliveness][记忆] 新开环事件 | "$desc" '
+            '${days.clamp(1, 7)}天后跟进');
       }
       await saveOpenLoops(agent.id, loops);
-    } catch (_) {
+      if (loopsAdded == 0 && newLoops.isEmpty) {
+        debugPrint('[Aliveness][记忆] 本轮无新开环事件');
+      }
+    } catch (e) {
       // 记忆提取失败不影响主流程
+      debugPrint('[Aliveness][记忆] 提取失败（已忽略）: $e');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:agentlib/openai_compat.dart';
 import 'package:aboutme_notifications/aboutme_notifications.dart';
@@ -49,7 +50,7 @@ class ProactiveService {
     _timer = Timer.periodic(_tickInterval, (_) => _tick());
     // 按全局配置启动前台保活（Android：离开 app 后调度器仍可运行）
     unawaited(_syncKeepAlive());
-    developer.log('主动消息调度器已启动', name: 'ProactiveService');
+    debugPrint('[Aliveness][主动] 调度器已启动（每分钟检查）');
   }
 
   Future<void> _syncKeepAlive() async {
@@ -81,7 +82,7 @@ class ProactiveService {
         await _checkAgent(agent, config);
       }
     } catch (e) {
-      developer.log('主动消息 tick 失败: $e', name: 'ProactiveService');
+      debugPrint('[Aliveness][主动] tick 失败: $e');
     }
   }
 
@@ -122,6 +123,7 @@ class ProactiveService {
         )
         .firstOrNull;
     if (dueLoop != null) {
+      debugPrint('[Aliveness][主动] 开环到期触发 | "${dueLoop.description}"');
       triggerInstruction =
           '你之前记住了用户的一件事：「${dueLoop.description}」，现在到了该跟进的时间。'
           '自然地问问这件事怎么样了，像朋友想起来随口一问。';
@@ -137,6 +139,9 @@ class ProactiveService {
           _rng.nextDouble() < _idleChance)) {
         return;
       }
+      debugPrint('[Aliveness][主动] 闲置思念触发 | '
+          '距上次互动=${last == null ? "从未" : "${now.difference(last).inHours}h"} '
+          '亲密度=${state.intimacy.toStringAsFixed(2)}');
       triggerInstruction =
           '你已经有一段时间没和用户说话了，突然想起了 TA。'
           '像真人一样主动发一条消息：可以是你突然想到的事、或者自然地表达想念。'
@@ -240,10 +245,11 @@ class ProactiveService {
     }
 
     _notify(agent, bubbles.first);
-    developer.log(
-      '已发送主动消息到频道 $channelId: ${bubbles.first}',
-      name: 'ProactiveService',
-    );
+    final preview = bubbles.first.length > 30
+        ? '${bubbles.first.substring(0, 30)}…'
+        : bubbles.first;
+    debugPrint('[Aliveness][主动] 已发送 | agent=${agent.name} 频道=$channelId '
+        '共${bubbles.length}条 内容="$preview"');
   }
 
   void _notify(AIAgent agent, String preview) {

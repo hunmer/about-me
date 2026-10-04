@@ -58,6 +58,21 @@ void main() {
       final config = AlivenessConfig.fromJson(const {'enabled': false});
       expect(config.enabled, isFalse);
     });
+
+    test('ttsServiceId 可显式清除回 null（跟随全局）', () {
+      const config = AlivenessConfig(enabled: true, ttsServiceId: 'svc-1');
+      // 普通 copyWith 不影响
+      expect(config.copyWith(enabled: false).ttsServiceId, 'svc-1');
+      // 显式传 null 清除
+      final cleared = config.copyWith(ttsServiceId: null);
+      expect(cleared.ttsServiceId, isNull);
+      // 序列化：null 不落盘，fromJson 兼容
+      expect(cleared.toJson().containsKey('ttsServiceId'), isFalse);
+      expect(
+        AlivenessConfig.fromJson(config.toJson()).ttsServiceId,
+        'svc-1',
+      );
+    });
   });
 
   group('BehaviorExecutor.splitIntoBubbles', () {

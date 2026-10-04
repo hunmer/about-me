@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 
@@ -18,6 +20,12 @@ class StateService {
       DateTime.now(),
       intimacyHalfLifeDays: intimacyHalfLifeDays,
     );
+    if (decayed.energy != raw.energy || decayed.intimacy != raw.intimacy) {
+      debugPrint('[Aliveness][状态] 闲置演化 | '
+          '能量 ${raw.energy.toStringAsFixed(2)}→${decayed.energy.toStringAsFixed(2)} '
+          '亲密度 ${raw.intimacy.toStringAsFixed(2)}→${decayed.intimacy.toStringAsFixed(2)} | '
+          '${decayed.describe()}');
+    }
     _cache[agentId] = decayed;
     return decayed;
   }
