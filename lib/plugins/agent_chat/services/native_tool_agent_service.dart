@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:agentlib/openai_compat.dart' as compat;
 import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter/foundation.dart';
-import 'package:json_schema/json_schema.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
@@ -20,6 +20,84 @@ class NativeToolMeta {
   final String pluginId;
   final String methodName;
   final String title;
+}
+
+/// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
+///
+/// DeepSeek 思考模型的多轮工具调用要求把 reasoning_content 传回，
+/// dartantic 不回传会 400；FC 工具场景无需 reasoning，直接关闭思考模式
+/// （还省 token）。仅对 DeepSeek 域名生效，其他端点透传不注入。
+class DeepSeekCompatClient extends http.BaseClient {
+  DeepSeekCompatClient(this._inner, {required this.disableThinking});
+
+  final http.Client _inner;
+  final bool disableThinking;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (!disableThinking ||
+        request is! http.Request ||
+        request.method != 'POST' ||
+        !request.url.path.contains('chat/completions')) {
+      return _inner.send(request);
+    }
+    try {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      if (!body.containsKey('thinking') && !body.containsKey('reasoning')) {
+        body['thinking'] = {'type': 'disabled'};
+        final patched =
+            http.Request(request.method, request.url)
+              ..headers.addAll(request.headers)
+              ..body = jsonEncode(body);
+        return _inner.send(patched);
+      }
+    } catch (_) {}
+    return _inner.send(request);
+  }
+}
+
+/// OpenAI Provider 子类：为 ChatModel 注入 [DeepSeekCompatClient]。
+///
+/// dartantic 的 Provider 未暴露 httpClient，重写 createChatModel 补传。
+class AppOpenAIProvider extends OpenAIProvider {
+  AppOpenAIProvider({
+    required String apiKey,
+    required Uri baseUrl,
+    super.headers = const {},
+  }) : _disableThinking = baseUrl.host.contains('deepseek'),
+       super(apiKey: apiKey, baseUrl: baseUrl);
+
+  final bool _disableThinking;
+
+  @override
+  ChatModel<OpenAIChatOptions> createChatModel({
+    String? name,
+    List<Tool>? tools,
+    double? temperature,
+    bool enableThinking = false,
+    OpenAIChatOptions? options,
+  }) {
+    if (_disableThinking) {
+      debugPrint('[NativeTool] DeepSeek 兼容：关闭 thinking 模式');
+    }
+    return OpenAIChatModel(
+      name: name ?? defaultModelNames[ModelKind.chat]!,
+      tools: tools,
+      temperature: temperature,
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      client: DeepSeekCompatClient(
+        http.Client(),
+        disableThinking: _disableThinking,
+      ),
+      defaultOptions: OpenAIChatOptions(
+        temperature: temperature ?? options?.temperature,
+        streamOptions:
+            options?.streamOptions ?? const StreamOptions(includeUsage: true),
+      ),
+    );
+  }
 }
 
 /// 原生 function calling 工具服务（dartantic_ai）
@@ -42,7 +120,7 @@ class NativeToolAgentService {
       agent.enableFunctionCalling &&
       agent.apiFormat != 'anthropic';
 
-  List<Tool>? _toolsCache;
+  List<Tool<Map<String, dynamic>>>? _toolsCache;
   Map<String, NativeToolMeta>? _toolMetaCache;
 
   /// 当前循环的工具步骤进度（写 message.toolCall 用）
@@ -80,7 +158,7 @@ class NativeToolAgentService {
   /// 运行原生 FC 工具循环，返回最终文本
   ///
   /// [systemPrompt] agent 的有效 system prompt；contextMessages 里的
-  /// system 消息（活人感后缀等）会追加在其后
+  /// system 消息（活人感后缀等）会合并为首条 system 消息
   /// [contextMessages] 上下文消息（agentlib 格式，最后一条为本轮 user 输入）
   /// [onToolSteps] 工具状态变化时回传全量步骤（写入 message.toolCall）
   Future<String> runToolLoop({
@@ -123,41 +201,33 @@ class NativeToolAgentService {
         .map((m) => m.content is String ? m.content as String : '')
         .where((s) => s.trim().isNotEmpty)
         .join('\n\n');
+    final system = systemExtras.isEmpty
+        ? systemPrompt
+        : '$systemPrompt\n\n$systemExtras';
 
-    final dartAgent = Agent(
-      'openai:${agent.model}',
-      apiKey: _extractApiKey(agent),
-      baseUrl: _normalizeBaseUrl(agent.baseUrl),
-      systemPrompt: systemExtras.isEmpty
-          ? systemPrompt
-          : '$systemPrompt\n\n$systemExtras',
+    final dartAgent = Agent.forProvider(
+      AppOpenAIProvider(
+        apiKey: _extractApiKey(agent),
+        baseUrl: _normalizeBaseUrl(agent.baseUrl) ?? Uri.parse('https://api.openai.com/v1'),
+        headers: agent.headers,
+      ),
+      chatModelName: agent.model,
       tools: tools,
       temperature: agent.temperature,
     );
 
-    final history = _convertHistory(contextMessages);
-    // 图片作为多模态 part 附加在最后一条消息上
-    if (files.isNotEmpty) {
-      final mediaParts = <MediaPart>[];
-      for (final f in files) {
-        if (!f.existsSync()) continue;
-        final bytes = f.readAsBytesSync();
-        final mime = f.path.toLowerCase().endsWith('.png')
-            ? 'image/png'
-            : 'image/jpeg';
-        mediaParts.add(
-          MediaPart(
-            contentType: mime,
-            url: 'data:$mime;base64,${base64Encode(bytes)}',
-          ),
-        );
-      }
-      if (mediaParts.isNotEmpty && history.isNotEmpty) {
-        final last = history.removeLast();
-        history.add(
-          Message(role: last.role, content: [...last.content, ...mediaParts]),
-        );
-      }
+    final history = _convertHistory(contextMessages, system);
+    // 图片作为多模态附件（随 prompt 一起发送）
+    final attachments = <DataPart>[];
+    for (final f in files) {
+      if (!f.existsSync()) continue;
+      final bytes = f.readAsBytesSync();
+      final mime = f.path.toLowerCase().endsWith('.png')
+          ? 'image/png'
+          : 'image/jpeg';
+      attachments.add(
+        DataPart(bytes, mimeType: mime, name: f.path.split('/').last),
+      );
     }
 
     _activeSteps = [];
@@ -166,9 +236,10 @@ class NativeToolAgentService {
     final output = StringBuffer();
 
     try {
-      await for (final chunk in dartAgent.runStream(
+      await for (final chunk in dartAgent.sendStream(
         userInput,
-        messages: history,
+        history: history,
+        attachments: attachments,
       )) {
         if (isCancelling?.call() == true) {
           throw Exception('已取消发送');
@@ -191,11 +262,12 @@ class NativeToolAgentService {
 
   // ---------- 工具集构建 ----------
 
-  (List<Tool>, Map<String, NativeToolMeta>) _buildTools() {
+  (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>)
+  _buildTools() {
     if (_toolsCache != null && _toolMetaCache != null) {
       return (_toolsCache!, _toolMetaCache!);
     }
-    final tools = <Tool>[];
+    final tools = <Tool<Map<String, dynamic>>>[];
     final meta = <String, NativeToolMeta>{};
     for (final (toolId, pluginId, config) in ToolConfigManager.instance
         .getEnabledToolsWithPlugin()) {
@@ -208,10 +280,10 @@ class NativeToolAgentService {
           : toolId;
       meta[toolId] = NativeToolMeta(pluginId, methodName, config.title);
       tools.add(
-        Tool(
+        Tool<Map<String, dynamic>>(
           name: toolId,
           description: ToolSchemaBuilder.buildDescription(config),
-          inputSchema: JsonSchema.create(
+          inputSchema: Schema.fromMap(
             ToolSchemaBuilder.buildSchemaMap(config.parameters),
           ),
           onCall: (args) => _dispatch(toolId, args),
@@ -272,7 +344,9 @@ class NativeToolAgentService {
     );
     _activeSteps?.add(step);
     _activeOnToolSteps?.call(List.of(_activeSteps!));
-    debugPrint('[NativeTool] ▶ ${meta.title} | $argsJson');
+    debugPrint(
+      '[NativeTool] ▶ #$_activeToolCallCount ${meta.title} | $argsJson',
+    );
 
     try {
       final result = await ToolService.executeJsCode(js);
@@ -320,21 +394,30 @@ class NativeToolAgentService {
     }
   }
 
-  /// agentlib 消息 → dartantic 消息（system 已由 Agent 构造统一注入，跳过）
-  List<Message> _convertHistory(List<compat.ChatCompletionMessage> messages) {
-    final result = <Message>[];
+  /// agentlib 消息 → dartantic ChatMessage（system 置于首条）
+  List<ChatMessage> _convertHistory(
+    List<compat.ChatCompletionMessage> messages,
+    String systemPrompt,
+  ) {
+    final result = <ChatMessage>[
+      if (systemPrompt.trim().isNotEmpty)
+        ChatMessage(
+          role: ChatMessageRole.system,
+          parts: [TextPart(systemPrompt)],
+        ),
+    ];
     for (final m in messages) {
       final role = switch (m.role) {
-        compat.ChatCompletionMessageRole.user => MessageRole.user,
-        compat.ChatCompletionMessageRole.assistant => MessageRole.model,
-        _ => MessageRole.system,
+        compat.ChatCompletionMessageRole.user => ChatMessageRole.user,
+        compat.ChatCompletionMessageRole.assistant => ChatMessageRole.model,
+        _ => ChatMessageRole.system,
       };
-      if (role == MessageRole.system) continue;
+      if (role == ChatMessageRole.system) continue; // 已合并为首条
 
       final content = m.content;
       if (content is compat.StringContent) {
         if (content.value.trim().isNotEmpty) {
-          result.add(Message(role: role, content: [TextPart(content.value)]));
+          result.add(ChatMessage(role: role, parts: [TextPart(content.value)]));
         }
       } else if (content is compat.PartsContent) {
         final parts = <Part>[];
@@ -344,16 +427,21 @@ class NativeToolAgentService {
           } else if (p.kind == 'image_url') {
             final url = p.imageUrl.url;
             if (url.startsWith('data:image/')) {
-              final mime = url.substring(5, url.indexOf(';'));
-              parts.add(MediaPart(contentType: mime, url: url));
+              final comma = url.indexOf(',');
+              parts.add(
+                DataPart(
+                  base64Decode(url.substring(comma + 1)),
+                  mimeType: url.substring(5, url.indexOf(';')),
+                ),
+              );
             }
           }
         }
         if (parts.isNotEmpty) {
-          result.add(Message(role: role, content: parts));
+          result.add(ChatMessage(role: role, parts: parts));
         }
       } else if (content is String && content.trim().isNotEmpty) {
-        result.add(Message(role: role, content: [TextPart(content)]));
+        result.add(ChatMessage(role: role, parts: [TextPart(content)]));
       }
     }
     return result;

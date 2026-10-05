@@ -1,12 +1,12 @@
 [
   {
     "path": "metadata.json",
-    "md5": "6db560171104cf80dcf072282fc879bb",
+    "md5": "d69f751b635fb302110c908261f0c3da",
     "size": 3508
   },
   {
     "path": "script.js",
-    "md5": "da0c7784cebad030c0e47254b531f099",
-    "size": 16464
+    "md5": "ed0bcf22cc295e5adeaad30d36a25784",
+    "size": 16779
   }
 ]

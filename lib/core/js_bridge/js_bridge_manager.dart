@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dart_date/dart_date.dart';
 import 'package:get/get.dart';
@@ -700,20 +701,49 @@ class JSBridgeManager {
       return {'success': true, 'sleptMs': ms};
     });
 
-    // 7. saveFile - 将 base64 数据保存为文件（相对 app_data 目录）
+    // 7. saveFile - 保存文件（相对 app_data 目录）
+    //    支持 base64 内联或 url 下载直写（大文件走 url，base64 不过桥防 UI 卡顿）
     await _engine!.registerFunction('Aboutme_system_saveFile', ([
       dynamic a,
     ]) async {
       try {
         final params = a is Map<String, dynamic> ? a : <String, dynamic>{};
         final relativePath = params['path']?.toString() ?? '';
+        if (relativePath.isEmpty) {
+          throw Exception('缺少 path 参数');
+        }
         final base64Data = params['base64']?.toString() ?? '';
-        if (relativePath.isEmpty || base64Data.isEmpty) {
-          throw Exception('缺少 path 或 base64 参数');
+        final downloadUrl = params['url']?.toString() ?? '';
+        if (base64Data.isEmpty && downloadUrl.isEmpty) {
+          throw Exception('缺少 base64 或 url 参数');
         }
 
-        final bytes = Uint8List.fromList(base64Decode(base64Data));
-        await globalStorage.writeBytes(relativePath, bytes);
+        var byteCount = 0;
+        if (downloadUrl.isNotEmpty) {
+          final client = await createClientWithSystemProxy(
+            proxyUrl: (params['proxy']?.toString())?.isEmpty == true
+                ? null
+                : params['proxy']?.toString(),
+          );
+          try {
+            final resp = await client
+                .get(Uri.parse(downloadUrl))
+                .timeout(
+                  Duration(seconds: params['timeout'] is num ? (params['timeout'] as num).toInt() : 120),
+                );
+            if (resp.statusCode != 200) {
+              throw Exception('下载失败: HTTP ${resp.statusCode}');
+            }
+            byteCount = resp.bodyBytes.length;
+            await globalStorage.writeBytes(relativePath, resp.bodyBytes);
+          } finally {
+            client.close();
+          }
+        } else {
+          final bytes = Uint8List.fromList(base64Decode(base64Data));
+          byteCount = bytes.length;
+          await globalStorage.writeBytes(relativePath, bytes);
+        }
 
         // 附加绝对路径便于定位（Web 平台没有文件系统，仅返回相对路径）
         String? absolutePath;
@@ -728,7 +758,7 @@ class JSBridgeManager {
           'success': true,
           'path': relativePath,
           if (absolutePath != null) 'absolutePath': absolutePath,
-          'size': bytes.length,
+          'size': byteCount,
         };
       } catch (e) {
         return {'error': e.toString()};
@@ -903,13 +933,41 @@ class JSBridgeManager {
             if (part is! Map) continue;
             final name = part['name']?.toString();
             if (name == null || name.isEmpty) continue;
+            final filename = part['filename']?.toString() ?? 'file';
+            // 大文件路径引用（本地 path / 远端 url）：由 Dart 侧直接读取，
+            // 避免 MB 级 base64 过 QuickJS 桥导致主线程解析阻塞（UI 卡顿）
+            final filePath = part['path']?.toString();
+            final fileUrl = part['url']?.toString();
+            if (fileUrl != null && fileUrl.isNotEmpty) {
+              final tmp = await _downloadToTemp(fileUrl, proxy: proxy);
+              if (tmp != null) {
+                mreq.files.add(
+                  await http.MultipartFile.fromPath(
+                    name,
+                    tmp.path,
+                    filename: filename,
+                  ),
+                );
+              }
+              continue;
+            }
+            if (filePath != null && filePath.isNotEmpty && File(filePath).existsSync()) {
+              mreq.files.add(
+                await http.MultipartFile.fromPath(
+                  name,
+                  filePath,
+                  filename: filename,
+                ),
+              );
+              continue;
+            }
             final base64Data = part['base64']?.toString();
             if (base64Data != null && base64Data.isNotEmpty) {
               mreq.files.add(
                 http.MultipartFile.fromBytes(
                   name,
                   base64Decode(base64Data),
-                  filename: part['filename']?.toString() ?? 'file',
+                  filename: filename,
                 ),
               );
             } else {
@@ -1368,6 +1426,35 @@ class JSBridgeManager {
   /// 声明为 nullable 以防御热重载：新增字段的初始化器不会作用于
   /// 已存在的单例实例（热重载后为 null），使用处需判空回退注册
   Map<String, Set<String>>? _pluginApiNames;
+
+  /// 下载远端文件到临时文件（走系统代理），失败返回 null
+  static Future<File?> _downloadToTemp(
+    String url, {
+    String? proxy,
+    int timeoutSec = 120,
+  }) async {
+    try {
+      final client = await createClientWithSystemProxy(
+        proxyUrl: (proxy == null || proxy.isEmpty) ? null : proxy,
+      );
+      try {
+        final resp = await client
+            .get(Uri.parse(url))
+            .timeout(Duration(seconds: timeoutSec));
+        if (resp.statusCode != 200) return null;
+        final name = url.replaceFirst(RegExp(r'[?#].*$'), '').split('/').last;
+        final tmp = File(
+          '${Directory.systemTemp.path}/aboutme_dl_${DateTime.now().millisecondsSinceEpoch}_${name.isEmpty ? 'file' : name}',
+        );
+        await tmp.writeAsBytes(resp.bodyBytes);
+        return tmp;
+      } finally {
+        client.close();
+      }
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// 解析 (pluginId, methodName) 到 JS API 实际注册的插件命名空间。
   ///

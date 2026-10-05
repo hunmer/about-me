@@ -15,6 +15,13 @@ class MobileJSEngine implements JSEngine {
   bool _initialized = false;
   final Map<String, Function> _registeredFunctions = {};
 
+  /// 日志截断：超长内容（如 MB 级 base64）只保留前缀，避免刷屏与终端 IO 开销
+  static String _clipForLog(Object? value, {int max = 300}) {
+    final s = value == null ? 'null' : value.toString();
+    if (s.length <= max) return s;
+    return '${s.substring(0, max ~/ 2)}…[已截断,共${s.length}字符]';
+  }
+
   // UI 回调函数（Alert/Dialog 由外部注入）
   Future<bool> Function(
     String message, {
@@ -706,20 +713,28 @@ class MobileJSEngine implements JSEngine {
       final executionId =
           '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
 
-      // 包装用户代码：提供 setResult 函数并自动捕获返回值
+      // 包装用户代码：提供 setResult 函数并自动捕获返回值。
+      // setResult 必须闭包局部化：嵌套 evaluate（如工具 JS 内触发生图脚本）的
+      // wrapper 结束时会 delete globalThis.setResult，若用户代码依赖全局名，
+      // 外层在 await 长任务后调用 setResult 会 ReferenceError
       final wrappedCode = '''
         (async function() {
+          const __execId = '$executionId';
 
-          // 定义 setResult 函数，用户可以显式设置返回值
-          globalThis.setResult = function(value) {
+          // 闭包局部 setResult：用户代码里的裸名 setResult 解析到这里，
+          // 不受内层 evaluate 清理全局名的影响
+          const setResult = function(value) {
             if (typeof value === 'object' && value !== null) {
-              globalThis.__EVAL_RESULTS__['$executionId'] = JSON.stringify(value);
+              globalThis.__EVAL_RESULTS__[__execId] = JSON.stringify(value);
             } else if (value === undefined) {
-              globalThis.__EVAL_RESULTS__['$executionId'] = 'undefined';
+              globalThis.__EVAL_RESULTS__[__execId] = 'undefined';
             } else {
-              globalThis.__EVAL_RESULTS__['$executionId'] = String(value);
+              globalThis.__EVAL_RESULTS__[__execId] = String(value);
             }
           };
+
+          // 兼容显式 globalThis.setResult 调用（同批次内后注册的覆盖先生效）
+          globalThis.setResult = setResult;
 
           try {
             // 执行用户代码并等待完成
@@ -728,16 +743,18 @@ class MobileJSEngine implements JSEngine {
             })();
 
             // 如果用户没有调用 setResult，自动设置结果
-            if (!globalThis.__EVAL_RESULTS__['$executionId']) {
-              globalThis.setResult(result);
+            if (!globalThis.__EVAL_RESULTS__[__execId]) {
+              setResult(result);
             }
           } catch (error) {
             console.error('[Wrapper] 执行错误:', error);
             // 保存错误信息
-            globalThis.__EVAL_RESULTS__['$executionId'] = 'Error: ' + error.toString();
+            globalThis.__EVAL_RESULTS__[__execId] = 'Error: ' + error.toString();
           } finally {
-            // 清理 setResult 函数
-            delete globalThis.setResult;
+            // 清理全局名（闭包局部版本不受影响）
+            if (globalThis.setResult === setResult) {
+              delete globalThis.setResult;
+            }
           }
         })();
       ''';
@@ -968,7 +985,7 @@ class MobileJSEngine implements JSEngine {
     // 注册 Dart 端处理器
     _runtime.onMessage(name, (dynamic data) {
       try {
-        print('[JS Bridge] 调用函数: $name, 数据: $data');
+        print('[JS Bridge] 调用函数: $name, 数据: ${_clipForLog(data)}');
 
         final callId = data['callId'];
         final args = data['args'] as List<dynamic>?;
@@ -1000,7 +1017,7 @@ class MobileJSEngine implements JSEngine {
             print('[JS Bridge] ✓ 结果已写入: $resultKey');
           } catch (e) {
             print('[JS Bridge] ✗ 写入失败: $e');
-            print('[JS Bridge] JSON 内容: $jsonResult');
+            print('[JS Bridge] JSON 内容: ${_clipForLog(jsonResult)}');
           }
         }
 
@@ -1010,7 +1027,7 @@ class MobileJSEngine implements JSEngine {
               .then((value) {
                 // 总是 JSON 编码,确保在 JavaScript 中能正确解析
                 final jsonResult = jsonEncode(value);
-                print('[JS Bridge] Future 结果: $jsonResult');
+                print('[JS Bridge] Future 结果: ${_clipForLog(jsonResult)}');
                 setJsResult(jsonResult);
               })
               .catchError((e) {

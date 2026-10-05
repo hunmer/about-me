@@ -94,31 +94,18 @@ let refFiles = []; // [{base64, filename}]
 if (refPaths.length) {
   for (const p of refPaths) {
     try {
-      let base64 = '';
       let filename = '';
       if (/^https?:\/\//i.test(p)) {
-        const resp = await Aboutme.http.request({
-          url: p, method: 'GET', responseType: 'base64', timeout: 60,
-          ...(proxy ? { proxy } : {}),
-        });
-        if (!resp.bodyBase64) {
-          toast(`参考图下载失败: ${p}`, 'warning');
-          return { success: false, error: '参考图下载失败: ' + p };
-        }
-        base64 = resp.bodyBase64;
+        // URL：multipart url 引用，Dart 侧下载（大文件不过 QuickJS 桥）
         filename = p.replace(/^.*[\\/]/, '').split('?')[0] || 'image.png';
-        console.log(`[ai_image] 参考图已下载: ${filename} (${Math.round(base64.length * 3 / 4 / 1024)}KB)`);
+        refFiles.push({ url: p, filename });
+        console.log(`[ai_image] 参考图(URL直传): ${filename}`);
       } else {
-        const r = await Aboutme.system.readFile({ path: p });
-        if (!r || !r.base64) {
-          toast(`参考图读取失败: ${p}`, 'warning');
-          return { success: false, error: '参考图读取失败: ' + p };
-        }
-        base64 = r.base64;
+        // 本地：multipart path 引用，Dart 侧直接读取（零 base64 过桥）
         filename = String(p).replace(/^.*[\\/]/, '') || 'image.png';
-        console.log(`[ai_image] 参考图已读取: ${filename} (${Math.round(r.size / 1024)}KB)`);
+        refFiles.push({ path: p, filename });
+        console.log(`[ai_image] 参考图(本地直传): ${filename}`);
       }
-      refFiles.push({ base64, filename });
     } catch (e) {
       toast('参考图获取失败: ' + e.message, 'error');
       return { success: false, error: '参考图获取失败: ' + e.message };
@@ -138,7 +125,7 @@ try {
     const multipart = [];
     const fileField = refFiles.length > 1 ? 'image[]' : 'image';
     for (const f of refFiles) {
-      multipart.push({ name: fileField, filename: f.filename, base64: f.base64 });
+      multipart.push({ name: fileField, filename: f.filename, ...(f.path ? { path: f.path } : f.url ? { url: f.url } : { base64: f.base64 }) });
     }
     multipart.push({ name: 'prompt', value: prompt });
     multipart.push({ name: 'model', value: model });
@@ -267,20 +254,30 @@ async function saveImages(imageList) {
   for (let i = 0; i < imageList.length; i++) {
     const img = imageList[i];
     try {
-      let base64 = img.value;
-      if (img.kind === 'url') {
-        const resp = await Aboutme.http.request({
-          url: img.value, method: 'GET', responseType: 'base64', timeout: 60,
-          ...(proxy ? { proxy } : {}),
-        });
-        if (!resp.bodyBase64) continue;
-        base64 = resp.bodyBase64;
-      }
       const file = `scripts/ai_image/ai_image_${stamp}_${i + 1}.png`;
-      const result = await Aboutme.system.saveFile({ path: file, base64 });
-      if (result && result.success) {
-        saved[i] = { path: result.absolutePath || result.path, base64 };
-        console.log(`[ai_image] 已保存: ${result.absolutePath || result.path}`);
+      if (img.kind === 'url' && !showUi) {
+        // 后台模式：URL 直写磁盘（saveFile url 下载），base64 不过桥防 UI 卡顿
+        const result = await Aboutme.system.saveFile({ path: file, url: img.value, timeout: 120, ...(proxy ? { proxy } : {}) });
+        if (result && result.success) {
+          saved[i] = { path: result.absolutePath || result.path };
+          console.log(`[ai_image] 已保存(URL直写): ${result.absolutePath || result.path}`);
+        }
+      } else {
+        // 展示模式：base64 在手用于 memory_image 渲染
+        let base64 = img.value;
+        if (img.kind === 'url') {
+          const resp = await Aboutme.http.request({
+            url: img.value, method: 'GET', responseType: 'base64', timeout: 60,
+            ...(proxy ? { proxy } : {}),
+          });
+          if (!resp.bodyBase64) continue;
+          base64 = resp.bodyBase64;
+        }
+        const result = await Aboutme.system.saveFile({ path: file, base64 });
+        if (result && result.success) {
+          saved[i] = { path: result.absolutePath || result.path, base64 };
+          console.log(`[ai_image] 已保存: ${result.absolutePath || result.path}`);
+        }
       }
     } catch (e) {
       console.log(`[ai_image] 保存第 ${i + 1} 张失败: ${e.message}`);
@@ -372,7 +369,8 @@ const result = {
   success: true,
   message: `生成 ${images.length} 张图片，保存 ${savedCount} 张`,
   data: {
-    images: images.map(function(i) { return i.value; }),
+    // 后台模式剥离 base64（b64_json 可达 MB 级，过桥回传会阻塞主线程）
+    images: images.map(function(i) { return i.kind === 'url' || !showUi ? (i.kind === 'url' ? i.value : '[base64]') : i.value; }),
     imageUrls: images.filter(function(i) { return i.kind === 'url'; }).map(function(i) { return i.value; }),
     localPaths: localPaths,
     taskId: taskId,
