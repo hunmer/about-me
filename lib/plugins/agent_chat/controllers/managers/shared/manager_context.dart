@@ -22,6 +22,9 @@ class ManagerContext {
   /// 状态通知回调 - 用于触发 UI 更新
   final VoidCallback? notifyListeners;
 
+  /// 顶栏"正在输入"状态文案回调 - 工具编排等阶段状态显示在标题栏
+  final void Function(String? status)? onTypingStatus;
+
   ManagerContext({
     required this.conversationId,
     required this.messageService,
@@ -30,6 +33,7 @@ class ManagerContext {
     this.templateService,
     this.getSettings,
     this.notifyListeners,
+    this.onTypingStatus,
   });
 
   /// 保存消息详情到本地存储

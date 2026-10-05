@@ -5,7 +5,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:agentlib/openai_compat.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
-import 'package:aboutme/plugins/openai/aliveness/aliveness_orchestrator.dart';
+import 'package:aboutme/plugins/openai/aliveness/channels/chat_aliveness_channel.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
@@ -94,7 +94,7 @@ class ChatEventHandler {
       final agent = await _agentController.getAgent(agentData['id']);
       if (agent?.alivenessConfig?.enabled == true) {
         agentTasks.add(
-          AlivenessOrchestrator.instance.handleUserMessage(
+          handleChatAlivenessMessage(
             agent!,
             message,
             absoluteFilePath: absoluteFilePath,
@@ -393,7 +393,7 @@ class ChatEventHandler {
 
   void dispose() {
     // 清理活人感缓冲计时器
-    AlivenessOrchestrator.instance.dispose();
+    disposeChatAliveness();
 
     // 获取所有消息ID的副本，因为我们会在循环中修改集合
     final messageIds = _messageControllers.keys.toList();

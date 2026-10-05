@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
-import 'package:aboutme/plugins/chat/models/message.dart';
 
 /// 回复策略（Jev Choice 选项，与注入指令一一对应）
 enum ReplyStrategy { minimal, normal, detailed, shiftTopic }
@@ -53,25 +52,7 @@ class DecisionService {
     sendTimeout: const Duration(seconds: 5),
   ));
 
-  Future<DecisionResult> decide({
-    required String agentId,
-    required AgentState state,
-    required List<Message> bufferedMessages,
-    required AlivenessConfig config,
-    List<String> unaskedQuestions = const [],
-    DateTime? lastExploreAt,
-  }) {
-    return decideTexts(
-      agentId: agentId,
-      state: state,
-      bufferedTexts: bufferedMessages.map((m) => m.content).toList(),
-      config: config,
-      unaskedQuestions: unaskedQuestions,
-      lastExploreAt: lastExploreAt,
-    );
-  }
-
-  /// 纯文本版决策入口（agent_chat 等无 chat Message 模型的调用方使用）
+  /// 决策入口（通用文本输入，chat / agent_chat 共用）
   Future<DecisionResult> decideTexts({
     required String agentId,
     required AgentState state,

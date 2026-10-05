@@ -220,15 +220,16 @@ class ToolOrchestrator {
           // 尝试解析已获取到的工具列表
           final toolRequest = ToolService.parseToolRequest(content);
           if (toolRequest != null && toolRequest.isNotEmpty) {
-            // 显示"正在查看工具用法..."
+            // 顶栏显示"正在查看工具用法..."
             final toolsText = toolRequest.join('、');
-            onUpdateMessage('🔍 正在查看 $toolsText 工具的用法...', currentTokenCount);
+            context.onTypingStatus?.call('🔍 正在查看 $toolsText 工具的用法...');
           } else {
-            // 还在生成 JSON，显示通用提示
-            onUpdateMessage('🔍 正在识别需要的工具...', currentTokenCount);
+            // 还在生成 JSON，顶栏显示通用提示
+            context.onTypingStatus?.call('🔍 正在识别需要的工具...');
           }
         } else if (content.isNotEmpty) {
           // 不是工具需求 JSON，直接显示（比如 markdown 格式的工具调用）
+          context.onTypingStatus?.call(null);
           onUpdateMessage(content, currentTokenCount);
         }
       },
@@ -376,6 +377,7 @@ class ToolOrchestrator {
         final content = secondBuffer.toString();
         // 实时更新内容，让 markdown 能够渲染
         if (content.isNotEmpty) {
+          context.onTypingStatus?.call(null);
           onUpdateMessage(content, secondTokenCount);
         }
       },

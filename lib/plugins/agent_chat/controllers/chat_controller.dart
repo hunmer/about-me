@@ -100,6 +100,17 @@ class ChatController extends ChangeNotifier {
   bool _isThinking = false;
   bool get isThinking => _isThinking;
 
+  /// 顶栏"正在输入"状态文案（如"🔍 正在识别需要的工具..."），
+  /// null 时顶栏回退显示"正在输入中…"
+  String? _typingStatusText;
+  String? get typingStatusText => _typingStatusText;
+
+  void setTypingStatus(String? text) {
+    if (_typingStatusText == text) return;
+    _typingStatusText = text;
+    notifyListeners();
+  }
+
   /// 活人感生成隐藏窗口：本轮生成的 AI 消息在处理完（分条/语音合成）前
   /// 不进入 UI，处理完毕一次性揭示，避免"完整文本闪现再拆条"的跳变
   bool _alivenessFlushActive = false;
@@ -235,6 +246,7 @@ class ChatController extends ChangeNotifier {
         templateService: templateService,
         getSettings: getSettings,
         notifyListeners: notifyListeners,
+        onTypingStatus: setTypingStatus,
       );
 
       // 初始化所有管理器
@@ -487,6 +499,11 @@ class ChatController extends ChangeNotifier {
           userMessage: userMessage,
           messageService: messageService,
           onReveal: revealAlivenessMessages,
+          onIdle: () {
+            // 已读不回/空内容/出错时复位"正在输入中"标题态
+            _isThinking = false;
+            notifyListeners();
+          },
           onFlushGenerate: (mergedText, systemSuffix) async {
             _isThinking = false;
             _isSending = true;
@@ -536,6 +553,7 @@ class ChatController extends ChangeNotifier {
       rethrow;
     } finally {
       _isSending = false;
+      _typingStatusText = null;
       notifyListeners();
     }
   }
@@ -558,6 +576,7 @@ class ChatController extends ChangeNotifier {
     }
 
     _isSending = false;
+    _typingStatusText = null;
     _isCancelling = false;
     notifyListeners();
 

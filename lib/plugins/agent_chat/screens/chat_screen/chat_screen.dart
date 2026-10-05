@@ -605,6 +605,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _controller.isSending ||
             _controller.isThinking ||
             _controller.alivenessFlushActive,
+        typingStatusText: _controller.typingStatusText,
         isChainMode: _isChainMode,
         agentDisplayText: _getAgentDisplayText(),
         hasValidAgent: _hasValidAgent(),
@@ -1631,6 +1632,9 @@ class _ChatScreenState extends State<ChatScreen> {
 class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool isTyping;
+
+  /// 输入中状态的具体文案（如"🔍 正在识别需要的工具..."），null 时显示"正在输入中…"
+  final String? typingStatusText;
   final bool isChainMode;
   final String agentDisplayText;
   final bool hasValidAgent;
@@ -1649,6 +1653,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _AgentChatAppBar({
     required this.title,
     this.isTyping = false,
+    this.typingStatusText,
     required this.isChainMode,
     required this.agentDisplayText,
     required this.hasValidAgent,
@@ -1723,7 +1728,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                       const SizedBox(width: 4),
                                       Flexible(
                                         child: Text(
-                                          '正在输入中…',
+                                          typingStatusText ?? '正在输入中…',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: DsTypography.caption.copyWith(
