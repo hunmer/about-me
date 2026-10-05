@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'tool_config_manager.dart';
+import 'native_tool_agent_service.dart';
 import 'package:aboutme/plugins/webview/services/js_tool_service.dart';
 
 // ==================== Markdown 工具调用解析器 ====================
@@ -353,6 +354,8 @@ class ToolService {
       // 重新生成并缓存两种 Prompt
       _cachedToolBriefPrompt = _generateToolBriefPrompt();
       _cachedToolListPrompt = await _generateToolListPrompt();
+      // 原生 FC 工具集缓存同步失效
+      NativeToolAgentService.instance.invalidateCache();
     } catch (e) {
       print('[ToolService] 刷新缓存失败: $e');
     }

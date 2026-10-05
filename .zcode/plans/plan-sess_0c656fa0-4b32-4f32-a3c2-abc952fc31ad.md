@@ -1,54 +1,42 @@
-# Agent 朋友圈 + 资产图管理 + 生图工具
+# 工具系统迁移 dartantic_ai 原生 function calling
 
-## 复用结论（探索已确认）
-- **生图**：`ScriptsCenterPlugin.instance.scriptExecutor.execute('ai_image', args: {...})` → `result['data']['localPaths']`；ai_image 脚本已支持图生图（`image` 参数传本地路径数组）；用户 apiKey 已配在 `configs/scripts_center/ai_image_config.json`
-- **发图片消息**：照抄 `voice_service.dart:155-191` 模式 —— `ChatMessage + FileAttachment.image(filePath: 绝对路径)`，经 `AgentChatPlugin.instance.conversationController.messageService.addMessage` 写入（无需 ChatController）
-- **工具系统**：两阶段 Markdown+JS；新工具 = `openai_plugin.dart` 的 `defineJSAPI()` 注册 Dart 函数 + `lib/plugins/agent_chat/tools/openai.json` 加描述条目（ToolConfigManager 自动补拷新 json 字段）
-- **UI**：feed 参考 chat timeline 卡片；全屏看图用 PhotoView（calendar_album 已有）；选图用 `ImagePickerDialog`；图片渲染 `ImageUtils.getAbsolutePath` + `Image.file`
+## 结论（探索确认）
+- 项目内 `packages/agentlib` 是纯传输门面，无 FC 能力——**保留不动**（非工具请求继续走它）
+- `dartantic_ai`：`OpenAIProvider(apiKey, baseUrl, headers)` + `Agent.forProvider` + `Tool(name/description/inputSchema/onCall)`，**工具循环自动**（调用→执行→回传→继续生成，多轮），`sendStream` 流式输出，异常自动回传 LLM
+- 296 个工具 JSON 可机械转 `Tool`（type 规范化：String→string 等；22 个 object 参数的嵌套 properties 数据在 JSON 里但模型层未解析，需补）
 
-## 新增文件 `lib/plugins/openai/moments/`
+## 方案：并行路径 + 自动分流（保留旧链路兜底）
 
-**models/**
-- `moment_post.dart`：`MomentPost{id, agentId, text, images[List<String>相对路径], createdAt, source('agent'|'manual')}`
-- `agent_asset.dart`：`AgentAsset{id, name, prompt(占位模板), path(相对路径,null=未生成), createdAt}`
+**新文件**
+1. `lib/plugins/agent_chat/services/native_tool_agent_service.dart` — 核心服务：
+   - `runToolLoop({AIAgent, systemPrompt, contextMessages, files, userInput, aiMessageId, onUpdateMessage, onThinking, isCancelling})` → `Future<String>` 最终文本
+   - Provider 构造：`OpenAIProvider(apiKey: headers 提取, baseUrl: agent.baseUrl, headers: agent.headers)`（实施时对照 pub cache 源码确认 model 传法）
+   - 工具集：ToolConfigManager 启用工具 → `Tool` 列表（name=toolId，description=title+description+returns 摘要，inputSchema=Schema.fromMap）
+   - 统一 dispatcher：onCall 收 args → toolId 解析 (pluginId, method)（用 PluginToolSet 索引，不用 split 避开 calendar_album 下划线）→ 生成 JS `const r = await Aboutme.plugins.<p>.<m>(<args>); setResult(r); return r;` → 复用 `ToolService.executeJsCode`（QuickJS 执行层零改动）
+   - 每次工具调用构造/更新 `ToolCallStep` 写入 `message.toolCall`（UI/存储/详情对话框零改动）；执行上下文设 `MomentsService.currentAgentId/currentConversationId`（生图工具依赖）
+   - `sendStream`：文本 chunk → onUpdateMessage 流式；循环结束取最终 output
+2. `lib/plugins/agent_chat/services/tool_schema_builder.dart` — ToolConfig→JSON Schema（type 规范化映射、object 嵌套 properties、required 汇总）
+3. `test/native_tool_schema_test.dart` — schema 生成单测（含脏 type 规范化、嵌套 object）
 
-**services/**
-- `moments_service.dart`（ChangeNotifier 单例）：
-  - 帖子存 `openai/moments/posts.json`（新帖插头部，上限 500）
-  - `currentAgentId`/`currentConversationId` 静态上下文（工具执行时取）
-  - `sendImageToChat()`：发纯图 AI 消息到当前会话
-- `agent_assets_service.dart`：per-agent `openai/moments/<agentId>/assets.json`；首次打开初始化预置占位【三视图】【房间照片】（含生成提示词模板）；CRUD
-- `image_gen_service.dart`：`generate({prompt, refImagePaths, aspectRatio})` 调 ai_image（args 传 `showUi:false`）→ localPaths 拷贝到 `openai/moments/images/` 返回相对路径；插件未启用/未配 key 时返回友好错误
+**修改**
+4. `pubspec.yaml`：`dartantic_ai`（实施时 `flutter pub add dartantic_ai` 取最新）
+5. `tool_config.dart`：`ToolParameter` 补解析 `properties` 嵌套（22 个 object 参数）
+6. `agent_chain_executor.dart` `_requestAgentInChain` 开头分流：
+   - `apiFormat == 'openai' && enableFunctionCalling && agent.enableFunctionCalling` → 走 `NativeToolAgentService.runToolLoop`，完成后 `completeAIMessage`（复用现有 operationCompleter 语义，活人感零改动）
+   - **dartantic 异常自动回退旧两阶段路径**（ToolOrchestrator 保留不删，兼作 anthropic 格式与回退）
+7. 图片多模态：contextMessages 里的图片 parts 转 dartantic 的多模态消息（实施时按其 ChatMessage API 处理，DeepSeek vision 场景少，转不了就文本降级）
 
-**screens/**
-- `moments_screen.dart`：ins 风单列 feed（头像+名字+时间+文案+图片区）；单图大图、多图 3 列网格；点图全屏（PhotoView）；长按删除；监听 ChangeNotifier；空态引导
-- `agent_assets_screen.dart`：3 列网格资产卡（已生成=图+名；占位=虚线框+名+"生成"角标）；「+」添加：上传照片（ImagePickerDialog+命名）/ 新建占位（名称+提示词）；点资产弹操作：生成图片（prompt 预填模板+自动附加 agent 人设描述）、图生图（以此图为参考生成，结果可存为新资产/替换原图）、重命名、删除；生成中转圈
+**保留不动**：ToolOrchestrator（回退+anthropic+模板 rewrite 的 brief/detail prompt）、ToolExecutor（rerun/模板执行）、全部 UI（ToolCallSteps/详情/保存模板）、工具模板第零阶段、js_tool 动态注册（注册进 ToolConfigManager 后自动进入新工具集）、RequestService/agentlib（非工具请求）。
 
-**widgets/**
-- `moment_card.dart`：帖子卡片（头像渲染参考 `agent_card.dart:112` 的 avatarUrl/icon 兜底逻辑）
+**收益**：工具选择准确率（原生 FC vs prompt 平铺选择题）、参数结构化保证（不再靠模型写 JS）、多轮工具循环（旧架构单轮）、根治 JSON 泄漏类 bug、DeepSeek 无需 json_object 降级 hack。
 
-## 修改文件
-1. `lib/plugins/agent_chat/tools/openai.json`：加 3 个工具（带 examples 引导 LLM 配图时用 `refAssetNames` 引用资产图保持形象一致）：
-   - `generate_image{prompt必填, refAssetNames?, aspectRatio?, sendToChat默认true}`
-   - `post_moment{text必填, imagePrompt?(自动生图配图), refAssetNames?}`
-   - `list_agent_assets{}` → 返回 `[{name, hasImage}]`
-2. `lib/plugins/openai/openai_plugin.dart` + 新 part `moments_js_api.dart`：defineJSAPI 注册 3 个方法；agentId 解析顺序 `params → MomentsService.currentAgentId → MemoryService.currentAgentId`
-3. `lib/plugins/agent_chat/controllers/chat_controller.dart`：`initialize()` 设置 currentConversationId/currentAgentId
-4. `lib/plugins/agent_chat/controllers/managers/agent_chain_executor.dart`：`_handleSecondPhaseComplete` 开头更新 currentAgentId（多 agent 链准确）
-5. `lib/plugins/agent_chat/screens/chat_screen/chat_screen.dart`：AppBar DSPopover 菜单加「朋友圈」入口
-6. `lib/plugins/openai/screens/agent_edit_screen.dart`：AlivenessSettingsSection 后加「资产图库」入口 Section
-7. `assets/scripts/ai_image/script.js` + `online/scripts/ai_image/`（两份同步，版本 1.3.2→1.3.3）：支持 `args.showUi` 布尔值覆盖 config，后台调用不弹结果页
-
-## 范围决策（用户未答，按推荐执行）
-- 第一版不做点赞/评论（后续可加）
-- `generate_image` 默认发送图片到当前聊天（LLM 可传 `sendToChat:false` 只生成不发）
+**代价与控制**：296 工具 schema 全量注入 ≈30k input tokens/次（DeepSeek 约几厘钱，后续可按关键词+pluginAliases 预筛）；新依赖纯 Dart 无 Flutter 冲突。
 
 ## 验证
-- `flutter analyze lib/plugins/openai lib/plugins/agent_chat` + 现有 aliveness 测试不回归
-- 用户手动验收（遵循偏好，不自动跑 app）
+- `flutter analyze` 零新增问题；新单测 + aliveness 逻辑测试全绿
+- 用户实测（对话触发工具、生图、发朋友圈）
 
-## 验收步骤（交付后给用户）
-1. 聊天页右上菜单 →「朋友圈」打开动态流
-2. agent 编辑页 →「资产图库」→ 点【三视图】占位 → 生成（需脚本中心 ai_image 已配 key）
-3. 对 agent 说「帮我生成一张xxx图」→ 图片消息出现在聊天
-4. 对 agent 说「发一条朋友圈，配一张你在房间的照片」→ 朋友圈出现新帖
+## 验收步骤（交付后）
+1. 重启 app → 对余小满说「你能不能给我看看你的照片」→ 直接生图发聊天（不再出 JSON 占位）
+2. 说「查一下我的记忆里有什么」→ search_memory 工具步骤正常显示+总结回复
+3. 日志确认走 `[NativeTool]` 路径；断网/接口异常时自动回退旧路径不崩

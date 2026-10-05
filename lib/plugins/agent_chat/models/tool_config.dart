@@ -17,11 +17,15 @@ class ToolParameter {
   /// 参数描述
   final String description;
 
+  /// object 类型的嵌套属性（可选，原生 FC schema 用）
+  final List<ToolParameter> properties;
+
   ToolParameter({
     required this.name,
     required this.type,
     this.optional = false,
     required this.description,
+    this.properties = const [],
   });
 
   factory ToolParameter.fromJson(Map<String, dynamic> json) {
@@ -36,11 +40,18 @@ class ToolParameter {
       optional = false;
     }
 
+    final nested =
+        (json['properties'] as List<dynamic>? ?? [])
+            .whereType<Map>()
+            .map((e) => ToolParameter.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
     return ToolParameter(
       name: json['name'] as String,
       type: json['type'] as String,
       optional: optional,
       description: json['description'] as String,
+      properties: nested,
     );
   }
 
@@ -50,6 +61,8 @@ class ToolParameter {
       'type': type,
       'optional': optional,
       'description': description,
+      if (properties.isNotEmpty)
+        'properties': properties.map((p) => p.toJson()).toList(),
     };
   }
 
@@ -58,12 +71,14 @@ class ToolParameter {
     String? type,
     bool? optional,
     String? description,
+    List<ToolParameter>? properties,
   }) {
     return ToolParameter(
       name: name ?? this.name,
       type: type ?? this.type,
       optional: optional ?? this.optional,
       description: description ?? this.description,
+      properties: properties ?? this.properties,
     );
   }
 }

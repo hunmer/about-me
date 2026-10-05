@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
 
 /// 工具配置管理器（单例）
 class ToolConfigManager {
@@ -74,7 +75,18 @@ class ToolConfigManager {
     'nodes': ['节点', '树形笔记'],
     'calendar_album': ['相册', '照片', '图片日记'],
     'database': ['数据库', '自定义数据'],
-    'moments': ['朋友圈', '动态', '生图', '生成图片', '画图', '资产图'],
+    'moments': [
+      '朋友圈',
+      '动态',
+      '生图',
+      '生成图片',
+      '画图',
+      '资产图',
+      '照片',
+      '自拍',
+      '拍照',
+      '画一张',
+    ],
   };
 
   // 是否已初始化
@@ -212,6 +224,7 @@ class ToolConfigManager {
       final content = const JsonEncoder.withIndent('  ').convert(newIndex);
       await _manager.writeString('$_toolsPrefix/index.json', content);
       print('✅ 工具索引已生成 (共 ${newIndex.length} 个工具)');
+      _invalidateNativeToolCache();
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
     }
@@ -278,6 +291,7 @@ class ToolConfigManager {
       final jsonData = toolSet.toJson();
       final content = const JsonEncoder.withIndent('  ').convert(jsonData);
       await _manager.writeString('$_toolsPrefix/$pluginId.json', content);
+      _invalidateNativeToolCache();
     } catch (e) {
       print('❌ 保存 $pluginId 配置失败: $e');
       rethrow;
@@ -291,8 +305,30 @@ class ToolConfigManager {
       await _manager.writeString('$_toolsPrefix/index.json', content);
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
-      rethrow;
     }
+  }
+
+  /// 工具配置发生变化后失效原生 FC 工具集缓存
+  void _invalidateNativeToolCache() {
+    try {
+      NativeToolAgentService.instance.invalidateCache();
+    } catch (_) {}
+  }
+
+  /// 获取全部启用工具及其所属插件（原生 function calling 注入用）
+  ///
+  /// 返回 (toolId, pluginId, ToolConfig) 列表；toolId 为完整 ID（含插件前缀）
+  List<(String, String, ToolConfig)> getEnabledToolsWithPlugin() {
+    final result = <(String, String, ToolConfig)>[];
+    for (final entry in _pluginTools.entries) {
+      final pluginId = entry.key;
+      for (final toolEntry in entry.value.tools.entries) {
+        if (toolEntry.value.enabled) {
+          result.add((toolEntry.key, pluginId, toolEntry.value));
+        }
+      }
+    }
+    return result;
   }
 
   /// 获取工具简要索引（用于第一阶段 AI 请求）
