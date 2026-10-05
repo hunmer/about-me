@@ -6,6 +6,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_schema/json_schema.dart';
 
+import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
@@ -193,7 +194,8 @@ class NativeToolAgentService {
         .getEnabledToolsWithPlugin()) {
       // system_ 前缀工具不作为独立调用暴露（与旧两阶段 brief 行为一致）
       if (toolId.startsWith('system_')) continue;
-      // methodName = toolId 去掉 "<pluginId>_" 前缀（json key 本身无前缀）
+      // methodName = toolId 去掉 "<pluginId>_" 前缀（json key 本身无前缀）；
+      // pluginId 为描述文件所属插件，JS 路由在 _dispatch 时实时解析
       final methodName = toolId.startsWith('${pluginId}_')
           ? toolId.substring(pluginId.length + 1)
           : toolId;
@@ -243,10 +245,16 @@ class NativeToolAgentService {
     final meta = metaMap[toolId];
     if (meta == null) return {'error': 'Tool $toolId not found'};
 
+    // 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
+    // （moments/memory 的方法挂在 openai 命名空间），运行时解析真实路由
+    final resolved =
+        JSBridgeManager.instance.resolvePluginApi(meta.pluginId, meta.methodName) ??
+        (meta.pluginId, meta.methodName);
+
     final argsJson = jsonEncode(args);
     final js =
-        'const r = await Aboutme.plugins.${meta.pluginId}.'
-        '${meta.methodName}($argsJson);\nsetResult(r);\nreturn r;';
+        'const r = await Aboutme.plugins.${resolved.$1}.'
+        '${resolved.$2}($argsJson);\nsetResult(r);\nreturn r;';
 
     final step = ToolCallStep(
       method: 'run_js',
