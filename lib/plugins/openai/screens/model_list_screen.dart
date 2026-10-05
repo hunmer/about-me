@@ -21,6 +21,7 @@ class _ModelListScreenState extends State<ModelListScreen>
   final Map<String, String> _defaultModels = {};
   String _searchQuery = '';
   bool _isLoading = true;
+  bool _isFetching = false;
 
   @override
   void initState() {
@@ -108,6 +109,21 @@ class _ModelListScreenState extends State<ModelListScreen>
           title: Text('openai_modelManagement'.tr),
           actions: [
             // DS 按钮自带 DSThemeBridge 提供 AppTheme
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSIconButton(
+                    icon: DsIconKind.refresh,
+                    size: 40,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _isFetching ? null : _fetchAndImportModels,
+                    tooltip: 'openai_fetchLatestModels'.tr,
+                  );
+                },
+              ),
+            ),
             DSThemeBridge(
               child: Builder(
                 builder: (context) {
@@ -256,6 +272,51 @@ class _ModelListScreenState extends State<ModelListScreen>
         ),
       ),
     );
+  }
+
+  // 从 models.dev 拉取最新模型列表，选择来源后合并进本地
+  Future<void> _fetchAndImportModels() async {
+    if (_isFetching) return;
+    setState(() {
+      _isFetching = true;
+    });
+
+    try {
+      toastService.showToast('openai_fetchingModels'.tr);
+      final remoteGroups = await _modelController.fetchRemoteModelGroups();
+      if (!mounted) return;
+
+      final chosen = await showDSDialog<List<LLMModelGroup>>(
+        context: context,
+        theme: DSThemeBridge.resolve(context),
+        builder:
+            (context) => _ProviderPickDialog(
+              remoteGroups: remoteGroups,
+              existingGroupIds: _modelGroups.map((g) => g.id).toSet(),
+            ),
+      );
+      if (chosen == null || chosen.isEmpty) return;
+
+      final result = await _modelController.mergeModelGroups(chosen);
+      if (!mounted) return;
+      toastService.showToast(
+        'openai_syncResult'.trParams({
+          'groups': '${result.addedGroups}',
+          'models': '${result.addedModels}',
+        }),
+      );
+      await _loadModels();
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('${'openai_fetchModelsFailed'.tr}: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetching = false;
+        });
+      }
+    }
   }
 
   Future<void> _addNewModel() async {
@@ -509,5 +570,168 @@ class _ModelEditDialogState extends State<_ModelEditDialog> {
     _idController.dispose();
     _nameController.dispose();
     super.dispose();
+  }
+}
+
+/// 远端模型来源选择对话框：勾选要导入的 provider
+class _ProviderPickDialog extends StatefulWidget {
+  final List<LLMModelGroup> remoteGroups;
+  final Set<String> existingGroupIds;
+
+  const _ProviderPickDialog({
+    required this.remoteGroups,
+    required this.existingGroupIds,
+  });
+
+  @override
+  State<_ProviderPickDialog> createState() => _ProviderPickDialogState();
+}
+
+class _ProviderPickDialogState extends State<_ProviderPickDialog> {
+  String _query = '';
+  late final List<LLMModelGroup> _sorted;
+  late final Set<int> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // 与本地已有组匹配的来源排前面并默认勾选
+    final matched = <LLMModelGroup>[];
+    final rest = <LLMModelGroup>[];
+    for (final group in widget.remoteGroups) {
+      (widget.existingGroupIds.contains(group.id) ? matched : rest).add(group);
+    }
+    int byName(LLMModelGroup a, LLMModelGroup b) =>
+        a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    _sorted = [...matched..sort(byName), ...rest..sort(byName)];
+    _selected = {
+      for (var i = 0; i < matched.length; i++)
+        _sorted.indexOf(matched[i]),
+    };
+  }
+
+  void _toggle(int index) {
+    setState(() {
+      if (!_selected.remove(index)) {
+        _selected.add(index);
+      }
+    });
+  }
+
+  void _submit() {
+    final chosen = [
+      for (var i = 0; i < _sorted.length; i++)
+        if (_selected.contains(i)) _sorted[i],
+    ];
+    Navigator.of(context).pop(chosen);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          final query = _query.toLowerCase();
+          final filtered = [
+            for (var i = 0; i < _sorted.length; i++)
+              if (query.isEmpty ||
+                  _sorted[i].name.toLowerCase().contains(query) ||
+                  _sorted[i].id.toLowerCase().contains(query))
+                i,
+          ];
+          return JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 420, maxHeight: 560),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'openai_selectProviders'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.md),
+                DSInput.search(
+                  hint: 'openai_searchModel'.tr,
+                  onChanged: (value) {
+                    setState(() {
+                      _query = value;
+                    });
+                  },
+                ),
+                SizedBox(height: theme.spacing.sm),
+                Flexible(
+                  child: filtered.isEmpty
+                      ? Center(child: Text('openai_noModelsFound'.tr))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final i = filtered[index];
+                            final group = _sorted[i];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: DSCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: theme.spacing.sm,
+                                  vertical: theme.spacing.xs,
+                                ),
+                                onTap: () => _toggle(i),
+                                child: Row(
+                                  children: [
+                                    DSCheckbox(
+                                      value: _selected.contains(i),
+                                      onChanged: (_) => _toggle(i),
+                                    ),
+                                    SizedBox(width: theme.spacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        group.name,
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${group.models.length}',
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.textSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                SizedBox(height: theme.spacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'openai_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'openai_import'.tr,
+                        onPressed: _selected.isEmpty ? null : _submit,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -80,19 +80,92 @@ const authHeaders = {
   'Authorization': 'Bearer ' + apiKey,
 };
 
-console.log(`[ai_image] 提交生成 model=${model} ratio=${aspectRatio} n=${n}`);
-console.log(`[ai_image] 提示词: ${prompt}`);
-toast('已提交生成任务，等待云端处理...');
+// ── 参考图（图生图模式）─────────────────────────────────
+// 输入 image 为本地路径或图片 URL 的混合列表：
+//   URL → Aboutme.http.request 走代理下载为 base64
+//   本地路径 → Aboutme.system.readFile 读取
+const refPaths = Array.isArray(input.image)
+    ? input.image.filter(function(p) { return p && String(p).trim(); })
+    : (input.image ? [String(input.image)] : []);
+const isEdit = refPaths.length > 0;
+
+let refFiles = []; // [{base64, filename}]
+if (refPaths.length) {
+  for (const p of refPaths) {
+    try {
+      let base64 = '';
+      let filename = '';
+      if (/^https?:\/\//i.test(p)) {
+        const resp = await Aboutme.http.request({
+          url: p, method: 'GET', responseType: 'base64', timeout: 60,
+          ...(proxy ? { proxy } : {}),
+        });
+        if (!resp.bodyBase64) {
+          toast(`参考图下载失败: ${p}`, 'warning');
+          return { success: false, error: '参考图下载失败: ' + p };
+        }
+        base64 = resp.bodyBase64;
+        filename = p.replace(/^.*[\\/]/, '').split('?')[0] || 'image.png';
+        console.log(`[ai_image] 参考图已下载: ${filename} (${Math.round(base64.length * 3 / 4 / 1024)}KB)`);
+      } else {
+        const r = await Aboutme.system.readFile({ path: p });
+        if (!r || !r.base64) {
+          toast(`参考图读取失败: ${p}`, 'warning');
+          return { success: false, error: '参考图读取失败: ' + p };
+        }
+        base64 = r.base64;
+        filename = String(p).replace(/^.*[\\/]/, '') || 'image.png';
+        console.log(`[ai_image] 参考图已读取: ${filename} (${Math.round(r.size / 1024)}KB)`);
+      }
+      refFiles.push({ base64, filename });
+    } catch (e) {
+      toast('参考图获取失败: ' + e.message, 'error');
+      return { success: false, error: '参考图获取失败: ' + e.message };
+    }
+  }
+}
+
+console.log(`[ai_image] 提交生成 ${isEdit ? '图生图(编辑)' : '文生图'} model=${model} ratio=${aspectRatio} n=${n}${isEdit ? ` 参考图=${refFiles.length}` : ''}`);
+console.log(`[ai_image] ${isEdit ? '编辑指令' : '提示词'}: ${prompt}`);
+toast(isEdit ? `图生图任务已提交（${refFiles.length} 张参考图）...` : '已提交生成任务，等待云端处理...');
 
 // ── 提交生成 ─────────────────────────────────────────────
 let submit;
 try {
-  submit = await httpJson(`${baseUrl}/v1/images/generations?async=true`, {
-    method: 'POST',
-    headers: authHeaders,
-    body: { prompt, model, aspect_ratio: aspectRatio, n },
-    timeout: 120,
-  });
+  if (isEdit) {
+    // 图生图：POST /v1/images/edits?async=true（multipart，多图用 image[] 字段名）
+    const multipart = [];
+    const fileField = refFiles.length > 1 ? 'image[]' : 'image';
+    for (const f of refFiles) {
+      multipart.push({ name: fileField, filename: f.filename, base64: f.base64 });
+    }
+    multipart.push({ name: 'prompt', value: prompt });
+    multipart.push({ name: 'model', value: model });
+    if (aspectRatio) multipart.push({ name: 'aspect_ratio', value: aspectRatio });
+    if (n) multipart.push({ name: 'n', value: String(n) });
+
+    submit = await Aboutme.http.request({
+      url: `${baseUrl}/v1/images/edits?async=true`,
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + apiKey },
+      multipart,
+      timeout: 120,
+      ...(proxy ? { proxy } : {}),
+    });
+    let body = submit.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch (e) { /* 保持字符串 */ }
+    }
+    submit = { statusCode: submit.statusCode, body };
+  } else {
+    // 文生图：POST /v1/images/generations?async=true（JSON）
+    submit = await httpJson(`${baseUrl}/v1/images/generations?async=true`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: { prompt, model, aspect_ratio: aspectRatio, n },
+      timeout: 120,
+    });
+  }
 } catch (e) {
   toast('生成请求失败: ' + e.message, 'error');
   return { success: false, error: '提交失败: ' + e.message };
@@ -262,7 +335,7 @@ const uiJson = {
           {
             type: 'text',
             args: {
-              text: `生成成功 · ${images.length} 张 · ${model}${aspectRatio ? ' · ' + aspectRatio : ''}`,
+              text: `${isEdit ? '图生图' : '文生图'}成功 · ${images.length} 张 · ${model}${aspectRatio ? ' · ' + aspectRatio : ''}${isEdit ? ` · ${refFiles.length}参考` : ''}`,
               style: { fontSize: 14.0, fontWeight: 'bold' },
             }
           },

@@ -114,6 +114,11 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_modelGroup': 'Model Group',
   'openai_pleaseSelectModelGroup': 'Please select a model group',
   'openai_save': 'Save',
+  'openai_fetchLatestModels': 'Fetch latest models',
+  'openai_fetchingModels': 'Fetching model list...',
+  'openai_fetchModelsFailed': 'Failed to fetch model list',
+  'openai_selectProviders': 'Select model providers to import',
+  'openai_syncResult': 'Added @groups groups, @models models',
   'openai_modelManagementDescription': 'Manage large language models',
   'openai_modelUrlLabel': 'URL',
 

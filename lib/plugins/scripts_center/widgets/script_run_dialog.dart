@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/utils/file_picker_helper.dart';
 
 /// 脚本运行参数输入对话框
 ///
@@ -31,6 +32,9 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
   /// 下拉选择值映射 (key -> value)
   final Map<String, String?> _selectValues = {};
 
+  /// 图片选择路径映射 (key -> 路径列表，image 类型输入)
+  final Map<String, List<String>> _imageValues = {};
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +53,9 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
           break;
         case 'select':
           _selectValues[input.key] = input.defaultValue?.toString();
+          break;
+        case 'image':
+          _imageValues[input.key] = [];
           break;
       }
     }
@@ -88,6 +95,9 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
           break;
         case 'select':
           value = _selectValues[input.key];
+          break;
+        case 'image':
+          value = _imageValues[input.key] ?? [];
           break;
       }
 
@@ -262,8 +272,177 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
         return _buildBooleanInput(input);
       case 'select':
         return _buildSelectInput(input);
+      case 'image':
+        return _buildImageInput(input);
       default:
         return _buildTextInput(input);
+    }
+  }
+
+  /// 构建图片选择字段（image 类型：本地文件与 URL 链接混合列表，值传给脚本）
+  Widget _buildImageInput(ScriptInput input) {
+    final paths = _imageValues[input.key] ?? [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.image_outlined,
+                      color: Colors.deepPurple[300], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      paths.isEmpty
+                          ? (input.placeholder ?? '选择本地图片或粘贴图片链接（可混合多张）')
+                          : '已选择 ${paths.length} 项',
+                      style: TextStyle(
+                        color:
+                            paths.isEmpty ? Colors.grey[500] : Colors.black87,
+                      ),
+                    ),
+                  ),
+                  if (paths.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      tooltip: '清空',
+                      onPressed: () {
+                        setState(() => _imageValues[input.key] = []);
+                      },
+                    ),
+                ],
+              ),
+              // 已选列表（本地文件名 / URL 可辨识）
+              for (final p in paths)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        p.startsWith('http://') || p.startsWith('https://')
+                            ? Icons.link
+                            : Icons.insert_drive_file_outlined,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          p,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          setState(
+                            () => _imageValues[input.key] =
+                                (paths..remove(p)).toList(),
+                          );
+                        },
+                        child: Icon(Icons.close,
+                            size: 14, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final files = await FilePickerHelper.pickFiles(
+                        multiple: true,
+                        allowedExtensions: const [
+                          'png',
+                          'jpg',
+                          'jpeg',
+                          'webp'
+                        ],
+                      );
+                      if (files.isNotEmpty) {
+                        setState(() {
+                          _imageValues[input.key] = [
+                            ...paths,
+                            ...files.map((f) => f.path),
+                          ];
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.folder_open, size: 16),
+                    label: const Text('选择文件'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _addImageUrl(input, paths),
+                    icon: const Icon(Icons.link, size: 16),
+                    label: const Text('添加链接'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (input.description != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              input.description!,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 弹出输入框添加图片 URL（支持多行，每行一个）
+  Future<void> _addImageUrl(ScriptInput input, List<String> paths) async {
+    final controller = TextEditingController();
+    final urls = await showDialog<List<String>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('添加图片链接'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'https://example.com/image.png\n每行一个链接',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('scripts_center_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              final list = controller.text
+                  .split('\n')
+                  .map((e) => e.trim())
+                  .where((e) =>
+                      e.startsWith('http://') || e.startsWith('https://'))
+                  .toList();
+              Navigator.pop(context, list);
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (urls != null && urls.isNotEmpty) {
+      setState(() {
+        _imageValues[input.key] = [...paths, ...urls];
+      });
     }
   }
 

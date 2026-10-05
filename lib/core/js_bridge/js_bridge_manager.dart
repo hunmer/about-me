@@ -730,6 +730,33 @@ class JSBridgeManager {
       }
     });
 
+    // 8. readFile - 读取文件为 base64（与 saveFile 对应，用于图生图上传参考图等）
+    //    path 支持相对 app_data 的路径与绝对路径（远端存储模式下绝对路径不可用）
+    await _engine!.registerFunction('Aboutme_system_readFile', ([
+      dynamic a,
+    ]) async {
+      try {
+        final params = a is Map<String, dynamic> ? a : <String, dynamic>{};
+        final filePath = params['path']?.toString() ?? '';
+        if (filePath.isEmpty) {
+          throw Exception('缺少 path 参数');
+        }
+
+        final bytes = await globalStorage.readBytes(filePath);
+        if (bytes == null) {
+          throw Exception('文件不存在: $filePath');
+        }
+
+        return {
+          'success': true,
+          'base64': base64Encode(bytes),
+          'size': bytes.length,
+        };
+      } catch (e) {
+        return {'error': e.toString()};
+      }
+    });
+
     // 在 JS 中创建系统 API 代理
     await _engine!.evaluateDirect('''
       (function() {
@@ -777,6 +804,11 @@ class JSBridgeManager {
           return Aboutme_system_saveFile(opts).then(parseResult);
         };
 
+        // readFile - 读取文件为 base64（相对 app_data 或绝对路径）
+        namespace.system.readFile = function(opts) {
+          return Aboutme_system_readFile(opts).then(parseResult);
+        };
+
         // 获取自定义日期（推荐使用，解决时区问题）
         namespace.system.getCustomDate = function(options) {
           return Aboutme_system_getCustomDate(options ? JSON.stringify(options) : '{}').then(parseResult);
@@ -813,9 +845,11 @@ class JSBridgeManager {
   /// 注册 HTTP 请求 API（Aboutme.http.request）
   ///
   /// QuickJS 环境没有 fetch，脚本通过此 API 发起网络请求。
-  /// 参数：{ url, method?, headers?, body?, timeout?, responseType?, proxy? }，
+  /// 参数：{ url, method?, headers?, body?, timeout?, responseType?, proxy?, multipart? }，
   /// timeout 单位秒默认 60；responseType 为 'base64' 时返回 bodyBase64（用于二进制下载）；
-  /// proxy 可显式指定代理（host:port），缺省时自动探测系统代理（被墙站点必须走代理）。
+  /// proxy 可显式指定代理（host:port），缺省时自动探测系统代理（被墙站点必须走代理）；
+  /// multipart 为 [{name, value?}] 文本字段或 [{name, filename?, base64}] 文件字段
+  /// （QuickJS 无 FormData，multipart 请求体由 Dart 端拼装，用于图生图上传参考图等）。
   /// 返回：{ statusCode, headers, body } 或 { statusCode, headers, bodyBase64 }。
   Future<void> _registerHttpAPI() async {
     if (_engine == null) return;
@@ -836,6 +870,9 @@ class JSBridgeManager {
             : 60;
         final wantBase64 = params['responseType']?.toString() == 'base64';
         final proxy = params['proxy']?.toString();
+        final multipartParts = params['multipart'] is List
+            ? params['multipart'] as List
+            : null;
 
         final rawHeaders = params['headers'];
         final headers = <String, String>{};
@@ -851,11 +888,38 @@ class JSBridgeManager {
           bodyStr = body.toString();
         }
 
-        final request = http.Request(method, Uri.parse(url));
-        request.headers.addAll(headers);
-        if (bodyStr != null) {
-          request.body = bodyStr;
+        final uri = Uri.parse(url);
+        http.BaseRequest request;
+        if (multipartParts != null) {
+          final mreq = http.MultipartRequest(method, uri);
+          // boundary 由 MultipartRequest 自动生成，不能携带外部 Content-Type
+          headers.remove('Content-Type');
+          for (final part in multipartParts) {
+            if (part is! Map) continue;
+            final name = part['name']?.toString();
+            if (name == null || name.isEmpty) continue;
+            final base64Data = part['base64']?.toString();
+            if (base64Data != null && base64Data.isNotEmpty) {
+              mreq.files.add(
+                http.MultipartFile.fromBytes(
+                  name,
+                  base64Decode(base64Data),
+                  filename: part['filename']?.toString() ?? 'file',
+                ),
+              );
+            } else {
+              mreq.fields[name] = part['value']?.toString() ?? '';
+            }
+          }
+          request = mreq;
+        } else {
+          final req = http.Request(method, uri);
+          if (bodyStr != null) {
+            req.body = bodyStr;
+          }
+          request = req;
         }
+        request.headers.addAll(headers);
 
         // 走系统代理（或显式 proxy 参数），否则被墙站点会 Connection reset
         final client = await createClientWithSystemProxy(

@@ -114,6 +114,11 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_modelGroup': '模型组',
   'openai_pleaseSelectModelGroup': '请选择模型组',
   'openai_save': '保存',
+  'openai_fetchLatestModels': '获取最新模型',
+  'openai_fetchingModels': '正在获取模型列表...',
+  'openai_fetchModelsFailed': '获取模型列表失败',
+  'openai_selectProviders': '选择要导入的模型来源',
+  'openai_syncResult': '新增 @groups 个分组、@models 个模型',
   'openai_modelManagementDescription': '管理大语言模型列表',
   'openai_modelUrlLabel': 'URL',
 

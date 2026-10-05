@@ -101,7 +101,14 @@ class ScriptInput {
 
   /// 验证输入值
   String? validate(dynamic value) {
-    // 必填验证
+    // 必填验证（image 类型值为路径列表）
+    if (type == 'image') {
+      if (required && (value is! List || value.isEmpty)) {
+        return '$label 是必填项';
+      }
+      return null;
+    }
+
     if (required && (value == null || value.toString().trim().isEmpty)) {
       return '$label 是必填项';
     }
@@ -136,6 +143,10 @@ class ScriptInput {
       case 'boolean':
         if (value is bool) return value;
         return value.toString().toLowerCase() == 'true';
+      case 'image':
+        // image 类型值为文件路径列表，原样透传
+        if (value is List) return value;
+        return value.toString().isEmpty ? [] : [value.toString()];
       default:
         return value.toString();
     }

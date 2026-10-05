@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 
@@ -17,6 +18,18 @@ class ModelController {
   // 本地存储的键
   static const String _storageKey = 'openai_llm_models';
   static const String _defaultModelsKey = 'openai_default_models';
+
+  // models.dev 的 provider id 与本地组 id 不一致时的映射
+  static const Map<String, String> _providerGroupAlias = {
+    'zhipuai': 'zhipu',
+    'moonshotai': 'moonshot',
+    'moonshotai-cn': 'moonshot',
+    'alibaba': 'alibaba-qwen',
+    'alibaba-cn': 'alibaba-qwen',
+  };
+
+  // models.dev 模型数据库（provider 维度）
+  static const String _remoteApiUrl = 'https://models.dev/api.json';
 
   // 是否已初始化
   bool _initialized = false;
@@ -177,6 +190,84 @@ class ModelController {
   Future<void> resetToDefault() async {
     _modelGroups = List.from(llmModelGroups);
     await _saveToStorage();
+  }
+
+  /// 从 models.dev 拉取最新模型列表（provider 维度，跳过已废弃模型）
+  /// 返回的组 id 已按 [_providerGroupAlias] 映射为本地组 id
+  Future<List<LLMModelGroup>> fetchRemoteModelGroups() async {
+    final response = await http.get(Uri.parse(_remoteApiUrl));
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+    final data =
+        json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+
+    final groups = <LLMModelGroup>[];
+    data.forEach((providerId, providerRaw) {
+      final provider = providerRaw as Map<String, dynamic>;
+      final modelsRaw = provider['models'];
+      if (modelsRaw is! Map<String, dynamic>) return;
+
+      final groupId = _providerGroupAlias[providerId] ?? providerId;
+      final models = <LLMModel>[];
+      modelsRaw.forEach((modelId, modelRaw) {
+        final m = modelRaw as Map<String, dynamic>;
+        if (m['status'] == 'deprecated') return;
+        models.add(LLMModel(
+          id: modelId,
+          name: (m['name'] as String?) ?? modelId,
+          group: groupId,
+        ));
+      });
+      if (models.isEmpty) return;
+
+      groups.add(LLMModelGroup(
+        id: groupId,
+        name: (provider['name'] as String?) ?? providerId,
+        models: models,
+      ));
+    });
+    return groups;
+  }
+
+  /// 将远端分组合并进本地列表（只增不减：已有组补充新模型，未知组整组添加）
+  /// 返回统计结果
+  Future<({int addedGroups, int addedModels})> mergeModelGroups(
+    List<LLMModelGroup> remoteGroups,
+  ) async {
+    if (!_initialized) {
+      await _loadFromStorage();
+    }
+
+    var addedGroups = 0;
+    var addedModels = 0;
+    for (final remote in remoteGroups) {
+      LLMModelGroup? existing;
+      for (final group in _modelGroups) {
+        if (group.id == remote.id) {
+          existing = group;
+          break;
+        }
+      }
+
+      if (existing == null) {
+        _modelGroups.add(remote);
+        addedGroups++;
+        addedModels += remote.models.length;
+      } else {
+        for (final model in remote.models) {
+          if (!existing.models.any((m) => m.id == model.id)) {
+            existing.models.add(model);
+            addedModels++;
+          }
+        }
+      }
+    }
+
+    if (addedGroups > 0 || addedModels > 0) {
+      await _saveToStorage();
+    }
+    return (addedGroups: addedGroups, addedModels: addedModels);
   }
 
   // 获取分组的默认模型
