@@ -23,10 +23,10 @@
       "key": "model",
       "type": "select",
       "required": false,
-      "defaultValue": "gpt-image-1",
+      "defaultValue": "gpt-image-2",
       "options": [
         "gpt-image-1",
-        "gpt-image-2-all",
+        "gpt-image-2",
         "sora_image",
         "nano-banana",
         "dall-e-3",
@@ -78,7 +78,7 @@
       "type": "text",
       "labelText": "默认模型",
       "hintText": "gpt-image-1 / nano-banana / dall-e-3 ...",
-      "initialValue": "gpt-image-1",
+      "initialValue": "gpt-image-2",
       "required": false
     },
     {
