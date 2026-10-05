@@ -94,6 +94,9 @@ class NativeToolAgentService {
     String? conversationId,
   }) async {
     final (allTools, allMeta) = _buildTools();
+    if (allTools.isEmpty) {
+      debugPrint('[NativeTool] ⚠️ 工具集为空（ToolConfigManager 未初始化？）');
+    }
     // 生图等工具依赖会话上下文
     MomentsService.instance.currentAgentId = agent.id;
     if (conversationId != null) {
@@ -175,6 +178,10 @@ class NativeToolAgentService {
           onUpdateMessage(output.toString(), output.length);
         }
       }
+      debugPrint(
+        '[NativeTool] ✅ 循环完成 | 输出=${output.length}字 '
+        '工具调用=$_activeToolCallCount次',
+      );
       return output.toString();
     } finally {
       _activeSteps = null;
@@ -245,13 +252,13 @@ class NativeToolAgentService {
     final meta = metaMap[toolId];
     if (meta == null) return {'error': 'Tool $toolId not found'};
 
-    // 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
-    // （moments/memory 的方法挂在 openai 命名空间），运行时解析真实路由
-    final resolved =
-        JSBridgeManager.instance.resolvePluginApi(meta.pluginId, meta.methodName) ??
-        (meta.pluginId, meta.methodName);
-
     final argsJson = jsonEncode(args);
+
+    // 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
+    // （moments/memory 的方法挂在 openai 命名空间），运行时解析真实路由；
+    // 解析异常（如热重载后注册表为 null）降级回原插件，不中断 FC 循环
+    final resolved = _resolveRoute(meta);
+
     final js =
         'const r = await Aboutme.plugins.${resolved.$1}.'
         '${resolved.$2}($argsJson);\nsetResult(r);\nreturn r;';
@@ -290,6 +297,20 @@ class NativeToolAgentService {
   }
 
   // ---------- 转换工具 ----------
+
+  /// 解析工具的 JS 调用路由（异常时回退原插件）
+  (String, String) _resolveRoute(NativeToolMeta meta) {
+    try {
+      return JSBridgeManager.instance.resolvePluginApi(
+            meta.pluginId,
+            meta.methodName,
+          ) ??
+          (meta.pluginId, meta.methodName);
+    } catch (e) {
+      debugPrint('[NativeTool] 路由解析失败，回退原插件: $e');
+      return (meta.pluginId, meta.methodName);
+    }
+  }
 
   dynamic _tryDecodeJson(String s) {
     try {

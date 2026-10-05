@@ -216,8 +216,11 @@ class JSBridgeManager {
     Map<String, Function> apis,
   ) async {
     _registeredPlugins[plugin.id] = plugin;
-    // 记录 API 名注册表（供工具调用解析真实命名空间）
-    _pluginApiNames.putIfAbsent(plugin.id, () => {}).addAll(apis.keys);
+    // 记录 API 名注册表（供工具调用解析真实命名空间；热重载后可能为 null）
+    _pluginApiNames ??= {};
+    _pluginApiNames!
+        .putIfAbsent(plugin.id, () => {})
+        .addAll(apis.keys);
 
     // 为每个插件创建命名空间
     // 使用 globalThis 确保跨平台兼容性（Web/QuickJS）
@@ -1361,18 +1364,24 @@ class JSBridgeManager {
   List<String> get registeredPluginIds => _registeredPlugins.keys.toList();
 
   /// 各插件注册的 JS API 名注册表
-  final Map<String, Set<String>> _pluginApiNames = {};
+  ///
+  /// 声明为 nullable 以防御热重载：新增字段的初始化器不会作用于
+  /// 已存在的单例实例（热重载后为 null），使用处需判空回退注册
+  Map<String, Set<String>>? _pluginApiNames;
 
   /// 解析 (pluginId, methodName) 到 JS API 实际注册的插件命名空间。
   ///
   /// 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
   /// （如 moments.json / memory.json 描述的方法都挂在 openai 插件下）：
   /// 先精确匹配原插件，miss 则按注册顺序全局搜方法名。
+  /// 注册表为空（热重载后未重新注册）返回 null，由调用方回退原插件。
   (String, String)? resolvePluginApi(String pluginId, String methodName) {
-    if (_pluginApiNames[pluginId]?.contains(methodName) == true) {
+    final names = _pluginApiNames;
+    if (names == null || names.isEmpty) return null;
+    if (names[pluginId]?.contains(methodName) == true) {
       return (pluginId, methodName);
     }
-    for (final entry in _pluginApiNames.entries) {
+    for (final entry in names.entries) {
       if (entry.value.contains(methodName)) {
         return (entry.key, methodName);
       }
@@ -1472,7 +1481,7 @@ class JSBridgeManager {
     if (_initialized && _engine != null) {
       await _engine!.dispose();
       _registeredPlugins.clear();
-      _pluginApiNames.clear();
+      _pluginApiNames?.clear();
       _initialized = false;
       _engine = null;
     }

@@ -408,8 +408,8 @@ class AgentChainExecutor {
         isCancelling: isCancelling,
       );
       return true;
-    } catch (e) {
-      debugPrint('❌ [NativeTool] 执行失败: $e');
+    } catch (e, stack) {
+      debugPrint('❌ [NativeTool] 执行失败: $e\n$stack');
       if (e.toString().contains('已取消发送')) {
         await context.messageService.updateAIMessageContent(
           context.conversationId,
