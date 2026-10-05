@@ -32,6 +32,7 @@ import 'models/script_input.dart';
 import 'screens/scripts_list_screen.dart';
 import 'screens/script_edit_screen.dart';
 import 'screens/script_store_screen.dart';
+import 'screens/script_execution_log_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
@@ -280,7 +281,10 @@ class ScriptsCenterPlugin extends BasePlugin {
 
       for (var script in autoRunScripts) {
         try {
-          final result = await _scriptExecutor.execute(script.id);
+          final result = await _scriptExecutor.execute(
+            script.id,
+            args: const {'trigger': 'auto'},
+          );
 
           if (!result.success) {
             print('   ⚠️ 脚本执行失败: ${script.name}');
@@ -508,6 +512,31 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
       onSearchSubmitted: _setSearchQuery,
 
       actions: [
+        // 执行记录按钮
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              final theme = DSThemeBridge.resolve(buildContext);
+              return DSIconButton(
+                icon: DsIconKind.clock,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: '执行记录',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScriptExecutionLogScreen(
+                        logger: _plugin.scriptExecutor.executionLogger,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
         // 脚本商场按钮
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
         DSThemeBridge(

@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/services/test_service.dart';
+import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
@@ -534,6 +535,17 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                 final theme = DSThemeBridge.resolve(context);
                 return Row(
                   children: [
+                    // 智能创建 / 优化当前 AI 人设
+                    DSThemeBridge(
+                      child: DSIconButton(
+                        icon: DsIconKind.star,
+                        size: 40,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _showSmartSoulDialog,
+                        tooltip: '智能创建 / 优化人设',
+                      ),
+                    ),
                     // 只有在非回调模式下才显示删除、分享、克隆按钮
                     if (widget.onSave == null && widget.agent != null) ...[
                       DSThemeBridge(
@@ -556,16 +568,18 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           tooltip: 'openai_cloneAgent'.tr,
                         ),
                       ),
-                      DSThemeBridge(
-                        child: DSIconButton(
-                          icon: DsIconKind.trash,
-                          size: 40,
-                          color: theme.surfaceAlt,
-                          iconColor: theme.textSub,
-                          onPressed: _deleteAgent,
-                          tooltip: 'openai_deleteAgent'.tr,
+                      // 内置 agent 不可删除
+                      if (!SoulForgeService.isBuiltinAgent(widget.agent!.id))
+                        DSThemeBridge(
+                          child: DSIconButton(
+                            icon: DsIconKind.trash,
+                            size: 40,
+                            color: theme.surfaceAlt,
+                            iconColor: theme.textSub,
+                            onPressed: _deleteAgent,
+                            tooltip: 'openai_deleteAgent'.tr,
+                          ),
                         ),
-                      ),
                     ],
                     DSThemeBridge(
                       child: DSIconButton(
@@ -978,6 +992,308 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       enableImagePicker: true,
       testAgent: testAgent,
       formValues: formValues,
+    );
+  }
+
+  // ========== 智能创建 / 优化人设（Soul Forge） ==========
+
+  /// 从表单读取连接配置（不触发校验），供生成请求使用
+  AIAgent? _buildConnectionAgent() {
+    final form = _formKey.currentState;
+    if (form == null) return null;
+    final values = form.instantValue;
+    final baseUrl = (values['baseUrl'] as String?)?.trim() ?? '';
+    final model = (values['model'] as String?)?.trim() ?? '';
+    if (baseUrl.isEmpty || model.isEmpty) return null;
+    return AIAgent(
+      id: 'soul_forge_conn',
+      name: 'Soul Forge',
+      description: '',
+      tags: const [],
+      serviceProviderId: _selectedProviderId,
+      baseUrl: baseUrl,
+      headers: _parseHeaders(values['headers'] as String? ?? ''),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      model: model,
+      maxLength: 4096,
+      apiFormat: values['apiFormat'] as String? ?? 'openai',
+    );
+  }
+
+  /// 从表单构建当前 agent 快照（含现有提示词），作为优化上下文
+  AIAgent? _buildCurrentAgentSnapshot() {
+    final form = _formKey.currentState;
+    if (form == null) return null;
+    final values = form.instantValue;
+    final prompts = values['promptEditor'] as List<dynamic>? ?? [];
+    final messages = <Prompt>[];
+    for (final p in prompts) {
+      if (p is Map<String, dynamic>) {
+        messages.add(Prompt.fromJson(p));
+      }
+    }
+    return AIAgent(
+      id: widget.agent?.id ?? 'draft',
+      name: values['name'] as String? ?? '',
+      description: values['description'] as String? ?? '',
+      tags: (values['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      serviceProviderId: _selectedProviderId,
+      baseUrl: '',
+      headers: const {},
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      model: values['model'] as String? ?? '',
+      messages: messages,
+    );
+  }
+
+  Future<void> _showSmartSoulDialog() async {
+    final current = _buildCurrentAgentSnapshot();
+    final hasCurrentSoul = current != null && current.effectiveSystemPrompt.trim().isNotEmpty;
+
+    final result = await showDSDialog<Map<String, dynamic>>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      barrierDismissible: false,
+      builder:
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder: (context) => _SmartSoulDialog(
+                defaultOptimize: hasCurrentSoul,
+                onGenerate:
+                    (optimize, requirement) => SoulForgeService.generate(
+                      optimize: optimize,
+                      requirement: requirement,
+                      connectionAgent: _buildConnectionAgent(),
+                      currentAgent: current,
+                    ),
+              ),
+            ),
+          ),
+    );
+
+    if (result != null && mounted) {
+      _applySoulResult(result);
+    }
+  }
+
+  /// 将生成的 SOUL JSON 回填到表单
+  void _applySoulResult(Map<String, dynamic> soul) {
+    final form = _formKey.currentState;
+    if (form == null) return;
+
+    final patch = <String, dynamic>{};
+
+    final name = (soul['name'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) patch['name'] = name;
+
+    final description = (soul['description'] as String?)?.trim();
+    if (description != null && description.isNotEmpty) {
+      patch['description'] = description;
+    }
+
+    final tags = (soul['tags'] as List<dynamic>?)?.cast<String>().toList();
+    if (tags != null && tags.isNotEmpty) patch['tags'] = tags;
+
+    final systemPrompt = (soul['systemPrompt'] as String?)?.trim();
+    if (systemPrompt != null && systemPrompt.isNotEmpty) {
+      // 替换 system 消息，保留现有非 system 预设消息
+      final prompts = form.instantValue['promptEditor'] as List<dynamic>? ?? [];
+      final others =
+          prompts
+              .where(
+                (p) => (p as Map<String, dynamic>)['type'] != 'system',
+              )
+              .toList();
+      patch['promptEditor'] = [
+        {'type': 'system', 'content': systemPrompt},
+        ...others,
+      ];
+    }
+
+    final questions =
+        (soul['openingQuestions'] as List<dynamic>?)?.cast<String>().toList();
+    if (questions != null && questions.isNotEmpty) {
+      patch['enableOpeningQuestions'] = true;
+      patch['openingQuestions'] = questions;
+    }
+
+    form.patchValue(patch);
+    ToastService.instance.showToast('人设已生成并填充，请检查后保存');
+  }
+}
+
+/// 智能创建 / 优化人设对话框
+class _SmartSoulDialog extends StatefulWidget {
+  final bool defaultOptimize;
+  final Future<Map<String, dynamic>> Function(bool optimize, String requirement)
+  onGenerate;
+
+  const _SmartSoulDialog({
+    required this.defaultOptimize,
+    required this.onGenerate,
+  });
+
+  @override
+  State<_SmartSoulDialog> createState() => _SmartSoulDialogState();
+}
+
+class _SmartSoulDialogState extends State<_SmartSoulDialog> {
+  late final TextEditingController _controller;
+  late bool _optimize = widget.defaultOptimize;
+  bool _isGenerating = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _generate() async {
+    final requirement = _controller.text.trim();
+    if (requirement.isEmpty) {
+      setState(() => _error = '请先填写你的要求');
+      return;
+    }
+
+    setState(() {
+      _isGenerating = true;
+      _error = null;
+    });
+    try {
+      final soul = await widget.onGenerate(_optimize, requirement);
+      if (mounted) {
+        Navigator.of(context).pop(soul);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Material(
+          type: MaterialType.transparency,
+          child: JellyBox(
+            radius: theme.radii.xxl,
+            padding: EdgeInsets.all(theme.spacing.xl),
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '智能创建 / 优化人设',
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+                  Text(
+                    '由内置 Soul Forge 生成 SOUL.md 格式化 JSON 并回填表单',
+                    textAlign: TextAlign.center,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: '智能创建',
+                          size: DSButtonSize.sm,
+                          variant:
+                              _optimize
+                                  ? DSButtonVariant.outline
+                                  : DSButtonVariant.primary,
+                          onPressed:
+                              _isGenerating
+                                  ? null
+                                  : () => setState(() => _optimize = false),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: DSButton(
+                          label: '智能优化',
+                          size: DSButtonSize.sm,
+                          variant:
+                              _optimize
+                                  ? DSButtonVariant.primary
+                                  : DSButtonVariant.outline,
+                          onPressed:
+                              _isGenerating
+                                  ? null
+                                  : () => setState(() => _optimize = true),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  DSInput(
+                    controller: _controller,
+                    hint:
+                        _optimize
+                            ? '例如：更嘴硬一点，少用 emoji，加一条关于深夜聊天的边界'
+                            : '例如：一个毒舌但靠谱的程序员搭子，喜欢用梗图说话',
+                    maxLines: 6,
+                    enabled: !_isGenerating,
+                  ),
+                  if (_error != null) ...[
+                    SizedBox(height: theme.spacing.sm),
+                    Text(
+                      _error!,
+                      style: DsTypography.caption.copyWith(color: theme.danger),
+                    ),
+                  ],
+                  if (_isGenerating) ...[
+                    SizedBox(height: theme.spacing.md),
+                    Center(child: DSLoadingDots(label: '正在生成人设…')),
+                  ],
+                  SizedBox(height: theme.spacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'openai_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed:
+                              _isGenerating
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          label: '生成',
+                          icon: DsIconKind.star,
+                          onPressed: _isGenerating ? null : _generate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

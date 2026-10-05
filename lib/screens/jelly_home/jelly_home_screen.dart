@@ -204,7 +204,7 @@ class _CottageTabState extends State<_CottageTab> {
         SizedBox(
           width: 118,
           child: JellyProfileCard(
-            name: '小智',
+            name: Live2DPlugin.instance.selected?.name ?? '小智',
             level: 17,
             exp: 568,
             expMax: 1250,

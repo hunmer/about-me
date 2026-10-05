@@ -1,15 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/screens/jelly_home/companion_controller.dart';
 
-/// 小智的陪伴状态卡：情绪 / 精力 / 好感度 / 陪伴天数（2×2 数值格）
+/// 陪伴角色的状态卡：情绪 / 精力 / 好感度 / 陪伴天数（2×2 数值格）
 ///
 /// 点击卡片算一次互动：情绪 +2、好感度 +2（受每日上限约束）。
 class JellyCompanionCard extends StatelessWidget {
   const JellyCompanionCard({super.key, required this.controller});
 
   final CompanionController controller;
+
+  /// 当前选中的 Live2D 存档名，未选中时回退为“小智”
+  String get companionName =>
+      Live2DPlugin.instance.selected?.name ?? '小智';
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +25,7 @@ class JellyCompanionCard extends StatelessWidget {
       builder:
           (context, _) => Pressable(
             onPressed: () => controller.recordInteraction(),
-            semanticLabel: '和小智互动',
+            semanticLabel: '和$companionName互动',
             builder:
                 (context, states) => Opacity(
                   opacity: states.contains(WidgetState.pressed) ? 0.88 : 1,
@@ -40,7 +45,7 @@ class JellyCompanionCard extends StatelessWidget {
                             ),
                             SizedBox(width: theme.spacing.sm),
                             Text(
-                              '小智状态',
+                              '$companionName状态',
                               style: DsTypography.heading.copyWith(
                                 fontSize: 14,
                                 color: theme.primaryText,

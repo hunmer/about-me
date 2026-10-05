@@ -187,7 +187,9 @@ function timestamp() {
 
 async function saveImages(imageList) {
   const stamp = timestamp();
-  const paths = [];
+  // 与 imageList 等长对齐（失败位为 null），便于界面按索引取对应图片
+  // base64 保留用于界面展示（network_image 不走代理，被墙图床显示不出来）
+  const saved = new Array(imageList.length).fill(null);
   for (let i = 0; i < imageList.length; i++) {
     const img = imageList[i];
     try {
@@ -201,25 +203,33 @@ async function saveImages(imageList) {
         base64 = resp.bodyBase64;
       }
       const file = `scripts/ai_image/ai_image_${stamp}_${i + 1}.png`;
-      const saved = await Aboutme.system.saveFile({ path: file, base64 });
-      if (saved && saved.success) {
-        paths.push(saved.absolutePath || saved.path);
-        console.log(`[ai_image] 已保存: ${saved.absolutePath || saved.path}`);
+      const result = await Aboutme.system.saveFile({ path: file, base64 });
+      if (result && result.success) {
+        saved[i] = { path: result.absolutePath || result.path, base64 };
+        console.log(`[ai_image] 已保存: ${result.absolutePath || result.path}`);
       }
     } catch (e) {
       console.log(`[ai_image] 保存第 ${i + 1} 张失败: ${e.message}`);
     }
   }
-  return paths;
+  return saved;
 }
 
 console.log(`[ai_image] 开始保存 ${images.length} 张图片到本地...`);
-const localPaths = await saveImages(images);
-const savedCount = localPaths.length;
+const savedImages = await saveImages(images); // 与 images 等长，失败位为 null
+const savedList = savedImages.filter(Boolean);
+const localPaths = savedList.map(function(s) { return s.path; });
+const savedCount = savedList.length;
 console.log(`[ai_image] 保存完成 ${savedCount}/${images.length}`);
 
 // ── 构建 json_dynamic_widget 结果界面 ────────────────────
-const imageWidgets = images.map(function(img, i) {
+// 已保存的图片用 memory_image（base64 在手，不依赖网络；
+// network_image 不走系统代理，被墙图床会加载失败），
+// 未保存成功的回退 network_image（URL 直连）
+function imageWidget(base64, url) {
+  const child = base64
+    ? { type: 'memory_image', args: { image: base64, fit: 'fitWidth' } }
+    : { type: 'network_image', args: { src: url, fit: 'fitWidth' } };
   return {
     type: 'padding',
     args: {
@@ -228,14 +238,18 @@ const imageWidgets = images.map(function(img, i) {
         type: 'clip_rrect',
         args: {
           borderRadius: { type: 'circular', radius: 12.0 },
-          child: img.kind === 'url'
-            ? { type: 'network_image', args: { src: img.value, fit: 'fitWidth' } }
-            : { type: 'memory_image', args: { image: img.value, fit: 'fitWidth' } }
-        }
-      }
-    }
+          child: child,
+        },
+      },
+    },
   };
-});
+}
+
+const imageWidgets = [];
+for (let i = 0; i < images.length; i++) {
+  const s = savedImages[i];
+  imageWidgets.push(imageWidget(s ? s.base64 : null, images[i].value));
+}
 
 const uiJson = {
   type: 'scaffold',

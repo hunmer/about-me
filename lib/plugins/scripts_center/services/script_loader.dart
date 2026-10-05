@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -29,8 +30,11 @@ class ScriptLoader {
 
   /// 同步内置脚本（在 loadScripts 之前调用）
   ///
-  /// 内置脚本随应用 assets 打包（assets/scripts/{id}/）。仅当本地缺失时
-  /// 从 assets 恢复（用户对内置脚本的编辑保留），不可被删除。
+  /// 内置脚本随应用 assets 打包（assets/scripts/{id}/）：
+  /// - 本地不存在：从 assets 恢复
+  /// - assets 版本更高：自动升级覆盖（代码与元数据），用户配置在
+  ///   configs/scripts_center/{id}_config.json 不受影响
+  /// - 版本相同：跳过（保留用户对内置脚本代码的本地修改）
   Future<void> syncBuiltInScripts() async {
     final scriptsPath = await getScriptsDirectory();
 
@@ -42,28 +46,69 @@ class ScriptLoader {
 
         final metadataExists = await storage.fileExists(metadataPath);
         final codeExists = await storage.fileExists(codePath);
-        if (metadataExists && codeExists) continue;
 
-        final metadata = await rootBundle.loadString(
+        // 读 assets 版本
+        final assetsMetaJson = await rootBundle.loadString(
           'assets/scripts/$scriptId/metadata.json',
         );
+        final assetsMeta =
+            jsonDecode(assetsMetaJson) as Map<String, dynamic>;
+        final assetsVersion = assetsMeta['version']?.toString() ?? '0.0.0';
+
+        if (metadataExists && codeExists) {
+          // 版本相同：不动本地（可能含用户修改）
+          final localMeta = await storage.readJson(metadataPath);
+          final localVersion =
+              (localMeta is Map ? localMeta['version'] : null)?.toString() ??
+              '0.0.0';
+          if (_compareVersion(localVersion, assetsVersion) >= 0) continue;
+
+          // assets 版本更高：升级覆盖
+          final code = await rootBundle.loadString(
+            'assets/scripts/$scriptId/script.js',
+          );
+          await storage.writeString(metadataPath, assetsMetaJson);
+          await storage.writeString(codePath, code);
+          print('✅ 内置脚本已升级: $scriptId $localVersion -> $assetsVersion');
+          continue;
+        }
+
+        // 本地缺失：全新恢复
         final code = await rootBundle.loadString(
           'assets/scripts/$scriptId/script.js',
         );
-
         await _ensureScriptDirectoryExists(scriptPath);
-        await storage.writeString(metadataPath, metadata);
+        await storage.writeString(metadataPath, assetsMetaJson);
         await storage.writeString(codePath, code);
 
         // Web 平台需要加入索引才能被扫描到
         if (kIsWeb) {
           await _addToWebIndex(scriptId);
         }
-        print('✅ 内置脚本已恢复: $scriptId');
+        print('✅ 内置脚本已恢复: $scriptId v$assetsVersion');
       } catch (e) {
         print('❌ 同步内置脚本失败: $scriptId, 错误: $e');
       }
     }
+  }
+
+  /// 比较语义化版本号，返回 >0 / 0 / <0
+  int _compareVersion(String a, String b) {
+    int parse(String s, int i) {
+      final parts = s.split('.');
+      return i < parts.length ? (int.tryParse(parts[i]) ?? 0) : 0;
+    }
+
+    final len =
+        a.split('.').length > b.split('.').length
+        ? a.split('.').length
+        : b.split('.').length;
+    for (var i = 0; i < len; i++) {
+      final va = parse(a, i);
+      final vb = parse(b, i);
+      if (va != vb) return va.compareTo(vb);
+    }
+    return 0;
   }
 
   /// 扫描指定文件夹，返回该文件夹下的所有脚本信息

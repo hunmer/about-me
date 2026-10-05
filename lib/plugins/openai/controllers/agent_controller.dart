@@ -105,6 +105,11 @@ class AgentController extends ChangeNotifier {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return;
 
+    // 内置 agent 不可删除（兜底；UI 层已隐藏删除入口）
+    if (agentId.startsWith('builtin_')) {
+      throw Exception('内置 Agent 不可删除');
+    }
+
     // 获取要删除的agent用于事件
     final agentToDelete = _agents.firstWhere(
       (agent) => agent.id == agentId,

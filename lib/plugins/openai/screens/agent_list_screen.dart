@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/screens/agent_marketplace_screen.dart';
+import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 class AgentListScreen extends StatefulWidget {
@@ -80,6 +81,8 @@ class _AgentListScreenState extends State<AgentListScreen> {
   }
 
   Future<void> _loadAgents() async {
+    // 确保内置 Soul Forge agent 存在（幂等）
+    await SoulForgeService.ensureBuiltinAgent();
     await _agentController.loadAgents();
     // 加载所有类别
     _allTags = await _agentController.getAllTags();

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/widgets/prompt_editor.dart';
@@ -68,6 +70,17 @@ class _PromptEditorFieldState extends State<PromptEditorField> {
     _systemPromptController.dispose();
     super.dispose();
   }
+
+  @override
+  void didUpdateWidget(covariant PromptEditorField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 外部改值（patchValue）时同步内部编辑状态
+    if (_encodeValue(widget.initialValue) != _encodeValue(oldWidget.initialValue)) {
+      reset();
+    }
+  }
+
+  static String _encodeValue(List<dynamic>? value) => jsonEncode(value ?? []);
 
   void _onPromptsChanged(List<Prompt> prompts) {
     setState(() {

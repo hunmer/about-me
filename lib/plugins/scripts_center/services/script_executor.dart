@@ -6,6 +6,7 @@ import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_execution_result.dart';
+import 'script_execution_logger.dart';
 import 'script_manager.dart';
 
 /// 脚本执行器服务
@@ -16,6 +17,9 @@ class ScriptExecutor {
   final ScriptManager scriptManager;
   final StorageManager storage;
   final EventManager eventManager;
+
+  /// 执行记录器（所有触发路径的执行都统一记录）
+  final ScriptExecutionLogger executionLogger;
 
   /// JS Bridge Manager 实例
   final JSBridgeManager _jsBridge = JSBridgeManager.instance;
@@ -33,8 +37,9 @@ class ScriptExecutor {
     required this.scriptManager,
     required this.storage,
     required this.eventManager,
+    ScriptExecutionLogger? executionLogger,
     this.onLog,
-  });
+  }) : executionLogger = executionLogger ?? ScriptExecutionLogger(storage);
 
   /// 初始化JS引擎
   Future<void> initialize() async {
@@ -354,6 +359,14 @@ class ScriptExecutor {
       // 标记为正在执行
       _executingScripts.add(scriptId);
 
+      // 上报运行中状态（执行记录页实时可见）
+      final trigger = _resolveTrigger(args);
+      executionLogger.startRun(
+        scriptId: scriptId,
+        scriptName: script.name,
+        trigger: trigger,
+      );
+
       try {
         // 准备参数
         final argsJson = jsonEncode(args ?? {});
@@ -382,6 +395,16 @@ class ScriptExecutor {
           'info',
         );
 
+        executionLogger.record(
+          scriptId: scriptId,
+          scriptName: script.name,
+          success: true,
+          trigger: trigger,
+          durationMs: duration.inMilliseconds,
+          result: result,
+          images: _extractImagePaths(result),
+        );
+
         return ScriptExecutionResult.success(
           result: result,
           duration: duration,
@@ -390,6 +413,7 @@ class ScriptExecutor {
       } finally {
         // 移除执行标记
         _executingScripts.remove(scriptId);
+        executionLogger.endRun(scriptId);
       }
     } catch (e) {
       final duration = DateTime.now().difference(startTime);
@@ -400,12 +424,50 @@ class ScriptExecutor {
         'error',
       );
 
+      executionLogger.record(
+        scriptId: scriptId,
+        scriptName: scriptManager.getScriptById(scriptId)?.name ?? scriptId,
+        success: false,
+        trigger: _resolveTrigger(args),
+        durationMs: duration.inMilliseconds,
+        error: e,
+      );
+
       return ScriptExecutionResult.failure(
         error: e.toString(),
         duration: duration,
         scriptId: scriptId,
       );
     }
+  }
+
+  /// 从脚本返回值提取图片本地路径（约定 result.data.localPaths）
+  ///
+  /// 内置 ai_image 等脚本把生成的图片路径放在该字段，
+  /// 执行记录详情据此展示图片
+  List<String> _extractImagePaths(dynamic result) {
+    try {
+      if (result is! Map) return const [];
+      final data = result['data'];
+      if (data is! Map) return const [];
+      final paths = data['localPaths'];
+      if (paths is! List) return const [];
+      return paths
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// 根据执行参数推断触发方式
+  String _resolveTrigger(Map<String, dynamic>? args) {
+    if (args == null) return '手动';
+    if (args['calledFrom'] == 'runScript') return '脚本互调';
+    if (args['event'] != null) return '事件触发';
+    if (args['trigger'] == 'auto') return '自动运行';
+    return '手动';
   }
 
   /// 执行脚本代码

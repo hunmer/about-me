@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/screens/script_execution_log_screen.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_card.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_run_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -233,6 +234,22 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
             onTap: () {
               Navigator.pop(context);
               _showScriptDialog(script: script);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('执行记录'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ScriptExecutionLogScreen(
+                    logger: widget.scriptExecutor!.executionLogger,
+                    scriptId: script.id,
+                  ),
+                ),
+              );
             },
           ),
           if (!script.isBuiltIn)

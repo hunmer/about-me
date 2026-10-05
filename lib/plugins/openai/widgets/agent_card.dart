@@ -5,6 +5,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/widgets/common/agent_card.dart';
@@ -52,20 +53,22 @@ class _AgentCardState extends State<AgentCard> {
                         _editAgent();
                       },
                     ),
-                    _AgentSheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.trash,
-                        size: 20,
-                        color: theme.danger,
+                    // 内置 agent 不可删除
+                    if (!SoulForgeService.isBuiltinAgent(agent.id))
+                      _AgentSheetActionRow(
+                        icon: DsIcon(
+                          DsIconKind.trash,
+                          size: 20,
+                          color: theme.danger,
+                        ),
+                        label: '删除',
+                        theme: theme,
+                        danger: true,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _deleteAgent();
+                        },
                       ),
-                      label: '删除',
-                      theme: theme,
-                      danger: true,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _deleteAgent();
-                      },
-                    ),
                   ],
                 );
               },
