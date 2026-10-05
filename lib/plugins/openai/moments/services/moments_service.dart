@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
+import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -33,6 +34,13 @@ class MomentsService extends ChangeNotifier {
   /// （由 ChatController.initialize 与 AgentChainExecutor 维护）
   String? currentAgentId;
   String? currentConversationId;
+
+  /// 当前聊天界面的 MessageService 实例（由 ChatController.initialize 注册）。
+  ///
+  /// ChatScreen 每次打开会自建 MessageService（而非插件级单例），两个实例
+  /// 各自缓存、先后落盘同一文件会互相覆盖——图片消息必须写进聊天 UI 正在
+  /// 使用的那个实例，否则会被其后续落盘抹掉
+  MessageService? currentMessageService;
 
   List<MomentPost> _posts = [];
   bool _loaded = false;
@@ -199,13 +207,16 @@ class MomentsService extends ChangeNotifier {
     String? conversationId,
   }) async {
     try {
+      // 优先用聊天 UI 注册的实例，避免双实例落盘互相覆盖
       final messageService =
+          currentMessageService ??
           AgentChatPlugin.instance.conversationController?.messageService;
       final cid = conversationId ?? currentConversationId;
       if (messageService == null || cid == null) {
         debugPrint('[Moments] 发送图片消息失败: 无可用会话');
         return false;
       }
+      debugPrint('[Moments] 发送图片消息 → 会话 $cid');
       final attachments = <FileAttachment>[];
       for (final abs in imageAbsolutePaths) {
         final file = File(abs);
@@ -218,7 +229,10 @@ class MomentsService extends ChangeNotifier {
           ),
         );
       }
-      if (attachments.isEmpty) return false;
+      if (attachments.isEmpty) {
+        debugPrint('[Moments] 发送图片消息失败: 文件不存在 $imageAbsolutePaths');
+        return false;
+      }
       final message = ChatMessage(
         id: const Uuid().v4(),
         conversationId: cid,

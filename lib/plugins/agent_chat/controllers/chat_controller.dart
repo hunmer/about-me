@@ -299,11 +299,14 @@ class ChatController extends ChangeNotifier {
       // 初始化 AgentManager
       await _agentManager.initialize(conversation);
 
-      // 朋友圈/生图工具上下文：当前会话与其主 agent
+      // 朋友圈/生图工具上下文：当前会话与其主 agent；
+      // messageService 必须注册聊天 UI 实例（ChatScreen 每次自建实例，
+      // 插件级单例与之双写同一文件会互相覆盖）
       MomentsService.instance.currentConversationId = conversation.id;
       MomentsService.instance.currentAgentId =
           conversation.agentId ??
           conversation.agentChain?.firstOrNull?.agentId;
+      MomentsService.instance.currentMessageService = messageService;
 
       // 初始化前台服务管理器
       await _foregroundServiceManager.initialize();
