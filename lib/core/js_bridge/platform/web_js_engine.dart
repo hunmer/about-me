@@ -87,6 +87,11 @@ class WebJSEngine implements JSEngine {
   }
 
   @override
+  void requestAbortAll() {
+    // Web 平台脚本执行为同步 eval，无需终止机制
+  }
+
+  @override
   Future<void> dispose() async {
     // Web 平台无需释放
     _initialized = false;

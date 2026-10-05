@@ -37,6 +37,9 @@ class WebJSEngine implements JSEngine {
   }
 
   @override
+  void requestAbortAll() {}
+
+  @override
   Future<void> dispose() async {
     throw UnsupportedError('WebJSEngine is only available on web platform');
   }

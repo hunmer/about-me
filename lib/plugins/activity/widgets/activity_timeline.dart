@@ -40,6 +40,9 @@ class ActivityTimeline extends StatelessWidget {
   final List<IconData> Function(List<String> tagNames)? getTagIcons;
   // 获取标签颜色的函数
   final List<Color?> Function(List<String> tagNames)? getTagColors;
+  /// 嵌套在外层滚动组件里时置 true：按内容高度布局并禁用自身滚动，
+  /// 避免无界高度断言（viewport 嵌 viewport）
+  final bool nested;
 
   const ActivityTimeline({
     super.key,
@@ -49,6 +52,7 @@ class ActivityTimeline extends StatelessWidget {
     this.onDeleteActivity,
     this.getTagIcons,
     this.getTagColors,
+    this.nested = false,
   });
 
   Color _getPrimaryColor(BuildContext context) => const Color(0xfff472b6);
@@ -532,6 +536,8 @@ class ActivityTimeline extends StatelessWidget {
           ),
         ),
         ListView(
+          shrinkWrap: nested,
+          physics: nested ? const NeverScrollableScrollPhysics() : null,
           padding: EdgeInsets.fromLTRB(
             listHorizontalPadding,
             16.0,

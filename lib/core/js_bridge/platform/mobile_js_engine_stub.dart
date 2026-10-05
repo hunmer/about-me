@@ -37,6 +37,11 @@ class MobileJSEngine implements JSEngine {
   }
 
   @override
+  void requestAbortAll() {
+    // Web 平台不使用
+  }
+
+  @override
   Future<void> dispose() async {
     throw UnsupportedError('MobileJSEngine is only available on mobile/desktop platforms');
   }

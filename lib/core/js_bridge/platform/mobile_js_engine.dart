@@ -38,8 +38,37 @@ class MobileJSEngine implements JSEngine {
   // Location 回调函数（用于获取位置）
   Future<Map<String, dynamic>?> Function(String mode)? _onLocation;
 
+  /// 终止请求标记：置位后 evaluate 轮询循环立即退出并返回终止错误。
+  /// 一次性消费（检测到的 evaluate 返回后自动复位）
+  bool _abortRequested = false;
+
   @override
   bool get isSupported => true; // Android/iOS/Desktop 都支持
+
+  /// 终止当前正在执行的脚本
+  ///
+  /// QuickJS 无法强杀正在执行的代码，采用协作式终止：
+  /// 1. reject JS 环境所有挂起的 Promise（脚本的 await 处抛错，catch 分支快速走完）
+  /// 2. 置中止标记，evaluate 的结果轮询循环立即退出返回"脚本已被用户终止"
+  @override
+  void requestAbortAll() {
+    _abortRequested = true;
+    try {
+      _runtime.evaluate('''
+        (function() {
+          var pendings = globalThis.__PENDING_CALLS__ || {};
+          Object.keys(pendings).forEach(function(key) {
+            try {
+              pendings[key].reject(new Error('脚本已被用户终止'));
+            } catch (e) {}
+            delete pendings[key];
+          });
+        })();
+      ''');
+    } catch (e) {
+      print('[MobileJSEngine] 终止脚本时 reject pending 失败: $e');
+    }
+  }
 
   /// 设置 Alert 回调
   void setAlertHandler(
@@ -758,6 +787,17 @@ class MobileJSEngine implements JSEngine {
       final maxRetries = effectiveTimeout.inMilliseconds ~/ 50;
 
       while (retryCount < maxRetries) {
+        // 终止请求：立即退出并返回终止错误
+        if (_abortRequested) {
+          _abortRequested = false;
+          try {
+            _runtime.evaluate(
+              "delete globalThis.__EVAL_RESULTS__['$executionId'];",
+            );
+          } catch (_) {}
+          return JSResult.error('脚本已被用户终止');
+        }
+
         // 1. 处理待处理的 Promise 调用（不依赖 setTimeout）
         _runtime.evaluate('''
           (function() {

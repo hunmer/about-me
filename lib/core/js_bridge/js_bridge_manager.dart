@@ -373,6 +373,11 @@ class JSBridgeManager {
     return await _engine!.evaluate(code, timeout: timeout);
   }
 
+  /// 终止当前正在执行的脚本（协作式终止）
+  void requestAbort() {
+    _engine?.requestAbortAll();
+  }
+
   /// 执行 JS 代码（如果未初始化则加入延迟队列）
   ///
   /// 与 [evaluate] 不同，此方法在 JS Bridge 未初始化时不会立即返回错误，

@@ -246,6 +246,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
                 MaterialPageRoute(
                   builder: (_) => ScriptExecutionLogScreen(
                     logger: widget.scriptExecutor!.executionLogger,
+                    executor: widget.scriptExecutor,
                     scriptId: script.id,
                   ),
                 ),

@@ -158,6 +158,7 @@ class _AgentScheduleScreenState extends State<AgentScheduleScreen> {
                           ),
                           const SizedBox(height: 12),
                           ActivityTimeline(
+                            nested: true, // 外层已是 SingleChildScrollView
                             activities: ScheduleService.instance
                                 .toActivityRecords(schedule),
                           ),

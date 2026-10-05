@@ -529,6 +529,7 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
                     MaterialPageRoute(
                       builder: (_) => ScriptExecutionLogScreen(
                         logger: _plugin.scriptExecutor.executionLogger,
+                        executor: _plugin.scriptExecutor,
                       ),
                     ),
                   );

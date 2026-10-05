@@ -461,6 +461,17 @@ class ScriptExecutor {
     }
   }
 
+  /// 终止正在执行的脚本
+  ///
+  /// 协作式终止：reject JS 挂起的 Promise（脚本的 await 处抛错）+
+  /// evaluate 轮询退出，执行落入失败路径并记录"脚本已被用户终止"。
+  /// 注意：JS 引擎全局共享，会终止所有正在执行的脚本；
+  /// 正在同步执行的密集计算段无法立即打断（QuickJS 限制）
+  void terminateRunning() {
+    print('⛔ 请求终止脚本执行（当前运行中: ${_executingScripts.toList()}）');
+    _jsBridge.requestAbort();
+  }
+
   /// 根据执行参数推断触发方式
   String _resolveTrigger(Map<String, dynamic>? args) {
     if (args == null) return '手动';

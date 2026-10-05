@@ -3,13 +3,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_execution_logger.dart';
+import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
 
 /// 脚本执行记录页面
 ///
 /// 展示所有脚本的历史执行记录（手动/事件/互调/自动运行），
-/// 支持仅看失败、按脚本过滤、查看详情与清空
+/// 支持仅看失败、按脚本过滤、查看详情与清空，运行中脚本可终止
 class ScriptExecutionLogScreen extends StatefulWidget {
   final ScriptExecutionLogger logger;
+
+  /// 执行器（用于终止运行中的脚本），为空时不显示终止按钮
+  final ScriptExecutor? executor;
 
   /// 可选：仅显示该脚本的记录
   final String? scriptId;
@@ -17,6 +21,7 @@ class ScriptExecutionLogScreen extends StatefulWidget {
   const ScriptExecutionLogScreen({
     super.key,
     required this.logger,
+    this.executor,
     this.scriptId,
   });
 
@@ -87,6 +92,36 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     if (confirmed == true) {
       await widget.logger.clear();
       if (mounted) Toast.success('执行记录已清空');
+    }
+  }
+
+  /// 终止运行中的脚本（带确认）
+  Future<void> _confirmTerminate(String scriptName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('终止脚本'),
+        content: Text(
+          '确定终止「$scriptName」？\n\n'
+          '将中断脚本所有挂起的操作，执行记录中会标记为"脚本已被用户终止"。\n'
+          '注意：如有多个脚本同时在运行，会一并终止。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('终止'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      widget.executor?.terminateRunning();
+      if (mounted) Toast.success('已请求终止，等待脚本退出...');
     }
   }
 
@@ -354,7 +389,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
 
                 return ListView(
                   children: [
-                    // 运行中的脚本（实时状态）
+                    // 运行中的脚本（实时状态，可终止）
                     for (final r in widget.logger.running)
                       if (_filterScriptId == null || r.scriptId == _filterScriptId)
                         ListTile(
@@ -377,6 +412,14 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                               color: Colors.blue,
                             ),
                           ),
+                          trailing: widget.executor != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.stop_circle_outlined),
+                                  color: Colors.red,
+                                  tooltip: '终止执行',
+                                  onPressed: () => _confirmTerminate(r.scriptName),
+                                )
+                              : null,
                         ),
                     if (widget.logger.running.isNotEmpty)
                       const Divider(height: 1),

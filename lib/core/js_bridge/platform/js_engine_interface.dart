@@ -21,6 +21,9 @@ abstract class JSEngine {
   /// 注册 Dart 函数到 JS
   Future<void> registerFunction(String name, Function dartFunction);
 
+  /// 终止当前正在执行的脚本（协作式：reject 挂起 Promise + 轮询退出）
+  void requestAbortAll();
+
   /// 释放资源
   Future<void> dispose();
 
