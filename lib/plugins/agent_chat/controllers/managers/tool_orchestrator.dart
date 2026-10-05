@@ -100,7 +100,28 @@ class ToolOrchestrator {
       return true;
     }
 
-    // 如果第一阶段返回空，表示没有工具需求或出错
+    // 模型输出了合法的工具 JSON 但不需要工具：
+    // JSON 格式约束（json_object/json_schema）下模型无法同时输出对话内容，
+    // 必须丢弃 JSON 并无格式约束地重新生成正常回复，否则半截 JSON 会泄漏进聊天
+    if (toolRequest != null && toolRequest.isEmpty) {
+      debugPrint('✅ [第一阶段] 无工具需求，丢弃 JSON 重新生成正常回复');
+      final plain = await _executePlainResponse(
+        agent: agent,
+        contextMessages: contextMessages,
+        files: files,
+        onUpdateMessage: onUpdateMessage,
+        onError: onError,
+        onThinking: onThinking,
+      );
+      if (plain != null) {
+        buffer
+          ..clear()
+          ..write(plain);
+      }
+      return false;
+    }
+
+    // 第一阶段输出不是工具 JSON（解析失败或出错），维持原有内容直接返回
     if (toolRequest == null || toolRequest.isEmpty) {
       return false;
     }
@@ -228,9 +249,14 @@ class ToolOrchestrator {
             context.onTypingStatus?.call('🔍 正在识别需要的工具...');
           }
         } else if (content.isNotEmpty) {
-          // 不是工具需求 JSON，直接显示（比如 markdown 格式的工具调用）
-          context.onTypingStatus?.call(null);
-          onUpdateMessage(content, currentTokenCount);
+          if (content.trimLeft().startsWith('{')) {
+            // 可能是尚未流到冒号的工具 JSON 前缀，先不显示，防半截 JSON 泄漏
+            context.onTypingStatus?.call('🔍 正在识别需要的工具...');
+          } else {
+            // 不是工具需求 JSON，直接显示（比如 markdown 格式的工具调用）
+            context.onTypingStatus?.call(null);
+            onUpdateMessage(content, currentTokenCount);
+          }
         }
       },
       onComplete: () {
@@ -257,6 +283,55 @@ class ToolOrchestrator {
     );
 
     return firstPhaseCompleter.future;
+  }
+
+  /// 无格式约束地重新生成正常回复（第一阶段输出空工具 JSON 时的兜底）
+  ///
+  /// 用原始上下文再请求一次（responseFormat=null、不注入工具提示词），
+  /// 流式结果经 onUpdateMessage 直接写入消息，返回 null 表示失败
+  Future<String?> _executePlainResponse({
+    required AIAgent agent,
+    required List<ChatCompletionMessage> contextMessages,
+    required List<File> files,
+    required Function(String content, int count) onUpdateMessage,
+    required Function(String error) onError,
+    Function(String)? onThinking,
+  }) async {
+    final imageFiles =
+        files.where((f) => f.path != null && f.path.isNotEmpty).toList();
+
+    final buffer = StringBuffer();
+    final completer = Completer<String?>();
+
+    await RequestService.streamResponseWithRetry(
+      agent: agent,
+      prompt: null,
+      contextMessages: contextMessages,
+      vision: imageFiles.isNotEmpty,
+      filePath: imageFiles.isNotEmpty ? imageFiles.first.path : null,
+      responseFormat: null,
+      shouldCancel: isCancelling,
+      onToken: (token) {
+        buffer.write(token);
+        context.onTypingStatus?.call(null);
+        onUpdateMessage(buffer.toString(), buffer.length);
+      },
+      onComplete: () => completer.complete(buffer.toString()),
+      onThinking: onThinking,
+      onError: (error) {
+        debugPrint('❌ 重新生成正常回复失败: $error');
+        if (error == '已取消发送') {
+          onUpdateMessage('🛑 用户已取消操作', 0);
+        } else {
+          onUpdateMessage('❌ 错误: $error', 0);
+        }
+        completer.complete(null);
+      },
+      maxRetries: 10,
+      retryDelay: 1000,
+    );
+
+    return completer.future;
   }
 
   /// 执行第二阶段：生成工具调用代码

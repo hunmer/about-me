@@ -1,13 +1,38 @@
 {
   "generate_image": {
-    "title": "生成图片",
-    "description": "使用 AI 生成图片并默认发送到当前聊天会话。支持文生图，也可通过 refAssetNames 引用自己的资产图（如「三视图」）做图生图以保持形象一致。用户要求画图/生成图片/看某场景照片时使用",
+    "title": "生成图片/照片",
+    "description": "用 AI 生成图片并发送到聊天。用户想看你的照片/自拍、要求画图、生成图片、想象某场景画面时使用；可用 refAssetNames 引用自己的资产图（如「三视图」）保持形象一致",
     "parameters": [
-      {"name": "prompt", "type": "string", "required": true, "description": "生图提示词，尽量具体（主体、场景、风格、光线）"},
-      {"name": "refAssetNames", "type": "array", "required": false, "description": "参考图资产名数组（图生图），如 ['三视图']，先用 list_agent_assets 查可用资产"},
-      {"name": "aspectRatio", "type": "string", "required": false, "description": "画幅比例：1:1/16:9/9:16/4:3/3:4/3:2/2:3，默认 1:1"},
-      {"name": "sendToChat", "type": "boolean", "required": false, "description": "是否发送到当前聊天（默认 true）"},
-      {"name": "n", "type": "number", "required": false, "description": "生成张数 1-4，默认 1"}
+      {
+        "name": "prompt",
+        "type": "string",
+        "required": true,
+        "description": "生图提示词，尽量具体（主体、场景、风格、光线）"
+      },
+      {
+        "name": "refAssetNames",
+        "type": "array",
+        "required": false,
+        "description": "参考图资产名数组（图生图），如 ['三视图']，先用 list_agent_assets 查可用资产"
+      },
+      {
+        "name": "aspectRatio",
+        "type": "string",
+        "required": false,
+        "description": "画幅比例：1:1/16:9/9:16/4:3/3:4/3:2/2:3，默认 1:1"
+      },
+      {
+        "name": "sendToChat",
+        "type": "boolean",
+        "required": false,
+        "description": "是否发送到当前聊天（默认 true）"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "required": false,
+        "description": "生成张数 1-4，默认 1"
+      }
     ],
     "returns": {
       "type": "Promise<string>",
@@ -30,10 +55,30 @@
     "title": "发朋友圈",
     "description": "以自己的身份发布一条朋友圈动态（用户可在朋友圈页面查看）。分享日常、心情、见闻时使用；可提供 imagePrompt 自动生成配图",
     "parameters": [
-      {"name": "text", "type": "string", "required": true, "description": "动态文案，口语化、有个人风格，一两句话即可"},
-      {"name": "imagePrompt", "type": "string", "required": false, "description": "配图生图提示词；不传则发纯文字动态"},
-      {"name": "refAssetNames", "type": "array", "required": false, "description": "配图参考的资产图名数组（保持形象一致），如 ['三视图','房间照片']"},
-      {"name": "sendToChat", "type": "boolean", "required": false, "description": "配图是否同时发送到当前聊天（默认 false，仅发朋友圈）"}
+      {
+        "name": "text",
+        "type": "string",
+        "required": true,
+        "description": "动态文案，口语化、有个人风格，一两句话即可"
+      },
+      {
+        "name": "imagePrompt",
+        "type": "string",
+        "required": false,
+        "description": "配图生图提示词；不传则发纯文字动态"
+      },
+      {
+        "name": "refAssetNames",
+        "type": "array",
+        "required": false,
+        "description": "配图参考的资产图名数组（保持形象一致），如 ['三视图','房间照片']"
+      },
+      {
+        "name": "sendToChat",
+        "type": "boolean",
+        "required": false,
+        "description": "配图是否同时发送到当前聊天（默认 false，仅发朋友圈）"
+      }
     ],
     "returns": {
       "type": "Promise<string>",
