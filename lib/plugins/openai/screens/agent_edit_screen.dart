@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/moments/screens/agent_assets_screen.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/services/test_service.dart';
 import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
@@ -827,6 +828,28 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                     onChanged:
                         (c) => setState(() => _alivenessConfig = c),
                   ),
+                  if (widget.agent?.id != null) ...[
+                    const SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        leading: const Icon(Icons.photo_library_outlined),
+                        title: const Text('资产图库'),
+                        subtitle: const Text('三视图、房间照片等形象参考图，生图时保持一致'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            widget.agent == null
+                                ? null
+                                : () => NavigationHelper.push(
+                                    context,
+                                    AgentAssetsScreen(
+                                      agentId: widget.agent!.id,
+                                      agentName: widget.agent!.name,
+                                    ),
+                                  ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -463,7 +463,8 @@ class ChatScreenController extends ChangeNotifier {
     }
   }
 
-  Future<void> sendMessage(
+  /// 发送消息并返回真正存入频道的消息实例（供外部广播事件使用）
+  Future<Message?> sendMessage(
     String content, {
     Map<String, dynamic>? metadata,
     String type = 'text',
@@ -492,7 +493,7 @@ class ChatScreenController extends ChangeNotifier {
       default:
         messageType = MessageType.sent;
     }
-    if (content.trim().isEmpty) return;
+    if (content.trim().isEmpty) return null;
 
     try {
       final newMessage = await Message.create(
@@ -535,8 +536,10 @@ class ChatScreenController extends ChangeNotifier {
           }
         });
       }
+      return newMessage;
     } catch (e) {
       debugPrint('Error sending message: $e');
+      return null;
     }
   }
 

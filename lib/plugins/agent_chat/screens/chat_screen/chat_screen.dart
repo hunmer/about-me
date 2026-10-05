@@ -38,6 +38,7 @@ import 'components/save_tool_dialog.dart';
 import 'components/agent_chain_config_dialog.dart';
 import 'components/tool_agents_config_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
+import 'package:aboutme/plugins/openai/moments/screens/moments_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 
 /// 聊天界面
@@ -617,6 +618,7 @@ class _ChatScreenState extends State<ChatScreen> {
         onTTSSettings: _openTTSSettings,
         onVoiceCall: _openVoiceCall,
         onToolManagement: _openToolManagement,
+        onMoments: _openMoments,
         onTokenStats: _showTokenStats,
         onClearMessages: _showClearMessagesConfirm,
         onSettings: _showSettings,
@@ -1185,6 +1187,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// 打开 agent 朋友圈
+  void _openMoments() {
+    NavigationHelper.push(context, const MomentsScreen());
+  }
+
   /// 显示设置对话框
   void _showSettings() {
     int? customContextCount = widget.conversation.contextMessageCount;
@@ -1646,6 +1653,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onTTSSettings;
   final VoidCallback onVoiceCall;
   final VoidCallback onToolManagement;
+  final VoidCallback onMoments;
   final VoidCallback onTokenStats;
   final VoidCallback onClearMessages;
   final VoidCallback onSettings;
@@ -1665,6 +1673,7 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onTTSSettings,
     required this.onVoiceCall,
     required this.onToolManagement,
+    required this.onMoments,
     required this.onTokenStats,
     required this.onClearMessages,
     required this.onSettings,
@@ -1842,6 +1851,15 @@ class _AgentChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               onTap: () {
                 close();
                 onToolManagement();
+              },
+            ),
+            _AppBarMenuAction(
+              icon: DsIconKind.image,
+              label: '朋友圈',
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                onMoments();
               },
             ),
             _AppBarMenuAction(

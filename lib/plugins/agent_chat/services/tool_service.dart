@@ -391,8 +391,11 @@ class ToolService {
 
       final jsBridge = JSBridgeManager.instance;
 
-      // 执行 JS 代码
-      final result = await jsBridge.evaluate(jsCode);
+      // 执行 JS 代码（生图等工具内部轮询可达数分钟，与脚本执行器同样放宽到 5 分钟）
+      final result = await jsBridge.evaluate(
+        jsCode,
+        timeout: const Duration(minutes: 5),
+      );
 
       if (!result.success) {
         throw Exception(result.error ?? '执行失败');

@@ -44,6 +44,7 @@ class ToolConfigManager {
     'goods',
     'habits',
     'memory', // 活人感记忆查询
+    'moments', // 朋友圈 / 资产图 / 生图（描述 openai 插件的方法）
     'nodes',
     'notes',
     'store',
@@ -73,6 +74,7 @@ class ToolConfigManager {
     'nodes': ['节点', '树形笔记'],
     'calendar_album': ['相册', '照片', '图片日记'],
     'database': ['数据库', '自定义数据'],
+    'moments': ['朋友圈', '动态', '生图', '生成图片', '画图', '资产图'],
   };
 
   // 是否已初始化

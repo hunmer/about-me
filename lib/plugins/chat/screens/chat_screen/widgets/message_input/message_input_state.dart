@@ -1,8 +1,6 @@
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
-import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/plugins/chat/models/message.dart';
 
 class MessageInputState {
@@ -89,25 +87,14 @@ class MessageInputState {
           debugPrint('[MessageInputState] 设置默认 contextCount: 20');
         }
         debugPrint('[MessageInputState] 最终 metadata: $metadata');
-        // 创建用户对象
-        final user = ChatPlugin.instance.userService.currentUser;
-        // 创建消息对象
-        final message = Message(
-          id: const Uuid().v4(),
-          content: controller.text.trim(),
-          user: user,
-          type: MessageType.sent,
+
+        // 发送消息（消息实例由 ChatScreenController.sendMessage 统一创建并持久化，
+        // chat_message_sent 事件由 ChatScreen 用该真实实例广播，避免双实例重复）
+        onSendMessage(
+          messageText,
+          type: 'sent',
           replyTo: replyTo,
           metadata: metadata,
-          channelId: currentChannel.id,
-        );
-
-        // 发送消息
-        onSendMessage(
-          message.content,
-          type: 'sent',
-          replyTo: message.replyTo,
-          metadata: message.metadata,
         );
 
         // 清空输入框并保持焦点
@@ -118,12 +105,6 @@ class MessageInputState {
         if (onClearFile != null) {
           onClearFile!();
         }
-
-        // 广播消息事件
-        aboutme_event.EventManager.instance.broadcast(
-          'chat_message_sent',
-          aboutme_event.Value<Message>(message),
-        );
       }
     }
   }

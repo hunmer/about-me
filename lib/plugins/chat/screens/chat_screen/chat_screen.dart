@@ -1,7 +1,7 @@
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/event/event_manager.dart';
-import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -132,12 +132,17 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  // 处理消息更新事件
-  void _handleMessageUpdated(EventArgs args) {
-    if (args is! ValuesEventArgs<Message, String>) return;
+  // 处理消息更新事件（兼容两种事件载荷：openai 的 ValuesEventArgs 与 chat 插件的 Value）
+  void _handleMessageUpdated(aboutme_event.EventArgs args) {
+    Message? message;
+    if (args is ValuesEventArgs<Message, String>) {
+      message = args.value1;
+    } else if (args is aboutme_event.Value<Message>) {
+      message = args.value;
+    }
+    if (message == null) return;
 
     // 检查更新的消息是否属于当前频道
-    final message = args.value1;
     if (message.channelId != widget.channel.id) return;
 
     // 重新加载消息列表
@@ -145,7 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // 处理同步刷新事件（来自 RouteRefreshManager）
-  void _handleSyncRefresh(EventArgs args) {
+  void _handleSyncRefresh(aboutme_event.EventArgs args) {
     debugPrint('[ChatScreen] 收到同步刷新事件');
     // 重新加载消息列表
     _controller.reloadMessages();
@@ -1022,13 +1027,17 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         MessageInput(
           controller: _controller.draftController,
-          onSendMessage: (content, {metadata, String type = 'text', replyTo}) {
-            _controller.sendMessage(
+          onSendMessage: (content, {metadata, String type = 'text', replyTo}) async {
+            final sent = await _controller.sendMessage(
               content,
               metadata: metadata,
               type: type,
               replyTo: _replyToMessage,
             );
+            // 广播真实存入频道的消息实例（触发 AI/积分/小组件等订阅方）
+            if (sent != null) {
+              eventManager.broadcast('chat_message_sent', aboutme_event.Value<Message>(sent));
+            }
             // 发送后清除回复状态
             if (_replyToMessage != null) {
               setState(() {

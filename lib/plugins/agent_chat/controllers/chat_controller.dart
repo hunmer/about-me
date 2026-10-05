@@ -5,6 +5,7 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 import 'package:aboutme/core/services/foreground_task_manager.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
@@ -297,6 +298,12 @@ class ChatController extends ChangeNotifier {
 
       // 初始化 AgentManager
       await _agentManager.initialize(conversation);
+
+      // 朋友圈/生图工具上下文：当前会话与其主 agent
+      MomentsService.instance.currentConversationId = conversation.id;
+      MomentsService.instance.currentAgentId =
+          conversation.agentId ??
+          conversation.agentChain?.firstOrNull?.agentId;
 
       // 初始化前台服务管理器
       await _foregroundServiceManager.initialize();

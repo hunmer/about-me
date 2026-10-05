@@ -1,7 +1,7 @@
 {
   "name": "AI 图片生成",
   "id": "ai_image",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "OpenAI 兼容图像 API：文生图 + 参考图编辑（图生图/多图融合），异步任务轮询；图片自动保存本地并用 json_dynamic_widget 渲染结果（后台触发自动降级）",
   "icon": "star",
   "author": "Aboutme Team",

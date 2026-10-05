@@ -17,6 +17,10 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/proactive_service.dart';
+import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
+import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dart';
+import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
 import 'repositories/client_openai_repository.dart';
@@ -35,6 +39,7 @@ import 'sample_data.dart';
 
 part 'openai_js_api.dart';
 part 'openai_data_selectors.dart';
+part 'moments_js_api.dart';
 
 class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   static OpenAIPlugin? _instance;
@@ -88,6 +93,11 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
       // 活人感记忆查询（LLM 工具调用）
       'search_memory': _jsSearchMemory,
+
+      // 朋友圈 / 资产图 / 生图（LLM 工具调用）
+      'generate_image': _jsGenerateImage,
+      'post_moment': _jsPostMoment,
+      'list_agent_assets': _jsListAgentAssets,
 
       // 服务商管理
       'getProviders': _jsGetProviders,

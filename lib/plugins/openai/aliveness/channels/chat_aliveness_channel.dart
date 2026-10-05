@@ -1,32 +1,31 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:agentlib/openai_compat.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
-import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/aliveness_orchestrator.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/voice_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
-import 'package:aboutme/utils/image_utils.dart';
 
 /// chat 频道版活人感通道：
-/// 占位消息（"正在想…"）→ 流式生成实时更新占位 → 分条逐条发出 / 语音替代。
+/// AI 回复不插入频道消息列表，而是收敛到根消息（@AI 的用户消息）的
+/// [AiThread] 中，频道内以【有 xx 条回复】入口呈现，点击打开底部 drawer 续聊。
 /// 入口 [handleChatAlivenessMessage] 负责已读标记与互动频道记录，
 /// 其余流程统一交给 [AlivenessOrchestrator]。
 class ChatAlivenessSession implements AlivenessSessionChannel {
   ChatAlivenessSession({
     required this.agent,
     required this.channelId,
-    required this.replyToId,
+    required this.rootMessageId,
     this.contextCount = 20,
     this.absoluteFilePath,
     this.hasImage = false,
@@ -34,68 +33,60 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
 
   final AIAgent agent;
   final String channelId;
-  final String replyToId;
+  final String rootMessageId; // @AI 的用户消息 id（线程根）
   final int contextCount;
   final String? absoluteFilePath;
   final bool hasImage;
 
-  final _random = Random();
-  Message? typingMessage;
+  final AiThreadService _threads = AiThreadService.instance;
 
-  ChatPlugin get _plugin =>
-      PluginManager.instance.getPlugin('chat')! as ChatPlugin;
+  AiThreadMessage? _placeholder; // "正在想"占位（仅内存，崩溃后自然消失）
 
   AlivenessConfig get _config =>
       agent.alivenessConfig ?? const AlivenessConfig(enabled: true);
+
+  ChatPlugin get _plugin =>
+      PluginManager.instance.getPlugin('chat')! as ChatPlugin;
 
   @override
   String get scope => 'chat';
 
   @override
   Future<void> onBufferStart() async {
-    final aiUser = User(
-      id: agent.id,
-      username: agent.name,
-      iconPath: await ImageUtils.getAbsolutePath(agent.avatarUrl),
-    );
-    typingMessage = await Message.create(
+    await _threads.ensureThread(rootMessageId, channelId, agent.id);
+    _placeholder = AiThreadMessage(
       id: 'ai_alive_${agent.id}_${DateTime.now().millisecondsSinceEpoch}',
-      content: '正在想…',
-      channelId: channelId,
-      user: aiUser,
-      replyToId: replyToId,
-      type: MessageType.received,
-      metadata: {
-        'isAI': true,
-        'agentId': agent.id,
-        'isThinking': true,
-        'buffering': true,
-      },
+      role: 'assistant',
+      content: '',
+      status: 'thinking',
+      date: DateTime.now(),
+      agentId: agent.id,
+      agentName: agent.name,
     );
-    await _plugin.channelService.addMessage(channelId, typingMessage!);
-    _plugin.refresh();
-    EventManager.instance.broadcast(
-      'chat_message_updated',
-      Value<Message>(typingMessage!),
-    );
+    await _threads.appendMessage(rootMessageId, _placeholder!, persist: false);
   }
 
   @override
   Future<void> onNoReply() async {
-    final placeholder = typingMessage;
-    if (placeholder == null) return;
-    await _plugin.channelService.deleteMessage(placeholder);
-    _plugin.refresh();
+    final placeholder = _placeholder;
+    if (placeholder != null) {
+      await _threads.removeMessage(rootMessageId, placeholder.id);
+    }
+    // 已读不回且线程内没有任何 AI 回复时，连同线程一起清理，不留空入口
+    final thread = _threads.getThread(rootMessageId);
+    if (thread != null && thread.messages.isEmpty) {
+      await _threads.removeThread(rootMessageId);
+    }
   }
 
   @override
   Future<void> onDelay(int seconds) async {
-    // 占位内容保持"正在想…"即可，无需额外处理
+    // thinking 状态由入口行展示，无需额外处理
   }
 
   @override
   Future<String?> generate(AlivenessGenerationInput input) async {
-    final placeholder = typingMessage;
+    final placeholder = _placeholder;
     if (placeholder == null) return null;
 
     final contextMessages = await _buildContext(input);
@@ -110,17 +101,22 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
         contentBuffer.write(token);
         // 语音呈现时流式文本随后会被删除，保持占位原样避免闪现
         if (input.useVoice) return;
-        placeholder.content = RequestService.processThinkingContent(
-          contentBuffer.toString(),
+        await _threads.updateMessage(
+          rootMessageId,
+          placeholder.id,
+          content: RequestService.processThinkingContent(
+            contentBuffer.toString(),
+          ),
+          persist: false,
         );
-        await _plugin.channelService.saveMessage(placeholder);
-        _plugin.refresh();
       },
       onError: (error) async {
-        placeholder.content = '抱歉，生成回复时出现错误：$error';
-        placeholder.metadata?.addAll({'isError': true, 'isCompleted': true});
-        await _plugin.channelService.saveMessage(placeholder);
-        _plugin.refresh();
+        await _threads.updateMessage(
+          rootMessageId,
+          placeholder.id,
+          content: '抱歉，生成回复时出现错误：$error',
+          status: 'error',
+        );
       },
       onComplete: () {},
       maxRetries: 3,
@@ -131,88 +127,92 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
 
   @override
   Future<bool> sendVoice(String text) async {
-    // 替代模式：删除占位后只发语音消息，不再追加文本气泡
+    // 替代模式：删除占位后线程内只保留语音消息
     await onNoReply();
-    return VoiceService.instance.sendVoiceMessage(
-      agentId: agent.id,
-      channelId: channelId,
-      aiUser: typingMessage?.user ?? await _buildAiUser(),
-      text: text,
-      ttsServiceId:
-          _config.ttsServiceId ?? await _globalVoiceServiceId(),
-      replyToId: replyToId,
+    final voice = await VoiceService.instance.synthesize(
+      text,
+      ttsServiceId: _config.ttsServiceId ?? await _globalVoiceServiceId(),
     );
+    if (voice == null) return false;
+    await _threads.appendMessage(
+      rootMessageId,
+      AiThreadMessage(
+        id: 'ai_voice_${agent.id}_${DateTime.now().millisecondsSinceEpoch}',
+        role: 'assistant',
+        content: '',
+        type: 'audio',
+        audioPath: voice.storagePath,
+        audioDurationSec: voice.duration.inSeconds,
+        status: 'done',
+        date: DateTime.now(),
+        agentId: agent.id,
+        agentName: agent.name,
+      ),
+    );
+    debugPrint('[Aliveness][语音] chat 线程语音消息已写入');
+    return true;
   }
 
   @override
   Future<void> sendBubbles(List<String> bubbles) async {
-    final placeholder = typingMessage;
+    final placeholder = _placeholder;
     if (placeholder == null || bubbles.isEmpty) return;
-    final aiUser = placeholder.user;
     debugPrint('[Aliveness][分条] 共 ${bubbles.length} 条 | '
         '1."${bubbles.first.length > 25 ? "${bubbles.first.substring(0, 25)}…" : bubbles.first}"');
 
-    // 第一条：替换占位消息内容
-    placeholder.content = bubbles.first;
-    placeholder.metadata?.remove('isThinking');
-    placeholder.metadata?['isCompleted'] = true;
-    placeholder.metadata?['completedAt'] = DateTime.now().millisecondsSinceEpoch;
-    await _plugin.channelService.saveMessage(placeholder);
-    _plugin.refresh();
-    EventManager.instance.broadcast(
-      'chat_message_updated',
-      Value<Message>(placeholder),
+    // 第一条：落定占位消息
+    await _threads.updateMessage(
+      rootMessageId,
+      placeholder.id,
+      content: bubbles.first,
+      status: 'done',
     );
 
     // 后续条目：延迟逐条发出，模拟连续打字
+    final random = Random();
     for (var i = 1; i < bubbles.length; i++) {
       final delayMs = _config.bubbleDelayMinMs +
-          _random.nextInt(
-            (_config.bubbleDelayMaxMs - _config.bubbleDelayMinMs).clamp(1, 10000) +
+          random.nextInt(
+            (_config.bubbleDelayMaxMs - _config.bubbleDelayMinMs)
+                    .clamp(1, 10000) +
                 1,
           );
       debugPrint('[Aliveness][分条] 第${i + 1}条 延迟${delayMs}ms | '
           '"${bubbles[i].length > 25 ? "${bubbles[i].substring(0, 25)}…" : bubbles[i]}"');
       await Future.delayed(Duration(milliseconds: delayMs));
 
-      final message = await Message.create(
-        id: 'ai_alive_${agent.id}_${DateTime.now().millisecondsSinceEpoch}_$i',
-        content: bubbles[i],
-        channelId: channelId,
-        user: aiUser,
-        replyToId: placeholder.replyToId,
-        type: MessageType.received,
-        metadata: {
-          'isAI': true,
-          'agentId': agent.id,
-          'isCompleted': true,
-          'completedAt': DateTime.now().millisecondsSinceEpoch,
-        },
-      );
-      await _plugin.channelService.addMessage(channelId, message);
-      _plugin.refresh();
-      EventManager.instance.broadcast(
-        'chat_message_updated',
-        Value<Message>(message),
+      await _threads.appendMessage(
+        rootMessageId,
+        AiThreadMessage(
+          id: 'ai_alive_${agent.id}_${DateTime.now().millisecondsSinceEpoch}_$i',
+          role: 'assistant',
+          content: bubbles[i],
+          status: 'done',
+          date: DateTime.now(),
+          agentId: agent.id,
+          agentName: agent.name,
+        ),
       );
     }
   }
 
   @override
   void reveal() {
-    _plugin.refresh();
+    // 线程事件已实时广播，无需额外刷新
   }
 
   @override
   Future<void> onError(Object error) async {
-    final placeholder = typingMessage;
+    final placeholder = _placeholder;
     if (placeholder == null) return;
-    placeholder.metadata?.addAll({'isError': true, 'isCompleted': true});
-    await _plugin.channelService.saveMessage(placeholder);
-    _plugin.refresh();
+    await _threads.updateMessage(
+      rootMessageId,
+      placeholder.id,
+      status: 'error',
+    );
   }
 
-  /// 上下文组装：system（含活人感注入段）+ 频道历史 + 本次缓冲消息
+  /// 上下文组装：system（含活人感注入段）+ 频道历史 + 线程多轮 + 本次缓冲消息
   Future<List<ChatCompletionMessage>> _buildContext(
     AlivenessGenerationInput input,
   ) async {
@@ -223,17 +223,20 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
       ChatCompletionMessage.system(content: systemContent),
     ];
 
-    // 频道历史（排除本次缓冲消息与占位/错误消息）
+    final thread = _threads.getThread(rootMessageId);
+    final threadMessageIds =
+        thread?.messages.where((m) => m.role == 'user').map((m) => m.content).toSet();
+
+    // 频道历史（排除根消息/本次缓冲/异常消息）
     final buffered = input.bufferedHandles.whereType<Message>().toList();
     final recent = _plugin.channelService.getRecentMessages(
       channelId,
       contextCount + buffered.length,
     );
     final bufferedIds = buffered.map((m) => m.id).toSet();
-    final placeholderId = typingMessage?.id;
     for (final msg in recent) {
+      if (msg.id == rootMessageId) continue;
       if (bufferedIds.contains(msg.id)) continue;
-      if (msg.id == placeholderId) continue;
       if (msg.metadata?['isThinking'] == true) continue;
       if (msg.metadata?['isError'] == true) continue;
       if (msg.content.contains('抱歉，生成回复时出现错误')) continue;
@@ -250,8 +253,26 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
       }
     }
 
-    // 本次缓冲的用户消息（保证不被历史窗口挤掉）
+    // 线程内的多轮对话（根消息追问历史；drawer 追问已在此，避免重复）
+    if (thread != null) {
+      for (final msg in thread.messages) {
+        if (msg.status == 'thinking') continue;
+        if (msg.role == 'assistant') {
+          if (msg.type == 'audio' || msg.content.trim().isEmpty) continue;
+          messages.add(ChatCompletionMessage.assistant(content: msg.content));
+        } else {
+          messages.add(
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.string(msg.content),
+            ),
+          );
+        }
+      }
+    }
+
+    // 本次缓冲的用户消息（频道 @ 场景；drawer 追问无 handle，已在线程历史中）
     for (final msg in buffered) {
+      if (threadMessageIds?.contains(msg.content) == true) continue;
       messages.add(
         ChatCompletionMessage.user(
           content: ChatCompletionUserMessageContent.string(msg.content),
@@ -260,12 +281,6 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
     }
     return messages;
   }
-
-  Future<User> _buildAiUser() async => User(
-    id: agent.id,
-    username: agent.name,
-    iconPath: await ImageUtils.getAbsolutePath(agent.avatarUrl),
-  );
 
   /// 语音消息使用的 TTS 服务（全局配置，未配置则用 TTS 默认服务）
   Future<String?> _globalVoiceServiceId() async {
@@ -303,11 +318,30 @@ Future<void> handleChatAlivenessMessage(
     createSession: () => ChatAlivenessSession(
       agent: agent,
       channelId: channelId,
-      replyToId: message.id,
-      contextCount:
-          (message.metadata?['contextCount'] as int?) ?? 20,
+      rootMessageId: message.id,
+      contextCount: (message.metadata?['contextCount'] as int?) ?? 20,
       absoluteFilePath: absoluteFilePath,
       hasImage: hasImage,
+    ),
+  );
+}
+
+/// AI 回复线程内的追问入口（底部 drawer 输入）：
+/// 追问消息已写入线程，这里只负责把它送入同一套活人感编排。
+Future<void> submitAiThreadMessage({
+  required AIAgent agent,
+  required String channelId,
+  required String rootMessageId,
+  required String text,
+}) async {
+  await AlivenessOrchestrator.instance.submit(
+    agent: agent,
+    targetId: channelId,
+    text: text,
+    createSession: () => ChatAlivenessSession(
+      agent: agent,
+      channelId: channelId,
+      rootMessageId: rootMessageId,
     ),
   );
 }

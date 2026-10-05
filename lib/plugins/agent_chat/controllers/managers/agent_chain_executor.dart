@@ -9,6 +9,7 @@ import '../../models/chat_message.dart';
 import '../../models/tool_call_step.dart';
 import '../../models/saved_tool_template.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import '../../services/tool_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
@@ -553,6 +554,11 @@ class AgentChainExecutor {
     required Completer<void> completer,
   }) async {
     try {
+      // 工具执行前更新朋友圈/生图工具上下文（多 agent 链时为当前步骤的 agent）
+      MomentsService.instance.currentAgentId = agent.id;
+      MomentsService.instance.currentConversationId =
+          context.conversationId;
+
       // 执行工具调用
       if (ToolService.containsToolCall(secondResponse)) {
         // 使用内部的工具执行器（不会调用续写回调）

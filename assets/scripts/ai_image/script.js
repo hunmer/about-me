@@ -32,7 +32,8 @@ const baseUrl = String(config.baseUrl || 'https://ai.comfly.chat').replace(/\/+$
 const model = String(input.model || config.model || 'gpt-image-1').trim();
 const aspectRatio = String(input.aspectRatio || config.aspectRatio || '1:1').trim();
 const n = Math.max(1, Math.min(4, Number(input.n || config.n || 1) || 1));
-const showUi = config.showUi !== false; // 默认展示
+// 默认展示；args.showUi 显式覆盖（供后台/工具调用关闭结果页）
+const showUi = (typeof args.showUi === 'boolean') ? args.showUi : (config.showUi !== false);
 // 显式代理（host:port 或 http://host:port）；留空时 Dart 端自动探测系统代理
 const proxy = String(config.proxy || '').trim();
 

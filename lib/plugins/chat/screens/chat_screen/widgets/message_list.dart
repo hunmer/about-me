@@ -5,6 +5,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
+import 'ai_thread_entry.dart';
 import 'message_bubble.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/date_separator.dart';
 import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
@@ -202,6 +203,8 @@ class _MessageListState extends State<MessageList> {
                     },
                   ),
                 ),
+                // AI 回复线程入口（@AI 消息下方：有 xx 条回复 / 正在输入…）
+                if (!widget.isMultiSelectMode) AiThreadEntry(message: item),
               ],
             ),
           );

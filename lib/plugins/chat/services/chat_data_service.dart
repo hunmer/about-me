@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/plugins/chat/services/widget_service.dart';
+import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/chat/sample_data.dart';
 
 /// 聊天数据服务
@@ -34,6 +35,8 @@ class ChatDataService {
   Future<void> initialize() async {
     await _initializeDefaultData();
     await _loadChannels();
+    // AI 回复线程全量加载（入口行与 drawer 依赖内存缓存）
+    await AiThreadService.instance.loadAll();
   }
 
   Future<void> _initializeDefaultData() async {
@@ -277,6 +280,9 @@ class ChatDataService {
         _channels[channelIndex].lastMessage = null;
       }
 
+      // 级联清理该频道的 AI 回复线程
+      await AiThreadService.instance.clearChannel(channelId);
+
       _plugin.refresh();
       debugPrint('Successfully cleared messages for channel $channelId');
     } catch (e) {
@@ -491,6 +497,9 @@ class ChatDataService {
       debugPrint('无法删除消息：在频道 ${message.channelId} 中未找到ID为 ${message.id} 的消息');
       return false;
     }
+
+    // 根消息删除时级联清理其 AI 回复线程
+    await AiThreadService.instance.removeThread(message.id);
 
     if (_channels[channelIndex].lastMessage?.id == message.id) {
       if (_channels[channelIndex].messages.isNotEmpty) {
