@@ -203,6 +203,9 @@ class ScriptsCenterPlugin extends BasePlugin {
       // 初始化默认文件夹
       await _initializeDefaultFolders();
 
+      // 恢复缺失的内置脚本（assets 打包分发）
+      await _scriptLoader.syncBuiltInScripts();
+
       // 加载当前文件夹的脚本
       await _scriptManager.loadScripts();
 

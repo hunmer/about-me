@@ -79,6 +79,9 @@ class ScriptInfo {
   /// 是否自动运行（在插件初始化后自动执行）
   bool autoRun;
 
+  /// 是否内置脚本（随应用分发，用户不可删除；缺失时启动会从 assets 恢复）
+  final bool isBuiltIn;
+
   /// 脚本类型：module（可接受参数）| standalone（独立运行）
   String type;
 
@@ -105,12 +108,13 @@ class ScriptInfo {
     required this.path,
     required this.name,
     required this.version,
-    required this.description,
+    this.description = '',
     this.icon = 'code',
     this.author = 'Unknown',
     this.updateUrl,
     this.enabled = true,
     this.autoRun = false,
+    this.isBuiltIn = false,
     this.type = 'module',
     this.inputs = const [],
     this.triggers = const [],
@@ -137,6 +141,7 @@ class ScriptInfo {
       updateUrl: json['updateUrl'] as String?,
       enabled: json['enabled'] as bool? ?? true,
       autoRun: json['autoRun'] as bool? ?? false,
+      isBuiltIn: json['builtIn'] as bool? ?? false,
       type: json['type'] as String? ?? 'module',
       inputs: (json['inputs'] as List<dynamic>?)
               ?.map((e) => ScriptInput.fromJson(e as Map<String, dynamic>))
@@ -169,6 +174,7 @@ class ScriptInfo {
       if (updateUrl != null) 'updateUrl': updateUrl,
       'enabled': enabled,
       'autoRun': autoRun,
+      if (isBuiltIn) 'builtIn': true,
       'type': type,
       'inputs': inputs.map((i) => i.toJson()).toList(),
       'triggers': triggers.map((t) => t.toJson()).toList(),
@@ -221,6 +227,7 @@ class ScriptInfo {
       updateUrl: updateUrl ?? this.updateUrl,
       enabled: enabled ?? this.enabled,
       autoRun: autoRun ?? this.autoRun,
+      isBuiltIn: isBuiltIn,
       type: type ?? this.type,
       inputs: inputs ?? this.inputs,
       triggers: triggers ?? this.triggers,

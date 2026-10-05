@@ -267,6 +267,7 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
         ),
         subtitle: Text(
           [
+            if (f.isSelf) '自我记忆',
             if (f.tags.isNotEmpty) f.tags.take(4).join(' / '),
             _formatDate(f.createdAt),
             if (f.archived) '已淡忘',

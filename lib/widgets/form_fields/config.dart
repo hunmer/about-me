@@ -172,6 +172,10 @@ class FormConfig {
   /// 空状态提示文案（当字段列表为空时显示）
   final String? emptyStateMessage;
 
+  /// 任一字段值变化时回调（携带当前全部值）。
+  /// 供调用方实时收集表单值，避免表单被销毁后（如 Tab 切换）取不到值
+  final void Function(Map<String, dynamic> values)? onValuesChanged;
+
   const FormConfig({
     required this.fields,
     required this.onSubmit,
@@ -187,5 +191,6 @@ class FormConfig {
     this.autovalidateMode = false,
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.emptyStateMessage,
+    this.onValuesChanged,
   });
 }

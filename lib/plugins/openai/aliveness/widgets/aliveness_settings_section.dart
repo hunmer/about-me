@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
+import 'package:aboutme/plugins/openai/aliveness/screens/agent_schedule_screen.dart';
+import 'package:aboutme/plugins/openai/aliveness/screens/chat_import_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/decision_log_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/memory_manager_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/widgets/jev_settings_dialog.dart';
@@ -213,13 +215,39 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     _buildQuietHoursRow(theme, config),
                   ],
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
                     children: [
                       TextButton.icon(
                         onPressed: () => showJevSettingsDialog(context),
                         icon: const Icon(Icons.tune, size: 16),
                         label: const Text('决策模型'),
+                      ),
+                      TextButton.icon(
+                        onPressed: widget.agentId == null
+                            ? null
+                            : () => NavigationHelper.push(
+                                context,
+                                AgentScheduleScreen(
+                                  agentId: widget.agentId!,
+                                  agentName: widget.agentName,
+                                ),
+                              ),
+                        icon: const Icon(Icons.wb_sunny_outlined, size: 16),
+                        label: const Text('AI日程'),
+                      ),
+                      TextButton.icon(
+                        onPressed: widget.agentId == null
+                            ? null
+                            : () => NavigationHelper.push(
+                                context,
+                                ChatImportScreen(
+                                  agentId: widget.agentId!,
+                                  agentName: widget.agentName,
+                                ),
+                              ),
+                        icon: const Icon(Icons.upload_file, size: 16),
+                        label: const Text('分析聊天记录'),
                       ),
                       TextButton.icon(
                         onPressed: widget.agentId == null

@@ -12,7 +12,7 @@ class MobileJSEngine implements JSEngine {
   }
 
   @override
-  Future<JSResult> evaluate(String code) async {
+  Future<JSResult> evaluate(String code, {Duration? timeout}) async {
     throw UnsupportedError('MobileJSEngine is only available on mobile/desktop platforms');
   }
 

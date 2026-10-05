@@ -65,6 +65,7 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   @override
   void dispose() {
+    print('[ScriptConfigDebug] 表单wrapper销毁(fields=${widget.config.fields.map((f) => f.name).toList()})');
     super.dispose();
     _formChangeNotifier.dispose();
   }
@@ -72,8 +73,14 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
   /// 获取实际使用的 FormBuilder key
   GlobalKey<FormBuilderState> get _actualFormKey => widget.formKey ?? _fbKey;
 
-  Map<String, dynamic> get _currentValues {
-    final formValues = _actualFormKey.currentState?.value ?? {};
+  /// 合并 FormBuilder 与 WrappedFormField 的值，并补齐 disabled 字段
+  ///
+  /// 注意：flutter_form_builder 10.x 的 FormBuilderState.value 只返回
+  /// save() 之后的快照（_savedValue），用户输入实时存在 instantValue 里。
+  /// 此处收集实时值，因此优先读 instantValue
+  Map<String, dynamic> _collectValues() {
+    final fbState = _actualFormKey.currentState;
+    final formValues = fbState?.instantValue ?? {};
     final values = Map<String, dynamic>.from(formValues);
     // 合并 WrappedFormField 的值（这些字段不会自动注册到 FormBuilder）
     for (final entry in _fieldKeys.entries) {
@@ -82,8 +89,15 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
         values[entry.key] = fieldState.getValue();
       }
     }
+    for (final field in widget.config.fields) {
+      if (!field.enabled && !values.containsKey(field.name)) {
+        values[field.name] = field.initialValue;
+      }
+    }
     return values;
   }
+
+  Map<String, dynamic> get _currentValues => _collectValues();
 
   void submitForm() {
     if (!mounted) return;
@@ -107,17 +121,10 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   /// 验证所有字段（包括自定义验证规则）
   bool _validateAllFields() {
-    // 获取当前值
-    final formValues = _actualFormKey.currentState?.value ?? {};
-    final values = Map<String, dynamic>.from(formValues);
-    for (final entry in _fieldKeys.entries) {
-      final fieldState = entry.value.currentState;
-      if (fieldState != null) {
-        values[entry.key] = fieldState.getValue();
-      }
-    }
+    // 获取当前值（含 disabled 字段的 initialValue 兜底）
+    final values = _collectValues();
 
-    // 验证所有必填字段
+    // 验证所有必填字段（disabled 字段已有 initialValue 兜底，不跳过）
     for (final field in widget.config.fields) {
       if (field.required) {
         final value = values[field.name];
@@ -158,17 +165,8 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
       fieldKey.currentState?.save();
     }
 
-    // 从 FormBuilder 获取值
-    final formValues = fbState?.value ?? {};
-
-    // 合并 WrappedFormField 的值（这些字段不会自动注册到 FormBuilder）
-    final values = Map<String, dynamic>.from(formValues);
-    for (final entry in _fieldKeys.entries) {
-      final fieldState = entry.value.currentState;
-      if (fieldState != null) {
-        values[entry.key] = fieldState.getValue();
-      }
-    }
+    // 从 FormBuilder 获取值（含 disabled 字段的 initialValue 兜底）
+    final values = _collectValues();
 
     bool isValid = true;
     final errors = <String, dynamic>{};
@@ -183,14 +181,25 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
     }
 
     if (isValid) {
+      print('[ScriptConfigDebug] 表单验证通过(${widget.config.fields.length}字段), 提交: ${values.keys.toList()}');
       if (mounted) {
         widget.config.onSubmit(values);
       }
-    } else if (widget.config.onValidationFailed != null) {
+    } else {
+      // 验证失败：输出具体哪个字段、什么值（排查配置保存中断）
+      print('[ScriptConfigDebug] ⚠️ 表单验证失败! errors=$errors');
+      print('[ScriptConfigDebug] ⚠️ 当前提交值: $values');
+      for (final f in widget.config.fields) {
+        if (f.required) {
+          print('[ScriptConfigDebug]   字段${f.name}: required=${f.required}, enabled=${f.enabled}, value=${values[f.name]}, initialValue=${f.initialValue}');
+        }
+      }
+    }
+    if (!isValid && widget.config.onValidationFailed != null) {
       if (mounted) {
         widget.config.onValidationFailed!(errors);
       }
-    } else {
+    } else if (!isValid) {
       // 默认验证失败行为：显示错误消息
       final errorMessages = errors.values.join('\n');
       _showValidationError(errorMessages);
@@ -220,6 +229,9 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
     return FormBuilder(
       key: _actualFormKey,
+      onChanged: widget.config.onValuesChanged != null
+          ? () => widget.config.onValuesChanged!(_currentValues)
+          : null,
       child: Column(
         crossAxisAlignment: widget.config.crossAxisAlignment,
         children: [

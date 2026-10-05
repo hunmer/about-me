@@ -235,17 +235,18 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               _showScriptDialog(script: script);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: Text(
-              'app_delete'.tr,
-              style: const TextStyle(color: Colors.red),
+          if (!script.isBuiltIn)
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: Text(
+                'app_delete'.tr,
+                style: const TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteScript(script);
+              },
             ),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteScript(script);
-            },
-          ),
         ],
       ),
     );

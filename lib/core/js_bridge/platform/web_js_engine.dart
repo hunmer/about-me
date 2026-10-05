@@ -18,7 +18,7 @@ class WebJSEngine implements JSEngine {
   }
 
   @override
-  Future<JSResult> evaluate(String code) async {
+  Future<JSResult> evaluate(String code, {Duration? timeout}) async {
     try {
       final result = globalContext.callMethod('eval'.toJS, code.toJS);
       return JSResult.success(_convertJSValue(result));

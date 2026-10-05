@@ -141,6 +141,7 @@ class ScriptExecutor {
 
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
       final data = await storage.read(configPath);
+      print('[ScriptConfigDebug] 9.脚本getConfig读取: $configPath -> $data');
 
       // 默认配置
       final defaultConfig = {
@@ -407,10 +408,15 @@ class ScriptExecutor {
     }
   }
 
-  /// 执行脚本代码（JS 层已自带超时机制）
+  /// 执行脚本代码
+  ///
+  /// 脚本可能包含网络请求/轮询等长耗时操作，使用 5 分钟超时
   Future<dynamic> _executeWithTimeout(String code) async {
     // 使用 JSBridgeManager 执行代码
-    final jsResult = await _jsBridge.evaluate(code);
+    final jsResult = await _jsBridge.evaluate(
+      code,
+      timeout: const Duration(minutes: 5),
+    );
 
     // 处理返回值
     if (!jsResult.success) {

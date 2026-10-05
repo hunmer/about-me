@@ -8,7 +8,13 @@
     "version": "1.0.0",
     "author": "Aboutme Team",
     "homepage": "",
-    "tags": ["AI", "鼓励", "自动化"],
-    "permissions": ["agent_chat"]
+    "tags": [
+      "AI",
+      "鼓励",
+      "自动化"
+    ],
+    "permissions": [
+      "agent_chat"
+    ]
   }
 ]

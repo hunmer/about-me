@@ -12,7 +12,7 @@ class WebJSEngine implements JSEngine {
   }
 
   @override
-  Future<JSResult> evaluate(String code) async {
+  Future<JSResult> evaluate(String code, {Duration? timeout}) async {
     throw UnsupportedError('WebJSEngine is only available on web platform');
   }
 

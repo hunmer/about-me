@@ -112,6 +112,25 @@ class AlivenessStore {
     return data is Map ? (data['logs'] as List<dynamic>? ?? []) : [];
   }
 
+  // ---------- per-agent 每日日程（AI 的真实生活安排） ----------
+
+  Future<Map<String, dynamic>?> loadSchedule(String agentId) async {
+    final data = await OpenAIPlugin.instance.storage.read(
+      '${_dir(agentId)}/schedule.json',
+    );
+    return data is Map && data.isNotEmpty ? _asStringMap(data) : null;
+  }
+
+  Future<void> saveSchedule(
+    String agentId,
+    Map<String, dynamic> data,
+  ) async {
+    await OpenAIPlugin.instance.storage.write(
+      '${_dir(agentId)}/schedule.json',
+      data,
+    );
+  }
+
   // ---------- 全局决策层（Jev）配置 ----------
 
   Future<Map<String, dynamic>> loadSettings() async {

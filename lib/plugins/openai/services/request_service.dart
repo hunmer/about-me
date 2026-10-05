@@ -269,12 +269,17 @@ class RequestService {
   }
 
   /// 发送聊天请求
+  /// [maxTokens] 覆盖输出上限；默认用 agent.maxLength（与流式路径一致）。
+  /// 推理模型（deepseek-flash 等）的 reasoning 单独计 token，需要更大上限。
   static Future<String> chat(
     String input,
     AIAgent agent, {
     File? imageFile,
     List<ChatCompletionMessage>? contextMessages,
+    int? maxTokens,
   }) async {
+    final effectiveMaxTokens =
+        maxTokens ?? (agent.maxLength > 0 ? agent.maxLength : 1000);
     // 根据 apiFormat 分发到不同的实现
     final apiFormat = ApiFormat.fromString(agent.apiFormat);
     developer.log('chat: apiFormat=${apiFormat.value}', name: 'RequestService');
@@ -345,7 +350,7 @@ class RequestService {
           model: ChatCompletionModel.modelId(agent.model),
           messages: messages,
           temperature: 0.7,
-          maxTokens: 1000,
+          maxTokens: effectiveMaxTokens,
         );
       }
 
@@ -360,7 +365,7 @@ class RequestService {
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
         temperature: 0.7,
-        maxTokens: 1000,
+        maxTokens: effectiveMaxTokens,
       );
       stopwatch.stop();
 

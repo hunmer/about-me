@@ -99,7 +99,8 @@ class MemoryService {
     return ranked.take(k).map((e) => byId[e.key]!).toList();
   }
 
-  /// 给决策层/prompt 用的记忆摘要（激活碎片的自然语言拼接）
+  /// 给决策层/prompt 用的记忆摘要（激活碎片的自然语言拼接）。
+  /// 自我碎片加 [自己] 前缀，与用户记忆区分。
   Future<String> buildMemorySummary(
     String agentId,
     String queryText, {
@@ -120,7 +121,9 @@ class MemoryService {
       f.lastActivatedAt = DateTime.now();
     }
     await saveFragments(agentId, fragments);
-    return activated.map((f) => '· ${f.content}').join('\n');
+    return activated
+        .map((f) => '· ${f.isSelf ? '[自己] ' : ''}${f.content}')
+        .join('\n');
   }
 
   /// 核心记忆（常驻注入）：按权重取 Top-N（含手动标记，永不淡忘）。
@@ -132,7 +135,7 @@ class MemoryService {
     int halfLifeDays = 14,
   }) async {
     final fragments = await loadFragments(agentId);
-    final available = fragments.where((f) => !f.archived).toList()
+    final available = fragments.where((f) => !f.archived && !f.isSelf).toList()
       ..sort(
         (a, b) => b
             .weight(halfLifeDays: halfLifeDays)
@@ -140,6 +143,24 @@ class MemoryService {
       );
     if (available.isEmpty) return '';
     return available.take(k).map((f) => '· ${f.content}').join('\n');
+  }
+
+  /// 自我记忆摘要（常驻注入）：AI 从自己发言中沉淀的近况/习惯/承诺，
+  /// 让"我最近在干嘛"这类问题有真实答案而不是编造。
+  Future<String> buildSelfSummary(
+    String agentId, {
+    int k = 3,
+    int halfLifeDays = 14,
+  }) async {
+    final fragments = await loadFragments(agentId);
+    final self = fragments.where((f) => !f.archived && f.isSelf).toList()
+      ..sort(
+        (a, b) => b
+            .weight(halfLifeDays: halfLifeDays)
+            .compareTo(a.weight(halfLifeDays: halfLifeDays)),
+      );
+    if (self.isEmpty) return '';
+    return self.take(k).map((f) => '· ${f.content}').join('\n');
   }
 
   // ---------- 遗忘 ----------
@@ -164,6 +185,8 @@ class MemoryService {
   // ---------- 写入（LLM 提取） ----------
 
   /// 互动完成后后台调用：让 LLM 从这段对话提取记忆碎片与开环事件。
+  /// 同时提取两类碎片：关于用户（userMemories）与关于 AI 自己（selfMemories，
+  /// 来自 AI 的发言：自己的经历/计划/习惯/承诺）。
   /// 输出受限（JSON、限条数），失败静默跳过（记忆提取不阻塞主流程）。
   Future<void> extractFromConversation(
     AIAgent agent, {
@@ -172,50 +195,48 @@ class MemoryService {
   }) async {
     try {
       if (userText.trim().isEmpty) return;
-      final prompt = '从下面这轮对话中提取值得长期记住的用户信息。\n'
+      final prompt = '从下面这轮对话中提取值得长期记住的信息。\n'
           '只输出 JSON，格式：\n'
-          '{"memories":[{"content":"一句话事实","tags":["关键词"],"emotion":"neutral|positive|negative","importance":0.0到1.0}],"openLoops":[{"description":"待跟进事件","days":跟进天数}]}\n'
-          '规则：只记关于用户的事实/偏好/计划，最多3条memories；没有值得记的输出 {"memories":[],"openLoops":[]}；'
-          'openLoops 只收未来1~7天内可跟进的事（如面试、约会、出行），最多1条。\n'
+          '{"userMemories":[{"content":"一句话事实","tags":["关键词"],"emotion":"neutral|positive|negative","importance":0.0到1.0}],'
+          '"selfMemories":[{"content":"一句话事实","tags":["关键词"],"importance":0.0到1.0}],'
+          '"openLoops":[{"description":"待跟进事件","days":跟进天数}]}\n'
+          '规则：\n'
+          '- userMemories 只记关于用户的事实/偏好/计划，最多3条\n'
+          '- selfMemories 只记"你（AI角色）"在这轮对话里透露的自己的事：正在做/计划做/完成了什么、'
+          '习惯爱好、对用户的承诺（如"我周末要去爬山""我答应明天提醒她"），最多2条；用户没问、你也没提自己就留空\n'
+          '- 没有值得记的输出 {"userMemories":[],"selfMemories":[],"openLoops":[]}\n'
+          '- openLoops 只收未来1~7天内可跟进的事（如面试、约会、出行），最多1条\n'
           '对话：\n用户：$userText\n你：$assistantText';
 
-      final result = await RequestService.chat(prompt, agent);
+      final result = await RequestService.chat(
+        prompt,
+        agent,
+        // 推理模型 reasoning 吃 token，小上限会导致输出为空
+        maxTokens: 8000,
+      );
       final jsonStr = _extractJson(result);
       if (jsonStr == null) return;
       final data = json.decode(jsonStr) as Map<String, dynamic>;
 
-      // 去重写入碎片
+      // 去重写入碎片（兼容旧字段名 memories = 用户记忆）
       final fragments = await loadFragments(agent.id);
       final existing = fragments.map((f) => f.content).toSet();
-      final memories = data['memories'] as List<dynamic>? ?? [];
+      final userMemories = data['userMemories'] as List<dynamic>? ??
+          data['memories'] as List<dynamic>? ??
+          [];
       var added = 0;
-      for (final m in memories.take(3)) {
-        final map = Map<String, dynamic>.from(m as Map);
-        final content = (map['content'] as String?)?.trim();
-        if (content == null || content.isEmpty || existing.contains(content)) {
-          continue;
-        }
-        added++;
-        fragments.add(
-          MemoryFragment(
-            id: _uuid.v4(),
-            content: content,
-            tags:
-                (map['tags'] as List<dynamic>?)
-                    ?.map((t) => t.toString())
-                    .where((t) => t.isNotEmpty)
-                    .toList() ??
-                const [],
-            emotionTag: map['emotion'] as String?,
-            importance:
-                ((map['importance'] as num?)?.toDouble() ?? 0.5).clamp(0.0, 1.0),
-          ),
-        );
+      for (final m in userMemories.take(3)) {
+        added += _appendFragment(fragments, m, existing, isSelf: false);
+      }
+      final selfMemories = data['selfMemories'] as List<dynamic>? ?? [];
+      var selfAdded = 0;
+      for (final m in selfMemories.take(2)) {
+        selfAdded += _appendFragment(fragments, m, existing, isSelf: true);
       }
       // 只保留最近 200 条未归档 + 全部归档的，防膨胀
       await saveFragments(agent.id, fragments);
-      debugPrint('[Aliveness][记忆] LLM 提取完成 | 新增碎片=$added/候选${memories.length} '
-          '总碎片=${fragments.length}');
+      debugPrint('[Aliveness][记忆] LLM 提取完成 | 用户碎片=+$added/${userMemories.length} '
+          '自我碎片=+$selfAdded/${selfMemories.length} 总碎片=${fragments.length}');
 
       // 开环事件
       final loops = await loadOpenLoops(agent.id);
@@ -257,6 +278,38 @@ class MemoryService {
     return text.substring(start, end + 1);
   }
 
+  /// 解析一条 LLM 输出的记忆并去重写入；返回 1=写入 0=跳过
+  int _appendFragment(
+    List<MemoryFragment> fragments,
+    dynamic raw,
+    Set<String> existing, {
+    required bool isSelf,
+  }) {
+    final map = Map<String, dynamic>.from(raw as Map);
+    final content = (map['content'] as String?)?.trim();
+    if (content == null || content.isEmpty || existing.contains(content)) {
+      return 0;
+    }
+    existing.add(content);
+    fragments.add(
+      MemoryFragment(
+        id: _uuid.v4(),
+        content: content,
+        isSelf: isSelf,
+        tags:
+            (map['tags'] as List<dynamic>?)
+                ?.map((t) => t.toString())
+                .where((t) => t.isNotEmpty)
+                .toList() ??
+            const [],
+        emotionTag: map['emotion'] as String?,
+        importance:
+            ((map['importance'] as num?)?.toDouble() ?? 0.5).clamp(0.0, 1.0),
+      ),
+    );
+    return 1;
+  }
+
   /// 记忆查询工具（LLM 按需调用）：关键词激活检索，无命中回退核心记忆。
   /// 返回可直接 JSON 化的列表。
   Future<List<Map<String, dynamic>>> searchForTool(
@@ -288,6 +341,8 @@ class MemoryService {
     return hits.take(8).map((f) {
       return {
         'content': f.content,
+        // subject = self 表示这是 AI 自己的记忆（而非关于用户的）
+        if (f.isSelf) 'subject': 'self',
         'tags': f.tags,
         'importance': f.weight().toStringAsFixed(2),
         'userMarked': f.userMarked,

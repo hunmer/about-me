@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/behavior_executor.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/schedule_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/state_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
@@ -99,6 +100,9 @@ class AlivenessOrchestrator {
     final config = agent.alivenessConfig;
     if (config == null || !config.enabled) return false;
 
+    // 今日首次聊天：后台生成/复用今日日程（不阻塞缓冲，注入时再取）
+    unawaited(ScheduleService.instance.ensureTodaySchedule(agent));
+
     // 状态先读一次，用亲密度决定缓冲时长
     final state = await _states.load(
       agent.id,
@@ -154,10 +158,14 @@ class AlivenessOrchestrator {
       // 0) 设置当前 agent 上下文（记忆工具调用时定位记忆库）
       _memory.currentAgentId = agent.id;
 
-      // 1) 记忆：核心常驻（元问题兜底）+ 话题激活联想
+      // 1) 记忆：核心常驻（元问题兜底）+ 自我近况 + 话题激活联想 + 今日日程
       final mergedText = session.texts.join('\n');
       final state = _states.cached(agent.id);
       final coreMemory = await _memory.buildCoreMemorySummary(
+        agent.id,
+        halfLifeDays: config.forgettingHalfLifeDays,
+      );
+      final selfMemory = await _memory.buildSelfSummary(
         agent.id,
         halfLifeDays: config.forgettingHalfLifeDays,
       );
@@ -166,9 +174,15 @@ class AlivenessOrchestrator {
         mergedText,
         halfLifeDays: config.forgettingHalfLifeDays,
       );
+      final schedule = await ScheduleService.instance.loadToday(agent.id);
+      final scheduleContext = schedule == null
+          ? ''
+          : ScheduleService.instance.buildScheduleContext(schedule);
       debugPrint('[Aliveness][记忆] 核心常驻='
           '${coreMemory.isEmpty ? 0 : coreMemory.split("\n").length}条 '
-          '话题激活=${activatedMemory.isEmpty ? 0 : activatedMemory.split("\n").length}条');
+          '自我=${selfMemory.isEmpty ? 0 : selfMemory.split("\n").length}条 '
+          '话题激活=${activatedMemory.isEmpty ? 0 : activatedMemory.split("\n").length}条 '
+          '日程=${schedule == null ? "未生成" : "${schedule.entries.length}项"}');
 
       // 2) 决策（Jev 优先，失败走规则）：探索问题从未问池中选择
       final stats = await _store.loadStats(agent.id);
@@ -224,7 +238,9 @@ class AlivenessOrchestrator {
       final suffix = _buildSuffix(
         state,
         coreMemory,
+        selfMemory,
         activatedMemory,
+        scheduleContext,
         decision,
         config,
       );
@@ -298,11 +314,14 @@ class AlivenessOrchestrator {
     }
   }
 
-  /// 注入段：状态 + 消息格式 + 记忆 + 探索指令 + 语音说明 + 策略
+  /// 注入段：状态 + 消息格式 + 记忆（用户/自我/激活）+ 今日日程
+  /// + 探索指令 + 语音说明 + 策略
   String _buildSuffix(
     AgentState state,
     String coreMemory,
+    String selfMemory,
     String activatedMemory,
+    String scheduleContext,
     DecisionResult decision,
     AlivenessConfig config,
   ) {
@@ -322,6 +341,15 @@ class AlivenessOrchestrator {
     }
     if (activatedMemory.isNotEmpty) {
       buffer.write('\n【当前话题让你想起的往事】\n$activatedMemory');
+    }
+    if (selfMemory.isNotEmpty) {
+      buffer.write('\n【你自己的近况】（你亲自说过/做过的事，'
+          '聊到相关话题时自然带出，不要刻意汇报）\n$selfMemory');
+    }
+    if (scheduleContext.isNotEmpty) {
+      buffer.write('\n【你今天的真实生活】$scheduleContext'
+          '\n这是你今天真实的日程，用户问"你在干嘛/今天做了什么"时据此回答，'
+          '不要编造与它矛盾的内容。');
     }
     if (decision.exploreQuestion != null) {
       buffer.write('\n【探索指令】在回复的末尾，自然地问用户一个问题：'

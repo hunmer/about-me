@@ -71,6 +71,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   FormBuilderWrapperState? _configWrapperState;
   Map<String, dynamic>? _currentConfig;
 
+  /// 配置是否已从磁盘加载完成（完成后才构建配置表单，确保 initialValue 正确）
+  bool _configLoaded = false;
+
   // 配置表单字段定义（用于动态渲染配置界面）
   List<FormFieldConfig> _configFormFields = [];
 
@@ -245,6 +248,8 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
           widget.initialData!['configFormFields'],
         );
       }
+      // 导入模式无需读盘，配置直接就绪
+      _configLoaded = true;
     } else if (widget.script != null) {
       // 编辑模式
       _inputs = List.from(widget.script!.inputs);
@@ -257,6 +262,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
       _loadScriptCode();
       // 异步加载配置
       _loadScriptConfig();
+    } else {
+      // 新建模式：无已存配置，直接放行
+      _configLoaded = true;
     }
   }
 
@@ -269,26 +277,29 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
           'configs/scripts_center/${widget.script!.id}_config.json';
       final storageManager = widget.scriptManager.loader.storage;
       final data = await storageManager.read(configPath);
-      if (data != null && mounted) {
-        // 正确处理 Map 类型转换
-        Map<String, dynamic> config;
-        if (data is Map<String, dynamic>) {
-          config = data;
-        } else if (data is Map<dynamic, dynamic>) {
-          // 转换键的类型
-          config = data.map<String, dynamic>(
-            (key, value) => MapEntry(key.toString(), value),
-          );
-        } else {
-          // 如果数据格式不正确，返回默认配置
-          config = {};
-        }
-        setState(() {
-          _currentConfig = config;
-        });
+      print('[ScriptConfigDebug] 8.打开编辑屏读取配置: $configPath -> $data');
+      if (!mounted) return;
+      // 正确处理 Map 类型转换
+      Map<String, dynamic> config = {};
+      if (data is Map<String, dynamic>) {
+        config = data;
+      } else if (data is Map<dynamic, dynamic>) {
+        // 转换键的类型
+        config = data.map<String, dynamic>(
+          (key, value) => MapEntry(key.toString(), value),
+        );
       }
+      // 注意：文件不存在时 read 返回空 Map（非 null），同样标记加载完成
+      setState(() {
+        _currentConfig = config;
+        _configLoaded = true;
+      });
     } catch (e) {
       debugPrint('Failed to load script config: $e');
+      // 读取失败也要放行，避免配置页卡在 loading
+      if (mounted) {
+        setState(() => _configLoaded = true);
+      }
     }
   }
 
@@ -319,13 +330,19 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   /// 验证并保存
   void _saveScript() {
+    print('[ScriptConfigDebug] 1.保存按钮触发, 基本信息表单state=${_basicInfoWrapperState != null ? "已初始化" : "null"}');
     _basicInfoWrapperState?.submitForm();
   }
 
   /// 处理基本信息表单提交
   void _handleBasicInfoSubmit(Map<String, dynamic> values) {
     // 检查widget是否仍然mounted
-    if (!mounted) return;
+    if (!mounted) {
+      print('[ScriptConfigDebug] 2.基本信息提交: widget已unmounted, 中断!');
+      return;
+    }
+
+    print('[ScriptConfigDebug] 2.基本信息提交成功, values=$values');
 
     // 保存基本信息表单的值
     _basicInfoValues = values;
@@ -333,9 +350,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     // 检查高级设置表单是否已初始化
     if (_advancedWrapperState != null) {
       // 如果已初始化，提交表单获取值
+      print('[ScriptConfigDebug] 3.提交高级设置表单');
       _advancedWrapperState!.submitForm();
     } else {
       // 如果未初始化，使用默认值直接保存
+      print('[ScriptConfigDebug] 3.高级设置表单未初始化(用户没切到该Tab), 用默认值');
       _handleAdvancedSubmit(_getDefaultAdvancedValues());
     }
   }
@@ -353,15 +372,24 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   /// 处理高级设置表单提交（最终提交）
   void _handleAdvancedSubmit(Map<String, dynamic> advancedValues) {
     // 检查widget是否仍然mounted
-    if (!mounted) return;
+    if (!mounted) {
+      print('[ScriptConfigDebug] 4.高级设置提交: widget已unmounted, 中断!');
+      return;
+    }
+
+    print('[ScriptConfigDebug] 4.高级设置提交, advancedValues=$advancedValues');
 
     // 在保存前，获取配置表单的最新值（如果已初始化）
+    print('[ScriptConfigDebug] 5.配置表单state=${_configWrapperState != null ? "已初始化" : "null(用户没切到配置Tab)"}');
     if (_configWrapperState != null) {
       final configValues = _configWrapperState!.currentValues;
+      print('[ScriptConfigDebug] 5.配置表单currentValues=$configValues');
       if (configValues.isNotEmpty) {
         setState(() {
           _currentConfig = configValues;
         });
+      } else {
+        print('[ScriptConfigDebug] 5.⚠️ currentValues为空, _currentConfig保持=$_currentConfig');
       }
     }
     // 如果配置表单未初始化，_currentConfig 保持原有值（从编辑模式加载的值或 null）
@@ -427,6 +455,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     // 保存配置（如果有）
     if (_currentConfig != null && _currentConfig!.isNotEmpty) {
       scriptData['config'] = _currentConfig;
+      print('[ScriptConfigDebug] 6.配置将随脚本保存: ${_currentConfig!.keys.toList()}');
+    } else {
+      print('[ScriptConfigDebug] 6.⚠️ _currentConfig为空, scriptData不含config!');
     }
 
     // 保存配置表单字段定义（如果有）
@@ -1401,8 +1432,15 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
     final hasConfigFormFields = configFormFields.isNotEmpty;
 
+    // 无配置字段的脚本不需要读配置，直接放行
+    if (hasConfigFormFields && !_configLoaded) {
+      // 已存配置异步加载完成前不构建表单：否则 initialValue 拿不到已存值，
+      // 事后重建又会清掉用户正在填的内容
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (hasConfigFormFields) {
-      // 使用 FormBuilderWrapper 动态渲染配置表单
+      // 使用 FormBuilderWrapper 动态渲染配置表单（构建时 _currentConfig 已就绪）
       return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: FormBuilderWrapper(
@@ -1414,6 +1452,12 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
             showResetButton: false,
             fieldSpacing: 16,
             onSubmit: _handleConfigSubmit,
+            // 实时收集配置值：配置 Tab 可能在保存前被销毁（TabBarView 回收），
+            // 保存瞬间再取值不可靠，改为变化即同步
+            onValuesChanged: (values) {
+              print('[ScriptConfigDebug] 5s.配置实时同步: ${values.length}个字段');
+              _currentConfig = values;
+            },
           ),
         ),
       );

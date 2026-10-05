@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
@@ -11,6 +12,9 @@ import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
 class ScriptLoader {
   final StorageManager storage;
 
+  /// 内置脚本 ID 列表（assets/scripts/{id}/ 下的脚本）
+  static const List<String> builtInScriptIds = ['ai_image'];
+
   ScriptLoader(this.storage);
 
   /// 获取默认scripts目录路径
@@ -20,6 +24,45 @@ class ScriptLoader {
     } else {
       final appDir = await StorageManager.getApplicationDocumentsDirectory();
       return path.join(appDir.path, 'app_data', 'scripts');
+    }
+  }
+
+  /// 同步内置脚本（在 loadScripts 之前调用）
+  ///
+  /// 内置脚本随应用 assets 打包（assets/scripts/{id}/）。仅当本地缺失时
+  /// 从 assets 恢复（用户对内置脚本的编辑保留），不可被删除。
+  Future<void> syncBuiltInScripts() async {
+    final scriptsPath = await getScriptsDirectory();
+
+    for (final scriptId in builtInScriptIds) {
+      try {
+        final scriptPath = path.join(scriptsPath, scriptId);
+        final metadataPath = path.join(scriptPath, 'metadata.json');
+        final codePath = path.join(scriptPath, 'script.js');
+
+        final metadataExists = await storage.fileExists(metadataPath);
+        final codeExists = await storage.fileExists(codePath);
+        if (metadataExists && codeExists) continue;
+
+        final metadata = await rootBundle.loadString(
+          'assets/scripts/$scriptId/metadata.json',
+        );
+        final code = await rootBundle.loadString(
+          'assets/scripts/$scriptId/script.js',
+        );
+
+        await _ensureScriptDirectoryExists(scriptPath);
+        await storage.writeString(metadataPath, metadata);
+        await storage.writeString(codePath, code);
+
+        // Web 平台需要加入索引才能被扫描到
+        if (kIsWeb) {
+          await _addToWebIndex(scriptId);
+        }
+        print('✅ 内置脚本已恢复: $scriptId');
+      } catch (e) {
+        print('❌ 同步内置脚本失败: $scriptId, 错误: $e');
+      }
     }
   }
 
@@ -235,6 +278,11 @@ class ScriptLoader {
 
   /// 删除脚本
   Future<void> deleteScript(String scriptId) async {
+    // 内置脚本不可删除（兜底，UI 与 Manager 层已有拦截）
+    if (builtInScriptIds.contains(scriptId)) {
+      throw Exception('内置脚本不可删除: $scriptId');
+    }
+
     try {
       final scriptsPath = await getScriptsDirectory();
       final scriptPath = path.join(scriptsPath, scriptId);

@@ -4,7 +4,9 @@ abstract class JSEngine {
   Future<void> initialize();
 
   /// 执行 JS 代码（用户代码，包装后等待结果）
-  Future<JSResult> evaluate(String code);
+  ///
+  /// [timeout] 等待结果的最大时长，为 null 时使用引擎默认值
+  Future<JSResult> evaluate(String code, {Duration? timeout});
 
   /// 直接执行 JS 代码（内部使用，不包装，不等待结果）
   /// 用于注册函数、创建命名空间等操作

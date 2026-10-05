@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:dart_date/dart_date.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:json_dynamic_widget/json_dynamic_widget.dart';
+import 'package:aboutme/core/app_initializer.dart' show globalStorage;
+import 'package:aboutme/core/storage/storage_manager.dart' show StorageManager;
+import 'package:aboutme/core/utils/network.dart' show createClientWithSystemProxy;
+import 'package:aboutme/screens/json_dynamic_screen/json_dynamic_screen.dart';
 import 'platform/js_engine_interface.dart';
 import 'platform/js_engine_factory.dart';
 // 条件导入：默认 Web 平台存根，有 IO 库时（移动/桌面）使用真实实现
@@ -361,11 +366,11 @@ class JSBridgeManager {
   }
 
   /// 执行 JS 代码
-  Future<JSResult> evaluate(String code) async {
+  Future<JSResult> evaluate(String code, {Duration? timeout}) async {
     if (!_initialized || _engine == null) {
       return JSResult.error('JS Bridge not initialized');
     }
-    return await _engine!.evaluate(code);
+    return await _engine!.evaluate(code, timeout: timeout);
   }
 
   /// 执行 JS 代码（如果未初始化则加入延迟队列）
@@ -416,6 +421,9 @@ class JSBridgeManager {
 
     // 注册系统级 API
     await _registerSystemAPIs();
+
+    // 注册 HTTP 请求 API
+    await _registerHttpAPI();
 
     // 注册事件系统 API
     await _registerEventAPIs();
@@ -671,6 +679,52 @@ class JSBridgeManager {
       }
     });
 
+    // 6. sleep - 异步等待（QuickJS 无可靠 setTimeout，供脚本轮询间隔使用）
+    await _engine!.registerFunction('Aboutme_system_sleep', ([
+      dynamic a,
+    ]) async {
+      final ms = a is num ? a.toInt() : int.tryParse(a?.toString() ?? '') ?? 0;
+      if (ms > 0) {
+        await Future.delayed(Duration(milliseconds: ms));
+      }
+      return {'success': true, 'sleptMs': ms};
+    });
+
+    // 7. saveFile - 将 base64 数据保存为文件（相对 app_data 目录）
+    await _engine!.registerFunction('Aboutme_system_saveFile', ([
+      dynamic a,
+    ]) async {
+      try {
+        final params = a is Map<String, dynamic> ? a : <String, dynamic>{};
+        final relativePath = params['path']?.toString() ?? '';
+        final base64Data = params['base64']?.toString() ?? '';
+        if (relativePath.isEmpty || base64Data.isEmpty) {
+          throw Exception('缺少 path 或 base64 参数');
+        }
+
+        final bytes = Uint8List.fromList(base64Decode(base64Data));
+        await globalStorage.writeBytes(relativePath, bytes);
+
+        // 附加绝对路径便于定位（Web 平台没有文件系统，仅返回相对路径）
+        String? absolutePath;
+        try {
+          final rootDir = await StorageManager.appDataDirectory();
+          absolutePath = '${rootDir.path}/$relativePath';
+        } catch (e) {
+          absolutePath = null;
+        }
+
+        return {
+          'success': true,
+          'path': relativePath,
+          if (absolutePath != null) 'absolutePath': absolutePath,
+          'size': bytes.length,
+        };
+      } catch (e) {
+        return {'error': e.toString()};
+      }
+    });
+
     // 在 JS 中创建系统 API 代理
     await _engine!.evaluateDirect('''
       (function() {
@@ -708,6 +762,16 @@ class JSBridgeManager {
           return Aboutme_system_getTimestamp();
         };
 
+        // sleep - 等待指定毫秒（用于脚本轮询）
+        namespace.system.sleep = function(ms) {
+          return Aboutme_system_sleep(ms).then(parseResult);
+        };
+
+        // saveFile - 将 base64 数据保存为文件（相对 app_data 目录）
+        namespace.system.saveFile = function(opts) {
+          return Aboutme_system_saveFile(opts).then(parseResult);
+        };
+
         // 获取自定义日期（推荐使用，解决时区问题）
         namespace.system.getCustomDate = function(options) {
           return Aboutme_system_getCustomDate(options ? JSON.stringify(options) : '{}').then(parseResult);
@@ -729,6 +793,144 @@ class JSBridgeManager {
           },
           dialog: function(options) {
             return flutter.dialog(options);
+          },
+          // 用 json_dynamic_widget 渲染 JSON 并全屏展示
+          showJsonScreen: function(json, options) {
+            var jsonStr = typeof json === 'string' ? json : JSON.stringify(json);
+            var title = (options && options.title) || 'JSON UI';
+            return Aboutme_ui_showJsonScreen(jsonStr, title).then(parseResult);
+          }
+        };
+      })();
+    ''');
+  }
+
+  /// 注册 HTTP 请求 API（Aboutme.http.request）
+  ///
+  /// QuickJS 环境没有 fetch，脚本通过此 API 发起网络请求。
+  /// 参数：{ url, method?, headers?, body?, timeout?, responseType?, proxy? }，
+  /// timeout 单位秒默认 60；responseType 为 'base64' 时返回 bodyBase64（用于二进制下载）；
+  /// proxy 可显式指定代理（host:port），缺省时自动探测系统代理（被墙站点必须走代理）。
+  /// 返回：{ statusCode, headers, body } 或 { statusCode, headers, bodyBase64 }。
+  Future<void> _registerHttpAPI() async {
+    if (_engine == null) return;
+
+    await _engine!.registerFunction('Aboutme_http_request', ([
+      dynamic a,
+    ]) async {
+      try {
+        final params = a is Map<String, dynamic> ? a : <String, dynamic>{};
+        final url = params['url']?.toString() ?? '';
+        if (url.isEmpty) {
+          throw Exception('缺少 url 参数');
+        }
+
+        final method = (params['method']?.toString() ?? 'GET').toUpperCase();
+        final timeoutSec = params['timeout'] is num
+            ? (params['timeout'] as num).toInt()
+            : 60;
+        final wantBase64 = params['responseType']?.toString() == 'base64';
+        final proxy = params['proxy']?.toString();
+
+        final rawHeaders = params['headers'];
+        final headers = <String, String>{};
+        if (rawHeaders is Map) {
+          rawHeaders.forEach((k, v) => headers[k.toString()] = v.toString());
+        }
+
+        final body = params['body'];
+        String? bodyStr;
+        if (body is Map || body is List) {
+          bodyStr = jsonEncode(body);
+        } else if (body != null) {
+          bodyStr = body.toString();
+        }
+
+        final request = http.Request(method, Uri.parse(url));
+        request.headers.addAll(headers);
+        if (bodyStr != null) {
+          request.body = bodyStr;
+        }
+
+        // 走系统代理（或显式 proxy 参数），否则被墙站点会 Connection reset
+        final client = await createClientWithSystemProxy(
+          proxyUrl: (proxy == null || proxy.isEmpty) ? null : proxy,
+        );
+        try {
+          final response = await client
+              .send(request)
+              .timeout(Duration(seconds: timeoutSec));
+          final bytes = await response.stream.toBytes();
+
+          if (wantBase64) {
+            return {
+              'statusCode': response.statusCode,
+              'headers': response.headers,
+              'bodyBase64': base64Encode(bytes),
+            };
+          }
+          return {
+            'statusCode': response.statusCode,
+            'headers': response.headers,
+            'body': utf8.decode(bytes, allowMalformed: true),
+          };
+        } finally {
+          client.close();
+        }
+      } catch (e) {
+        return {'error': e.toString()};
+      }
+    });
+
+    // 注册 JSON 动态 UI 展示函数（供 Aboutme.plugins.ui.showJsonScreen 调用）
+    //
+    // 后台触发（无 UI 上下文）时返回 success:false 而非 error，
+    // 让脚本可以降级处理（如只 toast / 返回结果）而不是捕获异常
+    await _engine!.registerFunction('Aboutme_ui_showJsonScreen', ([
+      dynamic a,
+      dynamic b,
+    ]) async {
+      try {
+        final jsonStr = a?.toString() ?? '';
+        if (jsonStr.isEmpty) {
+          throw Exception('缺少 JSON 参数');
+        }
+        final title = b?.toString();
+        final decoded = jsonDecode(jsonStr);
+        if (decoded is! Map<String, dynamic>) {
+          throw Exception('JSON 必须是组件对象（含 type 字段）');
+        }
+
+        final context = Get.context;
+        if (context == null) {
+          return {'success': false, 'reason': 'no_context'};
+        }
+
+        await Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => JsonDynamicScreen(
+              title: (title == null || title.isEmpty) ? 'JSON UI' : title,
+              widgetJson: decoded,
+            ),
+          ),
+        );
+        return {'success': true};
+      } catch (e) {
+        return {'error': e.toString()};
+      }
+    });
+
+    // 在 JS 中创建 http 命名空间
+    await _engine!.evaluateDirect('''
+      (function() {
+        var namespace = globalThis.Aboutme;
+
+        namespace.http = {
+          request: function(opts) {
+            if (!opts || typeof opts !== 'object') {
+              return Promise.reject(new Error('request 需要参数对象 {url, method, headers, body, timeout}'));
+            }
+            return Aboutme_http_request(opts);
           }
         };
       })();

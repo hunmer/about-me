@@ -330,9 +330,14 @@ class ScriptManager extends ChangeNotifier {
   Future<void> _saveScriptConfig(String scriptId, Map<String, dynamic> config) async {
     try {
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
+      print('[ScriptConfigDebug] 7.写入配置文件: $configPath, data=$config');
       await loader.storage.write(configPath, config);
+      // 回读验证写入是否生效
+      final verify = await loader.storage.read(configPath);
+      print('[ScriptConfigDebug] 7.写入后回读验证: $verify');
       print('✅ 保存脚本配置成功: $scriptId -> $configPath');
     } catch (e) {
+      print('[ScriptConfigDebug] 7.❌ 写入配置异常: $e');
       _lastError = '保存脚本配置失败: $e';
       print('❌ $_lastError');
       rethrow;
@@ -341,6 +346,12 @@ class ScriptManager extends ChangeNotifier {
 
   /// 删除脚本
   Future<void> deleteScript(String scriptId) async {
+    // 内置脚本不可删除
+    final script = getScriptById(scriptId);
+    if (script?.isBuiltIn == true) {
+      throw Exception('内置脚本不可删除: ${script!.name}');
+    }
+
     try {
       // 从文件删除
       await loader.deleteScript(scriptId);
@@ -498,6 +509,7 @@ class ScriptManager extends ChangeNotifier {
 
     // 解析配置数据（实际填写的值）
     final configData = result['config'] as Map<String, dynamic>?;
+    print('[ScriptConfigDebug] saveScriptFromEditResult: id=${result['id']}, configData=${configData?.keys.toList()}');
 
     if (existingScript == null) {
       // 创建新脚本

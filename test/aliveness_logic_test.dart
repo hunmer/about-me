@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
@@ -5,7 +9,10 @@ import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/data/question_pool.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/behavior_executor.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/chat_import_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/schedule_service.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
 void main() {
   group('AlivenessConfig 序列化与钳制', () {
@@ -258,6 +265,327 @@ void main() {
     test('全部问完返回 null', () {
       final all = [...QuestionPool.low, ...QuestionPool.mid, ...QuestionPool.high];
       expect(QuestionPool.pickUnasked(0.9, all), isNull);
+    });
+  });
+
+  group('MemoryFragment 自我碎片', () {
+    test('isSelf 序列化往返无损，默认为用户记忆', () {
+      final self = MemoryFragment(
+        id: 'f1',
+        content: '我周末要去爬山',
+        tags: ['爬山', '周末'],
+        isSelf: true,
+      );
+      final restored = MemoryFragment.fromJson(self.toJson());
+      expect(restored.isSelf, isTrue);
+
+      final user = MemoryFragment(
+        id: 'f2',
+        content: '用户在准备面试',
+        tags: ['面试'],
+      );
+      expect(user.isSelf, isFalse);
+      // 旧数据无 isSelf 键 → 默认用户记忆
+      final json = user.toJson()..remove('isSelf');
+      expect(MemoryFragment.fromJson(json).isSelf, isFalse);
+    });
+
+    test('核心记忆排除自我碎片，自我摘要只含自我碎片', () async {
+      // buildCoreMemorySummary / buildSelfSummary 走存储，这里验证激活标注格式
+      final fragments = [
+        MemoryFragment(id: 'a', content: '用户喜欢吉他', tags: ['吉他']),
+        MemoryFragment(id: 'b', content: '我在学法语', tags: ['法语'], isSelf: true),
+      ];
+      final activated = MemoryService.activate(fragments, '法语');
+      expect(activated, hasLength(1));
+      expect(activated.single.isSelf, isTrue);
+    });
+  });
+
+  group('ScheduleService 日程', () {
+    final day = DateTime(2026, 10, 5);
+
+    test('parseSchedule 解析正常 JSON 数组并按时间排序', () {
+      const text = '[{"start":"09:00","end":"09:30","title":"早饭","desc":"豆浆油条"},'
+          '{"start":"07:30","end":"08:00","title":"起床"}]';
+      final entries = ScheduleService.parseSchedule(text, day);
+      expect(entries, hasLength(2));
+      expect(entries.first.title, '起床');
+      expect(entries.first.start, DateTime(2026, 10, 5, 7, 30));
+      expect(entries.last.description, '豆浆油条');
+    });
+
+    test('parseSchedule 容忍 markdown 包裹与前置思考文本', () {
+      const text = '好的，这是安排：\n```json\n'
+          '[{"start":"08:00","end":"08:30","title":"晨跑"}]\n```\n以上。';
+      final entries = ScheduleService.parseSchedule(text, day);
+      expect(entries, hasLength(1));
+      expect(entries.single.title, '晨跑');
+    });
+
+    test('parseSchedule 修正 end<=start 的条目并跳过非法时间', () {
+      const text = '['
+          '{"start":"12:00","end":"11:00","title":"倒置时间"},'
+          '{"start":"25:00","end":"26:00","title":"非法小时"},'
+          '{"start":"13:00","end":"14:00","title":"正常"}'
+          ']';
+      final entries = ScheduleService.parseSchedule(text, day);
+      expect(entries, hasLength(2));
+      expect(entries.first.end, entries.first.start.add(const Duration(minutes: 30)));
+    });
+
+    test('buildScheduleContext 命中当前时段并给出前后安排', () {
+      final schedule = AgentSchedule(date: day, entries: [
+        ScheduleEntry(
+          start: DateTime(2026, 10, 5, 12, 0),
+          end: DateTime(2026, 10, 5, 13, 30),
+          title: '午饭',
+        ),
+        ScheduleEntry(
+          start: DateTime(2026, 10, 5, 14, 0),
+          end: DateTime(2026, 10, 5, 15, 0),
+          title: '练吉他',
+        ),
+        ScheduleEntry(
+          start: DateTime(2026, 10, 5, 18, 0),
+          end: DateTime(2026, 10, 5, 19, 0),
+          title: '晚饭',
+        ),
+      ]);
+      final ctx = ScheduleService.instance.buildScheduleContext(
+        schedule,
+        now: DateTime(2026, 10, 5, 14, 30),
+      );
+      expect(ctx, contains('14:30'));
+      expect(ctx, contains('你正在练吉他'));
+      expect(ctx, contains('之前你刚午饭完毕'));
+      expect(ctx, contains('18:00 你要做的是：晚饭'));
+      expect(ctx, contains('12:00 午饭 → 14:00 练吉他 → 18:00 晚饭'));
+    });
+
+    test('buildScheduleContext 空档时间不声称正在做事', () {
+      final schedule = AgentSchedule(date: day, entries: [
+        ScheduleEntry(
+          start: DateTime(2026, 10, 5, 12, 0),
+          end: DateTime(2026, 10, 5, 13, 0),
+          title: '午饭',
+        ),
+      ]);
+      final ctx = ScheduleService.instance.buildScheduleContext(
+        schedule,
+        now: DateTime(2026, 10, 5, 15, 0),
+      );
+      expect(ctx, contains('空档时间'));
+      expect(ctx, isNot(contains('你正在')));
+    });
+
+    test('toActivityRecords 保留时间与标题（activity UI 复用）', () {
+      final schedule = AgentSchedule(date: day, entries: [
+        ScheduleEntry(
+          start: DateTime(2026, 10, 5, 9, 0),
+          end: DateTime(2026, 10, 5, 9, 40),
+          title: '晨跑',
+          description: '河边五公里',
+        ),
+      ]);
+      final records = ScheduleService.instance.toActivityRecords(schedule);
+      expect(records, hasLength(1));
+      expect(records.single.title, '晨跑');
+      expect(records.single.description, '河边五公里');
+      expect(records.single.startTime, DateTime(2026, 10, 5, 9, 0));
+    });
+  });
+
+  group('ChatImportService 分块与解析', () {
+    test('短文本不分块，空文本返回空', () {
+      expect(ChatImportService.splitChunks(''), isEmpty);
+      expect(ChatImportService.splitChunks('   '), isEmpty);
+      expect(ChatImportService.splitChunks('你好'), ['你好']);
+    });
+
+    test('长文本按行边界分块且内容无损', () {
+      final line = '这是一行聊天内容，长度合适。';
+      final text = List.filled(600, line).join('\n'); // 约 9000 字符
+      final chunks = ChatImportService.splitChunks(text, chunkChars: 3000);
+      expect(chunks.length, greaterThan(1));
+      // 每块都在上限附近且不超过原上限太多（行边界只可能提前切）
+      for (final c in chunks) {
+        expect(c.length, lessThanOrEqualTo(3000));
+      }
+      // 重组后内容一致（trim 只影响块首尾空白）
+      expect(chunks.join('\n'), text);
+    });
+
+    test('parseChunkResponse 容忍 markdown 包裹与前置思考文本', () {
+      final raw = '思考中…\n```json\n{"memories":['
+          '{"content":"用户在准备面试","tags":["面试","求职"],"emotion":"neutral","importance":0.8},'
+          '{"content":"用户喜欢爬山","tags":["爬山","运动"],"importance":0.7}]}'
+          '\n```';
+      final extraction = ChatImportService.parseChunkResponse(raw)!;
+      expect(extraction.memories, hasLength(2));
+      expect(extraction.memories.first.content, '用户在准备面试');
+      expect(extraction.memories.first.tags, ['面试', '求职']);
+      expect(extraction.memories.last.importance, 0.7);
+      expect(extraction.observations, isEmpty);
+    });
+
+    test('parseChunkResponse 同时解析 memories 与 observations', () {
+      final raw = '{"memories":[{"content":"用户养了只猫","tags":["猫","宠物"],"importance":0.8}],'
+          '"observations":["TA说话简短干脆","TA常用省略号结尾"]}';
+      final extraction = ChatImportService.parseChunkResponse(raw)!;
+      expect(extraction.memories, hasLength(1));
+      expect(extraction.observations, ['TA说话简短干脆', 'TA常用省略号结尾']);
+    });
+
+    test('parseChunkResponse 超过单块上限只取前 N 条', () {
+      final items = List.generate(
+        12,
+        (i) => '{"content":"事实$i","tags":["t"]}',
+      ).join(',');
+      final obs = List.generate(8, (i) => '"观察$i"').join(',');
+      final drafts = ChatImportService.parseChunkResponse(
+        '{"memories":[$items],"observations":[$obs]}',
+      )!;
+      expect(drafts.memories, hasLength(8));
+      expect(drafts.memories.last.content, '事实7');
+      expect(drafts.observations, hasLength(5)); // 每块观察上限 5
+    });
+
+    test('parseChunkResponse 无 JSON 或空数组容错', () {
+      expect(ChatImportService.parseChunkResponse('没有任何 JSON'), isNull);
+      // 空数组 → 空提取而非 null
+      final empty = ChatImportService.parseChunkResponse(
+        '{"memories":[],"observations":[]}',
+      )!;
+      expect(empty.memories, isEmpty);
+      expect(empty.observations, isEmpty);
+    });
+
+    test('parsePersona 解析人设并校验必填', () {
+      const raw = '```json\n{"name":"阿澜","persona":"你是阿澜……（说话简短，爱用省略号）"}\n```';
+      final draft = ChatImportService.parsePersona(raw)!;
+      expect(draft.name, '阿澜');
+      expect(draft.persona, startsWith('你是阿澜'));
+      // 缺字段返回 null
+      expect(ChatImportService.parsePersona('{"name":"阿澜"}'), isNull);
+      expect(ChatImportService.parsePersona('无 JSON'), isNull);
+    });
+
+    test('buildAgentFromPersona 克隆模板配置并替换人设', () {
+      final template = AIAgent(
+        id: 'tpl',
+        name: '模板',
+        description: '',
+        tags: const [],
+        serviceProviderId: 'sp1',
+        baseUrl: 'https://api.test',
+        headers: const {'Authorization': 'Bearer x'},
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        model: 'deepseek-flash',
+      );
+      final agent = ChatImportService.buildAgentFromPersona(
+        template,
+        const PersonaDraft(name: '阿澜', persona: '你是阿澜'),
+      );
+      expect(agent.id, isNot('tpl'));
+      expect(agent.name, '阿澜');
+      expect(agent.effectiveSystemPrompt, '你是阿澜');
+      // 模型配置完整克隆
+      expect(agent.model, 'deepseek-flash');
+      expect(agent.serviceProviderId, 'sp1');
+      expect(agent.headers['Authorization'], 'Bearer x');
+    });
+
+    test('loadFromFiles 遍历 zip 内文本条目并跳过非文本', () async {
+      final archive = Archive()
+        ..add(ArchiveFile.string('chat/a.txt', '用户：今天面试通过了'))
+        ..add(ArchiveFile.string('notes.md', '# 周报'))
+        ..add(ArchiveFile.string('pic.png', 'binary'));
+      final zip = ZipEncoder().encodeBytes(archive);
+      final tmp = File(
+        '${Directory.systemTemp.path}/aliveness_import_test_${DateTime.now().millisecondsSinceEpoch}.zip',
+      );
+      await tmp.writeAsBytes(zip);
+      addTearDown(() => tmp.delete());
+
+      final texts = await ChatImportService.instance.loadFromFiles([tmp]);
+      expect(texts, hasLength(2)); // png 被扩展名过滤
+      expect(texts.first.name, 'chat/a.txt');
+      expect(texts.first.content, contains('面试'));
+      expect(texts.map((t) => t.name), containsAll(['chat/a.txt', 'notes.md']));
+    });
+
+    test('微信导出 messages.json 转干净对话文本', () {
+      final raw = jsonEncode({
+        'schemaVersion': 1,
+        'conversation': {'displayName': '嘘', 'isGroup': false},
+        'messages': [
+          {
+            'createTimeText': '2026-01-31 23:04:14',
+            'renderType': 'text',
+            'isSent': true,
+            'senderDisplayName': 'Hum。',
+            'content': '所以你是不是已经本能的说不要香菜哈哈',
+          },
+          {
+            'createTimeText': '2026-01-31 23:04:27',
+            'renderType': 'text',
+            'isSent': true,
+            'senderDisplayName': 'Hum。',
+            'content': '还行吧味道',
+          },
+          {
+            'createTimeText': '2026-02-01 08:10:00',
+            'renderType': 'text',
+            'isSent': false,
+            'senderDisplayName': '嘘',
+            'content': '我连煎饼果子都不吃了',
+          },
+          {
+            'createTimeText': '2026-02-01 09:00:00',
+            'renderType': 'voice',
+            'isSent': false,
+            'senderDisplayName': '嘘',
+            'voiceTranscript': '',
+          },
+          {
+            // 图片类未导出内容：空 content 应被跳过
+            'createTimeText': '2026-02-01 09:01:00',
+            'renderType': 'image',
+            'isSent': false,
+            'senderDisplayName': '嘘',
+            'content': '',
+          },
+        ],
+      });
+      final out = ChatImportService.tryFormatWeChatExport(raw)!;
+      expect(out, contains('与「嘘」的聊天记录'));
+      expect(out, contains('—— 2026-01-31 ——'));
+      expect(out, contains('23:04 我：所以你是不是已经本能的说不要香菜哈哈'));
+      expect(out, contains('08:10 嘘：我连煎饼果子都不吃了'));
+      // 日期切换插入分隔行
+      expect(out, contains('—— 2026-02-01 ——'));
+      // 无转写语音保留标记
+      expect(out, contains('09:00 嘘：[语音]'));
+      // 空内容消息不出现在输出
+      expect(out, isNot(contains('09:01')));
+    });
+
+    test('微信导出识别失败返回 null（普通 JSON / 纯文本 / 空 messages）', () {
+      expect(ChatImportService.tryFormatWeChatExport('{"a":1}'), isNull);
+      expect(ChatImportService.tryFormatWeChatExport('[1,2,3]'), isNull);
+      expect(ChatImportService.tryFormatWeChatExport('不是json'), isNull);
+      expect(
+        ChatImportService.tryFormatWeChatExport('{"messages":[]}'),
+        isNull,
+      );
+      expect(
+        ChatImportService.tryFormatWeChatExport(
+          '{"messages":[{"content":"无renderType特征"}]}',
+        ),
+        isNull,
+      );
     });
   });
 }

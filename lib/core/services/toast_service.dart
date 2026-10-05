@@ -379,7 +379,9 @@ class ToastService implements IToastServiceWithInit {
     styled_toast.ToastManager().dismissAll();
 
     // 同时也取消 FlutterToast
-    fluttertoast.Fluttertoast.cancel();
+    // 桌面端无该插件实现，MissingPluginException 是异步抛出，必须捕获
+    // 否则成为 uncaught zone error
+    fluttertoast.Fluttertoast.cancel().catchError((_) => false);
   }
 
   @override
@@ -425,7 +427,7 @@ class ToastService implements IToastServiceWithInit {
       backgroundColor: bgColor,
       textColor: txtColor,
       fontSize: fontSize ?? 16.0,
-    );
+    ).catchError((_) => false); // 桌面端无插件实现，异步错误需捕获
   }
 
   /// 使用 SnackBar 显示消息（Web 和桌面端）

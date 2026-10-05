@@ -671,7 +671,7 @@ class MobileJSEngine implements JSEngine {
   }
 
   @override
-  Future<JSResult> evaluate(String code) async {
+  Future<JSResult> evaluate(String code, {Duration? timeout}) async {
     try {
       // 生成唯一的执行 ID
       final executionId =
@@ -751,10 +751,11 @@ class MobileJSEngine implements JSEngine {
         await Future.delayed(Duration(milliseconds: 10));
       }
 
-      // 轮询结果（最多等待 5 秒）
+      // 轮询结果（默认约 60 秒，可由 timeout 参数覆盖）
       String? resultStr;
       int retryCount = 0;
-      const maxRetries = 100 * 12; // 100 * 50ms = 5 秒
+      final effectiveTimeout = timeout ?? const Duration(seconds: 60);
+      final maxRetries = effectiveTimeout.inMilliseconds ~/ 50;
 
       while (retryCount < maxRetries) {
         // 1. 处理待处理的 Promise 调用（不依赖 setTimeout）
@@ -826,7 +827,9 @@ class MobileJSEngine implements JSEngine {
       }
       // 处理超时
       if (resultStr == null) {
-        return JSResult.error('执行超时：代码未在 5 秒内返回结果');
+        return JSResult.error(
+          '执行超时：代码未在 ${effectiveTimeout.inSeconds} 秒内返回结果',
+        );
       }
 
       // 检查错误
