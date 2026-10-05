@@ -172,16 +172,6 @@ class MessageBubble extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Token统计
-                      Text(
-                        TokenCounterService.formatTokenCountShort(
-                          message.tokenCount,
-                        ),
-                        style: TextStyle(fontSize: 11, color: theme.textSub),
-                      ),
-
-                      const SizedBox(width: 8),
-
                       // 时间
                       Text(
                         _formatTime(message.timestamp),

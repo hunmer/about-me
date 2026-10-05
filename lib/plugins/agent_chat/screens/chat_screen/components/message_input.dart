@@ -315,6 +315,11 @@ class _MessageInputState extends State<MessageInput> {
                     child: AgentChatTextInput(
                       controller: _textController,
                       focusNode: _focusNode,
+                      onSubmitted: (_) {
+                        if (_canSendMessage()) {
+                          _sendMessage();
+                        }
+                      },
                       enabled: widget.controller.currentAgent != null,
                       backgroundColor: Colors.transparent,
                       hintText: widget.controller.currentAgent != null

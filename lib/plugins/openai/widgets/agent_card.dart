@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/widgets/common/agent_card.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_detail_dialog.dart';
 
 /// Agent 卡片组件
 ///
@@ -77,6 +78,11 @@ class _AgentCardState extends State<AgentCard> {
     );
   }
 
+  /// 展示角色卡详情弹窗
+  void _showAgentDetail() {
+    AgentDetailDialog.show(context, agent, onEdit: _editAgent);
+  }
+
   /// 编辑 Agent
   void _editAgent() {
     NavigationHelper.openContainerWithHero(
@@ -106,7 +112,7 @@ class _AgentCardState extends State<AgentCard> {
       avatarUrl: agent.avatarUrl,
       iconCodePoint: agent.icon?.codePoint,
       iconColorValue: agent.iconColor?.value,
-      onTap: () => _editAgent(),
+      onTap: () => _showAgentDetail(),
       onLongPress: () => _showActionMenu(context),
     );
   }
