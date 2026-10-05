@@ -12,6 +12,7 @@
 
 | 模块 | 说明 | 文档 |
 |-----|------|-----|
+| jelly_home | 果冻小屋主页（**默认启动页**，四页签 + Live2D 伙伴） | [查看](jelly_home/CLAUDE.md) |
 | home_screen | 主屏幕，插件卡片布局和小组件系统 | [查看](home_screen/CLAUDE.md) |
 | settings_screen | 设置界面 | [查看](settings_screen/CLAUDE.md) |
 
@@ -25,9 +26,11 @@
 
 **主要文件**:
 - `jelly_home_screen.dart` - 主页入口
-- `companion_controller.dart` - Live2D 伙伴控制器（经 agent_chat/openai 请求链对话，TTS 朗读）
+- `companion_controller.dart` - 陪伴数值控制器（离线结算 + SharedPreferences）
 - `live2d_online_models.dart` / `live2d_online_model_page.dart` - 在线 Live2D 模型浏览
-- `widgets/` - jelly_bottom_nav、jelly_companion_card、jelly_live2d、jelly_profile_card、jelly_stat_card
+- `widgets/` - jelly_bottom_nav、jelly_companion_card、jelly_live2d（核心角色视图，约 1180 行）、jelly_profile_card、jelly_stat_card 等
+
+**详细文档**: [jelly_home/CLAUDE.md](jelly_home/CLAUDE.md)
 
 ---
 

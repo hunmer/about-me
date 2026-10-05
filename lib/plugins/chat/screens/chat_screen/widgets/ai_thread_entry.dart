@@ -53,11 +53,15 @@ class _AiThreadEntryState extends State<AiThreadEntry> {
     final isThinking = thread.isThinking;
     if (replyCount == 0 && !isThinking) return const SizedBox.shrink();
 
+    // 跟随消息气泡的对齐方向：用户消息（右）→ 入口落右下角，其余落左下角
+    final isSent = widget.message.type == MessageType.sent;
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 44, top: 2, bottom: 6),
+      padding: isSent
+          ? const EdgeInsets.only(right: 8, top: 2, bottom: 6)
+          : const EdgeInsets.only(left: 44, top: 2, bottom: 6),
       child: Align(
-        alignment: Alignment.centerLeft,
+        alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: replyCount > 0 ? () => _openDrawer(context, thread) : null,

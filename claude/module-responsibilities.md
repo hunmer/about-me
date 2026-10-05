@@ -38,7 +38,7 @@
 | nfc | NFC：近场通信读写 | [查看](../lib/plugins/nfc/CLAUDE.md) |
 | nodes | 节点：笔记本树结构 | [查看](../lib/plugins/nodes/CLAUDE.md) |
 | notes | 笔记：无限层级、全文搜索 | [查看](../lib/plugins/notes/CLAUDE.md) |
-| openai | AI 助手：多服务商、数据分析 | [查看](../lib/plugins/openai/CLAUDE.md) |
+| openai | AI 中枢：多服务商、Agent/预设管理、**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息/语音，2026-10-04）、**moments 朋友圈**（AI 动态流/资产图/自主生图，2026-10-05） | [查看](../lib/plugins/openai/CLAUDE.md) |
 | reminder | 定时提醒：本地通知、每天/每周/每月调度、错过补触发 | [查看](../lib/plugins/reminder/CLAUDE.md) |
 | scripts_center | 脚本中心：JS 脚本管理 | [查看](../lib/plugins/scripts_center/CLAUDE.md) |
 | store | 物品兑换：积分系统 | [查看](../lib/plugins/store/CLAUDE.md) |
@@ -47,7 +47,7 @@
 | tracker | 目标追踪：量化目标、数据记录 | [查看](../lib/plugins/tracker/CLAUDE.md) |
 | tts | 文本转语音：系统 TTS + HTTP API | [查看](../lib/plugins/tts/CLAUDE.md) |
 | webview | WebView：浏览器、应用商店 | [查看](../lib/plugins/webview/CLAUDE.md) |
-| live2d | Live2D 看板娘桌宠：气泡对话（经 agent_chat/openai）、TTS 自动朗读、在线模型仓库 | 无独立文档（见 [lib/plugins/CLAUDE.md](../lib/plugins/CLAUDE.md)） |
+| live2d | Live2D 桌宠：存档管理（模型+绑定 Agent）、TTS 自动朗读、在线模型仓库（渲染层在 jelly_home） | [查看](../lib/plugins/live2d/CLAUDE.md) |
 
 ## 服务端与子包（`packages/`，详见 [packages/CLAUDE.md](../packages/CLAUDE.md)）
 
@@ -55,7 +55,7 @@
 |------|------|
 | `packages/server-nodejs` | 同步服务器：Express + TS，JWT/API Key 认证、端到端加密、文件同步、WebSocket 实时同步、19 插件 REST API、服务端插件系统、Vue3 管理面板 |
 | `packages/server-nodejs/src/mcp/` | 内置 MCP 端点（/mcp，Streamable HTTP）：向 AI 工具暴露 12 个插件域、75 个工具 |
-| `packages/agentlib` | 本地 Dart 包：OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient），被 openai 插件等使用 |
+| `packages/agentlib` | 本地 Dart 包：OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient + agent_slots 资源槽位模型），被 openai 与 agent_chat 插件使用（[文档](../packages/agentlib/CLAUDE.md)） |
 | `packages/super_cupertino_navigation_bar` | 本地 Dart 包：iOS 风格大标题导航栏 UI 库 |
 | `packages/floating_ball_plugin` | 系统级悬浮球原生插件 |
 | `packages/aboutme_foreground_service` | 前台服务（封装 flutter_foreground_task） |
@@ -71,7 +71,7 @@
 | `shared_models/` | 客户端/服务端共享 Dart 模型：Repository 接口、UseCase、同步协议、工具类 |
 | `online/` | WebView 小程序仓库（4 应用 + preload 工具注册）、在线脚本、AI Agent 配置（[文档](../online/CLAUDE.md)） |
 | `docs/` | 67 篇专题文档：小组件、快捷方式、统一计时器、Live Activities、各原生插件实现等 |
-| `handoff/` | Agent 会话交接底稿（设计系统迁移、Live2D 迭代、agentlib/store 跟进） |
+| `handoff/` | Agent 会话交接底稿（设计系统迁移、Live2D 迭代、agentlib/store 跟进、ai-image 脚本中心、活人感系统） |
 | `scripts/` | 多平台构建与发布脚本（有自己的 [scripts/CLAUDE.md](../scripts/CLAUDE.md)） |
 | `tool_templates/` | 插件工具模板（bill / calendar_album / store） |
 | `android/ ios/ macos/ linux/ windows/ web/` | 各平台宿主工程 |

@@ -23,7 +23,7 @@
 |------|------|----------|------|
 | `server-nodejs/` | Node 服务 | 同步服务器：REST/WS、认证、E2E 加密、19 插件 API、服务端插件系统、Vue3 管理面板 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
 | `server-nodejs/src/mcp/` | server-nodejs 内置 | MCP 端点（/mcp，Streamable HTTP）：向 AI 暴露 12 插件域 75 工具 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
-| `agentlib/` | Dart 库 | OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient，openai 插件消费） | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
+| `agentlib/` | Dart 库 | OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient，openai 与 agent_chat 消费） | [agentlib/CLAUDE.md](agentlib/CLAUDE.md) |
 | `super_cupertino_navigation_bar/` | Dart 库 | iOS 风格大标题导航栏 UI 库 | 无独立文档（`docs/SUPER_CUPERTINO_*`） |
 | `floating_ball_plugin/` | 原生插件 | 系统级悬浮球 | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
 | `aboutme_foreground_service/` | 原生插件 | 前台服务（封装 flutter_foreground_task） | 无独立文档 |
@@ -34,7 +34,7 @@
 
 ## 扫描状态
 
-- 更新时间：2026-09-14（第四轮增量：删除 api_forwarding_server / mcp-aboutme-server，新增 agentlib / super_cupertino_navigation_bar 条目）
-- 已扫描：9 个现存子包的 pubspec/package.json、server-nodejs 与内置 mcp 的源码结构、`aboutme_widgets` Dart API 与 Provider 全景、`server-nodejs/admin-vue` 源码与端点清单、agentlib 导出面（4 个 Dart 文件）。
+- 更新时间：2026-10-05（第五轮增量：agentlib 建独立文档并补 agent_chat 消费方；核实 server-nodejs 9-15 WS/预热变更）
+- 已扫描：9 个现存子包的 pubspec/package.json、server-nodejs 与内置 mcp 的源码结构、`aboutme_widgets` Dart API 与 Provider 全景、`server-nodejs/admin-vue` 源码与端点清单、agentlib 全量源码与 20 个消费点。
 - 未深扫：其余 5 个原生插件（intent/nfc/foreground_service/notifications/floating_ball）的 android/ios 平台代码；server-nodejs 各 handler 实现细节与 plugins 运行时目录；super_cupertino_navigation_bar 源码。
 - 下一步建议：为 `aboutme_intent`（121 文件）与 `aboutme_nfc`（113 文件）补充独立文档。

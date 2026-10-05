@@ -19,6 +19,8 @@ import 'package:aboutme/plugins/openai/aliveness/services/keepalive_service.dart
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/state_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dart';
+import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -35,6 +37,9 @@ class ProactiveService {
   static const _idleThreshold = Duration(hours: 4);
   /// 每次 tick 的闲置触发概率（期望约 20 分钟内命中一次）
   static const _idleChance = 0.05;
+  /// 闲置思念命中后改发朋友圈（而非聊天消息）的概率：
+  /// 发动态不打扰用户、不依赖上次互动频道，可适度更活跃
+  static const _momentChance = 0.3;
 
   Timer? _timer;
   final _rng = Random();
@@ -142,6 +147,12 @@ class ProactiveService {
       debugPrint('[Aliveness][主动] 闲置思念触发 | '
           '距上次互动=${last == null ? "从未" : "${now.difference(last).inHours}h"} '
           '亲密度=${state.intimacy.toStringAsFixed(2)}');
+      // 分流：按概率改为发朋友圈（不打扰用户、不依赖上次互动频道）
+      if (_rng.nextDouble() < _momentChance) {
+        await _postProactiveMoment(agent, state);
+        await _recordProactive(agent.id, stats, config, countToday, now);
+        return;
+      }
       triggerInstruction =
           '你已经有一段时间没和用户说话了，突然想起了 TA。'
           '像真人一样主动发一条消息：可以是你突然想到的事、或者自然地表达想念。'
@@ -159,12 +170,61 @@ class ProactiveService {
     await _sendProactive(agent, channelId, state, triggerInstruction);
 
     // ---- 更新统计（计数 + 冷却） ----
-    stats['proactiveDateKey'] = todayKey;
+    await _recordProactive(agent.id, stats, config, countToday, now);
+  }
+
+  /// 记录一次主动行为（计数 + 冷却，朋友圈与聊天消息共用）
+  Future<void> _recordProactive(
+    String agentId,
+    Map<String, dynamic> stats,
+    AlivenessConfig config,
+    int countToday,
+    DateTime now,
+  ) async {
+    stats['proactiveDateKey'] = '${now.year}-${now.month}-${now.day}';
     stats['proactiveCountToday'] = countToday + 1;
     stats['cooldownUntil'] = now
         .add(Duration(minutes: config.proactiveCooldownMin))
         .toIso8601String();
-    await _store.saveStats(agent.id, stats);
+    await _store.saveStats(agentId, stats);
+  }
+
+  /// 闲置思念分流：自主发一条朋友圈（零成本配图=随机引用已有资产图）
+  Future<void> _postProactiveMoment(AIAgent agent, AgentState state) async {
+    final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
+    final system = '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
+        '【任务】你现在想发一条朋友圈动态，分享此刻的心情、见闻或生活琐事。\n'
+        '只输出动态文案本身（1~2句话），像真人发朋友圈的语气，不要引号、不要解释。\n';
+
+    final content = await RequestService.chat(
+      '（朋友圈）',
+      agent,
+      contextMessages: [ChatCompletionMessage.system(content: system)],
+    );
+    final text = content.trim();
+    if (text.isEmpty || text.startsWith('Error:')) return;
+
+    // 零成本配图：若已有生成好的资产图，一半概率随机引用一张
+    var images = const <String>[];
+    try {
+      final ready =
+          (await AgentAssetsService.instance.getAssets(agent.id))
+              .where((a) => a.hasImage)
+              .toList();
+      if (ready.isNotEmpty && _rng.nextBool()) {
+        images = [ready[_rng.nextInt(ready.length)].path!];
+      }
+    } catch (_) {}
+
+    await MomentsService.instance.addPost(
+      agentId: agent.id,
+      text: text,
+      images: images,
+      source: 'agent',
+    );
+    final preview = text.length > 30 ? '${text.substring(0, 30)}…' : text;
+    debugPrint('[Aliveness][主动] 已发朋友圈 | agent=${agent.name} '
+        '配图=${images.isEmpty ? "无" : "资产图"} 内容="$preview"');
   }
 
   /// 免打扰：支持跨午夜区间（如 [23, 8]）

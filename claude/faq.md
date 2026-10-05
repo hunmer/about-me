@@ -17,6 +17,12 @@ A：原生实现在 `packages/aboutme_widgets`（Android/iOS）；客户端侧�
 **Q：AI 集成有几条路径？**
 A：① 应用内 `lib/plugins/openai`（多服务商）与 `lib/plugins/agent_chat`（工具调用，工具定义在 `lib/plugins/agent_chat/tools/`）；② 外部 AI 工具走 server-nodejs 内置 MCP 端点 `POST /mcp`（Streamable HTTP，`aboutme_{plugin}_{action}` 工具）；③ `online/agents.json` 为 Agent 配置示例。
 
+**Q：AI 回复"变慢/分条/有时不回"是怎么回事？（aliveness 活人感）**
+A：agent 开启 alivenessConfig 后消息进入 `lib/plugins/openai/aliveness/` 编排器：先缓冲（时长随亲密度/惰性变化）再决策（Jev 或本地规则，允许已读不回）→ 分条气泡或语音。排查入口：决策日志页（`aliveness/screens/decision_log_screen.dart`）与 `openai/aliveness/<agentId>/decisions.log`。详见 [openai 子系统职责](../lib/plugins/openai/claude/module-responsibilities.md)。
+
+**Q：Live2D 相关代码在哪？**
+A：数据与设置在 `lib/plugins/live2d/`，渲染核心（JellyLive2D，约 1180 行）与在线模型目录在 `lib/screens/jelly_home/`——两边互相引用，改渲染要同时验证插件预览。`/live2d` 路由指向**设置页**。
+
 **Q：JS 脚本 / 小程序生态如何组织？**
 A：JS 引擎与 API 桥在 `lib/core/js_bridge/`；用户脚本由 `lib/plugins/scripts_center` 管理；小程序仓库在 `online/apps/`（`apps.json` 清单，WebView 加载）；示例见 `docs/script_examples/`。
 

@@ -19,12 +19,14 @@ class ImageGenService {
   /// 生成图片，返回归档后的相对路径列表（'./openai/moments/images/xxx.png'）
   ///
   /// [refImageAbsolutePaths] 参考图（图生图），本地绝对路径
+  /// [calledFrom] 执行记录触发来源标记（agent 工具传 'agent_tool'）
   Future<List<String>> generate({
     required String prompt,
     List<String> refImageAbsolutePaths = const [],
     String? aspectRatio,
     int n = 1,
     String? archiveDir,
+    String? calledFrom,
   }) async {
     final archive = archiveDir ?? MomentsService.imagesDir;
     final dynamic plugin;
@@ -37,6 +39,7 @@ class ImageGenService {
       'prompt': prompt,
       'showUi': false, // 后台调用不弹结果页（v1.3.3+ 支持）
       'n': n,
+      if (calledFrom != null) 'calledFrom': calledFrom,
       if (refImageAbsolutePaths.isNotEmpty) 'image': refImageAbsolutePaths,
       if (aspectRatio != null && aspectRatio.isNotEmpty)
         'aspectRatio': aspectRatio,

@@ -8,17 +8,21 @@ import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
-/// 朋友圈动态卡片（Instagram 风格：头像 + 名字 + 时间 + 文案 + 图片区）
+/// 朋友圈动态卡片（Instagram 风格：头像 + 名字 + 时间 + 文案 + 图片区 + 互动）
 class MomentCard extends StatelessWidget {
   final MomentPost post;
   final AIAgent? agent;
   final VoidCallback? onDelete;
+  final VoidCallback? onToggleLike;
+  final ValueChanged<String>? onAddComment;
 
   const MomentCard({
     super.key,
     required this.post,
     required this.agent,
     this.onDelete,
+    this.onToggleLike,
+    this.onAddComment,
   });
 
   @override
@@ -72,9 +76,77 @@ class MomentCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildImages(context),
             ],
+            const SizedBox(height: 8),
+            _buildActions(theme),
+            if (post.comments.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _buildComments(theme),
+            ],
             const SizedBox(height: 12),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 互动行：点赞红心 + 评论按钮
+  Widget _buildActions(ThemeData theme) {
+    return Row(
+      children: [
+        _IconAction(
+          icon: post.liked ? Icons.favorite : Icons.favorite_border,
+          color: post.liked ? Colors.redAccent : theme.hintColor,
+          label: post.liked ? '已赞' : '赞',
+          onTap: onToggleLike,
+        ),
+        const SizedBox(width: 24),
+        _IconAction(
+          icon: Icons.chat_bubble_outline,
+          color: theme.hintColor,
+          label: '评论',
+          onTap: onAddComment != null ? () => onAddComment!('') : null,
+        ),
+      ],
+    );
+  }
+
+  /// 评论列表：agent 名字高亮，用户名显示"我"
+  Widget _buildComments(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.disabledColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final c in post.comments)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: c.isAgent ? (agent?.name ?? 'TA') : '我',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: c.isAgent
+                            ? theme.colorScheme.primary
+                            : theme.hintColor,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '：${c.text}',
+                      style: const TextStyle(fontSize: 13, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -147,6 +219,43 @@ class MomentCard extends StatelessWidget {
               ),
             ],
           ),
+    );
+  }
+}
+
+/// 互动图标按钮
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _IconAction({
+    required this.icon,
+    required this.color,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 13, color: color),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

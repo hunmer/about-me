@@ -41,9 +41,9 @@
 - **GroupSelectorDialog**：分组选择器，支持增删改
 - **SimpleGroupSelector**：简单分组选择器，仅支持选择
 
-### 2.5 表单字段库（`form_fields/`，50 文件，2026-09 新增）
+### 2.5 表单字段库（`form_fields/`，50 文件，约 9900 行，2026-09 新增）
 
-统一的插件表单字段组件库，`FormFieldConfig` 配置驱动，覆盖金额输入、头像/图标/颜色/日期/日期范围选择、分类与标签 chip、日历条、自定义字段、事件多选等 20+ 字段类型；`builders/` 提供字段构建器。消费方为各插件的编辑表单（bill、todo、habits 等）；示例页见 `screens/form_fields_test/` 与 `screens/widgets_gallery/`。
+配置驱动的统一表单库：`FormConfig`/`FormFieldConfig`（约 30 参数，支持 visible 条件显示）→ `FormBuilderWrapper` 主入口（包裹 `flutter_form_builder`，按 `FormFieldType` **31 种枚举**分发到 `builders/` 的约 33 个 `buildXxxField` 工厂函数）。字段组件含通用输入（text/textarea/select/switch/slider）、picker 类（date/time/dateRange/calendarStrip/icon/avatar/circleIcon/image/location）、复合类（tags/customFields/eventMultiSelect 等）与插件专用类（amount/expenseType/subscriptionCycle/timerItems/reminderDate 等，最大 field_type_selector_field.dart 621 行）。基类 `FormFieldWrapper/FormFieldWrapperState` 统一 didChange/取值协议；视觉走 design_system 令牌（`base_builder.dart`）。消费方为 19 个插件的 32 个文件（bill/todo/habits/openai/scripts_center/store/timer/database/contact 等）；示例见 `screens/widgets_gallery/`。
 
 ### 3. 对话框类
 - **TagManagerDialog**：标签管理对话框，功能强大的标签管理系统
@@ -594,11 +594,12 @@ lib/widgets/
 ├── app_bar_widget.dart                         # 应用栏组件
 ├── app_drawer.dart                             # 应用抽屉
 │
-├── form_fields/                                # 表单字段库（50 文件，FormFieldConfig 驱动）
-│   ├── config.dart / types.dart                # 字段配置与类型定义
-│   ├── *_field.dart                            # 各字段组件（amount/avatar/calendar_strip/
-│                                              #   category/chip/circle_icon/color/date/...）
-│   └── builders/                               # 字段构建器
+├── form_fields/                                # 表单字段库（50 文件，31 种 FormFieldType）
+│   ├── index.dart / config.dart / types.dart   # 组件桶 / 表单与字段配置 / 字段类型枚举
+│   ├── form_builder_wrapper.dart              # 主入口：配置驱动动态生成表单
+│   ├── form_field_wrapper.dart                # 字段基类（统一 didChange/取值协议）
+│   ├── *_field.dart                            # 44 个字段组件（通用/picker/插件专用）
+│   └── builders/                               # 6 文件约 33 个 buildXxxField 工厂函数
 │
 ├── markdown_editor/                            # Quill 富文本编辑器模块
 │   ├── index.dart                              # 导出文件

@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:agentlib/openai_compat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/services/request_service.dart';
 
 /// Agent 朋友圈动态服务
 ///
@@ -19,6 +24,9 @@ class MomentsService extends ChangeNotifier {
 
   static const _postsPath = 'openai/moments/posts.json';
   static const _maxPosts = 500;
+
+  /// 单帖图片数上限（多图网格 3 列展示）
+  static const maxImagesPerPost = 9;
   static const imagesDir = 'openai/moments/images';
 
   /// 工具执行上下文：当前会话与其 agent
@@ -51,7 +59,7 @@ class MomentsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 发布动态（新帖插到最前）
+  /// 发布动态（新帖插到最前；图片数超过上限时截断）
   Future<MomentPost> addPost({
     required String agentId,
     required String text,
@@ -63,7 +71,7 @@ class MomentsService extends ChangeNotifier {
       id: const Uuid().v4(),
       agentId: agentId,
       text: text,
-      images: List.of(images),
+      images: List.of(images.take(maxImagesPerPost)),
       createdAt: DateTime.now(),
       source: source,
     );
@@ -79,6 +87,100 @@ class MomentsService extends ChangeNotifier {
     await loadPosts();
     _posts.removeWhere((p) => p.id == postId);
     await _save();
+  }
+
+  // ---------- 点赞 / 评论 ----------
+
+  /// 切换点赞状态
+  Future<void> toggleLike(String postId) async {
+    await loadPosts();
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index < 0) return;
+    final old = _posts[index];
+    _posts[index] = MomentPost(
+      id: old.id,
+      agentId: old.agentId,
+      text: old.text,
+      images: old.images,
+      createdAt: old.createdAt,
+      source: old.source,
+      liked: !old.liked,
+      comments: old.comments,
+    );
+    await _save();
+  }
+
+  /// 添加评论（用户评论后异步触发 agent 回复）
+  Future<void> addComment(
+    String postId,
+    String text, {
+    bool isAgent = false,
+  }) async {
+    final comment = MomentComment(
+      id: const Uuid().v4(),
+      text: text,
+      isAgent: isAgent,
+      createdAt: DateTime.now(),
+    );
+    await loadPosts();
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index < 0) return;
+    final old = _posts[index];
+    final updated = MomentPost(
+      id: old.id,
+      agentId: old.agentId,
+      text: old.text,
+      images: old.images,
+      createdAt: old.createdAt,
+      source: old.source,
+      liked: old.liked,
+      comments: [...old.comments, comment],
+    );
+    _posts[index] = updated;
+    await _save();
+    // agent 异步回复（稍作延迟模拟"正在看评论"，不打断 UI，失败静默）
+    if (!isAgent) {
+      unawaited(
+        Future.delayed(
+          Duration(seconds: 2, milliseconds: Random().nextInt(3000)),
+        ).then((_) => _autoAgentReply(updated)),
+      );
+    }
+  }
+
+  /// 用户评论后让 agent 用 LLM 生成一条回复评论
+  Future<void> _autoAgentReply(MomentPost post) async {
+    try {
+      final agent = await AgentController().getAgent(post.agentId);
+      if (agent == null) return;
+      final userComments = post.comments
+          .where((c) => !c.isAgent)
+          .map((c) => c.text)
+          .join('\n');
+      final system =
+          '${agent.description.isEmpty ? '' : '${agent.description}\n\n'}'
+          '你是「${agent.name}」。你发了一条朋友圈：「${post.text}」。\n'
+          '用户评论了你：「$userComments」。\n'
+          '请以你的口吻回复这条评论，像朋友之间随意自然，1~2 句话。\n'
+          '只输出回复内容本身，不要引号、表情符号可选、不要任何解释。';
+      final reply = await RequestService.chat(
+        '（回复朋友圈评论）',
+        agent,
+        contextMessages: [ChatCompletionMessage.system(content: system)],
+      );
+      final text = reply.trim();
+      if (text.isEmpty || text.startsWith('Error:')) {
+        debugPrint('[Moments] agent 回复评论失败: $text');
+        return;
+      }
+      // 帖子可能已被删除
+      final fresh = _posts.where((p) => p.id == post.id).firstOrNull;
+      if (fresh == null) return;
+      await addComment(post.id, text, isAgent: true);
+      debugPrint('[Moments] agent 已回复评论 | ${agent.name}');
+    } catch (e) {
+      debugPrint('[Moments] agent 回复评论异常: $e');
+    }
   }
 
   Future<void> _save() async {

@@ -476,6 +476,7 @@ class ScriptExecutor {
   String _resolveTrigger(Map<String, dynamic>? args) {
     if (args == null) return '手动';
     if (args['calledFrom'] == 'runScript') return '脚本互调';
+    if (args['calledFrom'] == 'agent_tool') return 'Agent 工具';
     if (args['event'] != null) return '事件触发';
     if (args['trigger'] == 'auto') return '自动运行';
     return '手动';

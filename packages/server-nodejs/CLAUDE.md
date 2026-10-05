@@ -29,8 +29,9 @@
 
 | 模块 | 说明 |
 |------|------|
-| `src/routes/` | authRoutes、syncRoutes、pluginSystemRoutes、pluginRoutes（工厂 + 19 个 handler） |
-| `src/services/` | 认证、加密、存储、插件数据、插件系统、WebSocket、文件监听、FCM、事件 |
+| `src/routes/` | authRoutes、storageRoutes、pluginSystemRoutes、pluginRoutes（工厂 + **19 个插件域 / 12 个专用 handler**，其余域走通用 CRUD） |
+| `src/services/` | 认证、加密、文件存储、插件数据、插件系统、**storageWebSocketService（多端实时同步广播）**、FCM、事件 |
+| `src/services/mcp/` | MCP 端点实现（8 文件）：Streamable HTTP 无状态 `/mcp` 路由、tools、invoker（进程内直连 handler） |
 | `src/middleware/` | authMiddleware、apiEnabledMiddleware |
 | `admin-vue/` | Vue3 + Naive UI + Pinia 管理面板（构建产物进 `dist/admin`）→ [admin-vue/CLAUDE.md](admin-vue/CLAUDE.md) |
 | `plugins/` | 服务端插件目录 + `plugin-store.json` 商店清单 |
@@ -38,6 +39,6 @@
 
 ## 扫描状态
 
-- 更新时间：2026-09-02（第二轮：补扫 admin-vue，梳理插件路由工厂细节）
-- 已扫描：package.json、README、src 全量文件清单、config、index.ts 装配逻辑、tests 目录、pluginRoutes 工厂/配置/handler 注册表、admin-vue 全部源码清单与 `/api/v1` 端点。
+- 更新时间：2026-10-05（第五轮增量：核实 2026-09-15 的 5 个提交——新增 storageWebSocketService（替代已删 webSocketManager）、index.ts 注入 WS 广播到 storage/plugin/MCP 路由、启动后 100ms 自预热、CORS 新增 Mcp-Session-Id/Last-Event-ID；修正 syncRoutes→storageRoutes、"19 handler"→"19 域 12 handler"两处过时描述）
+- 已扫描：package.json、README、src 全量文件清单、config、index.ts 装配逻辑（含 WS 握手协议：连接 10s 内须发 `{type:'auth', token, device_id}`，服务端回 auth_success，文件变更广播 `file_updated` 只发同 user 不同 device）、tests 目录、pluginRoutes 工厂/配置/handler 注册表、admin-vue 全部源码清单与 `/api/v1` 端点。
 - 未深扫：各 handler/service 实现细节（路由模式已梳理，见 [对外接口](claude/public-interfaces.md)）、`plugins/data-sync-logger-v2` 示例插件内部、admin-vue 组件模板细节。
