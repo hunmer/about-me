@@ -94,17 +94,49 @@ class ActivityVoiceCacheService {
   }
 
   /// 缓存是否可用（模板与服务匹配，且音频文件齐全）
-  Future<bool> isCacheReady(String template, String? serviceId) async {
+  ///
+  /// [verbose] 为 true 时输出不可用原因（播报诊断用；页面状态刷新传 false 避免噪音）
+  Future<bool> isCacheReady(
+    String template,
+    String? serviceId, {
+    bool verbose = true,
+  }) async {
     if (kIsWeb) return false;
     final manifest = await loadManifest();
-    if (manifest == null) return false;
+    if (manifest == null) {
+      if (verbose) {
+        debugPrint('[ActivityVoiceCache] 缓存不可用: 未生成（缺少缓存清单）');
+      }
+      return false;
+    }
 
     final id = serviceId ??
         (await ttsPlugin.managerService.getDefaultService())?.id;
-    if (manifest['serviceId'] != id) return false;
-    if (manifest['template'] != template) return false;
+    if (manifest['serviceId'] != id) {
+      if (verbose) {
+        debugPrint(
+          '[ActivityVoiceCache] 缓存不可用: TTS 服务不匹配 '
+          '(缓存=${manifest['serviceId']}, 当前=$id)',
+        );
+      }
+      return false;
+    }
+    if (manifest['template'] != template) {
+      if (verbose) {
+        debugPrint(
+          '[ActivityVoiceCache] 缓存不可用: 模板不匹配 '
+          '(缓存=${manifest['template']}, 当前=$template)',
+        );
+      }
+      return false;
+    }
     final ext = manifest['ext'] as String?;
-    if (ext == null) return false;
+    if (ext == null) {
+      if (verbose) {
+        debugPrint('[ActivityVoiceCache] 缓存不可用: 清单缺少音频格式');
+      }
+      return false;
+    }
 
     final names = <String>[
       for (var i = 0; i < numberTexts.length; i++) 'num_$i',
@@ -115,7 +147,12 @@ class ActivityVoiceCacheService {
     ];
     final dir = await cacheDir();
     for (final name in names) {
-      if (!await File('${dir.path}/$name.$ext').exists()) return false;
+      if (!await File('${dir.path}/$name.$ext').exists()) {
+        if (verbose) {
+          debugPrint('[ActivityVoiceCache] 缓存不可用: 缺少音频文件 $name.$ext');
+        }
+        return false;
+      }
     }
     return true;
   }

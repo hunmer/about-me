@@ -33,9 +33,12 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
 
   // TTS 播报设置
   bool _isTTSAnnouncementEnabled = false;
-  int _ttsAnnouncementInterval = 5; // 默认5分钟
+  int _ttsIntervalSeconds = 60; // 默认60秒
+  final TextEditingController _intervalInputController =
+      TextEditingController();
+  // 与 TTSAnnouncementSettings 默认模板保持一致（真实模板由 _loadTTSAnnouncementSettings 加载）
   final TextEditingController _ttsTextController = TextEditingController(
-    text: '已超过 {unrecorded_time} 分钟未记录活动，上次的活动是 {last_activity} ',
+    text: '已超过 {unrecorded_time} 分钟未记录活动',
   );
   String? _selectedVariable;
   bool _checkOnlyWorkHours = false;
@@ -252,7 +255,8 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
       if (mounted) {
         setState(() {
           _isTTSAnnouncementEnabled = isEnabled;
-          _ttsAnnouncementInterval = interval;
+          _ttsIntervalSeconds = interval;
+          _intervalInputController.text = interval.toString();
           _ttsTextController.text = text;
           _checkOnlyWorkHours = workHours['checkOnlyWorkHours'] as bool;
           _workHoursStart = workHours['workHoursStart'] as int;
@@ -260,6 +264,8 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
           _enableHapticFeedback = hapticFeedback;
           _cacheGapMs = cacheGap;
         });
+        // 模板就绪后刷新缓存状态（与 _loadTTSServices 并发，避免早于模板加载误判）
+        _refreshCacheStatus();
       }
     } catch (e) {
       debugPrint('加载播报设置失败: $e');
@@ -294,15 +300,38 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
     }
   }
 
-  Future<void> _updateTTSAnnouncementInterval(int value) async {
+  /// 播报间隔预设（秒）
+  static const List<int> _intervalPresets = [10, 30, 60, 300, 600, 1800];
+
+  /// 间隔秒数格式化为显示文本
+  String _formatIntervalLabel(int seconds) {
+    if (seconds >= 60 && seconds % 60 == 0) {
+      return '${seconds ~/ 60} 分钟';
+    }
+    return '$seconds 秒';
+  }
+
+  Future<void> _updateTTSAnnouncementInterval(int seconds) async {
     try {
-      await ActivityPlugin.instance.setTTSAnnouncementInterval(value);
+      await ActivityPlugin.instance.setTTSAnnouncementInterval(seconds);
       setState(() {
-        _ttsAnnouncementInterval = value;
+        _ttsIntervalSeconds = seconds;
+        _intervalInputController.text = seconds.toString();
       });
     } catch (e) {
       debugPrint('更新播报间隔失败: $e');
     }
+  }
+
+  /// 应用自定义间隔输入
+  Future<void> _applyCustomInterval() async {
+    final seconds = int.tryParse(_intervalInputController.text.trim());
+    if (seconds == null || seconds < 10 || seconds > 3600) {
+      toastService.showToast('请输入 10-3600 之间的秒数');
+      return;
+    }
+    await _updateTTSAnnouncementInterval(seconds);
+    toastService.showToast('播报间隔已更新为 ${_formatIntervalLabel(seconds)}');
   }
 
   Future<void> _updateTTSText() async {
@@ -367,7 +396,8 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
   Future<void> _refreshCacheStatus() async {
     try {
       final ready = await ActivityPlugin.instance.voiceCacheService
-          .isCacheReady(_ttsTextController.text, _selectedTTSServiceId);
+          .isCacheReady(_ttsTextController.text, _selectedTTSServiceId,
+              verbose: false);
       if (mounted) {
         setState(() {
           _cacheReady = ready;
@@ -428,6 +458,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
   @override
   void dispose() {
     _ttsTextController.dispose();
+    _intervalInputController.dispose();
     super.dispose();
   }
 
@@ -830,37 +861,52 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
 
                     // 播报间隔
                     Text(
-                      '未记录时间间隔（分钟）',
+                      '未记录时间间隔',
                       style: DsTypography.body.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.text,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '超过该时间未记录活动时播报提醒，两次播报至少间隔同样时长',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final seconds in _intervalPresets)
+                          DSButton(
+                            label: _formatIntervalLabel(seconds),
+                            size: DSButtonSize.sm,
+                            variant: _ttsIntervalSeconds == seconds
+                                ? DSButtonVariant.primary
+                                : DSButtonVariant.outline,
+                            onPressed: () =>
+                                _updateTTSAnnouncementInterval(seconds),
+                          ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: DSSlider(
-                            // 1-60 分钟归一化
-                            value: (_ttsAnnouncementInterval - 1) / (60 - 1),
-                            activeColor: ActivityPlugin.instance.color,
-                            onChanged: (value) {
-                              _updateTTSAnnouncementInterval(
-                                (value * (60 - 1) + 1).round(),
-                              );
-                            },
+                          child: DSInput(
+                            controller: _intervalInputController,
+                            hint: '自定义间隔（秒，10-3600）',
                           ),
                         ),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            '$_ttsAnnouncementInterval 分钟',
-                            style: DsTypography.body.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: ActivityPlugin.instance.color,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                        const SizedBox(width: 8),
+                        DSButton(
+                          label: '应用',
+                          size: DSButtonSize.sm,
+                          variant: DSButtonVariant.outline,
+                          icon: DsIconKind.check,
+                          onPressed: _applyCustomInterval,
                         ),
                       ],
                     ),

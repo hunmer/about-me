@@ -5,7 +5,9 @@ import 'package:aboutme/core/storage/storage_manager.dart';
 class TTSAnnouncementSettings {
   final bool isEnabled;
   final String? serviceId;
-  final int unrecordedIntervalMinutes;
+
+  /// 未记录时间间隔（秒）
+  final int unrecordedIntervalSeconds;
   final String textTemplate;
   final bool checkOnlyWorkHours;
   final int workHoursStart;
@@ -18,7 +20,7 @@ class TTSAnnouncementSettings {
   const TTSAnnouncementSettings({
     this.isEnabled = false,
     this.serviceId,
-    this.unrecordedIntervalMinutes = 5,
+    this.unrecordedIntervalSeconds = 60,
     this.textTemplate = '已超过 {unrecorded_time} 分钟未记录活动',
     this.checkOnlyWorkHours = false,
     this.workHoursStart = 9,
@@ -30,7 +32,7 @@ class TTSAnnouncementSettings {
   TTSAnnouncementSettings copyWith({
     bool? isEnabled,
     String? serviceId,
-    int? unrecordedIntervalMinutes,
+    int? unrecordedIntervalSeconds,
     String? textTemplate,
     bool? checkOnlyWorkHours,
     int? workHoursStart,
@@ -41,7 +43,8 @@ class TTSAnnouncementSettings {
     return TTSAnnouncementSettings(
       isEnabled: isEnabled ?? this.isEnabled,
       serviceId: serviceId ?? this.serviceId,
-      unrecordedIntervalMinutes: unrecordedIntervalMinutes ?? this.unrecordedIntervalMinutes,
+      unrecordedIntervalSeconds:
+          unrecordedIntervalSeconds ?? this.unrecordedIntervalSeconds,
       textTemplate: textTemplate ?? this.textTemplate,
       checkOnlyWorkHours: checkOnlyWorkHours ?? this.checkOnlyWorkHours,
       workHoursStart: workHoursStart ?? this.workHoursStart,
@@ -55,7 +58,7 @@ class TTSAnnouncementSettings {
     return {
       'isEnabled': isEnabled,
       'serviceId': serviceId,
-      'unrecordedIntervalMinutes': unrecordedIntervalMinutes,
+      'unrecordedIntervalSeconds': unrecordedIntervalSeconds,
       'textTemplate': textTemplate,
       'checkOnlyWorkHours': checkOnlyWorkHours,
       'workHoursStart': workHoursStart,
@@ -66,10 +69,13 @@ class TTSAnnouncementSettings {
   }
 
   factory TTSAnnouncementSettings.fromJson(Map<String, dynamic> json) {
+    // 兼容旧版分钟配置：无秒字段时按分钟换算
+    final intervalSeconds = json['unrecordedIntervalSeconds'] as int? ??
+        (json['unrecordedIntervalMinutes'] as int? ?? 5) * 60;
     return TTSAnnouncementSettings(
       isEnabled: json['isEnabled'] as bool? ?? false,
       serviceId: json['serviceId'] as String?,
-      unrecordedIntervalMinutes: json['unrecordedIntervalMinutes'] as int? ?? 5,
+      unrecordedIntervalSeconds: intervalSeconds,
       textTemplate: json['textTemplate'] as String? ?? '已超过 {unrecorded_time} 分钟未记录活动',
       checkOnlyWorkHours: json['checkOnlyWorkHours'] as bool? ?? false,
       workHoursStart: json['workHoursStart'] as int? ?? 9,
@@ -119,7 +125,7 @@ class TTSAnnouncementSettingsManager {
   Future<TTSAnnouncementSettings> update({
     bool? isEnabled,
     String? serviceId,
-    int? unrecordedIntervalMinutes,
+    int? unrecordedIntervalSeconds,
     String? textTemplate,
     bool? checkOnlyWorkHours,
     int? workHoursStart,
@@ -131,7 +137,7 @@ class TTSAnnouncementSettingsManager {
     final updated = current.copyWith(
       isEnabled: isEnabled,
       serviceId: serviceId,
-      unrecordedIntervalMinutes: unrecordedIntervalMinutes,
+      unrecordedIntervalSeconds: unrecordedIntervalSeconds,
       textTemplate: textTemplate,
       checkOnlyWorkHours: checkOnlyWorkHours,
       workHoursStart: workHoursStart,

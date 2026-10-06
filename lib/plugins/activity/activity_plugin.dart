@@ -759,7 +759,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       _ttsAnnouncementService.updateConfig(
         serviceId: settings.serviceId,
-        unrecordedIntervalMinutes: settings.unrecordedIntervalMinutes,
+        unrecordedIntervalSeconds: settings.unrecordedIntervalSeconds,
         textTemplate: settings.textTemplate,
         checkOnlyWorkHours: settings.checkOnlyWorkHours,
         workHoursStart: settings.workHoursStart,
@@ -778,7 +778,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> _saveTTSAnnouncementSettings({
     bool? isEnabled,
     String? serviceId,
-    int? unrecordedIntervalMinutes,
+    int? unrecordedIntervalSeconds,
     String? textTemplate,
     bool? checkOnlyWorkHours,
     int? workHoursStart,
@@ -790,7 +790,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       await _ttsSettingsManager.update(
         isEnabled: isEnabled,
         serviceId: serviceId,
-        unrecordedIntervalMinutes: unrecordedIntervalMinutes,
+        unrecordedIntervalSeconds: unrecordedIntervalSeconds,
         textTemplate: textTemplate,
         checkOnlyWorkHours: checkOnlyWorkHours,
         workHoursStart: workHoursStart,
@@ -803,23 +803,27 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     }
   }
 
-  /// 获取播报间隔（分钟）
+  /// 获取播报间隔（秒）
   Future<int> getTTSAnnouncementInterval() async {
     try {
       final settings = await _ttsSettingsManager.load();
-      return settings.unrecordedIntervalMinutes;
+      return settings.unrecordedIntervalSeconds;
     } catch (e) {
       debugPrint('[ActivityPlugin] 读取播报间隔失败: $e');
-      return 5;
+      return 60;
     }
   }
 
-  /// 设置播报间隔（分钟）
-  Future<void> setTTSAnnouncementInterval(int minutes) async {
+  /// 设置播报间隔（秒）
+  Future<void> setTTSAnnouncementInterval(int seconds) async {
     try {
-      _ttsAnnouncementService.updateConfig(unrecordedIntervalMinutes: minutes);
-      await _saveTTSAnnouncementSettings(unrecordedIntervalMinutes: minutes);
-      debugPrint('[ActivityPlugin] 播报间隔已设置为 $minutes 分钟');
+      _ttsAnnouncementService.updateConfig(
+        unrecordedIntervalSeconds: seconds,
+      );
+      await _saveTTSAnnouncementSettings(
+        unrecordedIntervalSeconds: seconds,
+      );
+      debugPrint('[ActivityPlugin] 播报间隔已设置为 $seconds 秒');
     } catch (e) {
       debugPrint('[ActivityPlugin] 设置播报间隔失败: $e');
       rethrow;

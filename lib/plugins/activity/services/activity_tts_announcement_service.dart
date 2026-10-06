@@ -39,11 +39,11 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
   /// 使用的 TTS 服务 ID
   String? _serviceId;
 
-  /// 未记录时间间隔（分钟）
-  int _unrecordedIntervalMinutes = 5;
+  /// 未记录时间间隔（秒）
+  int _unrecordedIntervalSeconds = 60;
 
-  /// 播报文本模板
-  String _textTemplate = '已超过 {unrecorded_time} 未记录活动';
+  /// 播报文本模板（与 TTSAnnouncementSettings 默认值保持一致）
+  String _textTemplate = '已超过 {unrecorded_time} 分钟未记录活动';
 
   /// 是否只在工作时间检查
   bool _checkOnlyWorkHours = false;
@@ -75,8 +75,8 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
   /// 使用的 TTS 服务 ID
   String? get serviceId => _serviceId;
 
-  /// 未记录时间间隔（分钟）
-  int get unrecordedIntervalMinutes => _unrecordedIntervalMinutes;
+  /// 未记录时间间隔（秒）
+  int get unrecordedIntervalSeconds => _unrecordedIntervalSeconds;
 
   /// 播报文本模板
   String get textTemplate => _textTemplate;
@@ -119,9 +119,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
     _isActive = true;
     _lastCheckTime = DateTime.now();
 
-    // 启动定时检查器（每分钟检查一次）
+    // 启动定时检查器（每 10 秒检查一次，支持秒级间隔）
     _checkTimer = Timer.periodic(
-      const Duration(minutes: 1),
+      const Duration(seconds: 10),
       (_) => _checkAndAnnounce(),
     );
 
@@ -171,21 +171,23 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
       // 获取最近的活动
       await _updateLastActivity();
 
-      // 计算未记录时间（如果没有活动，从今天 0 点开始计算）
+      // 计算未记录时间（秒；如果没有活动，从今天 0 点开始计算）
       final now = DateTime.now();
-      final unrecordedMins =
+      final unrecordedSeconds =
           _lastActivity == null
-              ? now.difference(DateTime(now.year, now.month, now.day)).inMinutes
-              : now.difference(_lastActivity!.endTime).inMinutes;
+              ? now.difference(DateTime(now.year, now.month, now.day)).inSeconds
+              : now.difference(_lastActivity!.endTime).inSeconds;
 
       // 检查是否超过设定间隔
-      if (unrecordedMins >= _unrecordedIntervalMinutes) {
+      if (unrecordedSeconds >= _unrecordedIntervalSeconds) {
         // 检查距离上次播报是否已超过设定间隔（避免重复播报）
         if (_lastAnnouncementTime != null) {
           final timeSinceLastAnnouncement =
-              now.difference(_lastAnnouncementTime!).inMinutes;
-          if (timeSinceLastAnnouncement < _unrecordedIntervalMinutes) {
-            debugPrint('[ActivityTTSAnnouncement] 距离上次播报仅 $timeSinceLastAnnouncement 分钟，跳过本次播报');
+              now.difference(_lastAnnouncementTime!).inSeconds;
+          if (timeSinceLastAnnouncement < _unrecordedIntervalSeconds) {
+            debugPrint(
+              '[ActivityTTSAnnouncement] 距离上次播报仅 $timeSinceLastAnnouncement 秒，跳过本次播报',
+            );
             return;
           }
         }
@@ -394,7 +396,7 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
   /// 更新配置
   Future<void> updateConfig({
     String? serviceId,
-    int? unrecordedIntervalMinutes,
+    int? unrecordedIntervalSeconds,
     String? textTemplate,
     bool? checkOnlyWorkHours,
     int? workHoursStart,
@@ -409,9 +411,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
       needRestart = true;
     }
 
-    if (unrecordedIntervalMinutes != null &&
-        unrecordedIntervalMinutes != _unrecordedIntervalMinutes) {
-      _unrecordedIntervalMinutes = unrecordedIntervalMinutes;
+    if (unrecordedIntervalSeconds != null &&
+        unrecordedIntervalSeconds != _unrecordedIntervalSeconds) {
+      _unrecordedIntervalSeconds = unrecordedIntervalSeconds;
       needRestart = true;
     }
 
