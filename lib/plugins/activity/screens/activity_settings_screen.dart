@@ -396,8 +396,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
   Future<void> _refreshCacheStatus() async {
     try {
       final ready = await ActivityPlugin.instance.voiceCacheService
-          .isCacheReady(_ttsTextController.text, _selectedTTSServiceId,
-              verbose: false);
+          .isCacheReady(_ttsTextController.text, _selectedTTSServiceId);
       if (mounted) {
         setState(() {
           _cacheReady = ready;

@@ -323,7 +323,6 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
       }
 
       if (await _speakWithCache(isTest: isTest)) {
-        debugPrint('[ActivityTTSAnnouncement] 本地缓存拼接播报完成');
         return;
       }
 
