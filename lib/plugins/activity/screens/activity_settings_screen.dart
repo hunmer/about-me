@@ -50,6 +50,13 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
   // 震动反馈设置
   bool _enableHapticFeedback = true;
 
+  // 语音缓存
+  bool _isGeneratingCache = false;
+  bool _cacheReady = false;
+  int _cacheDone = 0;
+  int _cacheTotal = 0;
+  int _cacheGapMs = 150;
+
   @override
   void initState() {
     super.initState();
@@ -220,6 +227,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
           _isLoadingTTSServices = false;
           _selectedTTSServiceId = selectedId ?? defaultService?.id;
         });
+        _refreshCacheStatus();
       }
     } catch (e) {
       debugPrint('加载 TTS 服务列表失败: $e');
@@ -239,6 +247,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
       final text = await plugin.getTTSAnnouncementText();
       final workHours = await plugin.getWorkHoursSettings();
       final hapticFeedback = await plugin.getTTSAnnouncementHapticFeedback();
+      final cacheGap = await plugin.getTTSAnnouncementCacheGap();
 
       if (mounted) {
         setState(() {
@@ -249,6 +258,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
           _workHoursStart = workHours['workHoursStart'] as int;
           _workHoursEnd = workHours['workHoursEnd'] as int;
           _enableHapticFeedback = hapticFeedback;
+          _cacheGapMs = cacheGap;
         });
       }
     } catch (e) {
@@ -301,6 +311,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
         _ttsTextController.text,
       );
       toastService.showToast('播报文本已更新');
+      _refreshCacheStatus();
     } catch (e) {
       toastService.showToast('更新失败: $e');
     }
@@ -344,8 +355,73 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
       setState(() {
         _selectedTTSServiceId = serviceId;
       });
+      _refreshCacheStatus();
     } catch (e) {
       toastService.showToast('设置失败: $e');
+    }
+  }
+
+  // ==================== 语音缓存 ====================
+
+  /// 刷新缓存可用状态（模板或服务变化后缓存会失效）
+  Future<void> _refreshCacheStatus() async {
+    try {
+      final ready = await ActivityPlugin.instance.voiceCacheService
+          .isCacheReady(_ttsTextController.text, _selectedTTSServiceId);
+      if (mounted) {
+        setState(() {
+          _cacheReady = ready;
+        });
+      }
+    } catch (e) {
+      debugPrint('读取语音缓存状态失败: $e');
+    }
+  }
+
+  /// 一键生成语音缓存：数字 0-10、时间单位及模板固定文本
+  Future<void> _generateVoiceCache() async {
+    if (_isGeneratingCache) return;
+
+    final template = _ttsTextController.text;
+    if (template.trim().isEmpty) {
+      toastService.showToast('请先输入播报文本模板');
+      return;
+    }
+
+    setState(() {
+      _isGeneratingCache = true;
+      _cacheDone = 0;
+      _cacheTotal = 0;
+    });
+    try {
+      // 先保存模板，确保缓存与生效模板一致
+      await ActivityPlugin.instance.setTTSAnnouncementText(template);
+
+      final error = await ActivityPlugin.instance.voiceCacheService.generate(
+        template: template,
+        serviceId: _selectedTTSServiceId,
+        onProgress: (done, total) {
+          if (mounted) {
+            setState(() {
+              _cacheDone = done;
+              _cacheTotal = total;
+            });
+          }
+        },
+      );
+      if (!mounted) return;
+      toastService.showToast(error ?? '语音缓存生成完成');
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('生成语音缓存失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingCache = false;
+        });
+      }
+      await _refreshCacheStatus();
     }
   }
 
@@ -650,6 +726,106 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                             _updateTTSServiceId(value);
                           },
                         ),
+                    const SizedBox(height: 16),
+
+                    // 语音缓存（离线拼接播报）
+                    Row(
+                      children: [
+                        DsIcon(
+                          DsIconKind.download,
+                          color: ActivityPlugin.instance.color,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '语音缓存',
+                          style: DsTypography.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.text,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _cacheReady ? '已生成，离线拼接播报生效中' : '未生成，播报将在线合成',
+                            style: DsTypography.caption.copyWith(
+                              color: _cacheReady ? theme.success : theme.textSub,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '预生成 0-10 数字、天/时/分/秒单位及模板固定文本语音，'
+                      '播报时本地智能拼接，{unrecorded_time} 无需在线生成；'
+                      '修改模板或切换服务后需重新生成',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DSButton(
+                      label: _isGeneratingCache
+                          ? (_cacheTotal > 0
+                                ? '生成中 $_cacheDone/$_cacheTotal'
+                                : '生成中...')
+                          : '一键生成语音缓存',
+                      icon: _isGeneratingCache
+                          ? DsIconKind.refresh
+                          : DsIconKind.download,
+                      onPressed: _isGeneratingCache ? null : _generateVoiceCache,
+                    ),
+
+                    // 拼接停顿
+                    if (_cacheReady) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        '拼接停顿',
+                        style: DsTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '拼接播放时段与段之间的停顿时长',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DSSlider(
+                              // 0-500 毫秒归一化
+                              value: _cacheGapMs / 500,
+                              activeColor: ActivityPlugin.instance.color,
+                              onChanged: (value) {
+                                setState(() {
+                                  _cacheGapMs = (value * 500).round();
+                                });
+                                ActivityPlugin.instance
+                                    .setTTSAnnouncementCacheGap(_cacheGapMs);
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              '$_cacheGapMs 毫秒',
+                              style: DsTypography.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: ActivityPlugin.instance.color,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 16),
 
                     // 播报间隔

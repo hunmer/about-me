@@ -12,6 +12,9 @@ class TTSAnnouncementSettings {
   final int workHoursEnd;
   final bool enableHapticFeedback;
 
+  /// 语音缓存拼接播放时，段与段之间的停顿（毫秒）
+  final int cacheGapMs;
+
   const TTSAnnouncementSettings({
     this.isEnabled = false,
     this.serviceId,
@@ -21,6 +24,7 @@ class TTSAnnouncementSettings {
     this.workHoursStart = 9,
     this.workHoursEnd = 18,
     this.enableHapticFeedback = true,
+    this.cacheGapMs = 150,
   });
 
   TTSAnnouncementSettings copyWith({
@@ -32,6 +36,7 @@ class TTSAnnouncementSettings {
     int? workHoursStart,
     int? workHoursEnd,
     bool? enableHapticFeedback,
+    int? cacheGapMs,
   }) {
     return TTSAnnouncementSettings(
       isEnabled: isEnabled ?? this.isEnabled,
@@ -42,6 +47,7 @@ class TTSAnnouncementSettings {
       workHoursStart: workHoursStart ?? this.workHoursStart,
       workHoursEnd: workHoursEnd ?? this.workHoursEnd,
       enableHapticFeedback: enableHapticFeedback ?? this.enableHapticFeedback,
+      cacheGapMs: cacheGapMs ?? this.cacheGapMs,
     );
   }
 
@@ -55,6 +61,7 @@ class TTSAnnouncementSettings {
       'workHoursStart': workHoursStart,
       'workHoursEnd': workHoursEnd,
       'enableHapticFeedback': enableHapticFeedback,
+      'cacheGapMs': cacheGapMs,
     };
   }
 
@@ -68,6 +75,7 @@ class TTSAnnouncementSettings {
       workHoursStart: json['workHoursStart'] as int? ?? 9,
       workHoursEnd: json['workHoursEnd'] as int? ?? 18,
       enableHapticFeedback: json['enableHapticFeedback'] as bool? ?? true,
+      cacheGapMs: json['cacheGapMs'] as int? ?? 150,
     );
   }
 }
@@ -117,6 +125,7 @@ class TTSAnnouncementSettingsManager {
     int? workHoursStart,
     int? workHoursEnd,
     bool? enableHapticFeedback,
+    int? cacheGapMs,
   }) async {
     final current = await load();
     final updated = current.copyWith(
@@ -128,6 +137,7 @@ class TTSAnnouncementSettingsManager {
       workHoursStart: workHoursStart,
       workHoursEnd: workHoursEnd,
       enableHapticFeedback: enableHapticFeedback,
+      cacheGapMs: cacheGapMs,
     );
     await save(updated);
     return updated;

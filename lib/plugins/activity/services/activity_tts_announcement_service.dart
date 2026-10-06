@@ -4,18 +4,31 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/activity_record.dart';
 import '../services/activity_service.dart';
+import '../services/activity_voice_cache_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 
 /// 活动后台播报服务
 ///
 /// 当检测到未记录时间超过指定间隔时，播报提示语音
 /// 支持占位符：{date}, {last_activity}, {unrecorded_time}
+///
+/// 配置了语音缓存时优先本地智能拼接播报（固定文本 + 数字 + 单位），
+/// 缓存不可用则回退在线合成。
 class ActivityTTSAnnouncementService extends ChangeNotifier {
   /// 活动服务
   final ActivityService activityService;
 
   /// TTS 插件
   final TTSPlugin ttsPlugin;
+
+  /// 语音缓存服务（可选，为空时始终在线合成）
+  final ActivityVoiceCacheService? voiceCache;
+
+  ActivityTTSAnnouncementService({
+    required this.activityService,
+    required this.ttsPlugin,
+    this.voiceCache,
+  });
 
   /// 定时检查器
   Timer? _checkTimer;
@@ -43,6 +56,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
 
   /// 是否启用震动反馈
   bool _enableHapticFeedback = true;
+
+  /// 语音缓存拼接播放时段间停顿（毫秒）
+  int _cacheGapMs = 150;
 
   /// 最近一次检查时间
   DateTime? _lastCheckTime;
@@ -77,6 +93,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
   /// 是否启用震动反馈
   bool get enableHapticFeedback => _enableHapticFeedback;
 
+  /// 语音缓存拼接播放时段间停顿（毫秒）
+  int get cacheGapMs => _cacheGapMs;
+
   /// 最近一次检查时间
   DateTime? get lastCheckTime => _lastCheckTime;
 
@@ -89,11 +108,6 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
     final now = DateTime.now();
     return now.difference(_lastActivity!.endTime).inMinutes;
   }
-
-  ActivityTTSAnnouncementService({
-    required this.activityService,
-    required this.ttsPlugin,
-  });
 
   /// 启动播报服务
   Future<void> start() async {
@@ -126,6 +140,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
     // 清空播报时间记录，避免重启后立即播报
     _lastAnnouncementTime = null;
     _lastCheckTime = null;
+
+    // 停止本地缓存拼接播放
+    await voiceCache?.stopPlayback();
 
     // 停止当前的 TTS 播放
     try {
@@ -173,12 +190,10 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
           }
         }
 
-        // 替换占位符并播报
-        final text = _replacePlaceholders(_textTemplate);
-        await _speak(text);
+        // 播报（优先本地缓存拼接，回退在线合成）
+        await _announce();
 
         _lastAnnouncementTime = DateTime.now();
-        debugPrint('[ActivityTTSAnnouncement] 播报: $text');
         notifyListeners();
       }
     } catch (e) {
@@ -249,23 +264,24 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
     return result;
   }
 
-  /// 格式化时长为小时制文本
+  /// 计算当前未记录分钟数
   ///
   /// 如果没有活动，从今天 0 点开始计算
-  String _formatDuration(ActivityRecord? activity) {
+  int _currentUnrecordedMinutes() {
     final now = DateTime.now();
-    int minutes;
-
-    if (activity == null) {
-      // 没有活动，从今天 0 点开始计算
+    if (_lastActivity == null) {
       final todayStart = DateTime(now.year, now.month, now.day);
-      minutes = now.difference(todayStart).inMinutes;
-    } else {
-      // 有活动，从活动结束时间开始计算
-      minutes = now.difference(activity.endTime).inMinutes;
+      return now.difference(todayStart).inMinutes;
     }
+    return now.difference(_lastActivity!.endTime).inMinutes;
+  }
 
-    // 格式化为小时制
+  /// 格式化时长文本
+  ///
+  /// 层级：分钟 -> 小时（满 60 分）-> 天（满 24 时）-> 月（满 30 天）
+  String _formatDuration(ActivityRecord? activity) {
+    final minutes = _currentUnrecordedMinutes();
+
     if (minutes < 60) {
       return '$minutes 分钟';
     } else if (minutes < 60 * 24) {
@@ -277,26 +293,101 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
         return '$hours 小时';
       }
     } else {
-      final days = minutes ~/ (60 * 24);
-      final hours = (minutes % (60 * 24)) ~/ 60;
-      if (hours > 0) {
-        return '$days 天 $hours 小时';
+      final totalDays = minutes ~/ (60 * 24);
+      if (totalDays < 30) {
+        final hours = (minutes % (60 * 24)) ~/ 60;
+        if (hours > 0) {
+          return '$totalDays 天 $hours 小时';
+        } else {
+          return '$totalDays 天';
+        }
+      }
+      final months = totalDays ~/ 30;
+      final days = totalDays % 30;
+      if (days > 0) {
+        return '$months 月 $days 天';
       } else {
-        return '$days 天';
+        return '$months 月';
       }
     }
   }
 
-  /// 执行播报
-  Future<void> _speak(String text) async {
+  /// 执行播报：优先本地缓存智能拼接，回退在线合成整句
+  Future<void> _announce({bool isTest = false}) async {
     try {
       // 震动反馈
       if (_enableHapticFeedback) {
         HapticFeedback.heavyImpact();
       }
+
+      if (await _speakWithCache(isTest: isTest)) {
+        debugPrint('[ActivityTTSAnnouncement] 本地缓存拼接播报完成');
+        return;
+      }
+
+      final text = _replacePlaceholders(_textTemplate);
       await ttsPlugin.speak(text, serviceId: _serviceId);
+      debugPrint('[ActivityTTSAnnouncement] 播报: $text');
     } catch (e) {
       debugPrint('[ActivityTTSAnnouncement] 播报失败: $e');
+    }
+  }
+
+  /// 使用本地语音缓存智能拼接播报
+  ///
+  /// 固定文本段与 {unrecorded_time}（数字 + 单位）播放缓存音频，
+  /// 其它动态占位符（{date} 等）单独在线合成。返回 false 表示缓存不可用。
+  Future<bool> _speakWithCache({bool isTest = false}) async {
+    final cache = voiceCache;
+    if (cache == null) return false;
+
+    try {
+      if (!await cache.isCacheReady(_textTemplate, _serviceId)) return false;
+
+      final manifest = await cache.loadManifest();
+      final ext = manifest?['ext'] as String?;
+      if (ext == null) return false;
+
+      final timeParts = cache.unrecordedTimeFileParts(
+        _currentUnrecordedMinutes(),
+        ext,
+      );
+      if (timeParts == null) return false;
+
+      final segments = cache.parseTemplate(_textTemplate);
+      final gap = Duration(milliseconds: _cacheGapMs);
+      var segmentIndex = 0;
+      for (final segment in segments) {
+        if (!isTest && !_isActive) return false;
+
+        switch (segment.type) {
+          case VoiceSegmentType.fixed:
+            // 固定文本段：播放预生成缓存（失败则跳过该段）
+            await cache.playFiles(
+              ['seg_${segmentIndex++}.$ext'],
+              gap: gap,
+              shouldContinue: () => isTest || _isActive,
+            );
+            break;
+          case VoiceSegmentType.unrecordedTime:
+            // 未记录时间：数字 + 单位拼接播放
+            await cache.playFiles(
+              timeParts,
+              gap: gap,
+              shouldContinue: () => isTest || _isActive,
+            );
+            break;
+          case VoiceSegmentType.dynamic:
+            // 动态占位符：替换后在线合成播报
+            final text = _replacePlaceholders(segment.text);
+            await ttsPlugin.speak(text, serviceId: _serviceId);
+            break;
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[ActivityTTSAnnouncement] 缓存拼接播报失败: $e');
+      return false;
     }
   }
 
@@ -309,6 +400,7 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
     int? workHoursStart,
     int? workHoursEnd,
     bool? enableHapticFeedback,
+    int? cacheGapMs,
   }) async {
     bool needRestart = false;
 
@@ -348,6 +440,10 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
       _enableHapticFeedback = enableHapticFeedback;
     }
 
+    if (cacheGapMs != null && cacheGapMs != _cacheGapMs) {
+      _cacheGapMs = cacheGapMs;
+    }
+
     if (needRestart && _isActive) {
       // 重启服务（原子操作：先停止，再启动）
       await _restart();
@@ -384,9 +480,7 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
       // 先刷新最近活动
       await _updateLastActivity();
 
-      final text = _replacePlaceholders(_textTemplate);
-      await _speak(text);
-      debugPrint('[ActivityTTSAnnouncement] 测试播报: $text');
+      await _announce(isTest: true);
     } catch (e) {
       debugPrint('[ActivityTTSAnnouncement] 测试播报失败: $e');
       rethrow;

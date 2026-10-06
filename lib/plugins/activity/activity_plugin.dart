@@ -24,6 +24,7 @@ import 'screens/activity_settings_screen.dart';
 import 'services/activity_service.dart';
 import 'services/activity_notification_service.dart';
 import 'services/activity_tts_announcement_service.dart';
+import 'services/activity_voice_cache_service.dart';
 import 'models/activity_record.dart';
 import 'models/tts_announcement_settings.dart';
 import 'repositories/client_activity_repository.dart';
@@ -108,6 +109,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   late ActivityNotificationService _notificationService;
   late ActivityUseCase _activityUseCase;
   late ActivityTTSAnnouncementService _ttsAnnouncementService;
+  late ActivityVoiceCacheService _voiceCacheService;
   late TTSAnnouncementSettingsManager _ttsSettingsManager;
   bool _isInitialized = false;
 
@@ -151,6 +153,14 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       throw StateError('ActivityPlugin has not been initialized');
     }
     return _ttsAnnouncementService;
+  }
+
+  /// 获取播报语音缓存服务实例
+  ActivityVoiceCacheService get voiceCacheService {
+    if (!_isInitialized) {
+      throw StateError('ActivityPlugin has not been initialized');
+    }
+    return _voiceCacheService;
   }
 
   @override
@@ -275,10 +285,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     _notificationService = ActivityNotificationService(_activityService);
     await _notificationService.initialize();
 
-    // 初始化 TTS 播报服务
+    // 初始化 TTS 播报服务（含语音缓存，支持离线拼接播报）
+    _voiceCacheService = ActivityVoiceCacheService(ttsPlugin: TTSPlugin.instance);
     _ttsAnnouncementService = ActivityTTSAnnouncementService(
       activityService: _activityService,
       ttsPlugin: TTSPlugin.instance,
+      voiceCache: _voiceCacheService,
     );
 
     // 初始化 TTS 设置管理器
@@ -753,6 +765,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
         workHoursStart: settings.workHoursStart,
         workHoursEnd: settings.workHoursEnd,
         enableHapticFeedback: settings.enableHapticFeedback,
+        cacheGapMs: settings.cacheGapMs,
       );
 
       debugPrint('[ActivityPlugin] 播报设置已加载');
@@ -771,6 +784,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     int? workHoursStart,
     int? workHoursEnd,
     bool? enableHapticFeedback,
+    int? cacheGapMs,
   }) async {
     try {
       await _ttsSettingsManager.update(
@@ -782,6 +796,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
         workHoursStart: workHoursStart,
         workHoursEnd: workHoursEnd,
         enableHapticFeedback: enableHapticFeedback,
+        cacheGapMs: cacheGapMs,
       );
     } catch (e) {
       debugPrint('[ActivityPlugin] 保存播报设置失败: $e');
@@ -920,6 +935,28 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       debugPrint('[ActivityPlugin] 震动反馈已设置为: $enabled');
     } catch (e) {
       debugPrint('[ActivityPlugin] 设置震动反馈失败: $e');
+      rethrow;
+    }
+  }
+
+  /// 获取语音缓存拼接停顿（毫秒）
+  Future<int> getTTSAnnouncementCacheGap() async {
+    try {
+      final settings = await _ttsSettingsManager.load();
+      return settings.cacheGapMs;
+    } catch (e) {
+      return 150;
+    }
+  }
+
+  /// 设置语音缓存拼接停顿（毫秒）
+  Future<void> setTTSAnnouncementCacheGap(int milliseconds) async {
+    try {
+      _ttsAnnouncementService.updateConfig(cacheGapMs: milliseconds);
+      await _saveTTSAnnouncementSettings(cacheGapMs: milliseconds);
+      debugPrint('[ActivityPlugin] 拼接停顿已设置为: ${milliseconds}ms');
+    } catch (e) {
+      debugPrint('[ActivityPlugin] 设置拼接停顿失败: $e');
       rethrow;
     }
   }
