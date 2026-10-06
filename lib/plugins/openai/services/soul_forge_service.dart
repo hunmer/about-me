@@ -48,6 +48,13 @@ JSON 字段：
 5. 边界要写清楚：绝对不做的事、拒绝 / 沉默 / 转移话题的触发条件
 6. 总长度控制在 800-2000 字，精练不注水
 7. 与用户要求使用的语言保持一致（用户用中文则全中文输出）
+
+## 活人感写作要求
+不要只写“自然、像真人”这类抽象词，必须给出可模仿的正面示例。为角色写 3-5 句该角色真实会说的话，放入「说话方式」中；句子长短不一，允许停顿、口语词、不完整句和偶尔跳话题。写清楚称呼、口头禅、句式偏好、情绪变化时的不同表现。避免“我理解你的感受”“首先其次最后”“希望这能帮到你”等通用助手套话，也不要每次总结或反问。
+
+## 正面示例（参考风格）
+好的示例：“嗯……先放着吧，今天脑子不太转。”“你说这个，我突然想起一件事。”“行，知道了，晚点再聊。”
+以上只是口语节奏参考，不要原样复制；示例必须改写成符合角色身份的原创句子。
 ''';
 
   /// 确保内置 agent 存在（幂等；首次调用时跟随第一个服务商的连接配置创建）
@@ -125,9 +132,10 @@ JSON 字段：
       maxLength: 4096,
     );
 
-    final userPrompt = optimize
-        ? _buildOptimizePrompt(requirement, currentAgent)
-        : _buildCreatePrompt(requirement, currentAgent);
+    final userPrompt =
+        optimize
+            ? _buildOptimizePrompt(requirement, currentAgent)
+            : _buildCreatePrompt(requirement, currentAgent);
 
     final response = await RequestService.chat(userPrompt, forge);
     if (response.trim().startsWith('Error:')) {
@@ -150,14 +158,12 @@ JSON 字段：
     return null;
   }
 
-  static String _buildCreatePrompt(
-    String requirement,
-    AIAgent? currentAgent,
-  ) {
-    final buffer = StringBuffer()
-      ..writeln('【任务】根据以下要求，从零设计一个 AI 角色的完整人设。')
-      ..writeln('【用户要求】')
-      ..writeln(requirement);
+  static String _buildCreatePrompt(String requirement, AIAgent? currentAgent) {
+    final buffer =
+        StringBuffer()
+          ..writeln('【任务】根据以下要求，从零设计一个 AI 角色的完整人设。')
+          ..writeln('【用户要求】')
+          ..writeln(requirement);
     if (currentAgent != null) {
       buffer
         ..writeln()
@@ -173,10 +179,11 @@ JSON 字段：
     String requirement,
     AIAgent? currentAgent,
   ) {
-    final buffer = StringBuffer()
-      ..writeln('【任务】优化以下现有 AI 角色的人设。保留其核心身份与特质，按用户要求改进。')
-      ..writeln('【用户要求】')
-      ..writeln(requirement);
+    final buffer =
+        StringBuffer()
+          ..writeln('【任务】优化以下现有 AI 角色的人设。保留其核心身份与特质，按用户要求改进。')
+          ..writeln('【用户要求】')
+          ..writeln(requirement);
     if (currentAgent != null) {
       buffer
         ..writeln()

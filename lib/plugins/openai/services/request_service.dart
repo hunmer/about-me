@@ -325,7 +325,7 @@ class RequestService {
         request = CreateChatCompletionRequest(
           model: ChatCompletionModel.modelId(agent.model),
           messages: messages,
-          temperature: 0.7,
+          temperature: agent.temperature,
           maxTokens: 4096,
         );
       } else {
@@ -349,7 +349,7 @@ class RequestService {
         request = CreateChatCompletionRequest(
           model: ChatCompletionModel.modelId(agent.model),
           messages: messages,
-          temperature: 0.7,
+          temperature: agent.temperature,
           maxTokens: effectiveMaxTokens,
         );
       }
@@ -364,7 +364,7 @@ class RequestService {
       final responseContent = await _agentLibClient(agent).complete(
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
-        temperature: 0.7,
+        temperature: agent.temperature,
         maxTokens: effectiveMaxTokens,
       );
       stopwatch.stop();
@@ -718,7 +718,7 @@ class RequestService {
       final request = CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(agent.model),
         messages: messages,
-        temperature: 0.7,
+        temperature: agent.temperature,
         responseFormat: responseFormat,
       );
 
@@ -732,7 +732,7 @@ class RequestService {
       final stream = _agentLibClient(agent).stream(
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
-        temperature: 0.7,
+        temperature: agent.temperature,
         maxTokens: agent.maxLength > 0 ? agent.maxLength : null,
         responseFormat: responseFormat?.toJson(),
       );

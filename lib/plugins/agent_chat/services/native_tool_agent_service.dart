@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
@@ -34,6 +35,32 @@ class NativeToolExecutionException implements Exception {
 
   @override
   String toString() => cause.toString();
+}
+
+class _NativeToolRunContext {
+  _NativeToolRunContext(this.onToolSteps);
+
+  final Future<void> Function(List<ToolCallStep> steps)? onToolSteps;
+  late final Map<String, NativeToolMeta> toolMeta;
+  final List<ToolCallStep> steps = [];
+  Future<void> updateChain = Future<void>.value();
+  int toolCallCount = 0;
+
+  Future<void> notifySteps() {
+    final callback = onToolSteps;
+    if (callback == null) return Future<void>.value();
+
+    final snapshot = steps.map((step) => step.copyWith()).toList();
+    final update = updateChain.then((_) async {
+      try {
+        await callback(snapshot);
+      } catch (e, stack) {
+        debugPrint('[NativeTool] 工具步骤状态更新失败: $e\n$stack');
+      }
+    });
+    updateChain = update;
+    return update;
+  }
 }
 
 /// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
@@ -68,6 +95,9 @@ class DeepSeekCompatClient extends http.BaseClient {
     } catch (_) {}
     return _inner.send(request);
   }
+
+  @override
+  void close() => _inner.close();
 }
 
 /// OpenAI Provider 子类：为 ChatModel 注入 [DeepSeekCompatClient]。
@@ -121,8 +151,7 @@ class AppOpenAIProvider extends OpenAIProvider {
 /// 继续生成，多轮）由 dartantic 内部完成。执行层复用 QuickJS
 /// （ToolService.executeJsCode），UI 沿用 ToolCallStep 数据结构。
 ///
-/// 注意：单会话串行使用（ChatController._isSending 互斥保证），
-/// 工具进度回调是实例级临时状态，结束后清理。
+/// 每次工具循环的步骤、计数与回调都绑定到独立执行上下文，支持不同会话并行请求。
 class NativeToolAgentService {
   NativeToolAgentService._();
 
@@ -142,6 +171,7 @@ class NativeToolAgentService {
         uri.scheme != 'https' ||
         uri.host != 'api.anthropic.com' ||
         uri.port != 443 ||
+        uri.userInfo.isNotEmpty ||
         uri.hasQuery ||
         uri.hasFragment) {
       return false;
@@ -150,15 +180,8 @@ class NativeToolAgentService {
     return path.isEmpty || path == '/v1';
   }
 
-  List<Tool<Map<String, dynamic>>>? _toolsCache;
+  List<(String, ToolConfig)>? _toolConfigCache;
   Map<String, NativeToolMeta>? _toolMetaCache;
-
-  /// 当前循环的工具步骤进度（写 message.toolCall 用）
-  List<ToolCallStep>? _activeSteps;
-  Function(List<ToolCallStep> steps)? _activeOnToolSteps;
-
-  /// 当前循环已执行的工具调用次数（轮数上限保护）
-  int _activeToolCallCount = 0;
 
   /// 单次循环工具调用上限：防止模型陷入无限调用
   static const maxToolCallsPerLoop = 12;
@@ -188,7 +211,7 @@ class NativeToolAgentService {
   /// 运行原生 FC 工具循环，返回最终文本
   ///
   /// [systemPrompt] agent 的有效 system prompt；contextMessages 里的
-  /// system 消息（活人感后缀等）会合并为首条 system 消息
+  /// system 消息（活人感后缀等）会合并为首条 system 消息。
   /// [contextMessages] 上下文消息（agentlib 格式，最后一条为本轮 user 输入）
   /// [onToolSteps] 工具状态变化时回传全量步骤（写入 message.toolCall）
   Future<String> runToolLoop({
@@ -197,11 +220,13 @@ class NativeToolAgentService {
     required List<compat.ChatCompletionMessage> contextMessages,
     List<File> files = const [],
     required Function(String content, int count) onUpdateMessage,
-    Function(List<ToolCallStep> steps)? onToolSteps,
+    Future<void> Function(List<ToolCallStep> steps)? onToolSteps,
+    Function(String thinking)? onThinking,
     bool Function()? isCancelling,
     String? conversationId,
   }) async {
-    final (allTools, allMeta) = _buildTools();
+    final run = _NativeToolRunContext(onToolSteps);
+    final (allTools, allMeta) = _buildTools(run);
     if (allTools.isEmpty) {
       throw StateError('标准工具集为空（ToolConfigManager 未初始化或没有启用的工具）');
     }
@@ -216,9 +241,10 @@ class NativeToolAgentService {
     final candidates = matchPluginCandidates(userInput);
     var tools = allTools;
     if (candidates != null && allTools.length > 30) {
-      tools = allTools
-          .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
-          .toList();
+      tools =
+          allTools
+              .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
+              .toList();
       debugPrint(
         '[NativeTool] 预筛：${allTools.length} → ${tools.length} 个工具 '
         '（候选插件：${candidates.join(',')}）',
@@ -231,9 +257,8 @@ class NativeToolAgentService {
         .map((m) => m.content is String ? m.content as String : '')
         .where((s) => s.trim().isNotEmpty)
         .join('\n\n');
-    final system = systemExtras.isEmpty
-        ? systemPrompt
-        : '$systemPrompt\n\n$systemExtras';
+    final system =
+        systemExtras.isEmpty ? systemPrompt : '$systemPrompt\n\n$systemExtras';
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
     final Agent dartAgent;
@@ -255,12 +280,22 @@ class NativeToolAgentService {
       );
     } else {
       final configuredBaseUrl = _normalizeBaseUrl(agent.baseUrl);
+      final baseUrl =
+          configuredBaseUrl ?? Uri.parse('https://api.openai.com/v1');
+      final provider =
+          baseUrl.host.contains('deepseek')
+              ? AppOpenAIProvider(
+                apiKey: _extractApiKey(agent),
+                baseUrl: baseUrl,
+                headers: agent.headers,
+              )
+              : OpenAIProvider(
+                apiKey: _extractApiKey(agent),
+                baseUrl: baseUrl,
+                headers: agent.headers,
+              );
       dartAgent = Agent.forProvider(
-        AppOpenAIProvider(
-          apiKey: _extractApiKey(agent),
-          baseUrl: configuredBaseUrl ?? Uri.parse('https://api.openai.com/v1'),
-          headers: agent.headers,
-        ),
+        provider,
         chatModelName: agent.model,
         tools: tools,
         temperature: agent.temperature,
@@ -273,17 +308,13 @@ class NativeToolAgentService {
     for (final f in files) {
       if (!f.existsSync()) continue;
       final bytes = f.readAsBytesSync();
-      final mime = f.path.toLowerCase().endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg';
+      final mime =
+          f.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
       attachments.add(
         DataPart(bytes, mimeType: mime, name: f.path.split('/').last),
       );
     }
 
-    _activeSteps = [];
-    _activeOnToolSteps = onToolSteps;
-    _activeToolCallCount = 0;
     final output = StringBuffer();
 
     try {
@@ -295,6 +326,9 @@ class NativeToolAgentService {
         if (isCancelling?.call() == true) {
           throw Exception('已取消发送');
         }
+        if (chunk.thinking != null && chunk.thinking!.isNotEmpty) {
+          onThinking?.call(chunk.thinking!);
+        }
         if (chunk.output.isNotEmpty) {
           output.write(chunk.output);
           onUpdateMessage(output.toString(), output.length);
@@ -302,42 +336,45 @@ class NativeToolAgentService {
       }
       debugPrint(
         '[NativeTool] ✅ 循环完成 | 输出=${output.length}字 '
-        '工具调用=$_activeToolCallCount次',
+        '工具调用=${run.toolCallCount}次',
       );
       return output.toString();
     } catch (e, stack) {
-      if (_activeToolCallCount > 0 && !e.toString().contains('已取消发送')) {
+      if (run.toolCallCount > 0 && !e.toString().contains('已取消发送')) {
         throw NativeToolExecutionException(
           cause: e,
-          toolCallsStarted: _activeToolCallCount,
+          toolCallsStarted: run.toolCallCount,
         );
       }
       Error.throwWithStackTrace(e, stack);
-    } finally {
-      _activeSteps = null;
-      _activeOnToolSteps = null;
     }
   }
 
   // ---------- 工具集构建 ----------
 
-  (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>)
-  _buildTools() {
-    if (_toolsCache != null && _toolMetaCache != null) {
-      return (_toolsCache!, _toolMetaCache!);
+  (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>) _buildTools(
+    _NativeToolRunContext run,
+  ) {
+    if (_toolConfigCache == null || _toolMetaCache == null) {
+      final configs = <(String, ToolConfig)>[];
+      final meta = <String, NativeToolMeta>{};
+      for (final (toolId, pluginId, config)
+          in ToolConfigManager.instance.getEnabledToolsWithPlugin()) {
+        if (toolId.startsWith('system_')) continue;
+        final methodName =
+            toolId.startsWith('${pluginId}_')
+                ? toolId.substring(pluginId.length + 1)
+                : toolId;
+        configs.add((toolId, config));
+        meta[toolId] = NativeToolMeta(pluginId, methodName, config.title);
+      }
+      _toolConfigCache = configs;
+      _toolMetaCache = meta;
     }
+    run.toolMeta = Map.unmodifiable(_toolMetaCache!);
+
     final tools = <Tool<Map<String, dynamic>>>[];
-    final meta = <String, NativeToolMeta>{};
-    for (final (toolId, pluginId, config) in ToolConfigManager.instance
-        .getEnabledToolsWithPlugin()) {
-      // system_ 前缀工具不作为独立调用暴露（与旧两阶段 brief 行为一致）
-      if (toolId.startsWith('system_')) continue;
-      // methodName = toolId 去掉 "<pluginId>_" 前缀（json key 本身无前缀）；
-      // pluginId 为描述文件所属插件，JS 路由在 _dispatch 时实时解析
-      final methodName = toolId.startsWith('${pluginId}_')
-          ? toolId.substring(pluginId.length + 1)
-          : toolId;
-      meta[toolId] = NativeToolMeta(pluginId, methodName, config.title);
+    for (final (toolId, config) in _toolConfigCache!) {
       tools.add(
         Tool<Map<String, dynamic>>(
           name: toolId,
@@ -345,19 +382,17 @@ class NativeToolAgentService {
           inputSchema: Schema.fromMap(
             ToolSchemaBuilder.buildSchemaMap(config.parameters),
           ),
-          onCall: (args) => _dispatch(toolId, args),
+          onCall: (args) => _dispatch(run, toolId, args),
         ),
       );
     }
     debugPrint('[NativeTool] 已构建 ${tools.length} 个原生工具');
-    _toolsCache = tools;
-    _toolMetaCache = meta;
-    return (tools, meta);
+    return (tools, _toolMetaCache!);
   }
 
   /// 缓存失效（工具配置变更时调用）
   void invalidateCache() {
-    _toolsCache = null;
+    _toolConfigCache = null;
     _toolMetaCache = null;
   }
 
@@ -365,12 +400,13 @@ class NativeToolAgentService {
 
   /// 工具调用回调：生成 JS 调用代码 → QuickJS 执行 → 结果回传 LLM
   Future<Map<String, dynamic>> _dispatch(
+    _NativeToolRunContext run,
     String toolId,
     Map<String, dynamic> args,
   ) async {
     // 轮数上限保护：超限后向模型返回错误提示，促使其收敛直接作答
-    _activeToolCallCount++;
-    if (_activeToolCallCount > maxToolCallsPerLoop) {
+    run.toolCallCount++;
+    if (run.toolCallCount > maxToolCallsPerLoop) {
       debugPrint('[NativeTool] ⚠️ 达到调用上限（$maxToolCallsPerLoop 次）');
       return {
         'error':
@@ -379,8 +415,7 @@ class NativeToolAgentService {
       };
     }
 
-    final (_, metaMap) = _buildTools();
-    final meta = metaMap[toolId];
+    final meta = run.toolMeta[toolId];
     if (meta == null) return {'error': 'Tool $toolId not found'};
 
     final argsJson = jsonEncode(args);
@@ -401,10 +436,10 @@ class NativeToolAgentService {
       data: js,
       status: ToolCallStatus.running,
     );
-    _activeSteps?.add(step);
-    _activeOnToolSteps?.call(List.of(_activeSteps!));
+    run.steps.add(step);
+    await run.notifySteps();
     debugPrint(
-      '[NativeTool] ▶ #$_activeToolCallCount ${meta.title} | $argsJson',
+      '[NativeTool] ▶ #${run.toolCallCount} ${meta.title} | $argsJson',
     );
 
     try {
@@ -412,7 +447,7 @@ class NativeToolAgentService {
       step
         ..status = ToolCallStatus.success
         ..result = result;
-      _activeOnToolSteps?.call(List.of(_activeSteps!));
+      await run.notifySteps();
       // 结果回传 LLM：JSON 字符串解析后原样传，其余包 result 字段
       final decoded = _tryDecodeJson(result);
       return (decoded is Map<String, dynamic>)
@@ -422,7 +457,7 @@ class NativeToolAgentService {
       step
         ..status = ToolCallStatus.failed
         ..error = e.toString();
-      _activeOnToolSteps?.call(List.of(_activeSteps!));
+      await run.notifySteps();
       debugPrint('[NativeTool] ✗ ${meta.title} 失败: $e');
       // 异常以 error 形式回传，模型可自行调整参数重试
       return {'error': e.toString()};
@@ -465,7 +500,22 @@ class NativeToolAgentService {
           parts: [TextPart(systemPrompt)],
         ),
     ];
-    for (final m in messages) {
+    // Agent.sendStream 会把 prompt 追加为新的 user message；上下文中最后
+    // 一个 user 已经是本轮 prompt 时不能再次放入 history，否则会重复提问。
+    var lastUserIndex = -1;
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role == compat.ChatCompletionMessageRole.system) {
+        continue;
+      }
+      if (messages[i].role == compat.ChatCompletionMessageRole.user) {
+        lastUserIndex = i;
+      }
+      break;
+    }
+
+    for (var i = 0; i < messages.length; i++) {
+      if (i == lastUserIndex) continue;
+      final m = messages[i];
       final role = switch (m.role) {
         compat.ChatCompletionMessageRole.user => ChatMessageRole.user,
         compat.ChatCompletionMessageRole.assistant => ChatMessageRole.model,
@@ -524,12 +574,22 @@ class NativeToolAgentService {
   }
 
   String _extractApiKey(AIAgent agent) {
-    final auth = agent.headers['Authorization'] ?? '';
-    if (auth.startsWith('Bearer ')) return auth.substring(7);
-    return agent.headers['api-key'] ??
-        agent.headers['x-api-key'] ??
-        agent.headers['X-Api-Key'] ??
-        '';
+    final headers = {
+      for (final entry in agent.headers.entries)
+        entry.key.toLowerCase(): entry.value.trim(),
+    };
+    final authorization = headers['authorization'] ?? '';
+    final bearer = RegExp(
+      r'^Bearer\s+(.+)$',
+      caseSensitive: false,
+    ).firstMatch(authorization);
+    if (bearer != null) return bearer.group(1)!.trim();
+
+    for (final name in ['x-api-key', 'api-key']) {
+      final value = headers[name];
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return '';
   }
 
   Uri? _normalizeBaseUrl(String baseUrl) {

@@ -70,8 +70,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
             title: const Text('活人感增强'),
             subtitle: const Text('开启后该 AI 会缓冲思考、分条回复、有节奏地聊天'),
             value: config.enabled,
-            onChanged: (v) =>
-                widget.onChanged(config.copyWith(enabled: v)),
+            onChanged: (v) => widget.onChanged(config.copyWith(enabled: v)),
           ),
           if (config.enabled) ...[
             const Divider(height: 1),
@@ -86,9 +85,35 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     min: 0,
                     max: 1,
                     divisions: 10,
-                    onChanged: (v) =>
-                        widget.onChanged(config.copyWith(laziness: v)),
+                    onChanged:
+                        (v) => widget.onChanged(config.copyWith(laziness: v)),
                   ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: const Text('Jev 拟人度评分与自动修订'),
+                    subtitle: Text(
+                      '低于 ${config.humanScoreThreshold}/3 时让模型重新生成一次',
+                    ),
+                    value: config.humanScoreEnabled,
+                    onChanged:
+                        (v) => widget.onChanged(
+                          config.copyWith(humanScoreEnabled: v),
+                        ),
+                  ),
+                  if (config.humanScoreEnabled)
+                    _buildSlider(
+                      label: '最低拟人度评分',
+                      valueText: '${config.humanScoreThreshold}/3',
+                      value: config.humanScoreThreshold.toDouble(),
+                      min: 1,
+                      max: 3,
+                      divisions: 2,
+                      onChanged:
+                          (v) => widget.onChanged(
+                            config.copyWith(humanScoreThreshold: v.round()),
+                          ),
+                    ),
                   _buildSlider(
                     label: '缓冲下限（秒）',
                     valueText: '${config.bufferMinSec}',
@@ -98,11 +123,12 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     divisions: 27,
                     onChanged: (v) {
                       final min = v.round();
-                      widget.onChanged(config.copyWith(
-                        bufferMinSec: min,
-                        bufferMaxSec:
-                            config.bufferMaxSec.clamp(min + 5, 600),
-                      ));
+                      widget.onChanged(
+                        config.copyWith(
+                          bufferMinSec: min,
+                          bufferMaxSec: config.bufferMaxSec.clamp(min + 5, 600),
+                        ),
+                      );
                     },
                   ),
                   _buildSlider(
@@ -114,11 +140,12 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     divisions: 22,
                     onChanged: (v) {
                       final max = v.round();
-                      widget.onChanged(config.copyWith(
-                        bufferMaxSec: max,
-                        bufferMinSec:
-                            config.bufferMinSec.clamp(1, max - 5),
-                      ));
+                      widget.onChanged(
+                        config.copyWith(
+                          bufferMaxSec: max,
+                          bufferMinSec: config.bufferMinSec.clamp(1, max - 5),
+                        ),
+                      );
                     },
                   ),
                   _buildSlider(
@@ -128,9 +155,10 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     min: 1,
                     max: 5,
                     divisions: 4,
-                    onChanged: (v) => widget.onChanged(
-                      config.copyWith(maxBubbles: v.round()),
-                    ),
+                    onChanged:
+                        (v) => widget.onChanged(
+                          config.copyWith(maxBubbles: v.round()),
+                        ),
                   ),
                   _buildSlider(
                     label: '分条最小间隔（毫秒）',
@@ -141,11 +169,15 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     divisions: 27,
                     onChanged: (v) {
                       final min = v.round();
-                      widget.onChanged(config.copyWith(
-                        bubbleDelayMinMs: min,
-                        bubbleDelayMaxMs: config.bubbleDelayMaxMs
-                            .clamp(min + 200, 10000),
-                      ));
+                      widget.onChanged(
+                        config.copyWith(
+                          bubbleDelayMinMs: min,
+                          bubbleDelayMaxMs: config.bubbleDelayMaxMs.clamp(
+                            min + 200,
+                            10000,
+                          ),
+                        ),
+                      );
                     },
                   ),
                   _buildSlider(
@@ -157,11 +189,15 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     divisions: 35,
                     onChanged: (v) {
                       final max = v.round();
-                      widget.onChanged(config.copyWith(
-                        bubbleDelayMaxMs: max,
-                        bubbleDelayMinMs: config.bubbleDelayMinMs
-                            .clamp(100, max - 200),
-                      ));
+                      widget.onChanged(
+                        config.copyWith(
+                          bubbleDelayMaxMs: max,
+                          bubbleDelayMinMs: config.bubbleDelayMinMs.clamp(
+                            100,
+                            max - 200,
+                          ),
+                        ),
+                      );
                     },
                   ),
                   const Divider(height: 24),
@@ -172,11 +208,11 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     title: const Text('语音主动发送'),
                     subtitle: const Text('情绪浓时以语音形式追加回复（需配置支持合成的 TTS 服务）'),
                     value: config.voiceEnabled,
-                    onChanged: (v) =>
-                        widget.onChanged(config.copyWith(voiceEnabled: v)),
+                    onChanged:
+                        (v) =>
+                            widget.onChanged(config.copyWith(voiceEnabled: v)),
                   ),
-                  if (config.voiceEnabled)
-                    _buildTtsSelector(theme, config),
+                  if (config.voiceEnabled) _buildTtsSelector(theme, config),
                   const Divider(height: 24),
                   // 主动消息
                   SwitchListTile(
@@ -185,9 +221,10 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                     title: const Text('主动消息'),
                     subtitle: const Text('久未联系或待跟进事件到期时，AI 会主动来找你'),
                     value: config.proactiveEnabled,
-                    onChanged: (v) => widget.onChanged(
-                      config.copyWith(proactiveEnabled: v),
-                    ),
+                    onChanged:
+                        (v) => widget.onChanged(
+                          config.copyWith(proactiveEnabled: v),
+                        ),
                   ),
                   if (config.proactiveEnabled) ...[
                     _buildSlider(
@@ -197,9 +234,10 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                       min: 15,
                       max: 360,
                       divisions: 23,
-                      onChanged: (v) => widget.onChanged(
-                        config.copyWith(proactiveCooldownMin: v.round()),
-                      ),
+                      onChanged:
+                          (v) => widget.onChanged(
+                            config.copyWith(proactiveCooldownMin: v.round()),
+                          ),
                     ),
                     _buildSlider(
                       label: '每日主动上限（条）',
@@ -208,9 +246,10 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                       min: 1,
                       max: 10,
                       divisions: 9,
-                      onChanged: (v) => widget.onChanged(
-                        config.copyWith(proactiveDailyLimit: v.round()),
-                      ),
+                      onChanged:
+                          (v) => widget.onChanged(
+                            config.copyWith(proactiveDailyLimit: v.round()),
+                          ),
                     ),
                     _buildQuietHoursRow(theme, config),
                   ],
@@ -224,54 +263,58 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                         label: const Text('决策模型'),
                       ),
                       TextButton.icon(
-                        onPressed: widget.agentId == null
-                            ? null
-                            : () => NavigationHelper.push(
-                                context,
-                                AgentScheduleScreen(
-                                  agentId: widget.agentId!,
-                                  agentName: widget.agentName,
+                        onPressed:
+                            widget.agentId == null
+                                ? null
+                                : () => NavigationHelper.push(
+                                  context,
+                                  AgentScheduleScreen(
+                                    agentId: widget.agentId!,
+                                    agentName: widget.agentName,
+                                  ),
                                 ),
-                              ),
                         icon: const Icon(Icons.wb_sunny_outlined, size: 16),
                         label: const Text('AI日程'),
                       ),
                       TextButton.icon(
-                        onPressed: widget.agentId == null
-                            ? null
-                            : () => NavigationHelper.push(
-                                context,
-                                ChatImportScreen(
-                                  agentId: widget.agentId!,
-                                  agentName: widget.agentName,
+                        onPressed:
+                            widget.agentId == null
+                                ? null
+                                : () => NavigationHelper.push(
+                                  context,
+                                  ChatImportScreen(
+                                    agentId: widget.agentId!,
+                                    agentName: widget.agentName,
+                                  ),
                                 ),
-                              ),
                         icon: const Icon(Icons.upload_file, size: 16),
                         label: const Text('分析聊天记录'),
                       ),
                       TextButton.icon(
-                        onPressed: widget.agentId == null
-                            ? null
-                            : () => NavigationHelper.push(
-                                context,
-                                MemoryManagerScreen(
-                                  agentId: widget.agentId!,
-                                  agentName: widget.agentName,
+                        onPressed:
+                            widget.agentId == null
+                                ? null
+                                : () => NavigationHelper.push(
+                                  context,
+                                  MemoryManagerScreen(
+                                    agentId: widget.agentId!,
+                                    agentName: widget.agentName,
+                                  ),
                                 ),
-                              ),
                         icon: const Icon(Icons.psychology_alt, size: 16),
                         label: const Text('记忆管理'),
                       ),
                       TextButton.icon(
-                        onPressed: widget.agentId == null
-                            ? null
-                            : () => NavigationHelper.push(
-                                context,
-                                DecisionLogScreen(
-                                  agentId: widget.agentId!,
-                                  agentName: widget.agentName,
+                        onPressed:
+                            widget.agentId == null
+                                ? null
+                                : () => NavigationHelper.push(
+                                  context,
+                                  DecisionLogScreen(
+                                    agentId: widget.agentId!,
+                                    agentName: widget.agentName,
+                                  ),
                                 ),
-                              ),
                         icon: const Icon(Icons.receipt_long, size: 16),
                         label: const Text('决策日志'),
                       ),
@@ -305,9 +348,10 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
             child: DropdownButton<String?>(
               isExpanded: true,
               value: validSelection ? selected : null,
-              hint: _ttsServices.isEmpty
-                  ? const Text('未找到 TTS 服务')
-                  : const Text('跟随全局设置'),
+              hint:
+                  _ttsServices.isEmpty
+                      ? const Text('未找到 TTS 服务')
+                      : const Text('跟随全局设置'),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,
@@ -323,15 +367,16 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                           : s.name,
                       style: TextStyle(
                         fontSize: 14,
-                        color: s.type == TTSServiceType.system
-                            ? theme.disabledColor
-                            : null,
+                        color:
+                            s.type == TTSServiceType.system
+                                ? theme.disabledColor
+                                : null,
                       ),
                     ),
                   ),
               ],
-              onChanged: (id) =>
-                  widget.onChanged(config.copyWith(ttsServiceId: id)),
+              onChanged:
+                  (id) => widget.onChanged(config.copyWith(ttsServiceId: id)),
             ),
           ),
         ],
@@ -363,9 +408,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
           ),
           hourDropdown(
             start,
-            (h) => widget.onChanged(
-              config.copyWith(quietHours: [h, end]),
-            ),
+            (h) => widget.onChanged(config.copyWith(quietHours: [h, end])),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
@@ -373,9 +416,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
           ),
           hourDropdown(
             end,
-            (h) => widget.onChanged(
-              config.copyWith(quietHours: [start, h]),
-            ),
+            (h) => widget.onChanged(config.copyWith(quietHours: [start, h])),
           ),
         ],
       ),

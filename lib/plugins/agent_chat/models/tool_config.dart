@@ -40,11 +40,7 @@ class ToolParameter {
       optional = false;
     }
 
-    final nested =
-        (json['properties'] as List<dynamic>? ?? [])
-            .whereType<Map>()
-            .map((e) => ToolParameter.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+    final nested = _parseNestedProperties(json['properties']);
 
     return ToolParameter(
       name: json['name'] as String,
@@ -53,6 +49,29 @@ class ToolParameter {
       description: json['description'] as String,
       properties: nested,
     );
+  }
+
+  /// 解析嵌套属性，兼容两种格式：
+  /// - 数组格式: [{"name": "date", ...}]
+  /// - 映射格式: {"date": {"type": "string", ...}}（activity/todo/tracker 旧配置）
+  static List<ToolParameter> _parseNestedProperties(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => ToolParameter.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    if (raw is Map) {
+      return raw.entries
+          .where((e) => e.value is Map)
+          .map((e) {
+            final item = Map<String, dynamic>.from(e.value as Map);
+            item.putIfAbsent('name', () => e.key.toString());
+            return ToolParameter.fromJson(item);
+          })
+          .toList();
+    }
+    return [];
   }
 
   Map<String, dynamic> toJson() {

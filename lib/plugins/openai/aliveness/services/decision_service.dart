@@ -45,12 +45,62 @@ class DecisionService {
 
   final _store = AlivenessStore.instance;
   final _rng = Random();
-  final _dio = Dio(BaseOptions(
-    // Jev 实测响应 2~4s（含 TLS 握手），1.5s 会频繁连接超时；超时仍回退本地规则
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 6),
-    sendTimeout: const Duration(seconds: 5),
-  ));
+  final _dio = Dio(
+    BaseOptions(
+      // Jev 实测响应 2~4s（含 TLS 握手），1.5s 会频繁连接超时；超时仍回退本地规则
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 6),
+      sendTimeout: const Duration(seconds: 5),
+    ),
+  );
+
+  /// 使用 Jev Score 评估回复的拟人度（0=AI味重，3=像真人）。
+  /// 返回 null 表示未配置或调用失败，由上层保留原回复。
+  Future<int?> scoreHumanity({
+    required String state,
+    required String reply,
+  }) async {
+    try {
+      final settings = await _store.loadSettings();
+      final key = settings['jevApiKey'] as String?;
+      if (key == null || key.isEmpty) return null;
+      final response = await _dio.post<Map<String, dynamic>>(
+        settings['jevBaseUrl'] as String? ??
+            'https://api.typesafe.ai/v1/systemone',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $key',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'model': settings['jevModel'] as String? ?? 'jev-latest',
+          'state': state,
+          'questions': {
+            'humanity': {
+              'type': 'score',
+              'instructions':
+                  '评价下面这条角色扮演回复有多像一个具体的真人角色，重点看口语、不完美、语言指纹和上下文贴合度。不要因为内容正确就给高分。',
+              'criteria': [
+                '明显AI味：套路、客套、结构过于完美',
+                '有明显AI痕迹',
+                '基本自然但仍有少量AI味',
+                '很像真人：有具体口吻和自然的不完美',
+              ],
+            },
+          },
+        },
+      );
+      final answer = (response.data?['answers'] as Map?)?['humanity'];
+      if (answer is! Map) return null;
+      final value = answer['score'];
+      final score = value is num ? value.round() : int.tryParse('$value');
+      return score?.clamp(0, 3);
+    } catch (e) {
+      debugPrint('[Aliveness][拟人度] Jev 评分失败: $e');
+      return null;
+    }
+  }
 
   /// 决策入口（通用文本输入，chat / agent_chat 共用）
   Future<DecisionResult> decideTexts({
@@ -72,14 +122,17 @@ class DecisionService {
       final settings = await _store.loadSettings();
       final apiKey = settings['jevApiKey'] as String?;
       if (apiKey == null || apiKey.isEmpty) {
-        debugPrint('[Aliveness][决策] 未配置 Jev Key，使用本地规则 | '
-            '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s');
+        debugPrint(
+          '[Aliveness][决策] 未配置 Jev Key，使用本地规则 | '
+          '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s',
+        );
         return fallback;
       }
 
       final sw = Stopwatch()..start();
       final jevResult = await _callJev(
-        baseUrl: settings['jevBaseUrl'] as String? ??
+        baseUrl:
+            settings['jevBaseUrl'] as String? ??
             'https://api.typesafe.ai/v1/systemone',
         apiKey: apiKey,
         model: settings['jevModel'] as String? ?? 'jev-latest',
@@ -92,19 +145,25 @@ class DecisionService {
       );
       sw.stop();
       if (jevResult == null) {
-        debugPrint('[Aliveness][决策] Jev 返回空结果(${sw.elapsedMilliseconds}ms)，'
-            '回退本地规则');
+        debugPrint(
+          '[Aliveness][决策] Jev 返回空结果(${sw.elapsedMilliseconds}ms)，'
+          '回退本地规则',
+        );
         return fallback;
       }
-      debugPrint('[Aliveness][决策] Jev 完成(${sw.elapsedMilliseconds}ms) | '
-          '回复=${jevResult.shouldReplyNow} 延迟=${jevResult.delaySeconds}s '
-          '策略=${jevResult.strategy.name} 转移话题=${jevResult.shiftTopic} '
-          '语音=${jevResult.useVoice} 用户情绪=${jevResult.userEmotion.toStringAsFixed(2)} '
-          '探索=${jevResult.exploreQuestion ?? "无"}');
+      debugPrint(
+        '[Aliveness][决策] Jev 完成(${sw.elapsedMilliseconds}ms) | '
+        '回复=${jevResult.shouldReplyNow} 延迟=${jevResult.delaySeconds}s '
+        '策略=${jevResult.strategy.name} 转移话题=${jevResult.shiftTopic} '
+        '语音=${jevResult.useVoice} 用户情绪=${jevResult.userEmotion.toStringAsFixed(2)} '
+        '探索=${jevResult.exploreQuestion ?? "无"}',
+      );
       return jevResult;
     } catch (e) {
-      debugPrint('[Aliveness][决策] Jev 调用失败，回退本地规则 | '
-          '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s | 错误: $e');
+      debugPrint(
+        '[Aliveness][决策] Jev 调用失败，回退本地规则 | '
+        '策略=${fallback.strategy.name} 延迟=${fallback.delaySeconds}s | 错误: $e',
+      );
       return fallback;
     }
   }
@@ -140,7 +199,8 @@ class DecisionService {
         'questions': {
           'should_reply_now': {
             'type': 'noul',
-            'instructions': '缓冲结束后，角色是否应立即生成回复？'
+            'instructions':
+                '缓冲结束后，角色是否应立即生成回复？'
                 '（用户在等待回应；闲聊结尾或客套话可以不回）',
           },
           'delay_seconds': {
@@ -168,10 +228,7 @@ class DecisionService {
             'type': 'noul',
             'instructions': '当前是否适合由角色主动转移话题？',
           },
-          'use_voice': {
-            'type': 'noul',
-            'instructions': '这条回复是否适合以语音而非文字形式发送？',
-          },
+          'use_voice': {'type': 'noul', 'instructions': '这条回复是否适合以语音而非文字形式发送？'},
           'user_emotion': {
             'type': 'score',
             'instructions': '用户当前情绪效价',
@@ -209,8 +266,10 @@ class DecisionService {
     final delaySeconds = int.tryParse(delayRaw ?? '0') ?? 0;
     if (delayAnswer != null &&
         ((delayAnswer['confidence'] as num?)?.toDouble() ?? 0) < threshold) {
-      debugPrint('[Aliveness][决策] 延迟项置信度不足'
-          '(${delayAnswer['confidence']} < $threshold)，回退 0s');
+      debugPrint(
+        '[Aliveness][决策] 延迟项置信度不足'
+        '(${delayAnswer['confidence']} < $threshold)，回退 0s',
+      );
     }
 
     final strategyAnswer = answers['reply_strategy'] as Map?;
@@ -218,9 +277,11 @@ class DecisionService {
     if (strategyAnswer != null &&
         strategyRaw == null &&
         strategyAnswer['choice'] != null) {
-      debugPrint('[Aliveness][决策] 策略项置信度不足'
-          '(${strategyAnswer['confidence']} < $threshold)，'
-          'Jev 倾向 ${strategyAnswer['choice']} 但回退"正常"');
+      debugPrint(
+        '[Aliveness][决策] 策略项置信度不足'
+        '(${strategyAnswer['confidence']} < $threshold)，'
+        'Jev 倾向 ${strategyAnswer['choice']} 但回退"正常"',
+      );
     }
     final strategy = switch (strategyRaw) {
       '极简' => ReplyStrategy.minimal,
@@ -236,12 +297,14 @@ class DecisionService {
     final shiftTopic = _readNoul(answers['should_shift_topic']) > 0.55;
 
     final emotionScore = _readScore(answers['user_emotion']);
-    debugPrint('[Aliveness][决策] 原始概率 | 回复noul=$replyNoul '
-        '转移noul=${_readNoul(answers['should_shift_topic'])} '
-        '语音noul=${_readNoul(answers['use_voice'])} '
-        '情绪score=$emotionScore 延迟选择=${delayAnswer?['choice']}'
-        '(conf ${delayAnswer?['confidence']}) '
-        '策略选择=${strategyAnswer?['choice']}(conf ${strategyAnswer?['confidence']})');
+    debugPrint(
+      '[Aliveness][决策] 原始概率 | 回复noul=$replyNoul '
+      '转移noul=${_readNoul(answers['should_shift_topic'])} '
+      '语音noul=${_readNoul(answers['use_voice'])} '
+      '情绪score=$emotionScore 延迟选择=${delayAnswer?['choice']}'
+      '(conf ${delayAnswer?['confidence']}) '
+      '策略选择=${strategyAnswer?['choice']}(conf ${strategyAnswer?['confidence']})',
+    );
 
     // 偏好探索：两个问题都命中且不是"不探索"才采纳
     String? exploreQuestion;
@@ -274,9 +337,10 @@ class DecisionService {
       'user_messages_buffer': texts,
       'character_energy': state.energy,
       'intimacy_level': state.intimacy,
-      'current_mood': state.mood > 0.2
-          ? 'positive'
-          : (state.mood < -0.2 ? 'low' : 'neutral'),
+      'current_mood':
+          state.mood > 0.2
+              ? 'positive'
+              : (state.mood < -0.2 ? 'low' : 'neutral'),
       'character_description': state.describe(),
       'time_of_day':
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
@@ -308,8 +372,7 @@ class DecisionService {
   double _readScore(dynamic answer) {
     if (answer is! Map) return 0.0;
     final legend = answer['legend'] as Map?;
-    final levels =
-        legend != null && legend.isNotEmpty ? legend.length : 5;
+    final levels = legend != null && legend.isNotEmpty ? legend.length : 5;
     final score = answer['score'];
     if (score is num) {
       return ((score.toDouble() / (levels - 1)) * 2 - 1).clamp(-1.0, 1.0);
@@ -332,19 +395,15 @@ class DecisionService {
     List<String> unaskedQuestions = const [],
     DateTime? lastExploreAt,
   }) {
-    final totalLength = messages.fold<int>(
-      0,
-      (sum, m) => sum + m.length,
-    );
+    final totalLength = messages.fold<int>(0, (sum, m) => sum + m.length);
     final complex = totalLength > 50 || messages.length >= 3;
 
     // 是否回复：低能量且低亲密度时可以"已读不回"一轮，但亲密度高时始终回复
     final shouldReply = state.energy > 0.3 || state.intimacy > 0.6 || complex;
 
     // 延迟：惰性高且消息复杂 → 思考一会儿；普通 → 立即
-    final delay = (config.laziness > 0.5 && complex)
-        ? (state.energy < 0.4 ? 45 : 15)
-        : 0;
+    final delay =
+        (config.laziness > 0.5 && complex) ? (state.energy < 0.4 ? 45 : 15) : 0;
 
     // 策略：能量低 → 极简；用户连发多条 → 详细；其余 → 正常
     final strategy =

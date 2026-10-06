@@ -20,7 +20,12 @@ void main() {
             'optional': true,
             'description': '是否完成',
           },
-          {'name': 'tag', 'type': 'string', 'required': true, 'description': '标签'},
+          {
+            'name': 'tag',
+            'type': 'string',
+            'required': true,
+            'description': '标签',
+          },
         ],
       });
       expect(param.properties.length, 2);
@@ -31,26 +36,33 @@ void main() {
       final json = param.toJson();
       expect((json['properties'] as List).length, 2);
     });
+
+    test('object 参数解析映射格式嵌套属性（activity/todo/tracker 旧配置）', () {
+      final param = ToolParameter.fromJson({
+        'name': 'params',
+        'type': 'object',
+        'required': true,
+        'description': '查询参数',
+        'properties': {
+          'date': {'type': 'string', 'required': false, 'description': '日期'},
+          'offset': {'type': 'number', 'required': false, 'description': '偏移'},
+          'title': {'type': 'string', 'required': true, 'description': '标题'},
+        },
+      });
+      expect(param.properties.length, 3);
+      expect(param.properties[0].name, 'date');
+      expect(param.properties[0].optional, true);
+      expect(param.properties[2].optional, false);
+      expect(param.properties[2].type, 'string');
+    });
   });
 
   group('ToolSchemaBuilder', () {
     test('脏 type 规范化', () {
       final schema = ToolSchemaBuilder.buildSchemaMap([
-        ToolParameter(
-          name: 'a',
-          type: 'String',
-          description: '大小写变体',
-        ),
-        ToolParameter(
-          name: 'b',
-          type: 'Array<string>',
-          description: '泛型数组',
-        ),
-        ToolParameter(
-          name: 'c',
-          type: 'any',
-          description: '未知类型降级 string',
-        ),
+        ToolParameter(name: 'a', type: 'String', description: '大小写变体'),
+        ToolParameter(name: 'b', type: 'Array<string>', description: '泛型数组'),
+        ToolParameter(name: 'c', type: 'any', description: '未知类型降级 string'),
       ]);
       final props = schema['properties'] as Map<String, dynamic>;
       expect((props['a'] as Map)['type'], 'string');
@@ -78,8 +90,9 @@ void main() {
           ],
         ),
       ]);
-      final filter = (schema['properties'] as Map<String, dynamic>)['filter']
-          as Map<String, dynamic>;
+      final filter =
+          (schema['properties'] as Map<String, dynamic>)['filter']
+              as Map<String, dynamic>;
       expect(filter['type'], 'object');
       final nested = filter['properties'] as Map<String, dynamic>;
       expect(nested.keys.toSet(), {'date', 'limit'});
@@ -99,9 +112,7 @@ void main() {
         description: '这是描述',
         parameters: [],
         returns: ToolReturns(type: 'string', description: '返回字符串'),
-        examples: [
-          ToolExample(code: "const r = await test();", comment: '示例'),
-        ],
+        examples: [ToolExample(code: "const r = await test();", comment: '示例')],
       );
       final desc = ToolSchemaBuilder.buildDescription(config);
       expect(desc.contains('这是描述'), true);
@@ -136,7 +147,34 @@ void main() {
   });
 
   group('NativeToolAgentService.supports', () {
-    test('Anthropic Agent 使用标准 function calling', () {
+    test('启用 function calling 的 OpenAI Agent 使用标准工具调用', () {
+      final now = DateTime(2026, 1, 1);
+      final agent = AIAgent(
+        id: 'openai-agent',
+        name: 'OpenAI',
+        description: '',
+        tags: const [],
+        serviceProviderId: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        headers: const {'Authorization': 'Bearer test-key'},
+        createdAt: now,
+        updatedAt: now,
+        model: 'gpt-4o-mini',
+        enableFunctionCalling: true,
+      );
+
+      expect(NativeToolAgentService.instance.supports(agent, true), isTrue);
+      expect(NativeToolAgentService.instance.supports(agent, false), isFalse);
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(enableFunctionCalling: false),
+          true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('Anthropic 仅在 SDK 官方 endpoint 使用标准 function calling', () {
       final now = DateTime(2026, 1, 1);
       final agent = AIAgent(
         id: 'anthropic-agent',
@@ -158,6 +196,34 @@ void main() {
       expect(
         NativeToolAgentService.instance.supports(
           agent.copyWith(baseUrl: 'https://open.bigmodel.cn/api/anthropic'),
+          true,
+        ),
+        isFalse,
+      );
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(baseUrl: 'https://api.anthropic.com'),
+          true,
+        ),
+        isTrue,
+      );
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(baseUrl: 'http://api.anthropic.com/v1'),
+          true,
+        ),
+        isFalse,
+      );
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(baseUrl: 'https://api.anthropic.com:8443/v1'),
+          true,
+        ),
+        isFalse,
+      );
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(baseUrl: 'https://user@api.anthropic.com/v1'),
           true,
         ),
         isFalse,

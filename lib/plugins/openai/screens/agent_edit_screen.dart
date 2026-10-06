@@ -203,6 +203,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       tags: (values['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       createdAt: widget.agent?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
+      temperature: (double.tryParse('${values['temperature']}') ?? 0.7).clamp(
+        0.0,
+        2.0,
+      ),
       icon: iconAvatarData?['icon'] as IconData?,
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
@@ -762,6 +766,13 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                             ),
                           ],
                         ),
+                        FormFieldConfig(
+                          name: 'temperature',
+                          type: FormFieldType.number,
+                          labelText: '生成温度（0-2）',
+                          hintText: '0.7（越高越随机，角色扮演建议 0.7-0.9）',
+                          initialValue: widget.agent?.temperature ?? 0.7,
+                        ),
                         // Headers
                         FormFieldConfig(
                           name: 'headers',
@@ -825,8 +836,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                     config: _alivenessConfig,
                     agentId: widget.agent?.id,
                     agentName: widget.agent?.name ?? '',
-                    onChanged:
-                        (c) => setState(() => _alivenessConfig = c),
+                    onChanged: (c) => setState(() => _alivenessConfig = c),
                   ),
                   if (widget.agent?.id != null) ...[
                     const SizedBox(height: 8),
@@ -841,12 +851,12 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                             widget.agent == null
                                 ? null
                                 : () => NavigationHelper.push(
-                                    context,
-                                    AgentAssetsScreen(
-                                      agentId: widget.agent!.id,
-                                      agentName: widget.agent!.name,
-                                    ),
+                                  context,
+                                  AgentAssetsScreen(
+                                    agentId: widget.agent!.id,
+                                    agentName: widget.agent!.name,
                                   ),
+                                ),
                       ),
                     ),
                   ],
@@ -976,10 +986,13 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       tags: (values['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      temperature: (double.tryParse('${values['temperature']}') ?? 0.7).clamp(
+        0.0,
+        2.0,
+      ),
       icon: iconAvatarData?['icon'] as IconData?,
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
-      temperature: 0.7,
       maxLength: 2000,
       topP: 1.0,
       frequencyPenalty: 0.0,
@@ -1001,7 +1014,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       'model': values['model'],
       'serviceProviderId': _selectedProviderId,
       'apiKey': apiKey,
-      'temperature': 0.7,
+      'temperature': testAgent.temperature,
       'maxLength': 2000,
       'topP': 1.0,
       'frequencyPenalty': 0.0,
@@ -1073,7 +1086,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
 
   Future<void> _showSmartSoulDialog() async {
     final current = _buildCurrentAgentSnapshot();
-    final hasCurrentSoul = current != null && current.effectiveSystemPrompt.trim().isNotEmpty;
+    final hasCurrentSoul =
+        current != null && current.effectiveSystemPrompt.trim().isNotEmpty;
 
     final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
@@ -1082,16 +1096,17 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       builder:
           (dialogContext) => DSThemeBridge(
             child: Builder(
-              builder: (context) => _SmartSoulDialog(
-                defaultOptimize: hasCurrentSoul,
-                onGenerate:
-                    (optimize, requirement) => SoulForgeService.generate(
-                      optimize: optimize,
-                      requirement: requirement,
-                      connectionAgent: _buildConnectionAgent(),
-                      currentAgent: current,
-                    ),
-              ),
+              builder:
+                  (context) => _SmartSoulDialog(
+                    defaultOptimize: hasCurrentSoul,
+                    onGenerate:
+                        (optimize, requirement) => SoulForgeService.generate(
+                          optimize: optimize,
+                          requirement: requirement,
+                          connectionAgent: _buildConnectionAgent(),
+                          currentAgent: current,
+                        ),
+                  ),
             ),
           ),
     );
@@ -1125,9 +1140,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       final prompts = form.instantValue['promptEditor'] as List<dynamic>? ?? [];
       final others =
           prompts
-              .where(
-                (p) => (p as Map<String, dynamic>)['type'] != 'system',
-              )
+              .where((p) => (p as Map<String, dynamic>)['type'] != 'system')
               .toList();
       patch['promptEditor'] = [
         {'type': 'system', 'content': systemPrompt},

@@ -37,6 +37,10 @@ class AlivenessConfig {
   /// 语音消息使用的 TTS 服务 ID（null = 跟随全局配置的 voiceServiceId）
   final String? ttsServiceId;
 
+  /// 生成后使用 Jev 评分拟人度，低分自动要求模型修订。
+  final bool humanScoreEnabled;
+  final int humanScoreThreshold;
+
   const AlivenessConfig({
     this.enabled = false,
     this.bufferMinSec = 8,
@@ -52,6 +56,8 @@ class AlivenessConfig {
     this.quietHours = const [23, 8],
     this.voiceEnabled = false,
     this.ttsServiceId,
+    this.humanScoreEnabled = false,
+    this.humanScoreThreshold = 2,
   });
 
   Map<String, dynamic> toJson() => {
@@ -71,6 +77,10 @@ class AlivenessConfig {
     },
     'voice': {'enabled': voiceEnabled},
     if (ttsServiceId != null) 'ttsServiceId': ttsServiceId,
+    'humanScore': {
+      'enabled': humanScoreEnabled,
+      'threshold': humanScoreThreshold,
+    },
   };
 
   factory AlivenessConfig.fromJson(Map<String, dynamic> json) {
@@ -79,6 +89,7 @@ class AlivenessConfig {
         v is Map ? Map<String, dynamic>.from(v) : null;
     final proactive = asMap(json['proactive']);
     final voice = asMap(json['voice']);
+    final humanScore = asMap(json['humanScore']);
     return AlivenessConfig(
       enabled: json['enabled'] as bool? ?? false,
       bufferMinSec: json['bufferMinSec'] as int? ?? 8,
@@ -98,6 +109,8 @@ class AlivenessConfig {
           const [23, 8],
       voiceEnabled: voice?['enabled'] as bool? ?? false,
       ttsServiceId: json['ttsServiceId'] as String?,
+      humanScoreEnabled: humanScore?['enabled'] as bool? ?? false,
+      humanScoreThreshold: (humanScore?['threshold'] as int? ?? 2).clamp(0, 3),
     );
   }
 
@@ -116,6 +129,8 @@ class AlivenessConfig {
     List<int>? quietHours,
     bool? voiceEnabled,
     Object? ttsServiceId = _unset,
+    bool? humanScoreEnabled,
+    int? humanScoreThreshold,
   }) {
     return AlivenessConfig(
       enabled: enabled ?? this.enabled,
@@ -125,16 +140,18 @@ class AlivenessConfig {
       bubbleDelayMinMs: bubbleDelayMinMs ?? this.bubbleDelayMinMs,
       bubbleDelayMaxMs: bubbleDelayMaxMs ?? this.bubbleDelayMaxMs,
       laziness: laziness ?? this.laziness,
-      forgettingHalfLifeDays: forgettingHalfLifeDays ?? this.forgettingHalfLifeDays,
+      forgettingHalfLifeDays:
+          forgettingHalfLifeDays ?? this.forgettingHalfLifeDays,
       proactiveEnabled: proactiveEnabled ?? this.proactiveEnabled,
       proactiveCooldownMin: proactiveCooldownMin ?? this.proactiveCooldownMin,
       proactiveDailyLimit: proactiveDailyLimit ?? this.proactiveDailyLimit,
       quietHours: quietHours ?? this.quietHours,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
       // sentinel 模式：允许显式传 null 恢复"跟随全局"
-      ttsServiceId: ttsServiceId == _unset
-          ? this.ttsServiceId
-          : ttsServiceId as String?,
+      ttsServiceId:
+          ttsServiceId == _unset ? this.ttsServiceId : ttsServiceId as String?,
+      humanScoreEnabled: humanScoreEnabled ?? this.humanScoreEnabled,
+      humanScoreThreshold: humanScoreThreshold ?? this.humanScoreThreshold,
     );
   }
 }

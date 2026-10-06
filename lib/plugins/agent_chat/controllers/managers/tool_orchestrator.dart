@@ -103,6 +103,7 @@ class ToolOrchestrator {
               );
             }
           },
+          onThinking: onThinking,
           isCancelling: isCancelling,
         );
         return false;
