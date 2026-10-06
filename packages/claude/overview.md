@@ -12,9 +12,10 @@
 
 > 历史：`mcp-aboutme-server/`（stdio MCP）与 `api_forwarding_server/`（WebSocket 8654 配对转发）曾是独立子包，现已删除；MCP 能力并入 server-nodejs。
 
-**本地 Dart 库（2 个，path 依赖进客户端）**
+**本地 Dart 库（3 个，path 依赖进客户端）**
 
 - `agentlib/`：OpenAI 兼容 HTTP/SSE 传输门面（`AgentLibClient` 等 4 个导出文件），替代曾直接依赖的 `openai_dart`。
+- `dartantic_ai/`：上游 3.4.2 的本地镜像；为 Anthropic provider 增加自定义 `baseUrl`，细节见 [定制与同步说明](../dartantic_ai/CUSTOMIZATION.md)。
 - `super_cupertino_navigation_bar/`：iOS 风格大标题导航栏 UI 库。
 
 **Flutter 原生插件（6 个，path 依赖进客户端）**

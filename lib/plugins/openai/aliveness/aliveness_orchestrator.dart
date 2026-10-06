@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -49,6 +48,9 @@ abstract class AlivenessSessionChannel {
   /// 生成回复：走宿主自己的 AI 聊天链路，返回完整回复文本（空/失败返回 null）
   Future<String?> generate(AlivenessGenerationInput input);
 
+  /// 中断正在进行的模型请求。新用户消息到达时由编排器调用。
+  Future<void> cancelGeneration() async {}
+
   /// 以语音形式发布（替代文本）；失败返回 false，编排器回退分条文本
   Future<bool> sendVoice(String text);
 
@@ -68,6 +70,8 @@ class _AlivenessSession {
   final List<String> texts = [];
   final List<Object> handles = [];
   Timer? timer;
+  bool flushing = false;
+  bool rerunRequested = false;
   _AlivenessSession(this.channel);
 }
 
@@ -84,7 +88,7 @@ class AlivenessOrchestrator {
   final _memory = MemoryService.instance;
   final _executor = BehaviorExecutor.instance;
   final _store = AlivenessStore.instance;
-  final _random = Random();
+  static const _bufferWaitSeconds = 5;
 
   final _sessions = <String, _AlivenessSession>{};
 
@@ -103,12 +107,6 @@ class AlivenessOrchestrator {
     // 今日首次聊天：后台生成/复用今日日程（不阻塞缓冲，注入时再取）
     unawaited(ScheduleService.instance.ensureTodaySchedule(agent));
 
-    // 状态先读一次，用亲密度决定缓冲时长
-    final state = await _states.load(
-      agent.id,
-      intimacyHalfLifeDays: config.forgettingHalfLifeDays,
-    );
-
     final key = '${agent.id}_$targetId';
     var session = _sessions[key];
     final isNew = session == null;
@@ -125,16 +123,21 @@ class AlivenessOrchestrator {
       '累计=${session.texts.length}条',
     );
 
+    // 生成阶段收到新消息：取消当前请求，等 5 秒后用合并后的消息重新生成。
+    if (session.flushing) {
+      session.rerunRequested = true;
+      await session.channel.cancelGeneration();
+    }
     session.timer?.cancel();
-    final seconds = _bufferSeconds(config, state.intimacy);
-    debugPrint(
-      '[Aliveness][缓冲] 本次等待 ${seconds}s 后统一回复 '
-      '(亲密度=${state.intimacy.toStringAsFixed(2)} 惰性=${config.laziness})',
-    );
+    // 固定给用户 5 秒补充消息；计时器会在每条新消息到达时重置。
+    const seconds = _bufferWaitSeconds;
+    debugPrint('[Aliveness][缓冲] 固定等待 ${seconds}s 后统一回复（期间新消息会重置计时）');
     session.timer = Timer(Duration(seconds: seconds), () {
-      final s = _sessions.remove(key);
+      final s = _sessions[key];
       s?.timer?.cancel();
       if (s != null) {
+        s.rerunRequested = false;
+        s.flushing = true;
         debugPrint(
           '[Aliveness][缓冲] 计时结束，进入决策生成 | '
           'agent=${agent.id} 共${s.texts.length}条消息',
@@ -143,15 +146,6 @@ class AlivenessOrchestrator {
       }
     });
     return true;
-  }
-
-  /// 缓冲时长：亲密度低 → 短等待（体验优先）；亲密度高且惰性高 → 允许更长思考
-  int _bufferSeconds(AlivenessConfig config, double intimacy) {
-    final range = (config.bufferMaxSec - config.bufferMinSec).clamp(0, 600);
-    final t = (intimacy * 0.6 + config.laziness * 0.4).clamp(0.0, 1.0);
-    final jitter = _random.nextDouble() * 0.15;
-    return (config.bufferMinSec + range * ((t * 0.8 + jitter).clamp(0.0, 1.0)))
-        .round();
   }
 
   Future<void> _flush(
@@ -181,10 +175,9 @@ class AlivenessOrchestrator {
         halfLifeDays: config.forgettingHalfLifeDays,
       );
       final schedule = await ScheduleService.instance.loadToday(agent.id);
-      final scheduleContext =
-          schedule == null
-              ? ''
-              : ScheduleService.instance.buildScheduleContext(schedule);
+      final scheduleContext = schedule == null
+          ? ''
+          : ScheduleService.instance.buildScheduleContext(schedule);
       debugPrint(
         '[Aliveness][记忆] 核心常驻='
         '${coreMemory.isEmpty ? 0 : coreMemory.split("\n").length}条 '
@@ -200,20 +193,18 @@ class AlivenessOrchestrator {
               ?.map((e) => e.toString())
               .toList() ??
           <String>[];
-      final unasked =
-          QuestionPool.unlocked(
-            state.intimacy,
-          ).where((q) => !asked.contains(q)).toList();
+      final unasked = QuestionPool.unlocked(
+        state.intimacy,
+      ).where((q) => !asked.contains(q)).toList();
       final decision = await _decisions.decideTexts(
         agentId: agent.id,
         state: state,
         bufferedTexts: session.texts,
         config: config,
         unaskedQuestions: unasked,
-        lastExploreAt:
-            stats['lastExploreAt'] == null
-                ? null
-                : DateTime.parse(stats['lastExploreAt'] as String),
+        lastExploreAt: stats['lastExploreAt'] == null
+            ? null
+            : DateTime.parse(stats['lastExploreAt'] as String),
       );
       unawaited(
         _store.appendDecision(agent.id, {
@@ -266,6 +257,20 @@ class AlivenessOrchestrator {
         ),
       );
       var fullContent = content?.trim() ?? '';
+      if (session.rerunRequested) {
+        session.flushing = false;
+        session.timer ??= Timer(
+          const Duration(seconds: _bufferWaitSeconds),
+          () {
+            session.timer = null;
+            session.rerunRequested = false;
+            session.flushing = true;
+            unawaited(_flush(agent, config, session));
+          },
+        );
+        debugPrint('[Aliveness][缓冲] 生成期间收到新消息，等待 5 秒后合并重生成');
+        return;
+      }
       if (fullContent.isNotEmpty && config.humanScoreEnabled) {
         final score = await _decisions.scoreHumanity(
           state: '${agent.effectiveSystemPrompt}\n用户：$mergedText',
@@ -355,6 +360,10 @@ class AlivenessOrchestrator {
     } catch (e) {
       debugPrint('[Aliveness][错误] ${channel.scope} 编排失败: $e');
       await channel.onError(e);
+    } finally {
+      if (!session.rerunRequested) {
+        _sessions.removeWhere((key, value) => identical(value, session));
+      }
     }
   }
 

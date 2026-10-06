@@ -19,7 +19,8 @@ import 'package:aboutme/plugins/agent_chat/services/token_counter_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/chat_task_handler.dart';
-export '../services/tool_service.dart' show TemplateMatch, ReplacementRule, TemplateStrategy;
+export '../services/tool_service.dart'
+    show TemplateMatch, ReplacementRule, TemplateStrategy;
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'managers/managers.dart';
 
@@ -83,6 +84,9 @@ class ChatController extends ChangeNotifier {
   /// 是否正在取消发送
   bool _isCancelling = false;
 
+  /// 活人感模型请求正在生成，允许新消息打断并重新合并生成。
+  bool _alivenessGenerating = false;
+
   ChatController({
     required this.conversation,
     required this.messageService,
@@ -130,6 +134,7 @@ class ChatController extends ChangeNotifier {
     _alivenessFlushActive = false;
     notifyListeners();
   }
+
   bool get isCancelling => _isCancelling;
 
   /// 当前 Agent (通过 AgentManager 获取)
@@ -150,9 +155,7 @@ class ChatController extends ChangeNotifier {
         .where((msg) => msg.parentId == null)
         .where(
           (msg) =>
-              !(!msg.isUser &&
-                  msg.isGenerating &&
-                  msg.content.trim().isEmpty),
+              !(!msg.isUser && msg.isGenerating && msg.content.trim().isEmpty),
         )
         .where(
           (msg) =>
@@ -180,7 +183,8 @@ class ChatController extends ChangeNotifier {
   List<File> get selectedFiles => _messageSender.selectedFiles;
 
   /// 选中的工具模板
-  SavedToolTemplate? get selectedToolTemplate => _messageSender.selectedToolTemplate;
+  SavedToolTemplate? get selectedToolTemplate =>
+      _messageSender.selectedToolTemplate;
 
   /// 当前输入文本
   String get inputText => _messageSender.inputText;
@@ -304,8 +308,7 @@ class ChatController extends ChangeNotifier {
       // 插件级单例与之双写同一文件会互相覆盖）
       MomentsService.instance.currentConversationId = conversation.id;
       MomentsService.instance.currentAgentId =
-          conversation.agentId ??
-          conversation.agentChain?.firstOrNull?.agentId;
+          conversation.agentId ?? conversation.agentChain?.firstOrNull?.agentId;
       MomentsService.instance.currentMessageService = messageService;
 
       // 初始化前台服务管理器
@@ -327,7 +330,10 @@ class ChatController extends ChangeNotifier {
   // ========== 工具步骤回调 ==========
 
   /// 执行工具步骤
-  Future<void> _executeToolSteps(String messageId, List<ToolCallStep> steps) async {
+  Future<void> _executeToolSteps(
+    String messageId,
+    List<ToolCallStep> steps,
+  ) async {
     debugPrint('🔧 执行工具步骤: $messageId, 共 ${steps.length} 步');
 
     try {
@@ -342,7 +348,11 @@ class ChatController extends ChangeNotifier {
   }
 
   /// 工具结果续写
-  Future<void> _continueWithToolResult(String messageId, String toolResult, String currentContent) async {
+  Future<void> _continueWithToolResult(
+    String messageId,
+    String toolResult,
+    String currentContent,
+  ) async {
     debugPrint('🔄 工具结果续写: $messageId');
 
     try {
@@ -412,7 +422,14 @@ class ChatController extends ChangeNotifier {
   /// 发送消息
   Future<void> sendMessage() async {
     // 如果正在发送，直接返回
-    if (_isSending) return;
+    if (_isSending && !_isThinking) {
+      // 活人感正在生成时，允许新消息进入；编排器会取消旧请求并合并重生成。
+      if (_alivenessGenerating) {
+        _isCancelling = true;
+      } else {
+        return;
+      }
+    }
 
     // 检查输入内容
     final text = _messageSender.inputText.trim();
@@ -443,7 +460,8 @@ class ChatController extends ChangeNotifier {
         metadata['toolTemplate'] = {
           'id': _messageSender.selectedToolTemplate!.id,
           'name': _messageSender.selectedToolTemplate!.name,
-          if (_messageSender.selectedToolTemplate!.description?.isNotEmpty ?? false)
+          if (_messageSender.selectedToolTemplate!.description?.isNotEmpty ??
+              false)
             'description': _messageSender.selectedToolTemplate!.description,
         };
       }
@@ -460,10 +478,7 @@ class ChatController extends ChangeNotifier {
       await messageService.addMessage(userMessage);
 
       // 更新会话的最后消息
-      await conversationService.updateLastMessage(
-        conversation.id,
-        text,
-      );
+      await conversationService.updateLastMessage(conversation.id, text);
 
       // 清空输入
       final userInput = text;
@@ -517,6 +532,8 @@ class ChatController extends ChangeNotifier {
           onFlushGenerate: (mergedText, systemSuffix) async {
             _isThinking = false;
             _isSending = true;
+            _isCancelling = false;
+            _alivenessGenerating = true;
             beginAlivenessFlush();
             try {
               await _agentChainExecutor.executeChain(
@@ -530,6 +547,7 @@ class ChatController extends ChangeNotifier {
               revealAlivenessMessages();
               rethrow;
             } finally {
+              _alivenessGenerating = false;
               _isSending = false;
               notifyListeners();
             }
@@ -543,6 +561,10 @@ class ChatController extends ChangeNotifier {
               }
             }
             return null;
+          },
+          onCancelGenerate: () {
+            _isCancelling = true;
+            debugPrint('[Aliveness][取消] 新消息到达，取消 agent_chat 当前生成');
           },
         );
         if (handled) {
@@ -624,7 +646,10 @@ class ChatController extends ChangeNotifier {
   }
 
   /// 启动 AI 聊天前台服务（仅 Android）
-  Future<void> _startAIChatService(String conversationId, String messageId) async {
+  Future<void> _startAIChatService(
+    String conversationId,
+    String messageId,
+  ) async {
     if (kIsWeb || !UniversalPlatform.isAndroid) {
       debugPrint('ℹ️ [ChatController] 非 Android 平台，跳过前台服务');
       return;
@@ -773,7 +798,10 @@ class ChatController extends ChangeNotifier {
       final message = messageService.getMessage(conversation.id, messageId);
       if (message != null && message.parentId != null) {
         // 获取父消息（用户消息）
-        final parentMessage = messageService.getMessage(conversation.id, message.parentId!);
+        final parentMessage = messageService.getMessage(
+          conversation.id,
+          message.parentId!,
+        );
         if (parentMessage != null) {
           // 删除当前消息，重新生成
           await messageService.deleteMessage(conversation.id, messageId);
@@ -867,11 +895,7 @@ class ChatController extends ChangeNotifier {
 
     // 检查工具是否已存在
     if (!tools.any((tool) => tool['id'] == toolId)) {
-      tools.add({
-        'pluginId': pluginId,
-        'id': toolId,
-        'name': toolName,
-      });
+      tools.add({'pluginId': pluginId, 'id': toolId, 'name': toolName});
       metadata['selectedTools'] = tools;
 
       final updatedConv = currentConv.copyWith(metadata: metadata);

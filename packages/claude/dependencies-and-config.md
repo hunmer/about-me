@@ -6,6 +6,7 @@
 
 ```yaml
 agentlib:                  { path: packages/agentlib }
+dartantic_ai:              { path: packages/dartantic_ai }
 super_cupertino_navigation_bar: { path: packages/super_cupertino_navigation_bar }
 floating_ball_plugin:      { path: packages/floating_ball_plugin }
 aboutme_widgets:           { path: packages/aboutme_widgets }
@@ -16,8 +17,9 @@ aboutme_nfc:               { path: packages/aboutme_nfc }
 ```
 
 - 客户端通过 `package:<插件名>/...` 直接 import；改插件公开 API 需全仓检索调用点。
-- `floating_ball_plugin`、`aboutme_intent`、`aboutme_nfc`、`aboutme_widgets` 的 SDK 约束为 `^3.10.0`（高于宿主 `^3.7.0` 的语义下限，实际以当前工具链为准）。
+- `floating_ball_plugin`、`aboutme_intent`、`aboutme_nfc`、`aboutme_widgets` 的 SDK 约束为 `^3.10.0`，与宿主一致。
 - `agentlib` 仅依赖 `http` ^1.3.0（dev: `test`），SDK `^3.7.0`。
+- `dartantic_ai` 跟踪 pub.dev 上游版本，并由 `packages/dartantic_ai/CUSTOMIZATION.md` 记录 Anthropic `baseUrl` 补丁；当前上游 `3.4.2` 要求 Dart `^3.10.0`。
 
 ## Node 子包清单要点
 

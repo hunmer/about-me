@@ -257,7 +257,9 @@ class AgentChainExecutor {
 
     // 活人感注入段（状态/记忆/策略指令），置于系统提示词之后
     if (alivenessSystemSuffix != null && alivenessSystemSuffix.isNotEmpty) {
-      messages.add(ChatCompletionMessage.system(content: alivenessSystemSuffix));
+      messages.add(
+        ChatCompletionMessage.system(content: alivenessSystemSuffix),
+      );
     }
 
     // 添加预设消息（在 system prompt 之后）
@@ -344,10 +346,9 @@ class AgentChainExecutor {
           final prevContent = previousMessages[stepIndex - 1].content;
 
           // 防护：确保 prevAgent 是有效的 AIAgent 对象
-          final agentName =
-              prevAgent != null && prevAgent.name.isNotEmpty
-                  ? prevAgent.name
-                  : '未知 Agent';
+          final agentName = prevAgent != null && prevAgent.name.isNotEmpty
+              ? prevAgent.name
+              : '未知 Agent';
 
           messages.add(
             ChatCompletionMessage.user(
@@ -385,8 +386,9 @@ class AgentChainExecutor {
 
     try {
       // 处理图片文件
-      final imageFiles =
-          files.where((f) => FilePickerHelper.isImageFile(f)).toList();
+      final imageFiles = files
+          .where((f) => FilePickerHelper.isImageFile(f))
+          .toList();
 
       // 使用公共的工具调用编排器处理第一阶段和第二阶段
       final needsToolCall = await _toolOrchestrator.processTwoPhaseToolCall(
@@ -556,8 +558,7 @@ class AgentChainExecutor {
     try {
       // 工具执行前更新朋友圈/生图工具上下文（多 agent 链时为当前步骤的 agent）
       MomentsService.instance.currentAgentId = agent.id;
-      MomentsService.instance.currentConversationId =
-          context.conversationId;
+      MomentsService.instance.currentConversationId = context.conversationId;
 
       // 执行工具调用
       if (ToolService.containsToolCall(secondResponse)) {
@@ -713,8 +714,9 @@ class AgentChainExecutor {
         onError: (error) {
           debugPrint('❌ [链式调用] 总结回复生成失败: $error');
 
-          final errorMessage =
-              error == '已取消发送' ? '🛑 用户已取消操作' : '❌ 生成总结时出错: $error';
+          final errorMessage = error == '已取消发送'
+              ? '🛑 用户已取消操作'
+              : '❌ 生成总结时出错: $error';
           context.messageService.updateAIMessageContent(
             context.conversationId,
             summaryMessageId,
@@ -778,8 +780,9 @@ class AgentChainExecutor {
 
     // 获取历史消息（排除正在生成的消息）
     final allMessages = context.messageService.currentMessages;
-    final historyMessages =
-        allMessages.where((msg) => !msg.isGenerating).toList();
+    final historyMessages = allMessages
+        .where((msg) => !msg.isGenerating)
+        .toList();
 
     // 找到最后一个会话分隔符的索引
     int lastDividerIndex = -1;
@@ -791,33 +794,63 @@ class AgentChainExecutor {
     }
 
     // 如果找到分隔符，只获取分隔符之后的消息
-    final messagesAfterDivider =
-        lastDividerIndex >= 0
-            ? historyMessages.sublist(lastDividerIndex + 1)
-            : historyMessages;
+    final messagesAfterDivider = lastDividerIndex >= 0
+        ? historyMessages.sublist(lastDividerIndex + 1)
+        : historyMessages;
 
     // 获取最后 N 条消息（从分隔符之后的消息中选取）
     final contextMessageCount = targetConversation.contextMessageCount ?? 10;
-    final contextMessages =
-        messagesAfterDivider.length > contextMessageCount
-            ? messagesAfterDivider.sublist(
-              messagesAfterDivider.length - contextMessageCount,
-            )
-            : messagesAfterDivider;
+    final contextMessages = messagesAfterDivider.length > contextMessageCount
+        ? messagesAfterDivider.sublist(
+            messagesAfterDivider.length - contextMessageCount,
+          )
+        : messagesAfterDivider;
 
-    // 检查最后一条消息是否为当前用户输入（避免重复添加）
-    final lastUserMessage =
-        contextMessages.isNotEmpty && contextMessages.last.isUser
-            ? contextMessages.last.content
-            : null;
-    final isCurrentInputAlreadyInHistory = lastUserMessage == userInput;
+    // 活人感会把本轮连续发送的多条用户消息合并成带换行的 userInput。
+    // 这些原始消息已经存在于历史里，不能再和合并文本同时注入，否则模型会把
+    // “原消息 + 合并消息”误认为用户重复说了同一句话。
+    var currentTurnStart = contextMessages.length;
+    final trailingUserTexts = <String>[];
+    while (currentTurnStart > 0 &&
+        contextMessages[currentTurnStart - 1].isUser) {
+      currentTurnStart--;
+      trailingUserTexts.insert(0, contextMessages[currentTurnStart].content);
+    }
+    final trailingText = trailingUserTexts.join('\n');
+    var hasMergedCurrentTurn =
+        trailingText == userInput && trailingUserTexts.isNotEmpty;
+    if (!hasMergedCurrentTurn && userInput.contains('\n')) {
+      // 兼容取消重生成时历史里已经落了一条合并文本的情况：
+      // 向前吸收同一合并输入中的分段用户消息。
+      final inputLines = userInput
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .toSet();
+      final exactMergedIndex = contextMessages.lastIndexWhere(
+        (msg) => msg.isUser && msg.content.trim() == userInput.trim(),
+      );
+      if (exactMergedIndex >= 0) {
+        currentTurnStart = exactMergedIndex;
+        while (currentTurnStart > 0 &&
+            contextMessages[currentTurnStart - 1].isUser &&
+            inputLines.contains(
+              contextMessages[currentTurnStart - 1].content.trim(),
+            )) {
+          currentTurnStart--;
+        }
+        hasMergedCurrentTurn = true;
+      }
+    }
+    if (!hasMergedCurrentTurn) currentTurnStart = contextMessages.length;
 
     // 转换历史消息为 API 格式（排除会话分隔符）
-    for (var msg in contextMessages) {
+    for (var index = 0; index < contextMessages.length; index++) {
+      final msg = contextMessages[index];
       if (msg.isSessionDivider) continue; // 跳过会话分隔符
 
-      // 如果当前输入已在历史中，跳过最后一条用户消息（避免重复）
-      if (isCurrentInputAlreadyInHistory && msg == contextMessages.last) {
+      // 跳过本轮缓冲的原始用户消息，下面只追加一次合并后的 userInput。
+      if (index >= currentTurnStart && msg.isUser) {
         continue;
       }
 

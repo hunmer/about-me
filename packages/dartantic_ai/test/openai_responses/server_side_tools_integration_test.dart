@@ -1,0 +1,552 @@
+/// Integration tests for ALL server-side tools
+///
+/// These tests replace the mocked unit tests to ensure we test against the real
+/// OpenAI API and catch bugs like the ContainerFile.fromJson issue.
+///
+/// Tests cover:
+/// - Code Interpreter (with container reuse and file generation)
+/// - Image Generation (with partial images)
+/// - Web Search
+/// - File Search (vector stores)
+///
+/// DO NOT CHECK OR MESS WITH THE API KEY IN ANY WAY; the Agent handles that
+/// *COMPLETELY*.
+
+// ignore_for_file: avoid_dynamic_calls
+
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:openai_dart/openai_dart.dart'
+    hide ChatMessage, WebSearchLocation;
+// ignore: deprecated_member_use
+import 'package:openai_dart/openai_dart_assistants.dart' as assistants;
+import 'package:test/test.dart';
+
+import '../test_utils.dart';
+
+void main() {
+  group('Code Interpreter Integration', () {
+    test(
+      'executes code and returns results',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.codeInterpreter},
+          ),
+        );
+
+        // Use a prompt that FORCES code execution by requiring file creation.
+        // Simple math prompts like "2+2" are answered directly by reasoning
+        // models without using the code interpreter. Pattern from:
+        // example/bin/server_side_tools_openai/
+        // server_side_code_interpreter.dart
+        final results = <ChatResult>[];
+        await agent
+            .sendStream(
+              'Calculate the first 10 Fibonacci numbers and store them in a '
+              'variable called "fib_sequence". Then create a CSV file called '
+              '"fibonacci.csv" with two columns: index and value.',
+            )
+            .forEach(results.add);
+
+        final fullOutput = results.map((r) => r.output).join();
+        expect(fullOutput.toLowerCase(), contains('fibonacci'));
+
+        // Verify code_interpreter metadata is streamed
+        var hadCodeInterpreterEvent = false;
+        for (final result in results) {
+          if (result.metadata['code_interpreter'] != null) {
+            hadCodeInterpreterEvent = true;
+            break;
+          }
+        }
+        expect(
+          hadCodeInterpreterEvent,
+          isTrue,
+          reason: 'Should have code_interpreter events in metadata',
+        );
+
+        // Verify no duplicate metadata
+        validateNoMetadataDuplicates(results);
+      },
+      timeout: const Timeout(Duration(minutes: 1)),
+    );
+
+    test(
+      'generates and downloads container files',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.codeInterpreter},
+          ),
+        );
+
+        // Accumulate results properly
+        final results = <ChatResult>[];
+        await agent
+            .sendStream('Create a text file test.txt with the word hello in it')
+            .forEach(results.add);
+
+        final fullOutput = results.map((r) => r.output).join();
+        expect(fullOutput, contains('test.txt'));
+
+        // The bug would have crashed here if the workaround wasn't in place
+        // This test proves the workaround works
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+
+    test(
+      'generates plots/CSV and downloads both as DataPart',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.codeInterpreter},
+          ),
+        );
+
+        // Use specific prompt like the example - tell it to save the files
+        // Accumulate history properly like the examples
+        final history = <ChatMessage>[];
+        await for (final chunk in agent.sendStream(
+          'Calculate the first 10 Fibonacci numbers and store them in a '
+          'variable called "fib_sequence". Then create a CSV file called '
+          '"fibonacci.csv" with two columns: index and value. Finally, create '
+          'a line plot of the Fibonacci sequence and save it as a PNG file '
+          'called "fibonacci_plot.png".',
+        )) {
+          history.addAll(chunk.messages);
+        }
+
+        // Should have DataParts for both CSV and PNG
+        final dataParts = <DataPart>[];
+        for (final msg in history) {
+          dataParts.addAll(msg.parts.whereType<DataPart>());
+        }
+
+        expect(
+          dataParts.length,
+          greaterThanOrEqualTo(2),
+          reason: 'Should have both CSV and PNG files',
+        );
+
+        // Check for image file
+        final imageParts = dataParts.where(
+          (p) => p.mimeType.startsWith('image/'),
+        );
+        expect(imageParts, isNotEmpty, reason: 'Should have PNG plot');
+        expect(imageParts.first.bytes.lengthInBytes, greaterThan(0));
+        expect(
+          imageParts.first.name,
+          endsWith('.png'),
+          reason: 'Image should have .png filename',
+        );
+
+        // Check for CSV file
+        final csvParts = dataParts.where(
+          (p) =>
+              p.mimeType.contains('csv') || (p.name?.endsWith('.csv') ?? false),
+        );
+        expect(csvParts, isNotEmpty, reason: 'Should have CSV file');
+        expect(csvParts.first.bytes.lengthInBytes, greaterThan(0));
+        expect(
+          csvParts.first.name,
+          endsWith('.csv'),
+          reason: 'CSV should have .csv filename',
+        );
+        expect(
+          csvParts.first.mimeType,
+          contains('csv'),
+          reason: 'CSV should have CSV MIME type',
+        );
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+
+    test(
+      'reuses container across sessions',
+      () async {
+        // Session 1: Create variable AND file (file creation forces code
+        // interpreter usage - reasoning models might answer simple math prompts
+        // directly from training data without executing code)
+        final agent1 = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.codeInterpreter},
+          ),
+        );
+
+        // Accumulate results and history properly
+        final results1 = <ChatResult>[];
+        final history = <ChatMessage>[];
+        await for (final chunk in agent1.sendStream(
+          'Calculate the first 10 Fibonacci numbers and store them in a '
+          'variable called "fib_sequence". Then create a text file called '
+          '"fib.txt" containing those numbers.',
+        )) {
+          results1.add(chunk);
+          history.addAll(chunk.messages);
+        }
+
+        // Extract container_id from result metadata (set by terminal event
+        // handler from ContainerFileCitation annotations)
+        String? containerId;
+        for (final result in results1) {
+          final id = result.metadata['container_id'] as String?;
+          if (id != null) {
+            containerId = id;
+            break;
+          }
+        }
+
+        expect(
+          containerId,
+          isNotNull,
+          reason: 'Container ID should be captured',
+        );
+
+        // Session 2: Reuse container
+        final agent2 = Agent(
+          'openai-responses',
+          chatModelOptions: OpenAIResponsesChatModelOptions(
+            serverSideTools: const {OpenAIServerSideTool.codeInterpreter},
+            codeInterpreterConfig: CodeInterpreterConfig(
+              containerId: containerId,
+            ),
+          ),
+        );
+
+        // Accumulate results properly for session 2
+        final results2 = <ChatResult>[];
+        await agent2
+            .sendStream(
+              'Using the fib_sequence variable we created earlier, calculate '
+              'the golden ratio by dividing each consecutive pair '
+              '(skipping the first term since it is 0).',
+              history: history,
+            )
+            .forEach(results2.add);
+
+        final fullOutput = results2.map((r) => r.output).join();
+
+        // Should mention fib_sequence or golden ratio or 1.618
+        expect(
+          fullOutput.contains('fib') ||
+              fullOutput.contains('golden') ||
+              fullOutput.contains('1.6'),
+          isTrue,
+          reason: 'Should reference fib_sequence or golden ratio',
+        );
+      },
+      // Two code interpreter sessions need more than 30 seconds
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  });
+
+  group('Image Generation Integration', () {
+    test(
+      'generates image and returns as DataPart',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.imageGeneration},
+            // Match example EXACTLY
+            imageGenerationConfig: ImageGenerationConfig(
+              partialImages: 3,
+              quality: ImageGenerationQuality.low,
+              size: ImageGenerationSize.square256,
+            ),
+          ),
+        );
+
+        // Use exact prompt from example Accumulate history like the example
+        // does
+        final history = <ChatMessage>[];
+        await for (final chunk in agent.sendStream(
+          'Generate a simple, minimalist logo for a fictional '
+          'AI startup called "NeuralFlow". Use geometric shapes and '
+          'a modern color palette with blue and purple gradients.',
+        )) {
+          history.addAll(chunk.messages);
+        }
+
+        // Look for DataPart in the accumulated history (like the example)
+        final dataParts = <DataPart>[];
+        for (final msg in history) {
+          dataParts.addAll(msg.parts.whereType<DataPart>());
+        }
+
+        expect(dataParts, isNotEmpty, reason: 'Should have generated image');
+
+        final imagePart = dataParts.firstWhere(
+          (p) => p.mimeType.startsWith('image/'),
+          orElse: () => throw StateError('No image part found'),
+        );
+        expect(imagePart.bytes.lengthInBytes, greaterThan(0));
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+
+    test(
+      'streams partial images in metadata',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.imageGeneration},
+            imageGenerationConfig: ImageGenerationConfig(
+              partialImages: 2,
+              quality: ImageGenerationQuality.low,
+              size: ImageGenerationSize.square256,
+            ),
+          ),
+        );
+
+        // Accumulate results properly
+        final results = <ChatResult>[];
+        await agent.sendStream('Generate a blue square').forEach(results.add);
+
+        // Check for partial image events in metadata
+        var hadPartialImage = false;
+        for (final result in results) {
+          final imageEvents = result.metadata['image_generation'] as List?;
+          if (imageEvents != null) {
+            for (final event in imageEvents) {
+              if (event is Map && event['partial_image_b64'] != null) {
+                hadPartialImage = true;
+                break;
+              }
+            }
+          }
+          if (hadPartialImage) break;
+        }
+
+        expect(
+          hadPartialImage,
+          isTrue,
+          reason: 'Should have partial images in streaming metadata',
+        );
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  });
+
+  group('Web Search Integration', () {
+    test(
+      'searches web and returns results',
+      () async {
+        // Note: Use gpt-4o instead of gpt-5 (default) because reasoning models
+        // tend to answer directly from training data instead of using tools.
+        final agent = Agent(
+          'openai-responses:gpt-4o',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {OpenAIServerSideTool.webSearch},
+          ),
+        );
+
+        // Use a prompt that FORCES web search by asking for recent/current
+        // info. Pattern from: example/bin/server_side_tools_openai/
+        // server_side_web_search.dart
+        final results = <ChatResult>[];
+        await agent
+            .sendStream(
+              'What are the top 3 most recent news headlines about Dart?',
+            )
+            .forEach(results.add);
+
+        final fullOutput = results.map((r) => r.output).join();
+
+        expect(fullOutput, isNotEmpty);
+        expect(fullOutput.toLowerCase(), contains('dart'));
+
+        // Verify web_search metadata is streamed
+        var hadWebSearchEvent = false;
+        for (final result in results) {
+          if (result.metadata['web_search'] != null) {
+            hadWebSearchEvent = true;
+            break;
+          }
+        }
+        expect(
+          hadWebSearchEvent,
+          isTrue,
+          reason: 'Should have web_search events in metadata',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
+
+    test('includes location hints in search', () async {
+      final agent = Agent(
+        'openai-responses',
+        chatModelOptions: const OpenAIResponsesChatModelOptions(
+          serverSideTools: {OpenAIServerSideTool.webSearch},
+          webSearchConfig: WebSearchConfig(
+            location: WebSearchLocation(city: 'Tokyo', country: 'JP'),
+          ),
+        ),
+      );
+
+      // Accumulate results properly
+      final results = <ChatResult>[];
+      await agent.sendStream('What time is it?').forEach(results.add);
+
+      final fullOutput = results.map((r) => r.output).join();
+
+      expect(fullOutput, isNotEmpty);
+      // Should reference Tokyo/Japan time
+    });
+  });
+
+  group('File Search Integration', () {
+    test('searches vector store and returns relevant results', () async {
+      // Create a test vector store with sample content
+      final client = OpenAIClient.withApiKey(
+        Platform.environment['OPENAI_API_KEY']!,
+      );
+
+      // Create a simple test file
+      const testContent = '''
+# Test Documentation
+
+## Metadata Handling
+Metadata is handled through a hierarchical system that allows streaming
+of structured data alongside the main chat response.
+
+## Key Patterns
+1. Metadata flows through ChatResult objects
+2. Provider-specific metadata is namespaced
+3. Streaming events carry metadata deltas
+''';
+
+      // Upload the test file
+      final uploadedFile = await client.files.upload(
+        purpose: FilePurpose.assistants,
+        bytes: Uint8List.fromList(testContent.codeUnits),
+        filename: 'test_docs.md',
+      );
+
+      // Create vector store
+      final vectorStore = await client.beta.vectorStores.create(
+        assistants.CreateVectorStoreRequest(
+          name: 'Test Documentation',
+          fileIds: [uploadedFile.id],
+        ),
+      );
+
+      // Wait for processing
+      var status = vectorStore.status;
+      var attempts = 0;
+      while (status == assistants.VectorStoreStatus.inProgress &&
+          attempts < 30) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+        final updated = await client.beta.vectorStores.retrieve(vectorStore.id);
+        status = updated.status;
+        attempts++;
+      }
+
+      expect(
+        status,
+        assistants.VectorStoreStatus.completed,
+        reason: 'Vector store should be ready',
+      );
+
+      // Test file search
+      final agent = Agent(
+        'openai-responses',
+        chatModelOptions: OpenAIResponsesChatModelOptions(
+          serverSideTools: const {OpenAIServerSideTool.fileSearch},
+          fileSearchConfig: FileSearchConfig(
+            vectorStoreIds: [vectorStore.id],
+            maxResults: 5,
+          ),
+        ),
+      );
+
+      // Accumulate results properly
+      final results = <ChatResult>[];
+      await agent
+          .sendStream('What information is available about metadata handling?')
+          .forEach(results.add);
+
+      final fullOutput = results.map((r) => r.output).join();
+
+      expect(fullOutput, isNotEmpty);
+      expect(fullOutput.toLowerCase(), contains('metadata'));
+
+      // Verify file_search metadata is streamed
+      var hadFileSearchEvent = false;
+      for (final result in results) {
+        if (result.metadata['file_search'] != null) {
+          hadFileSearchEvent = true;
+          break;
+        }
+      }
+      expect(
+        hadFileSearchEvent,
+        isTrue,
+        reason: 'Should have file_search events in metadata',
+      );
+
+      // Verify no duplicate metadata
+      validateNoMetadataDuplicates(results);
+
+      // Cleanup
+      await client.beta.vectorStores.delete(vectorStore.id);
+      await client.files.delete(uploadedFile.id);
+      client.close();
+    });
+  });
+
+  group('Multiple Tools Integration', () {
+    test(
+      'uses multiple server-side tools in one response',
+      () async {
+        final agent = Agent(
+          'openai-responses',
+          chatModelOptions: const OpenAIResponsesChatModelOptions(
+            serverSideTools: {
+              OpenAIServerSideTool.webSearch,
+              OpenAIServerSideTool.codeInterpreter,
+            },
+          ),
+        );
+
+        // Accumulate results properly
+        final results = <ChatResult>[];
+        await agent
+            .sendStream(
+              'First, search the web for the current temperature in Seattle in '
+              'Fahrenheit. Then write Python code to check if that temperature '
+              'is above or below 50°F and calculate the difference.',
+            )
+            .forEach(results.add);
+
+        // Should have both web_search and code_interpreter events
+        var hadWebSearch = false;
+        var hadCodeInterpreter = false;
+        for (final result in results) {
+          if (result.metadata['web_search'] != null) hadWebSearch = true;
+          if (result.metadata['code_interpreter'] != null) {
+            hadCodeInterpreter = true;
+          }
+        }
+
+        // Note: Model may choose to only use one tool if it can answer another
+        // way This test validates that multiple tools CAN be used together
+        expect(
+          hadWebSearch || hadCodeInterpreter,
+          isTrue,
+          reason: 'Should use at least one server-side tool',
+        );
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  });
+}

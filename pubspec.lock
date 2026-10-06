@@ -358,10 +358,9 @@ packages:
   dartantic_ai:
     dependency: "direct main"
     description:
-      name: dartantic_ai
-      sha256: "942ff61316b3596a1b78cd6a3808b942106d1b0dde89c6057202ba3485a1f312"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/dartantic_ai"
+      relative: true
+    source: path
     version: "3.4.2"
   dartantic_interface:
     dependency: transitive

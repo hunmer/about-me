@@ -174,7 +174,7 @@ void main() {
       );
     });
 
-    test('Anthropic 仅在 SDK 官方 endpoint 使用标准 function calling', () {
+    test('Anthropic 自定义 endpoint 使用标准 function calling', () {
       final now = DateTime(2026, 1, 1);
       final agent = AIAgent(
         id: 'anthropic-agent',
@@ -198,7 +198,7 @@ void main() {
           agent.copyWith(baseUrl: 'https://open.bigmodel.cn/api/anthropic'),
           true,
         ),
-        isFalse,
+        isTrue,
       );
       expect(
         NativeToolAgentService.instance.supports(
@@ -209,24 +209,10 @@ void main() {
       );
       expect(
         NativeToolAgentService.instance.supports(
-          agent.copyWith(baseUrl: 'http://api.anthropic.com/v1'),
+          agent.copyWith(baseUrl: 'https://api.minimaxi.com/anthropic'),
           true,
         ),
-        isFalse,
-      );
-      expect(
-        NativeToolAgentService.instance.supports(
-          agent.copyWith(baseUrl: 'https://api.anthropic.com:8443/v1'),
-          true,
-        ),
-        isFalse,
-      );
-      expect(
-        NativeToolAgentService.instance.supports(
-          agent.copyWith(baseUrl: 'https://user@api.anthropic.com/v1'),
-          true,
-        ),
-        isFalse,
+        isTrue,
       );
     });
   });

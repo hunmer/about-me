@@ -157,27 +157,9 @@ class NativeToolAgentService {
 
   static final NativeToolAgentService instance = NativeToolAgentService._();
 
-  /// SDK 的 AnthropicProvider 固定使用官方 endpoint；其他兼容端点保留旧路径。
   bool supports(AIAgent agent, bool enableToolCalling) {
     if (!enableToolCalling || !agent.enableFunctionCalling) return false;
-    if (agent.apiFormat.toLowerCase() != 'anthropic') return true;
-    return _supportsNativeAnthropicEndpoint(agent.baseUrl);
-  }
-
-  bool _supportsNativeAnthropicEndpoint(String baseUrl) {
-    if (baseUrl.trim().isEmpty) return true;
-    final uri = Uri.tryParse(baseUrl.trim());
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        uri.host != 'api.anthropic.com' ||
-        uri.port != 443 ||
-        uri.userInfo.isNotEmpty ||
-        uri.hasQuery ||
-        uri.hasFragment) {
-      return false;
-    }
-    final path = uri.path.replaceFirst(RegExp(r'/+$'), '');
-    return path.isEmpty || path == '/v1';
+    return true;
   }
 
   List<(String, ToolConfig)>? _toolConfigCache;
@@ -266,6 +248,7 @@ class NativeToolAgentService {
       dartAgent = Agent.forProvider(
         AnthropicProvider(
           apiKey: _extractApiKey(agent),
+          baseUrl: _normalizeAnthropicBaseUrl(agent.baseUrl),
           headers: agent.headers,
         ),
         chatModelName: agent.model,
@@ -601,5 +584,16 @@ class NativeToolAgentService {
       s = s.substring(0, s.length - '/chat/completions'.length);
     }
     return Uri.tryParse(s);
+  }
+
+  /// Anthropic SDK appends `/v1/...` to its configured base URL.
+  Uri? _normalizeAnthropicBaseUrl(String baseUrl) {
+    final value = baseUrl.trim();
+    if (value.isEmpty) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null || !uri.hasAuthority || uri.host.isEmpty) {
+      throw FormatException('无效的 Anthropic baseUrl: $baseUrl');
+    }
+    return uri;
   }
 }

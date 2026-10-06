@@ -16,10 +16,12 @@ class AgentChatGenerationResult {
 
 /// 生成回调：由 ChatController 提供（内部包装 isSending 并调 executeChain）
 /// [mergedText] 缓冲期合并后的用户输入；[systemSuffix] 活人感注入段
-typedef FlushCallback = Future<AgentChatGenerationResult?> Function(
-  String mergedText,
-  String? systemSuffix,
-);
+typedef FlushCallback =
+    Future<AgentChatGenerationResult?> Function(
+      String mergedText,
+      String? systemSuffix,
+    );
+typedef CancelFlushCallback = void Function();
 
 /// agent_chat 版活人感通道：
 /// 无消息占位（标题"正在输入中"），生成全程在隐藏窗口内，
@@ -30,6 +32,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
     required this.conversation,
     required this.messageService,
     required this.onFlushGenerate,
+    required this.onCancelGenerate,
     required this.onReveal,
     this.onIdle,
   });
@@ -38,6 +41,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
   final Conversation conversation;
   final MessageService messageService;
   final FlushCallback onFlushGenerate;
+  final CancelFlushCallback onCancelGenerate;
   final void Function() onReveal;
   final void Function()? onIdle;
 
@@ -66,6 +70,11 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
     final result = await onFlushGenerate(input.mergedText, input.systemSuffix);
     _generated = result;
     return result?.content;
+  }
+
+  @override
+  Future<void> cancelGeneration() async {
+    onCancelGenerate();
   }
 
   @override

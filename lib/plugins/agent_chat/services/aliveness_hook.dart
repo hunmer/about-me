@@ -29,6 +29,7 @@ class AgentChatAlivenessHook {
     required ChatMessage userMessage,
     required MessageService messageService,
     required FlushCallback onFlushGenerate,
+    required void Function() onCancelGenerate,
     required void Function() onReveal,
     void Function()? onIdle,
   }) async {
@@ -59,13 +60,17 @@ class AgentChatAlivenessHook {
         conversation: conversation,
         messageService: messageService,
         onFlushGenerate: onFlushGenerate,
+        onCancelGenerate: onCancelGenerate,
         onReveal: onReveal,
         onIdle: onIdle,
       ),
     );
   }
 
-  Future<void> _recordConversation(String agentId, String conversationId) async {
+  Future<void> _recordConversation(
+    String agentId,
+    String conversationId,
+  ) async {
     try {
       final stats = await _store.loadStats(agentId);
       stats['lastAgentChatConversationId'] = conversationId;

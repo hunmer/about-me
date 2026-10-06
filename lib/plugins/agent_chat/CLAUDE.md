@@ -6,7 +6,7 @@
 
 ## 约定的规则
 
-- function calling 可用时以 schema 化标准工具调用为主；Anthropic SDK 固定使用官方 endpoint，第三方 Anthropic 兼容 endpoint 走旧路径；兼容回退仍使用 `MarkdownToolCallParser` 解析 `run_js`。工具调用的状态按执行轮次隔离。
+- function calling 可用时以 schema 化标准工具调用为主；Anthropic 官方及兼容 endpoint 均通过本地定制的 `dartantic_ai` provider 接入；兼容回退仍使用 `MarkdownToolCallParser` 解析 `run_js`。工具调用的状态按执行轮次隔离。
 - 会话消息每会话单文件，保存走串行链 `_conversationsSaveChain` 防并发写坏。
 - 工具配置存 `app_data/agent_chat/tools/<pluginId>.json`（dart:io 直写），改动工具生成逻辑在 `tool_config_manager.dart:84-144`。
 - "当前页面问 AI"用临时会话（`getOrCreateTemporaryConversation`），勿复用普通会话。

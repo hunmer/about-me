@@ -37,6 +37,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
   final int contextCount;
   final String? absoluteFilePath;
   final bool hasImage;
+  bool _cancelRequested = false;
 
   final AiThreadService _threads = AiThreadService.instance;
 
@@ -91,6 +92,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
 
     final contextMessages = await _buildContext(input);
     final contentBuffer = StringBuffer();
+    _cancelRequested = false;
     await RequestService.streamResponseWithRetry(
       agent: agent,
       prompt: null,
@@ -119,10 +121,16 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
         );
       },
       onComplete: () {},
+      shouldCancel: () => _cancelRequested,
       maxRetries: 3,
       retryDelay: 1000,
     );
     return RequestService.processThinkingContent(contentBuffer.toString());
+  }
+
+  @override
+  Future<void> cancelGeneration() async {
+    _cancelRequested = true;
   }
 
   @override
@@ -157,8 +165,10 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
   Future<void> sendBubbles(List<String> bubbles) async {
     final placeholder = _placeholder;
     if (placeholder == null || bubbles.isEmpty) return;
-    debugPrint('[Aliveness][分条] 共 ${bubbles.length} 条 | '
-        '1."${bubbles.first.length > 25 ? "${bubbles.first.substring(0, 25)}…" : bubbles.first}"');
+    debugPrint(
+      '[Aliveness][分条] 共 ${bubbles.length} 条 | '
+      '1."${bubbles.first.length > 25 ? "${bubbles.first.substring(0, 25)}…" : bubbles.first}"',
+    );
 
     // 第一条：落定占位消息
     await _threads.updateMessage(
@@ -171,14 +181,19 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
     // 后续条目：延迟逐条发出，模拟连续打字
     final random = Random();
     for (var i = 1; i < bubbles.length; i++) {
-      final delayMs = _config.bubbleDelayMinMs +
+      final delayMs =
+          _config.bubbleDelayMinMs +
           random.nextInt(
-            (_config.bubbleDelayMaxMs - _config.bubbleDelayMinMs)
-                    .clamp(1, 10000) +
+            (_config.bubbleDelayMaxMs - _config.bubbleDelayMinMs).clamp(
+                  1,
+                  10000,
+                ) +
                 1,
           );
-      debugPrint('[Aliveness][分条] 第${i + 1}条 延迟${delayMs}ms | '
-          '"${bubbles[i].length > 25 ? "${bubbles[i].substring(0, 25)}…" : bubbles[i]}"');
+      debugPrint(
+        '[Aliveness][分条] 第${i + 1}条 延迟${delayMs}ms | '
+        '"${bubbles[i].length > 25 ? "${bubbles[i].substring(0, 25)}…" : bubbles[i]}"',
+      );
       await Future.delayed(Duration(milliseconds: delayMs));
 
       await _threads.appendMessage(
@@ -224,8 +239,10 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
     ];
 
     final thread = _threads.getThread(rootMessageId);
-    final threadMessageIds =
-        thread?.messages.where((m) => m.role == 'user').map((m) => m.content).toSet();
+    final threadMessageIds = thread?.messages
+        .where((m) => m.role == 'user')
+        .map((m) => m.content)
+        .toSet();
 
     // 频道历史（排除根消息/本次缓冲/异常消息）
     final buffered = input.bufferedHandles.whereType<Message>().toList();
@@ -354,8 +371,9 @@ void disposeChatAliveness() {
 Future<void> _markRead(Message message, String agentId) async {
   message.metadata ??= {};
   final readBy = List<String>.from(
-    (message.metadata!['readBy'] as List<dynamic>? ?? [])
-        .map((e) => e.toString()),
+    (message.metadata!['readBy'] as List<dynamic>? ?? []).map(
+      (e) => e.toString(),
+    ),
   );
   if (!readBy.contains(agentId)) readBy.add(agentId);
   message.metadata!['readBy'] = readBy;

@@ -7,8 +7,7 @@ class AlivenessConfig {
   /// 总开关
   final bool enabled;
 
-  /// 消息缓冲窗口（秒）：收到用户消息后先"看完再回"的等待区间，
-  /// 实际时长按亲密度与惰性在 [bufferMinSec, bufferMaxSec] 内插值。
+  /// 历史兼容字段。实际缓冲等待固定为 5 秒，收到新消息会重置计时。
   final int bufferMinSec;
   final int bufferMaxSec;
 
@@ -148,8 +147,9 @@ class AlivenessConfig {
       quietHours: quietHours ?? this.quietHours,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
       // sentinel 模式：允许显式传 null 恢复"跟随全局"
-      ttsServiceId:
-          ttsServiceId == _unset ? this.ttsServiceId : ttsServiceId as String?,
+      ttsServiceId: ttsServiceId == _unset
+          ? this.ttsServiceId
+          : ttsServiceId as String?,
       humanScoreEnabled: humanScoreEnabled ?? this.humanScoreEnabled,
       humanScoreThreshold: humanScoreThreshold ?? this.humanScoreThreshold,
     );

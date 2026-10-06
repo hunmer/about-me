@@ -27,8 +27,9 @@ String _extractErrorMessage(dynamic error) {
             // 修复可能的UTF-8编码问题
             final fixedMessage = _fixUTF8Encoding(message);
             final code = errorObj['code'];
-            errorDetails =
-                code != null ? '错误码 $code: $fixedMessage' : fixedMessage;
+            errorDetails = code != null
+                ? '错误码 $code: $fixedMessage'
+                : fixedMessage;
           }
         }
       }
@@ -110,17 +111,16 @@ String _formatMessagesForLog(List<ChatCompletionMessage> messages) {
     } else if (rawContent is ChatCompletionUserMessageContent) {
       // 处理 user 消息的特殊类型
       content = rawContent.map(
-        parts:
-            (parts) => parts.value
-                .map(
-                  (p) => p.map(
-                    text: (t) => t.text,
-                    image: (i) => '[图片]',
-                    audio: (a) => '[音频]',
-                    refusal: (r) => '[拒绝]',
-                  ),
-                )
-                .join(' '),
+        parts: (parts) => parts.value
+            .map(
+              (p) => p.map(
+                text: (t) => t.text,
+                image: (i) => '[图片]',
+                audio: (a) => '[音频]',
+                refusal: (r) => '[拒绝]',
+              ),
+            )
+            .join(' '),
         string: (s) => s.value,
       );
     } else {
@@ -128,10 +128,9 @@ String _formatMessagesForLog(List<ChatCompletionMessage> messages) {
     }
 
     // 截断过长内容
-    final truncated =
-        content.length > 200
-            ? '${content.substring(0, 200)}... (${content.length}字符)'
-            : content;
+    final truncated = content.length > 200
+        ? '${content.substring(0, 200)}... (${content.length}字符)'
+        : content;
     buffer.writeln('  [$i] $role: $truncated');
   }
   return buffer.toString();
@@ -156,34 +155,28 @@ class RequestService {
     dynamic normalized = content;
     if (content is ChatCompletionUserMessageContent) {
       normalized = content.map(
-        parts:
-            (parts) =>
-                parts.value
-                    .map(
-                      (part) => part.map(
-                        text:
-                            (text) => <String, dynamic>{
-                              'type': 'text',
-                              'text': text.text,
-                            },
-                        image:
-                            (image) => <String, dynamic>{
-                              'type': 'image_url',
-                              'image_url': {'url': image.imageUrl.url},
-                            },
-                        audio:
-                            (_) => <String, dynamic>{
-                              'type': 'text',
-                              'text': '[audio]',
-                            },
-                        refusal:
-                            (_) => <String, dynamic>{
-                              'type': 'text',
-                              'text': '[refusal]',
-                            },
-                      ),
-                    )
-                    .toList(),
+        parts: (parts) => parts.value
+            .map(
+              (part) => part.map(
+                text: (text) => <String, dynamic>{
+                  'type': 'text',
+                  'text': text.text,
+                },
+                image: (image) => <String, dynamic>{
+                  'type': 'image_url',
+                  'image_url': {'url': image.imageUrl.url},
+                },
+                audio: (_) => <String, dynamic>{
+                  'type': 'text',
+                  'text': '[audio]',
+                },
+                refusal: (_) => <String, dynamic>{
+                  'type': 'text',
+                  'text': '[refusal]',
+                },
+              ),
+            )
+            .toList(),
         string: (string) => string.value,
       );
     }
@@ -369,8 +362,9 @@ class RequestService {
       );
       stopwatch.stop();
 
-      final content =
-          responseContent.isEmpty ? 'No response content' : responseContent;
+      final content = responseContent.isEmpty
+          ? 'No response content'
+          : responseContent;
       developer.log(
         '收到响应: ${content.length}字符, 耗时: ${stopwatch.elapsedMilliseconds}ms',
         name: 'RequestService',
@@ -411,18 +405,17 @@ class RequestService {
             content = rawContent;
           } else if (rawContent is ChatCompletionUserMessageContent) {
             content = rawContent.map(
-              parts:
-                  (parts) => parts.value
-                      .map(
-                        (p) => p.map(
-                          text: (t) => t.text,
-                          image: (i) => '[图片]',
-                          audio: (a) => '[音频]',
-                          refusal: (r) => '',
-                        ),
-                      )
-                      .where((s) => s.isNotEmpty)
-                      .join(' '),
+              parts: (parts) => parts.value
+                  .map(
+                    (p) => p.map(
+                      text: (t) => t.text,
+                      image: (i) => '[图片]',
+                      audio: (a) => '[音频]',
+                      refusal: (r) => '',
+                    ),
+                  )
+                  .where((s) => s.isNotEmpty)
+                  .join(' '),
               string: (s) => s.value,
             );
           }
@@ -677,18 +670,17 @@ class RequestService {
               } else if (content is ChatCompletionUserMessageContent) {
                 // 处理 ChatCompletionUserMessageContent 类型
                 textContent = content.map(
-                  parts:
-                      (parts) => parts.value
-                          .map(
-                            (p) => p.map(
-                              text: (t) => t.text,
-                              image: (i) => '', // 跳过已有的图片
-                              audio: (a) => '',
-                              refusal: (r) => '',
-                            ),
-                          )
-                          .where((s) => s.isNotEmpty)
-                          .join(' '),
+                  parts: (parts) => parts.value
+                      .map(
+                        (p) => p.map(
+                          text: (t) => t.text,
+                          image: (i) => '', // 跳过已有的图片
+                          audio: (a) => '',
+                          refusal: (r) => '',
+                        ),
+                      )
+                      .where((s) => s.isNotEmpty)
+                      .join(' '),
                   string: (s) => s.value,
                 );
               }
@@ -932,6 +924,12 @@ class RequestService {
           additionalPrompts: additionalPrompts,
         );
 
+        // 取消属于调用方主动打断，不应继续进入重试，否则新消息无法及时接管生成。
+        if (shouldCancel?.call() == true) {
+          developer.log('🛑 请求已取消，跳过后续重试', name: 'RequestService');
+          return;
+        }
+
         // 如果成功完成，直接返回
         if (succeeded && currentError == null) {
           return;
@@ -1010,13 +1008,11 @@ class RequestService {
       );
       stopwatch.stop();
 
-      final urls =
-          (response['data'] as List<dynamic>? ?? const [])
-              .map(
-                (image) =>
-                    (image as Map<String, dynamic>)['url'] as String? ?? '',
-              )
-              .toList();
+      final urls = (response['data'] as List<dynamic>? ?? const [])
+          .map(
+            (image) => (image as Map<String, dynamic>)['url'] as String? ?? '',
+          )
+          .toList();
       developer.log(
         '图像生成完成: ${urls.length}张图片, 耗时: ${stopwatch.elapsedMilliseconds}ms',
         name: 'RequestService',
@@ -1157,18 +1153,17 @@ class RequestService {
             content = rawContent;
           } else if (rawContent is ChatCompletionUserMessageContent) {
             content = rawContent.map(
-              parts:
-                  (parts) => parts.value
-                      .map(
-                        (p) => p.map(
-                          text: (t) => t.text,
-                          image: (i) => '[图片]',
-                          audio: (a) => '[音频]',
-                          refusal: (r) => '',
-                        ),
-                      )
-                      .where((s) => s.isNotEmpty)
-                      .join(' '),
+              parts: (parts) => parts.value
+                  .map(
+                    (p) => p.map(
+                      text: (t) => t.text,
+                      image: (i) => '[图片]',
+                      audio: (a) => '[音频]',
+                      refusal: (r) => '',
+                    ),
+                  )
+                  .where((s) => s.isNotEmpty)
+                  .join(' '),
               string: (s) => s.value,
             );
           }
