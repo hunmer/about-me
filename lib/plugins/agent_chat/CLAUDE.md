@@ -1,12 +1,12 @@
 # agent_chat AI 对话插件
 
-一对一 AI 对话插件（90 个 Dart 文件，第二大插件）：多会话管理、Agent 绑定（单 Agent / Agent 链）、**三阶段工具调用**（模板匹配 → 工具识别 → 代码生成，经 JSBridgeManager 执行 `run_js`）、流式响应（thinking 单独渲染）、语音通话循环（录音→ASR→AI→TTS，含腾讯 ASR 实时 WebSocket）、Android 前台服务、iOS Shortcuts/Watch 同步。直接继承 `PluginBase`，**无 JS API**。
+一对一 AI 对话插件（90 个 Dart 文件，第二大插件）：多会话管理、Agent 绑定（单 Agent / Agent 链）、**标准 function calling 优先**（schema 化工具由应用分发执行；官方 Anthropic endpoint 与 OpenAI 兼容 endpoint 使用 SDK 工具循环，其他 endpoint 或未执行工具前失败时回退旧两阶段 `run_js`）、流式响应（thinking 单独渲染）、语音通话循环（录音→ASR→AI→TTS，含腾讯 ASR 实时 WebSocket）、Android 前台服务、iOS Shortcuts/Watch 同步。直接继承 `PluginBase`，**无 JS API**。
 
 强依赖链：`agent_chat → openai`（AIAgent 模型、RequestService 流式请求、AgentController）+ `tts`（语音通话播报）。工具配置由 `ToolConfigManager` 扫描各插件 JS API 自动生成——插件新增 JS API 后工具面板自动同步。
 
 ## 约定的规则
 
-- 工具调用解析基于 **Markdown 格式**（`MarkdownToolCallParser`），非 JSON function calling。
+- function calling 可用时以 schema 化标准工具调用为主；Anthropic SDK 当前固定使用官方 endpoint，其他 Anthropic 兼容 endpoint 走旧路径；兼容回退仍使用 `MarkdownToolCallParser` 解析 `run_js`。
 - 会话消息每会话单文件，保存走串行链 `_conversationsSaveChain` 防并发写坏。
 - 工具配置存 `app_data/agent_chat/tools/<pluginId>.json`（dart:io 直写），改动工具生成逻辑在 `tool_config_manager.dart:84-144`。
 - "当前页面问 AI"用临时会话（`getOrCreateTemporaryConversation`），勿复用普通会话。

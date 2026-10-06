@@ -62,7 +62,7 @@ class AIRequestHandler {
 
   // ========== 核心方法 ==========
 
-  /// 请求 AI 回复（三阶段工具调用：模板匹配 → 工具需求 → 工具调用）
+  /// 请求 AI 回复（标准 function calling 优先，回退旧两阶段 run_js 编排）
   Future<void> request({
     required String aiMessageId,
     required String userInput,

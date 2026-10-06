@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
@@ -131,6 +132,36 @@ void main() {
 
     test('空文本返回 null', () {
       expect(NativeToolAgentService.matchPluginCandidates('  '), isNull);
+    });
+  });
+
+  group('NativeToolAgentService.supports', () {
+    test('Anthropic Agent 使用标准 function calling', () {
+      final now = DateTime(2026, 1, 1);
+      final agent = AIAgent(
+        id: 'anthropic-agent',
+        name: 'Anthropic',
+        description: '',
+        tags: const [],
+        serviceProviderId: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        headers: const {'x-api-key': 'test-key'},
+        createdAt: now,
+        updatedAt: now,
+        model: 'claude-sonnet-4-5',
+        enableFunctionCalling: true,
+        apiFormat: 'anthropic',
+      );
+
+      expect(NativeToolAgentService.instance.supports(agent, true), isTrue);
+      expect(NativeToolAgentService.instance.supports(agent, false), isFalse);
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(baseUrl: 'https://open.bigmodel.cn/api/anthropic'),
+          true,
+        ),
+        isFalse,
+      );
     });
   });
 }

@@ -22,6 +22,20 @@ class NativeToolMeta {
   final String title;
 }
 
+/// 标准工具调用发起后发生错误，调用方不得再回退重放旧流程。
+class NativeToolExecutionException implements Exception {
+  const NativeToolExecutionException({
+    required this.cause,
+    required this.toolCallsStarted,
+  });
+
+  final Object cause;
+  final int toolCallsStarted;
+
+  @override
+  String toString() => cause.toString();
+}
+
 /// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
 ///
 /// DeepSeek 思考模型的多轮工具调用要求把 reasoning_content 传回，
@@ -114,11 +128,27 @@ class NativeToolAgentService {
 
   static final NativeToolAgentService instance = NativeToolAgentService._();
 
-  /// 是否走原生 FC 路径（openai 兼容格式 + 工具调用开启）
-  bool supports(AIAgent agent, bool enableToolCalling) =>
-      enableToolCalling &&
-      agent.enableFunctionCalling &&
-      agent.apiFormat != 'anthropic';
+  /// SDK 的 AnthropicProvider 固定使用官方 endpoint；其他兼容端点保留旧路径。
+  bool supports(AIAgent agent, bool enableToolCalling) {
+    if (!enableToolCalling || !agent.enableFunctionCalling) return false;
+    if (agent.apiFormat.toLowerCase() != 'anthropic') return true;
+    return _supportsNativeAnthropicEndpoint(agent.baseUrl);
+  }
+
+  bool _supportsNativeAnthropicEndpoint(String baseUrl) {
+    if (baseUrl.trim().isEmpty) return true;
+    final uri = Uri.tryParse(baseUrl.trim());
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host != 'api.anthropic.com' ||
+        uri.port != 443 ||
+        uri.hasQuery ||
+        uri.hasFragment) {
+      return false;
+    }
+    final path = uri.path.replaceFirst(RegExp(r'/+$'), '');
+    return path.isEmpty || path == '/v1';
+  }
 
   List<Tool<Map<String, dynamic>>>? _toolsCache;
   Map<String, NativeToolMeta>? _toolMetaCache;
@@ -173,7 +203,7 @@ class NativeToolAgentService {
   }) async {
     final (allTools, allMeta) = _buildTools();
     if (allTools.isEmpty) {
-      debugPrint('[NativeTool] ⚠️ 工具集为空（ToolConfigManager 未初始化？）');
+      throw StateError('标准工具集为空（ToolConfigManager 未初始化或没有启用的工具）');
     }
     // 生图等工具依赖会话上下文
     MomentsService.instance.currentAgentId = agent.id;
@@ -205,16 +235,37 @@ class NativeToolAgentService {
         ? systemPrompt
         : '$systemPrompt\n\n$systemExtras';
 
-    final dartAgent = Agent.forProvider(
-      AppOpenAIProvider(
-        apiKey: _extractApiKey(agent),
-        baseUrl: _normalizeBaseUrl(agent.baseUrl) ?? Uri.parse('https://api.openai.com/v1'),
-        headers: agent.headers,
-      ),
-      chatModelName: agent.model,
-      tools: tools,
-      temperature: agent.temperature,
-    );
+    final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
+    final Agent dartAgent;
+    if (isAnthropic) {
+      dartAgent = Agent.forProvider(
+        AnthropicProvider(
+          apiKey: _extractApiKey(agent),
+          headers: agent.headers,
+        ),
+        chatModelName: agent.model,
+        tools: tools,
+        temperature: agent.temperature,
+        chatModelOptions: AnthropicChatOptions(
+          maxTokens: agent.maxLength > 0 ? agent.maxLength : 4096,
+          temperature: agent.temperature > 0 ? agent.temperature : null,
+          topP: agent.topP > 0 ? agent.topP : null,
+          stopSequences: agent.stop,
+        ),
+      );
+    } else {
+      final configuredBaseUrl = _normalizeBaseUrl(agent.baseUrl);
+      dartAgent = Agent.forProvider(
+        AppOpenAIProvider(
+          apiKey: _extractApiKey(agent),
+          baseUrl: configuredBaseUrl ?? Uri.parse('https://api.openai.com/v1'),
+          headers: agent.headers,
+        ),
+        chatModelName: agent.model,
+        tools: tools,
+        temperature: agent.temperature,
+      );
+    }
 
     final history = _convertHistory(contextMessages, system);
     // 图片作为多模态附件（随 prompt 一起发送）
@@ -254,6 +305,14 @@ class NativeToolAgentService {
         '工具调用=$_activeToolCallCount次',
       );
       return output.toString();
+    } catch (e, stack) {
+      if (_activeToolCallCount > 0 && !e.toString().contains('已取消发送')) {
+        throw NativeToolExecutionException(
+          cause: e,
+          toolCallsStarted: _activeToolCallCount,
+        );
+      }
+      Error.throwWithStackTrace(e, stack);
     } finally {
       _activeSteps = null;
       _activeOnToolSteps = null;
@@ -467,7 +526,10 @@ class NativeToolAgentService {
   String _extractApiKey(AIAgent agent) {
     final auth = agent.headers['Authorization'] ?? '';
     if (auth.startsWith('Bearer ')) return auth.substring(7);
-    return agent.headers['api-key'] ?? agent.headers['x-api-key'] ?? '';
+    return agent.headers['api-key'] ??
+        agent.headers['x-api-key'] ??
+        agent.headers['X-Api-Key'] ??
+        '';
   }
 
   Uri? _normalizeBaseUrl(String baseUrl) {

@@ -10,7 +10,6 @@ import '../../models/tool_call_step.dart';
 import '../../models/saved_tool_template.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
-import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
 import '../../services/tool_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
@@ -368,61 +367,6 @@ class AgentChainExecutor {
 
   /// 在链式调用中请求单个 Agent 的响应
   /// 使用 Completer 确保等待所有异步操作（包括工具调用）完成
-  /// 原生 FC 工具循环包装：流式写消息 + 工具进度写 message.toolCall
-  ///
-  /// 返回 true 表示已处理完成（含取消/错误场景）；false 表示初始化失败应回退旧路径
-  Future<bool> _runNativeToolLoop({
-    required AIAgent agent,
-    required String aiMessageId,
-    required List<ChatCompletionMessage> contextMessages,
-    required List<File> files,
-  }) async {
-    try {
-      final systemPrompt = await RequestService.getEffectiveSystemPrompt(
-        agent,
-      );
-      await NativeToolAgentService.instance.runToolLoop(
-        agent: agent,
-        systemPrompt: systemPrompt,
-        contextMessages: contextMessages,
-        files: files,
-        conversationId: context.conversationId,
-        onUpdateMessage: (content, count) {
-          context.messageService.updateAIMessageContent(
-            context.conversationId,
-            aiMessageId,
-            content,
-            count,
-          );
-        },
-        onToolSteps: (steps) async {
-          final messages = await context.messageService.getMessages(
-            context.conversationId,
-          );
-          final message = messages.where((m) => m.id == aiMessageId).firstOrNull;
-          if (message == null) return;
-          await context.messageService.updateMessage(
-            message.copyWith(toolCall: ToolCallResponse(steps: steps)),
-          );
-        },
-        isCancelling: isCancelling,
-      );
-      return true;
-    } catch (e, stack) {
-      debugPrint('❌ [NativeTool] 执行失败: $e\n$stack');
-      if (e.toString().contains('已取消发送')) {
-        await context.messageService.updateAIMessageContent(
-          context.conversationId,
-          aiMessageId,
-          '🛑 用户已取消操作',
-          0,
-        );
-        return true; // 用户主动取消，不回退
-      }
-      return false; // 其他异常回退旧两阶段路径重试
-    }
-  }
-
   Future<void> _requestAgentInChain({
     required AIAgent agent,
     required String aiMessageId,
@@ -443,30 +387,6 @@ class AgentChainExecutor {
       // 处理图片文件
       final imageFiles =
           files.where((f) => FilePickerHelper.isImageFile(f)).toList();
-
-      // 原生 function calling 路径（dartantic_ai）：
-      // openai 兼容 + 工具调用开启时优先，工具 schema 由 SDK 注入，
-      // 多轮工具循环内置；异常回退旧两阶段编排（anthropic 格式恒走旧路径）
-      if (NativeToolAgentService.instance.supports(agent, enableToolCalling)) {
-        final nativeDone = await _runNativeToolLoop(
-          agent: agent,
-          aiMessageId: aiMessageId,
-          contextMessages: contextMessages,
-          files: imageFiles,
-        );
-        if (nativeDone) {
-          context.messageService.completeAIMessage(
-            context.conversationId,
-            aiMessageId,
-          );
-          debugPrint('✅ [NativeTool] Agent ${agent.name} 原生 FC 完成');
-          if (!operationCompleter.isCompleted) {
-            operationCompleter.complete();
-          }
-          return;
-        }
-        debugPrint('⚠️ [NativeTool] 失败，回退旧两阶段编排');
-      }
 
       // 使用公共的工具调用编排器处理第一阶段和第二阶段
       final needsToolCall = await _toolOrchestrator.processTwoPhaseToolCall(

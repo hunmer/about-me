@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:agentlib/openai_compat.dart';
 import '../../models/conversation.dart';
+import '../../models/tool_call_step.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
 import '../../services/tool_service.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'shared/manager_context.dart';
 
 /// 工具调用编排器 - 公共组件
 ///
-/// 负责处理工具调用的两个阶段：
-/// - 第一阶段：工具需求识别
-/// - 第二阶段：工具执行代码生成
+/// 优先执行 schema 化 function calling；不可用时回退到旧两阶段 run_js 流程。
 /// 这个类被 AIRequestHandler 和 AgentChainExecutor 共用
 class ToolOrchestrator {
   /// json_schema 强约束仅被部分 provider 支持（DeepSeek 返回 HTTP 400
@@ -78,6 +78,51 @@ class ToolOrchestrator {
     required Function(String firstResponse) onFirstPhaseComplete,
     Function(String)? onThinking,
   }) async {
+    // SDK 支持的 provider 优先使用 schema 化 function calling；失败时再走
+    // 旧的两阶段 run_js 编排。
+    if (NativeToolAgentService.instance.supports(agent, enableToolCalling)) {
+      try {
+        final systemPrompt = await RequestService.getEffectiveSystemPrompt(
+          agent,
+        );
+        await NativeToolAgentService.instance.runToolLoop(
+          agent: agent,
+          systemPrompt: systemPrompt,
+          contextMessages: contextMessages,
+          files: files,
+          conversationId: context.conversationId,
+          onUpdateMessage: onUpdateMessage,
+          onToolSteps: (steps) async {
+            final message = context.messageService.getMessage(
+              context.conversationId,
+              aiMessageId,
+            );
+            if (message != null) {
+              await context.messageService.updateMessage(
+                message.copyWith(toolCall: ToolCallResponse(steps: steps)),
+              );
+            }
+          },
+          isCancelling: isCancelling,
+        );
+        return false;
+      } catch (e, stack) {
+        debugPrint('❌ [NativeTool] 标准工具调用失败: $e\n$stack');
+        if (isCancelling() || e.toString().contains('已取消发送')) {
+          onError('已取消发送');
+          return false;
+        }
+        if (e is NativeToolExecutionException && e.toolCallsStarted > 0) {
+          onError(
+            '标准工具调用已发起 ${e.toolCallsStarted} 次，但后续生成失败；为避免重复执行，已停止回退：${e.cause}',
+          );
+          return false;
+        }
+        debugPrint('⚠️ [NativeTool] 尚未执行工具，回退旧两阶段 run_js 编排');
+        onUpdateMessage('', 0);
+      }
+    }
+
     // 第一阶段：工具需求识别
     final toolRequest = await _executeFirstPhase(
       agent: agent,
