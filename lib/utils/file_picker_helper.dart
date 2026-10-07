@@ -71,6 +71,14 @@ class FilePickerHelper {
     return [];
   }
 
+  /// 选择目录
+  ///
+  /// 返回选中的目录路径，用户取消返回 null
+  static Future<String?> pickDirectory() async {
+    final result = await FilePicker.platform.getDirectoryPath();
+    return result;
+  }
+
   /// 判断文件是否为图片
   ///
   /// 支持的图片格式：jpg, jpeg, png, gif, bmp, webp

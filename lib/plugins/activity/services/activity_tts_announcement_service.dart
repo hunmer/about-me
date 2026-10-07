@@ -336,8 +336,9 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
 
   /// 使用本地语音缓存智能拼接播报
   ///
-  /// 固定文本段与 {unrecorded_time}（数字 + 单位）播放缓存音频，
-  /// 其它动态占位符（{date} 等）单独在线合成。返回 false 表示缓存不可用。
+  /// 收集全部片段（固定文本缓存、{unrecorded_time} 数字+单位、动态占位符
+  /// 在线合成为临时文件），合并为一条完整语音后一次性播放，避免逐条播放
+  /// 不稳定。返回 false 表示缓存不可用。
   Future<bool> _speakWithCache({bool isTest = false}) async {
     final cache = voiceCache;
     if (cache == null) return false;
@@ -357,35 +358,56 @@ class ActivityTTSAnnouncementService extends ChangeNotifier {
 
       final segments = cache.parseTemplate(_textTemplate);
       final gap = Duration(milliseconds: _cacheGapMs);
+      final stamp = DateTime.now().microsecondsSinceEpoch;
+      final fileNames = <String>[];
+      final tempNames = <String>[];
       var segmentIndex = 0;
-      for (final segment in segments) {
-        if (!isTest && !_isActive) return false;
+      var dynamicIndex = 0;
+      try {
+        final dir = await cache.cacheDir();
+        for (final segment in segments) {
+          if (!isTest && !_isActive) return false;
 
-        switch (segment.type) {
-          case VoiceSegmentType.fixed:
-            // 固定文本段：播放预生成缓存（失败则跳过该段）
-            await cache.playFiles(
-              ['seg_${segmentIndex++}.$ext'],
-              gap: gap,
-              shouldContinue: () => isTest || _isActive,
-            );
-            break;
-          case VoiceSegmentType.unrecordedTime:
-            // 未记录时间：数字 + 单位拼接播放
-            await cache.playFiles(
-              timeParts,
-              gap: gap,
-              shouldContinue: () => isTest || _isActive,
-            );
-            break;
-          case VoiceSegmentType.dynamic:
-            // 动态占位符：替换后在线合成播报
-            final text = _replacePlaceholders(segment.text);
-            await ttsPlugin.speak(text, serviceId: _serviceId);
-            break;
+          switch (segment.type) {
+            case VoiceSegmentType.fixed:
+              fileNames.add('seg_${segmentIndex++}.$ext');
+              break;
+            case VoiceSegmentType.unrecordedTime:
+              fileNames.addAll(timeParts);
+              break;
+            case VoiceSegmentType.dynamic:
+              // 动态占位符：替换后在线合成为临时文件，参与合并
+              final text = _replacePlaceholders(segment.text);
+              final name = '_dyn_${stamp}_$dynamicIndex.$ext';
+              dynamicIndex++;
+              final result = await ttsPlugin.synthesizeToFile(
+                text,
+                serviceId: _serviceId,
+                filePath: '${dir.path}/$name',
+              );
+              if (result == null) return false;
+              fileNames.add(name);
+              tempNames.add(name);
+              break;
+          }
         }
+
+        // 合并为一条完整语音，单次播放
+        final combinedName = '_combined_$stamp.$ext';
+        if (!await cache.combineFiles(fileNames, combinedName, gap: gap)) {
+          return false;
+        }
+        tempNames.add(combinedName);
+
+        await cache.playFiles(
+          [combinedName],
+          shouldContinue: () => isTest || _isActive,
+        );
+        return true;
+      } finally {
+        // 播放完成或中断后清理临时文件
+        await cache.cleanupFiles(tempNames);
       }
-      return true;
     } catch (e) {
       debugPrint('[ActivityTTSAnnouncement] 缓存拼接播报失败: $e');
       return false;

@@ -6,6 +6,7 @@ import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_execution_result.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'script_execution_logger.dart';
 import 'script_manager.dart';
 
@@ -29,6 +30,12 @@ class ScriptExecutor {
 
   /// 正在执行的脚本栈（用于检测循环调用）
   final Set<String> _executingScripts = {};
+
+  /// 正在执行脚本所使用的配置文件 id（scriptId -> profileId）
+  ///
+  /// execute 的 args 里带 profileId 时记录，脚本内 getConfig(scriptId)
+  /// 未显式指定 profileId 时自动读取该配置文件
+  final Map<String, String> _activeProfileIds = {};
 
   /// 日志回调函数
   final Function(String message, String level)? onLog;
@@ -130,15 +137,24 @@ class ScriptExecutor {
   }
 
   /// 处理获取脚本配置
+  ///
+  /// 支持的调用方式：
+  /// 1. getConfig({scriptId: 'xxx'}) - 取默认配置文件
+  /// 2. getConfig({scriptId: 'xxx', profileId: 'yyy'}) - 取指定配置文件
+  /// 3. getConfig('xxx') - 位置参数（取默认配置文件）
+  /// 4. getConfig('xxx', 'yyy') - 两个位置参数（scriptId, profileId）
+  ///
+  /// 未显式指定 profileId 时：若脚本正以某个配置文件执行（args.profileId），
+  /// 则返回该配置文件；否则返回默认配置文件
   Future<Map<String, dynamic>> _handleGetConfig(
     Map<String, dynamic> params,
   ) async {
     try {
-      // 支持两种调用方式：
-      // 1. getConfig({scriptId: 'xxx'}) - 对象参数
-      // 2. getConfig('xxx') - 位置参数（会被包装成 {_value: 'xxx'}）
-      final scriptId =
-          (params['scriptId'] as String?) ?? (params['_value'] as String?);
+      final scriptId = (params['scriptId'] as String?) ??
+          (params['_value'] as String?) ??
+          (params['_pos0'] as String?);
+      final profileId = (params['profileId'] as String?) ??
+          (params['_pos1'] as String?);
 
       if (scriptId == null || scriptId.isEmpty) {
         return {'error': 'scriptId 参数缺失'};
@@ -146,7 +162,7 @@ class ScriptExecutor {
 
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
       final data = await storage.read(configPath);
-      print('[ScriptConfigDebug] 9.脚本getConfig读取: $configPath -> $data');
+      print('[ScriptConfigDebug] 9.脚本getConfig读取: $configPath -> profileId=$profileId');
 
       // 默认配置
       final defaultConfig = {
@@ -163,12 +179,24 @@ class ScriptExecutor {
         return defaultConfig;
       }
 
-      // 合并存储的配置和默认配置（确保所有字段都存在）
-      final storedConfig = data as Map<String, dynamic>;
+      // 解析配置文件（兼容旧扁平格式）
+      final profiles = ScriptProfiles.fromStorage(data);
+
+      // 目标配置文件优先级：显式传入 > 当前执行上下文 > 默认
+      final targetId = (profileId != null && profileId.isNotEmpty)
+          ? profileId
+          : (_activeProfileIds[scriptId] ?? profiles.defaultProfileId);
+      final profile = profiles.getById(targetId);
+      if (profile == null) {
+        return {'error': '配置文件不存在: $targetId'};
+      }
+
+      // 合并默认配置和配置文件值（确保所有字段都存在）
       return {
         ...defaultConfig,
-        ...storedConfig,
+        ...profile.values,
         'scriptId': scriptId, // 确保 scriptId 正确
+        'profileId': profile.id,
       };
     } catch (e) {
       return {'error': e.toString()};
@@ -177,9 +205,10 @@ class ScriptExecutor {
 
   /// 处理保存脚本配置
   ///
-  /// 支持两种调用方式：
-  /// 1. setConfig({scriptId: 'xxx', config: {...}}) - 对象参数
-  /// 2. setConfig('xxx', {...}) - 两个位置参数
+  /// 支持的调用方式：
+  /// 1. setConfig({scriptId: 'xxx', config: {...}}) - 整体覆盖（旧行为）
+  /// 2. setConfig({scriptId: 'xxx', profileId: 'yyy', config: {...}}) - 只更新指定配置文件
+  /// 3. setConfig('xxx', {...}) - 位置参数（整体覆盖）
   Future<Map<String, dynamic>> _handleSetConfig(
     Map<String, dynamic> params,
   ) async {
@@ -189,6 +218,7 @@ class ScriptExecutor {
       final config =
           (params['config'] as Map<String, dynamic>?) ??
           (params['_pos1'] as Map<String, dynamic>?);
+      final profileId = params['profileId'] as String?;
 
       if (scriptId == null || scriptId.isEmpty) {
         return {'error': 'scriptId 参数缺失'};
@@ -202,8 +232,27 @@ class ScriptExecutor {
       // 确保目录存在
       await storage.createDirectory('configs/scripts_center');
 
-      // 保存配置
-      await storage.write(configPath, config);
+      if (profileId != null && profileId.isNotEmpty) {
+        // 只更新指定配置文件的值，保留其他配置文件
+        final existing = ScriptProfiles.fromStorage(
+          await storage.read(configPath),
+        );
+        final index = existing.profiles.indexWhere((p) => p.id == profileId);
+        final updated = ScriptProfile(
+          id: profileId,
+          name: index >= 0 ? existing.profiles[index].name : profileId,
+          values: config,
+        );
+        if (index >= 0) {
+          existing.profiles[index] = updated;
+        } else {
+          existing.profiles.add(updated);
+        }
+        await storage.write(configPath, existing.toStorage());
+      } else {
+        // 未指定配置文件：整体覆盖（兼容旧脚本行为）
+        await storage.write(configPath, config);
+      }
 
       return {'success': true};
     } catch (e) {
@@ -272,6 +321,7 @@ class ScriptExecutor {
         (params['_value'] as String?) ??
         (params['_pos0'] as String?);
     final runParams = params['params'] ?? params['_pos1'];
+    final profileId = params['profileId'] as String?;
 
     if (scriptId == null || scriptId.isEmpty) {
       return {'success': false, 'error': 'scriptId 参数缺失'};
@@ -293,6 +343,7 @@ class ScriptExecutor {
       final Map<String, dynamic> args = {
         'params': runParams ?? [],
         'calledFrom': 'runScript',
+        if (profileId != null && profileId.isNotEmpty) 'profileId': profileId,
       };
 
       // 执行目标脚本
@@ -359,6 +410,12 @@ class ScriptExecutor {
       // 标记为正在执行
       _executingScripts.add(scriptId);
 
+      // 记录本次执行使用的配置文件（脚本内 getConfig 未显式指定时使用）
+      final profileId = args?['profileId'] as String?;
+      if (profileId != null && profileId.isNotEmpty) {
+        _activeProfileIds[scriptId] = profileId;
+      }
+
       // 上报运行中状态（执行记录页实时可见）
       final trigger = _resolveTrigger(args);
       executionLogger.startRun(
@@ -413,6 +470,7 @@ class ScriptExecutor {
       } finally {
         // 移除执行标记
         _executingScripts.remove(scriptId);
+        _activeProfileIds.remove(scriptId);
         executionLogger.endRun(scriptId);
       }
     } catch (e) {
@@ -520,6 +578,7 @@ class ScriptExecutor {
   /// 清理资源
   void dispose() {
     _executingScripts.clear();
+    _activeProfileIds.clear();
     _isInitialized = false;
     print('✅ ScriptExecutor已清理');
   }

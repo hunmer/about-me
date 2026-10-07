@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_trigger.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'script_loader.dart';
@@ -342,6 +344,47 @@ class ScriptManager extends ChangeNotifier {
       print('❌ $_lastError');
       rethrow;
     }
+  }
+
+  /// 读取脚本的配置文件列表（供运行时选择配置）
+  ///
+  /// 兼容旧扁平格式（视为单个 default 配置文件）
+  Future<ScriptProfiles> getScriptProfiles(String scriptId) async {
+    final configPath = 'configs/scripts_center/${scriptId}_config.json';
+    final data = await loader.storage.read(configPath);
+    return ScriptProfiles.fromStorage(data);
+  }
+
+  /// 导出脚本到目标目录下的 {scriptId}/ 子目录
+  ///
+  /// 写出 script.js + metadata.json（含 id 与全部配置文件），
+  /// 与"导入脚本"（选 script.js、读同目录 metadata.json）构成闭环。
+  /// 返回导出的目录路径；代码为空时抛出异常
+  Future<String> exportScript(ScriptInfo script, String targetDir) async {
+    final code = await getScriptCode(script.id);
+    if (code == null || code.isEmpty) {
+      throw Exception('脚本代码为空，无法导出');
+    }
+
+    final dir = Directory('$targetDir/${script.id}');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    // metadata：脚本元数据 + id + 配置文件（含全部 profile，原样透传）
+    final metadata = <String, dynamic>{...script.toJson(), 'id': script.id};
+    final config =
+        await loader.storage.read('configs/scripts_center/${script.id}_config.json');
+    if (config is Map && config.isNotEmpty) {
+      metadata['config'] = config;
+    }
+
+    await File('${dir.path}/metadata.json').writeAsString(
+      const JsonEncoder.withIndent('  ').convert(metadata),
+    );
+    await File('${dir.path}/script.js').writeAsString(code);
+    print('✅ 导出脚本成功: ${script.id} -> ${dir.path}');
+    return dir.path;
   }
 
   /// 删除脚本

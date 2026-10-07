@@ -2,6 +2,12 @@
 ///
 /// 用于定义 module 类型脚本的输入参数
 class ScriptInput {
+  /// 执行参数（args）中的保留键
+  ///
+  /// 这些键由执行框架注入（如 profileId 指定配置文件），
+  /// 输入参数不可占用，否则执行时会被框架覆盖
+  static const List<String> reservedKeys = ['calledFrom', 'params', 'profileId'];
+
   /// 参数显示名称
   final String label;
 

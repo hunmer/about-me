@@ -11,6 +11,7 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/screens/home_screen/widgets/generic_selector_widget.dart';
 import '../models/script_info.dart';
+import '../models/script_profile.dart';
 import '../scripts_center_plugin.dart';
 import '../widgets/script_run_dialog.dart';
 import 'providers.dart';
@@ -178,22 +179,35 @@ Future<void> executeScript(
     );
 
     if (script.hasInputs) {
+      // 读取配置文件列表（多配置文件时可在对话框中选择）
+      ScriptProfiles? profilesData;
+      if (script.configFormFields.isNotEmpty) {
+        profilesData = await plugin.scriptManager.getScriptProfiles(script.id);
+      }
+
       // 显示参数输入对话框
       final navContext = navigatorKey.currentContext ?? context;
       final params = await showDialog<Map<String, dynamic>>(
         context: navContext,
         builder: (dialogContext) => ScriptRunDialog(
           script: script,
+          profiles: profilesData?.profiles ?? const [],
+          defaultProfileId: profilesData?.defaultProfileId,
         ),
       );
 
       // 如果用户点击了取消，不执行脚本
       if (params == null) return;
 
-      // 执行脚本并传递参数
+      // 解包配置文件id与输入参数，执行脚本
+      final profileId = params['profileId'] as String?;
+      final values = (params['values'] as Map<String, dynamic>?) ?? {};
       final execResult = await plugin.scriptExecutor.execute(
         script.id,
-        args: params,
+        args: {
+          ...values,
+          if (profileId != null) 'profileId': profileId,
+        },
       );
 
       if (context.mounted) {

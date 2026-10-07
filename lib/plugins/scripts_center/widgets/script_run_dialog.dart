@@ -2,18 +2,29 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 
 /// 脚本运行参数输入对话框
 ///
-/// 用于在执行 module 类型脚本时收集用户输入
+/// 用于在执行 module 类型脚本时收集用户输入。
+/// 脚本有多个配置文件（profile）时，顶部可选择本次执行使用的配置文件，
+/// 返回 {'profileId': String?, 'values': Map}（profileId 为 null 表示用默认）
 class ScriptRunDialog extends StatefulWidget {
   /// 要执行的脚本信息
   final ScriptInfo script;
 
+  /// 可选的配置文件列表
+  final List<ScriptProfile> profiles;
+
+  /// 默认配置文件 id
+  final String? defaultProfileId;
+
   const ScriptRunDialog({
     super.key,
     required this.script,
+    this.profiles = const [],
+    this.defaultProfileId,
   });
 
   @override
@@ -22,6 +33,13 @@ class ScriptRunDialog extends StatefulWidget {
 
 class _ScriptRunDialogState extends State<ScriptRunDialog> {
   final _formKey = GlobalKey<FormState>();
+
+  /// 本次执行选择的配置文件 id（null 表示使用默认）
+  String? _selectedProfileId;
+
+  /// 是否显示配置文件选择（多于一个才有选择意义）
+  bool get _showProfileSelector =>
+      widget.profiles.length > 1 && widget.script.configFormFields.isNotEmpty;
 
   /// 文本输入控制器映射 (key -> controller)
   final Map<String, TextEditingController> _textControllers = {};
@@ -38,6 +56,9 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
   @override
   void initState() {
     super.initState();
+
+    // 默认选中默认配置文件
+    _selectedProfileId = widget.defaultProfileId;
 
     // 初始化控制器和默认值
     for (final input in widget.script.inputs) {
@@ -105,7 +126,10 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
       values[input.key] = input.getFormattedValue(value);
     }
 
-    Navigator.of(context).pop(values);
+    Navigator.of(context).pop({
+      'profileId': _selectedProfileId,
+      'values': values,
+    });
   }
 
   @override
@@ -209,6 +233,12 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
                       ),
                       const SizedBox(height: 24),
 
+                      // 配置文件选择（多配置文件时显示）
+                      if (_showProfileSelector) ...[
+                        _buildProfileSelector(),
+                        const SizedBox(height: 24),
+                      ],
+
                       // 动态生成输入字段
                       ...widget.script.inputs.map((input) {
                         return Padding(
@@ -258,6 +288,42 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
           ],
         ),
       ),
+    );
+  }
+
+  /// 构建配置文件选择器
+  Widget _buildProfileSelector() {
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedProfileId,
+      decoration: const InputDecoration(
+        labelText: '配置文件',
+        helperText: '本次执行使用的配置',
+        prefixIcon: Icon(Icons.tune),
+        border: OutlineInputBorder(),
+      ),
+      items: widget.profiles
+          .map(
+            (p) => DropdownMenuItem(
+              value: p.id,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(p.name, overflow: TextOverflow.ellipsis),
+                  ),
+                  if (p.id == widget.defaultProfileId) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.star, size: 14, color: Colors.orange),
+                  ],
+                ],
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedProfileId = value;
+        });
+      },
     );
   }
 

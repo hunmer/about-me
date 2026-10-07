@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
@@ -296,8 +297,8 @@ class ActivityVoiceCacheService {
 
   /// 顺序播放音频文件序列（相对于缓存目录）
   ///
-  /// [gap] 每段音频之间的停顿时长，让拼接更自然；[shouldContinue] 返回
-  /// false 时中断。返回 false 表示播放中断或失败。
+  /// [gap] 每段音频之间的停顿时长（未合并时的逐条播放模式）；[shouldContinue]
+  /// 返回 false 时中断。返回 false 表示播放中断或失败。
   Future<bool> playFiles(
     List<String> fileNames, {
     Duration gap = const Duration(milliseconds: 150),
@@ -327,6 +328,166 @@ class ActivityVoiceCacheService {
     return true;
   }
 
+  /// 将多个音频文件（同缓存目录，按顺序）合并为一条完整语音
+  ///
+  /// WAV 按 fmt 参数精细拼接并插入 [gap] 对应的静音；其它格式（MP3/PCM 等）
+  /// 按字节拼接（MP3 剥离非首文件的 ID3v2 标签）。返回 false 表示失败。
+  Future<bool> combineFiles(
+    List<String> fileNames,
+    String outputName, {
+    Duration gap = Duration.zero,
+  }) async {
+    try {
+      final dir = await cacheDir();
+      final buffers = <List<int>>[];
+      for (final name in fileNames) {
+        buffers.add(await File('${dir.path}/$name').readAsBytes());
+      }
+      if (buffers.isEmpty) return false;
+
+      final ext = outputName.split('.').last.toLowerCase();
+      final builder = BytesBuilder();
+      if (ext == 'wav') {
+        final combined = _combineWav(buffers, gap);
+        if (combined != null) {
+          builder.add(combined);
+        } else {
+          // 参数不一致等异常情况退化为顺序拼接
+          for (final bytes in buffers) {
+            builder.add(bytes);
+          }
+        }
+      } else {
+        builder.add(buffers.first);
+        for (var i = 1; i < buffers.length; i++) {
+          builder.add(_stripId3v2(buffers[i]));
+        }
+      }
+      await File('${dir.path}/$outputName').writeAsBytes(
+        builder.takeBytes(),
+        flush: true,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[ActivityVoiceCache] 合并语音失败: $e');
+      return false;
+    }
+  }
+
+  /// 删除临时音频文件（合并产物与动态段在线合成的临时文件）
+  Future<void> cleanupFiles(List<String> names) async {
+    final dir = await cacheDir();
+    for (final name in names) {
+      try {
+        final file = File('${dir.path}/$name');
+        if (await file.exists()) await file.delete();
+      } catch (_) {}
+    }
+  }
+
+  /// 剥离 MP3 头部的 ID3v2 标签，避免拼接处出现杂数据
+  List<int> _stripId3v2(List<int> bytes) {
+    if (bytes.length < 10 ||
+        bytes[0] != 0x49 || bytes[1] != 0x44 || bytes[2] != 0x33) {
+      return bytes;
+    }
+    final size =
+        (bytes[6] & 0x7F) << 21 |
+        (bytes[7] & 0x7F) << 14 |
+        (bytes[8] & 0x7F) << 7 |
+        (bytes[9] & 0x7F);
+    final start = 10 + size;
+    return start < bytes.length ? bytes.sublist(start) : bytes;
+  }
+
+  /// WAV 精细拼接：解析各文件 fmt/data chunk，采样参数一致则重写头部拼接，
+  /// 段间插入静音；解析失败或参数不一致返回 null。
+  List<int>? _combineWav(List<List<int>> buffers, Duration gap) {
+    final first = _parseWav(buffers.first);
+    if (first == null) return null;
+
+    final data = BytesBuilder();
+    data.add(first.data);
+    for (var i = 1; i < buffers.length; i++) {
+      final info = _parseWav(buffers[i]);
+      if (info == null) return null;
+      if (!_bytesEquals(info.fmtChunk, first.fmtChunk)) return null;
+      if (gap > Duration.zero && first.byteRate > 0) {
+        final silenceLength =
+            (first.byteRate * gap.inMilliseconds / 1000).round();
+        data.add(List<int>.filled(silenceLength, 0));
+      }
+      data.add(info.data);
+    }
+    final dataBytes = data.takeBytes();
+
+    final out = BytesBuilder();
+    out.add([0x52, 0x49, 0x46, 0x46]); // 'RIFF'
+    out.add(_le32(36 + dataBytes.length));
+    out.add([0x57, 0x41, 0x56, 0x45]); // 'WAVE'
+    out.add([0x66, 0x6D, 0x74, 0x20]); // 'fmt '
+    out.add(_le32(first.fmtChunk.length));
+    out.add(first.fmtChunk);
+    out.add([0x64, 0x61, 0x74, 0x61]); // 'data'
+    out.add(_le32(dataBytes.length));
+    out.add(dataBytes);
+    return out.takeBytes();
+  }
+
+  /// 解析 WAV：提取 fmt chunk 与 data 样本
+  _WavInfo? _parseWav(List<int> bytes) {
+    if (bytes.length < 12) return null;
+    if (!_hasTag(bytes, 0, 'RIFF') || !_hasTag(bytes, 8, 'WAVE')) return null;
+
+    List<int>? fmtChunk;
+    List<int> data = const [];
+    var pos = 12;
+    while (pos + 8 <= bytes.length) {
+      final size = _le32At(bytes, pos + 4);
+      final chunkStart = pos + 8;
+      final chunkEnd = chunkStart + size > bytes.length
+          ? bytes.length
+          : chunkStart + size;
+      if (_hasTag(bytes, pos, 'fmt ')) {
+        fmtChunk = bytes.sublist(chunkStart, chunkEnd);
+      } else if (_hasTag(bytes, pos, 'data')) {
+        data = bytes.sublist(chunkStart, chunkEnd);
+      }
+      pos = chunkStart + size + (size.isOdd ? 1 : 0);
+    }
+    if (fmtChunk == null || fmtChunk.length < 16 || data.isEmpty) return null;
+    // byteRate 位于 fmt chunk 偏移 8（format/channels/sampleRate 之后）
+    return _WavInfo(fmtChunk, data, _le32At(fmtChunk, 8));
+  }
+
+  bool _hasTag(List<int> bytes, int offset, String tag) {
+    for (var i = 0; i < 4; i++) {
+      if (bytes[offset + i] != tag.codeUnitAt(i)) return false;
+    }
+    return true;
+  }
+
+  int _le32At(List<int> bytes, int offset) =>
+      bytes[offset] |
+      (bytes[offset + 1] << 8) |
+      (bytes[offset + 2] << 16) |
+      (bytes[offset + 3] << 24);
+
+  List<int> _le32(int value) => [
+        value & 0xFF,
+        (value >> 8) & 0xFF,
+        (value >> 16) & 0xFF,
+        (value >> 24) & 0xFF,
+      ];
+
+  bool _bytesEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   /// 停止拼接播放
   Future<void> stopPlayback() async {
     _stopSignal?.complete();
@@ -343,4 +504,13 @@ class ActivityVoiceCacheService {
       await _player.dispose();
     } catch (_) {}
   }
+}
+
+/// WAV 解析结果：fmt chunk、样本数据与字节速率
+class _WavInfo {
+  final List<int> fmtChunk;
+  final List<int> data;
+  final int byteRate;
+
+  const _WavInfo(this.fmtChunk, this.data, this.byteRate);
 }

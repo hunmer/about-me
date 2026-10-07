@@ -3,6 +3,7 @@ import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_trigger.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_input_edit_dialog.dart';
@@ -69,7 +70,15 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   final GlobalKey<FormBuilderState> _configFormKey =
       GlobalKey<FormBuilderState>();
   FormBuilderWrapperState? _configWrapperState;
-  Map<String, dynamic>? _currentConfig;
+
+  // 配置文件列表（profile）：同一配置表单的多组值
+  List<ScriptProfile> _profiles = [];
+
+  // 当前正在编辑的配置文件 id
+  String _currentProfileId = 'default';
+
+  // 默认配置文件 id（执行未指定时使用）
+  String? _defaultProfileId;
 
   /// 配置是否已从磁盘加载完成（完成后才构建配置表单，确保 initialValue 正确）
   bool _configLoaded = false;
@@ -239,7 +248,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
       }
 
       if (widget.initialData!['config'] != null) {
-        _currentConfig = widget.initialData!['config'] as Map<String, dynamic>;
+        _applyProfilesData(widget.initialData!['config']);
       }
 
       // 解析 configFormFields
@@ -268,6 +277,32 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     }
   }
 
+  /// 应用配置文件数据（兼容新 profiles 格式与旧扁平格式）
+  void _applyProfilesData(dynamic data) {
+    final parsed = ScriptProfiles.fromStorage(data);
+    _profiles = parsed.profiles;
+    _defaultProfileId = parsed.defaultProfileId;
+    _currentProfileId = parsed.defaultProfile?.id ?? 'default';
+  }
+
+  /// 确保至少有一个配置文件
+  void _ensureProfiles() {
+    if (_profiles.isEmpty) {
+      _profiles = [ScriptProfile(id: 'default', name: '默认')];
+      _defaultProfileId ??= 'default';
+      _currentProfileId = 'default';
+    }
+  }
+
+  /// 当前正在编辑的配置文件
+  ScriptProfile get _currentProfile {
+    _ensureProfiles();
+    return _profiles.firstWhere(
+      (p) => p.id == _currentProfileId,
+      orElse: () => _profiles.first,
+    );
+  }
+
   /// 加载脚本配置
   Future<void> _loadScriptConfig() async {
     if (widget.script == null) return;
@@ -279,19 +314,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
       final data = await storageManager.read(configPath);
       print('[ScriptConfigDebug] 8.打开编辑屏读取配置: $configPath -> $data');
       if (!mounted) return;
-      // 正确处理 Map 类型转换
-      Map<String, dynamic> config = {};
-      if (data is Map<String, dynamic>) {
-        config = data;
-      } else if (data is Map<dynamic, dynamic>) {
-        // 转换键的类型
-        config = data.map<String, dynamic>(
-          (key, value) => MapEntry(key.toString(), value),
-        );
-      }
       // 注意：文件不存在时 read 返回空 Map（非 null），同样标记加载完成
       setState(() {
-        _currentConfig = config;
+        _applyProfilesData(data);
         _configLoaded = true;
       });
     } catch (e) {
@@ -379,20 +404,14 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
     print('[ScriptConfigDebug] 4.高级设置提交, advancedValues=$advancedValues');
 
-    // 在保存前，获取配置表单的最新值（如果已初始化）
-    print('[ScriptConfigDebug] 5.配置表单state=${_configWrapperState != null ? "已初始化" : "null(用户没切到配置Tab)"}');
+    // 在保存前，获取配置表单的最新值（如果已初始化），写入当前配置文件
     if (_configWrapperState != null) {
       final configValues = _configWrapperState!.currentValues;
-      print('[ScriptConfigDebug] 5.配置表单currentValues=$configValues');
       if (configValues.isNotEmpty) {
-        setState(() {
-          _currentConfig = configValues;
-        });
-      } else {
-        print('[ScriptConfigDebug] 5.⚠️ currentValues为空, _currentConfig保持=$_currentConfig');
+        _currentProfile.values = configValues;
       }
     }
-    // 如果配置表单未初始化，_currentConfig 保持原有值（从编辑模式加载的值或 null）
+    // 未初始化时各配置文件的 values 保持加载/实时同步的值
 
     // 获取保存的基本信息表单的值
     final basicValues = _basicInfoValues ?? {};
@@ -452,12 +471,13 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
       'localScriptPath': _localScriptPath,
     };
 
-    // 保存配置（如果有）
-    if (_currentConfig != null && _currentConfig!.isNotEmpty) {
-      scriptData['config'] = _currentConfig;
-      print('[ScriptConfigDebug] 6.配置将随脚本保存: ${_currentConfig!.keys.toList()}');
-    } else {
-      print('[ScriptConfigDebug] 6.⚠️ _currentConfig为空, scriptData不含config!');
+    // 保存配置文件（如果有配置表单字段）
+    if (_configFormFields.isNotEmpty) {
+      _ensureProfiles();
+      scriptData['config'] = {
+        'profiles': _profiles.map((p) => p.toJson()).toList(),
+        'defaultProfileId': _defaultProfileId ?? _profiles.first.id,
+      };
     }
 
     // 保存配置表单字段定义（如果有）
@@ -1440,25 +1460,34 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     }
 
     if (hasConfigFormFields) {
-      // 使用 FormBuilderWrapper 动态渲染配置表单（构建时 _currentConfig 已就绪）
+      // 使用 FormBuilderWrapper 动态渲染配置表单（构建时当前配置文件已就绪）
       return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: FormBuilderWrapper(
-          formKey: _configFormKey,
-          onStateReady: (state) => _configWrapperState = state,
-          config: FormConfig(
-            fields: _getConfigFormFields(),
-            showSubmitButton: false,
-            showResetButton: false,
-            fieldSpacing: 16,
-            onSubmit: _handleConfigSubmit,
-            // 实时收集配置值：配置 Tab 可能在保存前被销毁（TabBarView 回收），
-            // 保存瞬间再取值不可靠，改为变化即同步
-            onValuesChanged: (values) {
-              print('[ScriptConfigDebug] 5s.配置实时同步: ${values.length}个字段');
-              _currentConfig = values;
-            },
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 配置文件管理栏
+            _buildProfileBar(),
+            const SizedBox(height: 16),
+            // key 绑定当前配置文件 id：切换时表单重建，initialValue 换为新配置文件的值
+            FormBuilderWrapper(
+              key: ValueKey('config_profile_$_currentProfileId'),
+              formKey: _configFormKey,
+              onStateReady: (state) => _configWrapperState = state,
+              config: FormConfig(
+                fields: _getConfigFormFields(),
+                showSubmitButton: false,
+                showResetButton: false,
+                fieldSpacing: 16,
+                onSubmit: _handleConfigSubmit,
+                // 实时收集配置值：配置 Tab 可能在保存前被销毁（TabBarView 回收），
+                // 保存瞬间再取值不可靠，改为变化即同步到当前配置文件
+                onValuesChanged: (values) {
+                  _currentProfile.values = values;
+                },
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -1488,6 +1517,232 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     );
   }
 
+  /// 构建配置文件管理栏（选择/新建/重命名/删除/设为默认）
+  Widget _buildProfileBar() {
+    _ensureProfiles();
+    final current = _currentProfile;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.tune, size: 20, color: Colors.deepPurple),
+          const SizedBox(width: 8),
+          Text(
+            '配置文件',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButton<String>(
+              value: current.id,
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              items: _profiles
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p.id,
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              p.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (p.id == _defaultProfileId) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.star,
+                              size: 14,
+                              color: Colors.orange[700],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (id) {
+                if (id != null && id != _currentProfileId) {
+                  setState(() => _currentProfileId = id);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.add, size: 20),
+            color: Colors.deepPurple,
+            tooltip: '新建配置文件',
+            onPressed: _addProfile,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 20),
+            tooltip: '配置文件操作',
+            onSelected: (action) {
+              switch (action) {
+                case 'rename':
+                  _renameProfile();
+                case 'setDefault':
+                  _setDefaultProfile();
+                case 'delete':
+                  _deleteProfile();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'rename',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 18),
+                    SizedBox(width: 8),
+                    Text('重命名'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'setDefault',
+                child: Row(
+                  children: [
+                    Icon(Icons.star_outline, size: 18),
+                    SizedBox(width: 8),
+                    Text('设为默认'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                enabled: _profiles.length > 1,
+                child: const Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('删除'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 弹出配置文件名称输入对话框
+  Future<String?> _showProfileNameDialog(String title, String initialName) {
+    final controller = TextEditingController(text: initialName);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: '配置文件名称',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('scripts_center_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.of(context).pop(name);
+              }
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    ).whenComplete(controller.dispose);
+  }
+
+  /// 新建配置文件（值复制当前配置文件，便于微调）
+  Future<void> _addProfile() async {
+    final name = await _showProfileNameDialog('新建配置文件', '');
+    if (name == null) return;
+
+    setState(() {
+      final current = _currentProfile;
+      final id = 'profile_${DateTime.now().millisecondsSinceEpoch}';
+      _profiles.add(
+        ScriptProfile(
+          id: id,
+          name: name,
+          values: Map<String, dynamic>.from(current.values),
+        ),
+      );
+      _currentProfileId = id;
+    });
+  }
+
+  /// 重命名当前配置文件
+  Future<void> _renameProfile() async {
+    final current = _currentProfile;
+    final name = await _showProfileNameDialog('重命名配置文件', current.name);
+    if (name == null) return;
+
+    setState(() => current.name = name);
+  }
+
+  /// 将当前配置文件设为默认
+  void _setDefaultProfile() {
+    setState(() => _defaultProfileId = _currentProfile.id);
+    toastService.showToast('已设为默认配置文件');
+  }
+
+  /// 删除当前配置文件（至少保留一个）
+  Future<void> _deleteProfile() async {
+    if (_profiles.length <= 1) {
+      toastService.showToast('至少保留一个配置文件');
+      return;
+    }
+
+    final current = _currentProfile;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除配置文件'),
+        content: Text('确定删除配置文件「${current.name}」？其配置值将丢失。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('scripts_center_cancel'.tr),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() {
+      _profiles.removeWhere((p) => p.id == current.id);
+      if (_defaultProfileId == current.id) {
+        _defaultProfileId = _profiles.first.id;
+      }
+      _currentProfileId = _defaultProfileId ?? _profiles.first.id;
+    });
+  }
+
   /// 获取配置表单字段
   List<FormFieldConfig> _getConfigFormFields() {
     // 优先使用导入的configFormFields，其次使用script的configFormFields
@@ -1495,6 +1750,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         _configFormFields.isNotEmpty
             ? _configFormFields
             : widget.script?.configFormFields ?? [];
+
+    // 当前配置文件的值
+    final currentValues = _currentProfile.values;
 
     // 为需要可用事件列表的字段添加 extra 数据
     return fields.map((field) {
@@ -1516,7 +1774,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
           type: field.type,
           labelText: field.labelText,
           hintText: field.hintText,
-          initialValue: _currentConfig?[field.name],
+          initialValue: currentValues[field.name],
           required: field.required,
           validationMessage: field.validationMessage,
           enabled: field.enabled,
@@ -1531,7 +1789,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         type: field.type,
         labelText: field.labelText,
         hintText: field.hintText,
-        initialValue: _currentConfig?[field.name] ?? field.initialValue,
+        initialValue: currentValues[field.name] ?? field.initialValue,
         required: field.required,
         validationMessage: field.validationMessage,
         enabled: field.enabled,
@@ -1544,7 +1802,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   /// 处理配置表单提交
   void _handleConfigSubmit(Map<String, dynamic> values) {
     setState(() {
-      _currentConfig = values;
+      _currentProfile.values = values;
     });
   }
 

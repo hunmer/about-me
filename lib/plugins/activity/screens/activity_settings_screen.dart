@@ -820,7 +820,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '拼接播放时段与段之间的停顿时长',
+                        '语音合并播放时段与段之间的停顿（仅 WAV 语音格式生效）',
                         style: DsTypography.caption.copyWith(
                           color: theme.textSub,
                         ),

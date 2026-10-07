@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
+import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'package:aboutme/plugins/scripts_center/screens/script_execution_log_screen.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_card.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_run_dialog.dart';
+import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'script_edit_screen.dart';
 import '../scripts_center_plugin.dart';
@@ -87,6 +89,54 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
     }
   }
 
+  /// 导出脚本（选择目标目录，写出 script.js + metadata.json 含全部配置文件）
+  Future<void> _exportScript(ScriptInfo script) async {
+    try {
+      final targetDir = await FilePickerHelper.pickDirectory();
+      if (targetDir == null) return;
+
+      Toast.loading('正在导出: ${script.name}...');
+      final exportedPath = await widget.scriptManager.exportScript(
+        script,
+        targetDir,
+      );
+      if (mounted) {
+        Toast.dismiss();
+        Toast.success('导出成功: $exportedPath');
+      }
+    } catch (e) {
+      if (mounted) {
+        Toast.dismiss();
+        Toast.error('导出失败: $e');
+      }
+    }
+  }
+
+  /// 选择本次执行使用的配置文件（取消返回 null）
+  Future<String?> _selectProfileForRun(ScriptProfiles profiles) {
+    return showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('选择配置文件'),
+        children: [
+          for (final p in profiles.profiles)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(context).pop(p.id),
+              child: Row(
+                children: [
+                  const Icon(Icons.tune, size: 20, color: Colors.deepPurple),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(p.name)),
+                  if (p.id == profiles.defaultProfileId)
+                    Icon(Icons.star, size: 16, color: Colors.orange[700]),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   /// 显示创建/编辑脚本屏幕
   Future<void> _showScriptDialog({ScriptInfo? script}) async {
     final result = await NavigationHelper.push<Map<String, dynamic>>(
@@ -128,16 +178,35 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
       return;
     }
 
+    // 读取配置文件列表（有配置表单才有意义）
+    ScriptProfiles? profilesData;
+    if (script.configFormFields.isNotEmpty) {
+      profilesData = await widget.scriptManager.getScriptProfiles(script.id);
+    }
+
     // 如果是 module 类型且有输入参数,显示表单收集用户输入
     Map<String, dynamic>? inputValues;
+    String? profileId;
     if (script.isModule && script.hasInputs) {
-      inputValues = await showDialog<Map<String, dynamic>>(
+      final result = await showDialog<Map<String, dynamic>>(
         context: context,
-        builder: (context) => ScriptRunDialog(script: script),
+        builder: (context) => ScriptRunDialog(
+          script: script,
+          profiles: profilesData?.profiles ?? const [],
+          defaultProfileId: profilesData?.defaultProfileId,
+        ),
       );
 
       // 用户取消了
-      if (inputValues == null) {
+      if (result == null) {
+        return;
+      }
+      profileId = result['profileId'] as String?;
+      inputValues = (result['values'] as Map<String, dynamic>?) ?? {};
+    } else if (profilesData != null && profilesData.profiles.length > 1) {
+      // 无输入参数但有多个配置文件：选择本次执行使用的配置文件
+      profileId = await _selectProfileForRun(profilesData);
+      if (profileId == null) {
         return;
       }
     }
@@ -148,10 +217,13 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
     }
 
     try {
-      // 执行脚本,传入用户输入的参数
+      // 执行脚本,传入用户输入的参数与可选的配置文件id
       final result = await widget.scriptExecutor!.execute(
         script.id,
-        args: inputValues,
+        args: {
+          ...?inputValues,
+          if (profileId != null) 'profileId': profileId,
+        },
       );
 
       if (mounted) {
@@ -251,6 +323,15 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
                   ),
                 ),
               );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.ios_share),
+            title: const Text('导出脚本'),
+            subtitle: const Text('导出代码、元数据与全部配置文件'),
+            onTap: () {
+              Navigator.pop(context);
+              _exportScript(script);
             },
           ),
           if (!script.isBuiltIn)

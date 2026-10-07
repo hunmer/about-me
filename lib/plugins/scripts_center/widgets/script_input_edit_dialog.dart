@@ -228,6 +228,11 @@ class _ScriptInputEditDialogState extends State<ScriptInputEditDialog> {
                           ).hasMatch(value)) {
                             return '变量名只能包含字母、数字和下划线，且不能以数字开头';
                           }
+                          if (ScriptInput.reservedKeys.contains(
+                            value.trim(),
+                          )) {
+                            return '「${value.trim()}」是系统保留键，执行时会被框架占用，请换一个变量名';
+                          }
                           return null;
                         },
                       ),
