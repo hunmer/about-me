@@ -3,6 +3,7 @@ class AchievementTranslationsZh {
     // 插件信息
     'achievement_name': '成就',
     'achievement_pluginDescription': '成就系统：记录使用足迹，解锁等级徽章',
+    'achievement_overviewWidgetDescription': '展示成就解锁进度与累计积分，点击进入成就展览',
 
     // 分类
     'achievement_category_ai': 'AI 类',

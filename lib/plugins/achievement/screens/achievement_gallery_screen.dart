@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:aboutme/plugins/achievement/achievement_plugin.dart';
 import 'package:aboutme/plugins/achievement/controllers/achievement_controller.dart';
 import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
@@ -39,6 +40,13 @@ class _GalleryBody extends StatefulWidget {
 
 class _GalleryBodyState extends State<_GalleryBody> {
   AchievementFilter _filter = AchievementFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    // 打开成就页时做一次全量快照结算（幂等，异步不阻塞渲染）
+    AchievementPlugin.instance.resolveStats();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -324,7 +332,7 @@ class _AchievementTile extends StatelessWidget {
                         Icon(Icons.visibility_off_outlined,
                             size: 13, color: theme.hintColor),
                       ],
-                      if (def.event == null) ...[
+                      if (kPendingAchievementIds.contains(def.id)) ...[
                         const SizedBox(width: 6),
                         _PendingTag(theme: theme),
                       ],

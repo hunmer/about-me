@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'models/tts_service_config.dart';
 import 'models/tts_service_type.dart';
 import 'services/tts_manager_service.dart';
@@ -164,8 +165,10 @@ class TTSPlugin extends BasePlugin {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
-  }) {
-    return managerService.speak(
+  }) async {
+    // 成就系统计数（A61 播音员）
+    EventManager.instance.broadcast('tts_spoken', EventArgs('tts_spoken'));
+    await managerService.speak(
       text,
       serviceId: serviceId,
       onStart: onStart,

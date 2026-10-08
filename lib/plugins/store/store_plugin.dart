@@ -145,6 +145,13 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
       'onRecordAdded': 2, // 添加记录奖励
       'diary_entry_created': 5, // 添加日记奖励
       'bill_added': 10, // 添加账单奖励
+
+      // 成就等级奖励（按等级位次，全部成就共用）
+      'achievement_Lv1': 50,
+      'achievement_Lv2': 100,
+      'achievement_Lv3': 300,
+      'achievement_Lv4': 800,
+      'achievement_Lv5': 2000,
     },
   };
 

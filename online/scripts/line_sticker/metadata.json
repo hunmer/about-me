@@ -1,7 +1,7 @@
 {
   "name": "LINE 贴图下载",
   "id": "line_sticker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "输入 LINE 商店贴图链接，下载整个贴图包并导入为本地贴图合集，可在聊天表情面板中直接发送；参考 line-sticker-downloader",
   "icon": "image",
   "author": "Aboutme Team",
@@ -34,7 +34,7 @@
       "name": "proxy",
       "type": "text",
       "labelText": "网络代理（可选）",
-      "hintText": "如 http://127.0.0.1:7890，留空使用系统代理。LINE 域名在大陆网络需配置代理",
+      "hintText": "留空自动使用系统代理（Windows 设置/环境变量）；可填 http://127.0.0.1:7890 指定代理；填 direct 强制直连",
       "initialValue": "",
       "required": false
     }

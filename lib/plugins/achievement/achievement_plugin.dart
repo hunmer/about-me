@@ -7,6 +7,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/achievement/controllers/achievement_controller.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
 import 'package:aboutme/plugins/achievement/screens/achievement_gallery_screen.dart';
+import 'package:aboutme/plugins/achievement/stats/achievement_stats_resolver.dart';
 import 'package:aboutme/plugins/achievement/widgets/achievement_unlock_dialog.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 
@@ -63,12 +64,21 @@ class AchievementPlugin extends BasePlugin {
     _controller = AchievementController(this);
     await _controller.initialize();
 
+    // 快照结算器（延迟全量 + 事件防抖重算）
+    _statsResolver = AchievementStatsResolver(_controller);
+    await _statsResolver!.initialize();
+
     // 达成成就 → 全局弹窗
     EventManager.instance.subscribe('achievement_level_up', _onLevelUp);
 
     _isInitialized = true;
     _instance = this;
   }
+
+  AchievementStatsResolver? _statsResolver;
+
+  /// 触发一次全量快照结算（打开成就页时调用，幂等）
+  void resolveStats() => _statsResolver?.resolveAll();
 
   void _onLevelUp(EventArgs args) {
     if (args is AchievementLevelUpEventArgs) {
@@ -142,6 +152,7 @@ class AchievementPlugin extends BasePlugin {
   @override
   Future<void> uninstall() async {
     EventManager.instance.unsubscribe('achievement_level_up', _onLevelUp);
+    _statsResolver?.dispose();
     _controller.dispose();
     _instance = null;
   }

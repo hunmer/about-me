@@ -50,6 +50,9 @@ async function httpGetJson(url, timeout) {
     timeout,
     ...(proxy ? { proxy } : {}),
   });
+  if (resp && resp.error) {
+    throw new Error(String(resp.error));
+  }
   let body = resp.body;
   if (typeof body === 'string') {
     try {
@@ -72,7 +75,11 @@ try {
     30,
   );
 } catch (e) {
-  return fail('获取贴图列表失败（可能需要配置代理）: ' + (e.message || e));
+  return fail(
+    '获取贴图列表失败: ' +
+      (e.message || e) +
+      '。请在脚本配置中填写可用代理（如 http://127.0.0.1:7890），或填 direct 强制直连',
+  );
 }
 if (listResp.statusCode !== 200) {
   return fail(

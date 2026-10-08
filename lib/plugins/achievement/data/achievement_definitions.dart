@@ -102,3 +102,14 @@ const List<AchievementDefinition> kAchievementDefinitions = [
 final Map<String, AchievementDefinition> kAchievementById = {
   for (final def in kAchievementDefinitions) def.id: def,
 };
+
+/// 尚未接入任何数据源（无事件、无快照）的成就，展览界面显示「待接入」标记。
+/// 其余成就均已通过事件计数或各插件数据快照结算（见 stats/ 目录）。
+const Set<String> kPendingAchievementIds = {
+  'A06', // 声临其境：语音通话无持久记录，需埋点
+  'A33', // 富文本玩家：Quill 编辑次数需埋点
+  'A35', // 倒计时开始：纪念日进入倒计时无累计记录
+  'A41', // 守时主义：提醒按时处理无状态字段
+  'A63', // 一触即发：NFC 触发无日志
+  'A64', // 标签工程师：NFC 写入无记录
+};

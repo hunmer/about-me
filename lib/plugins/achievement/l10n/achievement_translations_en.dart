@@ -4,6 +4,8 @@ class AchievementTranslationsEn {
     'achievement_name': 'Achievements',
     'achievement_pluginDescription':
         'Achievement system: track your usage and unlock level badges',
+    'achievement_overviewWidgetDescription':
+        'Shows achievement progress and earned points. Tap to open the gallery',
 
     // Categories
     'achievement_category_ai': 'AI',
