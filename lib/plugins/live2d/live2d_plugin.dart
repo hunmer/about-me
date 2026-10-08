@@ -36,6 +36,22 @@ class Live2DPlugin extends BasePlugin {
     await updateSettings({'bubbleAsset': asset});
   }
 
+  Map<String, dynamic> get bubbleRegions {
+    final value = settings['bubbleRegions'];
+    return value is Map
+        ? Map<String, dynamic>.from(value)
+        : <String, dynamic>{};
+  }
+
+  Future<void> setBubbleRegions(
+    String asset,
+    Map<String, double> regions,
+  ) async {
+    final next = bubbleRegions;
+    next[asset] = regions;
+    await updateSettings({'bubbleRegions': next});
+  }
+
   String? get ttsServiceId => settings['ttsServiceId'] as String?;
 
   Future<void> speakReply(String reply) async {
@@ -114,6 +130,7 @@ class Live2DPlugin extends BasePlugin {
       'autoReadEnabled': defaultAutoReadEnabled,
       'ttsServiceId': null,
       'bubbleAsset': defaultBubbleAsset,
+      'bubbleRegions': <String, dynamic>{},
     });
     final data = await storage.read('$storageDir/archives.json');
     final rawArchives = data is Map ? data['archives'] : null;

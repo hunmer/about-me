@@ -18,6 +18,7 @@ import '../live2d_online_models.dart';
 import 'jelly_live2d_crop_dialog.dart';
 import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
+import 'bubble_region_editor.dart';
 
 class JellyLive2D extends StatefulWidget {
   const JellyLive2D({
@@ -454,6 +455,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   text: message,
                   modelName: _selectedModel.label,
                   bubbleAsset: Live2DPlugin.instance.bubbleAsset,
+                  customRegions: BubbleTextRegions.fromSettings(
+                    Live2DPlugin.instance.bubbleAsset,
+                    Live2DPlugin.instance.bubbleRegions,
+                  ),
                   streaming: _bubbleStreaming,
                   typingInterval: widget.typingInterval,
                   onUserInteract: _pauseBubbleHide,
@@ -792,7 +797,54 @@ class _JellyLive2DState extends State<JellyLive2D> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Image.asset(asset, fit: BoxFit.contain),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(asset, fit: BoxFit.contain),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  child: DsIcon(
+                                    DsIconKind.image,
+                                    size: 16,
+                                    color: theme.primary,
+                                  ),
+                                  onTap: () async {
+                                    final regions =
+                                        await showBubbleRegionEditor(
+                                          context: context,
+                                          asset: asset,
+                                          initial:
+                                              BubbleTextRegions.fromSettings(
+                                                asset,
+                                                Live2DPlugin
+                                                    .instance
+                                                    .bubbleRegions,
+                                              ),
+                                        );
+                                    if (regions == null) return;
+                                    await Live2DPlugin.instance
+                                        .setBubbleRegions(asset, {
+                                          'nameLeft': regions.modelName.left,
+                                          'nameTop': regions.modelName.top,
+                                          'nameRight': regions.modelName.right,
+                                          'nameBottom':
+                                              regions.modelName.bottom,
+                                          'messageLeft': regions.message.left,
+                                          'messageTop': regions.message.top,
+                                          'messageRight': regions.message.right,
+                                          'messageBottom':
+                                              regions.message.bottom,
+                                        });
+                                    _bubbleOverlay?.markNeedsBuild();
+                                    setBubbleState(() {});
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                   ],

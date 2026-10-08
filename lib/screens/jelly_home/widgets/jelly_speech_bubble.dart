@@ -7,6 +7,102 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
+/// 每张气泡素材的文字安全区，坐标为原图归一化坐标（left/top/right/bottom）。
+class BubbleTextRegions {
+  const BubbleTextRegions(this.modelName, this.message);
+
+  final Rect modelName;
+  final Rect message;
+
+  static const _default = BubbleTextRegions(
+    Rect.fromLTRB(0.20, 0.08, 0.42, 0.25),
+    Rect.fromLTRB(0.14, 0.30, 0.86, 0.86),
+  );
+
+  static const Map<String, BubbleTextRegions> byAsset = {
+    'assets/bubbles/可拉伸兔子聊天气泡素材.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.25),
+      Rect.fromLTRB(0.10, 0.30, 0.91, 0.86),
+    ),
+    'assets/bubbles/小猫聊天气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.07, 0.43, 0.25),
+      Rect.fromLTRB(0.10, 0.30, 0.89, 0.86),
+    ),
+    'assets/bubbles/月亮晚安气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+    ),
+    'assets/bubbles/星星聊天气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+    ),
+    'assets/bubbles/小恐龙侧边气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+    ),
+    'assets/bubbles/樱桃回形针气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+    ),
+    'assets/bubbles/甜点蛋糕气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+    ),
+    'assets/bubbles/游戏机像素气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.86, 0.86),
+    ),
+    'assets/bubbles/小熊聊天气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.86, 0.86),
+    ),
+    'assets/bubbles/甜酷翅膀深色气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+    ),
+    'assets/bubbles/彩虹渐变气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.31, 0.88, 0.86),
+    ),
+    'assets/bubbles/奶茶杯气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.10, 0.30, 0.79, 0.86),
+    ),
+    'assets/bubbles/云朵天使气泡.webp': BubbleTextRegions(
+      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
+      Rect.fromLTRB(0.12, 0.30, 0.86, 0.86),
+    ),
+  };
+
+  static BubbleTextRegions forAsset(String? asset) =>
+      byAsset[asset] ?? _default;
+
+  static BubbleTextRegions fromSettings(
+    String? asset,
+    Map<String, dynamic>? settings,
+  ) {
+    final raw = asset == null ? null : settings?[asset];
+    if (raw is! Map) return forAsset(asset);
+    double value(String key, double fallback) =>
+        (raw[key] as num?)?.toDouble() ?? fallback;
+    final base = forAsset(asset);
+    return BubbleTextRegions(
+      Rect.fromLTRB(
+        value('nameLeft', base.modelName.left),
+        value('nameTop', base.modelName.top),
+        value('nameRight', base.modelName.right),
+        value('nameBottom', base.modelName.bottom),
+      ),
+      Rect.fromLTRB(
+        value('messageLeft', base.message.left),
+        value('messageTop', base.message.top),
+        value('messageRight', base.message.right),
+        value('messageBottom', base.message.bottom),
+      ),
+    );
+  }
+}
+
 /// 角色头顶的对话气泡：白色胶囊 + 下垂小尾巴
 ///
 /// 胶囊与尾巴合并为同一路径一次填充/描边（Path union），
@@ -25,6 +121,7 @@ class JellySpeechBubble extends StatelessWidget {
     this.onUserInteract,
     this.bubbleAsset,
     this.modelName,
+    this.customRegions,
   });
 
   final String text;
@@ -39,6 +136,7 @@ class JellySpeechBubble extends StatelessWidget {
   final VoidCallback? onUserInteract;
   final String? bubbleAsset;
   final String? modelName;
+  final BubbleTextRegions? customRegions;
 
   /// 尾巴高度（画在胶囊边界之外，下方 Padding 负责占位）
   static const double tailHeight = 13;
@@ -46,37 +144,18 @@ class JellySpeechBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    final regions = customRegions ?? BubbleTextRegions.forAsset(bubbleAsset);
 
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (modelName != null && modelName!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 5),
-            child: Text(
-              modelName!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: DsTypography.caption.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.primaryText,
-              ),
-            ),
-          ),
-        Expanded(
-          child: _ScrollableBubbleText(
-            text: text,
-            interval: typingInterval,
-            onComplete: onTypingComplete,
-            style: DsTypography.button.copyWith(
-              fontSize: 15,
-              color: theme.primaryText,
-            ),
-            streaming: streaming,
-            onUserInteract: onUserInteract,
-          ),
-        ),
-      ],
+    final message = _ScrollableBubbleText(
+      text: text,
+      interval: typingInterval,
+      onComplete: onTypingComplete,
+      style: DsTypography.button.copyWith(
+        fontSize: 15,
+        color: theme.primaryText,
+      ),
+      streaming: streaming,
+      onUserInteract: onUserInteract,
     );
     final bubble = Padding(
       padding: const EdgeInsets.only(bottom: tailHeight + 2),
@@ -89,23 +168,61 @@ class JellySpeechBubble extends StatelessWidget {
                 tailHeight: tailHeight,
               )
             : null,
-        child: Container(
-          decoration: bubbleAsset == null
-              ? null
-              : BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(bubbleAsset!),
-                    fit: BoxFit.fill,
-                    // Keep the decorative border fixed while the center expands.
-                    centerSlice: const Rect.fromLTWH(500, 300, 1000, 400),
-                  ),
+        child: bubbleAsset == null
+            ? Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: theme.spacing.xl,
+                  vertical: theme.spacing.md,
                 ),
-          padding: EdgeInsets.symmetric(
-            horizontal: theme.spacing.xl,
-            vertical: theme.spacing.md,
-          ),
-          child: content,
-        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (modelName != null && modelName!.isNotEmpty)
+                      Text(
+                        modelName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    Expanded(child: message),
+                  ],
+                ),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(bubbleAsset!, fit: BoxFit.fill),
+                    if (modelName != null && modelName!.isNotEmpty)
+                      Positioned.fromRect(
+                        rect: Rect.fromLTRB(
+                          constraints.maxWidth * regions.modelName.left,
+                          constraints.maxHeight * regions.modelName.top,
+                          constraints.maxWidth * regions.modelName.right,
+                          constraints.maxHeight * regions.modelName.bottom,
+                        ),
+                        child: Center(
+                          child: Text(
+                            modelName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.primaryText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      left: constraints.maxWidth * regions.message.left,
+                      top: constraints.maxHeight * regions.message.top,
+                      right: constraints.maxWidth * (1 - regions.message.right),
+                      bottom:
+                          constraints.maxHeight * (1 - regions.message.bottom),
+                      child: message,
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
 
