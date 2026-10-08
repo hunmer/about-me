@@ -213,9 +213,13 @@ class _MessageInputState extends State<MessageInput> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: SafeArea(
+        top: false,
+        left: false,
+        right: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // 工具模板搜索结果
           if (_isSearchingTools) _buildToolTemplateSearchArea(),
 
@@ -424,7 +428,8 @@ class _MessageInputState extends State<MessageInput> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

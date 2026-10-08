@@ -1,4 +1,8 @@
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:flutter/cupertino.dart'
+    show cupertinoTextSelectionHandleControls;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,5 +58,27 @@ void main() {
     expect(controller.selection.isCollapsed, isFalse);
     expect(controller.selection.start, 0);
     expect(controller.selection.end, greaterThan(0));
+  });
+
+  testWidgets('iOS 启用粘贴菜单、选区和原生选择手柄', (tester) async {
+    final controller = TextEditingController(text: 'selectable text');
+    addTearDown(controller.dispose);
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(buildInput(controller));
+
+      final editableText = tester.widget<EditableText>(
+        find.byType(EditableText),
+      );
+      expect(editableText.contextMenuBuilder, isNotNull);
+      expect(editableText.selectionColor, isNotNull);
+      expect(editableText.showSelectionHandles, isTrue);
+      expect(
+        editableText.selectionControls,
+        same(cupertinoTextSelectionHandleControls),
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

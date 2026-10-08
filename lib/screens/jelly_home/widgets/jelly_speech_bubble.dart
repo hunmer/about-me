@@ -23,6 +23,8 @@ class JellySpeechBubble extends StatelessWidget {
     this.typingInterval = const Duration(milliseconds: 110),
     this.streaming = false,
     this.onUserInteract,
+    this.bubbleAsset,
+    this.modelName,
   });
 
   final String text;
@@ -35,6 +37,8 @@ class JellySpeechBubble extends StatelessWidget {
   final Duration typingInterval;
   final bool streaming;
   final VoidCallback? onUserInteract;
+  final String? bubbleAsset;
+  final String? modelName;
 
   /// 尾巴高度（画在胶囊边界之外，下方 Padding 负责占位）
   static const double tailHeight = 13;
@@ -43,28 +47,64 @@ class JellySpeechBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (modelName != null && modelName!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Text(
+              modelName!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DsTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.primaryText,
+              ),
+            ),
+          ),
+        Expanded(
+          child: _ScrollableBubbleText(
+            text: text,
+            interval: typingInterval,
+            onComplete: onTypingComplete,
+            style: DsTypography.button.copyWith(
+              fontSize: 15,
+              color: theme.primaryText,
+            ),
+            streaming: streaming,
+            onUserInteract: onUserInteract,
+          ),
+        ),
+      ],
+    );
     final bubble = Padding(
       padding: const EdgeInsets.only(bottom: tailHeight + 2),
       child: CustomPaint(
-        painter: _BubblePainter(
-          fill: theme.surface,
-          line: theme.primary.withValues(alpha: 0.30),
-          shadows: theme.shadows.soft,
-          tailHeight: tailHeight,
-        ),
-        child: Padding(
+        painter: bubbleAsset == null
+            ? _BubblePainter(
+                fill: theme.surface,
+                line: theme.primary.withValues(alpha: 0.30),
+                shadows: theme.shadows.soft,
+                tailHeight: tailHeight,
+              )
+            : null,
+        child: Container(
+          decoration: bubbleAsset == null
+              ? null
+              : BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(bubbleAsset!),
+                    fit: BoxFit.fill,
+                    // Keep the decorative border fixed while the center expands.
+                    centerSlice: const Rect.fromLTWH(500, 300, 1000, 400),
+                  ),
+                ),
           padding: EdgeInsets.symmetric(
             horizontal: theme.spacing.xl,
             vertical: theme.spacing.md,
           ),
-          child: _ScrollableBubbleText(
-              text: text,
-              interval: typingInterval,
-              onComplete: onTypingComplete,
-              style: DsTypography.button.copyWith(fontSize: 15, color: theme.primaryText),
-              streaming: streaming,
-              onUserInteract: onUserInteract,
-          ),
+          child: content,
         ),
       ),
     );
@@ -72,17 +112,22 @@ class JellySpeechBubble extends StatelessWidget {
     if (onTap == null) return bubble;
     return Pressable(
       onPressed: onTap,
-      builder:
-          (context, states) =>
-              states.contains(WidgetState.pressed)
-                  ? Opacity(opacity: 0.85, child: bubble)
-                  : bubble,
+      builder: (context, states) => states.contains(WidgetState.pressed)
+          ? Opacity(opacity: 0.85, child: bubble)
+          : bubble,
     );
   }
 }
 
 class _ScrollableBubbleText extends StatefulWidget {
-  const _ScrollableBubbleText({required this.text, required this.interval, required this.onComplete, required this.style, required this.streaming, this.onUserInteract});
+  const _ScrollableBubbleText({
+    required this.text,
+    required this.interval,
+    required this.onComplete,
+    required this.style,
+    required this.streaming,
+    this.onUserInteract,
+  });
   final String text;
   final Duration interval;
   final VoidCallback? onComplete;
@@ -110,8 +155,10 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
   @override
   void didUpdateWidget(covariant _ScrollableBubbleText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text || oldWidget.streaming != widget.streaming) {
-      if (widget.text.startsWith(oldWidget.text) && _shown <= oldWidget.text.runes.length) {
+    if (oldWidget.text != widget.text ||
+        oldWidget.streaming != widget.streaming) {
+      if (widget.text.startsWith(oldWidget.text) &&
+          _shown <= oldWidget.text.runes.length) {
         _startTypingTimer();
       } else {
         _restartTyping();
@@ -163,7 +210,11 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
     if (!mounted || !_scrollController.hasClients) return;
     final target = _scrollController.position.maxScrollExtent;
     if (animated) {
-      _scrollController.animateTo(target, duration: const Duration(milliseconds: 900), curve: Curves.easeOut);
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeOut,
+      );
     } else {
       _scrollController.jumpTo(target);
     }
@@ -185,8 +236,11 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
       child: Listener(
         onPointerDown: (_) => widget.onUserInteract?.call(),
         onPointerSignal: (event) {
-          if (event is! PointerScrollEvent || !_scrollController.hasClients) return;
-          GestureBinding.instance.pointerSignalResolver.register(event, (resolvedEvent) {
+          if (event is! PointerScrollEvent || !_scrollController.hasClients)
+            return;
+          GestureBinding.instance.pointerSignalResolver.register(event, (
+            resolvedEvent,
+          ) {
             final scroll = resolvedEvent as PointerScrollEvent;
             final position = _scrollController.position;
             final target = (position.pixels + scroll.scrollDelta.dy).clamp(
@@ -238,20 +292,21 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
                           : MarkdownBody(
                               data: visibleText,
                               shrinkWrap: true,
-                              styleSheet: MarkdownStyleSheet.fromTheme(
-                                Theme.of(context),
-                              ).copyWith(
-                                p: widget.style,
-                                h1: widget.style.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                h2: widget.style.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                code: widget.style,
-                              ),
+                              styleSheet:
+                                  MarkdownStyleSheet.fromTheme(
+                                    Theme.of(context),
+                                  ).copyWith(
+                                    p: widget.style,
+                                    h1: widget.style.copyWith(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    h2: widget.style.copyWith(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    code: widget.style,
+                                  ),
                             ),
                     ),
                   ),
@@ -285,10 +340,7 @@ class _BubblePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final capsule = Path()
       ..addRRect(
-        RRect.fromRectAndRadius(
-          Offset.zero & size,
-          const Radius.circular(18),
-        ),
+        RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(18)),
       );
 
     // 尾巴根部往胶囊里压 2px，保证 union 后完全一体
@@ -296,22 +348,16 @@ class _BubblePainter extends CustomPainter {
     final tipX = size.width * 0.44;
     final tipY = size.height + tailHeight;
     const halfTail = 13.0;
-    final tail =
-        Path()
-          ..moveTo(size.width / 2 - halfTail, baseY)
-          ..quadraticBezierTo(
-            tipX - 4,
-            baseY + tailHeight * 0.6,
-            tipX,
-            tipY,
-          )
-          ..quadraticBezierTo(
-            tipX + 8,
-            baseY + tailHeight * 0.5,
-            size.width / 2 + halfTail,
-            baseY,
-          )
-          ..close();
+    final tail = Path()
+      ..moveTo(size.width / 2 - halfTail, baseY)
+      ..quadraticBezierTo(tipX - 4, baseY + tailHeight * 0.6, tipX, tipY)
+      ..quadraticBezierTo(
+        tipX + 8,
+        baseY + tailHeight * 0.5,
+        size.width / 2 + halfTail,
+        baseY,
+      )
+      ..close();
 
     final shape = Path.combine(PathOperation.union, capsule, tail);
 
@@ -376,7 +422,8 @@ class _TypewriterTextState extends State<TypewriterText> {
   void didUpdateWidget(TypewriterText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
-      if (widget.text.startsWith(oldWidget.text) && _shown <= oldWidget.text.length) {
+      if (widget.text.startsWith(oldWidget.text) &&
+          _shown <= oldWidget.text.length) {
         _timer?.cancel();
         _timer = Timer.periodic(widget.interval, _tick);
       } else {

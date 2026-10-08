@@ -288,9 +288,13 @@ class _MessageInputState extends State<MessageInput> {
               color: theme.surface,
               boxShadow: theme.shadows.soft,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            child: SafeArea(
+              top: false,
+              left: false,
+              right: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 // 元数据显示区域
                 MetadataDisplay(
                   selectedFile: selectedFile,
@@ -374,7 +378,8 @@ class _MessageInputState extends State<MessageInput> {
                     ),
                   ],
                 ),
-              ],
+                ],
+              ),
             ),
           );
         },

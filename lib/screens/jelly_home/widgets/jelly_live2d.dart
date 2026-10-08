@@ -60,6 +60,22 @@ class JellyLive2D extends StatefulWidget {
 }
 
 class _JellyLive2DState extends State<JellyLive2D> {
+  static const _bubbleAssets = <String>[
+    'assets/bubbles/可拉伸兔子聊天气泡素材.webp',
+    'assets/bubbles/小猫聊天气泡.webp',
+    'assets/bubbles/月亮晚安气泡.webp',
+    'assets/bubbles/星星聊天气泡.webp',
+    'assets/bubbles/小恐龙侧边气泡.webp',
+    'assets/bubbles/樱桃回形针气泡.webp',
+    'assets/bubbles/甜点蛋糕气泡.webp',
+    'assets/bubbles/游戏机像素气泡.webp',
+    'assets/bubbles/小熊聊天气泡.webp',
+    'assets/bubbles/甜酷翅膀深色气泡.webp',
+    'assets/bubbles/彩虹渐变气泡.webp',
+    'assets/bubbles/奶茶杯气泡.webp',
+    'assets/bubbles/云朵天使气泡.webp',
+  ];
+
   /// 人物显示尺寸（逻辑像素，宽高一致），经 SharedPreferences 持久化
   static const double _defaultSize = 360;
   static const double _minSize = 200;
@@ -67,9 +83,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const double _sizeStep = 40;
   static const double _modelViewportAspectRatio = 0.5;
   static const double _fillBottomReserve = 92;
-  // RadialDiscBottomBar dock (105) plus JellyBottomNav vertical spacing
-  // (8 top + 16 bottom). The system/navigation safe inset is added below.
-  static const double _radialBottomBarReserve = 129;
+  // The floating-action radial dock paints 28px above its cropped layout
+  // bounds via OverflowBox/Transform.translate.
+  static const double _radialDockOverflowTop = 28;
   static const String _sizePrefKey = 'jelly_live2d.size';
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
@@ -93,6 +109,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
   /// 气泡宽度等布局按它计算
   double _displaySize = _defaultSize;
+  double _modelBottomInset = 0;
   String? _lastLayoutLog;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
@@ -394,7 +411,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // The key is attached to the full-height container, while the model is
     // bottom-aligned inside it. Anchor the bubble to the model's top instead
     // of the container's top so it stays near the character's head.
-    final modelTop = max(0.0, anchor.size.height - _displaySize);
+    final modelTop = max(
+      0.0,
+      anchor.size.height - _modelBottomInset - _displaySize,
+    );
     final anchorTopCenter = overlayBox.globalToLocal(
       anchor.localToGlobal(Offset(anchor.size.width / 2, modelTop)),
     );
@@ -425,15 +445,20 @@ class _JellyLive2DState extends State<JellyLive2D> {
           height: bubbleBottom - safeTop,
           child: Align(
             alignment: Alignment.bottomCenter,
-            child: AppTheme(
-              data: AppTheme.of(context),
-              child: JellySpeechBubble(
-                key: const ValueKey('live2d-speech-bubble'),
-                text: message,
-                streaming: _bubbleStreaming,
-                typingInterval: widget.typingInterval,
-                onUserInteract: _pauseBubbleHide,
-                onTypingComplete: _onBubbleTyped,
+            child: SizedBox(
+              height: 150,
+              child: AppTheme(
+                data: AppTheme.of(context),
+                child: JellySpeechBubble(
+                  key: const ValueKey('live2d-speech-bubble'),
+                  text: message,
+                  modelName: _selectedModel.label,
+                  bubbleAsset: Live2DPlugin.instance.bubbleAsset,
+                  streaming: _bubbleStreaming,
+                  typingInterval: widget.typingInterval,
+                  onUserInteract: _pauseBubbleHide,
+                  onTypingComplete: _onBubbleTyped,
+                ),
               ),
             ),
           ),
@@ -738,6 +763,43 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
+                '气泡样式',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              StatefulBuilder(
+                builder: (context, setBubbleState) => Wrap(
+                  spacing: theme.spacing.sm,
+                  runSpacing: theme.spacing.sm,
+                  children: [
+                    for (final asset in _bubbleAssets)
+                      GestureDetector(
+                        onTap: () async {
+                          await Live2DPlugin.instance.setBubbleAsset(asset);
+                          setBubbleState(() {});
+                          _bubbleOverlay?.markNeedsBuild();
+                        },
+                        child: Container(
+                          width: 72,
+                          height: 48,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: asset == Live2DPlugin.instance.bubbleAsset
+                                  ? theme.primary
+                                  : theme.surface.withValues(alpha: 0),
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Image.asset(asset, fit: BoxFit.contain),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
                 'screens_jellyLive2dCharacterSize'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
@@ -890,11 +952,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     .toDouble()
               : size;
           final layoutWidth = fitWidth ?? displaySize;
+          // Scaffold.extendBody exposes the complete radial bar footprint as
+          // the bottom media padding (runtime value is 129px on macOS).
           final bottomReserve =
-              MediaQuery.paddingOf(context).bottom + _radialBottomBarReserve;
-          final layoutHeight = fitHeight != null
-              ? max(0.0, fitHeight - bottomReserve)
-              : displaySize;
+              MediaQuery.paddingOf(context).bottom + _radialDockOverflowTop;
+          final layoutHeight = fitHeight ?? displaySize;
+          final modelBottomInset = fitHeight != null ? bottomReserve : 0.0;
           // The native model viewport is portrait (0.5 aspect). Scale it to
           // fit the available height while keeping its full top and bottom.
           // The native viewport is 180x360. Fit the complete viewport into
@@ -907,7 +970,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
               'constraints=${constraints.maxWidth}x${constraints.maxHeight} '
               'safeBottom=${MediaQuery.paddingOf(context).bottom} '
               'reserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
-              'display=$displaySize '
+              'display=$displaySize layoutHeight=$layoutHeight '
+              'modelBottomInset=$modelBottomInset '
               'viewport=${_defaultSize * _modelViewportAspectRatio}x$_defaultSize '
               'scale=$modelScale offsetY=${displaySize - _defaultSize * modelScale} '
               'cropZoom=${_cropRegion.zoom} crop=${_cropRegion.encode()}';
@@ -917,6 +981,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
             unawaited(_writeLayoutLog(layoutLog));
           }
           _displaySize = displaySize;
+          _modelBottomInset = modelBottomInset;
           return AnimatedContainer(
             key: _bubbleAnchorKey,
             duration: const Duration(milliseconds: 200),
@@ -938,7 +1003,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 0,
+                    bottom: modelBottomInset,
                     height: displaySize,
                     child: AnimatedOpacity(
                       opacity:
@@ -1023,8 +1088,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       return Positioned(
                         left: 0,
                         right: 0,
-                        bottom: 0,
-                        height: layoutHeight,
+                        bottom: modelBottomInset,
+                        height: max(0.0, layoutHeight - modelBottomInset),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: error == null
@@ -1118,7 +1183,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 0,
+                    bottom: modelBottomInset,
                     child: Center(
                       child: ValueListenableBuilder<Live2DViewState>(
                         valueListenable: _controller,

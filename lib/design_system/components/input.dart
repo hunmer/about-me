@@ -1,5 +1,10 @@
+import 'package:flutter/cupertino.dart'
+    show cupertinoTextSelectionHandleControls;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart' show materialTextSelectionControls;
+import 'package:flutter/material.dart'
+    show AdaptiveTextSelectionToolbar, materialTextSelectionHandleControls;
 import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
@@ -8,8 +13,7 @@ import 'icons.dart';
 
 /// 果冻输入框：基于 widgets 层 EditableText，样式完全自绘
 ///
-/// 说明：未接入系统文本选择手柄（那部分实现属于 Material/Cupertino），
-/// 桌面/Web 端键盘选择、光标、复制粘贴快捷键均可正常使用。
+/// 文本选择手柄和上下文菜单会根据当前平台自适应。
 class DSInput extends StatefulWidget {
   const DSInput({
     super.key,
@@ -214,8 +218,13 @@ class _DSInputState extends State<DSInput>
                                           controller: _effectiveController,
                                           focusNode: _effectiveFocus,
                                           readOnly: !widget.enabled,
+                                          showSelectionHandles: widget.enabled,
+                                          selectionColor: theme.primary
+                                              .withValues(alpha: 0.32),
                                           selectionControls:
-                                              materialTextSelectionControls,
+                                              _selectionControls,
+                                          contextMenuBuilder:
+                                              _buildContextMenu,
                                           maxLines: widget.maxLines,
                                           minLines: widget.minLines,
                                           inputFormatters:
@@ -281,6 +290,26 @@ class _DSInputState extends State<DSInput>
   }
 
   bool get _focused => _effectiveFocus.hasFocus;
+
+  TextSelectionControls get _selectionControls {
+    return defaultTargetPlatform == TargetPlatform.iOS
+        ? cupertinoTextSelectionHandleControls
+        : materialTextSelectionHandleControls;
+  }
+
+  Widget _buildContextMenu(
+    BuildContext context,
+    EditableTextState editableTextState,
+  ) {
+    if (SystemContextMenu.isSupportedByField(editableTextState)) {
+      return SystemContextMenu.editableText(
+        editableTextState: editableTextState,
+      );
+    }
+    return AdaptiveTextSelectionToolbar.editableText(
+      editableTextState: editableTextState,
+    );
+  }
 
   @override
   void initState() {

@@ -19,6 +19,7 @@ class Live2DPlugin extends BasePlugin {
   static const fixedGroup = 'live2d';
   static const defaultTypingIntervalMs = 70;
   static const defaultAutoReadEnabled = false;
+  static const defaultBubbleAsset = 'assets/bubbles/可拉伸兔子聊天气泡素材.webp';
 
   Duration get bubbleTypingInterval => Duration(
     milliseconds:
@@ -27,6 +28,13 @@ class Live2DPlugin extends BasePlugin {
 
   bool get autoReadEnabled =>
       settings['autoReadEnabled'] as bool? ?? defaultAutoReadEnabled;
+
+  String get bubbleAsset =>
+      settings['bubbleAsset'] as String? ?? defaultBubbleAsset;
+
+  Future<void> setBubbleAsset(String asset) async {
+    await updateSettings({'bubbleAsset': asset});
+  }
 
   String? get ttsServiceId => settings['ttsServiceId'] as String?;
 
@@ -105,6 +113,7 @@ class Live2DPlugin extends BasePlugin {
       'typingIntervalMs': defaultTypingIntervalMs,
       'autoReadEnabled': defaultAutoReadEnabled,
       'ttsServiceId': null,
+      'bubbleAsset': defaultBubbleAsset,
     });
     final data = await storage.read('$storageDir/archives.json');
     final rawArchives = data is Map ? data['archives'] : null;
