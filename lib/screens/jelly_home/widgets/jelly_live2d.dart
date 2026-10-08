@@ -67,6 +67,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const double _sizeStep = 40;
   static const double _modelViewportAspectRatio = 0.5;
   static const double _fillBottomReserve = 92;
+  // RadialDiscBottomBar dock (105) plus JellyBottomNav vertical spacing
+  // (8 top + 16 bottom). The system/navigation safe inset is added below.
+  static const double _radialBottomBarReserve = 129;
   static const String _sizePrefKey = 'jelly_live2d.size';
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
@@ -388,8 +391,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final bubbleWidth = min(_displaySize * 0.8, availableWidth);
     if (bubbleWidth <= 0) return const SizedBox.shrink();
 
+    // The key is attached to the full-height container, while the model is
+    // bottom-aligned inside it. Anchor the bubble to the model's top instead
+    // of the container's top so it stays near the character's head.
+    final modelTop = max(0.0, anchor.size.height - _displaySize);
     final anchorTopCenter = overlayBox.globalToLocal(
-      anchor.localToGlobal(Offset(anchor.size.width / 2, 0)),
+      anchor.localToGlobal(Offset(anchor.size.width / 2, modelTop)),
     );
     final minimumLeft = padding.left + margin;
     final maximumLeft = max(
@@ -883,7 +890,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     .toDouble()
               : size;
           final layoutWidth = fitWidth ?? displaySize;
-          final layoutHeight = fitHeight ?? displaySize;
+          final bottomReserve =
+              MediaQuery.paddingOf(context).bottom + _radialBottomBarReserve;
+          final layoutHeight = fitHeight != null
+              ? max(0.0, fitHeight - bottomReserve)
+              : displaySize;
           // The native model viewport is portrait (0.5 aspect). Scale it to
           // fit the available height while keeping its full top and bottom.
           // The native viewport is 180x360. Fit the complete viewport into
