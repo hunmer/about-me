@@ -48,10 +48,10 @@ class DSListItem extends StatelessWidget {
             color: pressed
                 ? theme.surfaceAlt.withValues(alpha: 0.6)
                 : theme.surface.withValues(alpha: theme.isDark ? 0.5 : 0.65),
-            borderRadius: theme.radii.lg,
+            borderRadius: theme.radii.xl,
             border: Border.all(
-              color: theme.stroke,
-              width: theme.isDark ? 1 : 1.4,
+              color: theme.primary.withValues(alpha: theme.isDark ? 0.6 : 0.45),
+              width: 1.8,
             ),
           ),
           padding: EdgeInsets.symmetric(

@@ -77,10 +77,24 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
       largeTitle: 'chat_channelListTitle'.tr,
       // 右上角切换列表/卡片视图（持久化到本地）
       actions: [
-        IconButton(
-          icon: Icon(_controller.isCardView ? Icons.view_list : Icons.grid_view),
-          tooltip: _controller.isCardView ? 'chat_listView'.tr : 'chat_cardView'.tr,
-          onPressed: () => _controller.toggleView(),
+        DSThemeBridge(
+          // DsIcon 取色需要 AppTheme，需包桥
+          child: Builder(
+            builder: (context) {
+              final theme = AppTheme.of(context);
+              return IconButton(
+                icon: DsIcon(
+                  _controller.isCardView ? DsIconKind.list : DsIconKind.grid,
+                  size: 22,
+                  color: theme.text,
+                ),
+                tooltip: _controller.isCardView
+                    ? 'chat_listView'.tr
+                    : 'chat_cardView'.tr,
+                onPressed: () => _controller.toggleView(),
+              );
+            },
+          ),
         ),
       ],
       enableSearchBar: true,
@@ -101,38 +115,36 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
             },
           ),
           Expanded(
-            child:
-                _controller.filteredChannels.isEmpty
-                    ? EmptyChannelView(
-                      onAddChannel: widget.onAddChannel ?? () {},
-                    )
-                    : ReorderableListView.builder(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.paddingOf(context).bottom,
-                      ),
-                      itemCount: _controller.filteredChannels.length,
-                      onReorder: _controller.reorderChannels,
-                      itemBuilder: (context, index) {
-                        final channel = _controller.filteredChannels[index];
-                        return Padding(
-                          key: ValueKey(channel.id),
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: ChannelTile(
-                            channel: channel,
-                            onBeforeOpen: () {
-                              // 在打开聊天页面之前设置当前频道
-                              widget.chatPlugin.channelService
-                                  .setCurrentChannel(channel);
-                            },
-                            onEdit:
-                                (channel) => _showEditChannelDialog(channel),
-                            onDelete:
-                                (channel) => _showDeleteChannelDialog(channel),
-                          ),
-                        );
-                      },
-                      buildDefaultDragHandles: false,
+            child: _controller.filteredChannels.isEmpty
+                ? EmptyChannelView(onAddChannel: widget.onAddChannel ?? () {})
+                : ReorderableListView.builder(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom,
                     ),
+                    itemCount: _controller.filteredChannels.length,
+                    onReorder: _controller.reorderChannels,
+                    itemBuilder: (context, index) {
+                      final channel = _controller.filteredChannels[index];
+                      return Padding(
+                        key: ValueKey(channel.id),
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: ChannelTile(
+                          channel: channel,
+                          isCardView: _controller.isCardView,
+                          onBeforeOpen: () {
+                            // 在打开聊天页面之前设置当前频道
+                            widget.chatPlugin.channelService.setCurrentChannel(
+                              channel,
+                            );
+                          },
+                          onEdit: (channel) => _showEditChannelDialog(channel),
+                          onDelete: (channel) =>
+                              _showDeleteChannelDialog(channel),
+                        ),
+                      );
+                    },
+                    buildDefaultDragHandles: false,
+                  ),
           ),
         ],
       ),
@@ -145,12 +157,11 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => ChannelDialog(
-            isEditMode: true,
-            channel: channel,
-            onUpdateChannel: _controller.updateChannel,
-          ),
+      builder: (context) => ChannelDialog(
+        isEditMode: true,
+        channel: channel,
+        onUpdateChannel: _controller.updateChannel,
+      ),
     );
   }
 
@@ -158,11 +169,10 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DeleteChannelDialog(
-            channel: channel,
-            onDeleteChannel: _controller.deleteChannel,
-          ),
+      builder: (context) => DeleteChannelDialog(
+        channel: channel,
+        onDeleteChannel: _controller.deleteChannel,
+      ),
     );
   }
 }

@@ -30,10 +30,9 @@ class ChannelTile extends StatelessWidget {
     this.isCardView = false,
   });
 
-  String? get _draft =>
-      (channel.draft != null && channel.draft!.isNotEmpty)
-          ? channel.draft
-          : null;
+  String? get _draft => (channel.draft != null && channel.draft!.isNotEmpty)
+      ? channel.draft
+      : null;
 
   String get _subtitle =>
       _draft ?? channel.lastMessage?.content ?? 'chat_enterMessage'.tr;
@@ -42,15 +41,9 @@ class ChannelTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return SwipeActionWrapper(
       key: ValueKey(channel.id),
-      leadingActions: [
-        SwipeActionPresets.edit(
-          onTap: () => onEdit(channel),
-        ),
-      ],
+      leadingActions: [SwipeActionPresets.edit(onTap: () => onEdit(channel))],
       trailingActions: [
-        SwipeActionPresets.delete(
-          onTap: () => onDelete(channel),
-        ),
+        SwipeActionPresets.delete(onTap: () => onDelete(channel)),
       ],
       child: DSThemeBridge(
         // DS 组件内部取 AppTheme，需包桥
@@ -70,34 +63,26 @@ class ChannelTile extends StatelessWidget {
         color: channel.backgroundColor,
         child: Icon(channel.icon, color: Colors.white, size: 20),
       ),
-      trailingText:
-          _draft == null && lastMessage != null
-              ? DateFormatter.formatDateTime(lastMessage.date, context)
-              : null,
+      trailingText: _draft == null && lastMessage != null
+          ? DateFormatter.formatDateTime(lastMessage.date, context)
+          : null,
       trailing: _buildDraftBadge(context),
       onTap: () => _openChat(context),
     );
   }
 
-  /// 卡片视图：半透明描边卡片，图标块在左上角
+  /// 卡片视图：半透明描边卡片，左上角半圆标志
   Widget _buildCard(BuildContext context) {
     final lastMessage = channel.lastMessage;
     return DSListItemCard(
       key: itemKey,
       title: channel.title,
       subtitle: _subtitle,
-      leading: JellyBox(
-        width: 36,
-        height: 36,
-        radius: DsRadii.md,
-        color: channel.backgroundColor,
-        alignment: Alignment.center,
-        child: Icon(channel.icon, color: Colors.white, size: 18),
-      ),
-      trailingText:
-          _draft == null && lastMessage != null
-              ? DateFormatter.formatDateTime(lastMessage.date, context)
-              : null,
+      iconColor: channel.backgroundColor,
+      leading: Icon(channel.icon, color: Colors.white, size: 16),
+      trailingText: _draft == null && lastMessage != null
+          ? DateFormatter.formatDateTime(lastMessage.date, context)
+          : null,
       trailing: _buildDraftBadge(context),
       onTap: () => _openChat(context),
     );
