@@ -4,18 +4,18 @@ import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
-/// CustomBottomBar - flutter_floating_bottom_bar 外壳 + DS 果冻底部导航
+/// CustomBottomBar - flutter_floating_bottom_bar 外壳 + DS 弧形圆盘底部导航
 ///
-/// 外壳保留浮动条、滚动隐藏、回顶按钮、FAB 定位、body 让位等机制;
-/// 导航本体为 [DSBottomNavigation](选中项凸起果冻方块),点按经 [tabController] 切换页。
+/// 外壳保留浮动条、滚动隐藏、回顶按钮、body 让位等机制;
+/// 导航本体为 [DSBottomNavigation](弧形 dock + 滑动药丸),点按经 [tabController] 切换页。
 ///
 /// ## 常用参数说明
 /// - [items]: 底部导航项([DSNavItem],自绘图标 + 文案)
 /// - [currentIndex]: 当前选中的 Tab 索引
 /// - [tabController]: Tab 控制器(驱动 body 的 TabBarView 与选中态)
 /// - [body]: 底部栏上方的内容(通常是 TabBarView)
-/// - [fab]: 悬浮按钮(可选)
-/// - [fabLocation]: FAB 位置,默认顶部居中
+/// - [fab]: 悬浮操作钮(可选),停靠在子栏右圆钮位置(缩放至 44)
+/// - [subLabels]/[subOption]/[onSubOptionChange]: 上层子栏双选项(可选)
 class CustomBottomBar extends StatefulWidget {
   /// 底部导航项
   final List<DSNavItem> items;
@@ -29,11 +29,17 @@ class CustomBottomBar extends StatefulWidget {
   /// 底部栏上方的内容(通常是 TabBarView)
   final Widget Function(BuildContext context, ScrollController controller) body;
 
-  /// 悬浮按钮(可选)
+  /// 悬浮操作钮(可选),停靠在子栏右圆钮位置
   final Widget? fab;
 
-  /// FAB 位置,默认顶部居中
-  final AlignmentGeometry fabLocation;
+  /// 上层子栏双选项文案(null 则不启用子栏)
+  final (String, String)? subLabels;
+
+  /// 当前选中的子栏选项
+  final RadialSubOption subOption;
+
+  /// 子栏选项切换回调
+  final ValueChanged<RadialSubOption>? onSubOptionChange;
 
   /// 底部栏宽度占屏幕宽度的比例,默认 0.85
   final double widthRatio;
@@ -54,7 +60,9 @@ class CustomBottomBar extends StatefulWidget {
     required this.tabController,
     required this.body,
     this.fab,
-    this.fabLocation = Alignment.topCenter,
+    this.subLabels,
+    this.subOption = RadialSubOption.left,
+    this.onSubOptionChange,
     this.widthRatio = 0.85,
     this.offset = 12,
     this.bottomBarKey,
@@ -136,7 +144,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
             curve: Curves.decelerate,
             showIcon: true,
             width: mediaQuery.size.width * widget.widthRatio,
-            // 外壳透明,外观由 DSBottomNavigation 的果冻盒呈现
+            // 外壳透明,外观由 DSBottomNavigation 的弧形 dock 呈现
             barColor: Colors.transparent,
             start: 2,
             end: 0,
@@ -174,63 +182,31 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                 ),
             child: Stack(
               key: widget.bottomBarKey,
-              alignment: widget.fabLocation,
               clipBehavior: Clip.none,
               children: [
                 DSBottomNavigation(
                   items: widget.items,
                   currentIndex: widget.currentIndex,
                   onTap: (index) => widget.tabController.animateTo(index),
+                  // fab 停靠到子栏右圆钮位置:等比缩到 44 的小图标
+                  floatingAction:
+                      widget.fab == null
+                          ? null
+                          : SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: widget.fab,
+                            ),
+                          ),
+                  subLabels: widget.subLabels,
+                  subOption: widget.subOption,
+                  onSubOptionChange: widget.onSubOptionChange,
                 ),
               ],
             ),
           ),
-          // FAB 容器:与 BottomBar 相同宽度,FAB 在 BottomBar 上方
-          if (widget.fab != null)
-            Builder(
-              builder: (context) {
-                final screenWidth = mediaQuery.size.width;
-                final barWidth = screenWidth * widget.widthRatio;
-                final horizontalPadding = (screenWidth - barWidth) / 2;
-
-                double? left;
-                double? right;
-                double bottomOffset;
-
-                // 水平位置
-                if (widget.fabLocation == Alignment.topCenter ||
-                    widget.fabLocation == Alignment.center ||
-                    widget.fabLocation == Alignment.bottomCenter) {
-                  // 居中
-                  left = horizontalPadding + barWidth / 2 - 28;
-                } else if (widget.fabLocation == Alignment.topRight ||
-                    widget.fabLocation == Alignment.centerRight ||
-                    widget.fabLocation == Alignment.bottomRight) {
-                  // 右侧,再向右偏移一半(28)
-                  right = horizontalPadding - 28;
-                } else {
-                  // 左侧
-                  left = horizontalPadding;
-                }
-
-                // 垂直位置:top 表示 FAB 一半在 BottomBar 上方
-                if (widget.fabLocation == Alignment.topLeft ||
-                    widget.fabLocation == Alignment.topCenter ||
-                    widget.fabLocation == Alignment.topRight) {
-                  // FAB 中心对齐 BottomBar 顶部
-                  bottomOffset = widget.offset + _bottomBarHeight - 28;
-                } else {
-                  bottomOffset = widget.offset;
-                }
-
-                return Positioned(
-                  bottom: bottomOffset,
-                  left: left,
-                  right: right,
-                  child: widget.fab!,
-                );
-              },
-            ),
         ],
       ),
     );

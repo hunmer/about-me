@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 
@@ -110,27 +111,24 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      backgroundColor: widget.plugin.color, // 使用插件主题色
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: Icon(
-        _currentPage == 0 ? Icons.add_business : Icons.add,
-        color:
-            widget.plugin.color.computeLuminance() < 0.5
-                ? Colors.white
-                : Colors.black,
-        size: 32,
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        color: widget.plugin.color, // 使用插件主题色
+        iconColor: widget.plugin.color.computeLuminance() < 0.5
+            ? Colors.white
+            : Colors.black,
+        icon: _currentPage == 0 ? DsIconKind.store : DsIconKind.plus,
+        onPressed: () {
+          if (_currentPage == 0) {
+            // Tab0: 添加仓库
+            _createWarehouse();
+          } else {
+            // Tab1: 添加物品
+            _addItem();
+          }
+        },
       ),
-      onPressed: () {
-        if (_currentPage == 0) {
-          // Tab0: 添加仓库
-          _createWarehouse();
-        } else {
-          // Tab1: 添加物品
-          _addItem();
-        }
-      },
     );
   }
 
@@ -140,21 +138,20 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.start,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              // Tab0: 仓库视图
-              WarehouseListScreen(onWarehouseTap: _handleWarehouseTap),
-              // Tab1: 物品视图
-              GoodsListScreen(
-                key: ValueKey('goods_list_${_filterWarehouseId ?? "all"}'),
-                initialFilterWarehouseId: _filterWarehouseId,
-              ),
-            ],
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.start,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          // Tab0: 仓库视图
+          WarehouseListScreen(onWarehouseTap: _handleWarehouseTap),
+          // Tab1: 物品视图
+          GoodsListScreen(
+            key: ValueKey('goods_list_${_filterWarehouseId ?? "all"}'),
+            initialFilterWarehouseId: _filterWarehouseId,
           ),
+        ],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.layers, label: 'goods_warehouseTab'.tr),

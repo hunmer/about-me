@@ -185,8 +185,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return const Locale('zh', 'CN');
     } else if (langCode == 'en') {
       return const Locale('en', 'US');
-    } else if (langCode == 'ja') {
-      return const Locale('ja', 'JP');
     }
     return const Locale('zh', 'CN');
   }
@@ -316,7 +314,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   supportedLocales: const [
                     Locale('zh', 'CN'), // 中文
                     Locale('en', 'US'), // 英文
-                    Locale('ja', 'JP'), // 日文
                   ],
                   theme:
                       hasCustomBackground ? _transparentSurfaces(theme) : theme,

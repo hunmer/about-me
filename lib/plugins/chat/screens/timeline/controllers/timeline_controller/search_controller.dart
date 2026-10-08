@@ -28,12 +28,9 @@ mixin SearchControllerMixin on BaseTimelineController {
 
   /// 根据搜索查询和高级过滤器过滤消息
   void filterMessages({bool saveState = true}) {
-    debugPrint('Timeline: 开始过滤消息...');
-
     // 如果没有搜索词且过滤器未激活，直接使用所有消息
     if (searchQuery.isEmpty && !isFilterActive) {
       filteredMessages = List<Message>.from(allMessages);
-      debugPrint('Timeline: 无过滤条件，显示所有 ${allMessages.length} 条消息');
 
       // 重置分页并加载第一页
       resetPagination();
@@ -82,7 +79,6 @@ mixin SearchControllerMixin on BaseTimelineController {
           return channelId != null &&
               filter.selectedChannelIds.contains(channelId);
         }).toList();
-        debugPrint('Timeline: 频道过滤后剩余 ${result.length} 条消息');
       }
 
       // 过滤用户
@@ -133,7 +129,6 @@ mixin SearchControllerMixin on BaseTimelineController {
           final isAI = message.metadata?['isAI'] as bool? ?? false;
           return filter.isAI! ? isAI : !isAI;
         }).toList();
-        debugPrint('Timeline: 应用 AI 消息过滤，剩余 ${result.length} 条消息');
       }
 
       // 过滤收藏消息
@@ -142,7 +137,6 @@ mixin SearchControllerMixin on BaseTimelineController {
           final isFavorite = message.metadata?['isFavorite'] as bool? ?? false;
           return filter.isFavorite! ? isFavorite : !isFavorite;
         }).toList();
-        debugPrint('Timeline: 应用收藏消息过滤，剩余 ${result.length} 条消息');
       }
     }
 
@@ -155,14 +149,10 @@ mixin SearchControllerMixin on BaseTimelineController {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadCurrentPage();
     });
-
-    debugPrint('Timeline: 过滤后共有 ${filteredMessages.length} 条消息');
   }
 
   /// 应用高级过滤器
   void applyFilter(TimelineFilter newFilter) {
-    debugPrint('Timeline: 开始应用新的过滤器...');
-    
     // 使用微任务确保在当前构建周期之后执行过滤操作
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 更新过滤器设置
@@ -190,15 +180,11 @@ mixin SearchControllerMixin on BaseTimelineController {
       // 应用过滤器并保存状态
       filterMessages(saveState: true);
       notifyListeners();
-      
-      debugPrint('Timeline: 新的过滤器已应用');
     });
   }
 
   /// 重置过滤器
   void resetFilter() {
-    debugPrint('Timeline: 重置过滤器...');
-    
     // 使用微任务确保在当前构建周期之后执行过滤操作
     WidgetsBinding.instance.addPostFrameCallback((_) {
       filter.reset();
@@ -206,8 +192,6 @@ mixin SearchControllerMixin on BaseTimelineController {
       filterMessages(saveState: true);
       ensureScrollListener(); // 确保滚动监听器已添加
       notifyListeners();
-      
-      debugPrint('Timeline: 过滤器已重置');
     });
   }
 
@@ -220,7 +204,6 @@ mixin SearchControllerMixin on BaseTimelineController {
     searchController.clear();
 
     // 立即处理清空搜索的情况
-    debugPrint('Timeline: 清空搜索查询');
     searchQuery = '';
     filterMessages(saveState: true);
 

@@ -357,8 +357,11 @@ class TimelineMessageCard extends StatelessWidget {
                                       ? DsTypography.body.copyWith(
                                         fontSize: 13,
                                         height: 1.3, // 调整行高使文本更紧凑
+                                        color: theme.text,
                                       )
-                                      : DsTypography.body,
+                                      : DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
                             ),
                           ),
                         );

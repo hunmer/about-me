@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
@@ -41,7 +42,7 @@ class ChatDataService {
 
   Future<void> _initializeDefaultData() async {
     final channelsListData = await _plugin.storage.read('chat/channels.json');
-    if (channelsListData.isEmpty) {
+    if (channelsListData.isEmpty && kDebugMode) {
       debugPrint('Chat插件: 首次初始化，正在加载示例数据...');
       await _loadSampleData();
     }
@@ -211,6 +212,12 @@ class ChatDataService {
 
       _channels.sort(Channel.compare);
       _plugin.refresh();
+
+      // 成就系统计数（A02 频道缔造者）
+      aboutme_event.EventManager.instance.broadcast(
+        'chat_channel_added',
+        aboutme_event.EventArgs('chat_channel_added'),
+      );
     } catch (e) {
       debugPrint('Error creating channel: $e');
       _channels.removeWhere((c) => c.id == channel.id);

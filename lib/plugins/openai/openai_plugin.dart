@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -183,54 +184,52 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       final confirmed = await showDSDialog<bool>(
         context: context,
         theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder: (dialogContext) {
-                  final theme = DSThemeBridge.resolve(dialogContext);
-                  return DSDialog(
-                    title: 'openai_importAgent'.tr,
-                    message: 'openai_importAgentConfirm'.tr,
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${'openai_nameLabel'.tr}: ${agent.name}',
-                          style: DsTypography.body.copyWith(
-                            color: theme.text,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (agent.description.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            '${'openai_descriptionLabel'.tr}: ${agent.description}',
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                          ),
-                        ],
-                        if (agent.tags.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 4,
-                            children:
-                                agent.tags
-                                    .map((tag) => DSChip(label: tag))
-                                    .toList(),
-                          ),
-                        ],
-                      ],
+        builder: (dialogContext) => DSThemeBridge(
+          child: Builder(
+            builder: (dialogContext) {
+              final theme = DSThemeBridge.resolve(dialogContext);
+              return DSDialog(
+                title: 'openai_importAgent'.tr,
+                message: 'openai_importAgentConfirm'.tr,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${'openai_nameLabel'.tr}: ${agent.name}',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    confirmText: 'openai_import'.tr,
-                    cancelText: 'openai_cancel'.tr,
-                    onConfirm: () => Navigator.of(dialogContext).pop(true),
-                    onCancel: () => Navigator.of(dialogContext).pop(false),
-                  );
-                },
-              ),
-            ),
+                    if (agent.description.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${'openai_descriptionLabel'.tr}: ${agent.description}',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                    if (agent.tags.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 4,
+                        children: agent.tags
+                            .map((tag) => DSChip(label: tag))
+                            .toList(),
+                      ),
+                    ],
+                  ],
+                ),
+                confirmText: 'openai_import'.tr,
+                cancelText: 'openai_cancel'.tr,
+                onConfirm: () => Navigator.of(dialogContext).pop(true),
+                onCancel: () => Navigator.of(dialogContext).pop(false),
+              );
+            },
+          ),
+        ),
       );
 
       if (confirmed != true) return;
@@ -257,8 +256,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> initializeDefaultData() async {
     // 确保 agents.json 文件存在并初始化默认智能体
     final agentData = await storage.read('$storageDir/agents.json');
-    if (agentData.isEmpty) {
-      // 如果文件为空，使用示例数据中的默认智能体
+    if (agentData.isEmpty && kDebugMode) {
+      // 如果文件为空，使用示例数据中的默认智能体（仅开发环境）
       final defaultAgents = OpenAISampleData.defaultAgents;
 
       await storage.write('$storageDir/agents.json', {'agents': defaultAgents});
@@ -273,8 +272,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> _initializePromptPresets() async {
     try {
       final presetData = await storage.read('openai/prompt_presets.json');
-      if (presetData.isEmpty || presetData['presets'] == null) {
-        // 如果没有预设数据，使用示例数据中的默认预设
+      if ((presetData.isEmpty || presetData['presets'] == null) && kDebugMode) {
+        // 如果没有预设数据，使用示例数据中的默认预设（仅开发环境）
         final defaultPresets = OpenAISampleData.defaultPresets;
 
         await storage.write('openai/prompt_presets.json', {
@@ -521,25 +520,23 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      onPressed: () {
-        if (_currentPage == 0) {
-          NavigationHelper.openContainerWithHero(context, (
-            BuildContext context,
-          ) {
-            return AgentEditScreen();
-          });
-        } else {
-          _showPresetEditPage();
-        }
-      },
-      backgroundColor: Colors.deepOrange,
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: Icon(
-        _currentPage == 0 ? Icons.smart_toy : Icons.text_snippet,
-        color: Colors.white,
-        size: 32,
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        onPressed: () {
+          if (_currentPage == 0) {
+            NavigationHelper.openContainerWithHero(context, (
+              BuildContext context,
+            ) {
+              return AgentEditScreen();
+            });
+          } else {
+            _showPresetEditPage();
+          }
+        },
+        color: Colors.deepOrange,
+        iconColor: Colors.white,
+        icon: _currentPage == 0 ? DsIconKind.bot : DsIconKind.clipboard,
       ),
     );
   }
@@ -550,13 +547,12 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.down,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [AgentListScreen(), PromptPresetScreen()],
-          ),
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: const [AgentListScreen(), PromptPresetScreen()],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.bot, label: 'openai_agentsTab'.tr),

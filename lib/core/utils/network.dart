@@ -10,9 +10,10 @@ DateTime _cachedAt = DateTime.fromMillisecondsSinceEpoch(0);
 
 /// 探测系统代理地址（返回 host:port）
 ///
-/// 优先级：环境变量(HTTP_PROXY/HTTPS_PROXY) > macOS 系统代理设置(scutil)。
+/// 优先级：环境变量(HTTP_PROXY/HTTPS_PROXY) > 系统代理设置
+/// （macOS scutil / Windows 注册表）。
 /// 桌面 App 从 Finder 启动时没有代理环境变量，必须读系统设置；
-/// Dart 无内置 API，macOS 上通过 scutil 子进程获取。
+/// Dart 无内置 API，通过系统命令获取。
 Future<String?> detectSystemProxyUrl() async {
   // 1. 环境变量（终端启动 / CI 场景）
   final envProxy =
@@ -31,6 +32,23 @@ Future<String?> detectSystemProxyUrl() async {
     try {
       final result = await Process.run('scutil', ['--proxy']);
       _cachedProxyUrl = _parseScutilProxy(result.stdout.toString());
+      _cachedAt = DateTime.now();
+      return _cachedProxyUrl;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // 3. Windows 系统代理（注册表，缓存 30 秒）
+  if (Platform.isWindows) {
+    final fresh = DateTime.now().difference(_cachedAt) < const Duration(seconds: 30);
+    if (fresh) return _cachedProxyUrl;
+    try {
+      final result = await Process.run('reg', [
+        'query',
+        r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
+      ]);
+      _cachedProxyUrl = _parseRegistryProxy(result.stdout.toString());
       _cachedAt = DateTime.now();
       return _cachedProxyUrl;
     } catch (_) {
@@ -69,22 +87,66 @@ String? _parseScutilProxy(String output) {
   return '$host:$port';
 }
 
+/// 解析 Windows `reg query` 注册表输出，返回系统代理的 host:port
+///
+/// 输出形如：
+/// ```
+///     ProxyEnable    REG_DWORD    0x1
+///     ProxyServer    REG_SZ    127.0.0.1:7890
+/// ```
+/// ProxyServer 也可能是按协议分设：`http=127.0.0.1:7890;https=...;socks=...`
+/// （HttpClient 不支持 SOCKS，仅取 https/http 条目）
+String? _parseRegistryProxy(String output) {
+  final enabled = RegExp(
+    r'ProxyEnable\s+REG_DWORD\s+0x?1\b',
+  ).hasMatch(output);
+  if (!enabled) return null;
+
+  final server =
+      RegExp(r'ProxyServer\s+REG_SZ\s+(\S+)').firstMatch(output)?.group(1);
+  if (server == null || server.isEmpty) return null;
+
+  if (server.contains('=')) {
+    for (final part in server.split(';')) {
+      final kv = part.split('=');
+      if (kv.length == 2 && (kv[0] == 'https' || kv[0] == 'http')) {
+        final normalized = _normalizeProxy(kv[1]);
+        if (normalized != null) return normalized;
+      }
+    }
+    return null;
+  }
+  return _normalizeProxy(server);
+}
+
 /// 创建 http.Client，支持系统代理
 ///
 /// [proxyUrl] 显式代理地址（host:port 或 http://host:port），
-/// 为空时自动探测（环境变量 → macOS 系统设置）
+/// 为空时自动探测（环境变量 → 系统设置）；
+/// 填 direct/none/off 时强制直连（系统代理失效时的逃生通道）。
 Future<http.Client> createClientWithSystemProxy({String? proxyUrl}) async {
   // 创建一个自定义的 HttpClient 来明确应用代理设置
   final httpClient = HttpClient();
 
-  final effective =
-      (proxyUrl != null && proxyUrl.isNotEmpty)
-          ? _normalizeProxy(proxyUrl)
-          : await detectSystemProxyUrl();
+  final trimmedProxy = proxyUrl?.trim() ?? '';
+  final forceDirect = switch (trimmedProxy.toLowerCase()) {
+    'direct' || 'none' || 'off' => true,
+    _ => false,
+  };
 
-  if (effective != null) {
+  final effective =
+      forceDirect || trimmedProxy.isEmpty
+      ? null
+      : _normalizeProxy(trimmedProxy);
+  final detected =
+      forceDirect ? null : (effective ?? await detectSystemProxyUrl());
+
+  if (forceDirect) {
+    httpClient.findProxy = (uri) => 'DIRECT';
+    debugPrint('[Network] 强制直连（忽略系统代理）');
+  } else if (detected != null) {
     try {
-      final parts = effective.split(':');
+      final parts = detected.split(':');
       final host = parts[0];
       final port = int.tryParse(parts.length > 1 ? parts[1] : '80') ?? 80;
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -95,6 +96,9 @@ class HabitController {
   }
 
   Future<void> _createDefaultHabits() async {
+    // 仅开发环境注入示例数据，生产环境保持空数据
+    if (!kDebugMode) return;
+
     // 使用示例数据创建默认习惯
     final sampleData = HabitsSampleData.getSampleData();
     final habitMaps = sampleData['habits'] as List<Map<String, dynamic>>;

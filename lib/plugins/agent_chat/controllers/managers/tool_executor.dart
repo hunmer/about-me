@@ -4,6 +4,7 @@ import '../../models/tool_call_step.dart';
 import '../../services/tool_service.dart';
 import '../../services/token_counter_service.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'shared/manager_context.dart';
 
 /// 工具调用执行管理器
@@ -230,6 +231,12 @@ class ToolExecutor {
           // 执行步骤
           final result = await ToolService.executeToolStep(step);
 
+          // 成就系统计数（A07 工具大师）
+          EventManager.instance.broadcast(
+            'agent_chat_tool_called',
+            EventArgs('agent_chat_tool_called'),
+          );
+
           // 自动将步骤结果保存到上下文（供后续步骤通过索引获取）
           jsBridge.setToolCallResult('step_$i', result);
 
@@ -352,6 +359,12 @@ class ToolExecutor {
       try {
         // 执行步骤
         final result = await ToolService.executeToolStep(steps[stepIndex]);
+
+        // 成就系统计数（A07 工具大师）
+        EventManager.instance.broadcast(
+          'agent_chat_tool_called',
+          EventArgs('agent_chat_tool_called'),
+        );
 
         // 更新步骤状态为成功（使用深拷贝）
         final successSteps = steps.map((s) => s.copyWith()).toList();

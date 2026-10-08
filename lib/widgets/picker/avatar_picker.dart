@@ -14,6 +14,7 @@ class AvatarPicker extends StatefulWidget {
   final String username;
   final String? currentAvatarPath;
   final String saveDirectory;
+  final String? defaultAvatarAsset;
   final Function(String path)? onAvatarChanged;
   final Future<Map<String, dynamic>?> Function(
     BuildContext context,
@@ -27,6 +28,7 @@ class AvatarPicker extends StatefulWidget {
     required this.username,
     this.currentAvatarPath,
     this.saveDirectory = 'avatars',
+    this.defaultAvatarAsset,
     this.onAvatarChanged,
     this.showPickerDialog,
   });
@@ -179,6 +181,23 @@ class _AvatarPickerState extends State<AvatarPicker> {
   }
 
   Widget _buildDefaultAvatar(AppThemeData theme) {
+    // 支持指定默认头像资产图片，未指定时回退为用户名首字
+    if (widget.defaultAvatarAsset != null) {
+      return ClipOval(
+        child: Image.asset(
+          widget.defaultAvatarAsset!,
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (_, __, ___) => _buildLetterAvatar(theme),
+        ),
+      );
+    }
+    return _buildLetterAvatar(theme);
+  }
+
+  Widget _buildLetterAvatar(AppThemeData theme) {
     return Center(
       child: Text(
         widget.username.isNotEmpty ? widget.username[0].toUpperCase() : '?',

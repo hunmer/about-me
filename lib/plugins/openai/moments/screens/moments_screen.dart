@@ -8,6 +8,8 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/moment_card.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// Agent 朋友圈：Instagram 风格动态流
 class MomentsScreen extends StatefulWidget {
@@ -58,27 +60,26 @@ class _MomentsScreenState extends State<MomentsScreen> {
     final controller = TextEditingController();
     final text = await showDialog<String>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('评论'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              maxLines: 3,
-              minLines: 1,
-              decoration: const InputDecoration(hintText: '说点什么…'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                child: const Text('发送'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('评论'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          minLines: 1,
+          decoration: const InputDecoration(hintText: '说点什么…'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('发送'),
+          ),
+        ],
+      ),
     );
     if (text != null && text.isNotEmpty) {
       await _moments.addComment(postId, text);
@@ -94,15 +95,14 @@ class _MomentsScreenState extends State<MomentsScreen> {
     await SmoothBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      builder:
-          (ctx) => AgentListDrawer(
-            selectedAgents: const [],
-            allowMultipleSelection: false,
-            onAgentSelected: (agents) {
-              if (agents.isNotEmpty) selected = agents.first;
-              Navigator.pop(ctx);
-            },
-          ),
+      builder: (ctx) => AgentListDrawer(
+        selectedAgents: const [],
+        allowMultipleSelection: false,
+        onAgentSelected: (agents) {
+          if (agents.isNotEmpty) selected = agents.first;
+          Navigator.pop(ctx);
+        },
+      ),
     );
     if (selected == null || !mounted) return;
     final agentId = selected!['id'];
@@ -115,52 +115,46 @@ class _MomentsScreenState extends State<MomentsScreen> {
     var generateImage = false;
     final ok = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => StatefulBuilder(
-            builder:
-                (ctx, setDialog) => AlertDialog(
-                  title: Text('以 $agentName 的身份发布'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: textController,
-                        maxLines: 3,
-                        minLines: 1,
-                        autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: '这一刻的想法…',
-                        ),
-                      ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('AI 生成配图'),
-                        value: generateImage,
-                        onChanged: (v) => setDialog(() => generateImage = v),
-                      ),
-                      if (generateImage)
-                        TextField(
-                          controller: promptController,
-                          maxLines: 2,
-                          minLines: 1,
-                          decoration: const InputDecoration(
-                            hintText: '配图描述（留空用文案生图）',
-                          ),
-                        ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('取消'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('发布'),
-                    ),
-                  ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialog) => AlertDialog(
+          title: Text('以 $agentName 的身份发布'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: textController,
+                maxLines: 3,
+                minLines: 1,
+                autofocus: true,
+                decoration: const InputDecoration(hintText: '这一刻的想法…'),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('AI 生成配图'),
+                value: generateImage,
+                onChanged: (v) => setDialog(() => generateImage = v),
+              ),
+              if (generateImage)
+                TextField(
+                  controller: promptController,
+                  maxLines: 2,
+                  minLines: 1,
+                  decoration: const InputDecoration(hintText: '配图描述（留空用文案生图）'),
                 ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('发布'),
+            ),
+          ],
+        ),
+      ),
     );
     if (ok != true || !mounted) return;
     final text = textController.text.trim();
@@ -192,10 +186,9 @@ class _MomentsScreenState extends State<MomentsScreen> {
     final posts = _moments.posts;
     return Scaffold(
       appBar: AppBar(title: const Text('朋友圈')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _composePost,
-        tooltip: '替 TA 发一条',
-        child: const Icon(Icons.edit),
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: DSFab(icon: DsIconKind.edit, onPressed: _composePost),
       ),
       body: posts.isEmpty
           ? _buildEmpty(context)
@@ -204,15 +197,12 @@ class _MomentsScreenState extends State<MomentsScreen> {
               child: ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: posts.length,
-                separatorBuilder:
-                    (_, __) => Divider(
-                      height: 1,
-                      indent: 16,
-                      endIndent: 16,
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.5),
-                    ),
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                ),
                 itemBuilder: (context, index) {
                   final post = posts[index];
                   return MomentCard(

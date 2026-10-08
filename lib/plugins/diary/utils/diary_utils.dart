@@ -148,8 +148,10 @@ class DiaryUtils {
     }
   }
 
-  /// 创建示例日记条目
+  /// 创建示例日记条目（仅开发环境，生产环境保持空数据）
   static Future<void> _createSampleEntries() async {
+    if (!kDebugMode) return;
+
     final storage = _storage;
     try {
       // 获取示例日记数据

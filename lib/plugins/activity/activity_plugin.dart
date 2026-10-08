@@ -286,7 +286,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     await _notificationService.initialize();
 
     // 初始化 TTS 播报服务（含语音缓存，支持离线拼接播报）
-    _voiceCacheService = ActivityVoiceCacheService(ttsPlugin: TTSPlugin.instance);
+    _voiceCacheService = ActivityVoiceCacheService(
+      ttsPlugin: TTSPlugin.instance,
+    );
     _ttsAnnouncementService = ActivityTTSAnnouncementService(
       activityService: _activityService,
       ttsPlugin: TTSPlugin.instance,
@@ -374,10 +376,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   // 更新缓存
   void _updateCache(DateTime date, int? count, int? duration) {
     final today = DateTime(date.year, date.month, date.day);
-    final cachedDay =
-        _cacheDate != null
-            ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-            : null;
+    final cachedDay = _cacheDate != null
+        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
+        : null;
 
     // 如果是新的一天，重置缓存
     if (cachedDay == null || !cachedDay.isAtSameMomentAs(today)) {
@@ -455,10 +456,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 检查日期是否匹配
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final cachedDay =
-        _cacheDate != null
-            ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-            : null;
+    final cachedDay = _cacheDate != null
+        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
+        : null;
 
     if (cachedDay == null || !cachedDay.isAtSameMomentAs(today)) {
       // 日期不匹配，异步刷新并返回空列表
@@ -507,14 +507,13 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
       now.month,
       now.day,
     ).subtract(const Duration(days: 1));
-    final cachedDay =
-        _yesterdayCacheDate != null
-            ? DateTime(
-              _yesterdayCacheDate!.year,
-              _yesterdayCacheDate!.month,
-              _yesterdayCacheDate!.day,
-            )
-            : null;
+    final cachedDay = _yesterdayCacheDate != null
+        ? DateTime(
+            _yesterdayCacheDate!.year,
+            _yesterdayCacheDate!.month,
+            _yesterdayCacheDate!.day,
+          )
+        : null;
 
     if (cachedDay == null || !cachedDay.isAtSameMomentAs(expectedYesterday)) {
       // 日期不匹配，异步刷新并返回空列表
@@ -817,12 +816,8 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置播报间隔（秒）
   Future<void> setTTSAnnouncementInterval(int seconds) async {
     try {
-      _ttsAnnouncementService.updateConfig(
-        unrecordedIntervalSeconds: seconds,
-      );
-      await _saveTTSAnnouncementSettings(
-        unrecordedIntervalSeconds: seconds,
-      );
+      _ttsAnnouncementService.updateConfig(unrecordedIntervalSeconds: seconds);
+      await _saveTTSAnnouncementSettings(unrecordedIntervalSeconds: seconds);
       debugPrint('[ActivityPlugin] 播报间隔已设置为 $seconds 秒');
     } catch (e) {
       debugPrint('[ActivityPlugin] 设置播报间隔失败: $e');
@@ -972,10 +967,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 检查缓存是否是今天的
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final cachedDay =
-        _cacheDate != null
-            ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-            : null;
+    final cachedDay = _cacheDate != null
+        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
+        : null;
 
     if (cachedDay != null && cachedDay.isAtSameMomentAs(today)) {
       return _cachedTodayActivityCount;
@@ -994,10 +988,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 检查缓存是否是今天的
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final cachedDay =
-        _cacheDate != null
-            ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-            : null;
+    final cachedDay = _cacheDate != null
+        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
+        : null;
 
     if (cachedDay != null && cachedDay.isAtSameMomentAs(today)) {
       return _cachedTodayActivityDuration;
@@ -1074,10 +1067,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
                             '$activityCount',
                             style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
-                              color:
-                                  activityCount > 0
-                                      ? theme.primary
-                                      : theme.text,
+                              color: activityCount > 0
+                                  ? theme.primary
+                                  : theme.text,
                             ),
                           ),
                         ],
@@ -1122,10 +1114,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
                             '${(remainingTime / 60).toStringAsFixed(1)}H',
                             style: DsTypography.body.copyWith(
                               fontWeight: FontWeight.bold,
-                              color:
-                                  remainingTime < 120
-                                      ? theme.danger
-                                      : theme.text,
+                              color: remainingTime < 120
+                                  ? theme.danger
+                                  : theme.text,
                             ),
                           ),
                         ],
@@ -1219,21 +1210,17 @@ class _ActivityMainViewState extends State<ActivityMainView>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      backgroundColor: ActivityPlugin.instance.color,
-      elevation: 4,
-      shape: const CircleBorder(),
-      onPressed: () {
-        if (!context.mounted) return;
-        ActivityController.showAddActivityScreen(context);
-      },
-      child: Icon(
-        Icons.add,
-        color:
-            ActivityPlugin.instance.color.computeLuminance() > 0.5
-                ? Colors.black
-                : Colors.white,
-        size: 32,
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        color: ActivityPlugin.instance.color,
+        iconColor: ActivityPlugin.instance.color.computeLuminance() > 0.5
+            ? Colors.black
+            : Colors.white,
+        onPressed: () {
+          if (!context.mounted) return;
+          ActivityController.showAddActivityScreen(context);
+        },
       ),
     );
   }
@@ -1244,25 +1231,24 @@ class _ActivityMainViewState extends State<ActivityMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.down,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              const ActivityTimelineScreen(),
-              _visitedTabs.contains(1)
-                  ? ActivityStatisticsScreen(
-                    activityService: ActivityPlugin.instance.activityService,
-                  )
-                  // DSLoadingDots 内部取 AppTheme，需包桥
-                  : Center(
-                    child: DSThemeBridge(
-                      child: Builder(builder: (_) => const DSLoadingDots()),
-                    ),
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          const ActivityTimelineScreen(),
+          _visitedTabs.contains(1)
+              ? ActivityStatisticsScreen(
+                  activityService: ActivityPlugin.instance.activityService,
+                )
+              // DSLoadingDots 内部取 AppTheme，需包桥
+              : Center(
+                  child: DSThemeBridge(
+                    child: Builder(builder: (_) => const DSLoadingDots()),
                   ),
-            ],
-          ),
+                ),
+        ],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.list, label: 'activity_timeline'.tr),

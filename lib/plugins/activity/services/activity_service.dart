@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -66,6 +66,13 @@ class ActivityService {
       // 广播事件（初始化时不通知）
       if (notify) {
         eventManager.broadcast('activity_added', EventArgs());
+        // 成就系统计数（A18 千时如梭）：仅新增记录（非重叠替换）时累计时长（分钟）
+        if (overlappingIndex == -1) {
+          eventManager.broadcast(
+            'activity_duration_added',
+            Value<int>(activity.durationInMinutes, 'activity_duration_added'),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving activity: $e');
@@ -405,7 +412,7 @@ class ActivityService {
       // 如果标签相关文件都不存在，说明是首次使用，插入默认数据
       final isFirstTime = !tagGroupsExists && !recentTagsExists && !recentMoodsExists;
 
-      if (isFirstTime) {
+      if (isFirstTime && kDebugMode) {
         debugPrint('[ActivityService] 检测到首次使用，正在插入默认数据...');
 
         // 1. 插入默认标签分组

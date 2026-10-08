@@ -1,11 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/plugin_manager.dart';
-import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/sample_data.dart';
 import 'dart:convert';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 
 class CalendarController extends ChangeNotifier {
@@ -159,8 +160,9 @@ class CalendarController extends ChangeNotifier {
     await _loadEntries();
   }
 
-  /// 加载示例数据
+  /// 加载示例数据（仅开发环境，生产环境保持空数据）
   Future<void> _loadSampleData() async {
+    if (!kDebugMode) return;
     final sampleEntries = CalendarAlbumSampleData.getSampleCalendarEntriesGrouped();
 
     // 将示例数据加载到内存中
@@ -198,6 +200,14 @@ class CalendarController extends ChangeNotifier {
     // 广播添加事件
     _notifyEvent('added', entry);
 
+    // 成就系统计数（A38 定格瞬间）：新增条目携带的照片张数
+    if (entry.imageUrls.isNotEmpty) {
+      EventManager.instance.broadcast(
+        'album_photo_added',
+        Value<int>(entry.imageUrls.length, 'album_photo_added'),
+      );
+    }
+
     // 同步小组件数据
     await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
   }
@@ -211,9 +221,20 @@ class CalendarController extends ChangeNotifier {
     if (_entries.containsKey(date)) {
       final index = _entries[date]!.indexWhere((e) => e.id == entry.id);
       if (index != -1) {
+        // 成就系统计数（A38 定格瞬间）：编辑新增的照片张数（差集）
+        final oldImages = _entries[date]![index].imageUrls;
+        final addedImages = entry.imageUrls
+            .where((url) => !oldImages.contains(url))
+            .length;
         _entries[date]![index] = entry;
         await _saveEntries();
         notifyListeners();
+        if (addedImages > 0) {
+          EventManager.instance.broadcast(
+            'album_photo_added',
+            Value<int>(addedImages, 'album_photo_added'),
+          );
+        }
 
         // 广播更新事件
         _notifyEvent('updated', entry);

@@ -30,7 +30,7 @@ A：JS 引擎与 API 桥在 `lib/core/js_bridge/`；用户脚本由 `lib/plugins
 A：`flutter_config.yaml` 设 `tree-shake-icons: false`——项目使用动态 `IconData`（如桌面小组件图标映射），树摇会在运行时报错。
 
 **Q：国际化支持哪些语言？在哪里加文案？**
-A：`zh_CN` / `en_US` / `ja_JP`（`lib/main.dart` supportedLocales），翻译集中在 `lib/l10n/unified_translations.dart`，使用 GetX `.tr`。
+A：`zh_CN` / `en_US`（`lib/main.dart` supportedLocales），翻译集中在 `lib/l10n/unified_translations.dart`，使用 GetX `.tr`。
 
 **Q：如何构建发布？**
 A：`./scripts/build.sh`（读 `scripts/release_config.json` 选平台）；`scripts/release.sh` 创建 GitHub Release；各平台 CI 在 `.github/workflows/`；Web 版由 `web-deploy.yml` + `vercel.json` 部署 Vercel。

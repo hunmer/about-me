@@ -129,12 +129,14 @@ class ConversationController extends ChangeNotifier {
       contextMessageCount: contextMessageCount,
     );
 
-    // 为新会话添加欢迎消息
-    final welcomeMessages = AgentChatSampleData.getWelcomeMessages(
-      conversation.id,
-    );
-    for (var message in welcomeMessages) {
-      await messageService.addMessage(message);
+    // 为新会话添加欢迎消息（仅开发环境，生产环境不注入）
+    if (kDebugMode) {
+      final welcomeMessages = AgentChatSampleData.getWelcomeMessages(
+        conversation.id,
+      );
+      for (var message in welcomeMessages) {
+        await messageService.addMessage(message);
+      }
     }
 
     // 触发会话创建事件

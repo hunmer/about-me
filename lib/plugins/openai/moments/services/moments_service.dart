@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:agentlib/openai_compat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
@@ -88,6 +89,8 @@ class MomentsService extends ChangeNotifier {
       _posts = _posts.sublist(0, _maxPosts);
     }
     await _save();
+    // 成就系统计数（A10 朋友圈原住民）
+    EventManager.instance.broadcast('moment_posted', EventArgs('moment_posted'));
     return post;
   }
 

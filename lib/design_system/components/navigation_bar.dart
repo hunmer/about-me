@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
+import 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart';
 
-import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
-import '../tokens/typography.dart';
 import 'icons.dart';
-import 'jelly_box.dart';
+
+// 公开 API 用到的包类型透出给 design_system 使用方
+export 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart'
+    show RadialSubOption, RadialSubBarBehavior;
 
 /// 底部导航项
 class DSNavItem {
@@ -21,137 +23,116 @@ class DSNavItem {
   final bool showBadge;
 }
 
-/// 果冻底部导航栏：选中项为凸起的果冻方块
+/// 弧形圆盘底部导航栏：同心圆弧 dock + 沿切线滑动的选中药丸
+///
+/// 实现为 packages/radial_disc_bottom_bar 包的主 dock 层；
+/// 可选启用磨砂玻璃扇环、子栏右圆钮位置浮动操作钮与上层子栏双选项。
 class DSBottomNavigation extends StatelessWidget {
   const DSBottomNavigation({
     super.key,
     required this.items,
     required this.currentIndex,
     required this.onTap,
+    this.floatingAction,
+    this.frosted = true,
+    this.subLabels,
+    this.subOption = RadialSubOption.left,
+    this.onSubOptionChange,
+    this.leadingAction,
+    this.onLeadingTap,
   });
 
   final List<DSNavItem> items;
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
+  /// 子栏右圆钮位置的常驻浮动操作钮（如添加按钮），自带手势与外观
+  final Widget? floatingAction;
+
+  /// 扇环磨砂玻璃（降低填充不透明度 + 背景模糊）
+  final bool frosted;
+
+  /// 上层子栏双选项文案（null 则不启用子栏）
+  final (String, String)? subLabels;
+
+  final RadialSubOption subOption;
+  final ValueChanged<RadialSubOption>? onSubOptionChange;
+
+  /// 上层子栏左侧圆按钮图标（null 则不渲染该按钮）；提供后启用子栏
+  final Widget? leadingAction;
+
+  /// 子栏左侧圆按钮点击回调
+  final VoidCallback? onLeadingTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
 
-    return JellyBox(
-      radius: theme.radii.xxl,
-      padding: EdgeInsets.symmetric(
-        horizontal: theme.spacing.sm,
-        vertical: theme.spacing.sm,
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: _NavItemView(
-                item: items[i],
-                selected: i == currentIndex,
-                onTap: onTap == null ? null : () => onTap!(i),
-              ),
+    var style = RadialDiscBarStyle.fromBrightness(theme.isDark).copyWith(
+      // 参考 stroke 在浅色主题是白色，画在浅色页面上不可见；
+      // 沿用旧果冻导航的 textSub 半透明描边，两主题均可见
+      strokeColor: theme.textSub.withValues(alpha: 0.6),
+      activePillColor: theme.primary,
+      activeIconColor: theme.onPrimary,
+      inactiveIconColor: theme.textSub,
+    );
+    if (frosted) {
+      // 磨砂模式降低填充不透明度，让背景模糊可见
+      style = style.copyWith(
+        fillColor: theme.isDark
+            ? const Color(0xCC1E222A)
+            : const Color(0xB3FFFFFF),
+      );
+    }
+
+    Widget bar = RadialDiscBottomBar(
+      tabs: [
+        for (final item in items)
+          RadialDiscTab(
+            label: item.label,
+            iconBuilder: (_, selected) => DsIcon(
+              item.icon,
+              size: 20,
+              color: selected ? theme.onPrimary : theme.textSub,
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItemView extends StatelessWidget {
-  const _NavItemView({
-    required this.item,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final DSNavItem item;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
-
-    final icon = selected
-        ? DsIcon(item.icon, size: 22, color: theme.onPrimary)
-        : DsIcon(item.icon, size: 22, color: theme.textSub);
-
-    return Pressable(
-      onPressed: onTap,
-      semanticLabel: item.label,
-      builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: theme.spacing.xs),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 选中项：凸起果冻方块（带果冻投影）
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                width: 46,
-                height: selected ? 46 : 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: selected
-                      ? LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: theme.jellyGradient(theme.primary),
-                          stops: theme.jellyStops,
-                        )
-                      : null,
-                  borderRadius: theme.radii.lg,
-                  border: selected
-                      ? Border.all(color: theme.jellyRim(theme.primary), width: 1.2)
-                      : null,
-                  boxShadow: selected && !pressed
-                      ? theme.jellyShadow(theme.primary, height: 4)
-                      : null,
-                ),
-                // 选中块叠加水晶玻璃罩
-                foregroundDecoration: selected
-                    ? JellyGlossDecoration(
-                        radius: theme.radii.lg, isDark: theme.isDark)
-                    : null,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    icon,
-                    if (item.showBadge)
-                      Positioned(
-                        right: -4,
-                        top: -2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: theme.danger,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: theme.stroke, width: 1.4),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(height: theme.spacing.xs),
-              Text(
-                item.label,
-                style: DsTypography.label.copyWith(
-                  fontSize: 12,
-                  color: selected ? theme.primaryText : theme.textSub,
-                ),
-              ),
-            ],
+            badge: item.showBadge
+                ? Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.danger,
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: theme.stroke, width: 1.4),
+                    ),
+                  )
+                : null,
           ),
-        );
-      },
+      ],
+      activeIndex: currentIndex.clamp(0, items.length - 1),
+      onTabChange: onTap,
+      floatingAction: floatingAction,
+      frosted: frosted,
+      subBarBehavior:
+          subLabels == null && leadingAction == null
+              ? RadialSubBarBehavior.never
+              : RadialSubBarBehavior.auto,
+      subLabels: subLabels,
+      subOption: subOption,
+      onSubOptionChange: onSubOptionChange,
+      leadingAction: leadingAction,
+      onLeadingTap: onLeadingTap,
+      style: style,
     );
+
+    // 弧形 dock 固有宽 380：更宽容器内居中，更窄容器等比缩小。
+    // heightFactor:1 关键——底部外壳给的是全屏高的松约束，无 factor 的
+    // Center 会撑满整屏把 dock 顶到屏幕中心，且透明装饰盒吞掉全部点击
+    bar = Center(
+      heightFactor: 1,
+      child: FittedBox(fit: BoxFit.scaleDown, child: bar),
+    );
+    if (onTap == null) bar = IgnorePointer(child: bar);
+    return bar;
   }
 }

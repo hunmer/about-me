@@ -133,6 +133,20 @@ class FileService {
     return './$storagePath';
   }
 
+  /// 保存图片字节为聊天附件（内置表情等无本地文件场景），
+  /// 返回 './chat/chat_files/images/xxx' 相对存储路径
+  Future<String> saveImageBytes(List<int> bytes, String fileName) async {
+    final uuid = const Uuid().v4();
+    final ext = path.extension(fileName).isEmpty
+        ? '.png'
+        : path.extension(fileName);
+    final storagePath = 'chat/chat_files/images/$uuid$ext';
+    final storage = PluginManager.instance.storageManager;
+    if (storage == null) throw StateError('StorageManager 未初始化');
+    await storage.writeBytes(storagePath, Uint8List.fromList(bytes));
+    return './$storagePath';
+  }
+
   // 删除文件
   Future<bool> deleteFile(String filePath) async {
     try {

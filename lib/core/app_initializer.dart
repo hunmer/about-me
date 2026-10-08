@@ -15,6 +15,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/system_widget_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
@@ -178,6 +179,9 @@ Future<void> initializeApp() async {
     // 初始化全局主题背景（所有界面共用的背景图设置）
     await AppBackgroundController().initialize();
 
+    // 初始化主题色板（全局主题颜色选择）
+    await DsThemeColorController().initialize();
+
     // 初始化日志服务（根据配置决定是否启用）
     unawaited(LogService.instance.initialize(globalStorage));
 
@@ -197,6 +201,15 @@ Future<void> initializeApp() async {
 
     // 初始化 Toast 服务
     Toast.setNavigatorKey(navigatorKey);
+
+    // 远端存储离线回退本地时，等首帧渲染完提示用户当前处于离线模式
+    if (globalStorage.remoteFallbackReason != null) {
+      unawaited(
+        Future<void>.delayed(const Duration(seconds: 1)).then((_) {
+          Toast.warning('远端存储不可用，已回退本地存储（离线模式）');
+        }),
+      );
+    }
 
     // 在初始化通知服务之前先清理历史通知和计时器状态
     // 这是防止应用重启后通知自动复原的关键步骤

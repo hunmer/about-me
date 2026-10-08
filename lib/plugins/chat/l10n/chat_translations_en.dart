@@ -204,5 +204,7 @@ class ChatTranslationsEn {
     'chat_searchMessages': 'Search messages',
     'chat_noMatchingMessages': 'No matching messages',
     'chat_refresh': 'Refresh',
+    'chat_listView': 'Switch to list view',
+    'chat_cardView': 'Switch to card view',
   };
 }

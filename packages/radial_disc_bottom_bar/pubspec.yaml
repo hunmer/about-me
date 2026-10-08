@@ -1,0 +1,15 @@
+name: radial_disc_bottom_bar
+description: 双层同心圆弧浮动底部导航栏：主弧形 dock 滑动药丸 + 可折叠上层子栏（圆按钮 + 双选项分段）
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

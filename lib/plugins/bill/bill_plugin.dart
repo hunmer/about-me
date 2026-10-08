@@ -184,10 +184,9 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                         '¥${_billController.getTodayFinance().toStringAsFixed(2)}',
                         style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
-                          color:
-                              _billController.getTodayFinance() >= 0
-                                  ? theme.success
-                                  : theme.danger,
+                          color: _billController.getTodayFinance() >= 0
+                              ? theme.success
+                              : theme.danger,
                         ),
                       ),
                     ],
@@ -204,10 +203,9 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
                         '¥${_billController.getMonthFinance().toStringAsFixed(2)}',
                         style: DsTypography.body.copyWith(
                           fontWeight: FontWeight.bold,
-                          color:
-                              _billController.getMonthFinance() >= 0
-                                  ? theme.success
-                                  : theme.danger,
+                          color: _billController.getMonthFinance() >= 0
+                              ? theme.success
+                              : theme.danger,
                         ),
                       ),
                     ],
@@ -441,26 +439,22 @@ class _BillMainViewState extends State<BillMainView>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      onPressed: () {
-        NavigationHelper.openContainerWithHero(
-          context,
-          (context) => BillEditScreen(
-            billPlugin: billPlugin,
-            accountId: billPlugin.selectedAccount?.id ?? '',
-          ),
-        );
-      },
-      backgroundColor: const Color(0xFF3498DB),
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: Icon(
-        Icons.add,
-        color:
-            const Color(0xFF3498DB).computeLuminance() > 0.5
-                ? Colors.black
-                : Colors.white,
-        size: 32,
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        onPressed: () {
+          NavigationHelper.openContainerWithHero(
+            context,
+            (context) => BillEditScreen(
+              billPlugin: billPlugin,
+              accountId: billPlugin.selectedAccount?.id ?? '',
+            ),
+          );
+        },
+        color: const Color(0xFF3498DB),
+        iconColor: const Color(0xFF3498DB).computeLuminance() > 0.5
+            ? Colors.black
+            : Colors.white,
       ),
     );
   }
@@ -476,27 +470,26 @@ class _BillMainViewState extends State<BillMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.down,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              BillListScreenSupercupertino(
-                billPlugin: billPlugin,
-                accountId: billPlugin.selectedAccount?.id ?? '',
-              ),
-              BillStatsScreenSupercupertino(
-                billPlugin: billPlugin,
-                accountId: billPlugin.selectedAccount?.id ?? '',
-                // 使用路由参数中的日期范围，如果不存在则使用默认值
-                startDate:
-                    _statsStartDate ??
-                    DateTime.now().subtract(const Duration(days: 30)),
-                endDate: _statsEndDate ?? DateTime.now(),
-              ),
-            ],
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          BillListScreenSupercupertino(
+            billPlugin: billPlugin,
+            accountId: billPlugin.selectedAccount?.id ?? '',
           ),
+          BillStatsScreenSupercupertino(
+            billPlugin: billPlugin,
+            accountId: billPlugin.selectedAccount?.id ?? '',
+            // 使用路由参数中的日期范围，如果不存在则使用默认值
+            startDate:
+                _statsStartDate ??
+                DateTime.now().subtract(const Duration(days: 30)),
+            endDate: _statsEndDate ?? DateTime.now(),
+          ),
+        ],
+      ),
       fab: _buildFab(),
       items: const [
         DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
@@ -667,12 +660,11 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
                       },
                       onChanged: (index) {
                         setState(
-                          () =>
-                              _selectedType = switch (index) {
-                                0 => 'income',
-                                1 => 'expense',
-                                _ => 'balance',
-                              },
+                          () => _selectedType = switch (index) {
+                            0 => 'income',
+                            1 => 'expense',
+                            _ => 'balance',
+                          },
                         );
                       },
                     ),
@@ -687,20 +679,19 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children:
-                          _periods.map((period) {
-                            final isSelected = _selectedPeriod == period;
-                            return DSChip(
-                              label: period,
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedPeriod = period;
-                                  _updateDateRange(period);
-                                });
-                              },
-                            );
-                          }).toList(),
+                      children: _periods.map((period) {
+                        final isSelected = _selectedPeriod == period;
+                        return DSChip(
+                          label: period,
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedPeriod = period;
+                              _updateDateRange(period);
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
@@ -868,52 +859,49 @@ class _MonthlyBillConfigFormState extends State<_MonthlyBillConfigForm> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
-                        children:
-                            _monthOptions.map((month) {
-                              final isSelected =
-                                  month.year == _selectedMonth.year &&
-                                  month.month == _selectedMonth.month;
-                              return Pressable(
-                                onPressed: () {
-                                  setState(() => _selectedMonth = month);
-                                },
-                                builder: (context, states) {
-                                  final pressed = states.contains(
-                                    WidgetState.pressed,
-                                  );
-                                  return Container(
-                                    color:
-                                        isSelected
-                                            ? BillPlugin.instance.color
-                                                .withValues(alpha: 0.1)
-                                            : (pressed
-                                                ? theme.surfaceAlt
-                                                : null),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            _formatMonth(month),
-                                            style: DsTypography.body.copyWith(
-                                              color: theme.text,
-                                            ),
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          DsIcon(
-                                            DsIconKind.check,
-                                            color: BillPlugin.instance.color,
-                                          ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                        children: _monthOptions.map((month) {
+                          final isSelected =
+                              month.year == _selectedMonth.year &&
+                              month.month == _selectedMonth.month;
+                          return Pressable(
+                            onPressed: () {
+                              setState(() => _selectedMonth = month);
+                            },
+                            builder: (context, states) {
+                              final pressed = states.contains(
+                                WidgetState.pressed,
                               );
-                            }).toList(),
+                              return Container(
+                                color: isSelected
+                                    ? BillPlugin.instance.color.withValues(
+                                        alpha: 0.1,
+                                      )
+                                    : (pressed ? theme.surfaceAlt : null),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _formatMonth(month),
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      DsIcon(
+                                        DsIconKind.check,
+                                        color: BillPlugin.instance.color,
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
                       ),
                     ),
                     const SizedBox(height: 16),

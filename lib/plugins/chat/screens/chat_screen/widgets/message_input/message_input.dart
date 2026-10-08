@@ -2,6 +2,7 @@ import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'message_input_types.dart';
 import 'message_input_state.dart';
@@ -11,6 +12,7 @@ import 'widgets/input_field.dart';
 import 'widgets/send_button.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
@@ -265,6 +267,16 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
+  /// 打开表情选择器
+  void _showEmojiPicker() {
+    handleEmojiSelection(
+      context: context,
+      fileService: FileService(),
+      onFileSelected: _handleFileSelected,
+      textController: widget.controller,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
@@ -326,6 +338,15 @@ class _MessageInputState extends State<MessageInput> {
                         onKeyEvent:
                             (event) => _messageInputState.handleKeyPress(event),
                       ),
+                    ),
+
+                    // 表情选择按钮
+                    DSIconButton(
+                      icon: DsIconKind.mood,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: _showEmojiPicker,
+                      tooltip: '表情',
                     ),
 
                     // 语音输入按钮

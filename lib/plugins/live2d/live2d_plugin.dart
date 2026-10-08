@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
@@ -38,6 +39,11 @@ class Live2DPlugin extends BasePlugin {
         reply,
         serviceId: ttsServiceId,
         onError: (error) => debugPrint('[Live2DChat] TTS failed: $error'),
+      );
+      // 成就系统计数（A13 播报员）
+      EventManager.instance.broadcast(
+        'live2d_tts_spoken',
+        EventArgs('live2d_tts_spoken'),
       );
     } catch (error) {
       debugPrint('[Live2DChat] TTS unavailable: $error');
@@ -122,6 +128,11 @@ class Live2DPlugin extends BasePlugin {
     final i = archives.indexWhere((a) => a.id == archive.id);
     if (i < 0) {
       archives.add(archive);
+      // 成就系统计数（A12 伙伴收藏家，仅新增模型时）
+      EventManager.instance.broadcast(
+        'live2d_model_added',
+        EventArgs('live2d_model_added'),
+      );
     } else {
       archives[i] = archive;
     }

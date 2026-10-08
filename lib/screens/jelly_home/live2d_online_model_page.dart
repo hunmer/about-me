@@ -1,3 +1,4 @@
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -84,7 +85,7 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppThemeData.light();
+    final theme = AppThemeData.fromPalette(DsThemeColorController().palette);
     return AppTheme(
       data: theme,
       child: ColoredBox(

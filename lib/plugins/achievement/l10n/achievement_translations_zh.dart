@@ -1,0 +1,37 @@
+class AchievementTranslationsZh {
+  static const Map<String, String> translations = {
+    // 插件信息
+    'achievement_name': '成就',
+    'achievement_pluginDescription': '成就系统：记录使用足迹，解锁等级徽章',
+    'achievement_overviewWidgetDescription': '展示成就解锁进度与累计积分，点击进入成就展览',
+
+    // 分类
+    'achievement_category_ai': 'AI 类',
+    'achievement_category_life': '记录与生活',
+    'achievement_category_asset': '物品与账务',
+    'achievement_category_tool': '工具与系统',
+    'achievement_category_overall': '跨插件综合',
+
+    // 概览
+    'achievement_progressTitle': '成就进度',
+    'achievement_levels': '级',
+    'achievement_recentUnlock': '最近达成',
+    'achievement_none': '暂无',
+    'achievement_points': '积分',
+
+    // 筛选
+    'achievement_filterAll': '全部',
+    'achievement_filterUnlocked': '已解锁',
+    'achievement_filterLocked': '未解锁',
+
+    // 详情
+    'achievement_unit': '计数单位',
+    'achievement_pending': '待接入',
+    'achievement_hiddenHint': '隐藏成就，达成后揭晓',
+
+    // 达成弹窗
+    'achievement_unlocked': '— 成就达成 —',
+    'achievement_unlocked_at': '达成于',
+    'achievement_tapToClose': '点击任意处关闭',
+  };
+}

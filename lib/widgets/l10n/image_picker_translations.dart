@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'image_picker_translations_jp.dart';
 import 'image_picker_translations_zh.dart';
 import 'image_picker_translations_en.dart';
 
@@ -7,7 +6,6 @@ import 'image_picker_translations_en.dart';
 class ImagePickerTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
-        'ja_JP': imagePickerTranslationsJp,
         'zh_CN': imagePickerTranslationsZh,
         'en_US': imagePickerTranslationsEn,
       };

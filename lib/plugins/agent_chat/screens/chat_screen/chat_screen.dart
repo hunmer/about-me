@@ -588,13 +588,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    debugPrint('[ChatScreen] dispose 开始');
     _voiceCallManager?.dispose();
     _aiMessageStreamController.close();
     _controller.removeListener(_onControllerChanged);
     _controller.messageService.removeListener(_onControllerChanged);
     _controller.dispose();
+    debugPrint('[ChatScreen] controller 已释放，继续 dispose');
     _scrollController.dispose();
     super.dispose();
+    debugPrint('[ChatScreen] dispose 完成');
   }
 
   @override

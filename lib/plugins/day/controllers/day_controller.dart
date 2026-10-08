@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
@@ -133,10 +133,11 @@ class DayController extends ChangeNotifier {
     final fileExists = await _plugin.storage.fileExists(filePath);
 
     if (!fileExists) {
-      // 文件不存在，写入示例数据
-      final sampleDays = DaySampleData.getSampleMemorialDays();
+      // 文件不存在，仅开发环境写入示例数据，生产环境保持空数据
       _memorialDays.clear();
-      _memorialDays.addAll(sampleDays);
+      if (kDebugMode) {
+        _memorialDays.addAll(DaySampleData.getSampleMemorialDays());
+      }
       await _saveMemorialDays();
       _sortMemorialDays();
       return;

@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -18,10 +20,13 @@ import '../models/record.dart' as record_model;
 enum RecordSortOption {
   /// 更新时间降序（最新的在前）
   updatedDesc,
+
   /// 更新时间升序
   updatedAsc,
+
   /// 创建时间降序
   createdDesc,
+
   /// 创建时间升序
   createdAsc,
 }
@@ -60,7 +65,6 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   /// 上一次的过滤状态（用于避免重复触发）
   Map<String, dynamic>? _lastFilterState;
-
 
   @override
   void initState() {
@@ -121,7 +125,8 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     dynamic currentValue,
     ValueChanged<dynamic> onChanged,
   ) {
-    final option = currentValue as RecordSortOption? ?? RecordSortOption.updatedDesc;
+    final option =
+        currentValue as RecordSortOption? ?? RecordSortOption.updatedDesc;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +208,8 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     if (a.length != b.length) return false;
     final aSet = a.toSet();
     final bSet = b.toSet();
-    return aSet.union(bSet).length == aSet.length && aSet.intersection(bSet).length == aSet.length;
+    return aSet.union(bSet).length == aSet.length &&
+        aSet.intersection(bSet).length == aSet.length;
   }
 
   /// 处理搜索
@@ -227,12 +233,17 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       final lowerKeyword = keyword.toLowerCase();
       result = result.where((record) {
         // 搜索 title 字段
-        if (record.fields['title']?.toString().toLowerCase().contains(lowerKeyword) == true) {
+        if (record.fields['title']?.toString().toLowerCase().contains(
+              lowerKeyword,
+            ) ==
+            true) {
           return true;
         }
         // 搜索所有其他字段值
-        return record.fields.values.any((value) =>
-          value?.toString().toLowerCase().contains(lowerKeyword) == true);
+        return record.fields.values.any(
+          (value) =>
+              value?.toString().toLowerCase().contains(lowerKeyword) == true,
+        );
       }).toList();
     }
 
@@ -240,14 +251,17 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     if (filters['dateRange'] != null) {
       final range = filters['dateRange'] as DateTimeRange;
       result = result
-          .where((record) =>
-              !record.updatedAt.isBefore(range.start) &&
-              !record.updatedAt.isAfter(range.end))
+          .where(
+            (record) =>
+                !record.updatedAt.isBefore(range.start) &&
+                !record.updatedAt.isAfter(range.end),
+          )
           .toList();
     }
 
     // 排序
-    final sortOption = filters['sort'] as RecordSortOption? ?? RecordSortOption.updatedDesc;
+    final sortOption =
+        filters['sort'] as RecordSortOption? ?? RecordSortOption.updatedDesc;
 
     switch (sortOption) {
       case RecordSortOption.updatedDesc:
@@ -265,13 +279,18 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   /// 应用过滤条件（调用setState）
   void _applyFilters(Map<String, dynamic> filters, String keyword) {
-    final newFilteredRecords = _computeFilteredRecords(_allRecords, filters, keyword);
+    final newFilteredRecords = _computeFilteredRecords(
+      _allRecords,
+      filters,
+      keyword,
+    );
 
     // 检查结果是否真的改变了（通过比较 ID 列表）
     final oldIds = _filteredRecords.map((r) => r.id).toSet();
     final newIds = newFilteredRecords.map((r) => r.id).toSet();
 
-    if (oldIds.length != newIds.length || !oldIds.every((id) => newIds.contains(id))) {
+    if (oldIds.length != newIds.length ||
+        !oldIds.every((id) => newIds.contains(id))) {
       // 结果改变了，才调用 setState
       _filteredRecords = newFilteredRecords;
       setState(() {});
@@ -363,24 +382,25 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: FloatingActionButton(
-              heroTag: 'database_detail_fab',
-              onPressed: () async {
-                final result = await NavigationHelper.push(
-                  context,
-                  RecordEditWidget(
-                    controller: widget.controller,
-                    database: database,
-                    record: null,
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _needsReload = true;
-                  });
-                }
-              },
-              child: const Icon(Icons.add),
+            child: DSThemeBridge(
+              // DSFab 内部取 AppTheme，需包桥
+              child: DSFab(
+                onPressed: () async {
+                  final result = await NavigationHelper.push(
+                    context,
+                    RecordEditWidget(
+                      controller: widget.controller,
+                      database: database,
+                      record: null,
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _needsReload = true;
+                    });
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -390,7 +410,8 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final hasFilters = _multiFilterState.hasAnyFilter || _searchKeyword.isNotEmpty;
+    final hasFilters =
+        _multiFilterState.hasAnyFilter || _searchKeyword.isNotEmpty;
 
     return Center(
       child: Column(
@@ -399,28 +420,28 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
           Icon(
             hasFilters ? Icons.filter_list_off : Icons.inbox,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
           Text(
             hasFilters ? '没有匹配的记录' : '暂无记录',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withOpacity(0.6),
-                ),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withOpacity(0.6),
+            ),
           ),
           if (hasFilters) ...[
             const SizedBox(height: 8),
             Text(
               '尝试调整过滤条件',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withOpacity(0.4),
-                  ),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withOpacity(0.4),
+              ),
             ),
           ],
         ],
@@ -446,8 +467,9 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   /// 构建记录卡片
   Widget _buildRecordCard(DatabaseModel database, record_model.Record record) {
     // 获取需要显示在预览中的字段
-    final previewFields =
-        database.fields.where((f) => f.showInPreview).toList();
+    final previewFields = database.fields
+        .where((f) => f.showInPreview)
+        .toList();
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -460,9 +482,11 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
               database: database,
               record: record,
             ),
-          ).then((_) => setState(() {
-            _needsReload = true;
-          }));
+          ).then(
+            (_) => setState(() {
+              _needsReload = true;
+            }),
+          );
         },
         onLongPress: () {
           _showRecordMenu(context, record);
@@ -477,10 +501,11 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
                 children: [
                   // 标题
                   Text(
-                    record.fields['title']?.toString() ?? 'database_untitled_record'.tr,
+                    record.fields['title']?.toString() ??
+                        'database_untitled_record'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
@@ -510,12 +535,11 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
                   Text(
                     '更新于 ${_formatDateTime(record.updatedAt)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant
-                              .withOpacity(0.5),
-                          fontSize: 11,
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -641,8 +665,10 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
         database: widget.controller.currentDatabase!,
         record: record,
       ),
-    ).then((_) => setState(() {
-      _needsReload = true;
-    }));
+    ).then(
+      (_) => setState(() {
+        _needsReload = true;
+      }),
+    );
   }
 }

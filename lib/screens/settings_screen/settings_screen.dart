@@ -1,29 +1,14 @@
-import 'package:aboutme/core/theme_controller.dart';
-import 'package:aboutme/core/services/speech_recognition_config_service.dart';
-import 'package:aboutme/core/services/app_background_controller.dart';
-
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-import './controllers/settings_screen_controller.dart';
-import './widgets/storage_backend_settings_dialog.dart';
-import './widgets/speech_recognition_settings_dialog.dart';
-import 'package:aboutme/core/floating_ball/settings_screen.dart';
-import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
-import 'package:aboutme/screens/settings_screen/screens/data_management_screen.dart';
-import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
-import 'package:aboutme/screens/about_screen/about_screen.dart';
-import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
-import 'package:aboutme/screens/settings_screen/widgets/permission_request_dialog.dart';
-import 'package:aboutme/core/app_initializer.dart';
 import 'package:get/get.dart';
-import 'package:universal_platform/universal_platform.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
-import 'package:aboutme/core/plugin_base.dart';
-import 'package:aboutme/widgets/route_viewer_dialog.dart';
-import 'package:aboutme/screens/route.dart';
-import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
+import 'package:aboutme/widgets/picker/avatar_picker.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import './controllers/settings_screen_controller.dart';
+import './widgets/settings_group.dart';
+import './screens/interface_settings_screen.dart';
+import './screens/data_settings_screen.dart';
+import './screens/app_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,7 +19,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late SettingsScreenController _controller;
-  bool _isSpeechRecognitionConfigured = false;
 
   @override
   void initState() {
@@ -46,35 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {});
       }
     });
-
-    // 初始化语音识别配置服务
-    _initSpeechRecognitionConfig();
-  }
-
-  // 初始化语音识别配置服务
-  Future<void> _initSpeechRecognitionConfig() async {
-    await SpeechRecognitionConfigService.instance.initialize();
-    if (mounted) {
-      setState(() {
-        _isSpeechRecognitionConfigured =
-            SpeechRecognitionConfigService.instance.isConfigured;
-      });
-    }
-  }
-
-  // 显示语音识别设置对话框
-  Future<void> _showSpeechRecognitionSettings() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const SpeechRecognitionSettingsDialog(),
-    );
-
-    if (result == true && mounted) {
-      setState(() {
-        _isSpeechRecognitionConfigured =
-            SpeechRecognitionConfigService.instance.isConfigured;
-      });
-    }
   }
 
   @override
@@ -97,41 +52,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  // 显示定位 API Key 设置对话框
-  Future<void> _showLocationApiKeyDialog() async {
-    final TextEditingController apiKeyController = TextEditingController(
-      text: _controller.locationApiKey,
+  // 修改用户名
+  Future<void> _showEditNameDialog() async {
+    final TextEditingController nameController = TextEditingController(
+      text: _controller.userName,
     );
 
     final result = await showDialog<String>(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('screens_setLocationApiKey'.tr),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'screens_locationApiKeyHint'.tr,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: apiKeyController,
-                  decoration: InputDecoration(
-                    labelText: 'screens_apiKeyLabel'.tr,
-                    hintText: 'screens_apiKeyInputHint'.tr,
-                    border: const OutlineInputBorder(),
-                  ),
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'screens_locationApiKeyGuide'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+            title: const Text('修改用户名'),
+            content: TextField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(hintText: '输入用户名'),
             ),
             actions: [
               TextButton(
@@ -139,552 +74,145 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text('screens_cancel'.tr),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(apiKeyController.text);
-                },
+                onPressed: () => Navigator.of(context).pop(nameController.text),
                 child: Text('app_save'.tr),
               ),
             ],
           ),
     );
 
-    if (result != null && result.isNotEmpty) {
-      await _controller.setLocationApiKey(result);
-      if (mounted) {
-        setState(() {});
-      }
+    if (result != null && result.trim().isNotEmpty) {
+      await _controller.setUserName(result.trim());
     }
 
-    apiKeyController.dispose();
+    nameController.dispose();
   }
 
-  Future<void> _showPluginManagementSheet() async {
-    await SmoothBottomSheet.show(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        final double sheetHeight = MediaQuery.of(context).size.height * 0.75;
-        return SizedBox(
-          height: sheetHeight,
-          child: StatefulBuilder(
-            builder: (context, setModalState) {
-              final List<PluginBase> plugins = List<PluginBase>.from(
-                _controller.availablePlugins,
-              )..sort(
-                (a, b) => (a.getPluginName(context) ?? a.id).compareTo(
-                  b.getPluginName(context) ?? b.id,
-                ),
-              );
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'settings_screen_pluginManagementTip'.tr,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: plugins.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final plugin = plugins[index];
-                        final pluginName =
-                            plugin.getPluginName(context) ?? plugin.id;
-                        final isEnabled = _controller.isPluginEnabled(
-                          plugin.id,
-                        );
-                        return SwitchListTile(
-                          title: Text(pluginName),
-                          subtitle: Text(plugin.id),
-                          value: isEnabled,
-                          onChanged: (value) async {
-                            await _controller.setPluginEnabled(
-                              plugin.id,
-                              value,
-                            );
-                            setModalState(() {});
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
+  // 主页菜单入口
+  Widget _buildNavTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Widget screen,
+    required String routeName,
+  }) {
+    return DSListItem(
+      title: title,
+      leading: Icon(icon, size: 22),
+      showChevron: true,
+      onTap: () => NavigationHelper.push(context, screen, routeName: routeName),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool showPermissionEntry =
-        UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
     if (!_controller.isInitialized()) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text(
-        'settings_screen_settingsTitle'.tr,
-        style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
-      ),
-      largeTitle: 'settings_screen_settingsTitle'.tr,
-      body: ListView(
+    final ThemeData theme = Theme.of(context);
+
+    final Widget list = DSThemeBridge(
+      child: ListView(
         // 底部叠加悬浮导航栏/系统安全区高度，避免最后几项被遮挡
         padding: EdgeInsets.fromLTRB(
           16.0,
-          16.0,
+          8.0,
           16.0,
           16.0 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          // 界面设置
-          Text(
-            '界面设置',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
           const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text('settings_screen_languageTitle'.tr),
-            subtitle: Text('settings_screen_languageSubtitle'.tr),
-            onTap: () => _controller.toggleLanguage(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.brightness_4),
-            title: Text('settings_screen_darkModeTitle'.tr),
-            subtitle: Text('settings_screen_darkModeSubtitle'.tr),
-            trailing: AdaptiveSwitch(
-              value: ThemeController.isDarkTheme(context),
-              onChanged: (value) => _controller.setTheme(context, value),
-            ),
-          ),
-          // 主题设置：全局背景图，应用于所有界面
-          ListenableBuilder(
-            listenable: AppBackgroundController(),
-            builder: (context, _) {
-              return ListTile(
-                leading: const Icon(Icons.image),
-                title: Text('screens_themeSettings'.tr),
-                subtitle: Text(
-                  AppBackgroundController().hasBackground
-                      ? 'screens_backgroundImageSet'.tr
-                      : AppBackgroundController().backgroundColor != null
-                      ? 'screens_solidBackgroundSet'.tr
-                      : 'screens_backgroundImageNotSet'.tr,
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  NavigationHelper.push(
-                    context,
-                    const ThemeBackgroundSettingsScreen(),
-                    routeName: '/settings/theme_background',
-                  );
-                },
-              );
-            },
-          ),
-          const Divider(),
-
-          // 数据管理
-          Text(
-            '数据管理',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.upload),
-            title: Text('settings_screen_exportDataTitle'.tr),
-            subtitle: Text('settings_screen_exportDataSubtitle'.tr),
-            onTap: () {
-              if (mounted) {
-                _controller.exportData(context);
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.storage),
-            title: Text('settings_screen_dataManagementTitle'.tr),
-            subtitle: Text('settings_screen_dataManagementSubtitle'.tr),
-            onTap: () {
-              NavigationHelper.push(
-                context,
-                DataManagementScreen(),
-                routeName: '/settings/data_management',
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.download),
-            title: Text('settings_screen_importDataTitle'.tr),
-            subtitle: Text('settings_screen_importDataSubtitle'.tr),
-            onTap: _controller.importData,
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.backup),
-            title: Text('settings_screen_fullBackupTitle'.tr),
-            subtitle: Text('settings_screen_fullBackupSubtitle'.tr),
-            onTap: _controller.exportAllData,
-          ),
-          ListTile(
-            leading: const Icon(Icons.restore),
-            title: Text('settings_screen_fullRestoreTitle'.tr),
-            subtitle: Text('settings_screen_fullRestoreSubtitle'.tr),
-            onTap: _controller.importAllData,
-            trailing: const Icon(Icons.warning, color: Colors.orange),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.cloud),
-            title: const Text('数据存储后端'),
-            subtitle: Text(globalStorage.isRemote ? 'HTTP 服务器' : '本地文件'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final changed = await showDialog<bool>(
-                context: context,
-                builder: (context) => const StorageBackendSettingsDialog(),
-              );
-              if (changed == true && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('设置已保存，请重新启动应用')),
-                );
-              }
-            },
-          ),
-          const Divider(),
-
-          // 应用设置
-          Text(
-            '应用设置',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<bool>(
-            future: FloatingBallManager().isEnabled(),
-            builder: (context, snapshot) {
-              final bool isEnabled = snapshot.data ?? true;
-              return ListTile(
-                leading: const Icon(Icons.touch_app),
-                title: Text('settings_screen_floatingBallTitle'.tr),
-                subtitle: Text(
-                  isEnabled
-                      ? 'settings_screen_floatingBallEnabled'.tr
-                      : 'settings_screen_floatingBallDisabled'.tr,
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  NavigationHelper.push(
-                    context,
-                    const FloatingBallSettingsScreen(),
-                    routeName: '/settings/floating_ball_settings',
-                  );
-                },
-              );
-            },
-          ),
-          if (UniversalPlatform.isAndroid)
-            ListTile(
-              leading: const Icon(Icons.touch_app),
-              title: Text('screens_floatingBallSettings'.tr),
-              subtitle: Text('screens_manageSystemFloatingBall'.tr),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.pushNamed(context, '/floating_ball');
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.alarm),
-            title: const Text('定时提醒'),
-            subtitle: const Text('管理定时提醒任务'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              NavigationHelper.push(
-                context,
-                const ReminderListScreen(),
-                routeName: '/settings/reminder',
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.extension),
-            title: Text('settings_screen_pluginManagementTitle'.tr),
-            subtitle: Text('settings_screen_pluginManagementSubtitle'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: _showPluginManagementSheet,
-          ),
-          ListTile(
-            leading: const Icon(Icons.play_circle),
-            title: Text('settings_screen_autoOpenLastPluginTitle'.tr),
-            subtitle: Text('settings_screen_autoOpenLastPluginSubtitle'.tr),
-            trailing: AdaptiveSwitch(
-              value: _controller.autoOpenLastPlugin,
-              onChanged:
-                  (value) => setState(() {
-                    _controller.autoOpenLastPlugin = value;
-                  }),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: Text('screens_locationApiKey'.tr),
-            subtitle: Text(
-              _controller.locationApiKey.isEmpty
-                  ? 'screens_locationApiKeyNotSet'.tr
-                  : 'screens_locationApiKeyPartial'.trParams({
-                    'key': _controller.locationApiKey.substring(0, 8),
-                  }),
-            ),
-            trailing: const Icon(Icons.edit),
-            onTap: () => _showLocationApiKeyDialog(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.mic),
-            title: const Text('语音识别设置'),
-            subtitle: Text(
-              _isSpeechRecognitionConfigured ? '已配置腾讯云语音识别' : '配置语音识别服务',
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          // 头像：顶部居中，点击更换
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                if (_isSpeechRecognitionConfigured)
-                  const Icon(Icons.check_circle, color: Colors.green),
-                const Icon(Icons.arrow_forward_ios),
+                AvatarPicker(
+                  size: 96,
+                  username: _controller.userName,
+                  currentAvatarPath: _controller.userAvatarPath,
+                  defaultAvatarAsset: 'assets/images/default_avatar.jpg',
+                  onAvatarChanged:
+                      (path) => _controller.setUserAvatarPath(path),
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.primaryColor,
+                      border: Border.all(
+                        color: theme.scaffoldBackgroundColor,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera,
+                      size: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
-            onTap: _showSpeechRecognitionSettings,
           ),
-          const Divider(),
-
-          // 剪切板设置
-          Text(
-            '剪切板设置',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.content_paste),
-            title: const Text('自动读取剪切板'),
-            subtitle: const Text('启用后将自动识别剪切板中的数据'),
-            trailing: AdaptiveSwitch(
-              value: _controller.clipboardAutoRead,
-              onChanged:
-                  (value) => setState(() {
-                    _controller.clipboardAutoRead = value;
-                  }),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.content_paste_go),
-            title: const Text('读取并识别剪切板'),
-            subtitle: const Text('手动读取剪切板中的数据并识别处理'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () async {
-              final result = await _controller.readAndProcessClipboard();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result ? '剪切板识别成功' : '剪切板中没有可识别的数据'),
-                    duration: const Duration(seconds: 2),
+          const SizedBox(height: 12),
+          // 用户名：点击修改
+          Center(
+            child: GestureDetector(
+              onTap: _showEditNameDialog,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _controller.userName,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                );
-              }
-            },
-          ),
-          if (showPermissionEntry)
-            ListTile(
-              leading: const Icon(Icons.privacy_tip),
-              title: Text('app_permissionsTitle'.tr),
-              subtitle: Text('app_permissionsManageDescription'.tr),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () async {
-                await showPermissionRequestDialog(
-                  context: context,
-                  controller: PermissionController(),
-                  barrierDismissible: true,
-                  showSkipButton: false,
-                );
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.system_update),
-            title: Text('settings_screen_autoCheckUpdateTitle'.tr),
-            subtitle: Text('settings_screen_autoCheckUpdateSubtitle'.tr),
-            trailing: AdaptiveSwitch(
-              value: _controller.autoCheckUpdate,
-              onChanged:
-                  (value) => setState(() {
-                    _controller.autoCheckUpdate = value;
-                  }),
+                  const SizedBox(width: 6),
+                  Icon(Icons.edit, size: 16, color: theme.hintColor),
+                ],
+              ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.update),
-            title: Text('settings_screen_checkUpdateTitle'.tr),
-            subtitle: Text('settings_screen_checkUpdateSubtitle'.tr),
-            onTap: _controller.checkForUpdates,
-          ),
-          const Divider(),
-
-          // 开发者测试
-          Text(
-            '开发者测试',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.notifications_active),
-            title: const Text('Toast 测试'),
-            subtitle: const Text('测试 Toast 显示、动画和自定义 Widget'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/toast_test');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.record_voice_over),
-            title: const Text('后台播报测试'),
-            subtitle: const Text('测试 TTS 后台定时播报功能'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(
+          const SizedBox(height: 24),
+          SettingsGroup(
+            children: [
+              _buildNavTile(
                 context,
-                AppRoutes.backgroundAnnouncementTest,
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.account_tree),
-            title: const Text('数据选择器测试'),
-            subtitle: const Text('测试插件数据选择器系统'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/data_selector_test');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.route),
-            title: const Text('路由查看器'),
-            subtitle: const Text('查看所有可用路由'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              RouteViewerDialog.show(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.swipe),
-            title: const Text('SwipeAction 测试'),
-            subtitle: const Text('测试滑动操作组件'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/swipe_action_test');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.widgets),
-            title: Text('screens_jsonDynamicWidgetTest'.tr),
-            subtitle: Text('screens_testAndPreviewDynamicUI'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/json_dynamic_test');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: Text('screens_notificationTest'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/notification_test');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.link),
-            title: Text('screens_intentTest'.tr),
-            subtitle: Text('screens_testDynamicIntentAndDeepLink'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/intent_test');
-            },
-          ),
-          if (UniversalPlatform.isIOS)
-            ListTile(
-              leading: const Icon(Icons.notifications_active),
-              title: const Text('Live Activities 测试'),
-              subtitle: const Text('测试实时活动通知'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.pushNamed(context, '/live_activities_test');
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.category),
-            title: const Text('通用组件示例'),
-            subtitle: const Text('查看 widgets 目录下的通用组件示例'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/widgets_gallery');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.description),
-            title: const Text('日志系统'),
-            subtitle: const Text('查看和管理应用日志'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(context, '/log');
-            },
-          ),
-          const Divider(),
-
-          // 关于
-          Text(
-            '关于',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: Text('app_aboutTitle'.tr),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              NavigationHelper.push(
+                icon: Icons.palette_outlined,
+                title: '界面设置',
+                screen: const InterfaceSettingsScreen(),
+                routeName: '/settings/interface',
+              ),
+              _buildNavTile(
                 context,
-                const AboutScreen(),
-                routeName: '/settings/about',
-              );
-            },
+                icon: Icons.storage_outlined,
+                title: '数据管理',
+                screen: const DataSettingsScreen(),
+                routeName: '/settings/data',
+              ),
+              _buildNavTile(
+                context,
+                icon: Icons.settings_outlined,
+                title: '应用设置',
+                screen: const AppSettingsScreen(),
+                routeName: '/settings/app',
+              ),
+            ],
           ),
         ],
       ),
+    );
+
+    return Scaffold(
+      body: SafeArea(bottom: false, child: list),
     );
   }
 }

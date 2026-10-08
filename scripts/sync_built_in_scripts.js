@@ -21,7 +21,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 // 与 script_loader.dart 的 builtInScriptIds 保持一致
-const DEFAULT_BUILT_IN_IDS = ['ai_image'];
+const DEFAULT_BUILT_IN_IDS = ['ai_image', 'line_sticker'];
 
 const ROOT = path.resolve(__dirname, '..');
 const ids = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_BUILT_IN_IDS;

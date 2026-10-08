@@ -52,6 +52,8 @@ import 'package:aboutme/plugins/tts/home_widgets/home_widgets.dart'
     as TtsHomeWidgets;
 import 'package:aboutme/plugins/webview/home_widgets/home_widgets.dart'
     as WebviewHomeWidgets;
+import 'package:aboutme/plugins/achievement/home_widgets/home_widgets.dart'
+    as AchievementHomeWidgets;
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
@@ -88,6 +90,7 @@ Future<void> initializeHomeWidgets() async {
     NfcHomeWidgets.register();
     TtsHomeWidgets.register();
     WebviewHomeWidgets.register();
+    AchievementHomeWidgets.register();
 
     // 初始化布局管理器
     final layoutManager = HomeLayoutManager();

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../tokens/colors.dart';
+import '../tokens/palettes.dart';
 import '../tokens/radii.dart';
 import '../tokens/shadows.dart';
 import '../tokens/spacing.dart';
@@ -8,6 +9,7 @@ import '../tokens/typography.dart';
 
 // 转发导出：组件只 import theme 即可拿到颜色令牌与派生扩展
 export '../tokens/colors.dart';
+export '../tokens/palettes.dart';
 
 /// 主题数据：语义化设计令牌的集合
 ///
@@ -38,52 +40,68 @@ class AppThemeData {
   });
 
   /// 浅色主题（对应设计稿）
-  factory AppThemeData.light() => const AppThemeData(
-        isDark: false,
-        primary: DsColors.primary,
-        onPrimary: DsColors.white,
-        secondary: DsColors.secondary,
-        onSecondary: DsColors.text,
-        success: DsColors.success,
-        onSuccess: DsColors.text,
-        warning: DsColors.warning,
-        onWarning: DsColors.text,
-        danger: DsColors.danger,
-        onDanger: DsColors.white,
-        background: DsColors.background,
-        backgroundAlt: DsColors.backgroundAlt,
-        surface: DsColors.white,
-        surfaceAlt: DsColors.backgroundAlt,
-        text: DsColors.text,
-        textSub: DsColors.textSub,
-        stroke: DsColors.white,
-        barrier: Color(0x594C1D95),
-        disabled: Color(0xFFE5DDF2),
-      );
+  factory AppThemeData.light() =>
+      AppThemeData.fromPalette(DsThemePalettes.pink, isDark: false);
 
   /// 深色主题
-  factory AppThemeData.dark() => const AppThemeData(
+  factory AppThemeData.dark() =>
+      AppThemeData.fromPalette(DsThemePalettes.pink, isDark: true);
+
+  /// 按色板构建主题：浅色下观感色（主色/背景/文字）均来自色板；
+  /// 深色下从主色派生同色相的深色阶梯（背景/面板/文字），避免非紫色板
+  /// 在深色模式下泛紫
+  factory AppThemeData.fromPalette(
+    DsThemePalette palette, {
+    bool isDark = false,
+  }) {
+    if (isDark) {
+      final night = _deepShade(palette.primary, 0.45, 0.15);
+      return AppThemeData(
         isDark: true,
-        primary: Color(0xFF9D7BFF),
+        primary: palette.primary.mixWhite(0.12),
         onPrimary: DsColors.white,
-        secondary: Color(0xFFF5A8D4),
-        onSecondary: DsColors.text,
+        secondary: palette.secondary,
+        onSecondary: DsColors.nightText,
         success: DsColors.success,
-        onSuccess: DsColors.text,
+        onSuccess: DsColors.nightText,
         warning: DsColors.warning,
-        onWarning: DsColors.text,
+        onWarning: DsColors.nightText,
         danger: Color(0xFFFF8A9B),
         onDanger: DsColors.night,
-        background: DsColors.night,
-        backgroundAlt: DsColors.nightAlt,
-        surface: Color(0xFF332154),
-        surfaceAlt: Color(0xFF46306E),
-        text: DsColors.nightText,
-        textSub: DsColors.nightTextSub,
+        background: night,
+        backgroundAlt: _deepShade(palette.primary, 0.48, 0.21),
+        surface: _deepShade(palette.primary, 0.44, 0.23),
+        surfaceAlt: _deepShade(palette.primary, 0.39, 0.31),
+        text: _deepShade(palette.primary, 0.55, 0.95),
+        textSub: _deepShade(palette.primary, 0.55, 0.78),
         stroke: Color(0x33FFFFFF),
-        barrier: Color(0x8C14082B),
-        disabled: Color(0xFF463A66),
+        barrier: night.withValues(alpha: 0.55),
+        disabled: _deepShade(palette.primary, 0.28, 0.31),
       );
+    }
+    return AppThemeData(
+      isDark: false,
+      primary: palette.primary,
+      onPrimary: DsColors.white,
+      secondary: palette.secondary,
+      onSecondary: palette.text,
+      success: DsColors.success,
+      onSuccess: DsColors.text,
+      warning: DsColors.warning,
+      onWarning: DsColors.text,
+      danger: DsColors.danger,
+      onDanger: DsColors.white,
+      background: palette.background,
+      backgroundAlt: palette.backgroundAlt,
+      surface: DsColors.white,
+      surfaceAlt: palette.backgroundAlt,
+      text: palette.text,
+      textSub: palette.textSub,
+      stroke: DsColors.white,
+      barrier: Color(0x594C1D95),
+      disabled: Color(0xFFE5DDF2),
+    );
+  }
 
   /// 是否深色模式
   final bool isDark;
@@ -180,6 +198,15 @@ class AppThemeData {
 
   /// 派生：主色文字（浅色模式直接用主色，深色模式提亮）
   Color get primaryText => isDark ? primary : primary.mixBlack(0.08);
+
+  /// 深色表面色派生：保持 [base] 色相，压到目标饱和度/明度，
+  /// 得到同色系的深色阶梯（数值对标原紫色 night 系硬编码值）
+  static Color _deepShade(Color base, double saturation, double lightness) {
+    return HSLColor.fromColor(base)
+        .withSaturation(saturation)
+        .withLightness(lightness)
+        .toColor();
+  }
 }
 
 /// 间距令牌透传（组件通过 `theme.spacing.xs` 读取）

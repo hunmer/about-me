@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:full_swipe_back_gesture/full_swipe_back_gesture.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/screens/route.dart';
 
 import 'open_container_route.dart';
 export 'open_container_route.dart';
@@ -224,6 +225,54 @@ class NavigationHelper {
   /// [context] BuildContext
   static void popToRoot(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  // ==================== 返回路由决策 ====================
+
+  /// 返回目标路由表：当前路由名 → 点返回时应去到的路由名
+  ///
+  /// 命中表项或前缀规则时不再按 Navigator 栈逐层返回，而是直接清栈
+  /// 跳到目标路由；未命中则走默认 maybePop 返回上一页
+  static const Map<String, String> _backRouteMap = {
+    // 需要固定返回目标的页面在此登记，例如：
+    // '/some_screen': AppRoutes.jellyHome,
+  };
+
+  /// 插件主界面路由前缀（PluginManager.openPlugin 推入的 `/plugin/<id>`）：
+  /// 固定返回首页，避免恢复栈中上一次打开的插件
+  static const String _pluginRoutePrefix = '/plugin/';
+
+  /// 解析返回目标；返回 null 表示走默认返回上一页
+  static String? resolveBackDestination(String? currentRouteName) {
+    if (currentRouteName == null) return null;
+    final mapped = _backRouteMap[currentRouteName];
+    if (mapped != null) return mapped;
+    if (currentRouteName.startsWith(_pluginRoutePrefix)) {
+      return AppRoutes.jellyHome;
+    }
+    return null;
+  }
+
+  /// 统一返回入口：根据当前路由名查表决定去向
+  static void smartBack(BuildContext context) {
+    final currentName = ModalRoute.of(context)?.settings.name;
+    final destination = resolveBackDestination(currentName);
+    debugPrint('[smartBack] 当前路由: $currentName → ${destination ?? '默认返回上一页'}');
+    if (destination == null) {
+      Navigator.maybePop(context);
+      return;
+    }
+    if (destination == AppRoutes.jellyHome) {
+      // 保留已有首页实例。启动恢复场景中首页可能不是根路由，不能继续
+      // pop 到根，否则会销毁首页上的 Live2D 组件。
+      Navigator.of(
+        context,
+      ).popUntil((route) => route.settings.name == AppRoutes.jellyHome);
+    } else {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(destination, (route) => false);
+    }
   }
 
   // ==================== 对话框和底部弹窗 ====================

@@ -7,32 +7,31 @@ class AudioMessageBubble extends StatelessWidget {
   final Message message;
   final bool isCurrentUser;
 
+  /// 跟随气泡文字色，保证在实色主色/白色/选中高亮气泡上都有对比
+  final Color textColor;
+
   const AudioMessageBubble({
     super.key,
     required this.message,
     required this.isCurrentUser,
+    required this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
     // 获取音频文件路径
     final audioPath = message.content;
-    if (audioPath == null) {
+    if (audioPath.isEmpty) {
       return Text('chat_audioMessageBubbleErrorText'.tr);
     }
 
     // 获取音频时长
     final duration = message.audioDuration;
 
-    // 设置颜色
-    final primaryColor =
-        isCurrentUser ? Theme.of(context).primaryColor : Colors.grey.shade700;
-    final backgroundColor =
-        isCurrentUser
-            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-            : Colors.grey.shade200;
-    final progressColor =
-        isCurrentUser ? Theme.of(context).primaryColor : Colors.grey.shade500;
+    // 播放器配色跟随气泡文字色
+    final primaryColor = textColor;
+    final backgroundColor = textColor.withValues(alpha: 0.15);
+    final progressColor = textColor;
 
     return Container(
       constraints: BoxConstraints(

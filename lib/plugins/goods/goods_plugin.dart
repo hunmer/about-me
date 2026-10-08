@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart' as aboutme_event_args;
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
@@ -309,8 +311,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     }
   }
 
-  /// 创建示例仓库数据
+  /// 创建示例仓库数据（仅开发环境，生产环境保持空数据）
   Future<void> _createSampleWarehouses() async {
+    if (!kDebugMode) return;
     try {
       // 获取示例仓库数据
       final sampleWarehouses = GoodsSampleData.getSampleWarehouses();
@@ -343,6 +346,11 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
         warehouse = updatedWarehouse; // 更新引用以保存正确的数据
       } else {
         _warehouses.add(warehouse);
+        // 成就系统计数（A46 分仓管理，仅新增仓库时）
+        EventManager.instance.broadcast(
+          'goods_warehouse_added',
+          EventArgs('goods_warehouse_added'),
+        );
       }
 
       // 保存仓库信息
@@ -421,6 +429,15 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     // 在当前层级查找
     for (var i = 0; i < items.length; i++) {
       if (items[i].id == updatedItem.id) {
+        // 成就系统计数（A47 物尽其用）：使用记录净增时广播增量
+        final usageDelta =
+            updatedItem.usageRecords.length - items[i].usageRecords.length;
+        if (usageDelta > 0) {
+          EventManager.instance.broadcast(
+            'goods_usage_recorded',
+            aboutme_event_args.Value<int>(usageDelta, 'goods_usage_recorded'),
+          );
+        }
         items[i] = updatedItem;
         return true;
       }

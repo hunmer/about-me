@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'dart:io';
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
@@ -19,7 +20,18 @@ import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70), this.motionRequest});
+  const JellyLive2D({
+    super.key,
+    this.onTap,
+    this.message,
+    this.initialModel,
+    this.reaction,
+    this.streaming = false,
+    this.typingInterval = const Duration(milliseconds: 70),
+    this.motionRequest,
+    this.fill = false,
+    this.fitContainer = false,
+  });
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
@@ -29,6 +41,15 @@ class JellyLive2D extends StatefulWidget {
   final int? reaction;
   final bool streaming;
   final Duration typingInterval;
+
+  /// 全屏模式：显示尺寸按父级可用高度自适应（约 70% 高度，
+  /// 夹在 [_minSize, _maxSize] 调节范围内），跟随窗口大小变化；
+  /// 关闭时使用保存的固定尺寸
+  final bool fill;
+
+  /// When enabled, the Live2D viewport follows the exact size of its parent
+  /// container. The parent should provide finite constraints.
+  final bool fitContainer;
 
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
@@ -45,6 +66,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   static const double _maxSize = 560;
   static const double _sizeStep = 40;
   static const double _modelViewportAspectRatio = 0.5;
+  static const double _fillBottomReserve = 92;
   static const String _sizePrefKey = 'jelly_live2d.size';
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
@@ -52,7 +74,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
   final GlobalKey _bubbleAnchorKey = GlobalKey();
-  late Live2DModelDefinition _selectedModel = widget.initialModel ?? _models.first;
+  late Live2DModelDefinition _selectedModel =
+      widget.initialModel ?? _models.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
   Live2DMotionDefinition? _pendingMotion;
@@ -63,6 +86,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// Live2D 实际显示视口的边框开关，仅用于界面调试，不持久化
   final ValueNotifier<bool> _borderVisible = ValueNotifier<bool>(false);
+
+  /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
+  /// 气泡宽度等布局按它计算
+  double _displaySize = _defaultSize;
+  String? _lastLayoutLog;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
@@ -80,23 +108,23 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）。
   /// 翻译需运行时解析，用 getter 每次取当前语言
   static List<String> get _headMessages => [
-        'screens_jellyLive2dTapHead1'.tr,
-        'screens_jellyLive2dTapHead2'.tr,
-        'screens_jellyLive2dTapHead3'.tr,
-        'screens_jellyLive2dTapHead4'.tr,
-      ];
+    'screens_jellyLive2dTapHead1'.tr,
+    'screens_jellyLive2dTapHead2'.tr,
+    'screens_jellyLive2dTapHead3'.tr,
+    'screens_jellyLive2dTapHead4'.tr,
+  ];
   static List<String> get _bodyMessages => [
-        'screens_jellyLive2dPokeBody1'.tr,
-        'screens_jellyLive2dPokeBody2'.tr,
-        'screens_jellyLive2dPokeBody3'.tr,
-        'screens_jellyLive2dPokeBody4'.tr,
-      ];
+    'screens_jellyLive2dPokeBody1'.tr,
+    'screens_jellyLive2dPokeBody2'.tr,
+    'screens_jellyLive2dPokeBody3'.tr,
+    'screens_jellyLive2dPokeBody4'.tr,
+  ];
   static List<String> get _missMessages => [
-        'screens_jellyLive2dMiss1'.tr,
-        'screens_jellyLive2dMiss2'.tr,
-        'screens_jellyLive2dMiss3'.tr,
-        'screens_jellyLive2dMiss4'.tr,
-      ];
+    'screens_jellyLive2dMiss1'.tr,
+    'screens_jellyLive2dMiss2'.tr,
+    'screens_jellyLive2dMiss3'.tr,
+    'screens_jellyLive2dMiss4'.tr,
+  ];
   static final Random _random = Random();
 
   @override
@@ -121,7 +149,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   Future<void> _playReaction() async {
     if (_isSwitchingModel || !_controller.value.isLoaded) return;
-    final candidates = _selectedModel.motions.where((motion) => motion.group.toLowerCase() != 'idle').toList();
+    final candidates = _selectedModel.motions
+        .where((motion) => motion.group.toLowerCase() != 'idle')
+        .toList();
     if (candidates.isEmpty) return;
     final motion = candidates[_random.nextInt(candidates.length)];
     try {
@@ -252,10 +282,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 按命中区域挑一条随机台词，避免和上一条重复
   String _pickBubbleMessage(String? hitAreaId, String? hitAreaName) {
-    final area =
-        (hitAreaName != null && hitAreaName.isNotEmpty)
-            ? hitAreaName
-            : hitAreaId?.replaceFirst('HitArea', '') ?? '';
+    final area = (hitAreaName != null && hitAreaName.isNotEmpty)
+        ? hitAreaName
+        : hitAreaId?.replaceFirst('HitArea', '') ?? '';
     final lower = area.toLowerCase();
     final List<String> pool;
     if (lower.contains('head') || area.contains('头')) {
@@ -356,7 +385,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
       0.0,
       viewport.width - padding.horizontal - margin * 2,
     );
-    final bubbleWidth = min(_size.value * 0.8, availableWidth);
+    final bubbleWidth = min(_displaySize * 0.8, availableWidth);
     if (bubbleWidth <= 0) return const SizedBox.shrink();
 
     final anchorTopCenter = overlayBox.globalToLocal(
@@ -372,16 +401,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
       maximumLeft,
     );
     final safeTop = padding.top + margin;
-    final safeBottom = max(
-      safeTop,
-      viewport.height - bottomInset - margin,
-    );
+    final safeBottom = max(safeTop, viewport.height - bottomInset - margin);
     if (safeBottom <= safeTop) return const SizedBox.shrink();
     final minimumBottom = min(safeBottom, safeTop + minimumBubbleHeight);
-    final bubbleBottom = max(anchorTopCenter.dy - gap, minimumBottom).clamp(
-      safeTop,
-      safeBottom,
-    );
+    final bubbleBottom = max(
+      anchorTopCenter.dy - gap,
+      minimumBottom,
+    ).clamp(safeTop, safeBottom);
 
     return Stack(
       children: [
@@ -420,27 +446,26 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// Sound 的动作；同时优先匹配 Cubism 惯例的 Tap<区域> 分组。
   Future<void> _playTapMotion({String? hitAreaId, String? hitAreaName}) async {
     // Mao 的 HitArea Name 为空，用 Id（HitAreaHead → Head）补齐
-    final area =
-        (hitAreaName != null && hitAreaName.isNotEmpty)
-            ? hitAreaName
-            : hitAreaId?.replaceFirst('HitArea', '') ?? '';
+    final area = (hitAreaName != null && hitAreaName.isNotEmpty)
+        ? hitAreaName
+        : hitAreaId?.replaceFirst('HitArea', '') ?? '';
 
     final areaGroup = area.isEmpty ? null : 'tap${area.toLowerCase()}';
-    final exact =
-        areaGroup == null
-            ? const <Live2DMotionDefinition>[]
-            : _selectedModel.motions
-                .where((motion) => motion.group.toLowerCase() == areaGroup)
-                .toList();
-    final genericTap =
-        _selectedModel.motions
-            .where((motion) => motion.group.toLowerCase() == 'tap')
-            .toList();
-    final voiced =
-        _selectedModel.motions.where((motion) => motion.hasSound).toList();
+    final exact = areaGroup == null
+        ? const <Live2DMotionDefinition>[]
+        : _selectedModel.motions
+              .where((motion) => motion.group.toLowerCase() == areaGroup)
+              .toList();
+    final genericTap = _selectedModel.motions
+        .where((motion) => motion.group.toLowerCase() == 'tap')
+        .toList();
+    final voiced = _selectedModel.motions
+        .where((motion) => motion.hasSound)
+        .toList();
 
-    List<Live2DMotionDefinition> candidates =
-        exact.where((motion) => motion.hasSound).toList();
+    List<Live2DMotionDefinition> candidates = exact
+        .where((motion) => motion.hasSound)
+        .toList();
     if (candidates.isEmpty) {
       candidates = genericTap.where((motion) => motion.hasSound).toList();
     }
@@ -448,14 +473,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (candidates.isEmpty) candidates = exact;
     if (candidates.isEmpty) candidates = genericTap;
     if (candidates.isEmpty) {
-      candidates =
-          _selectedModel.motions.where((motion) => motion.group == '').toList();
+      candidates = _selectedModel.motions
+          .where((motion) => motion.group == '')
+          .toList();
     }
     if (candidates.isEmpty) {
-      candidates =
-          _selectedModel.motions
-              .where((motion) => motion.group.toLowerCase() != 'idle')
-              .toList();
+      candidates = _selectedModel.motions
+          .where((motion) => motion.group.toLowerCase() != 'idle')
+          .toList();
     }
     if (candidates.isEmpty) return;
 
@@ -555,7 +580,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final boundary =
         _modelCaptureKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
-    if (boundary == null) throw StateError('screens_jellyLive2dCaptureUnavailable'.tr);
+    if (boundary == null)
+      throw StateError('screens_jellyLive2dCaptureUnavailable'.tr);
 
     final image = await boundary.toImage(pixelRatio: 2);
     try {
@@ -565,7 +591,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
         throw StateError('screens_jellyLive2dCaptureUnsupported'.tr);
       }
       final png = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (png == null) throw StateError('screens_jellyLive2dCaptureEncodeFailed'.tr);
+      if (png == null)
+        throw StateError('screens_jellyLive2dCaptureEncodeFailed'.tr);
       return (
         bytes: png.buffer.asUint8List(),
         size: Size(image.width.toDouble(), image.height.toDouble()),
@@ -603,13 +630,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
       if (!mounted) return;
       await showDSDialog<void>(
         context: context,
-        builder:
-            (dialogContext) => DSDialog(
-              title: 'screens_jellyLive2dCropErrorTitle'.tr,
-              message: error.toString().replaceFirst('Bad state: ', ''),
-              confirmText: 'screens_jellyLive2dGotIt'.tr,
-              onConfirm: () => Navigator.of(dialogContext).pop(),
-            ),
+        builder: (dialogContext) => DSDialog(
+          title: 'screens_jellyLive2dCropErrorTitle'.tr,
+          message: error.toString().replaceFirst('Bad state: ', ''),
+          confirmText: 'screens_jellyLive2dGotIt'.tr,
+          onConfirm: () => Navigator.of(dialogContext).pop(),
+        ),
       );
     }
   }
@@ -710,58 +736,55 @@ class _JellyLive2DState extends State<JellyLive2D> {
               SizedBox(height: theme.spacing.sm),
               ValueListenableBuilder<double>(
                 valueListenable: _size,
-                builder:
-                    (context, size, _) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                builder: (context, size, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dShrink'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed:
-                                    size > _minSize
-                                        ? () => _changeSize(-_sizeStep)
-                                        : null,
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.sm),
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dEnlarge'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed:
-                                    size < _maxSize
-                                        ? () => _changeSize(_sizeStep)
-                                        : null,
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.sm),
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dReset'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed:
-                                    size == _defaultSize ? null : _resetSize,
-                              ),
-                            ),
-                          ],
+                        Expanded(
+                          child: DSButton(
+                            label: 'screens_jellyLive2dShrink'.tr,
+                            size: DSButtonSize.sm,
+                            onPressed: size > _minSize
+                                ? () => _changeSize(-_sizeStep)
+                                : null,
+                          ),
                         ),
-                        SizedBox(height: theme.spacing.sm),
-                        Text(
-                          'screens_jellyLive2dCurrentSize'.trParams({
-                            'percent':
-                                (size / _defaultSize * 100).round().toString(),
-                            'size': size.round().toString(),
-                          }),
-                          textAlign: TextAlign.center,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
+                        SizedBox(width: theme.spacing.sm),
+                        Expanded(
+                          child: DSButton(
+                            label: 'screens_jellyLive2dEnlarge'.tr,
+                            size: DSButtonSize.sm,
+                            onPressed: size < _maxSize
+                                ? () => _changeSize(_sizeStep)
+                                : null,
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.sm),
+                        Expanded(
+                          child: DSButton(
+                            label: 'screens_jellyLive2dReset'.tr,
+                            size: DSButtonSize.sm,
+                            onPressed: size == _defaultSize ? null : _resetSize,
                           ),
                         ),
                       ],
                     ),
+                    SizedBox(height: theme.spacing.sm),
+                    Text(
+                      'screens_jellyLive2dCurrentSize'.trParams({
+                        'percent': (size / _defaultSize * 100)
+                            .round()
+                            .toString(),
+                        'size': size.round().toString(),
+                      }),
+                      textAlign: TextAlign.center,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
@@ -771,10 +794,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
               SizedBox(height: theme.spacing.sm),
               DSListItem(
                 title: 'screens_jellyLive2dSetCropRegion'.tr,
-                subtitle:
-                    _cropRegion.isFull
-                        ? 'screens_jellyLive2dCropFullModel'.tr
-                        : 'screens_jellyLive2dCropApplied'.tr,
+                subtitle: _cropRegion.isFull
+                    ? 'screens_jellyLive2dCropFullModel'.tr
+                    : 'screens_jellyLive2dCropApplied'.tr,
                 leading: DsIcon(
                   DsIconKind.image,
                   size: 18,
@@ -785,29 +807,27 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   size: 18,
                   color: theme.textSub,
                 ),
-                onTap:
-                    _controller.value.isLoaded && !_isSwitchingModel
-                        ? () => _openCropEditor(sheetContext)
-                        : null,
+                onTap: _controller.value.isLoaded && !_isSwitchingModel
+                    ? () => _openCropEditor(sheetContext)
+                    : null,
               ),
               SizedBox(height: theme.spacing.sm),
               ValueListenableBuilder<bool>(
                 valueListenable: _borderVisible,
-                    builder:
-                        (context, visible, _) => DSListItem(
-                      title: 'screens_jellyLive2dShowBorder'.tr,
-                      subtitle: 'screens_jellyLive2dShowBorderDesc'.tr,
-                      leading: DsIcon(
-                        DsIconKind.image,
-                        size: 18,
-                        color: theme.primary,
-                      ),
-                      trailing: DSSwitch(
-                        value: visible,
-                        semanticLabel: 'screens_jellyLive2dShowBorderSemantic'.tr,
-                        onChanged: (value) => _borderVisible.value = value,
-                      ),
-                    ),
+                builder: (context, visible, _) => DSListItem(
+                  title: 'screens_jellyLive2dShowBorder'.tr,
+                  subtitle: 'screens_jellyLive2dShowBorderDesc'.tr,
+                  leading: DsIcon(
+                    DsIconKind.image,
+                    size: 18,
+                    color: theme.primary,
+                  ),
+                  trailing: DSSwitch(
+                    value: visible,
+                    semanticLabel: 'screens_jellyLive2dShowBorderSemantic'.tr,
+                    onChanged: (value) => _borderVisible.value = value,
+                  ),
+                ),
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
@@ -817,15 +837,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
               SizedBox(height: theme.spacing.sm),
               ValueListenableBuilder<bool>(
                 valueListenable: _hitAreasVisible,
-                builder:
-                    (context, visible, _) => DSChip(
-                      label:
-                          visible
-                              ? 'screens_jellyLive2dEnabled'.tr
-                              : 'screens_jellyLive2dDisabled'.tr,
-                      selected: visible,
-                      onSelected: (_) => _toggleHitAreas(!visible),
-                    ),
+                builder: (context, visible, _) => DSChip(
+                  label: visible
+                      ? 'screens_jellyLive2dEnabled'.tr
+                      : 'screens_jellyLive2dDisabled'.tr,
+                  selected: visible,
+                  onSelected: (_) => _toggleHitAreas(!visible),
+                ),
               ),
               SizedBox(height: theme.spacing.xs),
               Text(
@@ -845,14 +863,46 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
     return ValueListenableBuilder<double>(
       valueListenable: _size,
-      builder:
-          (context, size, _) => AnimatedContainer(
+      builder: (context, size, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          final containerWidth = constraints.maxWidth;
+          final containerHeight = constraints.maxHeight;
+          final fitHeight = widget.fitContainer && containerHeight.isFinite
+              ? containerHeight
+              : null;
+          final fitWidth = widget.fitContainer && containerWidth.isFinite
+              ? containerWidth
+              : null;
+          final displaySize = size;
+          // The native model viewport is portrait (0.5 aspect). Scale it to
+          // fit the available height while keeping its full top and bottom.
+          // The native viewport is 180x360. Fit the complete viewport into
+          // the available square while keeping the model's bottom at the
+          // content bottom; do not cap the scale independently of layout.
+          final modelScale = 1.0;
+          final media = MediaQuery.sizeOf(context);
+          final layoutLog =
+              'window=${media.width}x${media.height} '
+              'constraints=${constraints.maxWidth}x${constraints.maxHeight} '
+              'safeBottom=${MediaQuery.paddingOf(context).bottom} '
+              'reserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
+              'display=$displaySize '
+              'viewport=${_defaultSize * _modelViewportAspectRatio}x$_defaultSize '
+              'scale=$modelScale offsetY=${displaySize - _defaultSize * modelScale} '
+              'cropZoom=${_cropRegion.zoom} crop=${_cropRegion.encode()}';
+          if (_lastLayoutLog != layoutLog) {
+            _lastLayoutLog = layoutLog;
+            debugPrint('[JellyLive2DLayout] $layoutLog');
+            unawaited(_writeLayoutLog(layoutLog));
+          }
+          _displaySize = displaySize;
+          return AnimatedContainer(
             key: _bubbleAnchorKey,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             onEnd: _updateBubbleOverlayPosition,
-            width: size,
-            height: size,
+            width: displaySize,
+            height: displaySize,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onLongPress: _showControls,
@@ -868,71 +918,75 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: size,
+                    height: displaySize,
                     child: AnimatedOpacity(
-                    opacity:
-                        _isSwitchingModel || _controller.value.lastError != null
-                            ? 0
-                            : 1,
-                    duration: const Duration(milliseconds: 160),
-                    child: OverflowBox(
-                      alignment: Alignment.bottomCenter,
-                      maxWidth: double.infinity,
-                      maxHeight: double.infinity,
-                      child: Transform.translate(
-                        // 仅垂直抵消尺寸差以固定脚底；水平方向由
-                        // OverflowBox + bottomCenter 保持居中。
-                        offset: Offset(0, size - _defaultSize),
-                        child: Transform.scale(
-                          scale: size / _defaultSize,
-                          alignment: Alignment.bottomCenter,
-                          // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
-                          // 视口同时为全身模型保留足够的纵向空间。
-                          child: SizedBox(
-                            width: _defaultSize * _modelViewportAspectRatio,
-                            height: _defaultSize,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ClipRect(
-                                  child: Transform.translate(
-                                    offset: _cropRegion.sourceTranslation(
-                                      const Size(
-                                        _defaultSize * _modelViewportAspectRatio,
-                                        _defaultSize,
+                      opacity:
+                          _isSwitchingModel ||
+                              _controller.value.lastError != null
+                          ? 0
+                          : 1,
+                      duration: const Duration(milliseconds: 160),
+                      child: OverflowBox(
+                        alignment: Alignment.bottomCenter,
+                        maxWidth: double.infinity,
+                        maxHeight: double.infinity,
+                        child: Transform.translate(
+                          // 仅垂直抵消尺寸差以固定脚底；水平方向由
+                          // OverflowBox + bottomCenter 保持居中。
+                          offset: Offset.zero,
+                          child: Transform.scale(
+                            scale: modelScale,
+                            alignment: Alignment.bottomCenter,
+                            // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
+                            // 视口同时为全身模型保留足够的纵向空间。
+                            child: SizedBox(
+                              width: _defaultSize * _modelViewportAspectRatio,
+                              height: _defaultSize,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  ClipRect(
+                                    child: Transform.translate(
+                                      offset: _cropRegion.sourceTranslation(
+                                        const Size(
+                                          _defaultSize *
+                                              _modelViewportAspectRatio,
+                                          _defaultSize,
+                                        ),
                                       ),
-                                    ),
-                                    child: Transform.scale(
-                                      scale: _cropRegion.zoom,
-                                      alignment: Alignment.topLeft,
-                                      child: RepaintBoundary(
-                                        key: _modelCaptureKey,
-                                        child: Live2DView(controller: _controller),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                ValueListenableBuilder<bool>(
-                                  valueListenable: _borderVisible,
-                                  builder: (context, visible, _) => visible
-                                      ? IgnorePointer(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: theme.danger,
-                                              width: 1.5,
-                                            ),
+                                      child: Transform.scale(
+                                        scale: _cropRegion.zoom,
+                                        alignment: Alignment.topLeft,
+                                        child: RepaintBoundary(
+                                          key: _modelCaptureKey,
+                                          child: Live2DView(
+                                            controller: _controller,
                                           ),
                                         ),
-                                      )
-                                      : const SizedBox.shrink(),
+                                      ),
+                                    ),
                                   ),
-                              ],
+                                  ValueListenableBuilder<bool>(
+                                    valueListenable: _borderVisible,
+                                    builder: (context, visible, _) => visible
+                                        ? IgnorePointer(
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: theme.danger,
+                                                  width: 1.5,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                     ),
                   ),
                   ValueListenableBuilder<Live2DViewState>(
@@ -952,15 +1006,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         height: size,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap:
-                              error == null
-                                  ? null
-                                  : () => _loadModel(_selectedModel),
+                          onTap: error == null
+                              ? null
+                              : () => _loadModel(_selectedModel),
                           child: MouseRegion(
-                            cursor:
-                                error == null
-                                    ? MouseCursor.defer
-                                    : SystemMouseCursors.click,
+                            cursor: error == null
+                                ? MouseCursor.defer
+                                : SystemMouseCursors.click,
                             child: ColoredBox(
                               color: theme.background.withValues(alpha: 0.96),
                               child: Center(
@@ -1081,8 +1133,25 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 ],
               ),
             ),
-          ),
+          );
+        },
+      ),
     );
+  }
+
+  Future<void> _writeLayoutLog(String line) async {
+    try {
+      final file = File(
+        '${Directory.systemTemp.path}/aboutme_live2d_layout.log',
+      );
+      await file.writeAsString(
+        '${DateTime.now().toIso8601String()} $line\n',
+        mode: FileMode.append,
+        flush: true,
+      );
+    } catch (_) {
+      // Layout logging must never affect rendering.
+    }
   }
 }
 
@@ -1160,7 +1229,8 @@ const List<Live2DModelDefinition> _models = [
   ),
 ];
 
-List<Live2DModelDefinition> get availableJellyLive2DModels => List.unmodifiable(_models);
+List<Live2DModelDefinition> get availableJellyLive2DModels =>
+    List.unmodifiable(_models);
 
 /// 把 Live2D 存档转换为视图层模型定义（小屋页签与设置页共用）：
 /// 优先匹配内置模型（带动作列表），否则按存档路径构造在线模型定义

@@ -5,6 +5,13 @@ import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 
 /// 所有可用事件的默认列表
 const List<EventOption> kDefaultAvailableEvents = [
+  // 成就等级奖励（按等级位次，全部成就共用）
+  EventOption(eventName: 'achievement_Lv1', category: '成就', description: '成就升到 Lv1'),
+  EventOption(eventName: 'achievement_Lv2', category: '成就', description: '成就升到 Lv2'),
+  EventOption(eventName: 'achievement_Lv3', category: '成就', description: '成就升到 Lv3'),
+  EventOption(eventName: 'achievement_Lv4', category: '成就', description: '成就升到 Lv4'),
+  EventOption(eventName: 'achievement_Lv5', category: '成就', description: '成就升到 Lv5'),
+
   // Todo 插件事件
   EventOption(eventName: 'task_added', category: 'Todo', description: '任务已创建'),
   EventOption(

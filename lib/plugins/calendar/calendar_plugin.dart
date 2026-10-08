@@ -46,9 +46,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'calendar/',
-  ];
+  static const List<String> _refreshableFiles = ['calendar/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -247,15 +245,14 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
 
       // 获取本月所有事件
       final allEvents = controller.getAllEvents();
-      final monthEvents =
-          allEvents.where((event) {
-            return event.startTime.isAfter(
-                  firstDayOfMonth.subtract(const Duration(seconds: 1)),
-                ) &&
-                event.startTime.isBefore(
-                  lastDayOfMonth.add(const Duration(days: 1)),
-                );
-          }).toList();
+      final monthEvents = allEvents.where((event) {
+        return event.startTime.isAfter(
+              firstDayOfMonth.subtract(const Duration(seconds: 1)),
+            ) &&
+            event.startTime.isBefore(
+              lastDayOfMonth.add(const Duration(days: 1)),
+            );
+      }).toList();
 
       // 构建每日事件数据
       final Map<String, List<Map<String, dynamic>>> dayEventsMap = {};
@@ -336,22 +333,21 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
 
     showDialog(
       context: context,
-      builder:
-          (context) => EventDetailCard(
-            event: event,
-            onEdit: () {
-              Navigator.pop(context);
-              showEventEditPage(context, event);
-            },
-            onComplete: () {
-              Navigator.pop(context);
-              controller.completeEvent(event);
-            },
-            onDelete: () {
-              Navigator.pop(context);
-              controller.deleteEvent(event);
-            },
-          ),
+      builder: (context) => EventDetailCard(
+        event: event,
+        onEdit: () {
+          Navigator.pop(context);
+          showEventEditPage(context, event);
+        },
+        onComplete: () {
+          Navigator.pop(context);
+          controller.completeEvent(event);
+        },
+        onDelete: () {
+          Navigator.pop(context);
+          controller.deleteEvent(event);
+        },
+      ),
     );
   }
 
@@ -694,10 +690,9 @@ class _CalendarMainViewState extends State<CalendarMainView> {
         break;
       case syncfusion.CalendarView.timelineWeek:
       case syncfusion.CalendarView.timelineWorkWeek:
-        viewMode =
-            view == syncfusion.CalendarView.timelineWeek
-                ? '时间轴周视图'
-                : '时间轴工作周视图';
+        viewMode = view == syncfusion.CalendarView.timelineWeek
+            ? '时间轴周视图'
+            : '时间轴工作周视图';
         final weekStart = displayDate.subtract(
           Duration(days: displayDate.weekday - 1),
         );
@@ -874,14 +869,10 @@ class _CalendarMainViewState extends State<CalendarMainView> {
                         plugin.getUserAppointments(),
                       ),
                       initialDisplayDate: plugin.controller.focusedMonth,
-                      onViewChanged:
-                          (details) => plugin.onViewChanged(
-                            details,
-                            _updateRouteContext,
-                          ),
-                      onTap:
-                          (details) =>
-                              plugin.handleCalendarTap(context, details),
+                      onViewChanged: (details) =>
+                          plugin.onViewChanged(details, _updateRouteContext),
+                      onTap: (details) =>
+                          plugin.handleCalendarTap(context, details),
                       monthViewSettings: const syncfusion.MonthViewSettings(
                         showAgenda: true,
                         agendaViewHeight: 200,
@@ -909,19 +900,21 @@ class _CalendarMainViewState extends State<CalendarMainView> {
               Positioned(
                 right: 16,
                 bottom: 16,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    NavigationHelper.openContainer<bool>(
-                      context,
-                      (context) => EventEditPage(
-                        initialDate: plugin.controller.selectedDate,
-                        onSave: (event) {
-                          plugin.controller.addEvent(event);
-                        },
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.add),
+                child: DSThemeBridge(
+                  // DSFab 内部取 AppTheme，需包桥
+                  child: DSFab(
+                    onPressed: () {
+                      NavigationHelper.openContainer<bool>(
+                        context,
+                        (context) => EventEditPage(
+                          initialDate: plugin.controller.selectedDate,
+                          onSave: (event) {
+                            plugin.controller.addEvent(event);
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
 import 'package:aboutme/plugins/openai/sample_data.dart';
@@ -70,6 +71,11 @@ class PromptPresetService extends ChangeNotifier {
     _presets.add(preset);
     await _savePresets();
     notifyListeners();
+    // 成就系统计数（A09 预设玩家）
+    EventManager.instance.broadcast(
+      'prompt_preset_added',
+      EventArgs('prompt_preset_added'),
+    );
   }
 
   /// 更新预设

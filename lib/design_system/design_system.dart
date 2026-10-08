@@ -36,6 +36,7 @@ export 'components/icons.dart';
 export 'components/input.dart';
 export 'components/jelly_box.dart';
 export 'components/list_item.dart';
+export 'components/list_item_card.dart';
 export 'components/loading.dart';
 export 'components/navigation_bar.dart';
 export 'components/page_indicator.dart';

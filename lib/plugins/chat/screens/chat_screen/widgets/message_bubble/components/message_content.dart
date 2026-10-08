@@ -168,6 +168,7 @@ class MessageContent extends StatelessWidget {
         return AudioMessageBubble(
           message: message,
           isCurrentUser: message.type == MessageType.sent,
+          textColor: textColor,
         );
       } else if (type == 'video') {
         return Pressable(
@@ -374,6 +375,9 @@ class MessageContent extends StatelessWidget {
 
         // 检测是否包含 Markdown 语法
         if (_containsMarkdown(plainText)) {
+          // 深底浅字气泡（实色主色/深色自定义色）上链接用文字色保证对比，浅底气泡保持主色
+          final linkColor =
+              textColor.computeLuminance() > 0.5 ? textColor : theme.primary;
           // 包含 Markdown，使用 MarkdownBody 渲染
           return MarkdownBody(
             data: plainText,
@@ -421,7 +425,7 @@ class MessageContent extends StatelessWidget {
               ),
               listBullet: TextStyle(color: textColor, fontSize: 15),
               a: TextStyle(
-                color: theme.primary,
+                color: linkColor,
                 decoration: TextDecoration.underline,
               ),
               strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),

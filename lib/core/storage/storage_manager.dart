@@ -23,6 +23,9 @@ class StorageManager {
   final bool _storageWasInjected;
   final StorageBackendConfigStore _configStore;
 
+  /// 远端存储初始化失败回退本地的原因；null 表示未发生回退
+  String? remoteFallbackReason;
+
   static StorageInterface _defaultStorage() =>
       kIsWeb ? web_storage.WebStorage.instance : MobileStorage.instance;
 
@@ -103,14 +106,20 @@ class StorageManager {
   /// 初始化存储管理器
   Future<void> initialize() async {
     if (_storageWasInjected) return;
+    remoteFallbackReason = null;
     final config = await _configStore.load();
     if (config.isHttpEnabled) {
       try {
-        _storage = HttpStorage.fromConfig(config);
+        final httpStorage = HttpStorage.fromConfig(config);
+        // 构造不会联网，必须实际探测一次，服务器离线时才能在此回退，
+        // 否则首个读取操作会抛 offline 导致核心初始化中断
+        await httpStorage.testConnection();
+        _storage = httpStorage;
       } catch (e) {
-        // 已保存的远端配置失效（如凭据丢失）时回退本地存储，
-        // 避免启动即崩溃；用户可在设置中重新保存远端配置
-        debugPrint('[StorageManager] 远端存储配置无效，回退本地存储: $e');
+        // 远端存储不可用（服务器未启动、凭据失效等）时回退本地存储，
+        // 避免启动即崩溃；下次启动会重新尝试连接远端
+        remoteFallbackReason = e.toString();
+        debugPrint('[StorageManager] 远端存储不可用，回退本地存储: $e');
       }
     }
     _cache.clear();

@@ -161,7 +161,6 @@ class _ChatBottomBarState extends State<ChatBottomBar>
                     ],
                   ),
               fab: _buildFab(),
-              fabLocation: Alignment.topRight,
               items: [
                 DSNavItem(icon: DsIconKind.chat, label: 'chat_channelsTab'.tr),
                 DSNavItem(icon: DsIconKind.clock, label: 'chat_timelineTab'.tr),

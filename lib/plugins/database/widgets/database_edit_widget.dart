@@ -6,6 +6,8 @@ import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
@@ -42,18 +44,19 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
     super.initState();
     _editedDatabase = widget.database;
     _tabController = TabController(length: 2, vsync: this);
-    _fields =
-        _editedDatabase.fields
-            .map(
-              (field) => FieldModel(
-                id: field.id,
-                name: field.name,
-                type: field.type,
-                // 将 metadata 对象转为 JSON 字符串存储在 description 中
-                description: field.metadata != null ? jsonEncode(field.metadata) : null,
-              ),
-            )
-            .toList();
+    _fields = _editedDatabase.fields
+        .map(
+          (field) => FieldModel(
+            id: field.id,
+            name: field.name,
+            type: field.type,
+            // 将 metadata 对象转为 JSON 字符串存储在 description 中
+            description: field.metadata != null
+                ? jsonEncode(field.metadata)
+                : null,
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -122,7 +125,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
               validationMessage: '${'database_database_name_label'.tr}不能为空',
               prefixIcon: Icons.storage,
             ),
-            
+
             // 描述
             FormFieldConfig(
               name: 'description',
@@ -150,90 +153,91 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
               _fields.insert(newIndex, item);
             });
           },
-          children:
-              _fields
-                  .map(
-                    (field) {
-                      // 解析 metadata 获取 showInPreview
-                      bool showInPreview = false;
-                      if (field.description != null && field.description!.isNotEmpty) {
-                        try {
-                          final metadata = jsonDecode(field.description!) as Map<String, dynamic>?;
-                          showInPreview = metadata?['showInPreview'] == true;
-                        } catch (e) {
-                          // 解析失败，使用默认值
+          children: _fields.map((field) {
+            // 解析 metadata 获取 showInPreview
+            bool showInPreview = false;
+            if (field.description != null && field.description!.isNotEmpty) {
+              try {
+                final metadata =
+                    jsonDecode(field.description!) as Map<String, dynamic>?;
+                showInPreview = metadata?['showInPreview'] == true;
+              } catch (e) {
+                // 解析失败，使用默认值
+              }
+            }
+
+            return ListTile(
+              key: ValueKey(field.id),
+              title: Text(field.name),
+              subtitle: Text(field.type),
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 预览显示 checkbox
+                  Checkbox(
+                    value: showInPreview,
+                    onChanged: (value) {
+                      setState(() {
+                        // 更新 metadata 中的 showInPreview
+                        Map<String, dynamic>? metadata;
+                        if (field.description != null &&
+                            field.description!.isNotEmpty) {
+                          try {
+                            metadata =
+                                jsonDecode(field.description!)
+                                    as Map<String, dynamic>?;
+                          } catch (e) {
+                            metadata = {};
+                          }
+                        } else {
+                          metadata = {};
                         }
-                      }
+                        metadata ??= {};
+                        metadata['showInPreview'] = value ?? false;
 
-                      return ListTile(
-                        key: ValueKey(field.id),
-                        title: Text(field.name),
-                        subtitle: Text(field.type),
-                        leading: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 预览显示 checkbox
-                            Checkbox(
-                              value: showInPreview,
-                              onChanged: (value) {
-                                setState(() {
-                                  // 更新 metadata 中的 showInPreview
-                                  Map<String, dynamic>? metadata;
-                                  if (field.description != null && field.description!.isNotEmpty) {
-                                    try {
-                                      metadata = jsonDecode(field.description!) as Map<String, dynamic>?;
-                                    } catch (e) {
-                                      metadata = {};
-                                    }
-                                  } else {
-                                    metadata = {};
-                                  }
-                                  metadata ??= {};
-                                  metadata['showInPreview'] = value ?? false;
-
-                                  final index = _fields.indexWhere((f) => f.id == field.id);
-                                  if (index >= 0) {
-                                    _fields[index] = field.copyWith(
-                                      description: jsonEncode(metadata),
-                                    );
-                                  }
-                                });
-                              },
-                            ),
-                            Icon(
-                              FieldController.fieldTypes[field.type] ?? Icons.help,
-                              color: Colors.deepPurple,
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, size: 20),
-                              onPressed: () => _editField(field),
-                              tooltip: '编辑'.tr,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, size: 20),
-                              onPressed: () => _deleteField(field),
-                              tooltip: '删除'.tr,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            const Icon(Icons.drag_handle),
-                          ],
-                        ),
-                      );
+                        final index = _fields.indexWhere(
+                          (f) => f.id == field.id,
+                        );
+                        if (index >= 0) {
+                          _fields[index] = field.copyWith(
+                            description: jsonEncode(metadata),
+                          );
+                        }
+                      });
                     },
-                  )
-                  .toList(),
+                  ),
+                  Icon(
+                    FieldController.fieldTypes[field.type] ?? Icons.help,
+                    color: Colors.deepPurple,
+                  ),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    onPressed: () => _editField(field),
+                    tooltip: '编辑'.tr,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20),
+                    onPressed: () => _deleteField(field),
+                    tooltip: '删除'.tr,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const Icon(Icons.drag_handle),
+                ],
+              ),
+            );
+          }).toList(),
         ),
         Positioned(
           bottom: 16,
           right: 16,
-          child: FloatingActionButton(
-            onPressed: _showAddFieldDialog,
-            child: const Icon(Icons.add),
+          child: DSThemeBridge(
+            // DSFab 内部取 AppTheme，需包桥
+            child: DSFab(onPressed: _showAddFieldDialog),
           ),
         ),
       ],
@@ -301,7 +305,9 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
       context: context,
       builder: (context) => AlertDialog(
         title: Text('database_delete_field_title'.tr),
-        content: Text('database_delete_field_confirm'.trParams({'name': field.name})),
+        content: Text(
+          'database_delete_field_confirm'.trParams({'name': field.name}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -361,36 +367,29 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
 
       // 转换字段模型并更新数据库
       final updatedDatabase = _editedDatabase.copyWith(
-        fields:
-            _fields
-                .map(
-                  (field) {
-                    // 将 FieldModel 的 description（JSON 字符串）解析为 metadata 对象
-                    Map<String, dynamic>? metadata;
-                    if (field.description != null && field.description!.isNotEmpty) {
-                      try {
-                        metadata = jsonDecode(field.description!) as Map<String, dynamic>;
-                      } catch (e) {
-                        // 解析失败，忽略
-                      }
-                    }
+        fields: _fields.map((field) {
+          // 将 FieldModel 的 description（JSON 字符串）解析为 metadata 对象
+          Map<String, dynamic>? metadata;
+          if (field.description != null && field.description!.isNotEmpty) {
+            try {
+              metadata = jsonDecode(field.description!) as Map<String, dynamic>;
+            } catch (e) {
+              // 解析失败，忽略
+            }
+          }
 
-                    return DatabaseField(
-                      id: field.id,
-                      name: field.name,
-                      type: field.type,
-                      isRequired: false,
-                      metadata: metadata,
-                    );
-                  },
-                )
-                .toList(),
+          return DatabaseField(
+            id: field.id,
+            name: field.name,
+            type: field.type,
+            isRequired: false,
+            metadata: metadata,
+          );
+        }).toList(),
       );
 
       if (updatedDatabase.id.isEmpty) {
-        final newDatabase = updatedDatabase.copyWith(
-          id: const Uuid().v4(),
-        );
+        final newDatabase = updatedDatabase.copyWith(id: const Uuid().v4());
         await widget.controller.createDatabase(newDatabase);
       } else {
         await widget.controller.updateDatabase(updatedDatabase);

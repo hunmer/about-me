@@ -43,7 +43,7 @@ MyPlugin（JS API 适配层）
 
 ## 国际化
 
-- 文案 key 用 GetX `.tr`；翻译集中在 `l10n/unified_translations.dart`（zh_CN / en_US / ja_JP，缺省回落 zh_CN）。
+- 文案 key 用 GetX `.tr`；翻译集中在 `l10n/unified_translations.dart`（zh_CN / en_US，缺省回落 zh_CN）。
 - 不要硬编码界面文案；第三方库 delegates 已在 `main.dart` 配齐（Syncfusion、Quill 等）。
 
 ## 主题与 UI
