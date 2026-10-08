@@ -199,5 +199,7 @@ class ChatTranslationsZh {
     'chat_searchMessages': '搜索消息',
     'chat_noMatchingMessages': '未找到匹配的消息',
     'chat_refresh': '刷新',
+    'chat_listView': '切换为列表视图',
+    'chat_cardView': '切换为卡片视图',
   };
 }

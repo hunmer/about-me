@@ -16,6 +16,9 @@ class ChannelTile extends StatelessWidget {
   final Function(Channel) onDelete;
   final Key? itemKey;
 
+  /// 是否卡片视图（果冻卡片布局），否则为列表视图
+  final bool isCardView;
+
   const ChannelTile({
     super.key,
     required this.channel,
@@ -24,13 +27,19 @@ class ChannelTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.itemKey,
+    this.isCardView = false,
   });
+
+  String? get _draft =>
+      (channel.draft != null && channel.draft!.isNotEmpty)
+          ? channel.draft
+          : null;
+
+  String get _subtitle =>
+      _draft ?? channel.lastMessage?.content ?? 'chat_enterMessage'.tr;
 
   @override
   Widget build(BuildContext context) {
-    final draft = channel.draft;
-    final lastMessage = channel.lastMessage;
-
     return SwipeActionWrapper(
       key: ValueKey(channel.id),
       leadingActions: [
@@ -45,43 +54,75 @@ class ChannelTile extends StatelessWidget {
       ],
       child: DSThemeBridge(
         // DS 组件内部取 AppTheme，需包桥
-        child: DSListItem(
-          key: itemKey,
-          title: channel.title,
-          subtitle:
-              (draft != null && draft.isNotEmpty)
-                  ? draft
-                  : lastMessage?.content ?? 'chat_enterMessage'.tr,
-          leading: DSAvatar(
-            color: channel.backgroundColor,
-            child: Icon(channel.icon, color: Colors.white, size: 20),
-          ),
-          trailingText:
-              (draft == null || draft.isEmpty) && lastMessage != null
-                  ? DateFormatter.formatDateTime(lastMessage.date, context)
-                  : null,
-          trailing:
-              (draft != null && draft.isNotEmpty)
-                  ? Text(
-                      'chat_draft'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    )
-                  : null,
-          onTap: () {
-            // 在打开之前执行回调（如设置当前频道）
-            onBeforeOpen?.call();
-            // 打开聊天页面
-            NavigationHelper.openContainerWithHero(
-              context,
-              (context) => ChatScreen(channel: channel),
-              transitionDuration: const Duration(milliseconds: 400),
-            );
-          },
-        ),
+        child: isCardView ? _buildCard(context) : _buildListItem(context),
       ),
+    );
+  }
+
+  /// 列表视图：果冻列表项
+  Widget _buildListItem(BuildContext context) {
+    final lastMessage = channel.lastMessage;
+    return DSListItem(
+      key: itemKey,
+      title: channel.title,
+      subtitle: _subtitle,
+      leading: DSAvatar(
+        color: channel.backgroundColor,
+        child: Icon(channel.icon, color: Colors.white, size: 20),
+      ),
+      trailingText:
+          _draft == null && lastMessage != null
+              ? DateFormatter.formatDateTime(lastMessage.date, context)
+              : null,
+      trailing: _buildDraftBadge(context),
+      onTap: () => _openChat(context),
+    );
+  }
+
+  /// 卡片视图：半透明描边卡片，图标块在左上角
+  Widget _buildCard(BuildContext context) {
+    final lastMessage = channel.lastMessage;
+    return DSListItemCard(
+      key: itemKey,
+      title: channel.title,
+      subtitle: _subtitle,
+      leading: JellyBox(
+        width: 36,
+        height: 36,
+        radius: DsRadii.md,
+        color: channel.backgroundColor,
+        alignment: Alignment.center,
+        child: Icon(channel.icon, color: Colors.white, size: 18),
+      ),
+      trailingText:
+          _draft == null && lastMessage != null
+              ? DateFormatter.formatDateTime(lastMessage.date, context)
+              : null,
+      trailing: _buildDraftBadge(context),
+      onTap: () => _openChat(context),
+    );
+  }
+
+  /// 草稿标记（红色文字）
+  Widget? _buildDraftBadge(BuildContext context) {
+    if (_draft == null) return null;
+    return Text(
+      'chat_draft'.tr,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.error,
+        fontSize: 12,
+      ),
+    );
+  }
+
+  void _openChat(BuildContext context) {
+    // 在打开之前执行回调（如设置当前频道）
+    onBeforeOpen?.call();
+    // 打开聊天页面
+    NavigationHelper.openContainerWithHero(
+      context,
+      (context) => ChatScreen(channel: channel),
+      transitionDuration: const Duration(milliseconds: 400),
     );
   }
 }

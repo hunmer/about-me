@@ -75,6 +75,14 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     return SuperCupertinoNavigationWrapper(
       title: Text('chat_channelList'.tr),
       largeTitle: 'chat_channelListTitle'.tr,
+      // 右上角切换列表/卡片视图（持久化到本地）
+      actions: [
+        IconButton(
+          icon: Icon(_controller.isCardView ? Icons.view_list : Icons.grid_view),
+          tooltip: _controller.isCardView ? 'chat_listView'.tr : 'chat_cardView'.tr,
+          onPressed: () => _controller.toggleView(),
+        ),
+      ],
       enableSearchBar: true,
       searchPlaceholder: 'chat_searchPlaceholder'.tr,
       onSearchChanged: (query) {

@@ -11,6 +11,7 @@ class ChannelListController extends ChangeNotifier {
   late SharedPreferences prefs;
   List<String> availableGroups = ["all", "ungrouped"]; // 可用的频道组列表
   String searchQuery = ""; // 搜索关键词
+  bool isCardView = false; // 是否卡片视图（否则为列表视图）
 
   ChannelListController({required this.channels, required this.chatPlugin}) {
     _initialize();
@@ -44,6 +45,7 @@ class ChannelListController extends ChangeNotifier {
   Future<void> _initializePrefs() async {
     prefs = await SharedPreferences.getInstance();
     selectedGroup = prefs.getString('selectedGroup') ?? "all";
+    isCardView = prefs.getBool('channelCardView') ?? false;
     // 不在这里调用 notifyListeners(),由 _initialize() 统一调用
   }
 
@@ -57,6 +59,13 @@ class ChannelListController extends ChangeNotifier {
     await prefs.setString('selectedGroup', group);
     selectedGroup = group;
     _updateSortedChannels();
+    notifyListeners();
+  }
+
+  /// 切换列表/卡片视图并持久化
+  Future<void> toggleView() async {
+    isCardView = !isCardView;
+    await prefs.setBool('channelCardView', isCardView);
     notifyListeners();
   }
 
