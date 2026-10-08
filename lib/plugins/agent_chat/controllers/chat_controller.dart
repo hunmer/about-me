@@ -973,5 +973,6 @@ class ChatController extends ChangeNotifier {
     debugPrint('🔌 ChatController 已释放');
 
     super.dispose();
+    debugPrint('🔌 ChatController dispose 完成');
   }
 }

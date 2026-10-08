@@ -47,7 +47,7 @@ class RadialDiscTab {
 /// - 主层：弧形扇环 dock，tab 沿圆弧排布并按切线方向旋转，
 ///   选中药丸以弹簧物理沿弧线滑动
 /// - 上层：可折叠子栏（左右圆按钮 + 中间双选项分段药丸）
-/// - [dockedAction]：停靠在 dock 右端的小操作钮（如“添加”）
+/// - [floatingAction]：子栏右圆钮位置的常驻浮动操作钮（如 FAB）
 ///
 /// 固有尺寸 380×146（仅 dock 时自动裁掉上下空区为 380×78），
 /// 更窄的容器中请用 `FittedBox(fit: BoxFit.scaleDown)` 等比缩放。
@@ -65,7 +65,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     this.onLeadingTap,
     this.trailingAction,
     this.onTrailingTap,
-    this.dockedAction,
+    this.floatingAction,
     this.style,
     this.frosted = false,
     this.frostSigma = 10,
@@ -89,9 +89,10 @@ class RadialDiscBottomBar extends StatelessWidget {
   final Widget? trailingAction;
   final VoidCallback? onTrailingTap;
 
-  /// 停靠在主 dock 右端的小操作钮（自带手势与外观，居中对齐端帽），
-  /// 存在时 tab 角度自动收窄避让
-  final Widget? dockedAction;
+  /// 停靠在子栏右圆钮位置（±15.4° 上层弧线，参考设计 eye 钮）的
+  /// 浮动操作钮（如 FAB），自带手势与外观，常驻不随子栏折叠；
+  /// 仅 dock 模式下渲染，启用子栏时请改用子栏 [trailingAction]
+  final Widget? floatingAction;
 
   final RadialDiscBarStyle? style;
 
@@ -107,14 +108,11 @@ class RadialDiscBottomBar extends StatelessWidget {
   /// 仅 dock 时裁掉的画布上方空区高度（主扇环弧顶 y=56）
   static const double _dockCropTop = 55;
 
+  /// 浮动操作钮模式下更小的上裁剪（44px 圆钮中心 y≈52，需为其留出空间）
+  static const double _floatActionCropTop = 28;
+
   /// 仅 dock 时裁掉的画布下方空区高度（主扇环最低点 y≈133）
   static const double _dockCropBottom = 13;
-
-  /// dockedAction 存在时 tab 的角度半跨度（默认 13.5 收窄避让右端操作钮）
-  static const double _dockedTabAngleSpan = 9.5;
-
-  double get _effectiveTabSpan =>
-      dockedAction == null ? RadialGeometry.tabAngleSpan : _dockedTabAngleSpan;
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +241,6 @@ class RadialDiscBottomBar extends StatelessWidget {
               final angle = RadialGeometry.continuousTabAngle(
                 animatedIndex,
                 count,
-                span: _effectiveTabSpan,
               );
               final center = RadialGeometry.polar(
                 angle,
@@ -272,13 +269,14 @@ class RadialDiscBottomBar extends StatelessWidget {
           // 4. tab 按钮
           for (var i = 0; i < count; i++)
             _tabButton(context, i, resolvedStyle),
-          // 5. dock 右端停靠操作钮（自带外观与手势，居中对齐端帽）
-          if (dockedAction != null)
+          // 5. 子栏右圆钮位置的常驻浮动操作钮（如 FAB），随切线旋转；
+          //    启用子栏时由子栏 trailingAction 承担该位置，此处不渲染
+          if (floatingAction != null && !subBarPossible)
             Builder(
               builder: (context) {
                 final anchor = RadialGeometry.polar(
-                  RadialGeometry.mainSectorSpan,
-                  RadialGeometry.mainMidRadius,
+                  RadialGeometry.trailingAngle,
+                  RadialGeometry.subMidRadius,
                 );
                 return Positioned(
                   left: anchor.dx,
@@ -286,8 +284,8 @@ class RadialDiscBottomBar extends StatelessWidget {
                   child: FractionalTranslation(
                     translation: const Offset(-0.5, -0.5),
                     child: Transform.rotate(
-                      angle: RadialGeometry.mainSectorSpan * math.pi / 180,
-                      child: dockedAction,
+                      angle: RadialGeometry.trailingAngle * math.pi / 180,
+                      child: floatingAction,
                     ),
                   ),
                 );
@@ -297,13 +295,15 @@ class RadialDiscBottomBar extends StatelessWidget {
       ),
     );
 
-    // 无子栏时裁掉画布上下空区，只保留 dock 高度。
+    // 无子栏时裁掉画布上下空区，只保留 dock（+ 浮动钮）高度。
     // OverflowBox 放松约束让场景保持 380×146（直接嵌套 SizedBox
     // 会被外层紧约束压扁，导致下半部分不可命中）
     if (!subBarPossible) {
+      final cropTop =
+          floatingAction == null ? _dockCropTop : _floatActionCropTop;
       scene = SizedBox(
         width: RadialGeometry.canvasWidth,
-        height: RadialGeometry.canvasHeight - _dockCropTop - _dockCropBottom,
+        height: RadialGeometry.canvasHeight - cropTop - _dockCropBottom,
         child: OverflowBox(
           alignment: Alignment.topLeft,
           minWidth: RadialGeometry.canvasWidth,
@@ -311,7 +311,7 @@ class RadialDiscBottomBar extends StatelessWidget {
           minHeight: RadialGeometry.canvasHeight,
           maxHeight: RadialGeometry.canvasHeight,
           child: Transform.translate(
-            offset: const Offset(0, -_dockCropTop),
+            offset: Offset(0, -cropTop),
             child: scene,
           ),
         ),
@@ -375,11 +375,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     final count = tabs.length;
     final tab = tabs[index];
     final selected = index == activeIndex.clamp(0, count - 1);
-    final angle = RadialGeometry.tabAngle(
-      index,
-      count,
-      span: _effectiveTabSpan,
-    );
+    final angle = RadialGeometry.tabAngle(index, count);
     final center = RadialGeometry.polar(angle, RadialGeometry.mainMidRadius);
 
     return Positioned(

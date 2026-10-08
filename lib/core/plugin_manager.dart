@@ -203,27 +203,22 @@ class PluginManager {
 
   /// 打开插件界面
   void openPlugin(BuildContext context, PluginBase plugin) {
-    // 检查当前路由是否已经是该插件
-    bool isPluginAlreadyOpen =
-        ModalRoute.of(context)?.settings.name == '/${plugin.id}';
+    // 检查当前路由是否已经是该插件主界面（openPlugin 推入的路由名），
+    // 防止悬浮球等入口把同一插件叠加多层
+    final isPluginAlreadyOpen =
+        ModalRoute.of(context)?.settings.name == '/plugin/${plugin.id}';
     if (isPluginAlreadyOpen) {
       return;
     }
     // 记录打开历史
     recordPluginOpen(plugin);
+    // 返回行为由 NavigationHelper.smartBack 的返回路由表统一决策
+    // （/plugin/<id> → 固定回首页），不要在此包 PopScope——canPop:false
+    // 会拦截一切 pop()/popUntil()，与返回逻辑叠加曾导致无限递归崩溃
     // 使用 NavigationHelper.push 以支持 iOS 左滑返回
     NavigationHelper.push(
       context,
-      // 插件主界面固定返回 home（拦截 iOS 左滑手势/系统返回键/maybePop，
-      // 与导航栏返回按钮的 _defaultBack 行为一致），避免恢复栈中上一次打开的插件
-      PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
-        child: plugin.buildMainView(context),
-      ),
+      plugin.buildMainView(context),
       routeName: '/plugin/${plugin.id}',
     );
   }

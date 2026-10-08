@@ -65,8 +65,10 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   @override
   void dispose() {
+    debugPrint('[ConversationListScreen] dispose 开始');
     _controller.removeListener(_onControllerChanged);
     super.dispose();
+    debugPrint('[ConversationListScreen] dispose 完成');
   }
 
   void _onControllerChanged() {

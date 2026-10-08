@@ -2,9 +2,14 @@
 """Split achievement icon sheets (3x3 / 3+3+1 / 2x2 grids) into single
 transparent-background PNG icons.
 
-Method: flood-fill is used ONLY to locate each badge's bounding box; the
-output alpha comes from a geometric rounded-hexagon mask fitted to that box,
-so badge pixels are copied verbatim (no color matting inside the badge)."""
+Two input kinds:
+- Native-alpha sheets (gpt-image-2.5-sunburst, background=transparent):
+  per cell, flood from the cell center over alpha>128 to isolate the badge
+  body (loose speckle fringe stays disconnected and is ignored), fit a
+  geometric rounded-hexagon mask to that body, output alpha = original
+  alpha * hexagon mask. Badge pixels are copied verbatim.
+- RGB sheets (old style): flood-fill from borders locates badges (location
+  only), same hexagon mask applied."""
 import math
 import os
 
@@ -43,19 +48,6 @@ NAMES = {
     "A71": "全能启动", "A72": "全方位记录", "A73": "百日筑基", "A74": "深度玩家",
 }
 
-# sheet file -> list of (row, col) cells in reading order, grid = rows x cols
-SHEETS = {
-    "sheet_01.png": ([(r, c) for r in range(3) for c in range(3)], "A{:02d}".format(1)),
-    "sheet_02.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_03.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_04.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_05.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_06.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_07.png": ([(r, c) for r in range(3) for c in range(3)], None),
-    "sheet_08.png": ([(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 1)], None),
-    "sheet_09.png": ([(0, 0), (0, 1), (1, 0), (1, 1)], None),
-}
-# rebuild with explicit id ranges
 SHEETS = {
     "sheet_01.png": ([(r, c) for r in range(3) for c in range(3)], 1),   # A01-A09
     "sheet_02.png": ([(r, c) for r in range(3) for c in range(3)], 10),  # A10-A18
@@ -69,18 +61,17 @@ SHEETS = {
 }
 
 
-def background_alpha(im: Image.Image) -> np.ndarray:
-    """Return mask (255=badge area, 0=background) used only for locating badges."""
+def background_locate(im: Image.Image) -> np.ndarray:
+    """RGB sheets: mask of non-background area (badge bodies) via border flood."""
     rgb = np.asarray(im.convert("RGB"), dtype=np.int16)
     h, w = rgb.shape[:2]
     border = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]])
     bg = np.median(border, axis=0)
     dist = np.sqrt(((rgb - bg) ** 2).sum(-1))
-
     m_strict = dist < 30
     m_loose = dist < 80
     bright = rgb.min(-1) > 242
-    neutral = (rgb[..., 2] - rgb[..., 0]) < 14  # blue - red: white is neutral, shadow is bluish
+    neutral = (rgb[..., 2] - rgb[..., 0]) < 14
     white_like = bright & neutral
     allowed = m_strict | (m_loose & ~white_like)
 
@@ -101,13 +92,42 @@ def background_alpha(im: Image.Image) -> np.ndarray:
             break
         visited |= grow
         frontier = grow
-
     return np.where(visited, 0, 255).astype(np.uint8)
 
 
+def flood_component(allowed: np.ndarray, cy, cx) -> np.ndarray:
+    """Connected component containing (cy, cx) in boolean array, 4-connected."""
+    visited = np.zeros_like(allowed)
+    if not allowed[cy, cx]:
+        # nudge to nearest allowed pixel in a small spiral
+        found = False
+        for r in range(1, 60):
+            ys, xs = np.where(allowed[max(0, cy - r):cy + r, max(0, cx - r):cx + r])
+            if len(ys):
+                cy = max(0, cy - r) + ys[0]
+                cx = max(0, cx - r) + xs[0]
+                found = True
+                break
+        if not found:
+            return visited
+    visited[cy, cx] = True
+    frontier = visited
+    while True:
+        grow = np.zeros_like(frontier)
+        grow[1:, :] |= frontier[:-1, :]
+        grow[:-1, :] |= frontier[1:, :]
+        grow[:, 1:] |= frontier[:, :-1]
+        grow[:, :-1] |= frontier[:, 1:]
+        grow &= allowed & ~visited
+        if not grow.any():
+            break
+        visited |= grow
+        frontier = grow
+    return visited
+
+
 def rounded_hexagon_mask(size_w, size_h, cx, cy, radius, corner_ratio=0.14, ss=4):
-    """Pointy-top rounded hexagon mask (pointing up/down), supersampled for
-    smooth edges. (cx, cy), radius are in 1x cell coordinates."""
+    """Pointy-top rounded hexagon mask, supersampled for smooth edges."""
     rc = radius * corner_ratio
     verts = []
     for k in range(6):
@@ -131,16 +151,22 @@ def rounded_hexagon_mask(size_w, size_h, cx, cy, radius, corner_ratio=0.14, ss=4
     mask = Image.new("L", (size_w * ss, size_h * ss), 0)
     ImageDraw.Draw(mask).polygon(pts, fill=255)
     mask = mask.resize((size_w, size_h), Image.LANCZOS)
-    return mask.filter(ImageFilter.GaussianBlur(0.5))
+    return np.asarray(mask.filter(ImageFilter.GaussianBlur(0.5)))
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     count = 0
     for sheet, (cells, start_id) in SHEETS.items():
-        im = Image.open(os.path.join(BASE, sheet)).convert("RGBA")
-        locate = np.asarray(background_alpha(im))  # 255 = badge, flood-based, only for bbox
-        h, w = locate.shape
+        path_sheet = os.path.join(BASE, sheet)
+        if not os.path.exists(path_sheet):
+            print("SKIP {} (not generated yet)".format(sheet))
+            continue
+        im = Image.open(path_sheet).convert("RGBA")
+        arr = np.asarray(im)
+        native_alpha = bool(arr[..., 3].min() < 200)
+        locate = None if native_alpha else background_locate(im)
+        h, w = arr.shape[:2]
         rows = max(r for r, _ in cells) + 1
         cols = max(c for _, c in cells) + 1
         for i, (r, c) in enumerate(cells):
@@ -148,28 +174,40 @@ def main():
             name = NAMES["A{:02d}".format(aid)]
             x0, x1 = int(w * c / cols), int(w * (c + 1) / cols)
             y0, y1 = int(h * r / rows), int(h * (r + 1) / rows)
-            badge = locate[y0:y1, x0:x1] > 128
-            ys, xs = np.where(badge)
-            bx0, bx1, by0, by1 = xs.min(), xs.max(), ys.min(), ys.max()
             cw, ch = x1 - x0, y1 - y0
-            cx, cy = (bx0 + bx1) / 2.0, (by0 + by1) / 2.0
-            # pointy-top hexagon: width = sqrt(3)*R, height = 2R; shrink 1.5% so the
-            # mask stays inside the white border even with slight AI-drawn skew
-            radius = min((by1 - by0) / 2.0, (bx1 - bx0) / math.sqrt(3)) * 0.985
-            mask = rounded_hexagon_mask(cw, ch, cx, cy, radius)
-            m = np.asarray(mask)
-            mys, mxs = np.where(m > 8)
+            if native_alpha:
+                # search window = cell expanded 25% so badges crossing the grid
+                # line are not clipped; neighboring badges stay outside the window
+                m = ch // 4
+                wy0, wy1 = max(0, y0 - m), min(h, y1 + m)
+                wx0, wx1 = max(0, x0 - m), min(w, x1 + m)
+                win = arr[wy0:wy1, wx0:wx1, 3] > 128
+                comp = flood_component(win, (wy1 - wy0) // 2, (wx1 - wx0) // 2)
+                cell = arr[wy0:wy1, wx0:wx1].copy()
+                cell[..., 3] = np.where(comp, cell[..., 3], 0)
+                ys, xs = np.where(cell[..., 3] > 8)
+            else:
+                comp = locate[y0:y1, x0:x1] > 128
+                ys, xs = np.where(comp)
+                bx0, bx1, by0, by1 = xs.min(), xs.max(), ys.min(), ys.max()
+                cx, cy = (bx0 + bx1) / 2.0, (by0 + by1) / 2.0
+                # pointy-top hexagon: width = sqrt(3)*R, height = 2R; shrink 1.5% so the
+                # mask stays inside the white border even with slight AI-drawn skew
+                radius = min((by1 - by0) / 2.0, (bx1 - bx0) / math.sqrt(3)) * 0.985
+                mask = rounded_hexagon_mask(cw, ch, cx, cy, radius)
+                m = np.where(comp, mask, 0)
+                ys, xs = np.where(m > 8)
+                cell = arr[y0:y1, x0:x1].copy()
+                cell[..., 3] = (cell[..., 3].astype(np.uint16) * m.astype(np.uint16) // 255).astype(np.uint8)
             pad = 2
-            cy0, cy1 = max(0, mys.min() - pad), min(ch, mys.max() + pad)
-            cx0, cx1 = max(0, mxs.min() - pad), min(cw, mxs.max() + pad)
-            out = im.crop((x0 + cx0, y0 + cy0, x0 + cx1, y0 + cy1)).copy()
-            a = np.asarray(out).copy()
-            a[..., 3] = m[cy0:cy1, cx0:cx1]
-            result = Image.fromarray(a)
+            wh, ww = wy1 - wy0, wx1 - wx0
+            cy0, cy1 = max(0, ys.min() - pad), min(wh, ys.max() + pad)
+            cx0, cx1 = max(0, xs.min() - pad), min(ww, xs.max() + pad)
+            result = Image.fromarray(cell[cy0:cy1, cx0:cx1])
             path = os.path.join(OUT, "A{:02d}_{}.png".format(aid, name))
             result.save(path)
             count += 1
-            print("A{:02d} {}x{} -> {}".format(aid, result.width, result.height, os.path.basename(path)))
+            print("A{:02d} {}x{} native={} -> {}".format(aid, result.width, result.height, native_alpha, os.path.basename(path)))
     print("DONE total={}".format(count))
 
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:super_cupertino_navigation_bar/super_cupertino_navigation_bar.dart';
 import 'super_cupertino_navigation_wrapper/filter_models.dart';
 import 'super_cupertino_navigation_wrapper/multi_filter_bar.dart';
@@ -564,16 +565,10 @@ class _SuperCupertinoNavigationWrapperState
     return null;
   }
 
-  /// 默认返回行为：插件主界面（路由名以 /plugin/ 开头，由
-  /// PluginManager.openPlugin 推入）固定回到首页，而不是恢复栈中上一次
-  /// 打开的插件；其余页面正常返回上一级
+  /// 默认返回行为：走 NavigationHelper 的返回路由表，
+  /// 插件主界面（`/plugin/<id>`）固定回首页，其余页面正常返回上一级
   void _defaultBack(BuildContext context) {
-    final routeName = ModalRoute.of(context)?.settings.name;
-    if (routeName != null && routeName.startsWith('/plugin/')) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      return;
-    }
-    Navigator.maybePop(context);
+    NavigationHelper.smartBack(context);
   }
 
   /// 默认的 DS 风格返回图标按钮（primary 果冻圆球，同 DSFab 质感）

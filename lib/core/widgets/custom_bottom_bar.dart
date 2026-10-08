@@ -14,7 +14,7 @@ import 'package:aboutme/design_system/design_system.dart';
 /// - [currentIndex]: 当前选中的 Tab 索引
 /// - [tabController]: Tab 控制器(驱动 body 的 TabBarView 与选中态)
 /// - [body]: 底部栏上方的内容(通常是 TabBarView)
-/// - [fab]: 悬浮操作钮(可选),停靠在 dock 右端的小图标(缩放至 44)
+/// - [fab]: 悬浮操作钮(可选),停靠在子栏右圆钮位置(缩放至 44)
 /// - [subLabels]/[subOption]/[onSubOptionChange]: 上层子栏双选项(可选)
 class CustomBottomBar extends StatefulWidget {
   /// 底部导航项
@@ -29,7 +29,7 @@ class CustomBottomBar extends StatefulWidget {
   /// 底部栏上方的内容(通常是 TabBarView)
   final Widget Function(BuildContext context, ScrollController controller) body;
 
-  /// 悬浮操作钮(可选),停靠在 dock 右端的小图标
+  /// 悬浮操作钮(可选),停靠在子栏右圆钮位置
   final Widget? fab;
 
   /// 上层子栏双选项文案(null 则不启用子栏)
@@ -188,8 +188,8 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   items: widget.items,
                   currentIndex: widget.currentIndex,
                   onTap: (index) => widget.tabController.animateTo(index),
-                  // fab 停靠到 dock 右端:等比缩到 44 的小图标
-                  trailingAction:
+                  // fab 停靠到子栏右圆钮位置:等比缩到 44 的小图标
+                  floatingAction:
                       widget.fab == null
                           ? null
                           : SizedBox(

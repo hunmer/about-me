@@ -38,14 +38,14 @@ void main() {
     expect(selected, 4);
   });
 
-  testWidgets('dockedAction：停靠右端且仍可点按最后一个 tab', (tester) async {
+  testWidgets('floatingAction：位于子栏右圆钮位置且不挡 tab 点击', (tester) async {
     var selected = -1;
     await tester.pumpWidget(wrap(RadialDiscBottomBar(
       tabs: buildTabs(),
       activeIndex: 0,
       onTabChange: (i) => selected = i,
-      dockedAction: GestureDetector(
-        key: const ValueKey('docked'),
+      floatingAction: GestureDetector(
+        key: const ValueKey('floating'),
         behavior: HitTestBehavior.opaque,
         onTap: () {},
         child: const SizedBox(width: 44, height: 44),
@@ -53,8 +53,22 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('docked')), findsOneWidget);
-    // dockedAction 存在时 tab 角度收窄，最后一个 tab 依旧可命中
+    expect(find.byKey(const ValueKey('floating')), findsOneWidget);
+    // 浮动钮模式下画布只裁掉少量顶部（44px 钮中心 y≈52）
+    final size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight - 28 - 13);
+
+    // 浮动钮高于主 dock：其中心应比最后一个 tab 按钮更靠上
+    final action = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('floating')));
+    final lastTab = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('icon4')));
+    expect(
+      action.localToGlobal(Offset.zero).dy,
+      lessThan(lastTab.localToGlobal(Offset.zero).dy),
+    );
+
+    // tab 保持全幅角度，最后一个 tab 依旧可命中
     await tester.tap(find.byKey(const ValueKey('icon4')));
     await tester.pumpAndSettle();
     expect(selected, 4);

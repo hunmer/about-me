@@ -20,7 +20,7 @@ import uuid
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 REF = "C:/Users/Administrator/Downloads/original-52b79381e4caafd86dcd4021cc1f96f9.jpg"
-MODEL = "gpt-image-2.5-sunburst"
+MODEL = "gpt-image-2.5-flare"
 SIZE = "2048x2048"
 QUALITY = "medium"
 
@@ -198,6 +198,13 @@ def save_result(payload, out):
     out.write_bytes(raw)
 
 
+def is_transparent(path):
+    import numpy as np
+    from PIL import Image
+    a = np.asarray(Image.open(path))
+    return a.shape[-1] == 4 and int(a[..., 3].min()) < 200
+
+
 def gen_sheet(name, dry_run=False):
     layout, subjects = SUBJECTS[name]
     prompt = STYLE.format(layout=layout, count=len(subjects),
@@ -210,11 +217,16 @@ def gen_sheet(name, dry_run=False):
     url = base.rstrip("/") + ("/v1" if not base.rstrip("/").endswith("/v1") else "") + "/images/generations"
     payload = {"model": MODEL, "prompt": prompt, "size": SIZE, "background": "transparent",
                "output_format": "png", "quality": QUALITY, "n": 1}
-    result = request_json(url, {"User-Agent": "Mozilla/5.0", "Accept": "application/json",
-                                "Authorization": "Bearer " + key, "Content-Type": "application/json"},
-                          json.dumps(payload).encode())
-    save_result(result, out)
-    print("SAVED {}".format(out))
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json",
+               "Authorization": "Bearer " + key, "Content-Type": "application/json"}
+    for attempt in range(4):
+        result = request_json(url, headers, json.dumps(payload).encode())
+        save_result(result, out)
+        if is_transparent(out):
+            print("SAVED {} (transparent, attempt {})".format(out, attempt + 1))
+            return
+        print("WARN {} came back OPAQUE (attempt {}), retrying...".format(out, attempt + 1), file=sys.stderr)
+    raise RuntimeError("{} still opaque after 4 attempts".format(name))
 
 
 def main():

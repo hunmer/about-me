@@ -61,7 +61,7 @@ void main() {
     );
   });
 
-  testWidgets('浅色 · 磨砂 + 右端停靠操作钮（仅 dock）', (tester) async {
+  testWidgets('浅色 · 磨砂 + 子栏右圆钮位置浮动操作钮（仅 dock）', (tester) async {
     await tester.pumpWidget(MaterialApp(
       debugShowCheckedModeBanner: false,
       home: ColoredBox(
@@ -74,7 +74,7 @@ void main() {
             style: const RadialDiscBarStyle().copyWith(
               fillColor: const Color(0xB3FFFFFF),
             ),
-            dockedAction: Container(
+            floatingAction: Container(
               width: 44,
               height: 44,
               decoration: const BoxDecoration(

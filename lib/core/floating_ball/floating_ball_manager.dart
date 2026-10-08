@@ -82,7 +82,7 @@ class FloatingBallManager {
     '返回上一页':
         (context) => () {
           if (context.mounted) {
-            Navigator.of(context).maybePop();
+            NavigationHelper.smartBack(context);
           }
         },
     '返回首页':

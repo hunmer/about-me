@@ -26,14 +26,14 @@ class DSNavItem {
 /// 弧形圆盘底部导航栏：同心圆弧 dock + 沿切线滑动的选中药丸
 ///
 /// 实现为 packages/radial_disc_bottom_bar 包的主 dock 层；
-/// 可选启用磨砂玻璃扇环、dock 右端停靠操作钮与上层子栏双选项。
+/// 可选启用磨砂玻璃扇环、子栏右圆钮位置浮动操作钮与上层子栏双选项。
 class DSBottomNavigation extends StatelessWidget {
   const DSBottomNavigation({
     super.key,
     required this.items,
     required this.currentIndex,
     required this.onTap,
-    this.trailingAction,
+    this.floatingAction,
     this.frosted = true,
     this.subLabels,
     this.subOption = RadialSubOption.left,
@@ -44,8 +44,8 @@ class DSBottomNavigation extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
-  /// 停靠在 dock 右端的小操作钮（如添加按钮），自带手势与外观
-  final Widget? trailingAction;
+  /// 子栏右圆钮位置的常驻浮动操作钮（如添加按钮），自带手势与外观
+  final Widget? floatingAction;
 
   /// 扇环磨砂玻璃（降低填充不透明度 + 背景模糊）
   final bool frosted;
@@ -103,7 +103,7 @@ class DSBottomNavigation extends StatelessWidget {
       ],
       activeIndex: currentIndex.clamp(0, items.length - 1),
       onTabChange: onTap,
-      dockedAction: trailingAction,
+      floatingAction: floatingAction,
       frosted: frosted,
       subBarBehavior:
           subLabels == null ? RadialSubBarBehavior.never : RadialSubBarBehavior.auto,
