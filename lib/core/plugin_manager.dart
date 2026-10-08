@@ -214,7 +214,16 @@ class PluginManager {
     // 使用 NavigationHelper.push 以支持 iOS 左滑返回
     NavigationHelper.push(
       context,
-      plugin.buildMainView(context),
+      // 插件主界面固定返回 home（拦截 iOS 左滑手势/系统返回键/maybePop，
+      // 与导航栏返回按钮的 _defaultBack 行为一致），避免恢复栈中上一次打开的插件
+      PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        child: plugin.buildMainView(context),
+      ),
       routeName: '/plugin/${plugin.id}',
     );
   }

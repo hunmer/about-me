@@ -172,7 +172,6 @@ class _TimerMainViewState extends State<TimerMainView> {
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _applyMultiFilters,
 
-      backgroundColor: Theme.of(context).colorScheme.surface,
       actions: [
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
         DSThemeBridge(

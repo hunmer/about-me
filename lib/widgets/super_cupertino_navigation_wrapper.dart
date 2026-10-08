@@ -554,9 +554,7 @@ class _SuperCupertinoNavigationWrapperState
           route != null &&
           route.canPop &&
           !(route is PageRoute && route.fullscreenDialog);
-      return canBack
-          ? _buildDefaultBackButton(() => Navigator.maybePop(context))
-          : null;
+      return canBack ? _buildDefaultBackButton(() => _defaultBack(context)) : null;
     }
 
     if (!(UniversalPlatform.isAndroid || UniversalPlatform.isIOS) &&
@@ -564,6 +562,18 @@ class _SuperCupertinoNavigationWrapperState
       return _buildDefaultBackButton(widget.onLeadingPressed!);
     }
     return null;
+  }
+
+  /// 默认返回行为：插件主界面（路由名以 /plugin/ 开头，由
+  /// PluginManager.openPlugin 推入）固定回到首页，而不是恢复栈中上一次
+  /// 打开的插件；其余页面正常返回上一级
+  void _defaultBack(BuildContext context) {
+    final routeName = ModalRoute.of(context)?.settings.name;
+    if (routeName != null && routeName.startsWith('/plugin/')) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+    Navigator.maybePop(context);
   }
 
   /// 默认的 DS 风格返回图标按钮（primary 果冻圆球，同 DSFab 质感）

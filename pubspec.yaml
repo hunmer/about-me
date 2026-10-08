@@ -142,6 +142,11 @@ dependencies:
   dartantic_ai:
     path: packages/dartantic_ai
   json_schema: ^5.2.2
+  # 表情选择器（本地 vendor 版：https://git.federated.nexus/Henry-Hiles/material_emoji_picker @ 1.2.0）
+  material_emoji_picker:
+    path: packages/material_emoji_picker
+  flutter_riverpod: ^3.4.3
+  fast_immutable_collections: ^11.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -199,6 +204,7 @@ flutter:
     - assets/models/ren/expressions/
     - lib/plugins/agent_chat/tools/
     - assets/scripts/ai_image/  # 内置脚本（AI 图片生成）
+    - assets/emojis/  # 内置表情包
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

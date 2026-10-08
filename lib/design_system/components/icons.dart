@@ -63,6 +63,7 @@ enum DsIconKind {
   stop,
   play,
   pause,
+  mood,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -125,6 +126,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.stop: Icons.stop,
   DsIconKind.play: Icons.play_arrow,
   DsIconKind.pause: Icons.pause,
+  DsIconKind.mood: Icons.emoji_emotions_outlined,
 };
 
 /// 图标组件：基于系统 Material Icons
