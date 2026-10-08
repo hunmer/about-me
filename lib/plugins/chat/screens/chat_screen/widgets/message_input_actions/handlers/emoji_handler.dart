@@ -11,7 +11,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:material_emoji_picker/material_emoji_picker.dart';
-import 'types.dart';
+import '../types.dart';
 
 /// 内置表情资源目录（assets/emojis 下的图片作为表情包）
 const String kBuiltInEmojiAssetDir = 'assets/emojis';
@@ -84,8 +84,8 @@ Future<List<String>> _loadBuiltInEmojiAssets() async {
 
 /// 构建内置表情分类
 EmojiCategory _buildBuiltInCategory(List<String> assets) {
-  final nameOf =
-      (String asset) => path.basenameWithoutExtension(asset).replaceAll('_', ' ');
+  String nameOf(String asset) =>
+      path.basenameWithoutExtension(asset).replaceAll('_', ' ');
 
   return EmojiCategory(
     icon: Image.asset(

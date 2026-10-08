@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'components/avatar.dart';
+import 'components/bubble_tail.dart';
 import 'components/favorite_icon.dart';
 import 'components/fixed_symbol.dart';
 import 'components/message_actions.dart';
@@ -258,43 +259,71 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding:
-                          _isImageMessage()
-                              ? EdgeInsets.zero
-                              : const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color:
-                            _isImageMessage()
-                                ? const Color(0x00000000)
-                                : backgroundColor,
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!_isCurrentUser)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4.0),
-                              child: Text(
-                                _currentMessage.user.username,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                          if (replyMessage != null && widget.onReplyTap != null)
-                            ReplyWidget(
-                              replyMessage: replyMessage!,
-                              onTap: widget.onReplyTap!,
-                            ),
-                          MessageContent(
-                            message: _currentMessage,
-                            textColor: textColor,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 图片消息气泡透明无边框，不显示尖角
+                        if (!_isCurrentUser && !_isImageMessage())
+                          BubbleTail(
+                            color: backgroundColor,
+                            isOutgoing: false,
                           ),
-                        ],
-                      ),
+                        Container(
+                          padding:
+                              _isImageMessage()
+                                  ? EdgeInsets.zero
+                                  : const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color:
+                                _isImageMessage()
+                                    ? const Color(0x00000000)
+                                    : backgroundColor,
+                            borderRadius:
+                                _isImageMessage()
+                                    ? BorderRadius.circular(12.0)
+                                    // 尖角一侧上方圆角收小，与尖角自然衔接
+                                    : BorderRadius.only(
+                                      topLeft: Radius.circular(
+                                        _isCurrentUser ? 12 : 4,
+                                      ),
+                                      topRight: Radius.circular(
+                                        _isCurrentUser ? 4 : 12,
+                                      ),
+                                      bottomLeft: const Radius.circular(12),
+                                      bottomRight: const Radius.circular(12),
+                                    ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (!_isCurrentUser)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: Text(
+                                    _currentMessage.user.username,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                ),
+                              if (replyMessage != null &&
+                                  widget.onReplyTap != null)
+                                ReplyWidget(
+                                  replyMessage: replyMessage!,
+                                  onTap: widget.onReplyTap!,
+                                ),
+                              MessageContent(
+                                message: _currentMessage,
+                                textColor: textColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_isCurrentUser && !_isImageMessage())
+                          BubbleTail(color: backgroundColor, isOutgoing: true),
+                      ],
                     ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
