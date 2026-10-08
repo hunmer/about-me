@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import '../models/webview_card.dart';
 
 /// 卡片/书签管理服务
@@ -160,6 +161,12 @@ class CardManager extends ChangeNotifier {
     );
     await _saveCards();
     notifyListeners();
+
+    // 成就系统计数（A65 冲浪起点）
+    EventManager.instance.broadcast(
+      'webview_card_opened',
+      EventArgs('webview_card_opened'),
+    );
   }
 
   /// 搜索卡片

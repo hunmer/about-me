@@ -116,6 +116,10 @@ class AchievementDefinition {
 class AchievementLevelUpEventArgs extends EventArgs {
   final String achievementId;
   final String name;
+
+  /// 本等级具体完成的事项（如「累计发送频道消息 100 条」）
+  final String condition;
+
   final String iconAsset;
   final int level;
   final DateTime unlockedAt;
@@ -124,6 +128,7 @@ class AchievementLevelUpEventArgs extends EventArgs {
   AchievementLevelUpEventArgs({
     required this.achievementId,
     required this.name,
+    required this.condition,
     required this.iconAsset,
     required this.level,
     required this.unlockedAt,

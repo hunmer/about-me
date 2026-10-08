@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import '../models/reminder.dart';
 import 'reminder_notification_service.dart';
 
@@ -97,6 +98,9 @@ class ReminderService {
 
     _reminders.add(reminder);
     await _saveReminders();
+
+    // 成就系统计数（A40 不再遗忘）
+    EventManager.instance.broadcast('reminder_added', EventArgs('reminder_added'));
 
     // 调度通知
     if (reminder.isEnabled) {

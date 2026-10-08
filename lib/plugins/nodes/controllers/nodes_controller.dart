@@ -338,11 +338,20 @@ class NodesController extends ChangeNotifier {
         // 保留原节点的子节点和展开状态
         final List<Node> originalChildren = nodes[i].children;
         final bool originalExpandedState = nodes[i].isExpanded;
+        final bool wasNotDone = nodes[i].status != NodeStatus.done;
 
         // 更新节点，但保留位置、子节点和展开状态
         updatedNode.children = originalChildren;
         updatedNode.isExpanded = originalExpandedState;
         nodes[i] = updatedNode;
+
+        // 成就系统计数（A32 闭环完成）：节点首次置为 done 时
+        if (wasNotDone && updatedNode.status == NodeStatus.done) {
+          EventManager.instance.broadcast(
+            'node_status_done',
+            EventArgs('node_status_done'),
+          );
+        }
         return true;
       }
 

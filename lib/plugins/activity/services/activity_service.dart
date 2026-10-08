@@ -66,6 +66,13 @@ class ActivityService {
       // 广播事件（初始化时不通知）
       if (notify) {
         eventManager.broadcast('activity_added', EventArgs());
+        // 成就系统计数（A18 千时如梭）：仅新增记录（非重叠替换）时累计时长（分钟）
+        if (overlappingIndex == -1) {
+          eventManager.broadcast(
+            'activity_duration_added',
+            Value<int>(activity.durationInMinutes, 'activity_duration_added'),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving activity: $e');

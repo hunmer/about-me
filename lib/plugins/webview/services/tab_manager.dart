@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import '../models/webview_tab.dart';
 
 /// 标签页管理服务
@@ -63,6 +65,12 @@ class TabManager extends ChangeNotifier {
 
     _tabs.add(tab);
     _controllers[tab.id] = null; // 控制器将在 WebView 创建时设置
+
+    // 成就系统计数（A67 多线程浏览）：携带当前标签页数，成就侧按峰值结算
+    EventManager.instance.broadcast(
+      'webview_tab_created',
+      Value<int>(_tabs.length, 'webview_tab_created'),
+    );
 
     if (setActive) {
       await switchToTab(tab.id);

@@ -212,6 +212,12 @@ class ChatDataService {
 
       _channels.sort(Channel.compare);
       _plugin.refresh();
+
+      // 成就系统计数（A02 频道缔造者）
+      aboutme_event.EventManager.instance.broadcast(
+        'chat_channel_added',
+        aboutme_event.EventArgs('chat_channel_added'),
+      );
     } catch (e) {
       debugPrint('Error creating channel: $e');
       _channels.removeWhere((c) => c.id == channel.id);

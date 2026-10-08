@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
@@ -21,15 +22,11 @@ class AchievementProgress {
   /// 通过成就累计获得的积分
   int earnedPoints;
 
-  /// 是否已完成历史数据回填（回填仅执行一次，此后启动不再跑快照）
-  bool backfilled;
-
   AchievementProgress({
     this.value = 0,
     this.unlockedLevel = 0,
     List<DateTime?>? unlockedDates,
     this.earnedPoints = 0,
-    this.backfilled = false,
   }) : unlockedDates = unlockedDates ?? [];
 
   Map<String, dynamic> toJson() => {
@@ -37,7 +34,6 @@ class AchievementProgress {
         'unlockedLevel': unlockedLevel,
         'unlockedDates': unlockedDates.map((d) => d?.toIso8601String()).toList(),
         'earnedPoints': earnedPoints,
-        'backfilled': backfilled,
       };
 
   factory AchievementProgress.fromJson(Map<String, dynamic> json) {
@@ -49,7 +45,6 @@ class AchievementProgress {
               .toList() ??
           [],
       earnedPoints: (json['earnedPoints'] as num?)?.toInt() ?? 0,
-      backfilled: json['backfilled'] as bool? ?? false,
     );
   }
 }
@@ -69,7 +64,7 @@ class AchievementController extends ChangeNotifier {
   /// 事件总线信号 → 成就编号（自计数增量，O(1)，删除源数据不影响计数）。
   ///
   /// 「xx_added/created」类事件对应文档「累计创建」口径，天然只增；
-  /// 无事件的存量型成就（频道数、Live2D 模型数等）依赖打开成就页时的手动快照刷新。
+  /// 携带 `Value<int>` 载荷的事件按数值增量累加（如时长分钟数、照片张数）。
   static const Map<String, String> _eventToAchievement = {
     // 流水型
     'chat_message_sent': 'A01',
@@ -82,24 +77,49 @@ class AchievementController extends ChangeNotifier {
     'goods_item_added': 'A45',
     'onRecordAdded': 'A55',
     // 创建型（累计创建口径）
+    'chat_channel_added': 'A02',
     'openai_agent_added': 'A08',
+    'prompt_preset_added': 'A09',
+    'moment_posted': 'A10',
+    'live2d_model_added': 'A12',
     'task_added': 'A28',
     'nodes_node_added': 'A31',
     'memorial_day_added': 'A34',
     'calendar_event_added': 'A36',
     'account_added': 'A44',
     'contact_created': 'A51',
+    'contact_interaction_added': 'A52',
     'database_added': 'A56',
     'database_record_added': 'A57',
-    // 埋点事件（tts / live2d 插件内一行广播）
+    'checkin_item_added': 'A25',
+    'note_folder_added': 'A30',
+    'reminder_added': 'A40',
+    'goods_warehouse_added': 'A46',
+    // 行为型埋点
     'tts_spoken': 'A61',
     'live2d_tts_spoken': 'A13',
+    'agent_chat_user_message': 'A05',
+    'agent_chat_tool_called': 'A07',
+    'tracker_goal_completed': 'A54',
+    'node_status_done': 'A32',
+    'webview_card_opened': 'A65',
+    'script_executed': 'A68',
+    // 带数值增量（Value<int>）
+    'goods_usage_recorded': 'A47',
+    'activity_duration_added': 'A18',
+    'album_photo_added': 'A38',
+  };
+
+  /// 事件 → 成就（max 语义）：载荷为「当前值」，按快照峰值结算（只增不减）
+  static const Map<String, String> _eventToAchievementMax = {
+    'webview_tab_created': 'A67', // 同时打开标签页数
   };
 
   final Map<String, AchievementProgress> _progress = {};
 
-  /// 已订阅的事件名（dispose 时反订阅）
-  final List<String> _subscribedEvents = [];
+  /// 事件 → 计数处理器（订阅时闭包捕获事件名：EventManager.broadcast
+  /// 不会回填 args.eventName，不能依赖事件参数还原事件名）
+  final Map<String, Function(EventArgs)> _countingHandlers = {};
 
   bool _isInitialized = false;
 
@@ -144,25 +164,6 @@ class AchievementController extends ChangeNotifier {
     return level >= 1 && level <= p.unlockedDates.length ? p.unlockedDates[level - 1] : null;
   }
 
-  /// 是否已完成历史回填
-  bool isBackfilled(String id) => progressOf(id).backfilled;
-
-  /// 标记回填完成并持久化（回填取数失败的成就不标记，下次启动重试）
-  Future<void> markBackfilled(Iterable<String> ids) async {
-    var changed = false;
-    for (final id in ids) {
-      final progress = progressOf(id);
-      if (!progress.backfilled) {
-        progress.backfilled = true;
-        changed = true;
-      }
-    }
-    if (changed) await _save();
-  }
-
-  /// 持久化当前进度（供结算器批量结算后调用）
-  Future<void> persist() => _save();
-
   // ========== 初始化 ==========
 
   Future<void> initialize() async {
@@ -170,14 +171,23 @@ class AchievementController extends ChangeNotifier {
     await _loadFromStorage();
 
     final eventManager = EventManager.instance;
+
+    void registerCounting(String eventName) {
+      // 闭包捕获事件名，处理时不再依赖 args.eventName
+      void handler(EventArgs args) => _onCountingEvent(eventName, args);
+      _countingHandlers[eventName] = handler;
+      eventManager.subscribe(eventName, handler);
+    }
+
     for (final eventName in _eventToAchievement.keys) {
-      eventManager.subscribe(eventName, _onCountingEvent);
-      _subscribedEvents.add(eventName);
+      registerCounting(eventName);
+    }
+    for (final eventName in _eventToAchievementMax.keys) {
+      registerCounting(eventName);
     }
 
     // A48 第一桶金：积分变动后按累计获得积分结算
     eventManager.subscribe('store_cache_updated', _onStoreCacheUpdated);
-    _subscribedEvents.add('store_cache_updated');
 
     _isInitialized = true;
     _recomputeDeepPlayer();
@@ -209,9 +219,23 @@ class AchievementController extends ChangeNotifier {
     }
   }
 
-  void _onCountingEvent(EventArgs args) {
-    final achievementId = _eventToAchievement[args.eventName];
-    if (achievementId != null) {
+  void _onCountingEvent(String eventName, EventArgs args) {
+    // max 语义通道：载荷为当前值，按峰值快照结算
+    final maxId = _eventToAchievementMax[eventName];
+    if (maxId != null) {
+      if (args is Value && args.value is int) {
+        setProgressValue(maxId, args.value as int);
+      }
+      return;
+    }
+
+    final achievementId = _eventToAchievement[eventName];
+    if (achievementId == null) return;
+
+    // 携带正整数载荷时按数值增量，否则 +1
+    if (args is Value && args.value is int && (args.value as int) > 0) {
+      recordProgress(achievementId, args.value as int);
+    } else {
       recordProgress(achievementId, 1);
     }
   }
@@ -272,6 +296,7 @@ class AchievementController extends ChangeNotifier {
       final args = AchievementLevelUpEventArgs(
         achievementId: def.id,
         name: def.name,
+        condition: '${def.condition} ${def.thresholds[level - 1]}${def.unit}',
         iconAsset: def.iconAsset,
         level: level,
         unlockedAt: now,
@@ -344,11 +369,11 @@ class AchievementController extends ChangeNotifier {
   @override
   void dispose() {
     final eventManager = EventManager.instance;
-    for (final eventName in _eventToAchievement.keys) {
-      eventManager.unsubscribe(eventName, _onCountingEvent);
-    }
+    _countingHandlers.forEach((eventName, handler) {
+      eventManager.unsubscribe(eventName, handler);
+    });
+    _countingHandlers.clear();
     eventManager.unsubscribe('store_cache_updated', _onStoreCacheUpdated);
-    _subscribedEvents.clear();
     super.dispose();
   }
 }

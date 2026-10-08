@@ -227,6 +227,8 @@ class NotesController {
     );
     _folders[folder.id] = folder;
     await _saveFolders();
+    // 成就系统计数（A30 分门别类）
+    EventManager.instance.broadcast('note_folder_added', EventArgs('note_folder_added'));
     return folder;
   }
 

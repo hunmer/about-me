@@ -5,6 +5,7 @@ import '../../models/file_attachment.dart';
 import '../../models/saved_tool_template.dart';
 import '../../services/token_counter_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'shared/manager_context.dart';
 
 /// 消息发送管理器
@@ -129,6 +130,12 @@ class MessageSender {
 
     // 保存用户消息
     await context.messageService.addMessage(userMessage);
+
+    // 成就系统计数（A05 促膝长谈：用户发出消息即计一轮）
+    EventManager.instance.broadcast(
+      'agent_chat_user_message',
+      EventArgs('agent_chat_user_message'),
+    );
 
     // 更新会话的最后消息
     await context.conversationService.updateLastMessage(

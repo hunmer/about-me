@@ -90,6 +90,31 @@ void main() {
     expect(selected, 3);
   });
 
+  testWidgets('仅圆按钮无 subLabels：不画空胶囊，圆钮常驻浮动', (tester) async {
+    await tester.pumpWidget(wrap(RadialDiscBottomBar(
+      tabs: buildTabs(),
+      activeIndex: 0,
+      leadingAction: const Icon(Icons.gamepad),
+    )));
+    await tester.pumpAndSettle();
+
+    // 无 subLabels → 子栏折叠目标恒为 0，不画空胶囊；
+    // 高度为 dock + 浮动圆钮裁剪（非完整 146 画布）
+    final size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight - 28 - 13);
+    expect(find.byIcon(Icons.gamepad), findsOneWidget);
+
+    // 圆钮在 dock 上方浮动，位置高于第一个 tab
+    final disc = tester.renderObject<RenderBox>(
+      find.byIcon(Icons.gamepad));
+    final firstTab = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('icon0')));
+    expect(
+      disc.localToGlobal(Offset.zero).dy,
+      lessThan(firstTab.localToGlobal(Offset.zero).dy),
+    );
+  });
+
   testWidgets('子栏选项切换回调', (tester) async {
     RadialSubOption? picked;
     await tester.pumpWidget(wrap(RadialDiscBottomBar(

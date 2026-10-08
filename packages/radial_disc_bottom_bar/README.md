@@ -6,6 +6,7 @@
 上层为可折叠子栏：左右两个圆按钮 + 中间双选项分段（弧形药丸沿弧线滑动）。
 
 - 右端浮动钮：`floatingAction` 在子栏右圆钮位置（±15.4° 上层弧线）常驻一个自带手势的浮动操作钮（如 FAB），不随子栏折叠；启用子栏时改用子栏 `trailingAction`
+- 子栏胶囊（含折叠动画）只在传 `subLabels` 时出现；仅传 `leadingAction`/`trailingAction` 时不画空胶囊，圆按钮常驻浮动在子栏弧线两端
 - 磨砂玻璃：`frosted: true` 时扇环用 ClipPath + BackdropFilter 做背景模糊（阴影层在玻璃外绘制，投影不被切断）
 
 ## 几何

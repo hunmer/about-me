@@ -207,6 +207,12 @@ class ContactController {
     interactions.add(interaction);
     await saveAllInteractions(interactions);
 
+    // 成就系统计数（A52 保持联络）
+    EventManager.instance.broadcast(
+      'contact_interaction_added',
+      EventArgs('contact_interaction_added'),
+    );
+
     // 更新联系人的最近联系时间
     final contact = await getContact(interaction.contactId);
     if (contact != null) {

@@ -423,6 +423,14 @@ class TrackerController with ChangeNotifier {
     );
     await updateGoal(goal.id, updatedGoal);
 
+    // 成就系统计数（A54 旗开得胜）：目标首次达成 100% 时
+    if (updatedGoal.isCompleted && !goal.isCompleted) {
+      eventManager.broadcast(
+        'tracker_goal_completed',
+        EventArgs('tracker_goal_completed'),
+      );
+    }
+
     // 广播记录添加事件
     eventManager.broadcast('onRecordAdded', Value<Record>(record));
 

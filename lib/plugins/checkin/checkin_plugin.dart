@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
@@ -363,6 +364,11 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       if (result.isSuccess) {
         // 创建成功后，重新加载数据
         await _saveCheckinItems();
+        // 成就系统计数（A25 建制完成）
+        EventManager.instance.broadcast(
+          'checkin_item_added',
+          EventArgs('checkin_item_added'),
+        );
       } else {
         final error = result.errorOrNull;
         final message = error != null ? error.message : '创建打卡项目失败';

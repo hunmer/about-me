@@ -135,6 +135,21 @@ class _UnlockDialogBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
+              // 本等级具体完成的事项
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  args.condition,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withAlpha(200),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               // 获得日期
               Row(
                 mainAxisSize: MainAxisSize.min,

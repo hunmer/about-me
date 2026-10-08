@@ -81,11 +81,13 @@ class RadialDiscBottomBar extends StatelessWidget {
   final ValueChanged<RadialSubOption>? onSubOptionChange;
   final (String, String)? subLabels;
 
-  /// 子栏左侧圆按钮图标（null 则不渲染该按钮）
+  /// 子栏左侧圆按钮图标（null 则不渲染该按钮）。
+  /// 无 subLabels 时圆按钮不画空胶囊，常驻浮动在子栏弧线左端
   final Widget? leadingAction;
   final VoidCallback? onLeadingTap;
 
-  /// 子栏右侧圆按钮图标（null 则不渲染该按钮）
+  /// 子栏右侧圆按钮图标（null 则不渲染该按钮）。
+  /// 无 subLabels 时圆按钮不画空胶囊，常驻浮动在子栏弧线右端
   final Widget? trailingAction;
   final VoidCallback? onTrailingTap;
 
@@ -108,7 +110,7 @@ class RadialDiscBottomBar extends StatelessWidget {
   /// 仅 dock 时裁掉的画布上方空区高度（主扇环弧顶 y=56）
   static const double _dockCropTop = 55;
 
-  /// 浮动操作钮模式下更小的上裁剪（44px 圆钮中心 y≈52，需为其留出空间）
+  /// 浮动内容（FAB 顶 ≈30 / 35px 圆钮顶 ≈34）模式下更小的上裁剪
   static const double _floatActionCropTop = 28;
 
   /// 仅 dock 时裁掉的画布下方空区高度（主扇环最低点 y≈133）
@@ -122,10 +124,12 @@ class RadialDiscBottomBar extends StatelessWidget {
         );
     final count = tabs.length;
     final index = activeIndex.clamp(0, count - 1);
-    final hasSubContent =
-        subLabels != null || leadingAction != null || trailingAction != null;
+    // 子栏胶囊（含折叠动画）只在有分段选项 subLabels 时出现；
+    // 仅传圆按钮时不画空胶囊，圆按钮以常驻浮动圆盘渲染在子栏弧线两端
     final subBarPossible =
-        subBarBehavior != RadialSubBarBehavior.never && hasSubContent;
+        subBarBehavior != RadialSubBarBehavior.never && subLabels != null;
+    final hasFloatingDiscs =
+        !subBarPossible && (leadingAction != null || trailingAction != null);
     final wantsSubBar = switch (subBarBehavior) {
       RadialSubBarBehavior.never => false,
       RadialSubBarBehavior.always => subBarPossible,
@@ -232,9 +236,23 @@ class RadialDiscBottomBar extends StatelessWidget {
                 ),
               ),
             ),
-          // 3. 主层滑动药丸（弹簧沿弧线滑动并随切线旋转）
-          SpringBuilder(
-            value: index.toDouble(),
+          // 3. 无胶囊时左右圆按钮渲染为常驻浮动圆盘（不随子栏折叠）
+          if (hasFloatingDiscs) ...[
+            _roundButton(
+              angle: RadialGeometry.leadingAngle,
+              icon: leadingAction,
+              onTap: onLeadingTap,
+              style: resolvedStyle,
+            ),
+            _roundButton(
+              angle: RadialGeometry.trailingAngle,
+              icon: trailingAction,
+              onTap: onTrailingTap,
+              style: resolvedStyle,
+            ),
+          ],
+          // 4. 主层滑动药丸（弹簧沿弧线滑动并随切线旋转）
+          SpringBuilder(            value: index.toDouble(),
             stiffness: 420,
             damping: 34,
             builder: (context, animatedIndex) {
@@ -266,10 +284,10 @@ class RadialDiscBottomBar extends StatelessWidget {
               );
             },
           ),
-          // 4. tab 按钮
+          // 5. tab 按钮
           for (var i = 0; i < count; i++)
             _tabButton(context, i, resolvedStyle),
-          // 5. 子栏右圆钮位置的常驻浮动操作钮（如 FAB），随切线旋转；
+          // 6. 子栏右圆钮位置的常驻浮动操作钮（如 FAB），随切线旋转；
           //    启用子栏时由子栏 trailingAction 承担该位置，此处不渲染
           if (floatingAction != null && !subBarPossible)
             Builder(
@@ -299,8 +317,8 @@ class RadialDiscBottomBar extends StatelessWidget {
     // OverflowBox 放松约束让场景保持 380×146（直接嵌套 SizedBox
     // 会被外层紧约束压扁，导致下半部分不可命中）
     if (!subBarPossible) {
-      final cropTop =
-          floatingAction == null ? _dockCropTop : _floatActionCropTop;
+      final hasFloating = floatingAction != null || hasFloatingDiscs;
+      final cropTop = hasFloating ? _floatActionCropTop : _dockCropTop;
       scene = SizedBox(
         width: RadialGeometry.canvasWidth,
         height: RadialGeometry.canvasHeight - cropTop - _dockCropBottom,

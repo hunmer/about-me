@@ -405,6 +405,12 @@ class ScriptExecutor {
           images: _extractImagePaths(result),
         );
 
+        // 成就系统计数（A68 Hello World）
+        EventManager.instance.broadcast(
+          'script_executed',
+          EventArgs('script_executed'),
+        );
+
         return ScriptExecutionResult.success(
           result: result,
           duration: duration,
@@ -431,6 +437,12 @@ class ScriptExecutor {
         trigger: _resolveTrigger(args),
         durationMs: duration.inMilliseconds,
         error: e,
+      );
+
+      // 成就系统计数（A68 Hello World，运行即计数，含失败）
+      EventManager.instance.broadcast(
+        'script_executed',
+        EventArgs('script_executed'),
       );
 
       return ScriptExecutionResult.failure(

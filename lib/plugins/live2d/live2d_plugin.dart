@@ -128,6 +128,11 @@ class Live2DPlugin extends BasePlugin {
     final i = archives.indexWhere((a) => a.id == archive.id);
     if (i < 0) {
       archives.add(archive);
+      // 成就系统计数（A12 伙伴收藏家，仅新增模型时）
+      EventManager.instance.broadcast(
+        'live2d_model_added',
+        EventArgs('live2d_model_added'),
+      );
     } else {
       archives[i] = archive;
     }
