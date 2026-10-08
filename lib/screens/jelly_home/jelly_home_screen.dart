@@ -130,7 +130,8 @@ class _CottageTabState extends State<_CottageTab> {
             children: [
               // Live2D 角色全屏铺满，点击命中角色本体（hit area）算一次陪伴互动
               JellyLive2D(
-                fill: true,
+                fill: false,
+                fitContainer: false,
                 message: _live2dMessage,
                 reaction: _live2dReaction,
                 initialModel: modelDefinitionForArchive(
@@ -194,23 +195,22 @@ class _CottageTabState extends State<_CottageTab> {
       child: Pressable(
         onPressed: onTap,
         semanticLabel: semanticLabel,
-        builder:
-            (context, states) => Opacity(
-              opacity: states.contains(WidgetState.pressed) ? 0.85 : 1,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.surface.withValues(alpha: 0.72),
-                  border: Border.all(color: theme.stroke),
-                  boxShadow: theme.shadows.soft,
-                ),
-                child: Center(
-                  child: DsIcon(icon, size: 20, color: theme.primaryText),
-                ),
-              ),
+        builder: (context, states) => Opacity(
+          opacity: states.contains(WidgetState.pressed) ? 0.85 : 1,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: theme.surface.withValues(alpha: 0.72),
+              border: Border.all(color: theme.stroke),
+              boxShadow: theme.shadows.soft,
             ),
+            child: Center(
+              child: DsIcon(icon, size: 20, color: theme.primaryText),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -219,39 +219,38 @@ class _CottageTabState extends State<_CottageTab> {
   Future<void> _showProfileDialog(AppThemeData theme) {
     return showDSDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => DSDialog(
-            title: '我的资料',
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (dialogContext) => DSDialog(
+        title: '我的资料',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            JellyProfileCard(
+              name: Live2DPlugin.instance.selected?.name ?? '小智',
+              level: 17,
+              exp: 568,
+              expMax: 1250,
+            ),
+            SizedBox(height: theme.spacing.md),
+            Row(
               children: [
-                JellyProfileCard(
-                  name: Live2DPlugin.instance.selected?.name ?? '小智',
-                  level: 17,
-                  exp: 568,
-                  expMax: 1250,
-                ),
-                SizedBox(height: theme.spacing.md),
-                Row(
-                  children: [
-                    for (var i = 0; i < _stats.length; i++) ...[
-                      if (i > 0) SizedBox(width: theme.spacing.sm),
-                      Expanded(
-                        child: JellyStatCard(
-                          icon: _stats[i].$1,
-                          label: _stats[i].$2,
-                          value: _stats[i].$3,
-                          color: [theme.warning, theme.success, theme.primary][i],
-                          onAdd: () {},
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                for (var i = 0; i < _stats.length; i++) ...[
+                  if (i > 0) SizedBox(width: theme.spacing.sm),
+                  Expanded(
+                    child: JellyStatCard(
+                      icon: _stats[i].$1,
+                      label: _stats[i].$2,
+                      value: _stats[i].$3,
+                      color: [theme.warning, theme.success, theme.primary][i],
+                      onAdd: () {},
+                    ),
+                  ),
+                ],
               ],
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -260,11 +259,10 @@ class _CottageTabState extends State<_CottageTab> {
     final companionName = Live2DPlugin.instance.selected?.name ?? '小智';
     return showDSDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => DSDialog(
-            title: '$companionName状态',
-            content: JellyCompanionCard(controller: _companion),
-          ),
+      builder: (dialogContext) => DSDialog(
+        title: '$companionName状态',
+        content: JellyCompanionCard(controller: _companion),
+      ),
     );
   }
 

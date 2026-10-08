@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'dart:io';
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
@@ -29,6 +30,7 @@ class JellyLive2D extends StatefulWidget {
     this.typingInterval = const Duration(milliseconds: 70),
     this.motionRequest,
     this.fill = false,
+    this.fitContainer = false,
   });
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
@@ -44,6 +46,10 @@ class JellyLive2D extends StatefulWidget {
   /// 夹在 [_minSize, _maxSize] 调节范围内），跟随窗口大小变化；
   /// 关闭时使用保存的固定尺寸
   final bool fill;
+
+  /// When enabled, the Live2D viewport follows the exact size of its parent
+  /// container. The parent should provide finite constraints.
+  final bool fitContainer;
 
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
@@ -84,6 +90,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
   /// 气泡宽度等布局按它计算
   double _displaySize = _defaultSize;
+  String? _lastLayoutLog;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
@@ -858,9 +865,38 @@ class _JellyLive2DState extends State<JellyLive2D> {
       valueListenable: _size,
       builder: (context, size, _) => LayoutBuilder(
         builder: (context, constraints) {
-          final displaySize = widget.fill && constraints.maxHeight.isFinite
-              ? max(_minSize, constraints.maxHeight - _fillBottomReserve)
+          final containerWidth = constraints.maxWidth;
+          final containerHeight = constraints.maxHeight;
+          final fitHeight = widget.fitContainer && containerHeight.isFinite
+              ? containerHeight
+              : null;
+          final fitWidth = widget.fitContainer && containerWidth.isFinite
+              ? containerWidth
+              : null;
+          final displaySize = fitHeight != null
+              ? min(fitHeight, fitWidth ?? fitHeight)
               : size;
+          // The native model viewport is portrait (0.5 aspect). Scale it to
+          // fit the available height while keeping its full top and bottom.
+          // The native viewport is 180x360. Fit the complete viewport into
+          // the available square while keeping the model's bottom at the
+          // content bottom; do not cap the scale independently of layout.
+          final modelScale = 1.0;
+          final media = MediaQuery.sizeOf(context);
+          final layoutLog =
+              'window=${media.width}x${media.height} '
+              'constraints=${constraints.maxWidth}x${constraints.maxHeight} '
+              'safeBottom=${MediaQuery.paddingOf(context).bottom} '
+              'reserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
+              'display=$displaySize '
+              'viewport=${_defaultSize * _modelViewportAspectRatio}x$_defaultSize '
+              'scale=$modelScale offsetY=${displaySize - _defaultSize * modelScale} '
+              'cropZoom=${_cropRegion.zoom} crop=${_cropRegion.encode()}';
+          if (_lastLayoutLog != layoutLog) {
+            _lastLayoutLog = layoutLog;
+            debugPrint('[JellyLive2DLayout] $layoutLog');
+            unawaited(_writeLayoutLog(layoutLog));
+          }
           _displaySize = displaySize;
           return AnimatedContainer(
             key: _bubbleAnchorKey,
@@ -901,7 +937,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                           // OverflowBox + bottomCenter 保持居中。
                           offset: Offset.zero,
                           child: Transform.scale(
-                            scale: displaySize / _defaultSize,
+                            scale: modelScale,
                             alignment: Alignment.bottomCenter,
                             // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
                             // 视口同时为全身模型保留足够的纵向空间。
@@ -1103,6 +1139,21 @@ class _JellyLive2DState extends State<JellyLive2D> {
         },
       ),
     );
+  }
+
+  Future<void> _writeLayoutLog(String line) async {
+    try {
+      final file = File(
+        '${Directory.systemTemp.path}/aboutme_live2d_layout.log',
+      );
+      await file.writeAsString(
+        '${DateTime.now().toIso8601String()} $line\n',
+        mode: FileMode.append,
+        flush: true,
+      );
+    } catch (_) {
+      // Layout logging must never affect rendering.
+    }
   }
 }
 
