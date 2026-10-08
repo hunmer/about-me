@@ -507,14 +507,15 @@ class _JellyLive2DState extends State<JellyLive2D> {
       });
     }
     try {
+      final localModel = await Live2DOnlineCatalog.cacheDefinition(model);
       await _controller.whenAttached;
       if (!mounted) return;
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
       }
       await _controller.loadModel(
-        modelDir: model.modelDir,
-        modelFileName: model.modelFile,
+        modelDir: localModel.modelDir,
+        modelFileName: localModel.modelFile,
       );
     } on Live2DException {
       // The controller exposes the detailed error through Live2DViewState.
@@ -873,13 +874,22 @@ class _JellyLive2DState extends State<JellyLive2D> {
           final fitWidth = widget.fitContainer && containerWidth.isFinite
               ? containerWidth
               : null;
-          final displaySize = size;
+          // Container-fit controls the outer hit-test/layout bounds only.
+          // Keep the model at its persisted size so a tall parent does not
+          // unexpectedly scale the character.
+          final displaySize = widget.fill && containerHeight.isFinite
+              ? (containerHeight - _fillBottomReserve)
+                    .clamp(_minSize, _maxSize)
+                    .toDouble()
+              : size;
+          final layoutWidth = fitWidth ?? displaySize;
+          final layoutHeight = fitHeight ?? displaySize;
           // The native model viewport is portrait (0.5 aspect). Scale it to
           // fit the available height while keeping its full top and bottom.
           // The native viewport is 180x360. Fit the complete viewport into
           // the available square while keeping the model's bottom at the
           // content bottom; do not cap the scale independently of layout.
-          final modelScale = 1.0;
+          final modelScale = displaySize / _defaultSize;
           final media = MediaQuery.sizeOf(context);
           final layoutLog =
               'window=${media.width}x${media.height} '
@@ -901,8 +911,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             onEnd: _updateBubbleOverlayPosition,
-            width: displaySize,
-            height: displaySize,
+            width: layoutWidth,
+            height: layoutHeight,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onLongPress: _showControls,
@@ -1003,7 +1013,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        height: size,
+                        height: layoutHeight,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: error == null

@@ -131,7 +131,7 @@ class _CottageTabState extends State<_CottageTab> {
               // Live2D 角色全屏铺满，点击命中角色本体（hit area）算一次陪伴互动
               JellyLive2D(
                 fill: false,
-                fitContainer: false,
+                fitContainer: true,
                 message: _live2dMessage,
                 reaction: _live2dReaction,
                 initialModel: modelDefinitionForArchive(
