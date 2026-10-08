@@ -218,7 +218,10 @@ class JellySpeechBubble extends StatelessWidget {
                       right: constraints.maxWidth * (1 - regions.message.right),
                       bottom:
                           constraints.maxHeight * (1 - regions.message.bottom),
-                      child: message,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: message,
+                      ),
                     ),
                   ],
                 ),
@@ -380,52 +383,39 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
             child: Scrollbar(
               controller: _scrollController,
               thumbVisibility: true,
-              child: ShaderMask(
-                blendMode: BlendMode.dstIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x00000000),
-                    Color(0xFF000000),
-                    Color(0xFF000000),
-                  ],
-                  stops: [0.0, 0.16, 1.0],
-                ).createShader(bounds),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 44),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: widget.text == '...'
-                          ? const SizedBox(
-                              height: 24,
-                              child: Center(
-                                child: Text('...', textAlign: TextAlign.center),
-                              ),
-                            )
-                          : MarkdownBody(
-                              data: visibleText,
-                              shrinkWrap: true,
-                              styleSheet:
-                                  MarkdownStyleSheet.fromTheme(
-                                    Theme.of(context),
-                                  ).copyWith(
-                                    p: widget.style,
-                                    h1: widget.style.copyWith(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    h2: widget.style.copyWith(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    code: widget.style,
-                                  ),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: widget.text == '...'
+                        ? const SizedBox(
+                            height: 24,
+                            child: Center(
+                              child: Text('...', textAlign: TextAlign.center),
                             ),
-                    ),
+                          )
+                        : MarkdownBody(
+                            data: visibleText,
+                            shrinkWrap: true,
+                            styleSheet:
+                                MarkdownStyleSheet.fromTheme(
+                                  Theme.of(context),
+                                ).copyWith(
+                                  p: widget.style,
+                                  h1: widget.style.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  h2: widget.style.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  code: widget.style,
+                                ),
+                          ),
                   ),
                 ),
               ),

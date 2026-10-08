@@ -395,7 +395,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
     const margin = 12.0;
     const gap = 8.0;
-    const minimumBubbleHeight = 84.0;
+    const bubbleBaseWidth = 288.0;
+    const bubbleBaseHeight = 150.0;
     final viewport = overlayBox.size;
     final padding = MediaQuery.paddingOf(overlayContext);
     final bottomInset = max(
@@ -408,6 +409,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
     );
     final bubbleWidth = min(_displaySize * 0.8, availableWidth);
     if (bubbleWidth <= 0) return const SizedBox.shrink();
+    final bubbleScale = bubbleWidth / bubbleBaseWidth;
+    final bubbleHeight = bubbleBaseHeight * bubbleScale;
 
     // The key is attached to the full-height container, while the model is
     // bottom-aligned inside it. Anchor the bubble to the model's top instead
@@ -431,7 +434,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final safeTop = padding.top + margin;
     final safeBottom = max(safeTop, viewport.height - bottomInset - margin);
     if (safeBottom <= safeTop) return const SizedBox.shrink();
-    final minimumBottom = min(safeBottom, safeTop + minimumBubbleHeight);
+    final minimumBottom = min(safeBottom, safeTop + bubbleHeight);
     final bubbleBottom = max(
       anchorTopCenter.dy - gap,
       minimumBottom,
@@ -447,7 +450,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: SizedBox(
-              height: 150,
+              width: bubbleWidth,
+              height: bubbleHeight,
               child: AppTheme(
                 data: AppTheme.of(context),
                 child: JellySpeechBubble(
