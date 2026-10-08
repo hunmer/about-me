@@ -9,6 +9,8 @@ import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/nodes/widgets/node_item.dart';
 import 'node_edit_screen.dart';
 import 'package:uuid/uuid.dart';
@@ -56,30 +58,24 @@ class _NodesScreenState extends State<NodesScreen> {
         ),
         PopupMenuButton<String>(
           icon: Icon(Icons.more_vert, color: theme.iconTheme.color),
-          onSelected:
-              (value) => _handleMenuAction(
-                value,
-                context,
-                controller,
-                currentNotebook,
+          onSelected: (value) =>
+              _handleMenuAction(value, context, controller, currentNotebook),
+          itemBuilder: (BuildContext context) => [
+            PopupMenuItem<String>(
+              value: 'copy',
+              child: ListTile(
+                leading: const Icon(Icons.copy),
+                title: Text('nodes_copyToText'.tr),
               ),
-          itemBuilder:
-              (BuildContext context) => [
-                PopupMenuItem<String>(
-                  value: 'copy',
-                  child: ListTile(
-                    leading: const Icon(Icons.copy),
-                    title: Text('nodes_copyToText'.tr),
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'clear',
-                  child: ListTile(
-                    leading: const Icon(Icons.clear_all),
-                    title: Text('nodes_clearNodes'.tr),
-                  ),
-                ),
-              ],
+            ),
+            PopupMenuItem<String>(
+              value: 'clear',
+              child: ListTile(
+                leading: const Icon(Icons.clear_all),
+                title: Text('nodes_clearNodes'.tr),
+              ),
+            ),
+          ],
         ),
       ],
       body: Stack(
@@ -87,23 +83,23 @@ class _NodesScreenState extends State<NodesScreen> {
           currentNotebook?.nodes.isEmpty ?? true
               ? Center(child: Text('nodes_noNodesYet'.tr))
               : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: currentNotebook?.nodes.length ?? 0,
-                itemBuilder: (context, index) {
-                  return NodeItem(
-                    node: currentNotebook!.nodes[index],
-                    notebookId: widget.notebook.id,
-                    depth: 0,
-                  );
-                },
-              ),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: currentNotebook?.nodes.length ?? 0,
+                  itemBuilder: (context, index) {
+                    return NodeItem(
+                      node: currentNotebook!.nodes[index],
+                      notebookId: widget.notebook.id,
+                      depth: 0,
+                    );
+                  },
+                ),
           // FAB 覆盖层
           Positioned(
             bottom: 16,
             right: 16,
-            child: FloatingActionButton(
-              child: const Icon(Icons.add),
-              onPressed: () => _addRootNode(context),
+            child: DSThemeBridge(
+              // DSFab 内部取 AppTheme，需包桥
+              child: DSFab(onPressed: () => _addRootNode(context)),
             ),
           ),
         ],
@@ -158,25 +154,24 @@ class _NodesScreenState extends State<NodesScreen> {
   ) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('nodes_clearNodesTitle'.tr),
-            content: Text('nodes_clearNodesConfirm'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('nodes_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () {
-                  controller.clearNodes(notebook.id);
-                  Navigator.pop(context);
-                  Toast.success('nodes_nodesCleared'.tr);
-                },
-                child: Text('nodes_clear'.tr),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text('nodes_clearNodesTitle'.tr),
+        content: Text('nodes_clearNodesConfirm'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('nodes_cancel'.tr),
           ),
+          TextButton(
+            onPressed: () {
+              controller.clearNodes(notebook.id);
+              Navigator.pop(context);
+              Toast.success('nodes_nodesCleared'.tr);
+            },
+            child: Text('nodes_clear'.tr),
+          ),
+        ],
+      ),
     );
   }
 
@@ -226,11 +221,10 @@ class _NodesScreenState extends State<NodesScreen> {
 
     // 执行搜索：匹配节点标题或笔记内容
     final allNodes = _getAllNodes(currentNotebook?.nodes ?? []);
-    final matchedNodes =
-        allNodes.where((node) {
-          return node.title.toLowerCase().contains(query.toLowerCase()) ||
-              node.notes.toLowerCase().contains(query.toLowerCase());
-        }).toList();
+    final matchedNodes = allNodes.where((node) {
+      return node.title.toLowerCase().contains(query.toLowerCase()) ||
+          node.notes.toLowerCase().contains(query.toLowerCase());
+    }).toList();
 
     if (matchedNodes.isEmpty) {
       return Center(

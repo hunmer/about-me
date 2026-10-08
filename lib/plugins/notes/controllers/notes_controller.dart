@@ -70,8 +70,8 @@ class NotesController {
           final folder = Folder.fromJson(item);
           _folders[folder.id] = folder;
         }
-      } else {
-        // 加载示例文件夹数据
+      } else if (kDebugMode) {
+        // 加载示例文件夹数据（仅开发环境，生产环境保持空数据）
         final sampleFolders = NotesSampleData.getSampleFolders();
         for (var folder in sampleFolders) {
           _folders[folder.id] = folder;

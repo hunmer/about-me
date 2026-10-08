@@ -6,6 +6,8 @@ import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:aboutme/plugins/tts/widgets/service_editor_dialog.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// TTS服务列表界面
 class TTSServicesScreen extends StatefulWidget {
@@ -46,22 +48,21 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
   Future<void> _deleteService(TTSServiceConfig service) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('tts_deleteService'.tr),
-            content: Text('tts_confirmDelete'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('tts_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text('tts_deleteService'.tr),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text('tts_deleteService'.tr),
+        content: Text('tts_confirmDelete'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('tts_cancel'.tr),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('tts_deleteService'.tr),
+          ),
+        ],
+      ),
     );
 
     if (confirmed == true) {
@@ -210,199 +211,199 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
               ? const Center(child: CircularProgressIndicator())
               : _services.isEmpty
               ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.record_voice_over_outlined,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'tts_noServicesAvailable'.tr,
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: () => _createDefaultService(),
-                      icon: const Icon(Icons.add),
-                      label: Text('tts_addService'.tr),
-                    ),
-                  ],
-                ),
-              )
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.record_voice_over_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'tts_noServicesAvailable'.tr,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => _createDefaultService(),
+                        icon: const Icon(Icons.add),
+                        label: Text('tts_addService'.tr),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _services.length,
-                itemBuilder: (context, index) {
-                  final service = _services[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      onTap: () => _editService(service),
-                      leading: Icon(
-                        service.type == TTSServiceType.system
-                            ? Icons.record_voice_over
-                            : Icons.cloud,
-                        color: service.isEnabled ? _plugin.color : Colors.grey,
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(child: Text(service.name)),
-                          if (service.isDefault)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'tts_defaultService'.tr,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _services.length,
+                  itemBuilder: (context, index) {
+                    final service = _services[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        onTap: () => _editService(service),
+                        leading: Icon(
+                          service.type == TTSServiceType.system
+                              ? Icons.record_voice_over
+                              : Icons.cloud,
+                          color: service.isEnabled
+                              ? _plugin.color
+                              : Colors.grey,
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(child: Text(service.name)),
+                            if (service.isDefault)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
                                 ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            service.type == TTSServiceType.system
-                                ? 'tts_systemTts'.tr
-                                : 'tts_httpService'.tr,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            service.isEnabled
-                                ? 'tts_enabled'.tr
-                                : 'tts_disabled'.tr,
-                            style: TextStyle(
-                              color:
-                                  service.isEnabled
-                                      ? Colors.green
-                                      : Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert),
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'edit':
-                              _editService(service);
-                              break;
-                            case 'test':
-                              _testService(service);
-                              break;
-                            case 'toggle':
-                              _toggleService(service);
-                              break;
-                            case 'default':
-                              _setDefaultService(service);
-                              break;
-                            case 'delete':
-                              _deleteService(service);
-                              break;
-                          }
-                        },
-                        itemBuilder:
-                            (context) => [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.edit, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text('tts_editService'.tr),
-                                  ],
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ),
-                              const PopupMenuDivider(),
-                              PopupMenuItem(
-                                value: 'test',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.play_arrow, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text('tts_test'.tr),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'toggle',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      service.isEnabled
-                                          ? Icons.pause
-                                          : Icons.play_circle_outline,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      service.isEnabled
-                                          ? 'tts_disabled'.tr
-                                          : 'tts_enabled'.tr,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (!service.isDefault)
-                                PopupMenuItem(
-                                  value: 'default',
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.star_outline, size: 20),
-                                      const SizedBox(width: 8),
-                                      Text('tts_setAsDefault'.tr),
-                                    ],
+                                child: Text(
+                                  'tts_defaultService'.tr,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
                                   ),
                                 ),
-                              const PopupMenuDivider(),
+                              ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              service.type == TTSServiceType.system
+                                  ? 'tts_systemTts'.tr
+                                  : 'tts_httpService'.tr,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              service.isEnabled
+                                  ? 'tts_enabled'.tr
+                                  : 'tts_disabled'.tr,
+                              style: TextStyle(
+                                color: service.isEnabled
+                                    ? Colors.green
+                                    : Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'edit':
+                                _editService(service);
+                                break;
+                              case 'test':
+                                _testService(service);
+                                break;
+                              case 'toggle':
+                                _toggleService(service);
+                                break;
+                              case 'default':
+                                _setDefaultService(service);
+                                break;
+                              case 'delete':
+                                _deleteService(service);
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.edit, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text('tts_editService'.tr),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuDivider(),
+                            PopupMenuItem(
+                              value: 'test',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.play_arrow, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text('tts_test'.tr),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'toggle',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    service.isEnabled
+                                        ? Icons.pause
+                                        : Icons.play_circle_outline,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    service.isEnabled
+                                        ? 'tts_disabled'.tr
+                                        : 'tts_enabled'.tr,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!service.isDefault)
                               PopupMenuItem(
-                                value: 'delete',
+                                value: 'default',
                                 child: Row(
                                   children: [
-                                    const Icon(
-                                      Icons.delete_outline,
-                                      size: 20,
-                                      color: Colors.red,
-                                    ),
+                                    const Icon(Icons.star_outline, size: 20),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      'tts_deleteService'.tr,
-                                      style: const TextStyle(color: Colors.red),
-                                    ),
+                                    Text('tts_setAsDefault'.tr),
                                   ],
                                 ),
                               ),
-                            ],
+                            const PopupMenuDivider(),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.delete_outline,
+                                    size: 20,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'tts_deleteService'.tr,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
           // FAB 覆盖层
           if (!_isLoading && _services.isNotEmpty)
             Positioned(
               bottom: 16,
               right: 16,
-              child: FloatingActionButton(
-                onPressed: () => _createDefaultService(),
-                child: const Icon(Icons.add),
+              child: DSThemeBridge(
+                // DSFab 内部取 AppTheme，需包桥
+                child: DSFab(onPressed: () => _createDefaultService()),
               ),
             ),
         ],

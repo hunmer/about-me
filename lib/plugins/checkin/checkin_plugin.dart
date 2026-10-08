@@ -69,29 +69,25 @@ class _CheckinMainViewState extends State<CheckinMainView>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      backgroundColor: checkinPlugin.color,
-      elevation: 4,
-      shape: const CircleBorder(),
-      onPressed: () async {
-        final newItem = await NavigationHelper.openContainer<CheckinItem>(
-          context,
-          (context) => const CheckinFormScreen(),
-        );
-        if (newItem != null) {
-          await checkinPlugin.addCheckinItem(newItem);
-          if (mounted) {
-            setState(() {});
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        color: checkinPlugin.color,
+        iconColor: checkinPlugin.color.computeLuminance() > 0.5
+            ? Colors.black
+            : Colors.white,
+        onPressed: () async {
+          final newItem = await NavigationHelper.openContainer<CheckinItem>(
+            context,
+            (context) => const CheckinFormScreen(),
+          );
+          if (newItem != null) {
+            await checkinPlugin.addCheckinItem(newItem);
+            if (mounted) {
+              setState(() {});
+            }
           }
-        }
-      },
-      child: Icon(
-        Icons.add,
-        color:
-            checkinPlugin.color.computeLuminance() > 0.5
-                ? Colors.black
-                : Colors.white,
-        size: 32,
+        },
       ),
     );
   }
@@ -102,40 +98,37 @@ class _CheckinMainViewState extends State<CheckinMainView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.down,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  final listController = CheckinListController(
-                    context: context,
-                    onStateChanged: () {
-                      setState(() {});
-                      CheckinPlugin.instance.triggerSave();
-                    },
-                  );
-                  return CheckinListScreen(
-                    controller: listController,
-                    initialItemId: widget.itemId,
-                    targetDate: widget.targetDate,
-                  );
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              final listController = CheckinListController(
+                context: context,
+                onStateChanged: () {
+                  setState(() {});
+                  CheckinPlugin.instance.triggerSave();
                 },
-              ),
-              ValueListenableBuilder(
-                valueListenable: ValueNotifier(
-                  CheckinPlugin.instance.checkinItems,
-                ),
-                builder: (context, _, __) {
-                  return CheckinStatsScreen(
-                    checkinItems: CheckinPlugin.instance.checkinItems,
-                  );
-                },
-              ),
-            ],
+              );
+              return CheckinListScreen(
+                controller: listController,
+                initialItemId: widget.itemId,
+                targetDate: widget.targetDate,
+              );
+            },
           ),
+          ValueListenableBuilder(
+            valueListenable: ValueNotifier(CheckinPlugin.instance.checkinItems),
+            builder: (context, _, __) {
+              return CheckinStatsScreen(
+                checkinItems: CheckinPlugin.instance.checkinItems,
+              );
+            },
+          ),
+        ],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.check, label: 'checkin_checkinList'.tr),
@@ -188,12 +181,9 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items =
-          jsonList
-              .map(
-                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
-              )
-              .toList();
+      final items = jsonList
+          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
+          .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
     // 同步到小组件
@@ -295,12 +285,9 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items =
-          jsonList
-              .map(
-                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
-              )
-              .toList();
+      final items = jsonList
+          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
+          .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
 
@@ -444,12 +431,9 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     final itemsResult = await _checkinUseCase.getItems({});
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items =
-          jsonList
-              .map(
-                (json) => CheckinItemDto.fromJson(json as Map<String, dynamic>),
-              )
-              .toList();
+      final items = jsonList
+          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
+          .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
     }
     // 同步到小组件
@@ -481,12 +465,11 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       group: params['group'] as String? ?? '默认分组',
       description: params['description'] as String? ?? '',
       cardStyle: params['cardStyle'] as int? ?? 0,
-      reminderSettings:
-          params['reminderSettings'] != null
-              ? ReminderSettingsDto.fromJson(
-                params['reminderSettings'] as Map<String, dynamic>,
-              )
-              : null,
+      reminderSettings: params['reminderSettings'] != null
+          ? ReminderSettingsDto.fromJson(
+              params['reminderSettings'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -500,17 +483,16 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
     // 将 checkInRecords 转换
     final records = <String, List<CheckinRecord>>{};
     dto.checkInRecords.forEach((date, recordDtos) {
-      records[date] =
-          recordDtos
-              .map(
-                (r) => CheckinRecord(
-                  startTime: r.startTime,
-                  endTime: r.endTime,
-                  checkinTime: r.checkinTime,
-                  note: r.note,
-                ),
-              )
-              .toList();
+      records[date] = recordDtos
+          .map(
+            (r) => CheckinRecord(
+              startTime: r.startTime,
+              endTime: r.endTime,
+              checkinTime: r.checkinTime,
+              note: r.note,
+            ),
+          )
+          .toList();
     });
 
     // 转换提醒设置

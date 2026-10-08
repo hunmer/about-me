@@ -6,6 +6,8 @@ import '../controllers/reminder_list_controller.dart';
 import 'components/reminder_card.dart';
 import 'components/empty_state.dart';
 import 'reminder_form_screen.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 提醒列表界面
 class ReminderListScreen extends StatefulWidget {
@@ -38,9 +40,9 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
     final reminders = _controller.reminders;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addReminder,
-        child: const Icon(Icons.add),
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: DSFab(onPressed: _addReminder),
       ),
       body: SuperCupertinoNavigationWrapper(
         title: const Text('定时提醒'),
@@ -48,22 +50,21 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _addReminder),
         ],
-        body:
-            reminders.isEmpty
-                ? const EmptyState()
-                : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: reminders.length,
-                  itemBuilder: (context, index) {
-                    final reminder = reminders[index];
-                    return ReminderCard(
-                      reminder: reminder,
-                      onToggle: () => _controller.toggleReminder(reminder.id),
-                      onEdit: () => _editReminder(reminder),
-                      onDelete: () => _deleteReminder(reminder),
-                    );
-                  },
-                ),
+        body: reminders.isEmpty
+            ? const EmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: reminders.length,
+                itemBuilder: (context, index) {
+                  final reminder = reminders[index];
+                  return ReminderCard(
+                    reminder: reminder,
+                    onToggle: () => _controller.toggleReminder(reminder.id),
+                    onEdit: () => _editReminder(reminder),
+                    onDelete: () => _deleteReminder(reminder),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -93,25 +94,24 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   Future<void> _deleteReminder(Reminder reminder) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('删除提醒'),
-            content: Text('确定要删除提醒"${reminder.title}"吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                ),
-                child: const Text('删除'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('删除提醒'),
+        content: Text('确定要删除提醒"${reminder.title}"吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed == true) {

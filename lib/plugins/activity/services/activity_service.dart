@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -405,7 +405,7 @@ class ActivityService {
       // 如果标签相关文件都不存在，说明是首次使用，插入默认数据
       final isFirstTime = !tagGroupsExists && !recentTagsExists && !recentMoodsExists;
 
-      if (isFirstTime) {
+      if (isFirstTime && kDebugMode) {
         debugPrint('[ActivityService] 检测到首次使用，正在插入默认数据...');
 
         // 1. 插入默认标签分组

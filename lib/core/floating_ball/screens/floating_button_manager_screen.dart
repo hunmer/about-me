@@ -4,6 +4,8 @@ import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:aboutme/core/floating_ball/floating_widget_controller.dart';
 import 'package:aboutme/core/floating_ball/widgets/floating_button_edit_dialog.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 
 /// 悬浮按钮管理界面
@@ -72,9 +74,9 @@ class _FloatingButtonManagerScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: Text('core_confirmDelete'.tr),
-            content: Text(
-              'core_confirmDeleteButton'.trParams({'title': _buttons[index].title}),
-            ),
+        content: Text(
+          'core_confirmDeleteButton'.trParams({'title': _buttons[index].title}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -113,34 +115,23 @@ class _FloatingButtonManagerScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('core_floatingButtonManager'.tr),
-      ),
+      appBar: AppBar(title: Text('core_floatingButtonManager'.tr)),
       body: _buttons.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.touch_app,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
+                  const Icon(Icons.touch_app, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
                   Text(
                     '暂无按钮',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
                     onPressed: _addButton,
                     icon: const Icon(Icons.add),
-                      label: Text(
-                        'core_addFirstButton'.tr,
-                      ),
+                    label: Text('core_addFirstButton'.tr),
                   ),
                 ],
               ),
@@ -183,9 +174,7 @@ class _FloatingButtonManagerScreenState
                         : const Icon(Icons.radio_button_unchecked, size: 48),
                     title: Text(button.title),
                     subtitle: Text(
-                      button.data != null
-                          ? jsonEncode(button.data)
-                          : '无执行数据',
+                      button.data != null ? jsonEncode(button.data) : '无执行数据',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12),
@@ -211,9 +200,9 @@ class _FloatingButtonManagerScreenState
               },
             ),
       floatingActionButton: _buttons.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: _addButton,
-              child: const Icon(Icons.add),
+          ? DSThemeBridge(
+              // DSFab 内部取 AppTheme，需包桥
+              child: DSFab(onPressed: _addButton),
             )
           : null,
     );

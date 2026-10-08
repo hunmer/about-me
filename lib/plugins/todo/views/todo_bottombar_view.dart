@@ -154,25 +154,23 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
     return Builder(
       builder: (context) {
         final fabColor = _colors[_currentPage];
-        return FloatingActionButton(
-          backgroundColor: fabColor,
-          elevation: 4,
-          shape: const CircleBorder(),
-          onPressed: () {
-            NavigationHelper.openContainerWithHero(
-              context,
-              (context) => TaskForm(
-                taskController: _plugin.taskController,
-                reminderController: _plugin.reminderController,
-              ),
-              transitionDuration: const Duration(milliseconds: 300),
-            );
-          },
-          child: Icon(
-            Icons.add,
-            color:
-                fabColor.computeLuminance() < 0.5 ? Colors.white : Colors.black,
-            size: 32,
+        return DSThemeBridge(
+          // DSFab 内部取 AppTheme，需包桥
+          child: DSFab(
+            color: fabColor,
+            iconColor: fabColor.computeLuminance() < 0.5
+                ? Colors.white
+                : Colors.black,
+            onPressed: () {
+              NavigationHelper.openContainerWithHero(
+                context,
+                (context) => TaskForm(
+                  taskController: _plugin.taskController,
+                  reminderController: _plugin.reminderController,
+                ),
+                transitionDuration: const Duration(milliseconds: 300),
+              );
+            },
           ),
         );
       },
@@ -185,13 +183,12 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.down,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [_buildTabPage(0), _buildTabPage(1)],
-          ),
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [_buildTabPage(0), _buildTabPage(1)],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.check, label: 'todo_todoTab'.tr),
@@ -316,13 +313,12 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
             },
           );
         },
-        getBadge:
-            (value) => FilterBuilders.priorityBadge(value, {
-              TaskPriority.q1: 'todo_q1'.tr,
-              TaskPriority.q2: 'todo_q2'.tr,
-              TaskPriority.q3: 'todo_q3'.tr,
-              TaskPriority.q4: 'todo_q4'.tr,
-            }),
+        getBadge: (value) => FilterBuilders.priorityBadge(value, {
+          TaskPriority.q1: 'todo_q1'.tr,
+          TaskPriority.q2: 'todo_q2'.tr,
+          TaskPriority.q3: 'todo_q3'.tr,
+          TaskPriority.q4: 'todo_q4'.tr,
+        }),
       ),
 
       // 3. 日期范围过滤
@@ -472,18 +468,16 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
               final theme = DSThemeBridge.resolve(context);
               // calendar_view_week / dashboard_outlined 无自绘等价物，用 calendar/grid 顶替
               return DSIconButton(
-                icon:
-                    _plugin.taskController.viewMode == ViewMode.quadrant
-                        ? DsIconKind.calendar
-                        : DsIconKind.grid,
+                icon: _plugin.taskController.viewMode == ViewMode.quadrant
+                    ? DsIconKind.calendar
+                    : DsIconKind.grid,
                 size: 40,
                 color: theme.surfaceAlt,
                 iconColor: theme.text,
                 onPressed: _plugin.taskController.toggleViewMode,
-                tooltip:
-                    _plugin.taskController.viewMode == ViewMode.quadrant
-                        ? '切换到周视图'
-                        : '切换到四象限视图',
+                tooltip: _plugin.taskController.viewMode == ViewMode.quadrant
+                    ? '切换到周视图'
+                    : '切换到四象限视图',
               );
             },
           ),
@@ -493,48 +487,47 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
         animation: _plugin.taskController,
         builder: (context, _) {
           // 根据 View 的过滤状态决定使用过滤后的结果还是原始数据
-          final tasks =
-              _currentFilter != null
-                  ? _plugin.taskController.filterTasks(_currentFilter!)
-                  : _plugin.taskController.tasks;
+          final tasks = _currentFilter != null
+              ? _plugin.taskController.filterTasks(_currentFilter!)
+              : _plugin.taskController.tasks;
 
           return _plugin.taskController.viewMode == ViewMode.quadrant
               ? TodoFourQuadrantView(
-                tasks: tasks,
-                onTaskTap: (task) => _showTaskDetailDialog(context, task),
-                onTaskStatusChanged: (task, status) {
-                  _plugin.taskController.updateTaskStatus(task.id, status);
-                },
-                onAddTask: (priority) {
-                  NavigationHelper.openContainerWithHero(
-                    context,
-                    (context) => TaskForm(
-                      taskController: _plugin.taskController,
-                      reminderController: _plugin.reminderController,
-                      initialPriority: priority,
-                    ),
-                    transitionDuration: const Duration(milliseconds: 300),
-                  );
-                },
-              )
+                  tasks: tasks,
+                  onTaskTap: (task) => _showTaskDetailDialog(context, task),
+                  onTaskStatusChanged: (task, status) {
+                    _plugin.taskController.updateTaskStatus(task.id, status);
+                  },
+                  onAddTask: (priority) {
+                    NavigationHelper.openContainerWithHero(
+                      context,
+                      (context) => TaskForm(
+                        taskController: _plugin.taskController,
+                        reminderController: _plugin.reminderController,
+                        initialPriority: priority,
+                      ),
+                      transitionDuration: const Duration(milliseconds: 300),
+                    );
+                  },
+                )
               : TodoWeekView(
-                tasks: tasks,
-                onTaskTap: (task) => _showTaskDetailDialog(context, task),
-                onTaskStatusChanged: (task, status) {
-                  _plugin.taskController.updateTaskStatus(task.id, status);
-                },
-                onAddTask: (date) {
-                  NavigationHelper.openContainerWithHero(
-                    context,
-                    (context) => TaskForm(
-                      taskController: _plugin.taskController,
-                      reminderController: _plugin.reminderController,
-                      initialStartDate: date,
-                    ),
-                    transitionDuration: const Duration(milliseconds: 300),
-                  );
-                },
-              );
+                  tasks: tasks,
+                  onTaskTap: (task) => _showTaskDetailDialog(context, task),
+                  onTaskStatusChanged: (task, status) {
+                    _plugin.taskController.updateTaskStatus(task.id, status);
+                  },
+                  onAddTask: (date) {
+                    NavigationHelper.openContainerWithHero(
+                      context,
+                      (context) => TaskForm(
+                        taskController: _plugin.taskController,
+                        reminderController: _plugin.reminderController,
+                        initialStartDate: date,
+                      ),
+                      transitionDuration: const Duration(milliseconds: 300),
+                    );
+                  },
+                );
         },
       ),
     );
@@ -561,16 +554,15 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                   final confirmed = await showDSDialog<bool>(
                     context: context,
                     theme: DSThemeBridge.resolve(context),
-                    builder:
-                        (dialogContext) => DSDialog(
-                          title: 'todo_clearHistoryTitle'.tr,
-                          message: 'todo_clearHistoryMessage'.tr,
-                          cancelText: 'todo_cancel'.tr,
-                          confirmText: 'todo_clearHistoryAction'.tr,
-                          confirmVariant: DSButtonVariant.destructive,
-                          onConfirm: () => Navigator.pop(dialogContext, true),
-                          onCancel: () => Navigator.pop(dialogContext, false),
-                        ),
+                    builder: (dialogContext) => DSDialog(
+                      title: 'todo_clearHistoryTitle'.tr,
+                      message: 'todo_clearHistoryMessage'.tr,
+                      cancelText: 'todo_cancel'.tr,
+                      confirmText: 'todo_clearHistoryAction'.tr,
+                      confirmVariant: DSButtonVariant.destructive,
+                      onConfirm: () => Navigator.pop(dialogContext, true),
+                      onCancel: () => Navigator.pop(dialogContext, false),
+                    ),
                   );
 
                   if (confirmed == true) {
@@ -595,11 +587,8 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
     SmoothBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      builder:
-          (context) => TodoItemDetail(
-            task: task,
-            taskController: _plugin.taskController,
-          ),
+      builder: (context) =>
+          TodoItemDetail(task: task, taskController: _plugin.taskController),
     );
   }
 
@@ -615,10 +604,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
             animation: _plugin.taskController,
             builder: (context, _) {
               // 搜索结果使用 View 的过滤状态
-              final searchTasks =
-                  _currentFilter != null
-                      ? _plugin.taskController.filterTasks(_currentFilter!)
-                      : _plugin.taskController.tasks;
+              final searchTasks = _currentFilter != null
+                  ? _plugin.taskController.filterTasks(_currentFilter!)
+                  : _plugin.taskController.tasks;
 
               if (_searchQuery.isEmpty) {
                 return Center(
@@ -676,8 +664,8 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                   16 + MediaQuery.paddingOf(context).bottom,
                 ),
                 itemCount: searchTasks.length,
-                separatorBuilder:
-                    (context, index) => const SizedBox(height: 16),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final task = searchTasks[index];
                   return _buildSimpleTaskCard(task);
@@ -762,8 +750,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                         style: DsTypography.body.copyWith(
                           fontSize: 16,
                           color: theme.text,
-                          decoration:
-                              isDone ? TextDecoration.lineThrough : null,
+                          decoration: isDone
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -784,8 +773,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                           DateFormat('MMM d').format(task.dueDate!),
                           style: DsTypography.caption.copyWith(
                             color: theme.textSub,
-                            decoration:
-                                isDone ? TextDecoration.lineThrough : null,
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                     ],
@@ -799,8 +789,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                     children: [
                       GestureDetector(
                         onTap: () {
-                          final newStatus =
-                              isDone ? TaskStatus.todo : TaskStatus.done;
+                          final newStatus = isDone
+                              ? TaskStatus.todo
+                              : TaskStatus.done;
                           _plugin.taskController.updateTaskStatus(
                             task.id,
                             newStatus,
@@ -809,10 +800,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                         child: DSCheckbox(
                           value: isDone,
                           onChanged: (value) {
-                            final newStatus =
-                                value == true
-                                    ? TaskStatus.done
-                                    : TaskStatus.todo;
+                            final newStatus = value == true
+                                ? TaskStatus.done
+                                : TaskStatus.todo;
                             _plugin.taskController.updateTaskStatus(
                               task.id,
                               newStatus,

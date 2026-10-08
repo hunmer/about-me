@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
@@ -202,8 +202,9 @@ class BillController with ChangeNotifier {
     }
   }
 
-  // 加载示例数据
+  // 加载示例数据（仅开发环境，生产环境保持空数据）
   Future<void> _loadSampleData() async {
+    if (!kDebugMode) return;
     try {
       // 获取示例数据
       final sampleData = BillSampleData.getSampleData();

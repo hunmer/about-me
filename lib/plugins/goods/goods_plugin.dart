@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -309,8 +310,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     }
   }
 
-  /// 创建示例仓库数据
+  /// 创建示例仓库数据（仅开发环境，生产环境保持空数据）
   Future<void> _createSampleWarehouses() async {
+    if (!kDebugMode) return;
     try {
       // 获取示例仓库数据
       final sampleWarehouses = GoodsSampleData.getSampleWarehouses();

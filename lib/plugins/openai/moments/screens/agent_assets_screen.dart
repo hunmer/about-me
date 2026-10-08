@@ -9,6 +9,8 @@ import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dar
 import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 
 /// Agent 资产图管理：占位生成 / 上传命名 / 图生图
@@ -68,12 +70,10 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.agentName} 的资产图'),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddSheet,
-        child: const Icon(Icons.add),
+      appBar: AppBar(title: Text('${widget.agentName} 的资产图')),
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: DSFab(onPressed: _showAddSheet),
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(12),
@@ -160,10 +160,7 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor,
-          width: 1.2,
-        ),
+        border: Border.all(color: theme.dividerColor, width: 1.2),
         color: theme.disabledColor.withValues(alpha: 0.08),
       ),
       child: Icon(
@@ -179,50 +176,45 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   void _showAddSheet() {
     showModalBottomSheet(
       context: context,
-      builder:
-          (ctx) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.upload_file),
-                  title: const Text('上传照片'),
-                  subtitle: const Text('从相册/本地选择，可命名'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickAndUpload();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.auto_awesome),
-                  title: const Text('新建占位'),
-                  subtitle: const Text('定义名称与生成提示词，稍后用 AI 生成'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showCreatePlaceholderDialog();
-                  },
-                ),
-              ],
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: const Text('上传照片'),
+              subtitle: const Text('从相册/本地选择，可命名'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUpload();
+              },
             ),
-          ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('新建占位'),
+              subtitle: const Text('定义名称与生成提示词，稍后用 AI 生成'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showCreatePlaceholderDialog();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Future<void> _pickAndUpload() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder:
-          (context) => ImagePickerDialog(
-            saveDirectory: _archiveDir,
-            enableCompression: true,
-            compressionQuality: 88,
-          ),
+      builder: (context) => ImagePickerDialog(
+        saveDirectory: _archiveDir,
+        enableCompression: true,
+        compressionQuality: 88,
+      ),
     );
     if (result == null || result['url'] == null) return;
-    final name = await _promptText(
-      title: '命名照片',
-      hint: '如：三视图、房间照片',
-    );
+    final name = await _promptText(title: '命名照片', hint: '如：三视图、房间照片');
     if (name == null || name.trim().isEmpty) return;
     await _assetsService.addAsset(
       agentId: widget.agentId,
@@ -251,90 +243,87 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   void _showAssetSheet(AgentAsset asset) {
     showModalBottomSheet(
       context: context,
-      builder:
-          (ctx) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    asset.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                asset.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-                if (asset.hasImage)
-                  ListTile(
-                    leading: const Icon(Icons.fullscreen),
-                    title: const Text('查看大图'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => PhotoViewerScreen(
-                                imageRelativePaths: [asset.path!],
-                              ),
-                        ),
-                      );
-                    },
-                  ),
-                if (!asset.hasImage)
-                  ListTile(
-                    leading: const Icon(Icons.auto_awesome),
-                    title: const Text('生成图片'),
-                    subtitle: const Text('按提示词生成，自动附加 TA 的人设'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showGenerateDialog(asset);
-                    },
-                  )
-                else ...[
-                  ListTile(
-                    leading: const Icon(Icons.transform),
-                    title: const Text('以此图生成（图生图）'),
-                    subtitle: const Text('以这张图为参考生成新图'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showImg2ImgDialog(asset);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.refresh),
-                    title: const Text('重新生成'),
-                    subtitle: const Text('覆盖当前图片'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showGenerateDialog(asset, overwrite: true);
-                    },
-                  ),
-                ],
-                ListTile(
-                  leading: const Icon(Icons.drive_file_rename_outline),
-                  title: Text(asset.hasImage ? '重命名' : '编辑名称与提示词'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showEditAssetDialog(asset);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: const Text('删除', style: TextStyle(color: Colors.red)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _assetsService.deleteAsset(
-                      agentId: widget.agentId,
-                      assetId: asset.id,
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
+            if (asset.hasImage)
+              ListTile(
+                leading: const Icon(Icons.fullscreen),
+                title: const Text('查看大图'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PhotoViewerScreen(imageRelativePaths: [asset.path!]),
+                    ),
+                  );
+                },
+              ),
+            if (!asset.hasImage)
+              ListTile(
+                leading: const Icon(Icons.auto_awesome),
+                title: const Text('生成图片'),
+                subtitle: const Text('按提示词生成，自动附加 TA 的人设'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showGenerateDialog(asset);
+                },
+              )
+            else ...[
+              ListTile(
+                leading: const Icon(Icons.transform),
+                title: const Text('以此图生成（图生图）'),
+                subtitle: const Text('以这张图为参考生成新图'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showImg2ImgDialog(asset);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text('重新生成'),
+                subtitle: const Text('覆盖当前图片'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showGenerateDialog(asset, overwrite: true);
+                },
+              ),
+            ],
+            ListTile(
+              leading: const Icon(Icons.drive_file_rename_outline),
+              title: Text(asset.hasImage ? '重命名' : '编辑名称与提示词'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditAssetDialog(asset);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text('删除', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _assetsService.deleteAsset(
+                  agentId: widget.agentId,
+                  assetId: asset.id,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -452,27 +441,26 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
     final controller = TextEditingController(text: initial);
     return showDialog<String>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text(title),
-            content: TextField(
-              controller: controller,
-              decoration: InputDecoration(hintText: hint),
-              autofocus: true,
-              maxLines: 3,
-              minLines: 1,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, controller.text),
-                child: const Text('确定'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: hint),
+          autofocus: true,
+          maxLines: 3,
+          minLines: 1,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
     );
   }
 }

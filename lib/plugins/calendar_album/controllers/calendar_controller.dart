@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/plugin_manager.dart';
-import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/sample_data.dart';
 import 'dart:convert';
@@ -159,8 +159,9 @@ class CalendarController extends ChangeNotifier {
     await _loadEntries();
   }
 
-  /// 加载示例数据
+  /// 加载示例数据（仅开发环境，生产环境保持空数据）
   Future<void> _loadSampleData() async {
+    if (!kDebugMode) return;
     final sampleEntries = CalendarAlbumSampleData.getSampleCalendarEntriesGrouped();
 
     // 将示例数据加载到内存中

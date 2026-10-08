@@ -66,59 +66,60 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return FloatingActionButton(
-      key: _fabKey,
-      backgroundColor: widget.plugin.color,
-      elevation: 4,
-      shape: const CircleBorder(),
-      onPressed: () {
-        if (_currentPage == 0) {
-          NavigationHelper.openContainerWithHero(
-            context,
-            (context) => Scaffold(
-              appBar: AppBar(
-                title: Text('habits_newHabit'.tr),
-                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        key: _fabKey,
+        color: widget.plugin.color,
+        iconColor: widget.plugin.color.computeLuminance() < 0.5
+            ? Colors.white
+            : Colors.black,
+        icon: _currentPage == 0 ? DsIconKind.clipboard : DsIconKind.heart,
+        onPressed: () {
+          if (_currentPage == 0) {
+            NavigationHelper.openContainerWithHero(
+              context,
+              (context) => Scaffold(
+                appBar: AppBar(
+                  title: Text('habits_newHabit'.tr),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).appBarTheme.backgroundColor,
+                ),
+                backgroundColor: DSThemeBridge.resolve(context).background,
+                body: HabitForm(
+                  onSave: (habit) async {
+                    await _habitController.saveHabit(habit);
+                  },
+                ),
               ),
-              backgroundColor: DSThemeBridge.resolve(context).background,
-              body: HabitForm(
-                onSave: (habit) async {
-                  await _habitController.saveHabit(habit);
-                },
+              sourceKey: _fabKey,
+              heroTag: 'habits_fab_add_habit',
+              closedShape: const CircleBorder(),
+            );
+          } else {
+            NavigationHelper.openContainerWithHero(
+              context,
+              (context) => Scaffold(
+                appBar: AppBar(
+                  title: Text('habits_createSkill'.tr),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).appBarTheme.backgroundColor,
+                ),
+                backgroundColor: DSThemeBridge.resolve(context).background,
+                body: SkillForm(
+                  onSave: (skill) async {
+                    await _skillController.saveSkill(skill);
+                  },
+                ),
               ),
-            ),
-            sourceKey: _fabKey,
-            heroTag: 'habits_fab_add_habit',
-            closedShape: const CircleBorder(),
-          );
-        } else {
-          NavigationHelper.openContainerWithHero(
-            context,
-            (context) => Scaffold(
-              appBar: AppBar(
-                title: Text('habits_createSkill'.tr),
-                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-              ),
-              backgroundColor: DSThemeBridge.resolve(context).background,
-              body: SkillForm(
-                onSave: (skill) async {
-                  await _skillController.saveSkill(skill);
-                },
-              ),
-            ),
-            sourceKey: _fabKey,
-            heroTag: 'habits_fab_add_skill',
-            closedShape: const CircleBorder(),
-          );
-        }
-      },
-      child: Icon(
-        _currentPage == 0 ? Icons.add_task : Icons.add_reaction,
-        color:
-            widget.plugin.color.computeLuminance() < 0.5
-                ? Colors.white
-                : Colors.black,
-        size: 32,
+              sourceKey: _fabKey,
+              heroTag: 'habits_fab_add_skill',
+              closedShape: const CircleBorder(),
+            );
+          }
+        },
       ),
     );
   }
@@ -129,26 +130,25 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.start,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              KeepAliveWrapper(
-                child: CombinedHabitsView(
-                  controller: _habitController,
-                  habitId: widget.habitId,
-                ),
-              ),
-              KeepAliveWrapper(
-                child: SkillsList(
-                  skillController: _skillController,
-                  recordController: _recordController,
-                ),
-              ),
-            ],
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.start,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          KeepAliveWrapper(
+            child: CombinedHabitsView(
+              controller: _habitController,
+              habitId: widget.habitId,
+            ),
           ),
+          KeepAliveWrapper(
+            child: SkillsList(
+              skillController: _skillController,
+              recordController: _recordController,
+            ),
+          ),
+        ],
+      ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.check, label: 'habits_habits'.tr),

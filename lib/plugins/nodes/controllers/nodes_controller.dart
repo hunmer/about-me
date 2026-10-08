@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
@@ -101,8 +102,9 @@ class NodesController extends ChangeNotifier {
     }
   }
 
-  /// 加载示例数据
+  /// 加载示例数据（仅开发环境，生产环境保持空数据）
   Future<void> _loadSampleData() async {
+    if (!kDebugMode) return;
     try {
       _notebooks = NodesSampleData.getSampleNotebooks();
       if (_notebooks.isNotEmpty) {

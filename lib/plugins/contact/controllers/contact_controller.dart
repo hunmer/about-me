@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
@@ -420,8 +420,10 @@ class ContactController {
     return interactions.length;
   }
 
-  // 创建默认联系人数据
+  // 创建默认联系人数据（仅开发环境，生产环境保持空数据）
   Future<void> createDefaultContacts() async {
+    if (!kDebugMode) return;
+
     final storage = plugin.storage;
 
     // 检查是否已有联系人数据

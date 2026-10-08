@@ -23,12 +23,11 @@ class GoalDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // 死代码文件：仅做轻量令牌化（无外部引用，供后续评估删除）
     final theme = DSThemeBridge.resolve(context);
-    final records =
-        controller.records
-            .where((r) => r.goalId == goal.id)
-            .toList()
-            .reversed
-            .toList();
+    final records = controller.records
+        .where((r) => r.goalId == goal.id)
+        .toList()
+        .reversed
+        .toList();
     final progress = controller.calculateProgress(goal);
 
     return Scaffold(
@@ -69,10 +68,9 @@ class GoalDetailPage extends StatelessWidget {
                   value: progress,
                   minHeight: 8,
                   backgroundColor: theme.surfaceAlt,
-                  color:
-                      goal.progressColor != null
-                          ? Color(goal.progressColor!)
-                          : theme.primary,
+                  color: goal.progressColor != null
+                      ? Color(goal.progressColor!)
+                      : theme.primary,
                 ),
                 const flutter.SizedBox(height: 8),
                 Text(
@@ -107,9 +105,9 @@ class GoalDetailPage extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showRecordDialog(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: DSFab(onPressed: () => _showRecordDialog(context)),
       ),
     );
   }

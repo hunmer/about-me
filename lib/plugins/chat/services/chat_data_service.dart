@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
@@ -41,7 +42,7 @@ class ChatDataService {
 
   Future<void> _initializeDefaultData() async {
     final channelsListData = await _plugin.storage.read('chat/channels.json');
-    if (channelsListData.isEmpty) {
+    if (channelsListData.isEmpty && kDebugMode) {
       debugPrint('Chat插件: 首次初始化，正在加载示例数据...');
       await _loadSampleData();
     }

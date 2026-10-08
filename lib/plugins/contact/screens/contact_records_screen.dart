@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
 import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
@@ -60,9 +62,7 @@ class _ContactRecordsScreenState extends State<ContactRecordsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('app_confirmDelete'.tr),
-        content: Text(
-          'contact_deleteConfirmMessage'.tr,
-        ),
+        content: Text('contact_deleteConfirmMessage'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -85,9 +85,7 @@ class _ContactRecordsScreenState extends State<ContactRecordsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('contact_recordsTab'.tr),
-      ),
+      appBar: AppBar(title: Text('contact_recordsTab'.tr)),
       body: Stack(
         children: [
           ListView.builder(
@@ -113,9 +111,9 @@ class _ContactRecordsScreenState extends State<ContactRecordsScreen> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: FloatingActionButton(
-              onPressed: _addInteraction,
-              child: const Icon(Icons.add),
+            child: DSThemeBridge(
+              // DSFab 内部取 AppTheme，需包桥
+              child: DSFab(onPressed: _addInteraction),
             ),
           ),
         ],
