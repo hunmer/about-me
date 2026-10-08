@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:get/get.dart';
 import 'app_translations_en.dart';
 import 'app_translations_zh.dart';
-import 'app_translations_jp.dart';
 
 /// GetX Translations for app-level internationalization
 ///
@@ -19,14 +18,12 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
         'en': appTranslationsEn,
         'zh': appTranslationsZh,
-        'ja': appTranslationsJp,
       };
 
   /// Supported locales
   static const List<Locale> supportedLocales = [
     Locale('en'),
     Locale('zh'),
-    Locale('ja'),
   ];
 
   /// Fallback locale

@@ -37,17 +37,6 @@ class BaseSettingsController extends ChangeNotifier {
                   ],
                 ),
               ),
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, const Locale('ja', 'JP')),
-                child: Row(
-                  children: [
-                    if (_currentLocale.languageCode == 'ja')
-                      Icon(Icons.check, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Text('settingsScreen_japanese'.tr),
-                  ],
-                ),
-              ),
             ],
           ),
     );

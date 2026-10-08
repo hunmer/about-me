@@ -36,4 +36,4 @@ graph LR
 - 应用版本：`0.0.1`（见 `pubspec.yaml`，`publish_to: none`）
 - Dart SDK `^3.7.0`；Node.js `>= 18`（所有 Node 子包）
 - 目标平台：Android、iOS、Web、Windows、macOS、Linux
-- 国际化：中文（zh_CN）、英文（en_US）、日文（ja_JP）
+- 国际化：中文（zh_CN）、英文（en_US）
