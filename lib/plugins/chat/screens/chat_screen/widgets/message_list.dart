@@ -108,6 +108,14 @@ class _MessageListState extends State<MessageList> {
 
           // 为消息项添加 AutoScrollTag
           final tagIndex = widget.messageIndexMap?[item.id] ?? index;
+          // 列表 reverse: true，视觉上方（时间更早）的消息在 index + 1；
+          // 与上一条非同一用户（或中间隔着日期分隔符）时视为组内首条
+          final prevItem =
+              index + 1 < widget.items.length
+                  ? widget.items[index + 1]
+                  : null;
+          final isFirstOfGroup =
+              prevItem is! Message || prevItem.user.id != item.user.id;
           return AutoScrollTag(
             key: ValueKey(item.id),
             controller: widget.scrollController,
@@ -192,6 +200,7 @@ class _MessageListState extends State<MessageList> {
                                 ? () => widget.onAvatarTap!(item)
                                 : null,
                         showAvatar: widget.showAvatar,
+                        isFirstOfGroup: isFirstOfGroup,
                         currentUserId: widget.currentUserId ?? '',
                         isHighlighted:
                             widget.shouldHighlight &&

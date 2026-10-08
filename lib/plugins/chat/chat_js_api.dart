@@ -2,7 +2,8 @@ part of 'chat_plugin.dart';
 
 // ==================== JS API 定义 ====================
 
-Map<String, Function> defineJSAPI() {
+/// 构建 chat 插件的 JS API 表（由 ChatPlugin.defineJSAPI 调用）
+Map<String, Function> buildChatJSAPI() {
   return {
 
     // 频道相关
@@ -29,6 +30,9 @@ Map<String, Function> defineJSAPI() {
     'findMessageBy': _jsFindMessageBy,
     'findMessageById': _jsFindMessageById,
     'findMessageByContent': _jsFindMessageByContent,
+
+    // 贴图相关
+    'importStickerCollection': _jsImportStickerCollection,
   };
 }
 
@@ -85,7 +89,6 @@ Future<String> _jsGetAIUser(Map<String, dynamic> params) async {
 }
 
 // ==================== 频道查找方法 ====================
-
 /// 通用频道查找
 /// @param params.field 要匹配的字段名 (必需)
 /// @param params.value 要匹配的值 (必需)
@@ -260,5 +263,42 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
   } catch (e) {
     debugPrint('Error in getMessagesByDate: $e');
     return '{"error": "获取消息失败: $e", "messages": []}';
+  }
+}
+
+// ==================== 贴图相关 ====================
+
+/// 导入贴图合集（供 line_sticker 等脚本下载贴图包后持久化）
+/// @param params.name 合集名称 (必需)
+/// @param params.paths 贴图文件路径列表 (必需，支持存储相对路径或本地绝对路径)
+/// @return {success, id, name, count} 或 {error}
+Future<String> _jsImportStickerCollection(Map<String, dynamic> params) async {
+  try {
+    final name = params['name']?.toString().trim() ?? '';
+    if (name.isEmpty) {
+      return '{"error": "缺少必需参数: name"}';
+    }
+    final paths =
+        (params['paths'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .where((p) => p.isNotEmpty)
+            .toList();
+    if (paths.isEmpty) {
+      return '{"error": "缺少必需参数: paths（至少一张贴图文件）"}';
+    }
+
+    final collection = await StickerService.instance.createCollection(
+      name,
+      sourcePaths: paths,
+    );
+    return jsonEncode({
+      'success': true,
+      'id': collection.id,
+      'name': collection.name,
+      'count': collection.stickerCount,
+    });
+  } catch (e) {
+    debugPrint('Error in importStickerCollection: $e');
+    return '{"error": "导入贴图合集失败: $e"}';
   }
 }

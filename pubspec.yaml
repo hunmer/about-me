@@ -113,6 +113,9 @@ dependencies:
   # Super Cupertino Navigation Bar（本地 vendor 版：https://github.com/kspo/super_cupertino_navigation_bar @ 2.1.2，扩展了搜索框自定义样式）
   super_cupertino_navigation_bar:
     path: packages/super_cupertino_navigation_bar
+  # 弧形圆盘浮动底部导航栏（双层同心圆弧 + 滑动药丸，参考 floating-bottom-bar）
+  radial_disc_bottom_bar:
+    path: packages/radial_disc_bottom_bar
   floating_ball_plugin:
     path: packages/floating_ball_plugin
   aboutme_widgets:
@@ -204,6 +207,7 @@ flutter:
     - assets/models/ren/expressions/
     - lib/plugins/agent_chat/tools/
     - assets/scripts/ai_image/  # 内置脚本（AI 图片生成）
+    - assets/scripts/line_sticker/  # 内置脚本（LINE 贴图下载）
     - assets/emojis/  # 内置表情包
 
   # An image asset can refer to one or more resolution-specific "variants", see

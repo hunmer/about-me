@@ -23,6 +23,7 @@ import 'services/chat_config_service.dart';
 import 'services/ui_service.dart';
 import 'services/widget_service.dart';
 import 'services/tag_service.dart';
+import 'services/sticker_service.dart';
 import 'package:shared_models/usecases/chat/chat_usecase.dart';
 import 'package:aboutme/core/watch_connectivity_manager.dart';
 
@@ -140,7 +141,7 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   // JSBridgePlugin 实现
   @override
-  Map<String, Function> defineJSAPI() => {};
+  Map<String, Function> defineJSAPI() => buildChatJSAPI();
 
   @override
   Color get color => Colors.indigoAccent;

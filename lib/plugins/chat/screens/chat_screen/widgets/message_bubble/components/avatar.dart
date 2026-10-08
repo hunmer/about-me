@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 
@@ -62,7 +63,7 @@ class _MessageAvatarState extends State<MessageAvatar> {
       child: Text(
         user.username.isNotEmpty ? user.username[0].toUpperCase() : '?',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 13,
           fontWeight: FontWeight.bold,
           color: Theme.of(context).colorScheme.onPrimaryContainer,
         ),
@@ -72,37 +73,35 @@ class _MessageAvatarState extends State<MessageAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Theme.of(context).colorScheme.primaryContainer,
-          ),
-          child:
-              user.iconPath != null && user.iconPath != ''
-                  ? FutureBuilder<String>(
-                    future: ImageUtils.getAbsolutePath(user.iconPath!),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return ClipOval(
-                          child: Image.file(
-                            File(snapshot.data!),
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                          ),
-                        );
-                      }
-                      return _buildDefaultAvatar(context);
-                    },
-                  )
-                  : _buildDefaultAvatar(context),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Theme.of(context).colorScheme.primaryContainer,
+          boxShadow: DsShadows.soft,
         ),
+        child:
+            user.iconPath != null && user.iconPath != ''
+                ? FutureBuilder<String>(
+                  future: ImageUtils.getAbsolutePath(user.iconPath!),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      return ClipOval(
+                        child: Image.file(
+                          File(snapshot.data!),
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    }
+                    return _buildDefaultAvatar(context);
+                  },
+                )
+                : _buildDefaultAvatar(context),
       ),
     );
   }

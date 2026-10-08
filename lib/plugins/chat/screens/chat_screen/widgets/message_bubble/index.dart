@@ -6,7 +6,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'components/avatar.dart';
-import 'components/bubble_tail.dart';
 import 'components/favorite_icon.dart';
 import 'components/fixed_symbol.dart';
 import 'components/message_actions.dart';
@@ -32,6 +31,9 @@ class MessageBubble extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
   final bool showAvatar;
+
+  /// 是否为同一用户连续消息组的首条（决定头像与用户名是否显示）
+  final bool isFirstOfGroup;
   final String currentUserId;
   final bool isHighlighted;
   final Function(String)? onReplyTap;
@@ -51,6 +53,7 @@ class MessageBubble extends StatefulWidget {
     this.onTap,
     this.onAvatarTap,
     this.showAvatar = true,
+    this.isFirstOfGroup = true,
     this.isHighlighted = false,
     this.onReplyTap,
     this.onToggleFavorite,
@@ -197,7 +200,8 @@ class _MessageBubbleState extends State<MessageBubble> {
     if (widget.isHighlighted) {
       return theme.secondary.mixWhite(0.82);
     }
-    return _isCurrentUser ? theme.primary.mixWhite(0.85) : theme.surfaceAlt;
+    // 自己的消息实色主色，对方白色表面（参考对话 UI 风格）
+    return _isCurrentUser ? theme.primary : theme.surface;
   }
 
   Color _getTextColor(BuildContext context) {
@@ -214,12 +218,16 @@ class _MessageBubbleState extends State<MessageBubble> {
           : const Color(0xFFFFFFFF);
     }
 
-    // 选中/高亮/普通气泡均为浅色果冻底，统一使用正文色
-    return theme.text;
+    // 实色主色气泡用 onPrimary，白色/浅色选中高亮气泡用正文色
+    if (widget.isSelected || widget.isHighlighted) {
+      return theme.text;
+    }
+    return _isCurrentUser ? theme.onPrimary : theme.text;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final backgroundColor = _getBackgroundColor(context);
     final textColor = _getTextColor(context);
 
@@ -230,7 +238,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
         onTap: widget.onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment:
@@ -244,14 +252,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                   padding: const EdgeInsets.only(right: 8.0, top: 12.0),
                   child: _buildCheckbox(context),
                 ),
-              if (!_isCurrentUser && widget.showAvatar)
-                MessageAvatar(
-                  user: _currentMessage.user,
-                  onTap: widget.onAvatarTap,
-                )
-              else if (!_isCurrentUser && !widget.showAvatar)
-                const SizedBox(width: 0),
-              const SizedBox(width: 8),
               Flexible(
                 child: Column(
                   crossAxisAlignment:
@@ -259,71 +259,66 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 图片消息气泡透明无边框，不显示尖角
-                        if (!_isCurrentUser && !_isImageMessage())
-                          BubbleTail(
-                            color: backgroundColor,
-                            isOutgoing: false,
-                          ),
-                        Container(
-                          padding:
-                              _isImageMessage()
-                                  ? EdgeInsets.zero
-                                  : const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color:
-                                _isImageMessage()
-                                    ? const Color(0x00000000)
-                                    : backgroundColor,
-                            borderRadius:
-                                _isImageMessage()
-                                    ? BorderRadius.circular(12.0)
-                                    // 尖角一侧上方圆角收小，与尖角自然衔接
-                                    : BorderRadius.only(
-                                      topLeft: Radius.circular(
-                                        _isCurrentUser ? 12 : 4,
-                                      ),
-                                      topRight: Radius.circular(
-                                        _isCurrentUser ? 4 : 12,
-                                      ),
-                                      bottomLeft: const Radius.circular(12),
-                                      bottomRight: const Radius.circular(12),
-                                    ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (!_isCurrentUser)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4.0),
-                                  child: Text(
-                                    _currentMessage.user.username,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ),
-                              if (replyMessage != null &&
-                                  widget.onReplyTap != null)
-                                ReplyWidget(
-                                  replyMessage: replyMessage!,
-                                  onTap: widget.onReplyTap!,
-                                ),
-                              MessageContent(
-                                message: _currentMessage,
-                                textColor: textColor,
-                              ),
-                            ],
-                          ),
+                    // 头像悬浮于气泡上方外侧，仅组内首条显示（参考对话 UI 风格）
+                    if (widget.showAvatar && widget.isFirstOfGroup)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: 6,
+                          left: _isCurrentUser ? 0 : 4,
+                          right: _isCurrentUser ? 4 : 0,
                         ),
-                        if (_isCurrentUser && !_isImageMessage())
-                          BubbleTail(color: backgroundColor, isOutgoing: true),
-                      ],
+                        child: MessageAvatar(
+                          user: _currentMessage.user,
+                          onTap: widget.onAvatarTap,
+                        ),
+                      ),
+                    Container(
+                      padding:
+                          _isImageMessage()
+                              ? EdgeInsets.zero
+                              : const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 12.0,
+                              ),
+                      decoration: BoxDecoration(
+                        color:
+                            _isImageMessage()
+                                ? const Color(0x00000000)
+                                : backgroundColor,
+                        borderRadius: BorderRadius.circular(
+                          _isImageMessage() ? 12.0 : 24.0,
+                        ),
+                        // 图片气泡透明无阴影，其余按参考风格带柔和投影
+                        boxShadow:
+                            _isImageMessage() ? null : theme.shadows.soft,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 用户名仅组内首条显示，与头像折叠策略一致
+                          if (!_isCurrentUser && widget.isFirstOfGroup)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                _currentMessage.user.username,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                          if (replyMessage != null &&
+                              widget.onReplyTap != null)
+                            ReplyWidget(
+                              replyMessage: replyMessage!,
+                              onTap: widget.onReplyTap!,
+                            ),
+                          MessageContent(
+                            message: _currentMessage,
+                            textColor: textColor,
+                          ),
+                        ],
+                      ),
                     ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -370,14 +365,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              if (_isCurrentUser && widget.showAvatar)
-                MessageAvatar(
-                  user: _currentMessage.user,
-                  onTap: widget.onAvatarTap,
-                )
-              else if (_isCurrentUser && !widget.showAvatar)
-                const SizedBox(width: 0),
               // 右侧复选框（其他用户的消息在多选模式下显示）
               if (!_isCurrentUser && widget.isMultiSelectMode)
                 Padding(
