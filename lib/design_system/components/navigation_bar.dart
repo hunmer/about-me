@@ -152,14 +152,18 @@ class _NavItemView extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: theme.spacing.xs),
-              Text(
-                item.label,
-                style: DsTypography.label.copyWith(
-                  fontSize: 12,
-                  color: selected ? theme.primaryText : theme.textSub,
+              // 未激活项不渲染文字区域（图标随 Row 垂直居中）；
+              // 切换同帧完成，任意时刻恰有一项带文字，bar 高度恒定
+              if (selected) ...[
+                SizedBox(height: theme.spacing.xs),
+                Text(
+                  item.label,
+                  style: DsTypography.label.copyWith(
+                    fontSize: 12,
+                    color: theme.primaryText,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         );

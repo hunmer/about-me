@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
@@ -27,8 +28,11 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 展示页自带主题切换，不影响全局
-    final theme = _dark ? AppThemeData.dark() : AppThemeData.light();
+    // 展示页自带主题切换，不影响全局（颜色跟随当前主题色板）
+    final theme = AppThemeData.fromPalette(
+      DsThemeColorController().palette,
+      isDark: _dark,
+    );
 
     return AppTheme(
       data: theme,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
@@ -95,8 +96,8 @@ class _CottageTabState extends State<_CottageTab> {
 
   @override
   Widget build(BuildContext context) {
-    // 演示页自带浅色主题
-    final theme = AppThemeData.light();
+    // 演示页自带浅色主题（跟随当前主题色板）
+    final theme = AppThemeData.fromPalette(DsThemeColorController().palette);
     // 悬浮导航栏的避让高度（JellyBottomNav 通过 extendBody 注入的底部内边距）
     final bottomInset = MediaQuery.of(context).padding.bottom;
 

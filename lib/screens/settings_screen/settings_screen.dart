@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/widgets/picker/avatar_picker.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import './controllers/settings_screen_controller.dart';
@@ -105,73 +104,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// 主题颜色选择：一排色板圆点，点击即全局切换
-  Widget _buildPalettePicker(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-
-    return ListenableBuilder(
-      listenable: DsThemeColorController(),
-      builder: (context, _) {
-        final controller = DsThemeColorController();
-        return Wrap(
-          spacing: theme.spacing.lg,
-          runSpacing: theme.spacing.md,
-          children:
-              DsThemePalettes.all.map((palette) {
-                final selected = palette.id == controller.paletteId;
-                return GestureDetector(
-                  onTap: () => controller.setPalette(palette.id),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 双层圆点：外圈主色、内芯背景色，直观预览主题观感
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: palette.primary,
-                          border: Border.all(
-                            color: selected ? palette.text : DsColors.transparent,
-                            width: 2.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: palette.background,
-                            ),
-                            child: selected
-                                ? Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: palette.primary,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        palette.name,
-                        style: DsTypography.caption.copyWith(
-                          color: selected ? theme.text : theme.textSub,
-                          fontWeight: selected ? FontWeight.w600 : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_controller.isInitialized()) {
@@ -248,12 +180,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          // 主题颜色：色板圆点直接切换，全局即时生效
-          SettingsGroup(
-            title: '主题颜色',
-            children: [_buildPalettePicker(context)],
           ),
           const SizedBox(height: 24),
           SettingsGroup(

@@ -48,12 +48,14 @@ class AppThemeData {
       AppThemeData.fromPalette(DsThemePalettes.pink, isDark: true);
 
   /// 按色板构建主题：浅色下观感色（主色/背景/文字）均来自色板；
-  /// 深色下背景/文字保持 night 系固定，仅主色/辅助色随色板（提亮保证深底可见）
+  /// 深色下从主色派生同色相的深色阶梯（背景/面板/文字），避免非紫色板
+  /// 在深色模式下泛紫
   factory AppThemeData.fromPalette(
     DsThemePalette palette, {
     bool isDark = false,
   }) {
     if (isDark) {
+      final night = _deepShade(palette.primary, 0.45, 0.15);
       return AppThemeData(
         isDark: true,
         primary: palette.primary.mixWhite(0.12),
@@ -66,15 +68,15 @@ class AppThemeData {
         onWarning: DsColors.nightText,
         danger: Color(0xFFFF8A9B),
         onDanger: DsColors.night,
-        background: DsColors.night,
-        backgroundAlt: DsColors.nightAlt,
-        surface: Color(0xFF332154),
-        surfaceAlt: Color(0xFF46306E),
-        text: DsColors.nightText,
-        textSub: DsColors.nightTextSub,
+        background: night,
+        backgroundAlt: _deepShade(palette.primary, 0.48, 0.21),
+        surface: _deepShade(palette.primary, 0.44, 0.23),
+        surfaceAlt: _deepShade(palette.primary, 0.39, 0.31),
+        text: _deepShade(palette.primary, 0.55, 0.95),
+        textSub: _deepShade(palette.primary, 0.55, 0.78),
         stroke: Color(0x33FFFFFF),
-        barrier: Color(0x8C14082B),
-        disabled: Color(0xFF463A66),
+        barrier: night.withValues(alpha: 0.55),
+        disabled: _deepShade(palette.primary, 0.28, 0.31),
       );
     }
     return AppThemeData(
@@ -196,6 +198,15 @@ class AppThemeData {
 
   /// 派生：主色文字（浅色模式直接用主色，深色模式提亮）
   Color get primaryText => isDark ? primary : primary.mixBlack(0.08);
+
+  /// 深色表面色派生：保持 [base] 色相，压到目标饱和度/明度，
+  /// 得到同色系的深色阶梯（数值对标原紫色 night 系硬编码值）
+  static Color _deepShade(Color base, double saturation, double lightness) {
+    return HSLColor.fromColor(base)
+        .withSaturation(saturation)
+        .withLightness(lightness)
+        .toColor();
+  }
 }
 
 /// 间距令牌透传（组件通过 `theme.spacing.xs` 读取）
