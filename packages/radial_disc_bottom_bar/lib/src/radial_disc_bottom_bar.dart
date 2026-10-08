@@ -563,6 +563,12 @@ class _ScenePainter extends CustomPainter {
   final bool shadowsOnly;
   final bool fillsOnly;
 
+  /// 背景画布不参与命中：CustomPainter.hitTest 默认 true 会把整个
+  /// 画布矩形（含弧线外的透明角落）变成命中黑洞，挡住下层内容点击；
+  /// 命中交给各按钮自身的 GestureDetector
+  @override
+  bool hitTest(Offset position) => false;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (fold > 0.001) {

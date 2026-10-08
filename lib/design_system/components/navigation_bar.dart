@@ -113,8 +113,11 @@ class DSBottomNavigation extends StatelessWidget {
       style: style,
     );
 
-    // 弧形 dock 固有宽 380：更宽容器内居中，更窄容器等比缩小
+    // 弧形 dock 固有宽 380：更宽容器内居中，更窄容器等比缩小。
+    // heightFactor:1 关键——底部外壳给的是全屏高的松约束，无 factor 的
+    // Center 会撑满整屏把 dock 顶到屏幕中心，且透明装饰盒吞掉全部点击
     bar = Center(
+      heightFactor: 1,
       child: FittedBox(fit: BoxFit.scaleDown, child: bar),
     );
     if (onTap == null) bar = IgnorePointer(child: bar);

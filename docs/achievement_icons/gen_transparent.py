@@ -154,22 +154,31 @@ def credentials():
 
 
 def request_json(url, headers, body):
-    for attempt in range(3):
+    attempt = 0
+    while True:
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=300, context=SSL_CONTEXT) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            # 524: Cloudflare proxy gave up (origin >120s). Back off per retry_after and retry.
+            if exc.code == 524 and attempt < 3:
+                attempt += 1
+                print("HTTP 524 (proxy timeout), backing off 125s (attempt {}/3)...".format(attempt), file=sys.stderr)
+                time.sleep(125)
+                continue
             if (exc.code >= 500 or exc.code == 429) and attempt < 2:
-                print("HTTP {}, retry...".format(exc.code), file=sys.stderr)
-                time.sleep(3)
+                attempt += 1
+                print("HTTP {}, retrying...".format(exc.code), file=sys.stderr)
+                time.sleep(5)
                 continue
             raise RuntimeError("HTTP {}: {}".format(exc.code, detail))
         except (urllib.error.URLError, OSError) as exc:
             if attempt < 2:
+                attempt += 1
                 print("network error, retry...", file=sys.stderr)
-                time.sleep(3)
+                time.sleep(5)
                 continue
             raise RuntimeError("network error: {}".format(exc))
 
