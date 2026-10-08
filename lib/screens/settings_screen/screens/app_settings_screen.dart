@@ -1,8 +1,9 @@
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
 import 'package:aboutme/core/floating_ball/settings_screen.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
@@ -225,7 +226,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('应用设置')),
-      body: ListView(
+      body: DSThemeBridge(
+        child: ListView(
         // 底部叠加系统安全区高度，避免最后几项被遮挡
         padding: EdgeInsets.fromLTRB(
           16.0,
@@ -242,15 +244,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 future: FloatingBallManager().isEnabled(),
                 builder: (context, snapshot) {
                   final bool isEnabled = snapshot.data ?? true;
-                  return ListTile(
-                    leading: const Icon(Icons.touch_app),
-                    title: Text('settings_screen_floatingBallTitle'.tr),
-                    subtitle: Text(
-                      isEnabled
-                          ? 'settings_screen_floatingBallEnabled'.tr
-                          : 'settings_screen_floatingBallDisabled'.tr,
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios),
+                  return DSListItem(
+                    title: 'settings_screen_floatingBallTitle'.tr,
+                    subtitle: isEnabled
+                        ? 'settings_screen_floatingBallEnabled'.tr
+                        : 'settings_screen_floatingBallDisabled'.tr,
+                    leading: const Icon(Icons.touch_app, size: 22),
+                    showChevron: true,
                     onTap: () {
                       NavigationHelper.push(
                         context,
@@ -262,20 +262,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               if (UniversalPlatform.isAndroid)
-                ListTile(
-                  leading: const Icon(Icons.touch_app),
-                  title: Text('screens_floatingBallSettings'.tr),
-                  subtitle: Text('screens_manageSystemFloatingBall'.tr),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                DSListItem(
+                  title: 'screens_floatingBallSettings'.tr,
+                  subtitle: 'screens_manageSystemFloatingBall'.tr,
+                  leading: const Icon(Icons.touch_app, size: 22),
+                  showChevron: true,
                   onTap: () {
                     Navigator.pushNamed(context, '/floating_ball');
                   },
                 ),
-              ListTile(
-                leading: const Icon(Icons.alarm),
-                title: const Text('定时提醒'),
-                subtitle: const Text('管理定时提醒任务'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '定时提醒',
+                subtitle: '管理定时提醒任务',
+                leading: const Icon(Icons.alarm, size: 22),
+                showChevron: true,
                 onTap: () {
                   NavigationHelper.push(
                     context,
@@ -284,18 +284,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.extension),
-                title: Text('settings_screen_pluginManagementTitle'.tr),
-                subtitle: Text('settings_screen_pluginManagementSubtitle'.tr),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'settings_screen_pluginManagementTitle'.tr,
+                subtitle: 'settings_screen_pluginManagementSubtitle'.tr,
+                leading: const Icon(Icons.extension, size: 22),
+                showChevron: true,
                 onTap: _showPluginManagementSheet,
               ),
-              ListTile(
-                leading: const Icon(Icons.play_circle),
-                title: Text('settings_screen_autoOpenLastPluginTitle'.tr),
-                subtitle: Text('settings_screen_autoOpenLastPluginSubtitle'.tr),
-                trailing: AdaptiveSwitch(
+              DSListItem(
+                title: 'settings_screen_autoOpenLastPluginTitle'.tr,
+                subtitle: 'settings_screen_autoOpenLastPluginSubtitle'.tr,
+                leading: const Icon(Icons.play_circle, size: 22),
+                trailing: DSSwitch(
                   value: _controller.autoOpenLastPlugin,
                   onChanged:
                       (value) => setState(() {
@@ -303,33 +303,26 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.location_on),
-                title: Text('screens_locationApiKey'.tr),
-                subtitle: Text(
-                  _controller.locationApiKey.isEmpty
-                      ? 'screens_locationApiKeyNotSet'.tr
-                      : 'screens_locationApiKeyPartial'.trParams({
-                        'key': _controller.locationApiKey.substring(0, 8),
-                      }),
-                ),
-                trailing: const Icon(Icons.edit),
+              DSListItem(
+                title: 'screens_locationApiKey'.tr,
+                subtitle: _controller.locationApiKey.isEmpty
+                    ? 'screens_locationApiKeyNotSet'.tr
+                    : 'screens_locationApiKeyPartial'.trParams({
+                      'key': _controller.locationApiKey.substring(0, 8),
+                    }),
+                leading: const Icon(Icons.location_on, size: 22),
+                trailing: const Icon(Icons.edit, size: 18),
                 onTap: () => _showLocationApiKeyDialog(),
               ),
-              ListTile(
-                leading: const Icon(Icons.mic),
-                title: const Text('语音识别设置'),
-                subtitle: Text(
-                  _isSpeechRecognitionConfigured ? '已配置腾讯云语音识别' : '配置语音识别服务',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isSpeechRecognitionConfigured)
-                      const Icon(Icons.check_circle, color: Colors.green),
-                    const Icon(Icons.arrow_forward_ios),
-                  ],
-                ),
+              DSListItem(
+                title: '语音识别设置',
+                subtitle: _isSpeechRecognitionConfigured
+                    ? '已配置腾讯云语音识别'
+                    : '配置语音识别服务',
+                leading: const Icon(Icons.mic, size: 22),
+                trailing: _isSpeechRecognitionConfigured
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: _showSpeechRecognitionSettings,
               ),
             ],
@@ -340,11 +333,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '剪切板设置',
             children: [
-              ListTile(
-                leading: const Icon(Icons.content_paste),
-                title: const Text('自动读取剪切板'),
-                subtitle: const Text('启用后将自动识别剪切板中的数据'),
-                trailing: AdaptiveSwitch(
+              DSListItem(
+                title: '自动读取剪切板',
+                subtitle: '启用后将自动识别剪切板中的数据',
+                leading: const Icon(Icons.content_paste, size: 22),
+                trailing: DSSwitch(
                   value: _controller.clipboardAutoRead,
                   onChanged:
                       (value) => setState(() {
@@ -352,11 +345,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.content_paste_go),
-                title: const Text('读取并识别剪切板'),
-                subtitle: const Text('手动读取剪切板中的数据并识别处理'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '读取并识别剪切板',
+                subtitle: '手动读取剪切板中的数据并识别处理',
+                leading: const Icon(Icons.content_paste_go, size: 22),
+                showChevron: true,
                 onTap: () async {
                   final result = await _controller.readAndProcessClipboard();
                   if (mounted) {
@@ -370,11 +363,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               if (showPermissionEntry)
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip),
-                  title: Text('app_permissionsTitle'.tr),
-                  subtitle: Text('app_permissionsManageDescription'.tr),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                DSListItem(
+                  title: 'app_permissionsTitle'.tr,
+                  subtitle: 'app_permissionsManageDescription'.tr,
+                  leading: const Icon(Icons.privacy_tip, size: 22),
+                  showChevron: true,
                   onTap: () async {
                     await showPermissionRequestDialog(
                       context: context,
@@ -392,11 +385,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '更新',
             children: [
-              ListTile(
-                leading: const Icon(Icons.system_update),
-                title: Text('settings_screen_autoCheckUpdateTitle'.tr),
-                subtitle: Text('settings_screen_autoCheckUpdateSubtitle'.tr),
-                trailing: AdaptiveSwitch(
+              DSListItem(
+                title: 'settings_screen_autoCheckUpdateTitle'.tr,
+                subtitle: 'settings_screen_autoCheckUpdateSubtitle'.tr,
+                leading: const Icon(Icons.system_update, size: 22),
+                trailing: DSSwitch(
                   value: _controller.autoCheckUpdate,
                   onChanged:
                       (value) => setState(() {
@@ -404,10 +397,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.update),
-                title: Text('settings_screen_checkUpdateTitle'.tr),
-                subtitle: Text('settings_screen_checkUpdateSubtitle'.tr),
+              DSListItem(
+                title: 'settings_screen_checkUpdateTitle'.tr,
+                subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
+                leading: const Icon(Icons.update, size: 22),
+                showChevron: true,
                 onTap: _controller.checkForUpdates,
               ),
             ],
@@ -418,20 +412,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '开发者测试',
             children: [
-              ListTile(
-                leading: const Icon(Icons.notifications_active),
-                title: const Text('Toast 测试'),
-                subtitle: const Text('测试 Toast 显示、动画和自定义 Widget'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'Toast 测试',
+                subtitle: '测试 Toast 显示、动画和自定义 Widget',
+                leading: const Icon(Icons.notifications_active, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/toast_test');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.record_voice_over),
-                title: const Text('后台播报测试'),
-                subtitle: const Text('测试 TTS 后台定时播报功能'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '后台播报测试',
+                subtitle: '测试 TTS 后台定时播报功能',
+                leading: const Icon(Icons.record_voice_over, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(
                     context,
@@ -439,83 +433,83 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.account_tree),
-                title: const Text('数据选择器测试'),
-                subtitle: const Text('测试插件数据选择器系统'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '数据选择器测试',
+                subtitle: '测试插件数据选择器系统',
+                leading: const Icon(Icons.account_tree, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/data_selector_test');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.route),
-                title: const Text('路由查看器'),
-                subtitle: const Text('查看所有可用路由'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '路由查看器',
+                subtitle: '查看所有可用路由',
+                leading: const Icon(Icons.route, size: 22),
+                showChevron: true,
                 onTap: () {
                   RouteViewerDialog.show(context);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.swipe),
-                title: const Text('SwipeAction 测试'),
-                subtitle: const Text('测试滑动操作组件'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'SwipeAction 测试',
+                subtitle: '测试滑动操作组件',
+                leading: const Icon(Icons.swipe, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/swipe_action_test');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.widgets),
-                title: Text('screens_jsonDynamicWidgetTest'.tr),
-                subtitle: Text('screens_testAndPreviewDynamicUI'.tr),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'screens_jsonDynamicWidgetTest'.tr,
+                subtitle: 'screens_testAndPreviewDynamicUI'.tr,
+                leading: const Icon(Icons.widgets, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/json_dynamic_test');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.notifications),
-                title: Text('screens_notificationTest'.tr),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'screens_notificationTest'.tr,
+                leading: const Icon(Icons.notifications, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/notification_test');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.link),
-                title: Text('screens_intentTest'.tr),
-                subtitle: Text('screens_testDynamicIntentAndDeepLink'.tr),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'screens_intentTest'.tr,
+                subtitle: 'screens_testDynamicIntentAndDeepLink'.tr,
+                leading: const Icon(Icons.link, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/intent_test');
                 },
               ),
               if (UniversalPlatform.isIOS)
-                ListTile(
-                  leading: const Icon(Icons.notifications_active),
-                  title: const Text('Live Activities 测试'),
-                  subtitle: const Text('测试实时活动通知'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                DSListItem(
+                  title: 'Live Activities 测试',
+                  subtitle: '测试实时活动通知',
+                  leading: const Icon(Icons.notifications_active, size: 22),
+                  showChevron: true,
                   onTap: () {
                     Navigator.pushNamed(context, '/live_activities_test');
                   },
                 ),
-              ListTile(
-                leading: const Icon(Icons.category),
-                title: const Text('通用组件示例'),
-                subtitle: const Text('查看 widgets 目录下的通用组件示例'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '通用组件示例',
+                subtitle: '查看 widgets 目录下的通用组件示例',
+                leading: const Icon(Icons.category, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/widgets_gallery');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.description),
-                title: const Text('日志系统'),
-                subtitle: const Text('查看和管理应用日志'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: '日志系统',
+                subtitle: '查看和管理应用日志',
+                leading: const Icon(Icons.description, size: 22),
+                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/log');
                 },
@@ -528,10 +522,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '关于',
             children: [
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: Text('app_aboutTitle'.tr),
-                trailing: const Icon(Icons.arrow_forward_ios),
+              DSListItem(
+                title: 'app_aboutTitle'.tr,
+                leading: const Icon(Icons.info, size: 22),
+                showChevron: true,
                 onTap: () {
                   NavigationHelper.push(
                     context,
@@ -543,6 +537,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             ],
           ),
         ],
+        ),
       ),
     );
   }

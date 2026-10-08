@@ -182,6 +182,7 @@ flutter:
     - assets/audio/msg_sended.mp3
     - assets/icon/icon.png
     - assets/images/image_not_found.jpg
+    - assets/images/default_avatar.jpg
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
     - assets/animations/  # Lottie animations

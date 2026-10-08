@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/widgets/picker/avatar_picker.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import './controllers/settings_screen_controller.dart';
 import './widgets/settings_group.dart';
 import './screens/interface_settings_screen.dart';
@@ -95,14 +97,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required Widget screen,
     required String routeName,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: Theme.of(context).hintColor,
-      ),
+    return DSListItem(
+      title: title,
+      leading: Icon(icon, size: 22),
+      showChevron: true,
       onTap: () => NavigationHelper.push(context, screen, routeName: routeName),
     );
   }
@@ -115,13 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final ThemeData theme = Theme.of(context);
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text(
-        'settings_screen_settingsTitle'.tr,
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
-      ),
-      largeTitle: 'settings_screen_settingsTitle'.tr,
-      body: ListView(
+    final Widget list = DSThemeBridge(
+      child: ListView(
         // 底部叠加悬浮导航栏/系统安全区高度，避免最后几项被遮挡
         padding: EdgeInsets.fromLTRB(
           16.0,
@@ -140,6 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   size: 96,
                   username: _controller.userName,
                   currentAvatarPath: _controller.userAvatarPath,
+                  defaultAvatarAsset: 'assets/images/default_avatar.jpg',
                   onAvatarChanged:
                       (path) => _controller.setUserAvatarPath(path),
                 ),
@@ -216,6 +210,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+
+    // 通过 tab 进入（无可返回的上一级路由）时直接铺满内容，不展示
+    // SuperCupertino 头部；被路由 push 打开时保留头部提供返回栏
+    final bool pushedAsRoute = ModalRoute.of(context)?.canPop ?? false;
+    if (!pushedAsRoute) {
+      return Scaffold(body: SafeArea(bottom: false, child: list));
+    }
+
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        'settings_screen_settingsTitle'.tr,
+        style: TextStyle(color: theme.textTheme.titleLarge?.color),
+      ),
+      largeTitle: 'settings_screen_settingsTitle'.tr,
+      body: list,
     );
   }
 }
