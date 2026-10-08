@@ -873,9 +873,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
           final fitWidth = widget.fitContainer && containerWidth.isFinite
               ? containerWidth
               : null;
-          final displaySize = fitHeight != null
-              ? min(fitHeight, fitWidth ?? fitHeight)
-              : size;
+          final displaySize = size;
           // The native model viewport is portrait (0.5 aspect). Scale it to
           // fit the available height while keeping its full top and bottom.
           // The native viewport is 180x360. Fit the complete viewport into
