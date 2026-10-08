@@ -79,7 +79,7 @@ class ChannelTile extends StatelessWidget {
       title: channel.title,
       subtitle: _subtitle,
       iconColor: channel.backgroundColor,
-      leading: Icon(channel.icon, color: Colors.white, size: 16),
+      leading: Icon(channel.icon, color: Colors.white, size: 22),
       trailingText: _draft == null && lastMessage != null
           ? DateFormatter.formatDateTime(lastMessage.date, context)
           : null,
