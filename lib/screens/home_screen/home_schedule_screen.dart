@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
@@ -19,11 +18,14 @@ class HomeScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showQuickCreateDialog(context),
-        tooltip: 'home_quickCreateTitle'.tr,
-        child: const Icon(Icons.add),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: DSThemeBridge(
+        // DSFab 内部取 AppTheme，需包桥
+        child: Builder(
+          builder: (_) => DSFab(
+            onPressed: () => _showQuickCreateDialog(context),
+          ),
+        ),
       ),
       body: SafeArea(
         bottom: false,

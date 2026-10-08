@@ -55,62 +55,77 @@ class DayCardHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _dayNames[date.weekday - 1],
+                style: TextStyle(
+                  color: titleColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                '${date.month}/${date.day}',
+                style: TextStyle(color: theme.textSub, fontSize: 11),
+              ),
+            ],
+          ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  _dayNames[date.weekday - 1],
-                  style: TextStyle(
-                    color: titleColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                if (summary != null)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 6),
+                      child: Text(
+                        summary!,
+                        style: TextStyle(color: titleColor, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
-                Text(
-                  '${date.month}/${date.day}',
-                  style: TextStyle(color: theme.textSub, fontSize: 11),
-                ),
+                if (count != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (onAdd != null)
+                  GestureDetector(
+                    onTap: onAdd,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      child: DsIcon(
+                        DsIconKind.plus,
+                        size: 18,
+                        color: titleColor,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-          if (summary != null)
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Text(
-                  summary!,
-                  style: TextStyle(color: titleColor, fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          if (count != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: titleColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          if (onAdd != null)
-            GestureDetector(
-              onTap: onAdd,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: DsIcon(DsIconKind.plus, size: 18, color: titleColor),
-              ),
-            ),
         ],
       ),
     );
