@@ -243,6 +243,8 @@
 
 ## 六、生图批次（http-imagegen，风格参考图）
 
+> 图标已产出入包：`assets/achievements/A01~A74.webp`；新增/替换图标流程见 [ACHIEVEMENT_ICONS.md](./ACHIEVEMENT_ICONS.md)
+
 - 参考图：`C:/Users/Administrator/Downloads/original-52b79381e4caafd86dcd4021cc1f96f9.jpg`（六边形徽章、白粗描边、扁平卡通贴纸、柔和渐变底）
 - 九宫格原图：`docs/achievement_icons/sheet_01.png ~ sheet_09.png`，每张 3x3（Sheet8 为 3+3+1、Sheet9 为 2x2）
 - **单图标成品**：`docs/achievement_icons/icons/A01_千言万语.png ~ A74_深度玩家.png`，透明背景 RGBA，由 `split_icons.py` 自动切分（背景泛洪去底 + 白描边保护 + 1px 羽化）；重切命令 `python docs/achievement_icons/split_icons.py`

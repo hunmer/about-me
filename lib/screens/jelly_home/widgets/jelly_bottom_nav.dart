@@ -20,6 +20,8 @@ class JellyBottomNav extends StatelessWidget {
     required this.current,
     required this.child,
     this.onTap,
+    this.onToggleChat,
+    this.chatActive = false,
   });
 
   /// 当前所在页签
@@ -29,6 +31,12 @@ class JellyBottomNav extends StatelessWidget {
   final Widget child;
 
   final ValueChanged<int>? onTap;
+
+  /// 切换小屋 Live2D 聊天表单显示（仅小屋页签显示该按钮）
+  final VoidCallback? onToggleChat;
+
+  /// 聊天表单当前是否显示（按钮高亮态）
+  final bool chatActive;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +80,23 @@ class JellyBottomNav extends StatelessWidget {
           ],
           currentIndex: current.index,
           onTap: onTap,
+          // 聊天按钮只在小屋页签出现（其它页签没有可切换的聊天表单）
+          leadingAction:
+              current == JellyTab.cottage && onToggleChat != null
+                  ? Builder(
+                    builder: (context) {
+                      final navTheme = AppTheme.of(context);
+                      return DsIcon(
+                        DsIconKind.chat,
+                        size: 16,
+                        color: chatActive
+                            ? navTheme.primary
+                            : navTheme.textSub,
+                      );
+                    },
+                  )
+                  : null,
+          onLeadingTap: onToggleChat,
         ),
       ),
     );

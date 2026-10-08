@@ -209,6 +209,7 @@ flutter:
     - assets/scripts/ai_image/  # 内置脚本（AI 图片生成）
     - assets/scripts/line_sticker/  # 内置脚本（LINE 贴图下载）
     - assets/emojis/  # 内置表情包
+    - assets/achievements/  # 成就系统图标（A01~A74，透明 WebP）
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

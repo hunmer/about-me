@@ -4,6 +4,10 @@ import 'package:get/get.dart';
 import 'app_translations_zh.dart';
 import 'app_translations_en.dart';
 
+// 成就插件
+import '../plugins/achievement/l10n/achievement_translations_zh.dart';
+import '../plugins/achievement/l10n/achievement_translations_en.dart';
+
 // 核心层
 import '../core/l10n/core_translations_zh.dart';
 import '../core/l10n/core_translations_en.dart';
@@ -101,6 +105,10 @@ class UnifiedTranslations extends Translations {
     // === 应用层 ===
     zhDict.addAll(appTranslationsZh);
     enDict.addAll(appTranslationsEn);
+
+    // === 成就插件 ===
+    zhDict.addAll(AchievementTranslationsZh.translations);
+    enDict.addAll(AchievementTranslationsEn.translations);
 
     // === 核心层 ===
     zhDict.addAll(coreTranslationsZh);

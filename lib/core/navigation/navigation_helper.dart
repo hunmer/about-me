@@ -257,35 +257,22 @@ class NavigationHelper {
   static void smartBack(BuildContext context) {
     final currentName = ModalRoute.of(context)?.settings.name;
     final destination = resolveBackDestination(currentName);
-    debugPrint(
-      '[smartBack] 当前路由: $currentName → ${destination ?? '默认返回上一页'}',
-    );
+    debugPrint('[smartBack] 当前路由: $currentName → ${destination ?? '默认返回上一页'}');
     if (destination == null) {
       Navigator.maybePop(context);
       return;
     }
     if (destination == AppRoutes.jellyHome) {
-      // 逐层 pop 回根路由：保留现有首页实例；不用一次性 popUntil——
-      // 同一帧销毁多层插件路由曾导致进程崩溃（Lost connection）
-      _popToRootStepByStep(context);
+      // 保留已有首页实例。启动恢复场景中首页可能不是根路由，不能继续
+      // pop 到根，否则会销毁首页上的 Live2D 组件。
+      Navigator.of(
+        context,
+      ).popUntil((route) => route.settings.name == AppRoutes.jellyHome);
     } else {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        destination,
-        (route) => false,
-      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(destination, (route) => false);
     }
-  }
-
-  /// 每帧只 pop 一层，等价于用户逐次手动返回（已验证不崩溃的模式）
-  static Future<void> _popToRootStepByStep(BuildContext context) async {
-    final navigator = Navigator.of(context);
-    while (context.mounted && navigator.canPop()) {
-      final popped = await navigator.maybePop();
-      if (!popped) break;
-      debugPrint('[smartBack] 已 pop 一层，剩余可 pop: ${navigator.canPop()}');
-      await WidgetsBinding.instance.endOfFrame;
-    }
-    debugPrint('[smartBack] 已回到根路由');
   }
 
   // ==================== 对话框和底部弹窗 ====================

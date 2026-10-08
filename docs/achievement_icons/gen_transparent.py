@@ -37,7 +37,9 @@ STYLE = ("Flat cartoon style icon set: {layout} evenly spaced on a fully transpa
          "icon. The {count} badge subjects, in reading order, are: {subjects}.")
 
 LAYOUT_3X3 = "9 hexagonal badges arranged in a 3x3 grid"
-LAYOUT_7 = "7 hexagonal badges arranged as a top row of 3, a middle row of 3, and 1 centered badge on the bottom row"
+LAYOUT_7 = ("7 hexagonal badges arranged as a top row of 3, a middle row of 3, and 1 centered badge "
+            "on the bottom row, all badges the same size, with wide clear empty gaps between badges, "
+            "badges must never touch or overlap each other")
 LAYOUT_2X2 = "4 hexagonal badges arranged in a 2x2 grid"
 
 SUBJECTS = {

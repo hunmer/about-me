@@ -12,6 +12,9 @@ Two input kinds:
   only), same hexagon mask applied."""
 import math
 import os
+import re
+import sys
+import time
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -154,7 +157,40 @@ def rounded_hexagon_mask(size_w, size_h, cx, cy, radius, corner_ratio=0.14, ss=4
     return np.asarray(mask.filter(ImageFilter.GaussianBlur(0.5)))
 
 
+def export_webp():
+    """Convert icons/*.png to transparent WebP in the app assets directory.
+
+    Asset filenames are ASCII-only (A01.webp ... A74.webp); the Chinese display
+    name stays in docs/ACHIEVEMENT_SYSTEM_PLAN.md and the future achievement
+    definition JSON."""
+    import glob
+
+    project = os.path.dirname(os.path.dirname(BASE))
+    out_dir = os.path.join(project, "assets", "achievements")
+    os.makedirs(out_dir, exist_ok=True)
+    total_png = total_webp = 0
+    for src in sorted(glob.glob(os.path.join(OUT, "A*.png"))):
+        m = re.match(r"(A\d+)_", os.path.basename(src))
+        if not m:
+            continue
+        dst = os.path.join(out_dir, m.group(1) + ".webp")
+        im = Image.open(src)
+        before = os.path.getsize(src)
+        im.save(dst, "WEBP", quality=90, method=6)
+        after = os.path.getsize(dst)
+        total_png += before
+        total_webp += after
+        print("{} -> {} ({}KB -> {}KB)".format(os.path.basename(src), os.path.basename(dst), before // 1024, after // 1024))
+    print("EXPORT_DONE png={}KB webp={}KB".format(total_png // 1024, total_webp // 1024))
+
+
 def main():
+    if "--export-only" not in sys.argv:
+        slice_all()
+    export_webp()
+
+
+def slice_all():
     os.makedirs(OUT, exist_ok=True)
     count = 0
     for sheet, (cells, start_id) in SHEETS.items():
@@ -205,7 +241,14 @@ def main():
             cx0, cx1 = max(0, xs.min() - pad), min(ww, xs.max() + pad)
             result = Image.fromarray(cell[cy0:cy1, cx0:cx1])
             path = os.path.join(OUT, "A{:02d}_{}.png".format(aid, name))
-            result.save(path)
+            for attempt in range(5):
+                try:
+                    result.save(path)
+                    break
+                except OSError:
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.5 * (attempt + 1))
             count += 1
             print("A{:02d} {}x{} native={} -> {}".format(aid, result.width, result.height, native_alpha, os.path.basename(path)))
     print("DONE total={}".format(count))

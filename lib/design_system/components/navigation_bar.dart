@@ -38,6 +38,8 @@ class DSBottomNavigation extends StatelessWidget {
     this.subLabels,
     this.subOption = RadialSubOption.left,
     this.onSubOptionChange,
+    this.leadingAction,
+    this.onLeadingTap,
   });
 
   final List<DSNavItem> items;
@@ -55,6 +57,12 @@ class DSBottomNavigation extends StatelessWidget {
 
   final RadialSubOption subOption;
   final ValueChanged<RadialSubOption>? onSubOptionChange;
+
+  /// 上层子栏左侧圆按钮图标（null 则不渲染该按钮）；提供后启用子栏
+  final Widget? leadingAction;
+
+  /// 子栏左侧圆按钮点击回调
+  final VoidCallback? onLeadingTap;
 
   @override
   Widget build(BuildContext context) {
@@ -106,10 +114,14 @@ class DSBottomNavigation extends StatelessWidget {
       floatingAction: floatingAction,
       frosted: frosted,
       subBarBehavior:
-          subLabels == null ? RadialSubBarBehavior.never : RadialSubBarBehavior.auto,
+          subLabels == null && leadingAction == null
+              ? RadialSubBarBehavior.never
+              : RadialSubBarBehavior.auto,
       subLabels: subLabels,
       subOption: subOption,
       onSubOptionChange: onSubOptionChange,
+      leadingAction: leadingAction,
+      onLeadingTap: onLeadingTap,
       style: style,
     );
 

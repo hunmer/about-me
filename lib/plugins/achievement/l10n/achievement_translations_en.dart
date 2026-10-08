@@ -1,0 +1,37 @@
+class AchievementTranslationsEn {
+  static const Map<String, String> translations = {
+    // Plugin info
+    'achievement_name': 'Achievements',
+    'achievement_pluginDescription':
+        'Achievement system: track your usage and unlock level badges',
+
+    // Categories
+    'achievement_category_ai': 'AI',
+    'achievement_category_life': 'Life & Records',
+    'achievement_category_asset': 'Assets & Finance',
+    'achievement_category_tool': 'Tools & System',
+    'achievement_category_overall': 'Cross-plugin',
+
+    // Overview
+    'achievement_progressTitle': 'Progress',
+    'achievement_levels': 'levels',
+    'achievement_recentUnlock': 'Latest',
+    'achievement_none': 'None',
+    'achievement_points': 'points',
+
+    // Filters
+    'achievement_filterAll': 'All',
+    'achievement_filterUnlocked': 'Unlocked',
+    'achievement_filterLocked': 'Locked',
+
+    // Detail
+    'achievement_unit': 'Unit',
+    'achievement_pending': 'Coming',
+    'achievement_hiddenHint': 'Hidden achievement, unlock to reveal',
+
+    // Unlock dialog
+    'achievement_unlocked': '— Achievement Unlocked —',
+    'achievement_unlocked_at': 'Unlocked at',
+    'achievement_tapToClose': 'Tap anywhere to close',
+  };
+}

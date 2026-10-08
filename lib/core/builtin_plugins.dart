@@ -1,4 +1,5 @@
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/plugins/achievement/achievement_plugin.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
@@ -56,6 +57,7 @@ class BuiltinPlugins {
     () => WebViewPlugin(),
     () => ReminderPlugin(),
     () => Live2DPlugin(),
+    () => AchievementPlugin(),
   ];
 
   static List<PluginBase> createAll() {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -39,6 +40,9 @@ class JellyHomeScreen extends StatefulWidget {
 class _JellyHomeScreenState extends State<JellyHomeScreen> {
   int _tabIndex = 0;
 
+  /// Live2D 聊天表单是否显示（由导航栏子栏左侧聊天按钮切换）
+  bool _chatVisible = false;
+
   @override
   Widget build(BuildContext context) {
     // IndexedStack 保活各页签状态（滚动位置、编辑进度等）；
@@ -46,10 +50,15 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
     return JellyBottomNav(
       current: JellyTab.values[_tabIndex],
       onTap: (index) => setState(() => _tabIndex = index),
+      chatActive: _chatVisible,
+      onToggleChat: () => setState(() => _chatVisible = !_chatVisible),
       child: IndexedStack(
         index: _tabIndex,
         children: [
-          HeroMode(enabled: _tabIndex == 0, child: _CottageTab()),
+          HeroMode(
+            enabled: _tabIndex == 0,
+            child: _CottageTab(chatVisible: _chatVisible),
+          ),
           HeroMode(enabled: _tabIndex == 1, child: const HomeScheduleScreen()),
           HeroMode(
             enabled: _tabIndex == 2,
@@ -62,12 +71,14 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   }
 }
 
-/// 小屋页签（软糖果冻风布局还原）
-///
-/// 参考设计稿自上而下：资料卡 + 统计卡
-/// → Live2D 角色 + 陪伴状态卡 → 商店横幅。
+/// 小屋页签：Live2D 角色全屏展示，
+/// 左右两侧悬浮信息按钮（弹窗展示资料/陪伴状态），
+/// 底部聊天表单按需切换显示。
 class _CottageTab extends StatefulWidget {
-  const _CottageTab();
+  const _CottageTab({this.chatVisible = false});
+
+  /// Live2D 聊天表单是否显示
+  final bool chatVisible;
 
   @override
   State<_CottageTab> createState() => _CottageTabState();
@@ -98,8 +109,9 @@ class _CottageTabState extends State<_CottageTab> {
   Widget build(BuildContext context) {
     // 演示页自带浅色主题（跟随当前主题色板）
     final theme = AppThemeData.fromPalette(DsThemeColorController().palette);
-    // 悬浮导航栏的避让高度（JellyBottomNav 通过 extendBody 注入的底部内边距）
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // 聊天表单避让底部：悬浮导航栏（padding）与键盘（viewInsets）取较大者
+    final mq = MediaQuery.of(context);
+    final bottomInset = math.max(mq.padding.bottom, mq.viewInsets.bottom);
 
     return AppTheme(
       data: theme,
@@ -113,64 +125,146 @@ class _CottageTabState extends State<_CottageTab> {
         ),
         child: SafeArea(
           bottom: false,
-          child: LayoutBuilder(
-            builder:
-                (context, viewport) => SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-                  // 内容不足一屏时也撑满视口高度，让底部卡片组贴住悬浮导航栏；
-                  // 视口高度需减去导航栏避让高度，底部卡片才不会被压在导航栏下面
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: viewport.maxHeight - bottomInset,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      // 富余空间全部落在上下两组之间：上组贴顶、底部组贴底
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SizedBox(height: theme.spacing.lg),
-                            _buildHeader(theme),
-                            SizedBox(height: theme.spacing.xl),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // 富余空间都在角色区之上，Live2D 角色贴着底部卡片组
-                            SizedBox(height: theme.spacing.md),
-                            // 点击命中角色本体（hit area）算一次陪伴互动
-                            Center(
-                              child: JellyLive2D(
-                                message: _live2dMessage,
-                                reaction: _live2dReaction,
-                                initialModel: modelDefinitionForArchive(
-                                  Live2DPlugin.instance.selected,
-                                ),
-                                typingInterval:
-                                    Live2DPlugin.instance.bubbleTypingInterval,
-                                onTap: (hitAreaId, _) {
-                                  if (hitAreaId != null) {
-                                    _companion.recordInteraction();
-                                  }
-                                },
-                              ),
-                            ),
-                            Live2DChatInput(onReply: _scheduleLive2dReply),
-                            SizedBox(height: theme.spacing.lg),
-                            JellyCompanionCard(controller: _companion),
-                            SizedBox(height: theme.spacing.lg),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Live2D 角色全屏铺满，点击命中角色本体（hit area）算一次陪伴互动
+              JellyLive2D(
+                fill: true,
+                message: _live2dMessage,
+                reaction: _live2dReaction,
+                initialModel: modelDefinitionForArchive(
+                  Live2DPlugin.instance.selected,
                 ),
+                typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
+                onTap: (hitAreaId, _) {
+                  if (hitAreaId != null) {
+                    _companion.recordInteraction();
+                  }
+                },
+              ),
+              // 左侧按钮：资料 + 统计（原顶部卡片信息改为弹窗展示）
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _buildSideButton(
+                  theme,
+                  icon: DsIconKind.user,
+                  semanticLabel: '查看资料与统计',
+                  onTap: () => _showProfileDialog(theme),
+                ),
+              ),
+              // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildSideButton(
+                  theme,
+                  icon: DsIconKind.bot,
+                  semanticLabel: '查看陪伴状态',
+                  onTap: _showCompanionDialog,
+                ),
+              ),
+              // 聊天表单（导航栏聊天按钮切换显示；保持挂载以维持会话监听）
+              Positioned(
+                left: theme.spacing.lg,
+                right: theme.spacing.lg,
+                bottom: bottomInset + theme.spacing.sm,
+                child: Visibility(
+                  visible: widget.chatVisible,
+                  maintainState: true,
+                  maintainAnimation: true,
+                  child: Live2DChatInput(onReply: _scheduleLive2dReply),
+                ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 两侧悬浮信息按钮：圆形果冻质感小钮
+  Widget _buildSideButton(
+    AppThemeData theme, {
+    required DsIconKind icon,
+    required String semanticLabel,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.sm),
+      child: Pressable(
+        onPressed: onTap,
+        semanticLabel: semanticLabel,
+        builder:
+            (context, states) => Opacity(
+              opacity: states.contains(WidgetState.pressed) ? 0.85 : 1,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.surface.withValues(alpha: 0.72),
+                  border: Border.all(color: theme.stroke),
+                  boxShadow: theme.shadows.soft,
+                ),
+                child: Center(
+                  child: DsIcon(icon, size: 20, color: theme.primaryText),
+                ),
+              ),
+            ),
+      ),
+    );
+  }
+
+  /// 左侧按钮弹窗：资料卡 + 三张统计卡（原顶部四卡的内容）
+  Future<void> _showProfileDialog(AppThemeData theme) {
+    return showDSDialog<void>(
+      context: context,
+      builder:
+          (dialogContext) => DSDialog(
+            title: '我的资料',
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                JellyProfileCard(
+                  name: Live2DPlugin.instance.selected?.name ?? '小智',
+                  level: 17,
+                  exp: 568,
+                  expMax: 1250,
+                ),
+                SizedBox(height: theme.spacing.md),
+                Row(
+                  children: [
+                    for (var i = 0; i < _stats.length; i++) ...[
+                      if (i > 0) SizedBox(width: theme.spacing.sm),
+                      Expanded(
+                        child: JellyStatCard(
+                          icon: _stats[i].$1,
+                          label: _stats[i].$2,
+                          value: _stats[i].$3,
+                          color: [theme.warning, theme.success, theme.primary][i],
+                          onAdd: () {},
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  /// 右侧按钮弹窗：陪伴状态卡（原底部状态卡的内容）
+  Future<void> _showCompanionDialog() {
+    final companionName = Live2DPlugin.instance.selected?.name ?? '小智';
+    return showDSDialog<void>(
+      context: context,
+      builder:
+          (dialogContext) => DSDialog(
+            title: '$companionName状态',
+            content: JellyCompanionCard(controller: _companion),
+          ),
     );
   }
 
@@ -195,43 +289,6 @@ class _CottageTabState extends State<_CottageTab> {
       });
     });
     SchedulerBinding.instance.ensureVisualUpdate();
-  }
-
-  /// 顶部：左资料卡 + 右三张统计卡
-  Widget _buildHeader(AppThemeData theme) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 118,
-          child: JellyProfileCard(
-            name: Live2DPlugin.instance.selected?.name ?? '小智',
-            level: 17,
-            exp: 568,
-            expMax: 1250,
-          ),
-        ),
-        SizedBox(width: theme.spacing.sm),
-        Expanded(
-          child: Row(
-            children: [
-              for (var i = 0; i < _stats.length; i++) ...[
-                if (i > 0) SizedBox(width: theme.spacing.sm),
-                Expanded(
-                  child: JellyStatCard(
-                    icon: _stats[i].$1,
-                    label: _stats[i].$2,
-                    value: _stats[i].$3,
-                    color: [theme.warning, theme.success, theme.primary][i],
-                    onAdd: () {},
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   static const List<(DsIconKind, String, String)> _stats = [

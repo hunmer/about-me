@@ -19,7 +19,7 @@ import 'jelly_live2d_crop_region.dart';
 import 'jelly_speech_bubble.dart';
 
 class JellyLive2D extends StatefulWidget {
-  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70), this.motionRequest});
+  const JellyLive2D({super.key, this.onTap, this.message, this.initialModel, this.reaction, this.streaming = false, this.typingInterval = const Duration(milliseconds: 70), this.motionRequest, this.fill = false});
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
   /// 用于衔接陪伴数值（情绪/好感度）等玩法
@@ -29,6 +29,11 @@ class JellyLive2D extends StatefulWidget {
   final int? reaction;
   final bool streaming;
   final Duration typingInterval;
+
+  /// 全屏模式：显示尺寸按父级可用高度自适应（约 70% 高度，
+  /// 夹在 [_minSize, _maxSize] 调节范围内），跟随窗口大小变化；
+  /// 关闭时使用保存的固定尺寸
+  final bool fill;
 
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
@@ -63,6 +68,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// Live2D 实际显示视口的边框开关，仅用于界面调试，不持久化
   final ValueNotifier<bool> _borderVisible = ValueNotifier<bool>(false);
+
+  /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
+  /// 气泡宽度等布局按它计算
+  double _displaySize = _defaultSize;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
@@ -356,7 +365,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
       0.0,
       viewport.width - padding.horizontal - margin * 2,
     );
-    final bubbleWidth = min(_size.value * 0.8, availableWidth);
+    final bubbleWidth = min(_displaySize * 0.8, availableWidth);
     if (bubbleWidth <= 0) return const SizedBox.shrink();
 
     final anchorTopCenter = overlayBox.globalToLocal(
@@ -846,13 +855,23 @@ class _JellyLive2DState extends State<JellyLive2D> {
     return ValueListenableBuilder<double>(
       valueListenable: _size,
       builder:
-          (context, size, _) => AnimatedContainer(
+          (context, size, _) => LayoutBuilder(
+            builder: (context, constraints) {
+              final displaySize =
+                  widget.fill && constraints.maxHeight.isFinite
+                      ? (constraints.maxHeight * 0.7).clamp(
+                          _minSize,
+                          _maxSize,
+                        )
+                      : size;
+              _displaySize = displaySize;
+              return AnimatedContainer(
             key: _bubbleAnchorKey,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             onEnd: _updateBubbleOverlayPosition,
-            width: size,
-            height: size,
+            width: displaySize,
+            height: displaySize,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onLongPress: _showControls,
@@ -868,7 +887,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: size,
+                    height: displaySize,
                     child: AnimatedOpacity(
                     opacity:
                         _isSwitchingModel || _controller.value.lastError != null
@@ -882,9 +901,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       child: Transform.translate(
                         // 仅垂直抵消尺寸差以固定脚底；水平方向由
                         // OverflowBox + bottomCenter 保持居中。
-                        offset: Offset(0, size - _defaultSize),
+                        offset: Offset(0, displaySize - _defaultSize),
                         child: Transform.scale(
-                          scale: size / _defaultSize,
+                          scale: displaySize / _defaultSize,
                           alignment: Alignment.bottomCenter,
                           // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
                           // 视口同时为全身模型保留足够的纵向空间。
@@ -1081,6 +1100,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 ],
               ),
             ),
+              );
+            },
           ),
     );
   }
