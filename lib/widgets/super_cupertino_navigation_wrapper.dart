@@ -403,6 +403,11 @@ class _SuperCupertinoNavigationWrapperState
   /// 检查是否为移动端
   bool get _isMobile => UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
 
+  /// 解析界面背景色：未显式传入时统一取 DS 主题背景色（浅色为粉调，
+  /// 深色为 night），所有走本组件的页面与 conversation_list 保持一致
+  Color _resolveBackgroundColor() =>
+      widget.backgroundColor ?? AppTheme.of(context).background;
+
   @override
   Widget build(BuildContext context) {
     // 根据搜索状态选择显示哪个body - 使用 setState 保证实时更新
@@ -419,8 +424,7 @@ class _SuperCupertinoNavigationWrapperState
         }
       },
       child: Scaffold(
-      backgroundColor:
-          widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: _resolveBackgroundColor(),
       body: SuperScaffold(
         onCollapsed: widget.onCollapsed,
         stretch: widget.stretch,
@@ -617,10 +621,7 @@ class _SuperCupertinoNavigationWrapperState
         widget.automaticallyImplyLeading ?? !(UniversalPlatform.isAndroid || UniversalPlatform.isIOS);
 
     return SuperAppBar(
-      backgroundColor:
-          widget.backgroundColor ??
-          Theme.of(context).appBarTheme.backgroundColor ??
-          Theme.of(context).colorScheme.surface,
+      backgroundColor: _resolveBackgroundColor(),
       automaticallyImplyLeading: effectiveAutomaticallyImplyLeading,
       leading: _resolveLeading(),
       title: widget.title,

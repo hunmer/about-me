@@ -34,7 +34,7 @@ class SwipeActionOption {
     this.textColor = Colors.white,
     required this.onTap,
     this.isDestructive = false,
-    this.useCircleButton = false,
+    this.useCircleButton = true,
     this.circleButtonSize = 50,
   });
 }

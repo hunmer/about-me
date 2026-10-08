@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../tokens/colors.dart';
+import '../tokens/palettes.dart';
 import '../tokens/radii.dart';
 import '../tokens/shadows.dart';
 import '../tokens/spacing.dart';
@@ -8,6 +9,7 @@ import '../tokens/typography.dart';
 
 // 转发导出：组件只 import theme 即可拿到颜色令牌与派生扩展
 export '../tokens/colors.dart';
+export '../tokens/palettes.dart';
 
 /// 主题数据：语义化设计令牌的集合
 ///
@@ -38,40 +40,30 @@ class AppThemeData {
   });
 
   /// 浅色主题（对应设计稿）
-  factory AppThemeData.light() => const AppThemeData(
-        isDark: false,
-        primary: DsColors.primary,
-        onPrimary: DsColors.white,
-        secondary: DsColors.secondary,
-        onSecondary: DsColors.text,
-        success: DsColors.success,
-        onSuccess: DsColors.text,
-        warning: DsColors.warning,
-        onWarning: DsColors.text,
-        danger: DsColors.danger,
-        onDanger: DsColors.white,
-        background: DsColors.background,
-        backgroundAlt: DsColors.backgroundAlt,
-        surface: DsColors.white,
-        surfaceAlt: DsColors.backgroundAlt,
-        text: DsColors.text,
-        textSub: DsColors.textSub,
-        stroke: DsColors.white,
-        barrier: Color(0x594C1D95),
-        disabled: Color(0xFFE5DDF2),
-      );
+  factory AppThemeData.light() =>
+      AppThemeData.fromPalette(DsThemePalettes.pink, isDark: false);
 
   /// 深色主题
-  factory AppThemeData.dark() => const AppThemeData(
+  factory AppThemeData.dark() =>
+      AppThemeData.fromPalette(DsThemePalettes.pink, isDark: true);
+
+  /// 按色板构建主题：浅色下观感色（主色/背景/文字）均来自色板；
+  /// 深色下背景/文字保持 night 系固定，仅主色/辅助色随色板（提亮保证深底可见）
+  factory AppThemeData.fromPalette(
+    DsThemePalette palette, {
+    bool isDark = false,
+  }) {
+    if (isDark) {
+      return AppThemeData(
         isDark: true,
-        primary: Color(0xFF9D7BFF),
+        primary: palette.primary.mixWhite(0.12),
         onPrimary: DsColors.white,
-        secondary: Color(0xFFF5A8D4),
-        onSecondary: DsColors.text,
+        secondary: palette.secondary,
+        onSecondary: DsColors.nightText,
         success: DsColors.success,
-        onSuccess: DsColors.text,
+        onSuccess: DsColors.nightText,
         warning: DsColors.warning,
-        onWarning: DsColors.text,
+        onWarning: DsColors.nightText,
         danger: Color(0xFFFF8A9B),
         onDanger: DsColors.night,
         background: DsColors.night,
@@ -84,6 +76,30 @@ class AppThemeData {
         barrier: Color(0x8C14082B),
         disabled: Color(0xFF463A66),
       );
+    }
+    return AppThemeData(
+      isDark: false,
+      primary: palette.primary,
+      onPrimary: DsColors.white,
+      secondary: palette.secondary,
+      onSecondary: palette.text,
+      success: DsColors.success,
+      onSuccess: DsColors.text,
+      warning: DsColors.warning,
+      onWarning: DsColors.text,
+      danger: DsColors.danger,
+      onDanger: DsColors.white,
+      background: palette.background,
+      backgroundAlt: palette.backgroundAlt,
+      surface: DsColors.white,
+      surfaceAlt: palette.backgroundAlt,
+      text: palette.text,
+      textSub: palette.textSub,
+      stroke: DsColors.white,
+      barrier: Color(0x594C1D95),
+      disabled: Color(0xFFE5DDF2),
+    );
+  }
 
   /// 是否深色模式
   final bool isDark;

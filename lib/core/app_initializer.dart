@@ -15,6 +15,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/system_widget_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
@@ -177,6 +178,9 @@ Future<void> initializeApp() async {
 
     // 初始化全局主题背景（所有界面共用的背景图设置）
     await AppBackgroundController().initialize();
+
+    // 初始化主题色板（全局主题颜色选择）
+    await DsThemeColorController().initialize();
 
     // 初始化日志服务（根据配置决定是否启用）
     unawaited(LogService.instance.initialize(globalStorage));

@@ -40,6 +40,9 @@ class DSBottomNavigation extends StatelessWidget {
 
     return JellyBox(
       radius: theme.radii.xxl,
+      // 默认 stroke 在浅色主题是白色，画在白色表面上不可见；
+      // 沿用 checkbox/radio 轨道的 textSub 半透明描边，两主题均可见
+      strokeColor: theme.textSub.withValues(alpha: 0.6),
       padding: EdgeInsets.symmetric(
         horizontal: theme.spacing.sm,
         vertical: theme.spacing.sm,
@@ -89,55 +92,64 @@ class _NavItemView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 选中项：凸起果冻方块（带果冻投影）
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                width: 46,
-                height: selected ? 46 : 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: selected
-                      ? LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: theme.jellyGradient(theme.primary),
-                          stops: theme.jellyStops,
-                        )
-                      : null,
-                  borderRadius: theme.radii.lg,
-                  border: selected
-                      ? Border.all(color: theme.jellyRim(theme.primary), width: 1.2)
-                      : null,
-                  boxShadow: selected && !pressed
-                      ? theme.jellyShadow(theme.primary, height: 4)
-                      : null,
-                ),
-                // 选中块叠加水晶玻璃罩
-                foregroundDecoration: selected
-                    ? JellyGlossDecoration(
-                        radius: theme.radii.lg, isDark: theme.isDark)
-                    : null,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    icon,
-                    if (item.showBadge)
-                      Positioned(
-                        right: -4,
-                        top: -2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: theme.danger,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: theme.stroke, width: 1.4),
+              // 选中项：凸起果冻方块（带果冻投影）。
+              // 外层固定 46 高槽位，方块在槽内动画缩放，
+              // 避免 34↔46 切换时把整条 bar 的高度带着跳
+              SizedBox(
+                height: 46,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    width: 46,
+                    height: selected ? 46 : 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: selected
+                          ? LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: theme.jellyGradient(theme.primary),
+                              stops: theme.jellyStops,
+                            )
+                          : null,
+                      borderRadius: theme.radii.lg,
+                      border: selected
+                          ? Border.all(
+                              color: theme.jellyRim(theme.primary), width: 1.2)
+                          : null,
+                      boxShadow: selected && !pressed
+                          ? theme.jellyShadow(theme.primary, height: 4)
+                          : null,
+                    ),
+                    // 选中块叠加水晶玻璃罩
+                    foregroundDecoration: selected
+                        ? JellyGlossDecoration(
+                            radius: theme.radii.lg, isDark: theme.isDark)
+                        : null,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        icon,
+                        if (item.showBadge)
+                          Positioned(
+                            right: -4,
+                            top: -2,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: theme.danger,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: theme.stroke, width: 1.4),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: theme.spacing.xs),
