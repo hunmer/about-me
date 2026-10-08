@@ -198,6 +198,15 @@ Future<void> initializeApp() async {
     // 初始化 Toast 服务
     Toast.setNavigatorKey(navigatorKey);
 
+    // 远端存储离线回退本地时，等首帧渲染完提示用户当前处于离线模式
+    if (globalStorage.remoteFallbackReason != null) {
+      unawaited(
+        Future<void>.delayed(const Duration(seconds: 1)).then((_) {
+          Toast.warning('远端存储不可用，已回退本地存储（离线模式）');
+        }),
+      );
+    }
+
     // 在初始化通知服务之前先清理历史通知和计时器状态
     // 这是防止应用重启后通知自动复原的关键步骤
     AppStartupState.instance._setLoadingMessage('正在清理历史通知...');
