@@ -156,16 +156,25 @@ class _DSListItemCardState extends State<DSListItemCard> {
                       bottomRight: Radius.circular(badgeSize),
                     ),
                   ),
-                  // 图标中心沿对角线内收，完整落在扇形内
+                  // 图标槽位沿对角线居中到扇形视觉中心（约 44% 处），
+                  // 槽位为扇形内能放下的最大方形（边长一半），外层
+                  // FittedBox 把调用方的定尺寸图标缩放进槽位
                   child: Align(
-                    alignment: const Alignment(-0.05, -0.05),
-                    child:
-                        widget.leading ??
-                        DsIcon(
-                          widget.icon!,
-                          size: badgeSize * 0.42,
-                          color: theme.onPrimary,
-                        ),
+                    alignment: const Alignment(-0.12, -0.12),
+                    child: SizedBox(
+                      width: badgeSize * 0.5,
+                      height: badgeSize * 0.5,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child:
+                            widget.leading ??
+                            DsIcon(
+                              widget.icon!,
+                              size: badgeSize * 0.5,
+                              color: theme.onPrimary,
+                            ),
+                      ),
+                    ),
                   ),
                 ),
               ),

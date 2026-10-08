@@ -136,7 +136,9 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
 
   /// 是否启用多条件过滤切换按钮
   /// 当为 true 时，会在 actions 中自动添加一个切换按钮
-  /// 点击按钮可以显示/隐藏过滤栏，切换时会清空已有的过滤条件
+  /// 点击按钮同时显示/隐藏过滤栏与搜索栏（两者默认隐藏），
+  /// 隐藏时会清空已有的过滤条件与搜索内容；
+  /// 仅启用搜索栏（无过滤项）的页面同样会出现该按钮，此时只切换搜索框
   final bool multiFilterToggleable;
 
   /// 初始多条件过滤值（用于页面跳转时传递初始筛选条件）
@@ -208,8 +210,18 @@ class _SuperCupertinoNavigationWrapperState
   /// 多条件过滤状态
   late MultiFilterState _multiFilterState;
 
-  /// 多条件过滤栏显示状态
-  bool _isMultiFilterVisible = true;
+  /// 过滤栏与搜索栏显示状态（由切换按钮同时控制，默认隐藏）
+  bool _isToolbarVisible = false;
+
+  /// 是否存在多条件过滤切换（过滤栏与搜索框一起切换）
+  bool get _hasFilterToggle =>
+      widget.enableMultiFilter &&
+      widget.multiFilterToggleable &&
+      widget.multiFilterItems != null &&
+      widget.multiFilterItems!.isNotEmpty;
+
+  /// 是否仅存在搜索切换（无过滤项时切换按钮只控制搜索框）
+  bool get _hasSearchToggle => widget.enableSearchBar && !_hasFilterToggle;
 
   /// 获取国际化文本
   @override
@@ -438,7 +450,7 @@ class _SuperCupertinoNavigationWrapperState
                 widget.multiFilterItems != null &&
                 widget.multiFilterItems!.isNotEmpty &&
                 !_isSearchFocused &&
-                _isMultiFilterVisible)
+                _isToolbarVisible)
               MultiFilterBar(
                 filterItems: widget.multiFilterItems!,
                 filterState: _multiFilterState,
@@ -468,11 +480,9 @@ class _SuperCupertinoNavigationWrapperState
   Widget? _buildActions() {
     final List<Widget> actionsList = [];
 
-    // 如果启用了多条件过滤切换,将其添加到最前面
-    if (widget.enableMultiFilter &&
-        widget.multiFilterToggleable &&
-        widget.multiFilterItems != null &&
-        widget.multiFilterItems!.isNotEmpty) {
+    // 过滤/搜索切换按钮：有过滤项时同时切换过滤栏与搜索框，
+    // 仅启用搜索栏的页面也显示该按钮，只切换搜索框（默认隐藏）
+    if (_hasFilterToggle || _hasSearchToggle) {
       final ds = AppTheme.of(context);
       actionsList.add(
         DSIconButton(
@@ -480,9 +490,11 @@ class _SuperCupertinoNavigationWrapperState
           icon: DsIconKind.sort,
           size: 36,
           color: ds.surfaceAlt,
-          iconColor: _isMultiFilterVisible ? ds.primary : ds.textSub,
-          tooltip: _isMultiFilterVisible ? '隐藏过滤' : '显示过滤',
-          onPressed: _toggleMultiFilter,
+          iconColor: _isToolbarVisible ? ds.primary : ds.textSub,
+          tooltip: _hasFilterToggle
+              ? (_isToolbarVisible ? '隐藏过滤/搜索' : '显示过滤/搜索')
+              : (_isToolbarVisible ? '隐藏搜索' : '显示搜索'),
+          onPressed: _toggleToolbarVisibility,
         ),
       );
     }
@@ -503,13 +515,18 @@ class _SuperCupertinoNavigationWrapperState
     );
   }
 
-  /// 切换多条件过滤栏显示状态
-  void _toggleMultiFilter() {
+  /// 切换过滤栏与搜索栏显示状态
+  void _toggleToolbarVisibility() {
+    final bool next = !_isToolbarVisible;
+    // 隐藏时退出搜索模式，清空搜索文本与焦点
+    if (!next && _isSearchFocused) {
+      _exitSearchMode();
+    }
     setState(() {
-      _isMultiFilterVisible = !_isMultiFilterVisible;
+      _isToolbarVisible = next;
 
       // 切换时清空所有过滤条件
-      if (!_isMultiFilterVisible) {
+      if (!next) {
         _multiFilterState.clearAll();
         // 通知外部过滤条件已清空
         widget.onMultiFilterChanged?.call({});
@@ -582,9 +599,11 @@ class _SuperCupertinoNavigationWrapperState
 
   /// 构建 SuperAppBar，根据 enableSearchBar 条件决定是否包含 searchBar
   SuperAppBar _buildSuperAppBar() {
-    // 构建 searchBar，当 enableSearchBar 为 false 时传入 disabled 的 SuperSearchBar
+    // 构建 searchBar：enableSearchBar 为 false，或存在过滤/搜索切换按钮
+    // 且处于隐藏态时，传入 disabled 的 SuperSearchBar（高度归零即不占位）
     final searchBar =
-        widget.enableSearchBar
+        widget.enableSearchBar &&
+            (!(_hasFilterToggle || _hasSearchToggle) || _isToolbarVisible)
             ? _buildSearchBar()
             : SuperSearchBar(
               enabled: false,

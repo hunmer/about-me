@@ -119,6 +119,8 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
                 ? EmptyChannelView(onAddChannel: widget.onAddChannel ?? () {})
                 : ReorderableListView.builder(
                     padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
                       bottom: MediaQuery.paddingOf(context).bottom,
                     ),
                     itemCount: _controller.filteredChannels.length,
