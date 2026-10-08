@@ -46,6 +46,31 @@ class SettingsScreenController extends ChangeNotifier {
     // 加载剪切板自动读取配置（默认关闭）
     _clipboardAutoRead = _prefs.getBool('clipboard_auto_read') ?? false;
     ClipboardService.instance.autoReadEnabled = _clipboardAutoRead;
+
+    // 加载用户资料（设置页顶部头像/用户名）
+    _userName = _prefs.getString('user_name') ?? '';
+    _userAvatarPath = _prefs.getString('user_avatar_path');
+  }
+
+  // 用户资料（设置页顶部头像/用户名）
+  String _userName = '';
+  String get userName => _userName.trim().isEmpty ? '用户' : _userName.trim();
+  Future<void> setUserName(String value) async {
+    _userName = value;
+    await _prefs.setString('user_name', value);
+    notifyListeners();
+  }
+
+  String? _userAvatarPath;
+  String? get userAvatarPath => _userAvatarPath;
+  Future<void> setUserAvatarPath(String? value) async {
+    _userAvatarPath = value;
+    if (value == null || value.isEmpty) {
+      await _prefs.remove('user_avatar_path');
+    } else {
+      await _prefs.setString('user_avatar_path', value);
+    }
+    notifyListeners();
   }
 
   void toggleTheme(context) => ThemeController.toggleTheme(context);

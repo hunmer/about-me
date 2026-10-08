@@ -1,0 +1,117 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:aboutme/core/theme_controller.dart';
+import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
+import '../controllers/settings_screen_controller.dart';
+import '../widgets/settings_group.dart';
+
+/// 界面设置：语言、深色模式、主题背景
+class InterfaceSettingsScreen extends StatefulWidget {
+  const InterfaceSettingsScreen({super.key});
+
+  @override
+  State<InterfaceSettingsScreen> createState() =>
+      _InterfaceSettingsScreenState();
+}
+
+class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
+  late SettingsScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SettingsScreenController();
+    _controller.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeAsync();
+  }
+
+  Future<void> _initializeAsync() async {
+    await _controller.initializeControllers(context);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_controller.isInitialized()) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('界面设置')),
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(
+          16.0,
+          16.0,
+          16.0,
+          16.0 + MediaQuery.paddingOf(context).bottom,
+        ),
+        children: [
+          SettingsGroup(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text('settings_screen_languageTitle'.tr),
+                subtitle: Text('settings_screen_languageSubtitle'.tr),
+                onTap: () => _controller.toggleLanguage(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.brightness_4),
+                title: Text('settings_screen_darkModeTitle'.tr),
+                subtitle: Text('settings_screen_darkModeSubtitle'.tr),
+                trailing: AdaptiveSwitch(
+                  value: ThemeController.isDarkTheme(context),
+                  onChanged: (value) => _controller.setTheme(context, value),
+                ),
+              ),
+              // 主题设置：全局背景图，应用于所有界面
+              ListenableBuilder(
+                listenable: AppBackgroundController(),
+                builder: (context, _) {
+                  return ListTile(
+                    leading: const Icon(Icons.image),
+                    title: Text('screens_themeSettings'.tr),
+                    subtitle: Text(
+                      AppBackgroundController().hasBackground
+                          ? 'screens_backgroundImageSet'.tr
+                          : AppBackgroundController().backgroundColor != null
+                          ? 'screens_solidBackgroundSet'.tr
+                          : 'screens_backgroundImageNotSet'.tr,
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      NavigationHelper.push(
+                        context,
+                        const ThemeBackgroundSettingsScreen(),
+                        routeName: '/settings/theme_background',
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
