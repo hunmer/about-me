@@ -904,7 +904,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
     );
   }
 
-  /// 档案条：点击 chip 切换档案（并即时重载对应模型）
+  /// 档案条：头像 + 名称，点击切换档案（并即时重载对应模型）
   Widget _buildArchiveStrip(AppThemeData theme) {
     final archives = Live2DPlugin.instance.archives;
     if (archives.isEmpty) {
@@ -919,19 +919,59 @@ class _JellyLive2DState extends State<JellyLive2D> {
       );
     }
     return SizedBox(
-      height: 36,
+      height: 66,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           for (final archive in archives)
             Padding(
               padding: EdgeInsets.only(right: theme.spacing.sm),
-              child: DSChip(
-                label: archive.name,
-                selected: archive.id == Live2DPlugin.instance.selectedId,
-                onSelected: (_) => _selectArchive(archive),
+              child: _archiveTile(theme, archive),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _archiveTile(AppThemeData theme, Live2DArchive archive) {
+    final selected = archive.id == Live2DPlugin.instance.selectedId;
+    final cover = archive.coverPath;
+    return GestureDetector(
+      onTap: () => _selectArchive(archive),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected ? theme.primary : theme.stroke,
+                width: 2,
               ),
             ),
+            child: ClipOval(
+              child: cover == null || cover.isEmpty
+                  ? DsIcon(DsIconKind.user, size: 20, color: theme.textSub)
+                  : JellyConfigurableImage(path: cover, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 56,
+            child: Text(
+              archive.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: DsTypography.caption.copyWith(
+                color: selected ? theme.primary : theme.text,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1499,79 +1539,76 @@ class _JellyLive2DState extends State<JellyLive2D> {
                             cursor: error == null
                                 ? MouseCursor.defer
                                 : SystemMouseCursors.click,
-                            child: ColoredBox(
-                              color: theme.background.withValues(alpha: 0.96),
-                              child: Center(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 250,
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (error == null) ...[
-                                        const DSLoadingDots(size: 10),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          '${_loadStageLabel(state.modelLoadStage)} '
-                                          '$percent%',
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.text,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 250,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (error == null) ...[
+                                      const DSLoadingDots(size: 10),
+                                      SizedBox(height: theme.spacing.md),
+                                      Text(
+                                        '${_loadStageLabel(state.modelLoadStage)} '
+                                        '$percent%',
+                                        textAlign: TextAlign.center,
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.text,
+                                          fontWeight: FontWeight.w700,
                                         ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        DSLinearProgress(
-                                          value: progress,
-                                          height: 8,
+                                      ),
+                                      SizedBox(height: theme.spacing.sm),
+                                      DSLinearProgress(
+                                        value: progress,
+                                        height: 8,
+                                      ),
+                                      SizedBox(height: theme.spacing.sm),
+                                      Text(
+                                        _selectedModel.label,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
                                         ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        Text(
-                                          _selectedModel.label,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.textSub,
-                                          ),
-                                        ),
-                                      ] else ...[
-                                        DsIcon(
-                                          DsIconKind.refresh,
-                                          size: 30,
+                                      ),
+                                    ] else ...[
+                                      DsIcon(
+                                        DsIconKind.refresh,
+                                        size: 30,
+                                        color: theme.danger,
+                                      ),
+                                      SizedBox(height: theme.spacing.md),
+                                      Text(
+                                        'screens_jellyLive2dLoadFailed'.tr,
+                                        textAlign: TextAlign.center,
+                                        style: DsTypography.body.copyWith(
                                           color: theme.danger,
+                                          fontWeight: FontWeight.w700,
                                         ),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          'screens_jellyLive2dLoadFailed'.tr,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.danger,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                      ),
+                                      SizedBox(height: theme.spacing.sm),
+                                      Text(
+                                        _loadErrorMessage(error),
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.textSub,
                                         ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        Text(
-                                          _loadErrorMessage(error),
-                                          maxLines: 4,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.textSub,
-                                          ),
+                                      ),
+                                      SizedBox(height: theme.spacing.md),
+                                      Text(
+                                        'screens_jellyLive2dTapToReload'.tr,
+                                        style: DsTypography.caption.copyWith(
+                                          color: theme.primary,
+                                          fontWeight: FontWeight.w700,
                                         ),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          'screens_jellyLive2dTapToReload'.tr,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ],
-                                  ),
+                                  ],
                                 ),
                               ),
                             ),
