@@ -95,6 +95,23 @@ class JellyBottomNav extends StatelessWidget {
                 )
                 : null,
         onLeadingTap: onToggleChat,
+        // 子栏最右侧：切换 Live2D 档案（与面板同款 激活高亮/再点收起）
+        trailingAction:
+            current == JellyTab.cottage && live2dPanel != null
+                ? DsIcon(
+                    DsIconKind.switchAccount,
+                    size: 16,
+                    color:
+                        activePanel == JellyLive2dPanel.archive
+                            ? theme.onPrimary
+                            : theme.textSub,
+                  )
+                : null,
+        onTrailingTap:
+            current == JellyTab.cottage && live2dPanel != null
+                ? () => _toggleLive2dPanel(live2dPanel!, JellyLive2dPanel.archive)
+                : null,
+        trailingSelected: activePanel == JellyLive2dPanel.archive,
         // 小屋页签：子栏提供 气泡/背景/状态面板 资源面板入口，
         // 激活（面板打开）时圆钮以主题色实底高亮
         subActions:
@@ -150,6 +167,16 @@ class JellyBottomNav extends StatelessWidget {
     );
   }
 
+  /// 切换资源面板：再次点击同面板收起；打开面板时收起聊天表单
+  /// （两者都悬浮在页面底部）
+  void _toggleLive2dPanel(
+    ValueNotifier<JellyLive2dPanel?> panel,
+    JellyLive2dPanel value,
+  ) {
+    if (panel.value != value && chatActive) onToggleChat?.call();
+    panel.value = panel.value == value ? null : value;
+  }
+
   /// 子栏资源面板图标：点按在 打开/收起 间切换（再次点击同图标收起）
   RadialSubAction _live2dPanelAction(
     ValueNotifier<JellyLive2dPanel?> panel,
@@ -168,11 +195,7 @@ class JellyBottomNav extends StatelessWidget {
         size: 16,
         color: selected ? theme.onPrimary : theme.textSub,
       ),
-      onTap: () {
-        // 打开面板时收起聊天表单，两者都悬浮在页面底部
-        if (panel.value != value && chatActive) onToggleChat?.call();
-        panel.value = panel.value == value ? null : value;
-      },
+      onTap: () => _toggleLive2dPanel(panel, value),
     );
   }
 }

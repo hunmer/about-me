@@ -172,6 +172,25 @@ void main() {
     );
   });
 
+  testWidgets('trailingSelected：右侧圆钮激活态主题色实底', (tester) async {
+    await tester.pumpWidget(wrap(RadialDiscBottomBar(
+      tabs: buildTabs(),
+      activeIndex: 0,
+      trailingAction: const Icon(Icons.gamepad_outlined),
+      trailingSelected: true,
+    )));
+    await tester.pumpAndSettle();
+
+    // 仅圆钮时走常驻浮动圆盘分支，激活圆钮使用 activePillColor 实底
+    final decoration = tester.widget<DecoratedBox>(
+      find.ancestor(
+        of: find.byIcon(Icons.gamepad_outlined),
+        matching: find.byType(DecoratedBox),
+      ).first,
+    ).decoration as BoxDecoration;
+    expect(decoration.color, const RadialDiscBarStyle().activePillColor);
+  });
+
   testWidgets('带子栏：尺寸 380×146，切到后半 tab 自动折叠', (tester) async {
     var index = 0;
     late StateSetter setStateOuter;

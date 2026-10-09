@@ -234,6 +234,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
   Future<void> _initialize() async {
     await _loadSavedSize();
     if (!mounted) return;
+    // Wait until the first finite layout is committed. The native view must
+    // not be loaded against the temporary constraints from the first build.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     await _loadModel(_selectedModel);
   }
 
@@ -430,7 +434,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // to the model viewport's top even when that point is above the container
     // (regular mode uses a viewport as tall as the container).
     final modelTop = height - _modelBottomInset - _displaySize;
-    final top = modelTop - gap - bubbleHeight;
+    final top = (modelTop - gap - bubbleHeight)
+        .clamp(0.0, max(0.0, height - bubbleHeight))
+        .toDouble();
     final left = ((width - bubbleWidth) / 2).clamp(
       margin,
       width - margin - bubbleWidth,
@@ -732,43 +738,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              StatefulBuilder(
-                builder: (sheetContext, setSheetState) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'screens_jellyLive2dArchives'.tr,
-                      style: DsTypography.heading.copyWith(color: theme.text),
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    if (Live2DPlugin.instance.archives.isEmpty)
-                      Text(
-                        'screens_jellyLive2dNoArchives'.tr,
-                        style: DsTypography.body.copyWith(color: theme.textSub),
-                      )
-                    else
-                      Wrap(
-                        spacing: theme.spacing.sm,
-                        runSpacing: theme.spacing.sm,
-                        children: [
-                          for (final archive in Live2DPlugin.instance.archives)
-                            DSChip(
-                              label: archive.name,
-                              selected:
-                                  archive.id ==
-                                  Live2DPlugin.instance.selectedId,
-                              onSelected: (_) {
-                                setSheetState(() {});
-                                _selectArchive(archive);
-                              },
-                            ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(height: theme.spacing.xl),
+              SizedBox(height: theme.spacing.sm),
               Text(
                 'screens_jellyLive2dCharacterSize'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
@@ -922,7 +892,41 @@ class _JellyLive2DState extends State<JellyLive2D> {
           JellyLive2dPanel.bubble => _buildBubbleStrip(theme),
           JellyLive2dPanel.background => _buildBackgroundStrip(theme),
           JellyLive2dPanel.statusPanel => _buildStatusPanelStrip(theme),
+          JellyLive2dPanel.archive => _buildArchiveStrip(theme),
         },
+      ),
+    );
+  }
+
+  /// 档案条：点击 chip 切换档案（并即时重载对应模型）
+  Widget _buildArchiveStrip(AppThemeData theme) {
+    final archives = Live2DPlugin.instance.archives;
+    if (archives.isEmpty) {
+      return SizedBox(
+        height: 32,
+        child: Center(
+          child: Text(
+            'screens_jellyLive2dNoArchives'.tr,
+            style: DsTypography.label.copyWith(color: theme.textSub),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final archive in archives)
+            Padding(
+              padding: EdgeInsets.only(right: theme.spacing.sm),
+              child: DSChip(
+                label: archive.name,
+                selected: archive.id == Live2DPlugin.instance.selectedId,
+                onSelected: (_) => _selectArchive(archive),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -1149,10 +1153,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   style: DsTypography.label.copyWith(color: theme.text),
                 ),
                 DSSlider(
-                  value: (_backgroundBlur / _backgroundBlurMax).clamp(
-                    0.0,
-                    1.0,
-                  ),
+                  value: (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
                   onChanged: (ratio) => _previewBackground(
                     () => _backgroundBlur = ratio * _backgroundBlurMax,
                     setSheetState,

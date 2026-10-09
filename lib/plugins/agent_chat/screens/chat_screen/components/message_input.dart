@@ -27,7 +27,15 @@ import 'agent_chat_text_input.dart';
 class MessageInput extends StatefulWidget {
   final ChatController controller;
 
-  const MessageInput({super.key, required this.controller});
+  /// 是否显示顶部快捷入口行（Agent 编辑 / Skills / MCP）；
+  /// 关闭后输入框高度更紧凑（如 Live2D 悬浮输入条）
+  final bool showQuickActions;
+
+  const MessageInput({
+    super.key,
+    required this.controller,
+    this.showQuickActions = true,
+  });
 
   @override
   State<MessageInput> createState() => _MessageInputState();
@@ -241,9 +249,10 @@ class _MessageInputState extends State<MessageInput> {
                   widget.controller.selectedFiles.isNotEmpty))
             _buildCurrentStatus(),
 
-          // 快捷入口：Agent 编辑与 Skills 选择
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          // 快捷入口：Agent 编辑与 Skills 选择（紧凑模式下隐藏）
+          if (widget.showQuickActions)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
               children: [
                 Pressable(

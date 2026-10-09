@@ -172,22 +172,62 @@ class _CottageTabState extends State<_CottageTab> {
                 },
               ),
               JellyStatusPanel(controller: _companion),
-              // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）；
+              // 左右两侧悬浮图标按钮（assets/jelly_icons 素材）：
+              // 右列首项为陪伴状态入口，其余为玩法占位；
               // 顶部按状态面板实际显示高度偏移避让
+              Align(
+                alignment: Alignment.topLeft,
+                child: AnimatedBuilder(
+                  animation: JellyStatusPanelSettings.instance,
+                  builder: (context, _) => _buildSideButtonColumn(
+                    theme,
+                    topOffset:
+                        _statusPanelHeight(mq.size.width) + theme.spacing.sm,
+                    buttons: const [
+                      (
+                        asset: 'assets/jelly_icons/envelope.webp',
+                        label: '信封（占位）',
+                        onTap: null,
+                      ),
+                      (
+                        asset: 'assets/jelly_icons/shop.webp',
+                        label: '商店（占位）',
+                        onTap: null,
+                      ),
+                      (
+                        asset: 'assets/jelly_icons/speech_bubble.webp',
+                        label: '气泡（占位）',
+                        onTap: null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               Align(
                 alignment: Alignment.topRight,
                 child: AnimatedBuilder(
                   animation: JellyStatusPanelSettings.instance,
-                  builder: (context, _) => Padding(
-                    padding: EdgeInsets.only(
-                      top: _statusPanelHeight(mq.size.width) + theme.spacing.sm,
-                    ),
-                    child: _buildSideButton(
-                      theme,
-                      icon: DsIconKind.bot,
-                      semanticLabel: '查看陪伴状态',
-                      onTap: _showCompanionDialog,
-                    ),
+                  builder: (context, _) => _buildSideButtonColumn(
+                    theme,
+                    topOffset:
+                        _statusPanelHeight(mq.size.width) + theme.spacing.sm,
+                    buttons: [
+                      (
+                        asset: 'assets/jelly_icons/heart.webp',
+                        label: '查看陪伴状态',
+                        onTap: _showCompanionDialog,
+                      ),
+                      const (
+                        asset: 'assets/jelly_icons/gift.webp',
+                        label: '礼物（占位）',
+                        onTap: null,
+                      ),
+                      const (
+                        asset: 'assets/jelly_icons/trophy.webp',
+                        label: '奖杯（占位）',
+                        onTap: null,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -219,10 +259,34 @@ class _CottageTabState extends State<_CottageTab> {
     return height.clamp(0.0, JellyStatusPanelSettings.maxDisplayHeight);
   }
 
-  /// 两侧悬浮信息按钮：圆形果冻质感小钮
+  /// 左右两侧悬浮图标按钮列（jelly_icons 素材），自上而下排列
+  Widget _buildSideButtonColumn(
+    AppThemeData theme, {
+    required double topOffset,
+    required List<({String asset, String label, VoidCallback? onTap})> buttons,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(top: topOffset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: theme.spacing.sm,
+        children: [
+          for (final button in buttons)
+            _buildSideButton(
+              theme,
+              iconAsset: button.asset,
+              semanticLabel: button.label,
+              onTap: button.onTap ?? () {},
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 两侧悬浮信息按钮：圆形果冻质感小钮（jelly_icons 图片图标）
   Widget _buildSideButton(
     AppThemeData theme, {
-    required DsIconKind icon,
+    required String iconAsset,
     required String semanticLabel,
     required VoidCallback onTap,
   }) {
@@ -243,7 +307,12 @@ class _CottageTabState extends State<_CottageTab> {
               boxShadow: theme.shadows.soft,
             ),
             child: Center(
-              child: DsIcon(icon, size: 20, color: theme.primaryText),
+              child: Image.asset(
+                iconAsset,
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),

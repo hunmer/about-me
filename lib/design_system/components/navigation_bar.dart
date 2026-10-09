@@ -41,6 +41,9 @@ class DSBottomNavigation extends StatelessWidget {
     this.onSubOptionChange,
     this.leadingAction,
     this.onLeadingTap,
+    this.trailingAction,
+    this.onTrailingTap,
+    this.trailingSelected = false,
   });
 
   final List<DSNavItem> items;
@@ -67,6 +70,15 @@ class DSBottomNavigation extends StatelessWidget {
 
   /// 子栏左侧圆按钮点击回调
   final VoidCallback? onLeadingTap;
+
+  /// 上层子栏右侧圆按钮图标（null 则不渲染该按钮）
+  final Widget? trailingAction;
+
+  /// 子栏右侧圆按钮点击回调
+  final VoidCallback? onTrailingTap;
+
+  /// 右侧圆按钮激活态（主题色实底高亮）
+  final bool trailingSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -118,15 +130,21 @@ class DSBottomNavigation extends StatelessWidget {
       floatingAction: floatingAction,
       frosted: frosted,
       subBarBehavior:
-          subLabels == null && subActions == null && leadingAction == null
-              ? RadialSubBarBehavior.never
-              : RadialSubBarBehavior.auto,
+          subLabels == null &&
+              subActions == null &&
+              leadingAction == null &&
+              trailingAction == null
+          ? RadialSubBarBehavior.never
+          : RadialSubBarBehavior.auto,
       subLabels: subLabels,
       subActions: subActions,
       subOption: subOption,
       onSubOptionChange: onSubOptionChange,
       leadingAction: leadingAction,
       onLeadingTap: onLeadingTap,
+      trailingAction: trailingAction,
+      onTrailingTap: onTrailingTap,
+      trailingSelected: trailingSelected,
       style: style,
     );
 
