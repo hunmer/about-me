@@ -1236,42 +1236,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       );
                     },
                   ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: modelBottomInset,
-                    child: Center(
-                      child: ValueListenableBuilder<Live2DViewState>(
-                        valueListenable: _controller,
-                        builder: (context, state, child) {
-                          if (state.isLoadingModel || state.lastError != null) {
-                            return const SizedBox.shrink();
-                          }
-                          return Container(
-                            constraints: const BoxConstraints(maxWidth: 260),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: theme.spacing.md,
-                              vertical: theme.spacing.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.surface.withValues(alpha: 0.88),
-                              borderRadius: theme.radii.pill,
-                              boxShadow: theme.shadows.soft,
-                            ),
-                            child: Text(
-                              _selectedModel.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.text,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

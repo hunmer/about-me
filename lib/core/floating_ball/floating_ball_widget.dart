@@ -81,7 +81,7 @@ class _FloatingBallWidgetState extends State<FloatingBallWidget> {
     final navigatorContext = Get.context;
     if (navigatorContext != null && navigatorContext.mounted) {
       final actionManager = ActionManager();
-      final result = await actionManager.executeGestureAction(
+      await actionManager.executeGestureAction(
         gesture,
         navigatorContext,
       );
