@@ -194,6 +194,7 @@ class ChatTranslationsEn {
     'chat_searchTags': 'Search tags',
     'chat_sortByTime': 'Sort by Time',
     'chat_sortByCount': 'Sort by Count',
+    'chat_sort': 'Sort',
     'chat_noTagsFound': 'No Tags Found',
     'chat_noMatchingTags': 'No Matching Tags',
     'chat_totalMessages': 'Total @count messages',

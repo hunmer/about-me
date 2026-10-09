@@ -75,28 +75,6 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     return SuperCupertinoNavigationWrapper(
       title: Text('chat_channelList'.tr),
       largeTitle: 'chat_channelListTitle'.tr,
-      // 右上角切换列表/卡片视图（持久化到本地）
-      actions: [
-        DSThemeBridge(
-          // DsIcon 取色需要 AppTheme，需包桥
-          child: Builder(
-            builder: (context) {
-              final theme = AppTheme.of(context);
-              return IconButton(
-                icon: DsIcon(
-                  _controller.isCardView ? DsIconKind.list : DsIconKind.grid,
-                  size: 22,
-                  color: theme.text,
-                ),
-                tooltip: _controller.isCardView
-                    ? 'chat_listView'.tr
-                    : 'chat_cardView'.tr,
-                onPressed: () => _controller.toggleView(),
-              );
-            },
-          ),
-        ),
-      ],
       enableSearchBar: true,
       searchPlaceholder: 'chat_searchPlaceholder'.tr,
       onSearchChanged: (query) {
@@ -132,7 +110,6 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 2),
                         child: ChannelTile(
                           channel: channel,
-                          isCardView: _controller.isCardView,
                           onBeforeOpen: () {
                             // 在打开聊天页面之前设置当前频道
                             widget.chatPlugin.channelService.setCurrentChannel(

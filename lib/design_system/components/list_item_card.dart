@@ -1,17 +1,16 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻列表卡片：标题/副标题 + 尾部信息，左上角带扇形标志
+/// 果冻列表卡片：标题/副标题 + 尾部信息，浅色底 + 左上角图标水印
 ///
-/// 标志（[icon] 或 [leading]）是贴在卡片左上角的实心四分之一圆：
-/// 1:1 占位框，边长取卡片高度的一半（布局后测量，上限 70）。
-/// 标志叠在面板之上，不作为行内元素占位——内容区仅为其让出左侧
-/// 间距。面板为半透明描边圆角面板，透出页面背景实现融合。
-class DSListItemCard extends StatefulWidget {
+/// 卡片内部为 [iconColor] 调亮的浅色底，描边取 [iconColor] 原色。
+/// 标志（[icon] 或 [leading]）放大后贴在卡片左上角作为背景水印，
+/// 置于内容层之下，超出圆角的部分被裁剪。
+class DSListItemCard extends StatelessWidget {
   const DSListItemCard({
     super.key,
     required this.title,
@@ -26,15 +25,15 @@ class DSListItemCard extends StatefulWidget {
 
   final String title;
 
-  /// 左上角标志图标（与 [leading] 二选一）
+  /// 左上角水印图标（与 [leading] 二选一）
   final DsIconKind? icon;
 
-  /// 左上角标志自定义内容（如 Material 图标），优先于 [icon]
+  /// 左上角水印自定义内容（如 Material 图标），优先于 [icon]
   final Widget? leading;
 
   final String? subtitle;
 
-  /// 标志扇形填充色（默认主题主色）
+  /// 卡片底色（默认主题主色）
   final Color? iconColor;
 
   final Widget? trailing;
@@ -44,65 +43,55 @@ class DSListItemCard extends StatefulWidget {
 
   final VoidCallback? onTap;
 
-  @override
-  State<DSListItemCard> createState() => _DSListItemCardState();
-}
-
-class _DSListItemCardState extends State<DSListItemCard> {
-  final GlobalKey _panelKey = GlobalKey();
-
-  /// 扇形标志边长（首帧布局后测得：卡片高度的一半，上限 70）
-  double? _badgeSize;
-
-  static const double _maxBadgeSize = 70;
-
-  /// 首帧前的预估边长，避免内容避让间距跳变过大
-  static const double _initialBadgeSize = 40;
+  /// 水印图标边长
+  static const double _watermarkSize = 96;
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final hasBadge = widget.leading != null || widget.icon != null;
+    final hasWatermark = leading != null || icon != null;
     final radius = theme.radii.xl;
-    final badgeSize = _badgeSize ?? _initialBadgeSize;
-
-    // 布局后测量卡片高度：标志边长 = 高度一半（≤70）。内容避让
-    // 随标志变化会反过来影响高度，仅在尺寸明显变化时重建，收敛
-    // 后不再触发。
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final height = _panelKey.currentContext?.size?.height;
-      if (height == null) return;
-      final next = (height / 2).clamp(24.0, _maxBadgeSize);
-      if ((next - badgeSize).abs() > 0.5) {
-        setState(() => _badgeSize = next);
-      }
-    });
+    final baseColor = iconColor ?? theme.primary;
+    // 内部背景为底色调亮的浅色，与 Timeline 消息卡片一致
+    final cardColor = Color.lerp(baseColor, Colors.white, 0.85);
 
     final card = ClipRRect(
       borderRadius: radius,
       child: Stack(
         children: [
-          Container(
-            key: _panelKey,
-            decoration: BoxDecoration(
-              // 半透明表面透出页面背景，卡片自然融入
-              color: theme.surface.withValues(alpha: theme.isDark ? 0.5 : 0.65),
-              borderRadius: radius,
-              border: Border.all(
-                color: theme.primary.withValues(
-                  alpha: theme.isDark ? 0.6 : 0.45,
-                ),
-                width: 1.8,
+          // 浅色底 + 原色描边
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: radius,
+                border: Border.all(color: baseColor, width: 1.8),
               ),
             ),
-            // 内容区为左上角扇形标志让出左侧间距
-            padding: EdgeInsets.only(
-              left: hasBadge ? badgeSize + theme.spacing.md : theme.spacing.md,
-              top: theme.spacing.md,
-              right: theme.spacing.md,
-              bottom: theme.spacing.md,
+          ),
+          // 左上角图标水印：放大贴角，处于内容层之下，溢出被裁剪；
+          // 底色已浅，水印用底色低透明度保持可见
+          if (hasWatermark)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: SizedBox(
+                width: _watermarkSize,
+                height: _watermarkSize,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Opacity(
+                    opacity: 0.15,
+                    child: IconTheme.merge(
+                      data: IconThemeData(color: baseColor),
+                      child: leading ?? DsIcon(icon!, color: baseColor),
+                    ),
+                  ),
+                ),
+              ),
             ),
+          Padding(
+            padding: EdgeInsets.all(theme.spacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -112,13 +101,13 @@ class _DSListItemCardState extends State<DSListItemCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        widget.title,
+                        title,
                         style: DsTypography.heading.copyWith(color: theme.text),
                       ),
-                      if (widget.subtitle != null) ...[
+                      if (subtitle != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          widget.subtitle!,
+                          subtitle!,
                           style: DsTypography.caption.copyWith(
                             color: theme.textSub,
                           ),
@@ -127,65 +116,27 @@ class _DSListItemCardState extends State<DSListItemCard> {
                     ],
                   ),
                 ),
-                if (widget.trailingText != null) ...[
+                if (trailingText != null) ...[
                   SizedBox(width: theme.spacing.sm),
                   Text(
-                    widget.trailingText!,
+                    trailingText!,
                     style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 ],
-                if (widget.trailing != null) ...[
+                if (trailing != null) ...[
                   SizedBox(width: theme.spacing.sm),
-                  widget.trailing!,
+                  trailing!,
                 ],
               ],
             ),
           ),
-          // 左上角扇形标志：贴顶边与左边，仅圆右下角，叠层不占行内布局
-          if (hasBadge)
-            Positioned(
-              left: 0,
-              top: 0,
-              child: SizedBox(
-                width: badgeSize,
-                height: badgeSize,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: widget.iconColor ?? theme.primary,
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(badgeSize),
-                    ),
-                  ),
-                  // 图标槽位沿对角线居中到扇形视觉中心（约 44% 处），
-                  // 槽位为扇形内能放下的最大方形（边长一半），外层
-                  // FittedBox 把调用方的定尺寸图标缩放进槽位
-                  child: Align(
-                    alignment: const Alignment(-0.12, -0.12),
-                    child: SizedBox(
-                      width: badgeSize * 0.5,
-                      height: badgeSize * 0.5,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child:
-                            widget.leading ??
-                            DsIcon(
-                              widget.icon!,
-                              size: badgeSize * 0.5,
-                              color: theme.onPrimary,
-                            ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
 
-    if (widget.onTap == null) return card;
+    if (onTap == null) return card;
     return Pressable(
-      onPressed: widget.onTap,
+      onPressed: onTap,
       builder: (context, states) => states.contains(WidgetState.pressed)
           ? Opacity(opacity: 0.85, child: card)
           : card,

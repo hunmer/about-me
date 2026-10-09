@@ -189,6 +189,7 @@ class ChatTranslationsZh {
     'chat_searchTags': '搜索标签',
     'chat_sortByTime': '按时间排序',
     'chat_sortByCount': '按数量排序',
+    'chat_sort': '排序',
     'chat_noTagsFound': '暂无标签',
     'chat_noMatchingTags': '未找到匹配的标签',
     'chat_totalMessages': '共 @count 条消息',

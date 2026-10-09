@@ -760,9 +760,9 @@
         "dev"
       ],
       "cwd": "G:\\programming\\nodejs\\sessionBox",
-      "status": "running",
+      "status": "exited",
       "pid": 1332,
-      "exitCode": null,
+      "exitCode": 3221225478,
       "error": null,
       "desc": "pnpm run build:extensions && electron-vite dev",
       "group": "sessionBox",

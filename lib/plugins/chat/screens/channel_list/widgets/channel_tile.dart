@@ -16,9 +16,6 @@ class ChannelTile extends StatelessWidget {
   final Function(Channel) onDelete;
   final Key? itemKey;
 
-  /// 是否卡片视图（果冻卡片布局），否则为列表视图
-  final bool isCardView;
-
   const ChannelTile({
     super.key,
     required this.channel,
@@ -27,7 +24,6 @@ class ChannelTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.itemKey,
-    this.isCardView = false,
   });
 
   String? get _draft => (channel.draft != null && channel.draft!.isNotEmpty)
@@ -47,31 +43,12 @@ class ChannelTile extends StatelessWidget {
       ],
       child: DSThemeBridge(
         // DS 组件内部取 AppTheme，需包桥
-        child: isCardView ? _buildCard(context) : _buildListItem(context),
+        child: _buildCard(context),
       ),
     );
   }
 
-  /// 列表视图：果冻列表项
-  Widget _buildListItem(BuildContext context) {
-    final lastMessage = channel.lastMessage;
-    return DSListItem(
-      key: itemKey,
-      title: channel.title,
-      subtitle: _subtitle,
-      leading: DSAvatar(
-        color: channel.backgroundColor,
-        child: Icon(channel.icon, color: Colors.white, size: 20),
-      ),
-      trailingText: _draft == null && lastMessage != null
-          ? DateFormatter.formatDateTime(lastMessage.date, context)
-          : null,
-      trailing: _buildDraftBadge(context),
-      onTap: () => _openChat(context),
-    );
-  }
-
-  /// 卡片视图：半透明描边卡片，左上角半圆标志
+  /// 卡片视图：彩色底卡片，左上角大图标作背景水印
   Widget _buildCard(BuildContext context) {
     final lastMessage = channel.lastMessage;
     return DSListItemCard(
@@ -79,7 +56,7 @@ class ChannelTile extends StatelessWidget {
       title: channel.title,
       subtitle: _subtitle,
       iconColor: channel.backgroundColor,
-      leading: Icon(channel.icon, color: Colors.white, size: 22),
+      leading: Icon(channel.icon, size: 22),
       trailingText: _draft == null && lastMessage != null
           ? DateFormatter.formatDateTime(lastMessage.date, context)
           : null,

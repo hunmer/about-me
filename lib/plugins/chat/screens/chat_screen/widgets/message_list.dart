@@ -60,6 +60,65 @@ class MessageList extends StatefulWidget {
   State<MessageList> createState() => _MessageListState();
 }
 
+/// 仅在指定消息自身的选中状态变化时重建，
+/// 避免监听整个选中集合导致所有可见气泡随每次勾选全量刷新
+class _SelectableMessageBubble extends StatefulWidget {
+  const _SelectableMessageBubble({
+    required this.selectedMessageIds,
+    required this.messageId,
+    required this.builder,
+  });
+
+  final ValueNotifier<Set<String>> selectedMessageIds;
+  final String messageId;
+  final MessageBubble Function(bool isSelected) builder;
+
+  @override
+  State<_SelectableMessageBubble> createState() =>
+      _SelectableMessageBubbleState();
+}
+
+class _SelectableMessageBubbleState extends State<_SelectableMessageBubble> {
+  late bool _isSelected;
+
+  @override
+  void initState() {
+    super.initState();
+    _isSelected = widget.selectedMessageIds.value.contains(widget.messageId);
+    widget.selectedMessageIds.addListener(_handleSelectionChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SelectableMessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedMessageIds != widget.selectedMessageIds ||
+        oldWidget.messageId != widget.messageId) {
+      oldWidget.selectedMessageIds.removeListener(_handleSelectionChanged);
+      _isSelected = widget.selectedMessageIds.value.contains(widget.messageId);
+      widget.selectedMessageIds.addListener(_handleSelectionChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.selectedMessageIds.removeListener(_handleSelectionChanged);
+    super.dispose();
+  }
+
+  void _handleSelectionChanged() {
+    final selected =
+        widget.selectedMessageIds.value.contains(widget.messageId);
+    if (selected != _isSelected) {
+      setState(() => _isSelected = selected);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.builder(_isSelected);
+  }
+}
+
 class _MessageListState extends State<MessageList> {
   @override
   Widget build(BuildContext context) {
@@ -84,28 +143,6 @@ class _MessageListState extends State<MessageList> {
         }
 
         if (item is Message) {
-          // 确保消息的 metadata 中包含 channelId
-          if (item.metadata == null ||
-              !item.metadata!.containsKey('channelId')) {
-            final metadata = Map<String, dynamic>.from(item.metadata ?? {});
-            metadata['channelId'] = item.channelId; // 使用消息对象中的 channelId
-            // 创建一个临时消息对象，等待异步操作完成
-            Message tempMessage = item;
-            // 使用 Future.microtask 来确保状态更新是安全的
-            Future.microtask(() async {
-              final updatedMessage = await item.copyWith(metadata: metadata);
-              if (mounted) {
-                setState(() {
-                  // 更新items中的消息
-                  final index = widget.items.indexOf(tempMessage);
-                  if (index != -1 && widget.items[index] is Message) {
-                    widget.items[index] = updatedMessage;
-                  }
-                });
-              }
-            });
-          }
-
           // 为消息项添加 AutoScrollTag
           final tagIndex = widget.messageIndexMap?[item.id] ?? index;
           // 列表 reverse: true，视觉上方（时间更早）的消息在 index + 1；
@@ -153,12 +190,12 @@ class _MessageListState extends State<MessageList> {
                       initiallyShowFixedSymbolDialog: true, // 直接显示固态符号编辑对话框
                     );
                   },
-                  child: ValueListenableBuilder<Set<String>>(
-                    valueListenable: widget.selectedMessageIds,
-                    builder: (context, selectedIds, _) {
-                      return MessageBubble(
+                  child: _SelectableMessageBubble(
+                    selectedMessageIds: widget.selectedMessageIds,
+                    messageId: item.id,
+                    builder: (isSelected) => MessageBubble(
                         message: item,
-                        isSelected: selectedIds.contains(item.id),
+                        isSelected: isSelected,
                         isMultiSelectMode: widget.isMultiSelectMode,
                         onEdit: () => widget.onMessageEdit(item),
                         onDelete: () => widget.onMessageDelete(item),
@@ -208,8 +245,7 @@ class _MessageListState extends State<MessageList> {
                             item.id == widget.highlightedMessage?.id,
                         onToggleFavorite: () => widget.onToggleFavorite(item),
                         onReplyTap: widget.onReplyTap,
-                      );
-                    },
+                      ),
                   ),
                 ),
                 // AI 回复线程入口（@AI 消息下方：有 xx 条回复 / 正在输入…）

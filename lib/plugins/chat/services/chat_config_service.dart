@@ -27,12 +27,10 @@ class ChatConfigService {
   bool _showAvatarInChat = true;
   bool _showAvatarInTimeline = true;
   bool _playSoundOnSend = true;
-  bool _timelineIsGridView = false;
 
   bool get showAvatarInChat => _showAvatarInChat;
   bool get showAvatarInTimeline => _showAvatarInTimeline;
   bool get playSoundOnSend => _playSoundOnSend;
-  bool get timelineIsGridView => _timelineIsGridView;
 
   ChatConfigService(this._plugin);
 
@@ -74,13 +72,11 @@ class ChatConfigService {
       _showAvatarInChat = settings['showAvatarInChat'] ?? true;
       _showAvatarInTimeline = settings['showAvatarInTimeline'] ?? true;
       _playSoundOnSend = settings['playSoundOnSend'] ?? true;
-      _timelineIsGridView = settings['timelineIsGridView'] ?? false;
     } catch (e) {
       debugPrint('Error loading chat settings: $e');
       _showAvatarInChat = true;
       _showAvatarInTimeline = true;
       _playSoundOnSend = true;
-      _timelineIsGridView = false;
     }
   }
 
@@ -160,12 +156,6 @@ class ChatConfigService {
     _plugin.refresh();
   }
 
-  Future<void> setTimelineIsGridView(bool value) async {
-    _timelineIsGridView = value;
-    await _saveSettings();
-    _plugin.refresh();
-  }
-
   bool shouldPlayMessageSound() {
     return _playSoundOnSend;
   }
@@ -175,7 +165,6 @@ class ChatConfigService {
       'showAvatarInChat': _showAvatarInChat,
       'showAvatarInTimeline': _showAvatarInTimeline,
       'playSoundOnSend': _playSoundOnSend,
-      'timelineIsGridView': _timelineIsGridView,
     });
   }
 }

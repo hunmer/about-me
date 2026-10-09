@@ -7,6 +7,8 @@ import 'package:aboutme/plugins/chat/models/tag.dart';
 import 'package:aboutme/plugins/chat/screens/tags/widgets/tag_card.dart';
 import 'package:aboutme/plugins/chat/screens/tags/tag_messages_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 
 /// 排序类型枚举
 enum SortType {
@@ -94,20 +96,11 @@ class _TagsScreenState extends State<TagsScreen> {
     );
   }
 
-  /// 构建排序按钮（两种排序方式之间切换）
-  Widget _buildSortButton() {
-    final byCount = _sortType == SortType.byMessageCount;
-    return DSIconButton(
-      icon: byCount ? DsIconKind.hash : DsIconKind.clock,
-      size: 36,
-      tooltip: byCount ? 'chat_sortByCount'.tr : 'chat_sortByTime'.tr,
-      onPressed: () {
-        setState(() {
-          _sortType = byCount ? SortType.byLastUsed : SortType.byMessageCount;
-        });
-      },
-    );
-  }
+  /// 排序选项（值 -> 标签）
+  Map<String, String> get _sortOptions => {
+    'count': 'chat_sortByCount'.tr,
+    'time': 'chat_sortByTime'.tr,
+  };
 
   /// 构建标签网格
   Widget _buildTagsGrid() {
@@ -154,21 +147,33 @@ class _TagsScreenState extends State<TagsScreen> {
           setState(() => _searchQuery = query);
         },
 
-        actions: [
-          // SuperAppBar 的 actions 经 Overlay 渲染，脱离页面主题桥，
-          // DS 按钮需自带 DSThemeBridge 提供 AppTheme
-          // 排序按钮
-          DSThemeBridge(child: _buildSortButton()),
-          // 刷新按钮
-          DSThemeBridge(
-            child: DSIconButton(
-              icon: DsIconKind.refresh,
-              size: 36,
-              onPressed: _loadTags,
-              tooltip: 'chat_refresh'.tr,
+        multiFilterItems: [
+          FilterItem(
+            id: 'sort',
+            title: 'chat_sort'.tr,
+            type: FilterType.custom,
+            initialValue: 'count',
+            builder:
+                (context, value, onChanged) => FilterBuilders.buildSortFilter(
+                  context: context,
+                  currentValue: value,
+                  onChanged: onChanged,
+                  options: _sortOptions,
+                ),
+            getBadge: (value) => FilterBuilders.sortBadge(
+              value,
+              _sortOptions,
             ),
           ),
         ],
+        onMultiFilterChanged: (filters) {
+          setState(() {
+            _sortType = filters['sort'] == 'time'
+                ? SortType.byLastUsed
+                : SortType.byMessageCount;
+          });
+        },
+
         body:
             _isLoading
                 ? const Center(child: DSLoadingDots())

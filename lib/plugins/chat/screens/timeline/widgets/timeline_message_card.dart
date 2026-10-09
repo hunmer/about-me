@@ -39,7 +39,11 @@ class TimelineMessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final cardColor = message.bubbleColor;
+    // 瀑布流卡片：气泡色描边，内部背景为气泡色调亮的浅色底
+    final bubbleColor = message.bubbleColor;
+    final cardColor = isGridView && bubbleColor != null
+        ? Color.lerp(bubbleColor, Colors.white, 0.85)
+        : bubbleColor;
 
     // 根据视图模式调整卡片样式
     return Container(
@@ -47,6 +51,12 @@ class TimelineMessageCard extends StatelessWidget {
         color: cardColor,
         borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
         boxShadow: isGridView ? theme.shadows.soft : null,
+        border: isGridView
+            ? Border.all(
+                color: bubbleColor ?? theme.primary,
+                width: 1.8,
+              )
+            : null,
       ),
       child: InkWell(
         onLongPress: () {

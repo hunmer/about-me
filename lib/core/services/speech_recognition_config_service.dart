@@ -85,7 +85,6 @@ class SpeechRecognitionConfigService extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      debugPrint('🎤 [语音识别配置服务] 保存配置失败: $e');
       rethrow;
     }
   }
@@ -110,7 +109,6 @@ class SpeechRecognitionConfigService extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      debugPrint('🎤 [语音识别配置服务] 保存AI纠错Agent失败: $e');
       rethrow;
     }
   }
@@ -123,7 +121,6 @@ class SpeechRecognitionConfigService extends ChangeNotifier {
       _correctionAgent = null;
       notifyListeners();
     } catch (e) {
-      debugPrint('🎤 [语音识别配置服务] 清除配置失败: $e');
       rethrow;
     }
   }

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'dart:io';
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
@@ -136,7 +135,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 气泡宽度等布局按它计算
   double _displaySize = _defaultSize;
   double _modelBottomInset = 0;
-  String? _lastLayoutLog;
 
   /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
   String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
@@ -208,8 +206,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final motion = candidates[_random.nextInt(candidates.length)];
     try {
       await _controller.startMotion(group: motion.group, index: motion.index);
-    } on Live2DException catch (e) {
-      debugPrint('[JellyLive2D] reaction motion failed: ${e.message}');
+    } on Live2DException {
+      // 动作播放失败时保持当前动作，不打断交互
     }
   }
 
@@ -223,9 +221,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _controller.onTap = _handleTap;
     _controller.addListener(_onViewStateChanged);
     widget.motionRequest?.addListener(_handleMotionRequest);
-    _loadSavedSize();
     _loadSavedCropRegion(_selectedModel);
-    _loadModel(_selectedModel);
+    unawaited(_initialize());
+  }
+
+  Future<void> _initialize() async {
+    await _loadSavedSize();
+    if (!mounted) return;
+    await _loadModel(_selectedModel);
   }
 
   @override
@@ -332,8 +335,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _hitAreasVisible.value = visible;
     try {
       await _controller.setHitAreasVisible(visible);
-    } on Live2DException catch (e) {
-      debugPrint('[JellyLive2D] setHitAreasVisible failed: ${e.message}');
+    } on Live2DException {
+      // 平台不支持时静默忽略
     }
   }
 
@@ -421,11 +424,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (bubbleWidth <= 0) return const SizedBox.shrink();
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
-    final modelTop = max(0.0, height - _modelBottomInset - _displaySize);
-    final top = (modelTop - gap - bubbleHeight).clamp(
-      0.0,
-      height - bubbleHeight,
-    );
+    // The model is bottom-aligned in the container. Keep the bubble anchored
+    // to the model viewport's top even when that point is above the container
+    // (regular mode uses a viewport as tall as the container).
+    final modelTop = height - _modelBottomInset - _displaySize;
+    final top = modelTop - gap - bubbleHeight;
     final left = ((width - bubbleWidth) / 2).clamp(
       margin,
       width - margin - bubbleWidth,
@@ -513,8 +516,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
         index: motion.index,
         priority: 3,
       );
-    } on Live2DException catch (e) {
-      debugPrint('[JellyLive2D] tap motion failed: ${e.message}');
+    } on Live2DException {
+      // 动作播放失败时保持当前动作，不打断交互
     }
   }
 
@@ -587,8 +590,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
         index: motion.index,
         priority: 3,
       );
-    } on Live2DException catch (e) {
-      debugPrint('[JellyLive2D] motion request failed: ${e.message}');
+    } on Live2DException {
+      // 动作播放失败时保持当前动作，不打断交互
     }
   }
 
@@ -725,14 +728,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   void _showControls() {
     unawaited(JellyStatusPanelSettings.instance.load());
-    assert(() {
-      debugPrint(
-        '[JellyLive2D] open controls model=${_selectedModel.label} '
-        'attached=${_controller.value.isAttached} '
-        'loaded=${_controller.value.isLoaded}',
-      );
-      return true;
-    }());
     showDSBottomSheet<void>(
       context: context,
       title: 'Live2D',
@@ -1309,22 +1304,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
             viewportLayout.viewportHeight,
           );
           final modelScale = viewportLayout.scale;
-          final media = MediaQuery.sizeOf(context);
-          final layoutLog =
-              'window=${media.width}x${media.height} '
-              'constraints=${constraints.maxWidth}x${constraints.maxHeight} '
-              'safeBottom=$navigationPadding layoutReserve=$bottomReserve '
-              'fillReserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
-              'display=$displaySize layoutHeight=$layoutHeight '
-              'modelBottomInset=$modelBottomInset '
-              'viewport=${viewportSize.width}x${viewportSize.height} '
-              'scale=$modelScale offsetY=0.0 '
-              'cropZoom=${_cropRegion.zoom} crop=${_cropRegion.encode()}';
-          if (_lastLayoutLog != layoutLog) {
-            _lastLayoutLog = layoutLog;
-            debugPrint('[JellyLive2DLayout] $layoutLog');
-            unawaited(_writeLayoutLog(layoutLog));
-          }
           _displaySize = displaySize;
           _modelBottomInset = modelBottomInset;
           return AnimatedContainer(
@@ -1547,21 +1526,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
         },
       ),
     );
-  }
-
-  Future<void> _writeLayoutLog(String line) async {
-    try {
-      final file = File(
-        '${Directory.systemTemp.path}/aboutme_live2d_layout.log',
-      );
-      await file.writeAsString(
-        '${DateTime.now().toIso8601String()} $line\n',
-        mode: FileMode.append,
-        flush: true,
-      );
-    } catch (_) {
-      // Layout logging must never affect rendering.
-    }
   }
 }
 

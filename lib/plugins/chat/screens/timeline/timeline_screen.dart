@@ -24,7 +24,6 @@ class TimelineScreen extends StatefulWidget {
 
 class _TimelineScreenState extends State<TimelineScreen> {
   late TimelineController _controller;
-  bool _isGridView = false; // 控制视图模式：false为默认卡片视图，true为瀑布流视图
 
   late MessageOperations _messageOperations;
 
@@ -33,15 +32,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
     super.initState();
     // 创建消息操作处理器
     _messageOperations = MessageOperations(context);
-
-    // 从插件配置中恢复视图模式
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _isGridView = widget.chatPlugin.settingsService.timelineIsGridView;
-        });
-      }
-    });
 
     // 创建时间线控制器，使用消息操作处理器处理消息操作
     _controller = TimelineController(
@@ -123,27 +113,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
         enableMultiFilter: true,
         multiFilterItems: _buildFilterItems(),
         onMultiFilterChanged: _applyMultiFilters,
-        actions: [
-          // 视图切换按钮
-          // SuperAppBar 的 actions 经 Overlay 渲染，脱离页面主题桥，
-          // 需自带 DSThemeBridge 提供 AppTheme，否则 DS 组件取主题会崩
-          DSThemeBridge(
-            child: DSIconButton(
-              icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
-              size: 36,
-              tooltip: _isGridView ? '切换到卡片视图' : '切换到瀑布流视图',
-              onPressed: () {
-                setState(() {
-                  _isGridView = !_isGridView;
-                  // 保存视图模式到插件配置
-                  widget.chatPlugin.settingsService.setTimelineIsGridView(
-                    _isGridView,
-                  );
-                });
-              },
-            ),
-          ),
-        ],
         body: ListenableBuilder(
           listenable: _controller,
           builder: (context, _) {
@@ -165,7 +134,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
             return RefreshIndicator(
               onRefresh: _controller.refreshTimeline,
-              child: _isGridView ? _buildGridView() : _buildListView(),
+              child: _buildGridView(),
             );
           },
         ),
@@ -173,65 +142,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  // 构建列表视图（默认卡片视图）
-  Widget _buildListView() {
-    return ListView.builder(
-      controller: _controller.scrollController,
-      padding: EdgeInsets.fromLTRB(
-        8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      itemCount:
-          _controller.displayMessages.length +
-          (_controller.hasMoreMessages ? 1 : 0),
-      itemBuilder: (context, index) {
-        // 显示加载更多指示器
-        if (_controller.hasMoreMessages &&
-            index == _controller.displayMessages.length) {
-          // 在构建完成后触发加载更多，避免在 build 期间调用 setState
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _controller.loadMoreMessages();
-          });
-
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(child: DSLoadingDots()),
-          );
-        }
-        final message = _controller.displayMessages[index];
-        final channel = _controller.getMessageChannel(message);
-
-        if (channel == null) return const SizedBox.shrink();
-
-        // 限制动画延迟，避免列表过长时延迟过大（最多延迟 500ms）
-        final animationDelay = ((index * 50).clamp(0, 500)).ms;
-
-        return Animate(
-          key: ValueKey(message.id),
-          effects: [
-            FadeEffect(duration: 300.ms, delay: animationDelay),
-            SlideEffect(
-              begin: const Offset(0, 0.3),
-              end: Offset.zero,
-              duration: 400.ms,
-              delay: animationDelay,
-              curve: Curves.easeOut,
-            ),
-          ],
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TimelineMessageCard(
-              message: message,
-              channel: channel,
-              controller: _controller,
-              settingsService: widget.chatPlugin.settingsService,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // 构建网格视图（瀑布流视图）
+  // 构建瀑布流视图
   Widget _buildGridView() {
     final padding = 8.0;
     final spacing = 8.0;

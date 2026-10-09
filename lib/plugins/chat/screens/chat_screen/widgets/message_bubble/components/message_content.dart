@@ -25,6 +25,27 @@ class MessageContent extends StatelessWidget {
     required this.textColor,
   });
 
+  /// 内容解析结果缓存：key 为原始 content，
+  /// 避免气泡每次重建（如选中态切换）都重复 jsonDecode 与正则检测
+  static final Map<String, (bool, String, bool)> _resolveCache = {};
+  static const int _maxCacheEntries = 300;
+
+  /// 返回 (是否纯文本, 提取的文本, 是否含 Markdown)
+  (bool, String, bool) _resolveContent(String content) {
+    final cached = _resolveCache[content];
+    if (cached != null) return cached;
+
+    final isPlain = _isPlainText(content);
+    final text = isPlain ? _extractPlainText(content) : content;
+    final result = (isPlain, text, isPlain && _containsMarkdown(text));
+
+    if (_resolveCache.length >= _maxCacheEntries) {
+      _resolveCache.remove(_resolveCache.keys.first);
+    }
+    _resolveCache[content] = result;
+    return result;
+  }
+
   /// 判断内容是否为纯文本（没有任何 Quill 格式）
   bool _isPlainText(String content) {
     if (content.isEmpty) return true;
@@ -97,27 +118,27 @@ class MessageContent extends StatelessWidget {
     }
   }
 
+  /// 常见 Markdown 语法的正则表达式（只编译一次）
+  static final List<RegExp> _markdownPatterns = [
+    RegExp(r'^#{1,6}\s', multiLine: true), // 标题: # ## ###
+    RegExp(r'\*\*[^*]+\*\*'), // 粗体: **text**
+    RegExp(r'__[^_]+__'), // 粗体: __text__
+    RegExp(r'(?<!\*)\*(?!\*)[^*]+\*(?!\*)'), // 斜体: *text*
+    RegExp(r'(?<!_)_(?!_)[^_]+_(?!_)'), // 斜体: _text_
+    RegExp(r'\[([^\]]+)\]\(([^)]+)\)'), // 链接: [text](url)
+    RegExp(r'!\[([^\]]*)\]\(([^)]+)\)'), // 图片: ![alt](url)
+    RegExp(r'`[^`]+`'), // 行内代码: `code`
+    RegExp(r'```[\s\S]*?```', multiLine: true), // 代码块: ```code```
+    RegExp(r'^>\s', multiLine: true), // 引用: > text
+    RegExp(r'^[-*+]\s', multiLine: true), // 无序列表: - * +
+    RegExp(r'^\d+\.\s', multiLine: true), // 有序列表: 1. 2.
+    RegExp(r'^---+$', multiLine: true), // 水平线: ---
+    RegExp(r'^\*\*\*+$', multiLine: true), // 水平线: ***
+  ];
+
   /// 检测文本是否包含 Markdown 语法
   bool _containsMarkdown(String text) {
-    // 常见 Markdown 语法的正则表达式
-    final patterns = [
-      RegExp(r'^#{1,6}\s', multiLine: true), // 标题: # ## ###
-      RegExp(r'\*\*[^*]+\*\*'), // 粗体: **text**
-      RegExp(r'__[^_]+__'), // 粗体: __text__
-      RegExp(r'(?<!\*)\*(?!\*)[^*]+\*(?!\*)'), // 斜体: *text*
-      RegExp(r'(?<!_)_(?!_)[^_]+_(?!_)'), // 斜体: _text_
-      RegExp(r'\[([^\]]+)\]\(([^)]+)\)'), // 链接: [text](url)
-      RegExp(r'!\[([^\]]*)\]\(([^)]+)\)'), // 图片: ![alt](url)
-      RegExp(r'`[^`]+`'), // 行内代码: `code`
-      RegExp(r'```[\s\S]*?```', multiLine: true), // 代码块: ```code```
-      RegExp(r'^>\s', multiLine: true), // 引用: > text
-      RegExp(r'^[-*+]\s', multiLine: true), // 无序列表: - * +
-      RegExp(r'^\d+\.\s', multiLine: true), // 有序列表: 1. 2.
-      RegExp(r'^---+$', multiLine: true), // 水平线: ---
-      RegExp(r'^\*\*\*+$', multiLine: true), // 水平线: ***
-    ];
-
-    for (final pattern in patterns) {
+    for (final pattern in _markdownPatterns) {
       if (pattern.hasMatch(text)) {
         return true;
       }
@@ -368,13 +389,15 @@ class MessageContent extends StatelessWidget {
         );
       }
     } else {
-      // 普通文本消息
-      // 判断是否为纯文本（无 Quill 格式）
-      if (_isPlainText(message.content)) {
-        final plainText = _extractPlainText(message.content);
+      // 普通文本消息（解析结果按 content 缓存）
+      final (isPlainText, plainText, hasMarkdown) = _resolveContent(
+        message.content,
+      );
 
+      // 判断是否为纯文本（无 Quill 格式）
+      if (isPlainText) {
         // 检测是否包含 Markdown 语法
-        if (_containsMarkdown(plainText)) {
+        if (hasMarkdown) {
           // 深底浅字气泡（实色主色/深色自定义色）上链接用文字色保证对比，浅底气泡保持主色
           final linkColor =
               textColor.computeLuminance() > 0.5 ? textColor : theme.primary;
