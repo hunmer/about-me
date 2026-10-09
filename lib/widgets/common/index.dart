@@ -85,3 +85,6 @@ export 'checkin_item_card.dart' show CheckinItemCardWidget;
 
 // 导出联系人卡片组件
 export 'contact_card.dart' show ContactCardWidget, ContactCardData, ContactCardGender;
+
+// 导出人设介绍对话框组件
+export 'persona_intro_dialog.dart' show PersonaIntroCard, showPersonaIntroDialog;

@@ -1,17 +1,24 @@
+import 'dart:math';
+
 double computeJellyLive2DDisplaySize({
   required double savedSize,
+  required double containerWidth,
   required double containerHeight,
   required double bottomReserve,
   required bool fill,
   required bool fitContainer,
+  required double modelViewportAspectRatio,
   double fillBottomReserve = 92,
   double minSize = 200,
   double maxSize = 560,
 }) {
-  if (fitContainer && containerHeight.isFinite) {
-    return (containerHeight - bottomReserve)
-        .clamp(0.0, double.infinity)
-        .toDouble();
+  if (fitContainer && containerWidth.isFinite && containerHeight.isFinite) {
+    final heightLimit = (containerHeight - bottomReserve).clamp(
+      0.0,
+      double.infinity,
+    );
+    final widthLimit = containerWidth / modelViewportAspectRatio;
+    return min(heightLimit, widthLimit).toDouble();
   }
   if (fill && containerHeight.isFinite) {
     return (containerHeight - fillBottomReserve)

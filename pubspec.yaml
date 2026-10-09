@@ -191,6 +191,7 @@ flutter:
     - assets/icon/icon.png
     - assets/images/image_not_found.jpg
     - assets/images/default_avatar.jpg
+    - assets/images/persona_dialog_frame.webp
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
     - assets/animations/  # Lottie animations

@@ -7,12 +7,29 @@ void main() {
       expect(
         computeJellyLive2DDisplaySize(
           savedSize: 360,
+          containerWidth: 515,
           containerHeight: 1008,
           bottomReserve: 157,
           fill: false,
           fitContainer: true,
+          modelViewportAspectRatio: 0.5,
         ),
         851,
+      );
+    });
+
+    test('fitContainer also shrinks to fit a narrow window', () {
+      expect(
+        computeJellyLive2DDisplaySize(
+          savedSize: 360,
+          containerWidth: 410,
+          containerHeight: 1008,
+          bottomReserve: 157,
+          fill: false,
+          fitContainer: true,
+          modelViewportAspectRatio: 0.5,
+        ),
+        820,
       );
     });
 
@@ -20,10 +37,12 @@ void main() {
       expect(
         computeJellyLive2DDisplaySize(
           savedSize: 320,
+          containerWidth: 515,
           containerHeight: 1008,
           bottomReserve: 157,
           fill: false,
           fitContainer: false,
+          modelViewportAspectRatio: 0.5,
         ),
         320,
       );

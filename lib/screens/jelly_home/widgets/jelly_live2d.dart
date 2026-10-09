@@ -1007,10 +1007,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
               MediaQuery.paddingOf(context).bottom + _radialDockOverflowTop;
           final displaySize = computeJellyLive2DDisplaySize(
             savedSize: size,
+            containerWidth: containerWidth,
             containerHeight: containerHeight,
             bottomReserve: bottomReserve,
             fill: widget.fill,
             fitContainer: widget.fitContainer,
+            modelViewportAspectRatio: _modelViewportAspectRatio,
             fillBottomReserve: _fillBottomReserve,
             minSize: _minSize,
             maxSize: _maxSize,
@@ -1084,6 +1086,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       duration: const Duration(milliseconds: 160),
                       child: OverflowBox(
                         alignment: Alignment.bottomCenter,
+                        minWidth: 0,
+                        minHeight: 0,
                         maxWidth: double.infinity,
                         maxHeight: double.infinity,
                         child: Transform.scale(

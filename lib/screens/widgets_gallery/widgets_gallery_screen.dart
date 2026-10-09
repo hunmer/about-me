@@ -169,6 +169,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'CustomDialog',
             route: '/widgets_gallery/custom_dialog',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.portrait,
+            title: '人设介绍对话框',
+            subtitle: 'PersonaIntroDialog',
+            route: '/widgets_gallery/persona_intro_dialog',
+          ),
           const Divider(),
 
           // 弹窗类

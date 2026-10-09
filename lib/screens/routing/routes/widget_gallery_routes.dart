@@ -17,6 +17,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/simple_group_selector_ex
 import 'package:aboutme/screens/widgets_gallery/screens/tag_manager_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/statistics_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/custom_dialog_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/persona_intro_dialog_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_bottom_sheet_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/file_preview_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/app_drawer_example.dart';
@@ -209,6 +210,11 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/custom_dialog',
           handler: (settings) => RouteHelpers.createRoute(const CustomDialogExample(), settings: settings),
           description: '自定义对话框示例',
+        ),
+        RouteDefinition(
+          path: '/widgets_gallery/persona_intro_dialog',
+          handler: (settings) => RouteHelpers.createRoute(const PersonaIntroDialogExample(), settings: settings),
+          description: '人设介绍对话框示例',
         ),
         RouteDefinition(
           path: '/widgets_gallery/smooth_bottom_sheet',
