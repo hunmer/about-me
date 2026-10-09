@@ -5,10 +5,10 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻列表卡片：标题/副标题 + 尾部信息，浅色底 + 左上角图标水印
+/// 果冻列表卡片：标题/副标题 + 尾部信息，浅色底 + 右上角图标水印
 ///
 /// 卡片内部为 [iconColor] 调亮的浅色底，描边取 [iconColor] 原色。
-/// 标志（[icon] 或 [leading]）放大后贴在卡片左上角作为背景水印，
+/// 标志（[icon] 或 [leading]）放大后贴在卡片右上角作为背景水印，
 /// 置于内容层之下，超出圆角的部分被裁剪。
 class DSListItemCard extends StatelessWidget {
   const DSListItemCard({
@@ -25,10 +25,10 @@ class DSListItemCard extends StatelessWidget {
 
   final String title;
 
-  /// 左上角水印图标（与 [leading] 二选一）
+  /// 右上角水印图标（与 [leading] 二选一）
   final DsIconKind? icon;
 
-  /// 左上角水印自定义内容（如 Material 图标），优先于 [icon]
+  /// 右上角水印自定义内容（如 Material 图标），优先于 [icon]
   final Widget? leading;
 
   final String? subtitle;
@@ -69,11 +69,11 @@ class DSListItemCard extends StatelessWidget {
               ),
             ),
           ),
-          // 左上角图标水印：放大贴角，处于内容层之下，溢出被裁剪；
+          // 右上角图标水印：放大贴角，处于内容层之下，溢出被裁剪；
           // 底色已浅，水印用底色低透明度保持可见
           if (hasWatermark)
             Positioned(
-              left: 0,
+              right: 0,
               top: 0,
               child: SizedBox(
                 width: _watermarkSize,

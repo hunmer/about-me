@@ -44,6 +44,8 @@ class DSBottomNavigation extends StatelessWidget {
     this.trailingAction,
     this.onTrailingTap,
     this.trailingSelected = false,
+    this.subBarBehavior,
+    this.subBarVisible,
   });
 
   final List<DSNavItem> items;
@@ -79,6 +81,16 @@ class DSBottomNavigation extends StatelessWidget {
 
   /// 右侧圆按钮激活态（主题色实底高亮）
   final bool trailingSelected;
+
+  /// 覆盖子栏展示策略的默认推断；子栏元素随 tab 动态出现的宿主
+  /// 应恒传 auto，否则占位高度会在有无子栏的 tab 间跳变
+  /// （never 始终只保留主 dock 高度）
+  final RadialSubBarBehavior? subBarBehavior;
+
+  /// 手动控制子栏显隐（如仅部分 tab 启用子栏）；子栏元素需常驻
+  /// （不随 tab 增删），显隐切换才有弹簧折叠过渡动画。
+  /// 收起后子栏不可命中
+  final bool? subBarVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -130,16 +142,18 @@ class DSBottomNavigation extends StatelessWidget {
       floatingAction: floatingAction,
       frosted: frosted,
       subBarBehavior:
-          subLabels == null &&
+          subBarBehavior ??
+          (subLabels == null &&
               subActions == null &&
               leadingAction == null &&
               trailingAction == null
           ? RadialSubBarBehavior.never
-          : RadialSubBarBehavior.auto,
+          : RadialSubBarBehavior.auto),
       subLabels: subLabels,
       subActions: subActions,
       subOption: subOption,
       onSubOptionChange: onSubOptionChange,
+      subBarVisible: subBarVisible,
       leadingAction: leadingAction,
       onLeadingTap: onLeadingTap,
       trailingAction: trailingAction,

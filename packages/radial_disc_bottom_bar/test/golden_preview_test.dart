@@ -71,6 +71,7 @@ void main() {
             tabs: tabs(),
             activeIndex: 0,
             frosted: true,
+            subBarBehavior: RadialSubBarBehavior.never,
             style: const RadialDiscBarStyle().copyWith(
               fillColor: const Color(0xB3FFFFFF),
             ),

@@ -78,9 +78,14 @@ class JellyBottomNav extends StatelessWidget {
         ],
         currentIndex: current.index,
         onTap: onTap,
-        // 聊天按钮只在小屋页签出现（其它页签没有可切换的聊天表单）
+        // 子栏元素常驻（不随页签增删），由 subBarVisible 控制显隐：
+        // 显隐切换经弹簧折叠动画过渡，画布全高恒定不跳动。
+        // 子栏仅小屋页签可见（其它页签没有可切换的聊天表单/面板）
+        subBarBehavior: RadialSubBarBehavior.always,
+        subBarVisible: current == JellyTab.cottage,
+        // 子栏左侧：切换 Live2D 聊天表单
         leadingAction:
-            current == JellyTab.cottage && onToggleChat != null
+            onToggleChat != null
                 ? Builder(
                   builder: (context) {
                     final navTheme = AppTheme.of(context);
@@ -97,7 +102,7 @@ class JellyBottomNav extends StatelessWidget {
         onLeadingTap: onToggleChat,
         // 子栏最右侧：切换 Live2D 档案（与面板同款 激活高亮/再点收起）
         trailingAction:
-            current == JellyTab.cottage && live2dPanel != null
+            live2dPanel != null
                 ? DsIcon(
                     DsIconKind.switchAccount,
                     size: 16,
@@ -108,14 +113,14 @@ class JellyBottomNav extends StatelessWidget {
                   )
                 : null,
         onTrailingTap:
-            current == JellyTab.cottage && live2dPanel != null
+            live2dPanel != null
                 ? () => _toggleLive2dPanel(live2dPanel!, JellyLive2dPanel.archive)
                 : null,
         trailingSelected: activePanel == JellyLive2dPanel.archive,
-        // 小屋页签：子栏提供 气泡/背景/状态面板 资源面板入口，
+        // 小屋子栏：气泡/背景/状态面板资源入口，
         // 激活（面板打开）时圆钮以主题色实底高亮
         subActions:
-            current == JellyTab.cottage && live2dPanel != null
+            live2dPanel != null
                 ? [
                   _live2dPanelAction(
                     live2dPanel!,
@@ -155,8 +160,12 @@ class JellyBottomNav extends StatelessWidget {
           theme.spacing.lg,
           theme.spacing.lg,
         ),
-        // 面板开关变化时重建子栏图标的激活态
-        child: current == JellyTab.cottage && live2dPanel != null
+        // 面板开关变化时重建子栏图标的激活态。
+        // 结构需恒定（仅按构造期固定的 live2dPanel 判空）：
+        // 若随页签切换在 ValueListenableBuilder 与裸 DSBottomNavigation
+        // 之间切换，子树会被整体卸载重建，子栏折叠的弹簧 State 丢失，
+        // 显隐只剩瞬时跳变
+        child: live2dPanel != null
             ? ValueListenableBuilder<JellyLive2dPanel?>(
                 valueListenable: live2dPanel!,
                 builder: (context, activePanel, _) =>

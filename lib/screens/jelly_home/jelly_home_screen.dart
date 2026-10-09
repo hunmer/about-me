@@ -154,22 +154,32 @@ class _CottageTabState extends State<_CottageTab> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Live2D 角色全屏铺满，点击命中角色本体（hit area）算一次陪伴互动
-              JellyLive2D(
-                fill: false,
-                fitContainer: true,
-                panel: widget.panel,
-                message: _live2dMessage,
-                reaction: _live2dReaction,
-                initialModel: modelDefinitionForArchive(
-                  Live2DPlugin.instance.selected,
+              // Live2D 角色填充状态面板下方的可用区域，点击命中角色本体
+              //（hit area）算一次陪伴互动。
+              Positioned(
+                left: 0,
+                right: 0,
+                top: _statusPanelHeight(mq.size.width),
+                bottom: 0,
+                child: AnimatedBuilder(
+                  animation: JellyStatusPanelSettings.instance,
+                  builder: (context, _) => JellyLive2D(
+                    fill: false,
+                    fitContainer: true,
+                    panel: widget.panel,
+                    message: _live2dMessage,
+                    reaction: _live2dReaction,
+                    initialModel: modelDefinitionForArchive(
+                      Live2DPlugin.instance.selected,
+                    ),
+                    typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
+                    onTap: (hitAreaId, _) {
+                      if (hitAreaId != null) {
+                        _companion.recordInteraction();
+                      }
+                    },
+                  ),
                 ),
-                typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
-                onTap: (hitAreaId, _) {
-                  if (hitAreaId != null) {
-                    _companion.recordInteraction();
-                  }
-                },
               ),
               JellyStatusPanel(controller: _companion),
               // 左右两侧悬浮图标按钮（assets/jelly_icons 素材）：
@@ -383,6 +393,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     if (args is! Value<String> || args.value != 'agent_chat' || !mounted) {
       return;
     }
+    debugPrint('[ChatClear] plugin_loaded(agent_chat) -> reset controller future');
     setState(() {
       _initializedKey = null;
       _controllerFuture = null;
@@ -426,6 +437,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     await controller.initialize();
     _messageService = messageService;
     _controller = controller;
+    debugPrint('[ChatClear] Live2D controller initialized #${identityHashCode(controller)} key=$_currentKey');
     messageService.addListener(_onMessagesChanged);
     return controller;
   }
@@ -478,6 +490,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     _messageService = null;
     _lastReplyId = null;
     _lastReplyContent = null;
+    debugPrint('[ChatClear] reset controller old=#${identityHashCode(controller)}');
     messageService?.removeListener(_onMessagesChanged);
     // 帧末再释放旧 controller，避免仍在显示它的 MessageInput 先行移除监听
     if (controller != null) {

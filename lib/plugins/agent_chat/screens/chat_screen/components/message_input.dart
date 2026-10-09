@@ -67,11 +67,27 @@ class _MessageInputState extends State<MessageInput> {
     _textController.text = widget.controller.inputText;
     _textController.addListener(_onTextChanged);
     widget.controller.addListener(_onControllerChanged);
+    debugPrint('[ChatClear] initState controller=#${identityHashCode(widget.controller)}');
     _initializeVoiceRecognition();
   }
 
   @override
+  void didUpdateWidget(covariant MessageInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      debugPrint(
+        '[ChatClear] controller replaced: #${identityHashCode(oldWidget.controller)} -> #${identityHashCode(widget.controller)}',
+      );
+      // controller 实例变化时重新挂监听，否则清空通知会发到旧实例上
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+      _textController.text = widget.controller.inputText;
+    }
+  }
+
+  @override
   void dispose() {
+    debugPrint('[ChatClear] dispose controller=#${identityHashCode(widget.controller)}');
     _textController.removeListener(_onTextChanged);
     widget.controller.removeListener(_onControllerChanged);
     _textController.dispose();
@@ -200,6 +216,9 @@ class _MessageInputState extends State<MessageInput> {
 
       // 同步输入框文本
       if (_textController.text != widget.controller.inputText) {
+        debugPrint(
+          '[ChatClear] sync text: field="${_textController.text}" -> model="${widget.controller.inputText}"',
+        );
         _textController.text = widget.controller.inputText;
         _textController.selection = TextSelection.collapsed(
           offset: _textController.text.length,
@@ -1126,7 +1145,19 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 发送消息
   Future<void> _sendMessage() async {
+    // 先结束输入法组合状态（如拼音未上屏）：组合中的文本仍属于
+    // inputText 会正常发出，但不提前清除 composing 标记的话，
+    // 发送后清空输入框会被输入法把组合文本重新提交回来
+    if (_textController.value.composing != TextRange.empty) {
+      _textController.value = _textController.value.copyWith(
+        composing: TextRange.empty,
+      );
+    }
+
     final text = widget.controller.inputText.trim();
+    debugPrint(
+      '[ChatClear] _sendMessage: field="${_textController.text}" model="${widget.controller.inputText}" controller=#${identityHashCode(widget.controller)}',
+    );
 
     // 如果文本为空且没有工具模板和文件，则不能发送
     if (text.isEmpty &&

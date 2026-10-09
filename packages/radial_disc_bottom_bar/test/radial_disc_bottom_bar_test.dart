@@ -24,6 +24,7 @@ void main() {
     await tester.pumpWidget(wrap(RadialDiscBottomBar(
       tabs: buildTabs(),
       activeIndex: 0,
+      subBarBehavior: RadialSubBarBehavior.never,
       onTabChange: (i) => selected = i,
     )));
     await tester.pumpAndSettle();
@@ -43,6 +44,7 @@ void main() {
     await tester.pumpWidget(wrap(RadialDiscBottomBar(
       tabs: buildTabs(),
       activeIndex: 0,
+      subBarBehavior: RadialSubBarBehavior.never,
       onTabChange: (i) => selected = i,
       floatingAction: GestureDetector(
         key: const ValueKey('floating'),
@@ -94,6 +96,7 @@ void main() {
     await tester.pumpWidget(wrap(RadialDiscBottomBar(
       tabs: buildTabs(),
       activeIndex: 0,
+      subBarBehavior: RadialSubBarBehavior.never,
       leadingAction: const Icon(Icons.gamepad),
     )));
     await tester.pumpAndSettle();
@@ -189,6 +192,91 @@ void main() {
       ).first,
     ).decoration as BoxDecoration;
     expect(decoration.color, const RadialDiscBarStyle().activePillColor);
+  });
+
+  testWidgets('auto 模式：子栏元素随 tab 动态增减时高度恒定 146', (tester) async {
+    // 宿主（如果冻小屋导航）只在部分 tab 提供子栏元素；
+    // auto 实例不按当前内容裁剪，避免占位高度跳变带动内容跳动
+    var withSubActions = true;
+    late StateSetter setStateOuter;
+    await tester.pumpWidget(wrap(StatefulBuilder(
+      builder: (context, setState) {
+        setStateOuter = setState;
+        return RadialDiscBottomBar(
+          tabs: buildTabs(),
+          activeIndex: 0,
+          subActions: withSubActions
+              ? [
+                  RadialSubAction(
+                    label: 'Action 1',
+                    icon: const Icon(Icons.star, key: ValueKey('action0')),
+                  ),
+                ]
+              : null,
+        );
+      },
+    )));
+    await tester.pumpAndSettle();
+
+    var size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight);
+
+    setStateOuter(() => withSubActions = false);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('action0')), findsNothing);
+    size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight);
+  });
+
+  testWidgets('subBarVisible：手动折叠时元素保留，经透明度过渡', (tester) async {
+    // 元素常驻 + subBarVisible 控制显隐：切换时子栏淡入淡出而非卸载
+    var visible = true;
+    late StateSetter setStateOuter;
+    await tester.pumpWidget(wrap(StatefulBuilder(
+      builder: (context, setState) {
+        setStateOuter = setState;
+        return RadialDiscBottomBar(
+          tabs: buildTabs(),
+          activeIndex: 0,
+          subBarBehavior: RadialSubBarBehavior.always,
+          subBarVisible: visible,
+          subActions: const [
+            RadialSubAction(
+              label: 'Action 1',
+              icon: Icon(Icons.star, key: ValueKey('action0')),
+            ),
+          ],
+        );
+      },
+    )));
+    await tester.pumpAndSettle();
+
+    var size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight);
+    Finder subOpacity() => find
+        .ancestor(
+          of: find.byKey(const ValueKey('action0')),
+          matching: find.byType(Opacity),
+        )
+        .first;
+    expect(tester.widget<Opacity>(subOpacity()).opacity, 1.0);
+
+    // 折叠：控件层保留在树上，透明度动画进行中
+    // （首帧只重建并启动弹簧，需再推进时间才有动画中间值）
+    setStateOuter(() => visible = false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byKey(const ValueKey('action0')), findsOneWidget);
+    final midOpacity = tester.widget<Opacity>(subOpacity()).opacity;
+    expect(midOpacity, lessThan(1.0));
+    expect(midOpacity, greaterThan(0.0));
+
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('action0')), findsOneWidget);
+    expect(tester.widget<Opacity>(subOpacity()).opacity, 0.0);
+    // 高度恒定
+    size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight);
   });
 
   testWidgets('带子栏：尺寸 380×146，切到后半 tab 自动折叠', (tester) async {

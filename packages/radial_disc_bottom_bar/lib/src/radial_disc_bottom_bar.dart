@@ -82,6 +82,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     this.subBarBehavior = RadialSubBarBehavior.auto,
     this.subOption = RadialSubOption.left,
     this.onSubOptionChange,
+    this.subBarVisible,
     this.subLabels,
     this.subActions,
     this.leadingAction,
@@ -107,6 +108,12 @@ class RadialDiscBottomBar extends StatelessWidget {
   final RadialSubBarBehavior subBarBehavior;
   final RadialSubOption subOption;
   final ValueChanged<RadialSubOption>? onSubOptionChange;
+
+  /// 手动覆盖子栏显隐（null 时按 [subBarBehavior] 策略推断）。
+  /// 需与常驻子栏元素搭配：显隐切换经弹簧折叠动画过渡；
+  /// 元素本身随条件增删则是瞬间挂载/卸载，没有过渡
+  final bool? subBarVisible;
+
   final (String, String)? subLabels;
 
   /// 上层子栏的图标动作（与 [subLabels] 互斥），沿子栏弧线均匀排布
@@ -166,12 +173,13 @@ class RadialDiscBottomBar extends StatelessWidget {
         (subLabels != null || (subActions?.isNotEmpty ?? false));
     final hasFloatingDiscs =
         !subBarPossible && (leadingAction != null || trailingAction != null);
-    final wantsSubBar = switch (subBarBehavior) {
-      RadialSubBarBehavior.never => false,
-      RadialSubBarBehavior.always => subBarPossible,
-      RadialSubBarBehavior.auto =>
-        subBarPossible && index <= (count - 1) ~/ 2,
-    };
+    final wantsSubBar = subBarVisible ??
+        switch (subBarBehavior) {
+          RadialSubBarBehavior.never => false,
+          RadialSubBarBehavior.always => subBarPossible,
+          RadialSubBarBehavior.auto =>
+            subBarPossible && index <= (count - 1) ~/ 2,
+        };
 
     Widget scene = SizedBox(
       width: RadialGeometry.canvasWidth,
@@ -202,6 +210,7 @@ class RadialDiscBottomBar extends StatelessWidget {
                           style: resolvedStyle,
                           fold: fold,
                           optionT: optionT,
+                          hasSubLabels: subLabels != null,
                         ),
                       ),
               ),
@@ -368,10 +377,13 @@ class RadialDiscBottomBar extends StatelessWidget {
       ),
     );
 
-    // 无子栏时裁掉画布上下空区，只保留 dock（+ 浮动钮）高度。
+    // 仅显式声明"只要主弧 dock"（never）时裁掉画布上下空区；
+    // auto/always 实例可能随 tab 动态出现子栏，若按当前内容裁剪，
+    // 占位高度会在 tab 间跳变（body 内容经 bottomNavigationBar
+    // 高度联动跟随跳动）。
     // OverflowBox 放松约束让场景保持 380×146（直接嵌套 SizedBox
     // 会被外层紧约束压扁，导致下半部分不可命中）
-    if (!subBarPossible) {
+    if (subBarBehavior == RadialSubBarBehavior.never) {
       final hasFloating = floatingAction != null || hasFloatingDiscs;
       final cropTop = hasFloating ? _floatActionCropTop : _dockCropTop;
       scene = SizedBox(
@@ -413,6 +425,7 @@ class RadialDiscBottomBar extends StatelessWidget {
             style: style,
             fold: fold,
             optionT: optionT,
+            hasSubLabels: subLabels != null,
             shadowsOnly: true,
           ),
         ),
@@ -430,6 +443,7 @@ class RadialDiscBottomBar extends StatelessWidget {
                 style: style,
                 fold: fold,
                 optionT: optionT,
+                hasSubLabels: subLabels != null,
                 fillsOnly: true,
               ),
             ),
@@ -626,6 +640,7 @@ class _ScenePainter extends CustomPainter {
     required this.style,
     required this.fold,
     required this.optionT,
+    this.hasSubLabels = false,
     this.shadowsOnly = false,
     this.fillsOnly = false,
   });
@@ -637,6 +652,10 @@ class _ScenePainter extends CustomPainter {
 
   /// 子栏选项位置 0（左）~1（右），驱动弧形药丸沿弧线滑动
   final double optionT;
+
+  /// 分段选项（subLabels）模式才画弧形滑动药丸；图标动作
+  /// （subActions）模式下没有选项文字，药丸只是悬在左侧的色块
+  final bool hasSubLabels;
 
   final bool shadowsOnly;
   final bool fillsOnly;
@@ -664,23 +683,25 @@ class _ScenePainter extends CustomPainter {
       if (!fillsOnly) _paintShadows(canvas, RadialGeometry.subRibbon, progress);
       if (!shadowsOnly) {
         _paintFill(canvas, RadialGeometry.subRibbon, progress);
-        final pillCenter =
-            RadialGeometry.optionLeftAngle +
-            (RadialGeometry.optionRightAngle - RadialGeometry.optionLeftAngle) *
-                optionT;
-        final subPill = RadialGeometry.annularSector(
-          pillCenter - RadialGeometry.subPillHalfWidth,
-          pillCenter + RadialGeometry.subPillHalfWidth,
-          RadialGeometry.subPillInnerRadius,
-          RadialGeometry.subPillOuterRadius,
-        );
-        canvas.drawPath(
-          subPill,
-          Paint()
-            ..color = style.subPillColor.withValues(
-              alpha: style.subPillColor.a * progress,
-            ),
-        );
+        if (hasSubLabels) {
+          final pillCenter =
+              RadialGeometry.optionLeftAngle +
+              (RadialGeometry.optionRightAngle - RadialGeometry.optionLeftAngle) *
+                  optionT;
+          final subPill = RadialGeometry.annularSector(
+            pillCenter - RadialGeometry.subPillHalfWidth,
+            pillCenter + RadialGeometry.subPillHalfWidth,
+            RadialGeometry.subPillInnerRadius,
+            RadialGeometry.subPillOuterRadius,
+          );
+          canvas.drawPath(
+            subPill,
+            Paint()
+              ..color = style.subPillColor.withValues(
+                alpha: style.subPillColor.a * progress,
+              ),
+          );
+        }
       }
       canvas.restore();
     }
@@ -723,6 +744,7 @@ class _ScenePainter extends CustomPainter {
       oldDelegate.fold != fold ||
       oldDelegate.optionT != optionT ||
       oldDelegate.style != style ||
+      oldDelegate.hasSubLabels != hasSubLabels ||
       oldDelegate.shadowsOnly != shadowsOnly ||
       oldDelegate.fillsOnly != fillsOnly;
 }

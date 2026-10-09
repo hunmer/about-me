@@ -427,6 +427,7 @@ class ChatController extends ChangeNotifier {
       if (_alivenessGenerating) {
         _isCancelling = true;
       } else {
+        debugPrint('[ChatClear] sendMessage blocked: isSending=$_isSending');
         return;
       }
     }
@@ -487,6 +488,7 @@ class ChatController extends ChangeNotifier {
       _messageSender.setInputText('');
       _messageSender.clearFiles();
       _messageSender.clearSelectedToolTemplate();
+      debugPrint('[ChatClear] model cleared, notifying listeners');
       notifyListeners();
 
       // 启动前台服务（仅 Android，且用户启用了后台服务）

@@ -252,7 +252,18 @@ class _JellyLive2DState extends State<JellyLive2D> {
   }
 
   void resetGaze() {
-    unawaited(_controller.resetGaze());
+    unawaited(_resetGaze());
+  }
+
+  Future<void> _resetGaze() async {
+    // flutter_live2d exposes parameter updates rather than a resetGaze command.
+    await Future.wait([
+      _controller.setParameter('ParamAngleX', 0),
+      _controller.setParameter('ParamAngleY', 0),
+      _controller.setParameter('ParamAngleZ', 0),
+      _controller.setParameter('ParamEyeBallX', 0),
+      _controller.setParameter('ParamEyeBallY', 0),
+    ]);
   }
 
   Future<void> _loadSavedBubblePosition() async {
@@ -1520,14 +1531,17 @@ class _JellyLive2DState extends State<JellyLive2D> {
             navigationPadding: navigationPadding,
             fitContainer: fitHeight != null,
           );
-          // Windows uses a Flutter Texture and can re-render the model at the
-          // target size. Other platforms retain the established fixed native
-          // viewport plus composited scaling behavior.
+          // Windows and macOS can resize their native/web viewport to the
+          // target size. Keeping the native bounds equal to the painted bounds
+          // is required for correct hit-test coordinates on macOS platform
+          // views, which otherwise receive events in the unscaled 360px view.
           final viewportLayout = computeJellyLive2DViewportLayout(
             displaySize: displaySize,
             baseViewportHeight: _defaultSize,
             useResizableViewport:
-                !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,
+                !kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.windows ||
+                    defaultTargetPlatform == TargetPlatform.macOS),
           );
           final viewportSize = Size(
             viewportLayout.viewportHeight * _modelViewportAspectRatio,

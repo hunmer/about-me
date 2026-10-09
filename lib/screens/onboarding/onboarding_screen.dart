@@ -83,8 +83,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _index >= _pageCount - 1;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
+      backgroundColor: theme.background,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [theme.backgroundAlt, theme.background],
+          ),
+        ),
+        child: SafeArea(
         child: Column(
           children: [
             Expanded(
@@ -114,6 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
