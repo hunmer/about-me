@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
-/// 设置分组：可选分组标题 + 一组 DS 风格列表项
+/// 设置分组：可选分组标题 + 一组设置条目
 ///
-/// 子项应为 [DSListItem]（自带半透明描边面板与按压反馈），
+/// 子项应为 [SettingsTile]（粉彩圆形图标 + 扁平行，参考稿风格），
 /// 组内条目之间以主题小间距排列。
 class SettingsGroup extends StatelessWidget {
   final String? title;

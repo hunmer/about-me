@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:aboutme/core/app_widgets/page_transitions.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/services/log_service.dart';
+import 'package:aboutme/core/services/window_geometry_service.dart';
 import 'package:aboutme/core/services/fcm_service.dart';
 import 'package:aboutme/firebase_options.dart';
 import 'package:procm_sdk_dart/procm_sdk_dart.dart';
@@ -98,6 +99,9 @@ void main() {
 
       // 执行核心初始化（快速完成）
       await initializeApp();
+
+      // 桌面端：恢复上次窗口位置与大小（非桌面平台内部跳过）
+      await WindowGeometryService.instance.initialize();
 
       // 立即启动应用，其他初始化在后台进行
       runApp(const MyApp());

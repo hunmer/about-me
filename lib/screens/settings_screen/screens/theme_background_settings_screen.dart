@@ -9,6 +9,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import '../widgets/settings_tile.dart';
 
 /// 全局主题背景设置页面
 ///

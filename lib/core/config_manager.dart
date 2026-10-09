@@ -91,6 +91,12 @@ class ConfigManager {
     await saveAppConfig();
   }
 
+  /// 批量设置应用级配置并立即保存（只写一次文件）
+  Future<void> setAppConfigValues(Map<String, dynamic> values) async {
+    _appConfig.addAll(values);
+    await saveAppConfig();
+  }
+
   Map<String, bool> getPluginEnabledStates() {
     final states = _appConfig['pluginStates'];
     if (states is Map) {
