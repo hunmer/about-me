@@ -501,15 +501,27 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         if (controller == null) return const SizedBox.shrink();
         // 液态玻璃磨砂背景：Impeller 下实时折射背景，
         // Skia/无 LiquidGlassView 时自动降级为磨砂（模糊 + 着色 + 描边）
-        return LiquidGlassLens(
-          style: const LiquidGlassStyle(
-            shape: LiquidGlassShape.roundedRectangle(cornerRadius: 28),
-            appearance: LiquidGlassAppearance(
-              blur: LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
-              color: Color(0x59FFFFFF),
+        //
+        // removeBottom：外层 Positioned 已避让悬浮导航栏/键盘，
+        // 去掉 MessageInput 内部 SafeArea 消费的底部 inset，避免双重避让
+        // 抬高输入框；showQuickActions: false 收起常驻快捷入口行，
+        // 输入框高度随内容（多行文本 / 命令面板 / 附件状态）自动伸缩
+        return MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: LiquidGlassLens(
+            style: const LiquidGlassStyle(
+              shape: LiquidGlassShape.roundedRectangle(cornerRadius: 28),
+              appearance: LiquidGlassAppearance(
+                blur: LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
+                color: Color(0x59FFFFFF),
+              ),
+            ),
+            child: MessageInput(
+              controller: controller,
+              showQuickActions: false,
             ),
           ),
-          child: MessageInput(controller: controller),
         );
       },
     );

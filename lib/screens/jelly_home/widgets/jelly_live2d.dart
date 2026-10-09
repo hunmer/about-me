@@ -238,6 +238,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // not be loaded against the temporary constraints from the first build.
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
+    // The home screen's bottom navigation reports its final safe area one or
+    // two frames after the first layout. Give that resize time to settle
+    // before creating the native viewport.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
     await _loadModel(_selectedModel);
   }
 
@@ -430,11 +435,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (bubbleWidth <= 0) return const SizedBox.shrink();
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
-    // The model is bottom-aligned in the container. Keep the bubble anchored
-    // to the model viewport's top even when that point is above the container
-    // (regular mode uses a viewport as tall as the container).
+    // The model is bottom-aligned in the container. The model viewport itself
+    // includes transparent headroom, so use a point inside its upper section
+    // as the visual head anchor rather than the outer container's top.
     final modelTop = height - _modelBottomInset - _displaySize;
-    final top = (modelTop - gap - bubbleHeight)
+    final headAnchor = modelTop + _displaySize * 0.22;
+    final top = (headAnchor - gap - bubbleHeight)
         .clamp(0.0, max(0.0, height - bubbleHeight))
         .toDouble();
     final left = ((width - bubbleWidth) / 2).clamp(

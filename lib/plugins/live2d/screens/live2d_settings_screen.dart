@@ -7,7 +7,9 @@ import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_configurable_image.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'live2d_archive_form_screen.dart';
 
 /// Live2D 全局设置：选中存档切换、语音播报、打字速度、模型预览。
@@ -119,6 +121,24 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     }
   }
 
+  /// 上传/更换档案头像（复用 coverPath，1:1 裁剪保存到 live2d_covers）
+  Future<void> _uploadAvatar(Live2DArchive item) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => ImagePickerDialog(
+        initialUrl: item.coverPath,
+        saveDirectory: 'live2d_covers',
+        enableCrop: true,
+        cropAspectRatio: 1,
+      ),
+    );
+    final url = result?['url'] as String?;
+    if (url == null || url.isEmpty) return;
+    item.coverPath = url;
+    await plugin.save();
+    if (mounted) setState(() {});
+  }
+
   Live2DModelDefinition? modelFor(Live2DArchive? value) =>
       modelDefinitionForArchive(value);
 
@@ -156,23 +176,24 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
           ),
           if (plugin.archives.isNotEmpty)
             SizedBox(
-              height: 48,
+              height: 88,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: plugin.archives.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, index) {
                   final item = plugin.archives[index];
-                  return ChoiceChip(
-                    label: Text(item.name),
+                  return _ArchiveAvatarTile(
+                    archive: item,
                     selected: item.id == current?.id,
-                    onSelected: (_) {
+                    onSelect: () {
                       if (_showPreview) _showPreview = false;
                       setState(() {
                         archive = item;
                         plugin.selectedId = item.id;
                       });
                     },
+                    onUpload: () => _uploadAvatar(item),
                   );
                 },
               ),
@@ -264,6 +285,107 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   ),
             ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 档案头像列表项：圆形头像 + 名称，右下角相机角标上传/更换头像
+class _ArchiveAvatarTile extends StatelessWidget {
+  const _ArchiveAvatarTile({
+    required this.archive,
+    required this.selected,
+    required this.onSelect,
+    required this.onUpload,
+  });
+
+  final Live2DArchive archive;
+  final bool selected;
+  final VoidCallback onSelect;
+  final VoidCallback onUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cover = archive.coverPath;
+    return GestureDetector(
+      onTap: onSelect,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : theme.dividerColor,
+                    width: 2,
+                  ),
+                ),
+                child: ClipOval(
+                  child: cover == null || cover.isEmpty
+                      ? Icon(
+                          Icons.person_outline,
+                          size: 26,
+                          color: theme.hintColor,
+                        )
+                      : JellyConfigurableImage(
+                          path: cover,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
+              Positioned(
+                right: -4,
+                bottom: -4,
+                child: GestureDetector(
+                  onTap: onUpload,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.primary,
+                      border: Border.all(
+                        color: theme.colorScheme.surface,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 64,
+            child: Text(
+              archive.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.textTheme.bodyMedium?.color,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -106,8 +106,9 @@ class _MessageInputState extends State<MessageInput> {
 
     final bool isPotentialCommand =
         text.startsWith('/') && !text.contains('\n');
-    final (commandType, argument) =
-        isPotentialCommand ? ChatCommand.parseInput(text) : (null, null);
+    final (commandType, argument) = isPotentialCommand
+        ? ChatCommand.parseInput(text)
+        : (null, null);
 
     // 检测命令模式
     setState(() {
@@ -228,215 +229,202 @@ class _MessageInputState extends State<MessageInput> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-          // 工具模板搜索结果
-          if (_isSearchingTools) _buildToolTemplateSearchArea(),
+            // 工具模板搜索结果
+            if (_isSearchingTools) _buildToolTemplateSearchArea(),
 
-          // 命令选择器
-          if (_isCommandMode && _filteredCommands.isNotEmpty)
-            CommandSelector(
-              commands: _filteredCommands,
-              onCommandSelected: _handleCommandSelected,
-            ),
+            // 命令选择器
+            if (_isCommandMode && _filteredCommands.isNotEmpty)
+              CommandSelector(
+                commands: _filteredCommands,
+                onCommandSelected: _handleCommandSelected,
+              ),
 
-          if (!_isSearchingTools &&
-              _isCommandMode &&
-              (_commandToolQuery?.isNotEmpty ?? false))
-            _buildToolCommandSearchResults(),
+            if (!_isSearchingTools &&
+                _isCommandMode &&
+                (_commandToolQuery?.isNotEmpty ?? false))
+              _buildToolCommandSearchResults(),
 
-          // 当前状态显示区域（工具模板和文件）
-          if (!_isSearchingTools &&
-              (widget.controller.selectedToolTemplate != null ||
-                  widget.controller.selectedFiles.isNotEmpty))
-            _buildCurrentStatus(),
+            // 当前状态显示区域（工具模板和文件）
+            if (!_isSearchingTools &&
+                (widget.controller.selectedToolTemplate != null ||
+                    widget.controller.selectedFiles.isNotEmpty))
+              _buildCurrentStatus(),
 
-          // 快捷入口：Agent 编辑与 Skills 选择（紧凑模式下隐藏）
-          if (widget.showQuickActions)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Row(
-              children: [
-                Pressable(
-                  onPressed:
-                      widget.controller.currentAgent != null
+            // 快捷入口：Agent 编辑与 Skills 选择（紧凑模式下隐藏）
+            if (widget.showQuickActions)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Row(
+                  children: [
+                    Pressable(
+                      onPressed: widget.controller.currentAgent != null
                           ? _openAgentEdit
                           : null,
-                  semanticLabel: '编辑Agent',
-                  builder:
-                      (context, states) => DsIcon(
+                      semanticLabel: '编辑Agent',
+                      builder: (context, states) => DsIcon(
                         DsIconKind.bot,
                         size: 20,
-                        color:
-                            widget.controller.currentAgent != null
-                                ? theme.primaryText
-                                : theme.textSub.withValues(alpha: 0.5),
+                        color: widget.controller.currentAgent != null
+                            ? theme.primaryText
+                            : theme.textSub.withValues(alpha: 0.5),
                       ),
-                ),
-                const SizedBox(width: 20),
-                Pressable(
-                  onPressed: () => _showResourceMenu(skills: true),
-                  semanticLabel: '选择Skill',
-                  builder:
-                      (context, states) => DsIcon(
+                    ),
+                    const SizedBox(width: 20),
+                    Pressable(
+                      onPressed: () => _showResourceMenu(skills: true),
+                      semanticLabel: '选择Skill',
+                      builder: (context, states) => DsIcon(
                         DsIconKind.book,
                         size: 20,
                         color: theme.primaryText,
                       ),
-                ),
-                const SizedBox(width: 20),
-                Pressable(
-                  onPressed: () => _showResourceMenu(skills: false),
-                  semanticLabel: '选择MCP',
-                  builder:
-                      (context, states) => DsIcon(
+                    ),
+                    const SizedBox(width: 20),
+                    Pressable(
+                      onPressed: () => _showResourceMenu(skills: false),
+                      semanticLabel: '选择MCP',
+                      builder: (context, states) => DsIcon(
                         DsIconKind.block,
                         size: 20,
                         color: theme.primaryText,
                       ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // 输入框区域
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 附件按钮
-                  Pressable(
-                    onPressed: _showAttachmentMenu,
-                    semanticLabel: '添加附件',
-                    builder:
-                        (context, states) => SizedBox(
+            // 输入框区域
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 附件按钮
+                    Pressable(
+                      onPressed: _showAttachmentMenu,
+                      semanticLabel: '添加附件',
+                      builder: (context, states) => SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.copy,
+                            size: 22,
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 输入框
+                    Expanded(
+                      child: AgentChatTextInput(
+                        controller: _textController,
+                        focusNode: _focusNode,
+                        onSubmitted: (_) {
+                          if (_canSendMessage()) {
+                            _sendMessage();
+                          }
+                        },
+                        enabled: widget.controller.currentAgent != null,
+                        backgroundColor: Colors.transparent,
+                        hintText: widget.controller.currentAgent != null
+                            ? '输入消息...'
+                            : '请先选择Agent...',
+                        suffixIcon: Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Token统计
+                              if (widget.controller.inputText.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 4),
+                                  child: Text(
+                                    '~${widget.controller.inputTokenCount}',
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ),
+                              // "你可以问"按钮
+                              if (widget.controller.currentAgent != null)
+                                Pressable(
+                                  onPressed: _showSuggestedQuestions,
+                                  semanticLabel: '你可以问',
+                                  builder: (context, states) => Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: DsIcon(
+                                      DsIconKind.star,
+                                      size: 20,
+                                      color: theme.warning,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 语音按钮（长按录音）
+                    if (_recognitionService != null)
+                      PressToRecordButton(
+                        textController: _textController,
+                        recognitionService: _recognitionService!,
+                        enabled: widget.controller.currentAgent != null,
+                        tooltip: '长按录音',
+                        onRecognitionComplete: (text) {
+                          // 聚焦到输入框
+                          _focusNode.requestFocus();
+                        },
+                        onError: (error) {
+                          if (mounted) {
+                            toastService.showToast('语音识别失败: $error');
+                          }
+                        },
+                      )
+                    else
+                      Pressable(
+                        onPressed: widget.controller.currentAgent != null
+                            ? _showVoiceInputDialog
+                            : null,
+                        semanticLabel: '语音输入（未配置）',
+                        builder: (context, states) => SizedBox(
                           width: 40,
                           height: 40,
                           child: Center(
                             child: DsIcon(
-                              DsIconKind.copy,
+                              DsIconKind.mic,
                               size: 22,
                               color: theme.textSub,
                             ),
                           ),
                         ),
-                  ),
-
-                  // 输入框
-                  Expanded(
-                    child: AgentChatTextInput(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      onSubmitted: (_) {
-                        if (_canSendMessage()) {
-                          _sendMessage();
-                        }
-                      },
-                      enabled: widget.controller.currentAgent != null,
-                      backgroundColor: Colors.transparent,
-                      hintText: widget.controller.currentAgent != null
-                          ? '输入消息...'
-                          : '请先选择Agent...',
-                      suffixIcon: Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Token统计
-                            if (widget.controller.inputText.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: Text(
-                                  '~${widget.controller.inputTokenCount}',
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.textSub,
-                                  ),
-                                ),
-                              ),
-                            // "你可以问"按钮
-                            if (widget.controller.currentAgent != null)
-                              Pressable(
-                                onPressed: _showSuggestedQuestions,
-                                semanticLabel: '你可以问',
-                                builder:
-                                    (context, states) => Padding(
-                                      padding: const EdgeInsets.all(4),
-                                      child: DsIcon(
-                                        DsIconKind.star,
-                                        size: 20,
-                                        color: theme.warning,
-                                      ),
-                                    ),
-                              ),
-                          ],
-                        ),
                       ),
-                    ),
-                  ),
 
-                  // 语音按钮（长按录音）
-                  if (_recognitionService != null)
-                    PressToRecordButton(
-                      textController: _textController,
-                      recognitionService: _recognitionService!,
-                      enabled: widget.controller.currentAgent != null,
-                      tooltip: '长按录音',
-                      onRecognitionComplete: (text) {
-                        // 聚焦到输入框
-                        _focusNode.requestFocus();
-                      },
-                      onError: (error) {
-                        if (mounted) {
-                          toastService.showToast('语音识别失败: $error');
-                        }
-                      },
-                    )
-                  else
-                    Pressable(
-                      onPressed:
-                          widget.controller.currentAgent != null
-                              ? _showVoiceInputDialog
-                              : null,
-                      semanticLabel: '语音输入（未配置）',
-                      builder:
-                          (context, states) => SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: Center(
-                              child: DsIcon(
-                                DsIconKind.mic,
-                                size: 22,
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ),
-                    ),
-
-                  // 发送/取消按钮
-                  DSIconButton(
-                    icon:
-                        widget.controller.isSending
-                            ? DsIconKind
+                    // 发送/取消按钮
+                    DSIconButton(
+                      icon: widget.controller.isSending
+                          ? DsIconKind
                                 .close // 显示取消图标
-                            : DsIconKind.send,
-                    size: 44,
-                    color:
-                        widget.controller.isSending
-                            ? theme
+                          : DsIconKind.send,
+                      size: 44,
+                      color: widget.controller.isSending
+                          ? theme
                                 .danger // 发送中显示红色
-                            : theme.primary,
-                    onPressed:
-                        widget.controller.isSending
-                            ? () =>
-                                widget.controller
-                                    .cancelSending() // 取消发送
-                            : (_canSendMessage() ? _sendMessage : null),
-                  ),
-                ],
+                          : theme.primary,
+                      onPressed: widget.controller.isSending
+                          ? () => widget.controller
+                                .cancelSending() // 取消发送
+                          : (_canSendMessage() ? _sendMessage : null),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ],
         ),
       ),
@@ -503,12 +491,13 @@ class _MessageInputState extends State<MessageInput> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children:
-                  widget.controller.selectedFiles.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final file = entry.value;
-                    return _buildFileChip(file, index);
-                  }).toList(),
+              children: widget.controller.selectedFiles.asMap().entries.map((
+                entry,
+              ) {
+                final index = entry.key;
+                final file = entry.value;
+                return _buildFileChip(file, index);
+              }).toList(),
             ),
           ],
         ],
@@ -554,22 +543,15 @@ class _MessageInputState extends State<MessageInput> {
           Pressable(
             onPressed: () => widget.controller.clearSelectedToolTemplate(),
             semanticLabel: '移除工具模板',
-            builder:
-                (context, states) => Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: theme.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.warning.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: DsIcon(
-                    DsIconKind.close,
-                    size: 14,
-                    color: theme.warning,
-                  ),
-                ),
+            builder: (context, states) => Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.warning.withValues(alpha: 0.6)),
+              ),
+              child: DsIcon(DsIconKind.close, size: 14, color: theme.warning),
+            ),
           ),
         ],
       ),
@@ -614,9 +596,8 @@ class _MessageInputState extends State<MessageInput> {
           Pressable(
             onPressed: () => widget.controller.removeFile(index),
             semanticLabel: '移除文件',
-            builder:
-                (context, states) =>
-                    DsIcon(DsIconKind.close, size: 16, color: theme.textSub),
+            builder: (context, states) =>
+                DsIcon(DsIconKind.close, size: 16, color: theme.textSub),
           ),
         ],
       ),
@@ -627,43 +608,41 @@ class _MessageInputState extends State<MessageInput> {
   void _showAttachmentMenu() {
     SmoothBottomSheet.show(
       context: context,
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DSListItem(
-                          leading: DsIcon(
-                            DsIconKind.image,
-                            size: 22,
-                            color: DSThemeBridge.resolve(context).primaryText,
-                          ),
-                          title: 'agent_chat_image'.tr,
-                          onTap: () {
-                            Navigator.pop(context);
-                            widget.controller.pickImages();
-                          },
-                        ),
-                        DSListItem(
-                          leading: DsIcon(
-                            DsIconKind.book,
-                            size: 22,
-                            color: DSThemeBridge.resolve(context).primaryText,
-                          ),
-                          title: 'agent_chat_document'.tr,
-                          onTap: () {
-                            Navigator.pop(context);
-                            widget.controller.pickDocuments();
-                          },
-                        ),
-                      ],
-                    ),
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DSListItem(
+                  leading: DsIcon(
+                    DsIconKind.image,
+                    size: 22,
+                    color: DSThemeBridge.resolve(context).primaryText,
                   ),
+                  title: 'agent_chat_image'.tr,
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.controller.pickImages();
+                  },
+                ),
+                DSListItem(
+                  leading: DsIcon(
+                    DsIconKind.book,
+                    size: 22,
+                    color: DSThemeBridge.resolve(context).primaryText,
+                  ),
+                  title: 'agent_chat_document'.tr,
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.controller.pickDocuments();
+                  },
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 
@@ -693,63 +672,52 @@ class _MessageInputState extends State<MessageInput> {
 
     SmoothBottomSheet.show(
       context: context,
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            child: SafeArea(
+              child: items.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          '暂无可用的 $label，可先在 Agent 编辑页添加',
+                          style: DsTypography.body.copyWith(
+                            color: DSThemeBridge.resolve(context).textSub,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(bottom: 8),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return DSListItem(
+                          leading: DsIcon(
+                            skills ? DsIconKind.book : DsIconKind.block,
+                            size: 22,
+                            color: DSThemeBridge.resolve(context).primaryText,
+                          ),
+                          title: item.displayName,
+                          subtitle: item.tags.isEmpty
+                              ? null
+                              : item.tags.join(' · '),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _insertResourceText(item, skills);
+                          },
+                        );
+                      },
                     ),
-                    child: SafeArea(
-                      child:
-                          items.isEmpty
-                              ? Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Center(
-                                  child: Text(
-                                    '暂无可用的 $label，可先在 Agent 编辑页添加',
-                                    style: DsTypography.body.copyWith(
-                                      color: DSThemeBridge.resolve(
-                                        context,
-                                      ).textSub,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              : ListView.builder(
-                                shrinkWrap: true,
-                                padding: const EdgeInsets.only(bottom: 8),
-                                itemCount: items.length,
-                                itemBuilder: (context, index) {
-                                  final item = items[index];
-                                  return DSListItem(
-                                    leading: DsIcon(
-                                      skills
-                                          ? DsIconKind.book
-                                          : DsIconKind.block,
-                                      size: 22,
-                                      color:
-                                          DSThemeBridge.resolve(
-                                            context,
-                                          ).primaryText,
-                                    ),
-                                    title: item.displayName,
-                                    subtitle:
-                                        item.tags.isEmpty
-                                            ? null
-                                            : item.tags.join(' · '),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _insertResourceText(item, skills);
-                                    },
-                                  );
-                                },
-                              ),
-                    ),
-                  ),
             ),
           ),
+        ),
+      ),
     );
   }
 
@@ -759,9 +727,7 @@ class _MessageInputState extends State<MessageInput> {
     final current = _textController.text;
     final newText = current.isEmpty ? insert : '$current\n$insert';
     _textController.text = newText;
-    _textController.selection = TextSelection.collapsed(
-      offset: newText.length,
-    );
+    _textController.selection = TextSelection.collapsed(offset: newText.length);
     widget.controller.setInputText(newText);
     _focusNode.requestFocus();
   }
@@ -914,10 +880,9 @@ class _MessageInputState extends State<MessageInput> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 8),
-              itemCount:
-                  _commandToolResults.length > 5
-                      ? 5
-                      : _commandToolResults.length,
+              itemCount: _commandToolResults.length > 5
+                  ? 5
+                  : _commandToolResults.length,
               itemBuilder: (context, index) {
                 final template = _commandToolResults[index];
                 return _buildToolCommandResultItem(template);
@@ -932,43 +897,42 @@ class _MessageInputState extends State<MessageInput> {
     final theme = DSThemeBridge.resolve(context);
     return Pressable(
       onPressed: () => _applyToolCommandTemplate(template),
-      builder:
-          (context, states) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                DsIcon(DsIconKind.gear, size: 20, color: theme.warning),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        template.name,
-                        style: DsTypography.body.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.text,
-                        ),
-                      ),
-                      if (template.description != null &&
-                          template.description!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          template.description!,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
+      builder: (context, states) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            DsIcon(DsIconKind.gear, size: 20, color: theme.warning),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    template.name,
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.text,
+                    ),
                   ),
-                ),
-                DsIcon(DsIconKind.chevronRight, size: 16, color: theme.textSub),
-              ],
+                  if (template.description != null &&
+                      template.description!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      template.description!,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+            DsIcon(DsIconKind.chevronRight, size: 16, color: theme.textSub),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1034,18 +998,17 @@ class _MessageInputState extends State<MessageInput> {
                     });
                   },
                   semanticLabel: '取消',
-                  builder:
-                      (context, states) => SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.close,
-                            size: 20,
-                            color: theme.textSub,
-                          ),
-                        ),
+                  builder: (context, states) => SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.close,
+                        size: 20,
+                        color: theme.textSub,
                       ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1100,8 +1063,9 @@ class _MessageInputState extends State<MessageInput> {
     widget.controller.setInputText('');
 
     final keyword = searchQuery?.trim();
-    final normalizedKeyword =
-        (keyword == null || keyword.isEmpty) ? null : keyword;
+    final normalizedKeyword = (keyword == null || keyword.isEmpty)
+        ? null
+        : keyword;
 
     setState(() {
       _isSearchingTools = true;
