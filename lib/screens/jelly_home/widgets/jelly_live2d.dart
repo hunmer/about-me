@@ -119,6 +119,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
   // bounds via OverflowBox/Transform.translate.
   static const double _radialDockOverflowTop = 28;
   static const String _sizePrefKey = 'jelly_live2d.size';
+  static const String _bubbleOffsetXPrefKey = 'jelly_live2d.bubbleOffsetX';
+  static const String _bubbleOffsetYPrefKey = 'jelly_live2d.bubbleOffsetY';
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
 
   final Live2DViewController _controller = Live2DViewController();
@@ -140,7 +142,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
   /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
   /// 气泡宽度等布局按它计算
   double _displaySize = _defaultSize;
-  double _modelBottomInset = 0;
+  double _bubbleOffsetX = 0;
+  double _bubbleOffsetY = 0;
 
   /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
   String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
@@ -152,6 +155,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
+  bool _bubblePositionPreview = false;
   bool _bubbleStreaming = false;
   Timer? _bubbleTimer;
   Timer? _bubbleResumeTimer;
@@ -233,6 +237,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   Future<void> _initialize() async {
     await _loadSavedSize();
+    await _loadSavedBubblePosition();
     if (!mounted) return;
     // Wait until the first finite layout is committed. The native view must
     // not be loaded against the temporary constraints from the first build.
@@ -244,6 +249,25 @@ class _JellyLive2DState extends State<JellyLive2D> {
     await Future<void>.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     await _loadModel(_selectedModel);
+  }
+
+  Future<void> _loadSavedBubblePosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _bubbleOffsetX = (prefs.getDouble(_bubbleOffsetXPrefKey) ?? 0)
+          .clamp(-0.45, 0.45)
+          .toDouble();
+      _bubbleOffsetY = (prefs.getDouble(_bubbleOffsetYPrefKey) ?? 0)
+          .clamp(-0.45, 0.45)
+          .toDouble();
+    });
+  }
+
+  Future<void> _saveBubblePosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_bubbleOffsetXPrefKey, _bubbleOffsetX);
+    await prefs.setDouble(_bubbleOffsetYPrefKey, _bubbleOffsetY);
   }
 
   @override
@@ -420,10 +444,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
     required double width,
     required double height,
   }) {
-    final message = _bubbleMessage;
+    final previewing = _bubblePositionPreview;
+    final message = _bubbleMessage ?? (previewing ? '气泡预览' : null);
     if (message == null) return const SizedBox.shrink();
     const margin = 12.0;
-    const gap = 8.0;
     const bubbleBaseWidth = 288.0;
     const bubbleBaseHeight = 150.0;
     final availableWidth = max(0.0, width - margin * 2);
@@ -435,15 +459,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (bubbleWidth <= 0) return const SizedBox.shrink();
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
-    // The model is bottom-aligned in the container. The model viewport itself
-    // includes transparent headroom, so use a point inside its upper section
-    // as the visual head anchor rather than the outer container's top.
-    final modelTop = height - _modelBottomInset - _displaySize;
-    final headAnchor = modelTop + _displaySize * 0.22;
-    final top = (headAnchor - gap - bubbleHeight)
+    final top = ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
         .clamp(0.0, max(0.0, height - bubbleHeight))
         .toDouble();
-    final left = ((width - bubbleWidth) / 2).clamp(
+    final left = ((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
       margin,
       width - margin - bubbleWidth,
     );
@@ -466,8 +485,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
           ),
           streaming: _bubbleStreaming,
           typingInterval: widget.typingInterval,
-          onUserInteract: _pauseBubbleHide,
-          onTypingComplete: _onBubbleTyped,
+          onUserInteract: previewing ? null : _pauseBubbleHide,
+          onTypingComplete: previewing ? null : _onBubbleTyped,
         ),
       ),
     );
@@ -701,7 +720,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
   Future<void> _selectArchive(Live2DArchive archive) async {
     final plugin = Live2DPlugin.instance;
     if (archive.id == plugin.selectedId) return;
-    plugin.selectedId = archive.id;
+    // 立即刷新选中态：档案指向同一模型时 _selectModel 会跳过重载，
+    // 不先 setState 的话资源条看起来毫无反应
+    setState(() => plugin.selectedId = archive.id);
     await plugin.save();
     final model = modelDefinitionForArchive(archive);
     if (model != null) await _selectModel(model);
@@ -978,29 +999,124 @@ class _JellyLive2DState extends State<JellyLive2D> {
   }
 
   Widget _buildBubbleStrip(AppThemeData theme) {
-    return SizedBox(
-      height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          for (final asset in [
-            ..._bubbleAssets,
-            ...Live2DPlugin.instance.customBubbleAssets,
-          ])
-            Padding(
-              padding: EdgeInsets.only(right: theme.spacing.sm),
-              child: _bubbleTile(theme, asset),
-            ),
-          _addTile(
-            theme,
-            width: 72,
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
             height: 48,
-            iconSize: 22,
-            onTap: () => _uploadCustomBubble(context),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final asset in [
+                  ..._bubbleAssets,
+                  ...Live2DPlugin.instance.customBubbleAssets,
+                ])
+                  Padding(
+                    padding: EdgeInsets.only(right: theme.spacing.sm),
+                    child: _bubbleTile(theme, asset),
+                  ),
+                _addTile(
+                  theme,
+                  width: 72,
+                  height: 48,
+                  iconSize: 22,
+                  onTap: () => _uploadCustomBubble(context),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
+        SizedBox(width: theme.spacing.md),
+        Container(width: 1, height: 36, color: theme.stroke),
+        SizedBox(width: theme.spacing.md),
+        _bubblePositionButton(theme),
+      ],
+    );
+  }
+
+  Widget _bubblePositionButton(AppThemeData theme) {
+    return GestureDetector(
+      onTap: _openBubblePositionSettings,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.surfaceAlt,
+          border: Border.all(color: theme.stroke),
+        ),
+        child: Center(
+          child: DsIcon(DsIconKind.tune, size: 18, color: theme.primary),
+        ),
       ),
     );
+  }
+
+  Future<void> _openBubblePositionSettings() async {
+    setState(() => _bubblePositionPreview = true);
+    try {
+      await showDSBottomSheet<void>(
+        context: context,
+        title: '气泡位置',
+        builder: (sheetContext) {
+          final theme = AppTheme.of(sheetContext);
+          return StatefulBuilder(
+            builder: (context, setSheetState) => Padding(
+              padding: EdgeInsets.fromLTRB(
+                theme.spacing.xl,
+                0,
+                theme.spacing.xl,
+                theme.spacing.md,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '水平位置',
+                    style: DsTypography.label.copyWith(color: theme.text),
+                  ),
+                  DSSlider(
+                    value: ((_bubbleOffsetX + 0.45) / 0.9).clamp(0.0, 1.0),
+                    onChanged: (value) {
+                      setState(() => _bubbleOffsetX = value * 0.9 - 0.45);
+                      setSheetState(() {});
+                    },
+                    onChangeEnd: (_) => _saveBubblePosition(),
+                  ),
+                  Text(
+                    '垂直位置',
+                    style: DsTypography.label.copyWith(color: theme.text),
+                  ),
+                  DSSlider(
+                    value: ((_bubbleOffsetY + 0.45) / 0.9).clamp(0.0, 1.0),
+                    onChanged: (value) {
+                      setState(() => _bubbleOffsetY = value * 0.9 - 0.45);
+                      setSheetState(() {});
+                    },
+                    onChangeEnd: (_) => _saveBubblePosition(),
+                  ),
+                  DSButton(
+                    label: '恢复居中',
+                    size: DSButtonSize.sm,
+                    onPressed: () {
+                      setState(() {
+                        _bubbleOffsetX = 0;
+                        _bubbleOffsetY = 0;
+                      });
+                      setSheetState(() {});
+                      unawaited(_saveBubblePosition());
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _bubblePositionPreview = false);
+    }
   }
 
   Widget _bubbleTile(AppThemeData theme, String asset) {
@@ -1410,7 +1526,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
           );
           final modelScale = viewportLayout.scale;
           _displaySize = displaySize;
-          _modelBottomInset = modelBottomInset;
           return AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
