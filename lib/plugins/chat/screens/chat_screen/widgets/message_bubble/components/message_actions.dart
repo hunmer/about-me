@@ -41,8 +41,8 @@ class MessageActions extends StatelessWidget {
         DSIconButton(
           icon: DsIconKind.trash,
           size: 32,
-          color: theme.surfaceAlt,
-          iconColor: theme.textSub,
+          color: theme.danger,
+          iconColor: theme.onDanger,
           onPressed: onDelete,
           tooltip: '删除',
         ),

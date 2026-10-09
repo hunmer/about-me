@@ -776,7 +776,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 displayMessages,
                 backgroundPath,
               ),
-              enableLargeTitle: true,
+              enableLargeTitle: false,
               enableSearchBar: true,
               searchPlaceholder: '搜索消息内容、发送人...',
               onSearchChanged: _handleSearchChanged,

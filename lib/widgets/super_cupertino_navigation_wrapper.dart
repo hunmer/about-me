@@ -491,8 +491,7 @@ class _SuperCupertinoNavigationWrapperState
       final ds = AppTheme.of(context);
       actionsList.add(
         DSIconButton(
-          // sort 图标（递减横线）即漏斗筛选图形；显示状态用主色、隐藏用次要色区分
-          icon: DsIconKind.sort,
+          icon: DsIconKind.search,
           size: 36,
           color: ds.surfaceAlt,
           iconColor: _isToolbarVisible ? ds.primary : ds.textSub,

@@ -240,7 +240,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
         onTap: widget.onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+          margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment:
@@ -274,79 +274,52 @@ class _MessageBubbleState extends State<MessageBubble> {
                           onTap: widget.onAvatarTap,
                         ),
                       ),
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          padding:
-                              _isImageMessage()
-                                  ? EdgeInsets.zero
-                                  : const EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                    vertical: 12.0,
-                                  ),
-                          decoration: BoxDecoration(
-                            color:
-                                _isImageMessage()
-                                    ? const Color(0x00000000)
-                                    : backgroundColor,
-                            borderRadius: BorderRadius.circular(
-                              _isImageMessage() ? 12.0 : 24.0,
-                            ),
-                            // 图片气泡透明无阴影，其余按参考风格带柔和投影
-                            boxShadow:
-                                _isImageMessage() ? null : theme.shadows.soft,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    // 他人消息上方悬浮光标按钮行：气泡下移留出空间，按钮行贴整行右缘显示
+                    _isCurrentUser
+                        ? _buildBubble(theme, backgroundColor, textColor)
+                        : Stack(
+                            clipBehavior: Clip.none,
                             children: [
-                              // 用户名仅组内首条显示，与头像折叠策略一致
-                              if (!_isCurrentUser && widget.isFirstOfGroup)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4.0),
-                                  child: Text(
-                                    _currentMessage.user.username,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 32),
+                                child: _buildBubble(
+                                  theme,
+                                  backgroundColor,
+                                  textColor,
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: SizedBox(
+                                  height: 32,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      AnimatedSize(
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        alignment: Alignment.centerRight,
+                                        child: _showActions
+                                            ? MessageActions(
+                                                onEdit: widget.onEdit,
+                                                onDelete: widget.onDelete,
+                                                onCopy: widget.onCopy,
+                                                onSetFixedSymbol:
+                                                    widget.onSetFixedSymbol,
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
+                                      _buildActionsToggle(theme),
+                                    ],
                                   ),
                                 ),
-                              if (replyMessage != null &&
-                                  widget.onReplyTap != null)
-                                ReplyWidget(
-                                  replyMessage: replyMessage!,
-                                  onTap: widget.onReplyTap!,
-                                ),
-                              MessageContent(
-                                message: _currentMessage,
-                                textColor: textColor,
                               ),
                             ],
                           ),
-                        ),
-                        // 气泡上方光标按钮：点击切换操作栏展示与光标方向，操作栏向左侧展开
-                        if (!_isCurrentUser)
-                          Positioned(
-                            top: -32,
-                            right: 0,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                if (_showActions)
-                                  MessageActions(
-                                    onEdit: widget.onEdit,
-                                    onDelete: widget.onDelete,
-                                    onCopy: widget.onCopy,
-                                    onSetFixedSymbol: widget.onSetFixedSymbol,
-                                  ),
-                                _buildActionsToggle(theme),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -398,6 +371,45 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
+  Widget _buildBubble(
+    AppThemeData theme,
+    Color backgroundColor,
+    Color textColor,
+  ) {
+    return Container(
+      padding:
+          _isImageMessage()
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: _isImageMessage() ? const Color(0x00000000) : backgroundColor,
+        borderRadius: BorderRadius.circular(_isImageMessage() ? 12.0 : 24.0),
+        // 图片气泡透明无阴影，其余按参考风格带柔和投影
+        boxShadow: _isImageMessage() ? null : theme.shadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 用户名仅组内首条显示，与头像折叠策略一致
+          if (!_isCurrentUser && widget.isFirstOfGroup)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Text(
+                _currentMessage.user.username,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ),
+          if (replyMessage != null && widget.onReplyTap != null)
+            ReplyWidget(replyMessage: replyMessage!, onTap: widget.onReplyTap!),
+          MessageContent(message: _currentMessage, textColor: textColor),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionsToggle(AppThemeData theme) {
     return GestureDetector(
       onTap: () => setState(() => _showActions = !_showActions),
@@ -410,12 +422,15 @@ class _MessageBubbleState extends State<MessageBubble> {
           boxShadow: theme.shadows.soft,
         ),
         child: Center(
-          child: DsIcon(
-            _showActions
-                ? DsIconKind.chevronRight
-                : DsIconKind.chevronLeft,
-            size: 16,
-            color: theme.textSub,
+          // 展开时光标旋转180°由指向左变为指向右
+          child: AnimatedRotation(
+            turns: _showActions ? 0.5 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: DsIcon(
+              DsIconKind.chevronLeft,
+              size: 16,
+              color: theme.textSub,
+            ),
           ),
         ),
       ),

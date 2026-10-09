@@ -97,10 +97,9 @@ class _MessageInputState extends State<MessageInput> {
         // 加载保存的智能体列表
         final savedAgents = metadata['selectedAgents'] as List<dynamic>?;
         if (savedAgents != null) {
-          selectedAgents =
-              savedAgents
-                  .map((agent) => Map<String, String>.from(agent))
-                  .toList();
+          selectedAgents = savedAgents
+              .map((agent) => Map<String, String>.from(agent))
+              .toList();
         }
 
         // 加载保存的上下文范围
@@ -137,12 +136,11 @@ class _MessageInputState extends State<MessageInput> {
     SmoothBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      builder:
-          (context) => AgentListDrawer(
-            selectedAgents: selectedAgents,
-            onAgentSelected: _handleAgentSelected,
-            textController: widget.controller,
-          ),
+      builder: (context) => AgentListDrawer(
+        selectedAgents: selectedAgents,
+        onAgentSelected: _handleAgentSelected,
+        textController: widget.controller,
+      ),
     );
   }
 
@@ -283,18 +281,21 @@ class _MessageInputState extends State<MessageInput> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
+          // 悬浮输入框：与屏幕底部保持间距（含底部安全边距），圆角卡片浮于列表之上
           return Container(
+            margin: EdgeInsets.only(
+              left: 8.0,
+              right: 8.0,
+              bottom: 8.0 + MediaQuery.of(context).padding.bottom,
+            ),
             decoration: BoxDecoration(
               color: theme.surface,
+              borderRadius: BorderRadius.circular(24),
               boxShadow: theme.shadows.soft,
             ),
-            child: SafeArea(
-              top: false,
-              left: false,
-              right: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 // 元数据显示区域
                 MetadataDisplay(
                   selectedFile: selectedFile,
@@ -317,17 +318,16 @@ class _MessageInputState extends State<MessageInput> {
                       onPressed: () {
                         SmoothBottomSheet.show(
                           context: context,
-                          builder:
-                              (context) => MessageInputActionsDrawer(
-                                actions:
-                                    MessageInputActionsBuilder.getDefaultActions(
-                                      context,
-                                      onFileSelected: _handleFileSelected,
-                                      onSendMessage: widget.onSendMessage,
-                                      textController: widget.controller,
-                                    ),
-                                onFileSelected: _handleFileSelected,
-                              ),
+                          builder: (context) => MessageInputActionsDrawer(
+                            actions:
+                                MessageInputActionsBuilder.getDefaultActions(
+                                  context,
+                                  onFileSelected: _handleFileSelected,
+                                  onSendMessage: widget.onSendMessage,
+                                  textController: widget.controller,
+                                ),
+                            onFileSelected: _handleFileSelected,
+                          ),
                         );
                       },
                     ),
@@ -339,8 +339,8 @@ class _MessageInputState extends State<MessageInput> {
                         focusNode: _focusNode,
                         keyboardListenerFocusNode: _keyboardListenerFocusNode,
                         onChanged: (text) => widget.onSaveDraft(text),
-                        onKeyEvent:
-                            (event) => _messageInputState.handleKeyPress(event),
+                        onKeyEvent: (event) =>
+                            _messageInputState.handleKeyPress(event),
                       ),
                     ),
 
@@ -378,8 +378,7 @@ class _MessageInputState extends State<MessageInput> {
                     ),
                   ],
                 ),
-                ],
-              ),
+              ],
             ),
           );
         },

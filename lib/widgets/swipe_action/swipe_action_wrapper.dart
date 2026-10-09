@@ -76,7 +76,7 @@ class SwipeActionWrapper extends StatelessWidget {
     this.trailingActions,
     this.performFirstActionWithFullSwipe = false,
     this.deleteConfirmTitle = '确认删除',
-    this.deleteConfirmContent = '确定要删除此项吗？',
+    this.deleteConfirmContent = '确定？',
     this.isEditMode = false,
     this.backgroundColor,
   });
