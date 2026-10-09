@@ -251,6 +251,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
     await _loadModel(_selectedModel);
   }
 
+  void resetGaze() {
+    unawaited(_controller.resetGaze());
+  }
+
   Future<void> _loadSavedBubblePosition() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -723,9 +727,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // 立即刷新选中态：档案指向同一模型时 _selectModel 会跳过重载，
     // 不先 setState 的话资源条看起来毫无反应
     setState(() => plugin.selectedId = archive.id);
-    await plugin.save();
     final model = modelDefinitionForArchive(archive);
     if (model != null) await _selectModel(model);
+    // 落盘放在切换之后：持久化失败不应阻断本次模型切换
+    try {
+      await plugin.save();
+    } catch (error) {
+      debugPrint('[Live2D] save archives failed: $error');
+    }
   }
 
   Future<void> _uploadCustomBubble(BuildContext context) async {
@@ -1526,237 +1535,243 @@ class _JellyLive2DState extends State<JellyLive2D> {
           );
           final modelScale = viewportLayout.scale;
           _displaySize = displaySize;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            width: layoutWidth,
-            height: layoutHeight,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onLongPress: _showControls,
-              // 右键点在 Flutter 渲染的区域（如底部标签）时走这里；
-              // 点在人物本体上由原生转发到 _controller.onContextMenu
-              onSecondaryTapUp: (_) => _showControls(),
-              child: Stack(
-                fit: StackFit.expand,
-                // Crop selection can extend beyond the model's layout bounds.
-                clipBehavior: Clip.none,
-                children: [
-                  if (_backgroundAsset != null)
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: _backgroundOpacity.clamp(0.0, 1.0),
-                        child: _backgroundBlur > 0
-                            ? ImageFiltered(
-                                imageFilter: ui.ImageFilter.blur(
-                                  sigmaX: _backgroundBlur,
-                                  sigmaY: _backgroundBlur,
-                                  tileMode: ui.TileMode.decal,
-                                ),
-                                child: JellyConfigurableImage(
+          return MouseRegion(
+            onExit: (_) => resetGaze(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              width: layoutWidth,
+              height: layoutHeight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onLongPress: _showControls,
+                // 右键点在 Flutter 渲染的区域（如底部标签）时走这里；
+                // 点在人物本体上由原生转发到 _controller.onContextMenu
+                onSecondaryTapUp: (_) => _showControls(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  // Crop selection can extend beyond the model's layout bounds.
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (_backgroundAsset != null)
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: _backgroundOpacity.clamp(0.0, 1.0),
+                          child: _backgroundBlur > 0
+                              ? ImageFiltered(
+                                  imageFilter: ui.ImageFilter.blur(
+                                    sigmaX: _backgroundBlur,
+                                    sigmaY: _backgroundBlur,
+                                    tileMode: ui.TileMode.decal,
+                                  ),
+                                  child: JellyConfigurableImage(
+                                    path: _backgroundAsset!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : JellyConfigurableImage(
                                   path: _backgroundAsset!,
                                   fit: BoxFit.cover,
                                 ),
-                              )
-                            : JellyConfigurableImage(
-                                path: _backgroundAsset!,
-                                fit: BoxFit.cover,
-                              ),
+                        ),
                       ),
-                    ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: modelBottomInset,
-                    height: displaySize,
-                    child: AnimatedOpacity(
-                      opacity:
-                          _isSwitchingModel ||
-                              _controller.value.lastError != null
-                          ? 0
-                          : 1,
-                      duration: const Duration(milliseconds: 160),
-                      child: OverflowBox(
-                        alignment: Alignment.bottomCenter,
-                        minWidth: 0,
-                        minHeight: 0,
-                        maxWidth: double.infinity,
-                        maxHeight: double.infinity,
-                        child: Transform.scale(
-                          scale: modelScale,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: modelBottomInset,
+                      height: displaySize,
+                      child: AnimatedOpacity(
+                        opacity:
+                            _isSwitchingModel ||
+                                _controller.value.lastError != null
+                            ? 0
+                            : 1,
+                        duration: const Duration(milliseconds: 160),
+                        child: OverflowBox(
                           alignment: Alignment.bottomCenter,
-                          child: SizedBox(
-                            width: viewportSize.width,
-                            height: viewportSize.height,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ClipRect(
-                                  child: Transform.translate(
-                                    offset: _cropRegion.sourceTranslation(
-                                      viewportSize,
-                                    ),
-                                    child: Transform.scale(
-                                      scale: _cropRegion.zoom,
-                                      alignment: Alignment.topLeft,
-                                      child: RepaintBoundary(
-                                        key: _modelCaptureKey,
-                                        child: Live2DView(
-                                          controller: _controller,
+                          minWidth: 0,
+                          minHeight: 0,
+                          maxWidth: double.infinity,
+                          maxHeight: double.infinity,
+                          child: Transform.scale(
+                            scale: modelScale,
+                            alignment: Alignment.bottomCenter,
+                            child: SizedBox(
+                              width: viewportSize.width,
+                              height: viewportSize.height,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  ClipRect(
+                                    child: Transform.translate(
+                                      offset: _cropRegion.sourceTranslation(
+                                        viewportSize,
+                                      ),
+                                      child: Transform.scale(
+                                        scale: _cropRegion.zoom,
+                                        alignment: Alignment.topLeft,
+                                        child: RepaintBoundary(
+                                          key: _modelCaptureKey,
+                                          child: Live2DView(
+                                            controller: _controller,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                ValueListenableBuilder<bool>(
-                                  valueListenable: _borderVisible,
-                                  builder: (context, visible, _) => visible
-                                      ? IgnorePointer(
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: theme.danger,
-                                                width: 1.5,
+                                  ValueListenableBuilder<bool>(
+                                    valueListenable: _borderVisible,
+                                    builder: (context, visible, _) => visible
+                                        ? IgnorePointer(
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: theme.danger,
+                                                  width: 1.5,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
-                              ],
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  ValueListenableBuilder<Live2DViewState>(
-                    valueListenable: _controller,
-                    builder: (context, state, _) {
-                      final error = state.lastError;
-                      final showPlaceholder =
-                          _isSwitchingModel || error != null;
-                      if (!showPlaceholder) return const SizedBox.shrink();
+                    ValueListenableBuilder<Live2DViewState>(
+                      valueListenable: _controller,
+                      builder: (context, state, _) {
+                        final error = state.lastError;
+                        final showPlaceholder =
+                            _isSwitchingModel || error != null;
+                        if (!showPlaceholder) return const SizedBox.shrink();
 
-                      final progress = state.modelLoadProgress.clamp(0.0, 1.0);
-                      final percent = (progress * 100).round();
-                      return Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: modelBottomInset,
-                        height: max(0.0, layoutHeight - modelBottomInset),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: error == null
-                              ? null
-                              : () => _loadModel(_selectedModel),
-                          child: MouseRegion(
-                            cursor: error == null
-                                ? MouseCursor.defer
-                                : SystemMouseCursors.click,
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 250,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (error == null) ...[
-                                      const DSLoadingDots(size: 10),
-                                      SizedBox(height: theme.spacing.md),
-                                      Text(
-                                        '${_loadStageLabel(state.modelLoadStage)} '
-                                        '$percent%',
-                                        textAlign: TextAlign.center,
-                                        style: DsTypography.body.copyWith(
-                                          color: theme.text,
-                                          fontWeight: FontWeight.w700,
+                        final progress = state.modelLoadProgress.clamp(
+                          0.0,
+                          1.0,
+                        );
+                        final percent = (progress * 100).round();
+                        return Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: modelBottomInset,
+                          height: max(0.0, layoutHeight - modelBottomInset),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: error == null
+                                ? null
+                                : () => _loadModel(_selectedModel),
+                            child: MouseRegion(
+                              cursor: error == null
+                                  ? MouseCursor.defer
+                                  : SystemMouseCursors.click,
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 250,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (error == null) ...[
+                                        const DSLoadingDots(size: 10),
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          '${_loadStageLabel(state.modelLoadStage)} '
+                                          '$percent%',
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.text,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: theme.spacing.sm),
-                                      DSLinearProgress(
-                                        value: progress,
-                                        height: 8,
-                                      ),
-                                      SizedBox(height: theme.spacing.sm),
-                                      Text(
-                                        _selectedModel.label,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: DsTypography.caption.copyWith(
-                                          color: theme.textSub,
+                                        SizedBox(height: theme.spacing.sm),
+                                        DSLinearProgress(
+                                          value: progress,
+                                          height: 8,
                                         ),
-                                      ),
-                                    ] else ...[
-                                      DsIcon(
-                                        DsIconKind.refresh,
-                                        size: 30,
-                                        color: theme.danger,
-                                      ),
-                                      SizedBox(height: theme.spacing.md),
-                                      Text(
-                                        'screens_jellyLive2dLoadFailed'.tr,
-                                        textAlign: TextAlign.center,
-                                        style: DsTypography.body.copyWith(
+                                        SizedBox(height: theme.spacing.sm),
+                                        Text(
+                                          _selectedModel.label,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        DsIcon(
+                                          DsIconKind.refresh,
+                                          size: 30,
                                           color: theme.danger,
-                                          fontWeight: FontWeight.w700,
                                         ),
-                                      ),
-                                      SizedBox(height: theme.spacing.sm),
-                                      Text(
-                                        _loadErrorMessage(error),
-                                        maxLines: 4,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: DsTypography.caption.copyWith(
-                                          color: theme.textSub,
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          'screens_jellyLive2dLoadFailed'.tr,
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.danger,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: theme.spacing.md),
-                                      Text(
-                                        'screens_jellyLive2dTapToReload'.tr,
-                                        style: DsTypography.caption.copyWith(
-                                          color: theme.primary,
-                                          fontWeight: FontWeight.w700,
+                                        SizedBox(height: theme.spacing.sm),
+                                        Text(
+                                          _loadErrorMessage(error),
+                                          maxLines: 4,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.textSub,
+                                          ),
                                         ),
-                                      ),
+                                        SizedBox(height: theme.spacing.md),
+                                        Text(
+                                          'screens_jellyLive2dTapToReload'.tr,
+                                          style: DsTypography.caption.copyWith(
+                                            color: theme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildBubbleInContainer(
-                    width: layoutWidth,
-                    height: layoutHeight,
-                  ),
-                  // 子栏图标驱动的资源条：悬浮在底部导航（含其向上溢出的
-                  // 弧顶绘制区）之上
-                  if (widget.panel != null)
-                    ValueListenableBuilder<JellyLive2dPanel?>(
-                      valueListenable: widget.panel!,
-                      builder: (context, activePanel, _) {
-                        if (activePanel == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return Positioned(
-                          left: theme.spacing.lg,
-                          right: theme.spacing.lg,
-                          bottom:
-                              navigationPadding +
-                              _radialDockOverflowTop +
-                              theme.spacing.xs,
-                          child: _buildResourceStrip(activePanel),
                         );
                       },
                     ),
-                ],
+                    _buildBubbleInContainer(
+                      width: layoutWidth,
+                      height: layoutHeight,
+                    ),
+                    // 子栏图标驱动的资源条：悬浮在底部导航（含其向上溢出的
+                    // 弧顶绘制区）之上
+                    if (widget.panel != null)
+                      ValueListenableBuilder<JellyLive2dPanel?>(
+                        valueListenable: widget.panel!,
+                        builder: (context, activePanel, _) {
+                          if (activePanel == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return Positioned(
+                            left: theme.spacing.lg,
+                            right: theme.spacing.lg,
+                            bottom:
+                                navigationPadding +
+                                _radialDockOverflowTop +
+                                theme.spacing.xs,
+                            child: _buildResourceStrip(activePanel),
+                          );
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
           );
