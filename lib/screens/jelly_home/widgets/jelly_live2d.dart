@@ -119,7 +119,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
   final Live2DViewController _controller = Live2DViewController();
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
-  final GlobalKey _bubbleAnchorKey = GlobalKey();
   late Live2DModelDefinition _selectedModel =
       widget.initialModel ?? _models.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
@@ -153,8 +152,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
   Timer? _bubbleTimer;
   Timer? _bubbleResumeTimer;
   String? _lastBubbleMessage;
-  OverlayEntry? _bubbleOverlay;
-  ScrollPosition? _bubbleScrollPosition;
 
   /// 气泡展示时长
   static const Duration _minimumBubbleDuration = Duration(seconds: 6);
@@ -225,21 +222,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
     // 点击事件同样由原生侧经 onTap 转发（含 hit area 判定结果）
     _controller.onTap = _handleTap;
     _controller.addListener(_onViewStateChanged);
-    _size.addListener(_updateBubbleOverlayPosition);
     widget.motionRequest?.addListener(_handleMotionRequest);
     _loadSavedSize();
     _loadSavedCropRegion(_selectedModel);
     _loadModel(_selectedModel);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final scrollPosition = Scrollable.maybeOf(context)?.position;
-    if (scrollPosition == _bubbleScrollPosition) return;
-    _bubbleScrollPosition?.removeListener(_updateBubbleOverlayPosition);
-    _bubbleScrollPosition = scrollPosition;
-    _bubbleScrollPosition?.addListener(_updateBubbleOverlayPosition);
   }
 
   @override
@@ -248,9 +234,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _controller.removeListener(_onViewStateChanged);
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();
-    _bubbleScrollPosition?.removeListener(_updateBubbleOverlayPosition);
-    _removeBubbleOverlay();
-    _size.removeListener(_updateBubbleOverlayPosition);
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
@@ -296,7 +279,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
   ) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => const ImagePickerDialog(saveDirectory: 'live2d/backgrounds'),
+      builder: (_) =>
+          const ImagePickerDialog(saveDirectory: 'live2d/backgrounds'),
     );
     final asset = result?['url'] as String?;
     if (asset == null || asset.isEmpty) return;
@@ -401,7 +385,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
       _bubbleMessage = message;
       _bubbleStreaming = streaming;
     });
-    _scheduleBubbleOverlaySync();
   }
 
   /// 台词逐字浮现完毕：从现在起再展示 [_bubbleDuration] 后收起
@@ -415,132 +398,61 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _bubbleTimer = Timer(Duration(seconds: seconds), () {
       if (mounted) {
         setState(() => _bubbleMessage = null);
-        _removeBubbleOverlay();
       }
     });
   }
 
-  void _scheduleBubbleOverlaySync() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_bubbleMessage == null) {
-        _removeBubbleOverlay();
-        return;
-      }
-      final entry = _bubbleOverlay;
-      if (entry != null) {
-        entry.markNeedsBuild();
-        return;
-      }
-      final overlay = Overlay.of(context, rootOverlay: true);
-      final newEntry = OverlayEntry(builder: _buildBubbleOverlay);
-      _bubbleOverlay = newEntry;
-      overlay.insert(newEntry);
-    });
-  }
-
-  void _updateBubbleOverlayPosition() {
-    _bubbleOverlay?.markNeedsBuild();
-  }
-
-  void _removeBubbleOverlay() {
-    _bubbleOverlay?.remove();
-    _bubbleOverlay = null;
-  }
-
-  Widget _buildBubbleOverlay(BuildContext overlayContext) {
+  Widget _buildBubbleInContainer({
+    required double width,
+    required double height,
+  }) {
     final message = _bubbleMessage;
-    final anchor = _bubbleAnchorKey.currentContext?.findRenderObject();
-    final overlay = Overlay.of(context, rootOverlay: true);
-    final overlayBox = overlay.context.findRenderObject();
-    if (message == null ||
-        anchor is! RenderBox ||
-        !anchor.hasSize ||
-        overlayBox is! RenderBox ||
-        !overlayBox.hasSize) {
-      return const SizedBox.shrink();
-    }
-
+    if (message == null) return const SizedBox.shrink();
     const margin = 12.0;
     const gap = 8.0;
     const bubbleBaseWidth = 288.0;
     const bubbleBaseHeight = 150.0;
-    final viewport = overlayBox.size;
-    final padding = MediaQuery.paddingOf(overlayContext);
-    final bottomInset = max(
-      padding.bottom,
-      MediaQuery.viewInsetsOf(overlayContext).bottom,
+    final availableWidth = max(0.0, width - margin * 2);
+    final availableHeight = max(0.0, height);
+    final bubbleWidth = min(
+      min(_displaySize * 0.8, availableWidth),
+      availableHeight * bubbleBaseWidth / bubbleBaseHeight,
     );
-    final availableWidth = max(
-      0.0,
-      viewport.width - padding.horizontal - margin * 2,
-    );
-    final bubbleWidth = min(_displaySize * 0.8, availableWidth);
     if (bubbleWidth <= 0) return const SizedBox.shrink();
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
-
-    // The key is attached to the full-height container, while the model is
-    // bottom-aligned inside it. Anchor the bubble to the model's top instead
-    // of the container's top so it stays near the character's head.
-    final modelTop = max(
+    final modelTop = max(0.0, height - _modelBottomInset - _displaySize);
+    final top = (modelTop - gap - bubbleHeight).clamp(
       0.0,
-      anchor.size.height - _modelBottomInset - _displaySize,
+      height - bubbleHeight,
     );
-    final anchorTopCenter = overlayBox.globalToLocal(
-      anchor.localToGlobal(Offset(anchor.size.width / 2, modelTop)),
+    final left = ((width - bubbleWidth) / 2).clamp(
+      margin,
+      width - margin - bubbleWidth,
     );
-    final minimumLeft = padding.left + margin;
-    final maximumLeft = max(
-      minimumLeft,
-      viewport.width - padding.right - margin - bubbleWidth,
-    );
-    final left = (anchorTopCenter.dx - bubbleWidth / 2).clamp(
-      minimumLeft,
-      maximumLeft,
-    );
-    final safeTop = padding.top + margin;
-    final safeBottom = max(safeTop, viewport.height - bottomInset - margin);
-    if (safeBottom <= safeTop) return const SizedBox.shrink();
-    final minimumBottom = min(safeBottom, safeTop + bubbleHeight);
-    final bubbleBottom = max(
-      anchorTopCenter.dy - gap,
-      minimumBottom,
-    ).clamp(safeTop, safeBottom);
 
-    return Stack(
-      children: [
-        Positioned(
-          left: left,
-          top: safeTop,
-          width: bubbleWidth,
-          height: bubbleBottom - safeTop,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              width: bubbleWidth,
-              height: bubbleHeight,
-              child: AppTheme(
-                data: AppTheme.of(context),
-                child: JellySpeechBubble(
-                  key: const ValueKey('live2d-speech-bubble'),
-                  text: message,
-                  modelName: _selectedModel.label,
-                  bubbleAsset: Live2DPlugin.instance.bubbleAsset,
-                  customRegions: BubbleTextRegions.fromSettings(
-                    Live2DPlugin.instance.bubbleAsset,
-                    Live2DPlugin.instance.bubbleRegions,
-                  ),
-                  streaming: _bubbleStreaming,
-                  typingInterval: widget.typingInterval,
-                  onUserInteract: _pauseBubbleHide,
-                  onTypingComplete: _onBubbleTyped,
-                ),
-              ),
-            ),
+    return Positioned(
+      left: left,
+      top: top,
+      width: bubbleWidth,
+      height: bubbleHeight,
+      child: AppTheme(
+        data: AppTheme.of(context),
+        child: JellySpeechBubble(
+          key: const ValueKey('live2d-speech-bubble'),
+          text: message,
+          modelName: _selectedModel.label,
+          bubbleAsset: Live2DPlugin.instance.bubbleAsset,
+          customRegions: BubbleTextRegions.fromSettings(
+            Live2DPlugin.instance.bubbleAsset,
+            Live2DPlugin.instance.bubbleRegions,
           ),
+          streaming: _bubbleStreaming,
+          typingInterval: widget.typingInterval,
+          onUserInteract: _pauseBubbleHide,
+          onTypingComplete: _onBubbleTyped,
         ),
-      ],
+      ),
     );
   }
 
@@ -609,7 +521,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
   Future<void> _loadModel(Live2DModelDefinition model) async {
     if (mounted) {
       _bubbleTimer?.cancel();
-      _removeBubbleOverlay();
       setState(() {
         _isSwitchingModel = true;
         _bubbleMessage = null;
@@ -808,7 +719,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
         'messageBottom': regions.message.bottom,
       });
     }
-    _bubbleOverlay?.markNeedsBuild();
+    if (mounted) setState(() {});
     setBubbleState(() {});
   }
 
@@ -893,7 +804,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         onTap: () async {
                           await Live2DPlugin.instance.setBubbleAsset(asset);
                           setBubbleState(() {});
-                          _bubbleOverlay?.markNeedsBuild();
+                          if (mounted) setState(() {});
                         },
                         child: Container(
                           width: 72,
@@ -952,7 +863,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                                           'messageBottom':
                                               regions.message.bottom,
                                         });
-                                    _bubbleOverlay?.markNeedsBuild();
+                                    if (mounted) setState(() {});
                                     setBubbleState(() {});
                                   },
                                 ),
@@ -1092,8 +1003,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                           () => _backgroundOpacity = ratio,
                           setBgState,
                         ),
-                        onChangeEnd: (ratio) => Live2DPlugin.instance
-                            .setBackgroundOpacity(ratio),
+                        onChangeEnd: (ratio) =>
+                            Live2DPlugin.instance.setBackgroundOpacity(ratio),
                       ),
                     ],
                   ],
@@ -1417,10 +1328,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
           _displaySize = displaySize;
           _modelBottomInset = modelBottomInset;
           return AnimatedContainer(
-            key: _bubbleAnchorKey,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            onEnd: _updateBubbleOverlayPosition,
             width: layoutWidth,
             height: layoutHeight,
             child: GestureDetector(
@@ -1626,6 +1535,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         ),
                       );
                     },
+                  ),
+                  _buildBubbleInContainer(
+                    width: layoutWidth,
+                    height: layoutHeight,
                   ),
                 ],
               ),
