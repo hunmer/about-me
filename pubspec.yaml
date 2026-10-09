@@ -215,6 +215,7 @@ flutter:
     - assets/emojis/  # 内置表情包
     - assets/achievements/  # 成就系统图标（A01~A74，透明 WebP）
     - assets/bubbles/  # Live2D 气泡皮肤（透明 WebP）
+    - assets/live2d_backgrounds/  # Live2D 小屋背景图（JPG）
     - assets/jelly_icons/  # 状态面板属性图标（透明 WebP，切分脚本 docs/jelly_icons/）
 
   # An image asset can refer to one or more resolution-specific "variants", see

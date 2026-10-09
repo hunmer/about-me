@@ -84,6 +84,25 @@ class _JellyLive2DState extends State<JellyLive2D> {
     'assets/bubbles/云朵天使气泡.webp',
   ];
 
+  /// 小屋内置背景图（assets/live2d_backgrounds/），null 表示无背景
+  static const List<String> _backgroundAssets = [
+    'assets/live2d_backgrounds/Live2D背景·冬日窗边.jpg',
+    'assets/live2d_backgrounds/Live2D背景·放学教室.jpg',
+    'assets/live2d_backgrounds/Live2D背景·海底珊瑚(深蓝冷调).jpg',
+    'assets/live2d_backgrounds/Live2D背景·极简厨房(灰白冷调).jpg',
+    'assets/live2d_backgrounds/Live2D背景·秋日银杏(金橙冷天).jpg',
+    'assets/live2d_backgrounds/Live2D背景·森林露营(森绿冷调).jpg',
+    'assets/live2d_backgrounds/Live2D背景·深夜办公室.jpg',
+    'assets/live2d_backgrounds/Live2D背景·天台星空(雾紫靛蓝).jpg',
+    'assets/live2d_backgrounds/Live2D背景·图书馆(冷灰绿).jpg',
+    'assets/live2d_backgrounds/Live2D背景·卧室清晨.jpg',
+    'assets/live2d_backgrounds/Live2D背景·夏日海边(冷蓝).jpg',
+    'assets/live2d_backgrounds/Live2D背景·雪夜温泉(青灰冷调).jpg',
+    'assets/live2d_backgrounds/Live2D背景·樱花长椅(樱粉雾白).jpg',
+    'assets/live2d_backgrounds/Live2D背景·雨后街角.jpg',
+    'assets/live2d_backgrounds/图片节点 1.jpg',
+  ];
+
   /// 人物显示尺寸（逻辑像素，宽高一致），经 SharedPreferences 持久化
   static const double _defaultSize = 360;
   static const double _minSize = 200;
@@ -119,6 +138,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
   double _displaySize = _defaultSize;
   double _modelBottomInset = 0;
   String? _lastLayoutLog;
+
+  /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
+  String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
@@ -252,6 +274,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
     _size.value = _defaultSize;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_sizePrefKey, _defaultSize);
+  }
+
+  /// 切换小屋背景图；null 表示关闭背景，选择后立即生效并持久化
+  Future<void> _selectBackground(String? asset, StateSetter setBgState) async {
+    if (asset == _backgroundAsset) return;
+    setState(() => _backgroundAsset = asset);
+    setBgState(() {});
+    await Live2DPlugin.instance.setBackgroundAsset(asset);
   }
 
   String _cropPrefKey(Live2DModelDefinition model) {
@@ -926,6 +956,65 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
+                '背景图片',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              StatefulBuilder(
+                builder: (context, setBgState) => Wrap(
+                  spacing: theme.spacing.sm,
+                  runSpacing: theme.spacing.sm,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _selectBackground(null, setBgState),
+                      child: Container(
+                        width: 72,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _backgroundAsset == null
+                                ? theme.primary
+                                : theme.stroke,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.block,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ),
+                    ),
+                    for (final asset in _backgroundAssets)
+                      GestureDetector(
+                        onTap: () => _selectBackground(asset, setBgState),
+                        child: Container(
+                          width: 72,
+                          height: 48,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: asset == _backgroundAsset
+                                  ? theme.primary
+                                  : theme.surface.withValues(alpha: 0),
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: JellyConfigurableImage(
+                            path: asset,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
                 '状态面板',
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
@@ -1259,6 +1348,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 // Crop selection can extend beyond the model's layout bounds.
                 clipBehavior: Clip.none,
                 children: [
+                  if (_backgroundAsset != null)
+                    Positioned.fill(
+                      child: JellyConfigurableImage(
+                        path: _backgroundAsset!,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   Positioned(
                     left: 0,
                     right: 0,

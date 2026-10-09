@@ -36,6 +36,13 @@ class Live2DPlugin extends BasePlugin {
     await updateSettings({'bubbleAsset': asset});
   }
 
+  /// 小屋背景图；null 表示不显示背景
+  String? get backgroundAsset => settings['backgroundAsset'] as String?;
+
+  Future<void> setBackgroundAsset(String? asset) async {
+    await updateSettings({'backgroundAsset': asset});
+  }
+
   List<String> get customBubbleAssets =>
       (settings['customBubbleAssets'] as List?)?.whereType<String>().toList() ??
       const [];
@@ -140,6 +147,7 @@ class Live2DPlugin extends BasePlugin {
       'autoReadEnabled': defaultAutoReadEnabled,
       'ttsServiceId': null,
       'bubbleAsset': defaultBubbleAsset,
+      'backgroundAsset': null,
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
     });
