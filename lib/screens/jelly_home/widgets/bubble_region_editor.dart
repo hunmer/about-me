@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'jelly_speech_bubble.dart';
+import 'jelly_configurable_image.dart';
 
 Future<BubbleTextRegions?> showBubbleRegionEditor({
   required BuildContext context,
@@ -71,7 +72,10 @@ class _BubbleRegionEditorState extends State<_BubbleRegionEditor> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(widget.asset, fit: BoxFit.fill),
+                      JellyConfigurableImage(
+                        path: widget.asset,
+                        fit: BoxFit.fill,
+                      ),
                       _regionBox(_name, constraints.biggest, Colors.red, '名称'),
                       _regionBox(
                         _message,

@@ -166,9 +166,9 @@
         "windows"
       ],
       "cwd": "D:/about-me",
-      "status": "running",
+      "status": "exited",
       "pid": 27840,
-      "exitCode": null,
+      "exitCode": 1,
       "error": null,
       "desc": "Run the Flutter app on Windows with procm room logging",
       "group": "aboutme",
@@ -177,7 +177,7 @@
       "favorite": false,
       "startedAt": 1791510332705,
       "lastStartedAt": 1791513197758,
-      "stoppedAt": null,
+      "stoppedAt": 1791513852544,
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\GMdMbBUm-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\GMdMbBUm-stderr.log",
       "envs": {
@@ -800,6 +800,216 @@
       "stderrLogPath": null,
       "roomId": null,
       "envs": null
+    },
+    {
+      "id": "FgnoO8Vi",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "running",
+      "pid": 10940,
+      "exitCode": null,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791514726039,
+      "lastStartedAt": 1791526665624,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\FgnoO8Vi-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\FgnoO8Vi-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "dGWTgMVH",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 6448,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791518861129,
+      "lastStartedAt": 1791518861129,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\dGWTgMVH-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\dGWTgMVH-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "Kn1ArY3t",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 4704,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791519598256,
+      "lastStartedAt": 1791520233473,
+      "stoppedAt": 1791520641764,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\Kn1ArY3t-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\Kn1ArY3t-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "-FbnsikX",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 19148,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791520678417,
+      "lastStartedAt": 1791520678417,
+      "stoppedAt": 1791520878648,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\-FbnsikX-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\-FbnsikX-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "lZAHP8M9",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 15212,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791520974518,
+      "lastStartedAt": 1791520974518,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\lZAHP8M9-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\lZAHP8M9-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "bvWpJUfH",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 7236,
+      "exitCode": 0,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791521203520,
+      "lastStartedAt": 1791521203520,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\bvWpJUfH-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\bvWpJUfH-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "hzHityBB",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 15248,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1791523008028,
+      "lastStartedAt": 1791523008028,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\hzHityBB-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\hzHityBB-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
     }
   ]
 }

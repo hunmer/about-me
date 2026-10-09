@@ -28,6 +28,15 @@ double computeJellyLive2DDisplaySize({
   return savedSize;
 }
 
+double computeJellyLive2DModelBottomInset({
+  required double layoutHeight,
+  required double navigationPadding,
+  required bool fitContainer,
+}) {
+  if (!fitContainer) return 0;
+  return navigationPadding.clamp(0.0, layoutHeight).toDouble();
+}
+
 ({double viewportHeight, double scale}) computeJellyLive2DViewportLayout({
   required double displaySize,
   required double baseViewportHeight,

@@ -36,6 +36,16 @@ class Live2DPlugin extends BasePlugin {
     await updateSettings({'bubbleAsset': asset});
   }
 
+  List<String> get customBubbleAssets =>
+      (settings['customBubbleAssets'] as List?)?.whereType<String>().toList() ??
+      const [];
+
+  Future<void> addCustomBubbleAsset(String asset) async {
+    final next = [...customBubbleAssets];
+    if (!next.contains(asset)) next.add(asset);
+    await updateSettings({'customBubbleAssets': next, 'bubbleAsset': asset});
+  }
+
   Map<String, dynamic> get bubbleRegions {
     final value = settings['bubbleRegions'];
     return value is Map
@@ -131,6 +141,7 @@ class Live2DPlugin extends BasePlugin {
       'ttsServiceId': null,
       'bubbleAsset': defaultBubbleAsset,
       'bubbleRegions': <String, dynamic>{},
+      'customBubbleAssets': <String>[],
     });
     final data = await storage.read('$storageDir/archives.json');
     final rawArchives = data is Map ? data['archives'] : null;

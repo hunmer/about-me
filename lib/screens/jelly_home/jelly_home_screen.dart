@@ -14,8 +14,7 @@ import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
 import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
-import 'widgets/jelly_profile_card.dart';
-import 'widgets/jelly_stat_card.dart';
+import 'widgets/jelly_status_panel.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
@@ -72,7 +71,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 }
 
 /// 小屋页签：Live2D 角色全屏展示，
-/// 左右两侧悬浮信息按钮（弹窗展示资料/陪伴状态），
+/// 顶部信息面板与右侧陪伴状态按钮，
 /// 底部聊天表单按需切换显示。
 class _CottageTab extends StatefulWidget {
   const _CottageTab({this.chatVisible = false});
@@ -144,16 +143,7 @@ class _CottageTabState extends State<_CottageTab> {
                   }
                 },
               ),
-              // 左侧按钮：资料 + 统计（原顶部卡片信息改为弹窗展示）
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _buildSideButton(
-                  theme,
-                  icon: DsIconKind.user,
-                  semanticLabel: '查看资料与统计',
-                  onTap: () => _showProfileDialog(theme),
-                ),
-              ),
+              JellyStatusPanel(controller: _companion),
               // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）
               Align(
                 alignment: Alignment.centerRight,
@@ -215,45 +205,6 @@ class _CottageTabState extends State<_CottageTab> {
     );
   }
 
-  /// 左侧按钮弹窗：资料卡 + 三张统计卡（原顶部四卡的内容）
-  Future<void> _showProfileDialog(AppThemeData theme) {
-    return showDSDialog<void>(
-      context: context,
-      builder: (dialogContext) => DSDialog(
-        title: '我的资料',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            JellyProfileCard(
-              name: Live2DPlugin.instance.selected?.name ?? '小智',
-              level: 17,
-              exp: 568,
-              expMax: 1250,
-            ),
-            SizedBox(height: theme.spacing.md),
-            Row(
-              children: [
-                for (var i = 0; i < _stats.length; i++) ...[
-                  if (i > 0) SizedBox(width: theme.spacing.sm),
-                  Expanded(
-                    child: JellyStatCard(
-                      icon: _stats[i].$1,
-                      label: _stats[i].$2,
-                      value: _stats[i].$3,
-                      color: [theme.warning, theme.success, theme.primary][i],
-                      onAdd: () {},
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 右侧按钮弹窗：陪伴状态卡（原底部状态卡的内容）
   Future<void> _showCompanionDialog() {
     final companionName = Live2DPlugin.instance.selected?.name ?? '小智';
@@ -288,12 +239,6 @@ class _CottageTabState extends State<_CottageTab> {
     });
     SchedulerBinding.instance.ensureVisualUpdate();
   }
-
-  static const List<(DsIconKind, String, String)> _stats = [
-    (DsIconKind.clipboard, '今日待办', '3/8'),
-    (DsIconKind.calendarCheck, '连续打卡', '26 天'),
-    (DsIconKind.book, '本月记录', '128 条'),
-  ];
 }
 
 class Live2DChatInput extends StatefulWidget {

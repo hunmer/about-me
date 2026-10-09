@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// 人设介绍对话框卡片
@@ -18,6 +20,9 @@ class PersonaIntroCard extends StatelessWidget {
 
   /// 窗口内显示的照片
   final ImageProvider image;
+
+  /// 标题倾斜角（弧度，正值顺时针），与相框卡片倾角反向形成俏皮对比
+  static const double _titleTilt = 1.3 * math.pi / 180;
 
   /// 角标文字（相框顶部白色区域）
   final String badgeText;
@@ -102,14 +107,17 @@ class PersonaIntroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: size.width * 0.058,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                    Transform.rotate(
+                      angle: _titleTilt,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: size.width * 0.058,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                     if (subtitle != null) ...[

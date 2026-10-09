@@ -7,6 +7,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
+import 'jelly_configurable_image.dart';
+
 /// 每张气泡素材的文字安全区，坐标为原图归一化坐标（left/top/right/bottom）。
 class BubbleTextRegions {
   const BubbleTextRegions(this.modelName, this.message);
@@ -191,7 +193,10 @@ class JellySpeechBubble extends StatelessWidget {
                 builder: (context, constraints) => Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(bubbleAsset!, fit: BoxFit.fill),
+                    JellyConfigurableImage(
+                      path: bubbleAsset!,
+                      fit: BoxFit.fill,
+                    ),
                     if (modelName != null && modelName!.isNotEmpty)
                       Positioned.fromRect(
                         rect: Rect.fromLTRB(
@@ -356,8 +361,9 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
       child: Listener(
         onPointerDown: (_) => widget.onUserInteract?.call(),
         onPointerSignal: (event) {
-          if (event is! PointerScrollEvent || !_scrollController.hasClients)
+          if (event is! PointerScrollEvent || !_scrollController.hasClients) {
             return;
+          }
           GestureBinding.instance.pointerSignalResolver.register(event, (
             resolvedEvent,
           ) {

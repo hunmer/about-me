@@ -72,4 +72,28 @@ void main() {
       );
     });
   });
+
+  group('computeJellyLive2DModelBottomInset', () {
+    test('uses the navigation boundary as the model horizontal baseline', () {
+      expect(
+        computeJellyLive2DModelBottomInset(
+          layoutHeight: 1008,
+          navigationPadding: 129,
+          fitContainer: true,
+        ),
+        129,
+      );
+    });
+
+    test('regular mode keeps the model at the bottom of its own box', () {
+      expect(
+        computeJellyLive2DModelBottomInset(
+          layoutHeight: 360,
+          navigationPadding: 129,
+          fitContainer: false,
+        ),
+        0,
+      );
+    });
+  });
 }

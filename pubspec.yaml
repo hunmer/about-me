@@ -192,6 +192,9 @@ flutter:
     - assets/images/image_not_found.jpg
     - assets/images/default_avatar.jpg
     - assets/images/persona_dialog_frame.webp
+    - assets/images/jelly_status_panel.png
+    - assets/images/jelly_status_panel_a2.png
+    - assets/images/jelly_status_panel_a3.png
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
     - assets/animations/  # Lottie animations
@@ -212,6 +215,7 @@ flutter:
     - assets/emojis/  # 内置表情包
     - assets/achievements/  # 成就系统图标（A01~A74，透明 WebP）
     - assets/bubbles/  # Live2D 气泡皮肤（透明 WebP）
+    - assets/jelly_icons/  # 状态面板属性图标（透明 WebP，切分脚本 docs/jelly_icons/）
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -8,18 +8,23 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show showDialog;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 
 import '../live2d_online_models.dart';
 import 'jelly_live2d_crop_dialog.dart';
 import 'jelly_live2d_crop_region.dart';
+import 'jelly_live2d_interaction.dart';
 import 'jelly_live2d_layout.dart';
 import 'jelly_speech_bubble.dart';
 import 'bubble_region_editor.dart';
+import 'jelly_status_panel_settings.dart';
+import 'jelly_configurable_image.dart';
 
 class JellyLive2D extends StatefulWidget {
   const JellyLive2D({
@@ -299,6 +304,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
     }
     if (!_controller.value.isLoaded) return;
     widget.onTap?.call(hitAreaId, hitAreaName);
+    if (!hasJellyLive2DHitArea(hitAreaId, hitAreaName)) {
+      return;
+    }
     _playTapMotion(hitAreaId: hitAreaId, hitAreaName: hitAreaName);
     _showBubble(_pickBubbleMessage(hitAreaId, hitAreaName));
   }
@@ -624,8 +632,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final boundary =
         _modelCaptureKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
-    if (boundary == null)
+    if (boundary == null) {
       throw StateError('screens_jellyLive2dCaptureUnavailable'.tr);
+    }
 
     final image = await boundary.toImage(pixelRatio: 2);
     try {
@@ -635,8 +644,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
         throw StateError('screens_jellyLive2dCaptureUnsupported'.tr);
       }
       final png = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (png == null)
+      if (png == null) {
         throw StateError('screens_jellyLive2dCaptureEncodeFailed'.tr);
+      }
       return (
         bytes: png.buffer.asUint8List(),
         size: Size(image.width.toDouble(), image.height.toDouble()),
@@ -711,7 +721,41 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (model != null) await _selectModel(model);
   }
 
+  Future<void> _uploadCustomBubble(
+    BuildContext context,
+    StateSetter setBubbleState,
+  ) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => const ImagePickerDialog(saveDirectory: 'live2d/bubbles'),
+    );
+    final asset = result?['url'] as String?;
+    if (asset == null || asset.isEmpty) return;
+    await Live2DPlugin.instance.addCustomBubbleAsset(asset);
+    if (!context.mounted) return;
+    final regions = await showBubbleRegionEditor(
+      context: context,
+      asset: asset,
+      initial: BubbleTextRegions.forAsset(asset),
+    );
+    if (regions != null) {
+      await Live2DPlugin.instance.setBubbleRegions(asset, {
+        'nameLeft': regions.modelName.left,
+        'nameTop': regions.modelName.top,
+        'nameRight': regions.modelName.right,
+        'nameBottom': regions.modelName.bottom,
+        'messageLeft': regions.message.left,
+        'messageTop': regions.message.top,
+        'messageRight': regions.message.right,
+        'messageBottom': regions.message.bottom,
+      });
+    }
+    _bubbleOverlay?.markNeedsBuild();
+    setBubbleState(() {});
+  }
+
   void _showControls() {
+    unawaited(JellyStatusPanelSettings.instance.load());
     assert(() {
       debugPrint(
         '[JellyLive2D] open controls model=${_selectedModel.label} '
@@ -783,7 +827,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
                   spacing: theme.spacing.sm,
                   runSpacing: theme.spacing.sm,
                   children: [
-                    for (final asset in _bubbleAssets)
+                    for (final asset in [
+                      ..._bubbleAssets,
+                      ...Live2DPlugin.instance.customBubbleAssets,
+                    ])
                       GestureDetector(
                         onTap: () async {
                           await Live2DPlugin.instance.setBubbleAsset(asset);
@@ -806,7 +853,10 @@ class _JellyLive2DState extends State<JellyLive2D> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.asset(asset, fit: BoxFit.contain),
+                              JellyConfigurableImage(
+                                path: asset,
+                                fit: BoxFit.contain,
+                              ),
                               Positioned(
                                 right: 0,
                                 top: 0,
@@ -853,8 +903,143 @@ class _JellyLive2DState extends State<JellyLive2D> {
                           ),
                         ),
                       ),
+                    GestureDetector(
+                      onTap: () => _uploadCustomBubble(context, setBubbleState),
+                      child: Container(
+                        width: 72,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.stroke),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.plus,
+                            size: 22,
+                            color: theme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Text(
+                '状态面板',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              StatefulBuilder(
+                builder: (context, setStatusPanelState) {
+                  final settings = JellyStatusPanelSettings.instance;
+                  return AnimatedBuilder(
+                    animation: settings,
+                    builder: (context, _) => Wrap(
+                      spacing: theme.spacing.sm,
+                      runSpacing: theme.spacing.sm,
+                      children: [
+                        for (final style in settings.styles)
+                          GestureDetector(
+                            onTap: () async {
+                              await settings.selectStyle(style.id);
+                              setStatusPanelState(() {});
+                            },
+                            child: Container(
+                              width: 200,
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: style.id == settings.selectedStyle.id
+                                      ? theme.primary
+                                      : theme.stroke,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 16 / 9,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        JellyConfigurableImage(
+                                          path: style.asset,
+                                          fit: BoxFit.contain,
+                                        ),
+                                        Positioned(
+                                          right: 0,
+                                          top: 0,
+                                          child: GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: () async {
+                                              await settings.selectStyle(
+                                                style.id,
+                                              );
+                                              if (context.mounted) {
+                                                await settings.edit(context);
+                                              }
+                                            },
+                                            child: Container(
+                                              width: 32,
+                                              height: 32,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: theme.surface.withValues(
+                                                  alpha: 0.9,
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: DsIcon(
+                                                  DsIconKind.edit,
+                                                  size: 18,
+                                                  color: theme.primary,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    style.label,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: DsTypography.label.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        GestureDetector(
+                          onTap: () => settings.upload(context),
+                          child: Container(
+                            width: 200,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: theme.stroke),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: DsIcon(
+                                DsIconKind.plus,
+                                size: 28,
+                                color: theme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
@@ -1003,8 +1188,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
               : null;
           // Scaffold.extendBody exposes the complete radial bar footprint as
           // the bottom media padding (runtime value is 129px on macOS).
-          final bottomReserve =
-              MediaQuery.paddingOf(context).bottom + _radialDockOverflowTop;
+          final navigationPadding = MediaQuery.paddingOf(context).bottom;
+          final bottomReserve = navigationPadding + _radialDockOverflowTop;
           final displaySize = computeJellyLive2DDisplaySize(
             savedSize: size,
             containerWidth: containerWidth,
@@ -1019,9 +1204,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
           );
           final layoutWidth = fitWidth ?? displaySize;
           final layoutHeight = fitHeight ?? displaySize;
-          final modelBottomInset = fitHeight != null
-              ? bottomReserve.clamp(0.0, layoutHeight).toDouble()
-              : 0.0;
+          final modelBottomInset = computeJellyLive2DModelBottomInset(
+            layoutHeight: layoutHeight,
+            navigationPadding: navigationPadding,
+            fitContainer: fitHeight != null,
+          );
           // Windows uses a Flutter Texture and can re-render the model at the
           // target size. Other platforms retain the established fixed native
           // viewport plus composited scaling behavior.
@@ -1040,8 +1227,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
           final layoutLog =
               'window=${media.width}x${media.height} '
               'constraints=${constraints.maxWidth}x${constraints.maxHeight} '
-              'safeBottom=${MediaQuery.paddingOf(context).bottom} '
-              'reserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
+              'safeBottom=$navigationPadding layoutReserve=$bottomReserve '
+              'fillReserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
               'display=$displaySize layoutHeight=$layoutHeight '
               'modelBottomInset=$modelBottomInset '
               'viewport=${viewportSize.width}x${viewportSize.height} '
