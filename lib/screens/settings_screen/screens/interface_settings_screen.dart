@@ -9,6 +9,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_tile.dart';
 
 /// 界面设置：语言、深色模式、主题背景
 class InterfaceSettingsScreen extends StatefulWidget {
@@ -138,17 +139,19 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
           children: [
             SettingsGroup(
               children: [
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.language,
+                  iconColor: const Color(0xFF3B82F6),
                   title: 'settings_screen_languageTitle'.tr,
                   subtitle: 'settings_screen_languageSubtitle'.tr,
-                  leading: const Icon(Icons.language, size: 22),
-                  showChevron: true,
                   onTap: () => _controller.toggleLanguage(context),
                 ),
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.brightness_4,
+                  iconColor: const Color(0xFF6366F1),
                   title: 'settings_screen_darkModeTitle'.tr,
                   subtitle: 'settings_screen_darkModeSubtitle'.tr,
-                  leading: const Icon(Icons.brightness_4, size: 22),
+                  showChevron: false,
                   trailing: DSSwitch(
                     value: ThemeController.isDarkTheme(context),
                     onChanged: (value) => _controller.setTheme(context, value),
@@ -158,7 +161,9 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                 ListenableBuilder(
                   listenable: AppBackgroundController(),
                   builder: (context, _) {
-                    return DSListItem(
+                    return SettingsTile(
+                      icon: Icons.image,
+                      iconColor: const Color(0xFF10B981),
                       title: 'screens_themeSettings'.tr,
                       subtitle:
                           AppBackgroundController().hasBackground
@@ -166,8 +171,6 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                               : AppBackgroundController().backgroundColor != null
                               ? 'screens_solidBackgroundSet'.tr
                               : 'screens_backgroundImageNotSet'.tr,
-                      leading: const Icon(Icons.image, size: 22),
-                      showChevron: true,
                       onTap: () {
                         NavigationHelper.push(
                           context,

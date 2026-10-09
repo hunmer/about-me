@@ -10,6 +10,16 @@ const Map<String, String> appTranslationsEn = {
   'app_settings': 'Settings',
   'app_version': 'Version',
 
+  // Onboarding
+  'app_onboarding_habitsTitle': 'Manage Your Daily Habits',
+  'app_onboarding_habitsDesc': 'Keep your streaks by completing daily tasks. Reach big goals with consistent habits.',
+  'app_onboarding_competeTitle': 'Compete with Friends',
+  'app_onboarding_competeDesc': 'Follow your friends, earn points, and compete. Fun competition keeps you motivated.',
+  'app_onboarding_challengeTitle': 'Challenge Yourself!',
+  'app_onboarding_challengeDesc': 'Join 30-day challenges to set new goals for yourself. Push your limits with challenges.',
+  'app_onboarding_next': 'NEXT',
+  'app_onboarding_getStarted': 'GET STARTED',
+
   // Common actions
   'app_ok': 'OK',
   'app_select': 'Select',

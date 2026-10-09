@@ -10,6 +10,16 @@ const Map<String, String> appTranslationsZh = {
   'app_settings': '设置',
   'app_version': '版本',
 
+  // Onboarding
+  'app_onboarding_habitsTitle': '管理你的日常习惯',
+  'app_onboarding_habitsDesc': '坚持完成每日任务，保持连续记录，用稳定的习惯达成大目标。',
+  'app_onboarding_competeTitle': '与好友一起比拼',
+  'app_onboarding_competeDesc': '关注好友、赚取积分并同台竞技，有趣的比拼让你始终保持动力。',
+  'app_onboarding_challengeTitle': '挑战自我！',
+  'app_onboarding_challengeDesc': '加入 30 天挑战，为自己设定新目标，突破自己的极限。',
+  'app_onboarding_next': '下一步',
+  'app_onboarding_getStarted': '开始使用',
+
   // Common actions
   'app_ok': '确定',
   'app_select': '选择',

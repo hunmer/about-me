@@ -672,47 +672,28 @@ class _ThemeBackgroundSettingsScreenState
                   padding: EdgeInsets.all(theme.spacing.lg),
                   children: [
                     // 全局背景设置卡片
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.image,
-                        size: 22,
-                        color: theme.primary,
-                      ),
+                    SettingsTile(
+                      icon: Icons.image,
+                      iconColor: const Color(0xFF10B981),
                       title: 'screens_globalBackgroundImage'.tr,
                       subtitle:
                           _backgroundPath != null
                               ? 'screens_backgroundImageSet'.tr
                               : 'screens_backgroundImageNotSet'.tr,
-                      showChevron: true,
                       onTap: _showBackgroundDialog,
                     ),
 
                     SizedBox(height: theme.spacing.lg),
 
                     // 纯色背景设置卡片
-                    DSListItem(
-                      leading:
-                          _backgroundColor != null
-                              ? Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: _backgroundColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: theme.stroke),
-                                ),
-                              )
-                              : DsIcon(
-                                DsIconKind.palette,
-                                size: 22,
-                                color: theme.primary,
-                              ),
+                    SettingsTile(
+                      icon: Icons.palette,
+                      iconColor: const Color(0xFF8B5CF6),
                       title: 'screens_solidBackgroundColor'.tr,
                       subtitle:
                           _backgroundColor != null
                               ? 'screens_solidBackgroundSet'.tr
                               : 'screens_solidBackgroundNotSet'.tr,
-                      showChevron: true,
                       onTap: _showSolidColorDialog,
                     ),
 

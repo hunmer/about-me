@@ -19,6 +19,7 @@ import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_tile.dart';
 
 /// 应用设置：悬浮球、插件、剪切板、权限、更新、开发者测试、关于
 class AppSettingsScreen extends StatefulWidget {
@@ -244,13 +245,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 future: FloatingBallManager().isEnabled(),
                 builder: (context, snapshot) {
                   final bool isEnabled = snapshot.data ?? true;
-                  return DSListItem(
+                  return SettingsTile(
+                    icon: Icons.touch_app,
+                    iconColor: const Color(0xFFEC4899),
                     title: 'settings_screen_floatingBallTitle'.tr,
                     subtitle: isEnabled
                         ? 'settings_screen_floatingBallEnabled'.tr
                         : 'settings_screen_floatingBallDisabled'.tr,
-                    leading: const Icon(Icons.touch_app, size: 22),
-                    showChevron: true,
                     onTap: () {
                       NavigationHelper.push(
                         context,
@@ -262,20 +263,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               if (UniversalPlatform.isAndroid)
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.radio_button_checked,
+                  iconColor: const Color(0xFFF97316),
                   title: 'screens_floatingBallSettings'.tr,
                   subtitle: 'screens_manageSystemFloatingBall'.tr,
-                  leading: const Icon(Icons.touch_app, size: 22),
-                  showChevron: true,
                   onTap: () {
                     Navigator.pushNamed(context, '/floating_ball');
                   },
                 ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.alarm,
+                iconColor: const Color(0xFFEF4444),
                 title: '定时提醒',
                 subtitle: '管理定时提醒任务',
-                leading: const Icon(Icons.alarm, size: 22),
-                showChevron: true,
                 onTap: () {
                   NavigationHelper.push(
                     context,
@@ -284,17 +285,19 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   );
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.extension,
+                iconColor: const Color(0xFF6366F1),
                 title: 'settings_screen_pluginManagementTitle'.tr,
                 subtitle: 'settings_screen_pluginManagementSubtitle'.tr,
-                leading: const Icon(Icons.extension, size: 22),
-                showChevron: true,
                 onTap: _showPluginManagementSheet,
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.play_circle,
+                iconColor: const Color(0xFF10B981),
                 title: 'settings_screen_autoOpenLastPluginTitle'.tr,
                 subtitle: 'settings_screen_autoOpenLastPluginSubtitle'.tr,
-                leading: const Icon(Icons.play_circle, size: 22),
+                showChevron: false,
                 trailing: DSSwitch(
                   value: _controller.autoOpenLastPlugin,
                   onChanged:
@@ -303,26 +306,28 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.location_on,
+                iconColor: const Color(0xFFF59E0B),
                 title: 'screens_locationApiKey'.tr,
                 subtitle: _controller.locationApiKey.isEmpty
                     ? 'screens_locationApiKeyNotSet'.tr
                     : 'screens_locationApiKeyPartial'.trParams({
                       'key': _controller.locationApiKey.substring(0, 8),
                     }),
-                leading: const Icon(Icons.location_on, size: 22),
-                trailing: const Icon(Icons.edit, size: 18),
                 onTap: () => _showLocationApiKeyDialog(),
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.mic,
+                iconColor: const Color(0xFF14B8A6),
                 title: '语音识别设置',
                 subtitle: _isSpeechRecognitionConfigured
                     ? '已配置腾讯云语音识别'
                     : '配置语音识别服务',
-                leading: const Icon(Icons.mic, size: 22),
+                showChevron: !_isSpeechRecognitionConfigured,
                 trailing: _isSpeechRecognitionConfigured
                     ? const Icon(Icons.check_circle, color: Colors.green)
-                    : const Icon(Icons.arrow_forward_ios, size: 16),
+                    : null,
                 onTap: _showSpeechRecognitionSettings,
               ),
             ],
@@ -333,10 +338,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '剪切板设置',
             children: [
-              DSListItem(
+              SettingsTile(
+                icon: Icons.content_paste,
+                iconColor: const Color(0xFF3B82F6),
                 title: '自动读取剪切板',
                 subtitle: '启用后将自动识别剪切板中的数据',
-                leading: const Icon(Icons.content_paste, size: 22),
+                showChevron: false,
                 trailing: DSSwitch(
                   value: _controller.clipboardAutoRead,
                   onChanged:
@@ -345,11 +352,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.content_paste_go,
+                iconColor: const Color(0xFF06B6D4),
                 title: '读取并识别剪切板',
                 subtitle: '手动读取剪切板中的数据并识别处理',
-                leading: const Icon(Icons.content_paste_go, size: 22),
-                showChevron: true,
                 onTap: () async {
                   final result = await _controller.readAndProcessClipboard();
                   if (mounted) {
@@ -363,11 +370,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               if (showPermissionEntry)
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.privacy_tip,
+                  iconColor: const Color(0xFF8B5CF6),
                   title: 'app_permissionsTitle'.tr,
                   subtitle: 'app_permissionsManageDescription'.tr,
-                  leading: const Icon(Icons.privacy_tip, size: 22),
-                  showChevron: true,
                   onTap: () async {
                     await showPermissionRequestDialog(
                       context: context,
@@ -385,10 +392,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '更新',
             children: [
-              DSListItem(
+              SettingsTile(
+                icon: Icons.system_update,
+                iconColor: const Color(0xFF10B981),
                 title: 'settings_screen_autoCheckUpdateTitle'.tr,
                 subtitle: 'settings_screen_autoCheckUpdateSubtitle'.tr,
-                leading: const Icon(Icons.system_update, size: 22),
+                showChevron: false,
                 trailing: DSSwitch(
                   value: _controller.autoCheckUpdate,
                   onChanged:
@@ -397,11 +406,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       }),
                 ),
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.update,
+                iconColor: const Color(0xFF3B82F6),
                 title: 'settings_screen_checkUpdateTitle'.tr,
                 subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
-                leading: const Icon(Icons.update, size: 22),
-                showChevron: true,
                 onTap: _controller.checkForUpdates,
               ),
             ],
@@ -412,20 +421,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '开发者测试',
             children: [
-              DSListItem(
+              SettingsTile(
+                icon: Icons.notifications_active,
+                iconColor: const Color(0xFF64748B),
                 title: 'Toast 测试',
                 subtitle: '测试 Toast 显示、动画和自定义 Widget',
-                leading: const Icon(Icons.notifications_active, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/toast_test');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.record_voice_over,
+                iconColor: const Color(0xFF64748B),
                 title: '后台播报测试',
                 subtitle: '测试 TTS 后台定时播报功能',
-                leading: const Icon(Icons.record_voice_over, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(
                     context,
@@ -433,83 +442,83 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   );
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.account_tree,
+                iconColor: const Color(0xFF64748B),
                 title: '数据选择器测试',
                 subtitle: '测试插件数据选择器系统',
-                leading: const Icon(Icons.account_tree, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/data_selector_test');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.route,
+                iconColor: const Color(0xFF64748B),
                 title: '路由查看器',
                 subtitle: '查看所有可用路由',
-                leading: const Icon(Icons.route, size: 22),
-                showChevron: true,
                 onTap: () {
                   RouteViewerDialog.show(context);
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.swipe,
+                iconColor: const Color(0xFF64748B),
                 title: 'SwipeAction 测试',
                 subtitle: '测试滑动操作组件',
-                leading: const Icon(Icons.swipe, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/swipe_action_test');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.widgets,
+                iconColor: const Color(0xFF64748B),
                 title: 'screens_jsonDynamicWidgetTest'.tr,
                 subtitle: 'screens_testAndPreviewDynamicUI'.tr,
-                leading: const Icon(Icons.widgets, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/json_dynamic_test');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.notifications,
+                iconColor: const Color(0xFF64748B),
                 title: 'screens_notificationTest'.tr,
-                leading: const Icon(Icons.notifications, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/notification_test');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.link,
+                iconColor: const Color(0xFF64748B),
                 title: 'screens_intentTest'.tr,
                 subtitle: 'screens_testDynamicIntentAndDeepLink'.tr,
-                leading: const Icon(Icons.link, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/intent_test');
                 },
               ),
               if (UniversalPlatform.isIOS)
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.notifications_active,
+                  iconColor: const Color(0xFF64748B),
                   title: 'Live Activities 测试',
                   subtitle: '测试实时活动通知',
-                  leading: const Icon(Icons.notifications_active, size: 22),
-                  showChevron: true,
                   onTap: () {
                     Navigator.pushNamed(context, '/live_activities_test');
                   },
                 ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.category,
+                iconColor: const Color(0xFF64748B),
                 title: '通用组件示例',
                 subtitle: '查看 widgets 目录下的通用组件示例',
-                leading: const Icon(Icons.category, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/widgets_gallery');
                 },
               ),
-              DSListItem(
+              SettingsTile(
+                icon: Icons.description,
+                iconColor: const Color(0xFF64748B),
                 title: '日志系统',
                 subtitle: '查看和管理应用日志',
-                leading: const Icon(Icons.description, size: 22),
-                showChevron: true,
                 onTap: () {
                   Navigator.pushNamed(context, '/log');
                 },
@@ -522,10 +531,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           SettingsGroup(
             title: '关于',
             children: [
-              DSListItem(
+              SettingsTile(
+                icon: Icons.info,
+                iconColor: const Color(0xFF0EA5E9),
                 title: 'app_aboutTitle'.tr,
-                leading: const Icon(Icons.info, size: 22),
-                showChevron: true,
                 onTap: () {
                   NavigationHelper.push(
                     context,

@@ -141,6 +141,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
 
   /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
   String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
+  double _backgroundBlur = Live2DPlugin.instance.backgroundBlur;
+  double _backgroundOpacity = Live2DPlugin.instance.backgroundOpacity;
+
+  /// 背景模糊上限（滑杆 0~1 映射到 sigma 0~20）
+  static const double _backgroundBlurMax = 20;
 
   /// 当前气泡台词；null 表示不显示。连续点击时替换内容并重置计时
   String? _bubbleMessage;
@@ -282,6 +287,29 @@ class _JellyLive2DState extends State<JellyLive2D> {
     setState(() => _backgroundAsset = asset);
     setBgState(() {});
     await Live2DPlugin.instance.setBackgroundAsset(asset);
+  }
+
+  /// 上传自定义背景图：保存到应用目录、加入自定义列表并立即选用
+  Future<void> _uploadCustomBackground(
+    BuildContext context,
+    StateSetter setBgState,
+  ) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => const ImagePickerDialog(saveDirectory: 'live2d/backgrounds'),
+    );
+    final asset = result?['url'] as String?;
+    if (asset == null || asset.isEmpty) return;
+    await Live2DPlugin.instance.addCustomBackgroundAsset(asset);
+    if (!mounted) return;
+    setState(() => _backgroundAsset = asset);
+    setBgState(() {});
+  }
+
+  /// 滑杆拖动中：setState 让 sheet 背后的页面实时预览，setBgState 刷新 sheet 内滑杆
+  void _previewBackground(VoidCallback apply, StateSetter setBgState) {
+    setState(apply);
+    setBgState(() {});
   }
 
   String _cropPrefKey(Live2DModelDefinition model) {
@@ -961,55 +989,113 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ),
               SizedBox(height: theme.spacing.sm),
               StatefulBuilder(
-                builder: (context, setBgState) => Wrap(
-                  spacing: theme.spacing.sm,
-                  runSpacing: theme.spacing.sm,
+                builder: (context, setBgState) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () => _selectBackground(null, setBgState),
-                      child: Container(
-                        width: 72,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _backgroundAsset == null
-                                ? theme.primary
-                                : theme.stroke,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.block,
-                            size: 20,
-                            color: theme.textSub,
-                          ),
-                        ),
-                      ),
-                    ),
-                    for (final asset in _backgroundAssets)
-                      GestureDetector(
-                        onTap: () => _selectBackground(asset, setBgState),
-                        child: Container(
-                          width: 72,
-                          height: 48,
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: asset == _backgroundAsset
-                                  ? theme.primary
-                                  : theme.surface.withValues(alpha: 0),
-                              width: 2,
+                    Wrap(
+                      spacing: theme.spacing.sm,
+                      runSpacing: theme.spacing.sm,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _selectBackground(null, setBgState),
+                          child: Container(
+                            width: 72,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _backgroundAsset == null
+                                    ? theme.primary
+                                    : theme.stroke,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: JellyConfigurableImage(
-                            path: asset,
-                            fit: BoxFit.cover,
+                            child: Center(
+                              child: DsIcon(
+                                DsIconKind.block,
+                                size: 20,
+                                color: theme.textSub,
+                              ),
+                            ),
                           ),
                         ),
+                        for (final asset in [
+                          ..._backgroundAssets,
+                          ...Live2DPlugin.instance.customBackgroundAssets,
+                        ])
+                          GestureDetector(
+                            onTap: () => _selectBackground(asset, setBgState),
+                            child: Container(
+                              width: 72,
+                              height: 48,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: asset == _backgroundAsset
+                                      ? theme.primary
+                                      : theme.surface.withValues(alpha: 0),
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: JellyConfigurableImage(
+                                path: asset,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        GestureDetector(
+                          onTap: () =>
+                              _uploadCustomBackground(context, setBgState),
+                          child: Container(
+                            width: 72,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: theme.stroke),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: DsIcon(
+                                DsIconKind.plus,
+                                size: 22,
+                                color: theme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_backgroundAsset != null) ...[
+                      SizedBox(height: theme.spacing.md),
+                      Text(
+                        '背景模糊',
+                        style: DsTypography.label.copyWith(color: theme.text),
                       ),
+                      DSSlider(
+                        value: _backgroundBlur / _backgroundBlurMax,
+                        onChanged: (ratio) => _previewBackground(
+                          () => _backgroundBlur = ratio * _backgroundBlurMax,
+                          setBgState,
+                        ),
+                        onChangeEnd: (ratio) => Live2DPlugin.instance
+                            .setBackgroundBlur(ratio * _backgroundBlurMax),
+                      ),
+                      SizedBox(height: theme.spacing.xs),
+                      Text(
+                        '背景不透明度',
+                        style: DsTypography.label.copyWith(color: theme.text),
+                      ),
+                      DSSlider(
+                        value: _backgroundOpacity,
+                        onChanged: (ratio) => _previewBackground(
+                          () => _backgroundOpacity = ratio,
+                          setBgState,
+                        ),
+                        onChangeEnd: (ratio) => Live2DPlugin.instance
+                            .setBackgroundOpacity(ratio),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1350,9 +1436,24 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 children: [
                   if (_backgroundAsset != null)
                     Positioned.fill(
-                      child: JellyConfigurableImage(
-                        path: _backgroundAsset!,
-                        fit: BoxFit.cover,
+                      child: Opacity(
+                        opacity: _backgroundOpacity.clamp(0.0, 1.0),
+                        child: _backgroundBlur > 0
+                            ? ImageFiltered(
+                                imageFilter: ui.ImageFilter.blur(
+                                  sigmaX: _backgroundBlur,
+                                  sigmaY: _backgroundBlur,
+                                  tileMode: ui.TileMode.decal,
+                                ),
+                                child: JellyConfigurableImage(
+                                  path: _backgroundAsset!,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : JellyConfigurableImage(
+                                path: _backgroundAsset!,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                     ),
                   Positioned(

@@ -20,6 +20,8 @@ class Live2DPlugin extends BasePlugin {
   static const defaultTypingIntervalMs = 70;
   static const defaultAutoReadEnabled = false;
   static const defaultBubbleAsset = 'assets/bubbles/可拉伸兔子聊天气泡素材.webp';
+  static const defaultBackgroundBlur = 0.0;
+  static const defaultBackgroundOpacity = 1.0;
 
   Duration get bubbleTypingInterval => Duration(
     milliseconds:
@@ -41,6 +43,39 @@ class Live2DPlugin extends BasePlugin {
 
   Future<void> setBackgroundAsset(String? asset) async {
     await updateSettings({'backgroundAsset': asset});
+  }
+
+  /// 背景高斯模糊 sigma（0 = 不模糊）
+  double get backgroundBlur =>
+      (settings['backgroundBlur'] as num?)?.toDouble() ??
+      defaultBackgroundBlur;
+
+  Future<void> setBackgroundBlur(double value) async {
+    await updateSettings({'backgroundBlur': value});
+  }
+
+  /// 背景不透明度（0.0 ~ 1.0）
+  double get backgroundOpacity =>
+      (settings['backgroundOpacity'] as num?)?.toDouble() ??
+      defaultBackgroundOpacity;
+
+  Future<void> setBackgroundOpacity(double value) async {
+    await updateSettings({'backgroundOpacity': value});
+  }
+
+  List<String> get customBackgroundAssets =>
+      (settings['customBackgroundAssets'] as List?)
+          ?.whereType<String>()
+          .toList() ??
+      const [];
+
+  Future<void> addCustomBackgroundAsset(String asset) async {
+    final next = [...customBackgroundAssets];
+    if (!next.contains(asset)) next.add(asset);
+    await updateSettings({
+      'customBackgroundAssets': next,
+      'backgroundAsset': asset,
+    });
   }
 
   List<String> get customBubbleAssets =>
@@ -148,6 +183,9 @@ class Live2DPlugin extends BasePlugin {
       'ttsServiceId': null,
       'bubbleAsset': defaultBubbleAsset,
       'backgroundAsset': null,
+      'backgroundBlur': defaultBackgroundBlur,
+      'backgroundOpacity': defaultBackgroundOpacity,
+      'customBackgroundAssets': <String>[],
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
     });

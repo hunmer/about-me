@@ -6,6 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import './controllers/settings_screen_controller.dart';
 import './widgets/settings_group.dart';
+import './widgets/settings_tile.dart';
 import './screens/interface_settings_screen.dart';
 import './screens/data_settings_screen.dart';
 import './screens/app_settings_screen.dart';
@@ -92,14 +93,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNavTile(
     BuildContext context, {
     required IconData icon,
+    required Color iconColor,
     required String title,
     required Widget screen,
     required String routeName,
   }) {
-    return DSListItem(
+    return SettingsTile(
+      icon: icon,
+      iconColor: iconColor,
       title: title,
-      leading: Icon(icon, size: 22),
-      showChevron: true,
       onTap: () => NavigationHelper.push(context, screen, routeName: routeName),
     );
   }
@@ -110,104 +112,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final ThemeData theme = Theme.of(context);
-
     final Widget list = DSThemeBridge(
-      child: ListView(
-        // 底部叠加悬浮导航栏/系统安全区高度，避免最后几项被遮挡
-        padding: EdgeInsets.fromLTRB(
-          16.0,
-          8.0,
-          16.0,
-          16.0 + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          const SizedBox(height: 8),
-          // 头像：顶部居中，点击更换
-          Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AvatarPicker(
-                  size: 96,
-                  username: _controller.userName,
-                  currentAvatarPath: _controller.userAvatarPath,
-                  defaultAvatarAsset: 'assets/images/default_avatar.jpg',
-                  onAvatarChanged:
-                      (path) => _controller.setUserAvatarPath(path),
-                ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.primaryColor,
-                      border: Border.all(
-                        color: theme.scaffoldBackgroundColor,
-                        width: 2,
+      child: Builder(
+        builder: (bridgeContext) {
+          final ds = DSThemeBridge.resolve(bridgeContext);
+          return ListView(
+            // 底部叠加悬浮导航栏/系统安全区高度，避免最后几项被遮挡
+            padding: EdgeInsets.fromLTRB(
+              20.0,
+              8.0,
+              20.0,
+              16.0 + MediaQuery.paddingOf(context).bottom,
+            ),
+            children: [
+              const SizedBox(height: 8),
+              // 头部：头像（左，右上角铅笔徽标）+ 用户名（大号粗体），参考稿样式
+              Row(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AvatarPicker(
+                        size: 84,
+                        username: _controller.userName,
+                        currentAvatarPath: _controller.userAvatarPath,
+                        defaultAvatarAsset: 'assets/images/default_avatar.jpg',
+                        onAvatarChanged:
+                            (path) => _controller.setUserAvatarPath(path),
+                      ),
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: ds.surface,
+                            border: Border.all(
+                              color: ds.textSub.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: 14,
+                            color: ds.text,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 20),
+                  // 用户名：点击修改
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _showEditNameDialog,
+                      behavior: HitTestBehavior.opaque,
+                      child: Text(
+                        _controller.userName,
+                        style: DsTypography.display.copyWith(
+                          fontSize: 28,
+                          color: ds.text,
+                        ),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.photo_camera,
-                      size: 15,
-                      color: Colors.white,
-                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // 用户名：点击修改
-          Center(
-            child: GestureDetector(
-              onTap: _showEditNameDialog,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _controller.userName,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(Icons.edit, size: 16, color: theme.hintColor),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          SettingsGroup(
-            children: [
-              _buildNavTile(
-                context,
-                icon: Icons.palette_outlined,
-                title: '界面设置',
-                screen: const InterfaceSettingsScreen(),
-                routeName: '/settings/interface',
+              const SizedBox(height: 28),
+              SettingsGroup(
+                title: '通用',
+                children: [
+                  _buildNavTile(
+                    context,
+                    icon: Icons.palette_outlined,
+                    iconColor: const Color(0xFFEC4899),
+                    title: '界面设置',
+                    screen: const InterfaceSettingsScreen(),
+                    routeName: '/settings/interface',
+                  ),
+                  _buildNavTile(
+                    context,
+                    icon: Icons.storage_outlined,
+                    iconColor: const Color(0xFF3B82F6),
+                    title: '数据管理',
+                    screen: const DataSettingsScreen(),
+                    routeName: '/settings/data',
+                  ),
+                ],
               ),
-              _buildNavTile(
-                context,
-                icon: Icons.storage_outlined,
-                title: '数据管理',
-                screen: const DataSettingsScreen(),
-                routeName: '/settings/data',
-              ),
-              _buildNavTile(
-                context,
-                icon: Icons.settings_outlined,
-                title: '应用设置',
-                screen: const AppSettingsScreen(),
-                routeName: '/settings/app',
+              const SizedBox(height: 20),
+              SettingsGroup(
+                title: '应用',
+                children: [
+                  _buildNavTile(
+                    context,
+                    icon: Icons.tune,
+                    iconColor: const Color(0xFF8B5CF6),
+                    title: '应用设置',
+                    screen: const AppSettingsScreen(),
+                    routeName: '/settings/app',
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
 

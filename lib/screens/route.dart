@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/routing/plugin_route_handler.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_manager.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
@@ -128,6 +129,7 @@ class AppRoutes extends NavigatorObserver {
 
   // ==================== 路由路径常量 ====================
   static const String home = '/';
+  static const String onboarding = '/onboarding';
   static const String chat = '/chat';
   static const String diary = '/diary';
   static const String diaryDetail = '/diary_detail';
@@ -299,6 +301,9 @@ class AppRoutes extends NavigatorObserver {
     'live_activities_test': (context) => const LiveActivitiesTestScreen(),
   };
 
-  // 默认启动路由：果冻小屋
-  static String get initialRoute => jellyHome;
+  // 默认启动路由：首次启动先进引导页，之后直接进果冻小屋
+  static String get initialRoute =>
+      globalConfigManager.getAppConfigValue<bool>('onboardingCompleted', false)
+          ? jellyHome
+          : onboarding;
 }

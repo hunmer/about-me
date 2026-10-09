@@ -811,9 +811,9 @@
         "windows"
       ],
       "cwd": "D:/about-me",
-      "status": "running",
+      "status": "exited",
       "pid": 23868,
-      "exitCode": null,
+      "exitCode": 1,
       "error": null,
       "desc": "Run the Flutter app on Windows with procm room logging",
       "group": "aboutme",
@@ -822,7 +822,7 @@
       "favorite": false,
       "startedAt": 1791514726039,
       "lastStartedAt": 1791528803229,
-      "stoppedAt": null,
+      "stoppedAt": 1791530186288,
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\FgnoO8Vi-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\oGzMXO(15072)\\processes\\FgnoO8Vi-stderr.log",
       "envs": {

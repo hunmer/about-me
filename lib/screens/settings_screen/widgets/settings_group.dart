@@ -22,14 +22,11 @@ class SettingsGroup extends StatelessWidget {
       children: [
         if (title != null)
           Padding(
-            padding: const EdgeInsets.only(left: 4, top: 8),
+            padding: const EdgeInsets.only(left: 4, top: 8, bottom: 10),
             child: Text(
               title!,
-              style: DsTypography.caption.copyWith(
-                color: theme.textSub,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
+              // 参考稿：分组标题为加粗大字（与正文同色）
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
           ),
         for (int i = 0; i < children.length; i++) ...[

@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/screens/data_management_screen.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_tile.dart';
 import '../widgets/storage_backend_settings_dialog.dart';
 
 /// 数据管理：导入导出、全量备份恢复、存储后端
@@ -70,22 +70,22 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
             SettingsGroup(
               title: '导入导出',
               children: [
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.upload,
+                  iconColor: const Color(0xFFF97316),
                   title: 'settings_screen_exportDataTitle'.tr,
                   subtitle: 'settings_screen_exportDataSubtitle'.tr,
-                  leading: const Icon(Icons.upload, size: 22),
-                  showChevron: true,
                   onTap: () {
                     if (mounted) {
                       _controller.exportData(context);
                     }
                   },
                 ),
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.storage,
+                  iconColor: const Color(0xFF3B82F6),
                   title: 'settings_screen_dataManagementTitle'.tr,
                   subtitle: 'settings_screen_dataManagementSubtitle'.tr,
-                  leading: const Icon(Icons.storage, size: 22),
-                  showChevron: true,
                   onTap: () {
                     NavigationHelper.push(
                       context,
@@ -94,11 +94,11 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
                     );
                   },
                 ),
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.download,
+                  iconColor: const Color(0xFF10B981),
                   title: 'settings_screen_importDataTitle'.tr,
                   subtitle: 'settings_screen_importDataSubtitle'.tr,
-                  leading: const Icon(Icons.download, size: 22),
-                  showChevron: true,
                   onTap: _controller.importData,
                 ),
               ],
@@ -107,18 +107,18 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
             SettingsGroup(
               title: '备份与恢复',
               children: [
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.backup,
+                  iconColor: const Color(0xFF8B5CF6),
                   title: 'settings_screen_fullBackupTitle'.tr,
                   subtitle: 'settings_screen_fullBackupSubtitle'.tr,
-                  leading: const Icon(Icons.backup, size: 22),
-                  showChevron: true,
                   onTap: _controller.exportAllData,
                 ),
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.restore,
+                  iconColor: const Color(0xFFF59E0B),
                   title: 'settings_screen_fullRestoreTitle'.tr,
                   subtitle: 'settings_screen_fullRestoreSubtitle'.tr,
-                  leading: const Icon(Icons.restore, size: 22),
-                  showChevron: true,
                   trailing: const Icon(Icons.warning, color: Colors.orange),
                   onTap: _controller.importAllData,
                 ),
@@ -128,11 +128,11 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
             SettingsGroup(
               title: '存储',
               children: [
-                DSListItem(
+                SettingsTile(
+                  icon: Icons.cloud,
+                  iconColor: const Color(0xFF14B8A6),
                   title: '数据存储后端',
                   subtitle: globalStorage.isRemote ? 'HTTP 服务器' : '本地文件',
-                  leading: const Icon(Icons.cloud, size: 22),
-                  showChevron: true,
                   onTap: () async {
                     final changed = await showDialog<bool>(
                       context: context,
