@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../live2d_online_models.dart';
 import 'jelly_live2d_crop_dialog.dart';
 import 'jelly_live2d_crop_region.dart';
+import 'jelly_live2d_layout.dart';
 import 'jelly_speech_bubble.dart';
 import 'bubble_region_editor.dart';
 
@@ -48,8 +49,9 @@ class JellyLive2D extends StatefulWidget {
   /// 关闭时使用保存的固定尺寸
   final bool fill;
 
-  /// When enabled, the Live2D viewport follows the exact size of its parent
-  /// container. The parent should provide finite constraints.
+  /// When enabled, the Live2D viewport fills the usable height of its parent
+  /// container above the bottom navigation area. The parent should provide
+  /// finite constraints.
   final bool fitContainer;
 
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
@@ -999,27 +1001,39 @@ class _JellyLive2DState extends State<JellyLive2D> {
           final fitWidth = widget.fitContainer && containerWidth.isFinite
               ? containerWidth
               : null;
-          // Container-fit controls the outer hit-test/layout bounds only.
-          // Keep the model at its persisted size so a tall parent does not
-          // unexpectedly scale the character.
-          final displaySize = widget.fill && containerHeight.isFinite
-              ? (containerHeight - _fillBottomReserve)
-                    .clamp(_minSize, _maxSize)
-                    .toDouble()
-              : size;
-          final layoutWidth = fitWidth ?? displaySize;
           // Scaffold.extendBody exposes the complete radial bar footprint as
           // the bottom media padding (runtime value is 129px on macOS).
           final bottomReserve =
               MediaQuery.paddingOf(context).bottom + _radialDockOverflowTop;
+          final displaySize = computeJellyLive2DDisplaySize(
+            savedSize: size,
+            containerHeight: containerHeight,
+            bottomReserve: bottomReserve,
+            fill: widget.fill,
+            fitContainer: widget.fitContainer,
+            fillBottomReserve: _fillBottomReserve,
+            minSize: _minSize,
+            maxSize: _maxSize,
+          );
+          final layoutWidth = fitWidth ?? displaySize;
           final layoutHeight = fitHeight ?? displaySize;
-          final modelBottomInset = fitHeight != null ? bottomReserve : 0.0;
-          // The native model viewport is portrait (0.5 aspect). Scale it to
-          // fit the available height while keeping its full top and bottom.
-          // The native viewport is 180x360. Fit the complete viewport into
-          // the available square while keeping the model's bottom at the
-          // content bottom; do not cap the scale independently of layout.
-          final modelScale = displaySize / _defaultSize;
+          final modelBottomInset = fitHeight != null
+              ? bottomReserve.clamp(0.0, layoutHeight).toDouble()
+              : 0.0;
+          // Windows uses a Flutter Texture and can re-render the model at the
+          // target size. Other platforms retain the established fixed native
+          // viewport plus composited scaling behavior.
+          final viewportLayout = computeJellyLive2DViewportLayout(
+            displaySize: displaySize,
+            baseViewportHeight: _defaultSize,
+            useResizableViewport:
+                !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,
+          );
+          final viewportSize = Size(
+            viewportLayout.viewportHeight * _modelViewportAspectRatio,
+            viewportLayout.viewportHeight,
+          );
+          final modelScale = viewportLayout.scale;
           final media = MediaQuery.sizeOf(context);
           final layoutLog =
               'window=${media.width}x${media.height} '
@@ -1028,8 +1042,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
               'reserve=$_fillBottomReserve fitContainer=${widget.fitContainer} '
               'display=$displaySize layoutHeight=$layoutHeight '
               'modelBottomInset=$modelBottomInset '
-              'viewport=${_defaultSize * _modelViewportAspectRatio}x$_defaultSize '
-              'scale=$modelScale offsetY=${displaySize - _defaultSize * modelScale} '
+              'viewport=${viewportSize.width}x${viewportSize.height} '
+              'scale=$modelScale offsetY=0.0 '
               'cropZoom=${_cropRegion.zoom} crop=${_cropRegion.encode()}';
           if (_lastLayoutLog != layoutLog) {
             _lastLayoutLog = layoutLog;
@@ -1053,7 +1067,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
               onSecondaryTapUp: (_) => _showControls(),
               child: Stack(
                 fit: StackFit.expand,
-                // 放大后的模型可能超出布局方框，不能裁剪
+                // Crop selection can extend beyond the model's layout bounds.
                 clipBehavior: Clip.none,
                 children: [
                   Positioned(
@@ -1072,59 +1086,48 @@ class _JellyLive2DState extends State<JellyLive2D> {
                         alignment: Alignment.bottomCenter,
                         maxWidth: double.infinity,
                         maxHeight: double.infinity,
-                        child: Transform.translate(
-                          // 仅垂直抵消尺寸差以固定脚底；水平方向由
-                          // OverflowBox + bottomCenter 保持居中。
-                          offset: Offset.zero,
-                          child: Transform.scale(
-                            scale: modelScale,
-                            alignment: Alignment.bottomCenter,
-                            // 固定原生视口尺寸，缩放时不再重算模型矩阵；竖向
-                            // 视口同时为全身模型保留足够的纵向空间。
-                            child: SizedBox(
-                              width: _defaultSize * _modelViewportAspectRatio,
-                              height: _defaultSize,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  ClipRect(
-                                    child: Transform.translate(
-                                      offset: _cropRegion.sourceTranslation(
-                                        const Size(
-                                          _defaultSize *
-                                              _modelViewportAspectRatio,
-                                          _defaultSize,
-                                        ),
-                                      ),
-                                      child: Transform.scale(
-                                        scale: _cropRegion.zoom,
-                                        alignment: Alignment.topLeft,
-                                        child: RepaintBoundary(
-                                          key: _modelCaptureKey,
-                                          child: Live2DView(
-                                            controller: _controller,
-                                          ),
+                        child: Transform.scale(
+                          scale: modelScale,
+                          alignment: Alignment.bottomCenter,
+                          child: SizedBox(
+                            width: viewportSize.width,
+                            height: viewportSize.height,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRect(
+                                  child: Transform.translate(
+                                    offset: _cropRegion.sourceTranslation(
+                                      viewportSize,
+                                    ),
+                                    child: Transform.scale(
+                                      scale: _cropRegion.zoom,
+                                      alignment: Alignment.topLeft,
+                                      child: RepaintBoundary(
+                                        key: _modelCaptureKey,
+                                        child: Live2DView(
+                                          controller: _controller,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  ValueListenableBuilder<bool>(
-                                    valueListenable: _borderVisible,
-                                    builder: (context, visible, _) => visible
-                                        ? IgnorePointer(
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: theme.danger,
-                                                  width: 1.5,
-                                                ),
+                                ),
+                                ValueListenableBuilder<bool>(
+                                  valueListenable: _borderVisible,
+                                  builder: (context, visible, _) => visible
+                                      ? IgnorePointer(
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: theme.danger,
+                                                width: 1.5,
                                               ),
                                             ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ],
-                              ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
                             ),
                           ),
                         ),

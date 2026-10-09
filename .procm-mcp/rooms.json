@@ -1,0 +1,23 @@
+{
+  "rooms": [
+    {
+      "id": "aboutme",
+      "title": "aboutme",
+      "note": "",
+      "processIds": [
+        "GMdMbBUm"
+      ],
+      "createdAt": 1791510368238,
+      "updatedAt": 1791510368247,
+      "clientHistory": [
+        {
+          "memberId": "GMdMbBUm:aboutme-app-windows",
+          "connectionId": "kwzrZpJYjp",
+          "clientName": "aboutme-app-windows",
+          "processId": "GMdMbBUm",
+          "connectedAt": 1791510368247
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,17 @@
       "group": "aboutme",
       "desc": "Run the Flutter app on macOS with procm room logging (phone/emulator targets need the host LAN IP instead of 127.0.0.1)"
     },
+    "app-windows": {
+      "script": "flutter",
+      "args": ["run", "-d", "windows"],
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      },
+      "group": "aboutme",
+      "desc": "Run the Flutter app on Windows with procm room logging"
+    },
     "analyze": {
       "script": "flutter",
       "args": ["analyze"],
