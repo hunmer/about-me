@@ -245,7 +245,7 @@ class _HabitFormState extends State<HabitForm> {
       final habitsPlugin = PluginManager.instance.getPlugin('habits');
       if (habitsPlugin != null && habitsPlugin is HabitsPlugin) {
         final controller = habitsPlugin.getSkillController();
-        final skills = await controller.getSkills();
+        final skills = controller.getSkills();
         setState(() {
           _skills = skills;
         });

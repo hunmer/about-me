@@ -130,6 +130,48 @@ void main() {
     expect(picked, RadialSubOption.right);
   });
 
+  testWidgets('subActions：沿子栏弧线排布，点按回调与激活态生效', (tester) async {
+    var tapped = -1;
+    await tester.pumpWidget(wrap(RadialDiscBottomBar(
+      tabs: buildTabs(),
+      activeIndex: 0,
+      subActions: [
+        for (var i = 0; i < 3; i++)
+          RadialSubAction(
+            label: 'Action ${i + 1}',
+            selected: i == 1,
+            onTap: () => tapped = i,
+            icon: Icon(Icons.star, key: ValueKey('action$i')),
+          ),
+      ],
+    )));
+    await tester.pumpAndSettle();
+
+    // subActions 启用子栏 → 完整画布高度，不裁剪
+    final size = tester.getSize(find.byType(RadialDiscBottomBar));
+    expect(size.height, RadialGeometry.canvasHeight);
+
+    // 三个圆钮都渲染且可点按
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(ValueKey('action$i')));
+      await tester.pumpAndSettle();
+      expect(tapped, i);
+      tapped = -1;
+    }
+
+    // 激活（selected）圆钮使用 activePillColor 实底
+    final decoration = tester.widget<DecoratedBox>(
+      find.ancestor(
+        of: find.byKey(const ValueKey('action1')),
+        matching: find.byType(DecoratedBox),
+      ).first,
+    ).decoration as BoxDecoration;
+    expect(
+      decoration.color,
+      const RadialDiscBarStyle().activePillColor,
+    );
+  });
+
   testWidgets('带子栏：尺寸 380×146，切到后半 tab 自动折叠', (tester) async {
     var index = 0;
     late StateSetter setStateOuter;

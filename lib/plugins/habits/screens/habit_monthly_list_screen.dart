@@ -123,7 +123,7 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
         stats[date] = _DailyStats();
       }
       stats[date]!.count++;
-      stats[date]!.totalMinutes += (record.duration.inMinutes as int);
+      stats[date]!.totalMinutes += record.duration.inMinutes;
     }
 
     // Convert to model records for current month

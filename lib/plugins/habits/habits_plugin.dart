@@ -178,9 +178,9 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
 
   TimerController get timerController => _timerController;
 
-  getHabitController() => _habitController;
-  getSkillController() => _skillController;
-  getRecordController() => _recordController;
+  HabitController getHabitController() => _habitController;
+  SkillController getSkillController() => _skillController;
+  CompletionRecordController getRecordController() => _recordController;
 
   @override
   Future<void> registerToApp(

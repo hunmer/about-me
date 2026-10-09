@@ -161,7 +161,7 @@ Map<String, (String, StatProvider)> buildStatProviders() {
           var total = 0;
           for (final skill in skillController.getSkills()) {
             final records = await skillController.getSkillCompletionRecords(skill.id);
-            total += records.length as int;
+            total += records.length;
           }
           return total;
         })),

@@ -12,8 +12,6 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
-import 'package:aboutme/plugins/habits/models/habit.dart';
-import 'package:aboutme/plugins/habits/models/completion_record.dart';
 import 'package:aboutme/plugins/habits/screens/habit_monthly_list_screen.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_day_card.dart';
 
@@ -24,12 +22,11 @@ bool _isSameDay(DateTime a, DateTime b) {
 /// 加载某日各习惯的完成情况（习惯列表同步，完成记录按习惯异步读取）
 Future<List<HabitDayStatus>> _statusesForDate(DateTime date) async {
   final plugin = HabitsPlugin.instance;
-  final habits = plugin.getHabitController().getHabits() as List<Habit>;
+  final habits = plugin.getHabitController().getHabits();
   return Future.wait(
     habits.map((habit) async {
       final records =
-          await plugin.getRecordController().getHabitCompletionRecords(habit.id)
-              as List<CompletionRecord>;
+          await plugin.getRecordController().getHabitCompletionRecords(habit.id);
       return HabitDayStatus(
         habit: habit,
         records:

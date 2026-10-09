@@ -294,9 +294,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
     setState(() => _backgroundAsset = asset);
   }
 
-  /// 滑杆拖动中实时预览背景模糊 / 不透明度
-  void _previewBackground(VoidCallback apply) {
+  /// 滑杆拖动中实时预览：setState 刷新页面背景，setSheetState 刷新
+  /// 设置弹出层内的滑杆
+  void _previewBackground(VoidCallback apply, [StateSetter? setSheetState]) {
     setState(apply);
+    setSheetState?.call(() {});
   }
 
   String _cropPrefKey(Live2DModelDefinition model) {
@@ -1092,39 +1094,91 @@ class _JellyLive2DState extends State<JellyLive2D> {
               ],
             ),
           ),
-          // 背景生效时尾随固定的模糊/不透明度滑杆（不参与横向滚动，
-          // 避免与滑杆拖动手势冲突）
+          // 背景生效时尾随固定的调节按钮：点击弹出模糊/不透明度设置层
           if (_backgroundAsset != null) ...[
             SizedBox(width: theme.spacing.md),
             Container(width: 1, height: 36, color: theme.stroke),
             SizedBox(width: theme.spacing.md),
-            DsIcon(DsIconKind.blur, size: 14, color: theme.textSub),
-            SizedBox(
-              width: 72,
-              child: DSSlider(
-                value: (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
-                onChanged: (ratio) => _previewBackground(
-                  () => _backgroundBlur = ratio * _backgroundBlurMax,
-                ),
-                onChangeEnd: (ratio) => Live2DPlugin.instance
-                    .setBackgroundBlur(ratio * _backgroundBlurMax),
-              ),
-            ),
-            SizedBox(width: theme.spacing.sm),
-            DsIcon(DsIconKind.opacity, size: 14, color: theme.textSub),
-            SizedBox(
-              width: 72,
-              child: DSSlider(
-                value: _backgroundOpacity.clamp(0.0, 1.0),
-                onChanged: (ratio) =>
-                    _previewBackground(() => _backgroundOpacity = ratio),
-                onChangeEnd: (ratio) =>
-                    Live2DPlugin.instance.setBackgroundOpacity(ratio),
-              ),
-            ),
+            _backgroundSettingsButton(theme),
           ],
         ],
       ),
+    );
+  }
+
+  /// 背景调节按钮：点击弹出模糊 / 不透明度设置层
+  Widget _backgroundSettingsButton(AppThemeData theme) {
+    return GestureDetector(
+      onTap: _openBackgroundSettings,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.surfaceAlt,
+          border: Border.all(color: theme.stroke),
+        ),
+        child: Center(
+          child: DsIcon(DsIconKind.tune, size: 18, color: theme.primary),
+        ),
+      ),
+    );
+  }
+
+  /// 背景调节弹出层：滑杆拖动实时预览，松手持久化
+  Future<void> _openBackgroundSettings() {
+    return showDSBottomSheet<void>(
+      context: context,
+      title: '背景设置',
+      builder: (sheetContext) {
+        final theme = AppTheme.of(sheetContext);
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            theme.spacing.xl,
+            0,
+            theme.spacing.xl,
+            theme.spacing.md,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setSheetState) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '背景模糊',
+                  style: DsTypography.label.copyWith(color: theme.text),
+                ),
+                DSSlider(
+                  value: (_backgroundBlur / _backgroundBlurMax).clamp(
+                    0.0,
+                    1.0,
+                  ),
+                  onChanged: (ratio) => _previewBackground(
+                    () => _backgroundBlur = ratio * _backgroundBlurMax,
+                    setSheetState,
+                  ),
+                  onChangeEnd: (ratio) => Live2DPlugin.instance
+                      .setBackgroundBlur(ratio * _backgroundBlurMax),
+                ),
+                SizedBox(height: theme.spacing.sm),
+                Text(
+                  '背景不透明度',
+                  style: DsTypography.label.copyWith(color: theme.text),
+                ),
+                DSSlider(
+                  value: _backgroundOpacity.clamp(0.0, 1.0),
+                  onChanged: (ratio) => _previewBackground(
+                    () => _backgroundOpacity = ratio,
+                    setSheetState,
+                  ),
+                  onChangeEnd: (ratio) =>
+                      Live2DPlugin.instance.setBackgroundOpacity(ratio),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

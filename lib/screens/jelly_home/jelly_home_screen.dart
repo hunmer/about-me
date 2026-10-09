@@ -18,6 +18,7 @@ import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
+import 'widgets/jelly_status_panel_settings.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
@@ -171,14 +172,23 @@ class _CottageTabState extends State<_CottageTab> {
                 },
               ),
               JellyStatusPanel(controller: _companion),
-              // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）
+              // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）；
+              // 顶部按状态面板实际显示高度偏移避让
               Align(
                 alignment: Alignment.topRight,
-                child: _buildSideButton(
-                  theme,
-                  icon: DsIconKind.bot,
-                  semanticLabel: '查看陪伴状态',
-                  onTap: _showCompanionDialog,
+                child: AnimatedBuilder(
+                  animation: JellyStatusPanelSettings.instance,
+                  builder: (context, _) => Padding(
+                    padding: EdgeInsets.only(
+                      top: _statusPanelHeight(mq.size.width) + theme.spacing.sm,
+                    ),
+                    child: _buildSideButton(
+                      theme,
+                      icon: DsIconKind.bot,
+                      semanticLabel: '查看陪伴状态',
+                      onTap: _showCompanionDialog,
+                    ),
+                  ),
                 ),
               ),
               // 聊天表单（导航栏聊天按钮切换显示；保持挂载以维持会话监听）
@@ -200,6 +210,15 @@ class _CottageTabState extends State<_CottageTab> {
     );
   }
 
+  /// 顶部状态面板的显示高度：与 JellyStatusPanel 同一套约束
+  /// （maxWidth 900 / maxHeight 150 + 可见区纵横比）计算，
+  /// 右侧状态按钮以此为顶部偏移避让
+  double _statusPanelHeight(double availableWidth) {
+    final style = JellyStatusPanelSettings.instance.selectedStyle;
+    final height = math.min(availableWidth, 900) / style.visibleAspectRatio;
+    return height.clamp(0.0, JellyStatusPanelSettings.maxDisplayHeight);
+  }
+
   /// 两侧悬浮信息按钮：圆形果冻质感小钮
   Widget _buildSideButton(
     AppThemeData theme, {
@@ -208,13 +227,7 @@ class _CottageTabState extends State<_CottageTab> {
     required VoidCallback onTap,
   }) {
     return Padding(
-      // 按钮位于右上角，顶部留出间距避免贴边
-      padding: EdgeInsets.fromLTRB(
-        theme.spacing.sm,
-        theme.spacing.sm,
-        theme.spacing.sm,
-        0,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.sm),
       child: Pressable(
         onPressed: onTap,
         semanticLabel: semanticLabel,

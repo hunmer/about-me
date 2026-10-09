@@ -136,7 +136,7 @@ class _HabitsWeeklyConfigScreenState extends State<HabitsWeeklyConfigScreen> {
       if (habit.skillId != null) {
         try {
           final skill = skillController.getSkillById(habit.skillId!);
-          groupName = skill.title;
+          groupName = skill?.title ?? '未分类';
         } catch (_) {
           // 技能不存在,使用未分类
         }

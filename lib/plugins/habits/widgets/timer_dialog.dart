@@ -448,7 +448,7 @@ class _TimerDialogState extends State<TimerDialog> {
       final recordController =
           (PluginManager.instance.getPlugin('habits') as HabitsPlugin?)
               ?.getRecordController();
-      await recordController.saveCompletionRecord(widget.habit.id, record);
+      await recordController?.saveCompletionRecord(widget.habit.id, record);
 
       // 2. 然后停止计时器并清理前台通知服务（触发事件）
       if (_isRunning) {

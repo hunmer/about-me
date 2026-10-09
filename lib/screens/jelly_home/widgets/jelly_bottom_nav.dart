@@ -68,6 +68,67 @@ class JellyBottomNav extends StatelessWidget {
   Widget _buildBar(BuildContext context) {
     final theme = AppTheme.of(context);
 
+    Widget buildNavigation(JellyLive2dPanel? activePanel) {
+      return DSBottomNavigation(
+        items: const [
+          DSNavItem(icon: DsIconKind.home, label: '小屋'),
+          DSNavItem(icon: DsIconKind.calendar, label: '日程'),
+          DSNavItem(icon: DsIconKind.grid, label: '看板'),
+          DSNavItem(icon: DsIconKind.user, label: '我的', showBadge: true),
+        ],
+        currentIndex: current.index,
+        onTap: onTap,
+        // 聊天按钮只在小屋页签出现（其它页签没有可切换的聊天表单）
+        leadingAction:
+            current == JellyTab.cottage && onToggleChat != null
+                ? Builder(
+                  builder: (context) {
+                    final navTheme = AppTheme.of(context);
+                    return DsIcon(
+                      DsIconKind.chat,
+                      size: 16,
+                      color: chatActive
+                          ? navTheme.primary
+                          : navTheme.textSub,
+                    );
+                  },
+                )
+                : null,
+        onLeadingTap: onToggleChat,
+        // 小屋页签：子栏提供 气泡/背景/状态面板 资源面板入口，
+        // 激活（面板打开）时圆钮以主题色实底高亮
+        subActions:
+            current == JellyTab.cottage && live2dPanel != null
+                ? [
+                  _live2dPanelAction(
+                    live2dPanel!,
+                    JellyLive2dPanel.bubble,
+                    '气泡样式',
+                    DsIconKind.bubble,
+                    activePanel,
+                    theme,
+                  ),
+                  _live2dPanelAction(
+                    live2dPanel!,
+                    JellyLive2dPanel.background,
+                    '背景图片',
+                    DsIconKind.image,
+                    activePanel,
+                    theme,
+                  ),
+                  _live2dPanelAction(
+                    live2dPanel!,
+                    JellyLive2dPanel.statusPanel,
+                    '状态面板',
+                    DsIconKind.spaceDashboard,
+                    activePanel,
+                    theme,
+                  ),
+                ]
+                : null,
+      );
+    }
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -77,81 +138,35 @@ class JellyBottomNav extends StatelessWidget {
           theme.spacing.lg,
           theme.spacing.lg,
         ),
-        child: DSBottomNavigation(
-          items: const [
-            DSNavItem(icon: DsIconKind.home, label: '小屋'),
-            DSNavItem(icon: DsIconKind.calendar, label: '日程'),
-            DSNavItem(icon: DsIconKind.grid, label: '看板'),
-            DSNavItem(icon: DsIconKind.user, label: '我的', showBadge: true),
-          ],
-          currentIndex: current.index,
-          onTap: onTap,
-          // 聊天按钮只在小屋页签出现（其它页签没有可切换的聊天表单）
-          leadingAction:
-              current == JellyTab.cottage && onToggleChat != null
-                  ? Builder(
-                    builder: (context) {
-                      final navTheme = AppTheme.of(context);
-                      return DsIcon(
-                        DsIconKind.chat,
-                        size: 16,
-                        color: chatActive
-                            ? navTheme.primary
-                            : navTheme.textSub,
-                      );
-                    },
-                  )
-                  : null,
-          onLeadingTap: onToggleChat,
-          // 小屋页签：子栏提供 气泡/背景/状态面板 资源面板入口
-          subActions:
-              current == JellyTab.cottage && live2dPanel != null
-                  ? [
-                    _live2dPanelAction(
-                      live2dPanel!,
-                      JellyLive2dPanel.bubble,
-                      '气泡样式',
-                      DsIconKind.bubble,
-                    ),
-                    _live2dPanelAction(
-                      live2dPanel!,
-                      JellyLive2dPanel.background,
-                      '背景图片',
-                      DsIconKind.image,
-                    ),
-                    _live2dPanelAction(
-                      live2dPanel!,
-                      JellyLive2dPanel.statusPanel,
-                      '状态面板',
-                      DsIconKind.spaceDashboard,
-                    ),
-                  ]
-                  : null,
-        ),
+        // 面板开关变化时重建子栏图标的激活态
+        child: current == JellyTab.cottage && live2dPanel != null
+            ? ValueListenableBuilder<JellyLive2dPanel?>(
+                valueListenable: live2dPanel!,
+                builder: (context, activePanel, _) =>
+                    buildNavigation(activePanel),
+              )
+            : buildNavigation(null),
       ),
     );
   }
 
-  /// 子栏资源面板图标：点按在 打开/收起 间切换（再次点击同图标收起），
-  /// 图标颜色随当前打开的面板高亮
+  /// 子栏资源面板图标：点按在 打开/收起 间切换（再次点击同图标收起）
   RadialSubAction _live2dPanelAction(
     ValueNotifier<JellyLive2dPanel?> panel,
     JellyLive2dPanel value,
     String label,
     DsIconKind icon,
+    JellyLive2dPanel? active,
+    AppThemeData theme,
   ) {
+    final selected = active == value;
     return RadialSubAction(
       label: label,
-      icon: ValueListenableBuilder<JellyLive2dPanel?>(
-        valueListenable: panel,
-        builder: (context, active, _) {
-          final navTheme = AppTheme.of(context);
-          return DsIcon(
-            icon,
-            size: 16,
-            color: active == value ? navTheme.primary : navTheme.textSub,
-          );
-        },
+      selected: selected,
+      icon: DsIcon(
+        icon,
+        size: 16,
+        color: selected ? theme.onPrimary : theme.textSub,
       ),
       onTap: () {
         // 打开面板时收起聊天表单，两者都悬浮在页面底部

@@ -30,16 +30,20 @@ class RadialSubAction {
     required this.label,
     required this.icon,
     this.onTap,
+    this.selected = false,
   });
 
   /// 语义标签 / 无障碍描述（圆钮不渲染文字）
   final String label;
 
-  /// 圆钮内图标；选中高亮由调用方在 icon 内自行处理
-  /// （如用 ValueListenableBuilder 切换颜色）
+  /// 圆钮内图标；选中态圆钮换主题色实底，图标颜色仍由
+  /// [RadialDiscBarStyle.activeIconColor] 经 IconTheme 下发
   final Widget icon;
 
   final VoidCallback? onTap;
+
+  /// 激活态：圆钮以 activePillColor 实底高亮
+  final bool selected;
 }
 
 /// 弧形圆盘导航栏的 tab 项
@@ -84,6 +88,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     this.onLeadingTap,
     this.trailingAction,
     this.onTrailingTap,
+    this.trailingSelected = false,
     this.floatingAction,
     this.style,
     this.frosted = false,
@@ -116,6 +121,9 @@ class RadialDiscBottomBar extends StatelessWidget {
   /// 无 subLabels 时圆按钮不画空胶囊，常驻浮动在子栏弧线右端
   final Widget? trailingAction;
   final VoidCallback? onTrailingTap;
+
+  /// 右侧圆按钮激活态：与 [RadialSubAction.selected] 同款主题色实底
+  final bool trailingSelected;
 
   /// 停靠在子栏右圆钮位置（±15.4° 上层弧线，参考设计 eye 钮）的
   /// 浮动操作钮（如 FAB），自带手势与外观，常驻不随子栏折叠；
@@ -256,6 +264,7 @@ class RadialDiscBottomBar extends StatelessWidget {
                             icon: trailingAction,
                             onTap: onTrailingTap,
                             style: resolvedStyle,
+                            selected: trailingSelected,
                           ),
                           if (subActions != null)
                             for (var i = 0; i < subActions!.length; i++)
@@ -266,11 +275,13 @@ class RadialDiscBottomBar extends StatelessWidget {
                                 ),
                                 icon: Semantics(
                                   button: true,
+                                  selected: subActions![i].selected,
                                   label: subActions![i].label,
                                   child: subActions![i].icon,
                                 ),
                                 onTap: subActions![i].onTap,
                                 style: resolvedStyle,
+                                selected: subActions![i].selected,
                               ),
                         ],
                       ),
@@ -292,6 +303,7 @@ class RadialDiscBottomBar extends StatelessWidget {
               icon: trailingAction,
               onTap: onTrailingTap,
               style: resolvedStyle,
+              selected: trailingSelected,
             ),
           ],
           // 4. 主层滑动药丸（弹簧沿弧线滑动并随切线旋转）
@@ -487,6 +499,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     required Widget? icon,
     required VoidCallback? onTap,
     required RadialDiscBarStyle style,
+    bool selected = false,
   }) {
     if (icon == null) return const SizedBox.shrink();
     final center = RadialGeometry.polar(angle, RadialGeometry.subMidRadius);
@@ -502,15 +515,23 @@ class RadialDiscBottomBar extends StatelessWidget {
             height: RadialGeometry.roundButtonSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: style.roundButtonColor,
-              border: Border.all(color: style.roundButtonBorderColor),
-              boxShadow: [style.roundButtonShadow],
+              color: selected ? style.activePillColor : style.roundButtonColor,
+              border: Border.all(
+                color: selected
+                    ? style.activePillColor
+                    : style.roundButtonBorderColor,
+              ),
+              boxShadow: [
+                selected ? style.activePillShadow : style.roundButtonShadow,
+              ],
             ),
             child: Center(
               child: IconTheme.merge(
                 data: IconThemeData(
                   size: 16,
-                  color: style.roundButtonIconColor,
+                  color: selected
+                      ? style.activeIconColor
+                      : style.roundButtonIconColor,
                 ),
                 child: icon,
               ),
