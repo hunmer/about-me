@@ -6,7 +6,7 @@ import 'icons.dart';
 
 // 公开 API 用到的包类型透出给 design_system 使用方
 export 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart'
-    show RadialSubOption, RadialSubBarBehavior;
+    show RadialSubOption, RadialSubBarBehavior, RadialSubAction;
 
 /// 底部导航项
 class DSNavItem {
@@ -36,6 +36,7 @@ class DSBottomNavigation extends StatelessWidget {
     this.floatingAction,
     this.frosted = true,
     this.subLabels,
+    this.subActions,
     this.subOption = RadialSubOption.left,
     this.onSubOptionChange,
     this.leadingAction,
@@ -54,6 +55,9 @@ class DSBottomNavigation extends StatelessWidget {
 
   /// 上层子栏双选项文案（null 则不启用子栏）
   final (String, String)? subLabels;
+
+  /// 上层子栏图标动作（与 [subLabels] 互斥），沿子栏弧线均匀排布
+  final List<RadialSubAction>? subActions;
 
   final RadialSubOption subOption;
   final ValueChanged<RadialSubOption>? onSubOptionChange;
@@ -114,10 +118,11 @@ class DSBottomNavigation extends StatelessWidget {
       floatingAction: floatingAction,
       frosted: frosted,
       subBarBehavior:
-          subLabels == null && leadingAction == null
+          subLabels == null && subActions == null && leadingAction == null
               ? RadialSubBarBehavior.never
               : RadialSubBarBehavior.auto,
       subLabels: subLabels,
+      subActions: subActions,
       subOption: subOption,
       onSubOptionChange: onSubOptionChange,
       leadingAction: leadingAction,

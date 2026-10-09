@@ -22,8 +22,9 @@ import 'jelly_live2d_interaction.dart';
 import 'jelly_live2d_layout.dart';
 import 'jelly_speech_bubble.dart';
 import 'bubble_region_editor.dart';
-import 'jelly_status_panel_settings.dart';
 import 'jelly_configurable_image.dart';
+import 'jelly_live2d_panel.dart';
+import 'jelly_status_panel_settings.dart';
 
 class JellyLive2D extends StatefulWidget {
   const JellyLive2D({
@@ -37,6 +38,7 @@ class JellyLive2D extends StatefulWidget {
     this.motionRequest,
     this.fill = false,
     this.fitContainer = false,
+    this.panel,
   });
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
@@ -61,6 +63,10 @@ class JellyLive2D extends StatefulWidget {
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
   final ValueListenable<Live2DMotionDefinition?>? motionRequest;
+
+  /// 底部资源面板开关（由底部导航子栏图标驱动）：
+  /// 值非空时在底部导航上方展示水平可滚动的资源列表
+  final ValueListenable<JellyLive2dPanel?>? panel;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -268,18 +274,14 @@ class _JellyLive2DState extends State<JellyLive2D> {
   }
 
   /// 切换小屋背景图；null 表示关闭背景，选择后立即生效并持久化
-  Future<void> _selectBackground(String? asset, StateSetter setBgState) async {
+  Future<void> _selectBackground(String? asset) async {
     if (asset == _backgroundAsset) return;
     setState(() => _backgroundAsset = asset);
-    setBgState(() {});
     await Live2DPlugin.instance.setBackgroundAsset(asset);
   }
 
   /// 上传自定义背景图：保存到应用目录、加入自定义列表并立即选用
-  Future<void> _uploadCustomBackground(
-    BuildContext context,
-    StateSetter setBgState,
-  ) async {
+  Future<void> _uploadCustomBackground(BuildContext context) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) =>
@@ -290,13 +292,11 @@ class _JellyLive2DState extends State<JellyLive2D> {
     await Live2DPlugin.instance.addCustomBackgroundAsset(asset);
     if (!mounted) return;
     setState(() => _backgroundAsset = asset);
-    setBgState(() {});
   }
 
-  /// 滑杆拖动中：setState 让 sheet 背后的页面实时预览，setBgState 刷新 sheet 内滑杆
-  void _previewBackground(VoidCallback apply, StateSetter setBgState) {
+  /// 滑杆拖动中实时预览背景模糊 / 不透明度
+  void _previewBackground(VoidCallback apply) {
     setState(apply);
-    setBgState(() {});
   }
 
   String _cropPrefKey(Live2DModelDefinition model) {
@@ -693,10 +693,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
     if (model != null) await _selectModel(model);
   }
 
-  Future<void> _uploadCustomBubble(
-    BuildContext context,
-    StateSetter setBubbleState,
-  ) async {
+  Future<void> _uploadCustomBubble(BuildContext context) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => const ImagePickerDialog(saveDirectory: 'live2d/bubbles'),
@@ -711,23 +708,12 @@ class _JellyLive2DState extends State<JellyLive2D> {
       initial: BubbleTextRegions.forAsset(asset),
     );
     if (regions != null) {
-      await Live2DPlugin.instance.setBubbleRegions(asset, {
-        'nameLeft': regions.modelName.left,
-        'nameTop': regions.modelName.top,
-        'nameRight': regions.modelName.right,
-        'nameBottom': regions.modelName.bottom,
-        'messageLeft': regions.message.left,
-        'messageTop': regions.message.top,
-        'messageRight': regions.message.right,
-        'messageBottom': regions.message.bottom,
-      });
+      await _applyBubbleRegions(asset, regions);
     }
     if (mounted) setState(() {});
-    setBubbleState(() {});
   }
 
   void _showControls() {
-    unawaited(JellyStatusPanelSettings.instance.load());
     showDSBottomSheet<void>(
       context: context,
       title: 'Live2D',
@@ -779,348 +765,6 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       ),
                   ],
                 ),
-              ),
-              SizedBox(height: theme.spacing.xl),
-              Text(
-                '气泡样式',
-                style: DsTypography.heading.copyWith(color: theme.text),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              StatefulBuilder(
-                builder: (context, setBubbleState) => Wrap(
-                  spacing: theme.spacing.sm,
-                  runSpacing: theme.spacing.sm,
-                  children: [
-                    for (final asset in [
-                      ..._bubbleAssets,
-                      ...Live2DPlugin.instance.customBubbleAssets,
-                    ])
-                      GestureDetector(
-                        onTap: () async {
-                          await Live2DPlugin.instance.setBubbleAsset(asset);
-                          setBubbleState(() {});
-                          if (mounted) setState(() {});
-                        },
-                        child: Container(
-                          width: 72,
-                          height: 48,
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: asset == Live2DPlugin.instance.bubbleAsset
-                                  ? theme.primary
-                                  : theme.surface.withValues(alpha: 0),
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              JellyConfigurableImage(
-                                path: asset,
-                                fit: BoxFit.contain,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  child: DsIcon(
-                                    DsIconKind.image,
-                                    size: 16,
-                                    color: theme.primary,
-                                  ),
-                                  onTap: () async {
-                                    final regions =
-                                        await showBubbleRegionEditor(
-                                          context: context,
-                                          asset: asset,
-                                          initial:
-                                              BubbleTextRegions.fromSettings(
-                                                asset,
-                                                Live2DPlugin
-                                                    .instance
-                                                    .bubbleRegions,
-                                              ),
-                                        );
-                                    if (regions == null) return;
-                                    await Live2DPlugin.instance
-                                        .setBubbleRegions(asset, {
-                                          'nameLeft': regions.modelName.left,
-                                          'nameTop': regions.modelName.top,
-                                          'nameRight': regions.modelName.right,
-                                          'nameBottom':
-                                              regions.modelName.bottom,
-                                          'messageLeft': regions.message.left,
-                                          'messageTop': regions.message.top,
-                                          'messageRight': regions.message.right,
-                                          'messageBottom':
-                                              regions.message.bottom,
-                                        });
-                                    if (mounted) setState(() {});
-                                    setBubbleState(() {});
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    GestureDetector(
-                      onTap: () => _uploadCustomBubble(context, setBubbleState),
-                      child: Container(
-                        width: 72,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: theme.stroke),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.plus,
-                            size: 22,
-                            color: theme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: theme.spacing.xl),
-              Text(
-                '背景图片',
-                style: DsTypography.heading.copyWith(color: theme.text),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              StatefulBuilder(
-                builder: (context, setBgState) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Wrap(
-                      spacing: theme.spacing.sm,
-                      runSpacing: theme.spacing.sm,
-                      children: [
-                        GestureDetector(
-                          onTap: () => _selectBackground(null, setBgState),
-                          child: Container(
-                            width: 72,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: _backgroundAsset == null
-                                    ? theme.primary
-                                    : theme.stroke,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: DsIcon(
-                                DsIconKind.block,
-                                size: 20,
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ),
-                        ),
-                        for (final asset in [
-                          ..._backgroundAssets,
-                          ...Live2DPlugin.instance.customBackgroundAssets,
-                        ])
-                          GestureDetector(
-                            onTap: () => _selectBackground(asset, setBgState),
-                            child: Container(
-                              width: 72,
-                              height: 48,
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: asset == _backgroundAsset
-                                      ? theme.primary
-                                      : theme.surface.withValues(alpha: 0),
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: JellyConfigurableImage(
-                                path: asset,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        GestureDetector(
-                          onTap: () =>
-                              _uploadCustomBackground(context, setBgState),
-                          child: Container(
-                            width: 72,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: theme.stroke),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: DsIcon(
-                                DsIconKind.plus,
-                                size: 22,
-                                color: theme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_backgroundAsset != null) ...[
-                      SizedBox(height: theme.spacing.md),
-                      Text(
-                        '背景模糊',
-                        style: DsTypography.label.copyWith(color: theme.text),
-                      ),
-                      DSSlider(
-                        value: _backgroundBlur / _backgroundBlurMax,
-                        onChanged: (ratio) => _previewBackground(
-                          () => _backgroundBlur = ratio * _backgroundBlurMax,
-                          setBgState,
-                        ),
-                        onChangeEnd: (ratio) => Live2DPlugin.instance
-                            .setBackgroundBlur(ratio * _backgroundBlurMax),
-                      ),
-                      SizedBox(height: theme.spacing.xs),
-                      Text(
-                        '背景不透明度',
-                        style: DsTypography.label.copyWith(color: theme.text),
-                      ),
-                      DSSlider(
-                        value: _backgroundOpacity,
-                        onChanged: (ratio) => _previewBackground(
-                          () => _backgroundOpacity = ratio,
-                          setBgState,
-                        ),
-                        onChangeEnd: (ratio) =>
-                            Live2DPlugin.instance.setBackgroundOpacity(ratio),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              SizedBox(height: theme.spacing.xl),
-              Text(
-                '状态面板',
-                style: DsTypography.heading.copyWith(color: theme.text),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              StatefulBuilder(
-                builder: (context, setStatusPanelState) {
-                  final settings = JellyStatusPanelSettings.instance;
-                  return AnimatedBuilder(
-                    animation: settings,
-                    builder: (context, _) => Wrap(
-                      spacing: theme.spacing.sm,
-                      runSpacing: theme.spacing.sm,
-                      children: [
-                        for (final style in settings.styles)
-                          GestureDetector(
-                            onTap: () async {
-                              await settings.selectStyle(style.id);
-                              setStatusPanelState(() {});
-                            },
-                            child: Container(
-                              width: 200,
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: style.id == settings.selectedStyle.id
-                                      ? theme.primary
-                                      : theme.stroke,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        JellyConfigurableImage(
-                                          path: style.asset,
-                                          fit: BoxFit.contain,
-                                        ),
-                                        Positioned(
-                                          right: 0,
-                                          top: 0,
-                                          child: GestureDetector(
-                                            behavior: HitTestBehavior.opaque,
-                                            onTap: () async {
-                                              await settings.selectStyle(
-                                                style.id,
-                                              );
-                                              if (context.mounted) {
-                                                await settings.edit(context);
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 32,
-                                              height: 32,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: theme.surface.withValues(
-                                                  alpha: 0.9,
-                                                ),
-                                              ),
-                                              child: Center(
-                                                child: DsIcon(
-                                                  DsIconKind.edit,
-                                                  size: 18,
-                                                  color: theme.primary,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    style.label,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: DsTypography.label.copyWith(
-                                      color: theme.text,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        GestureDetector(
-                          onTap: () => settings.upload(context),
-                          child: Container(
-                            width: 200,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: theme.stroke),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: DsIcon(
-                                DsIconKind.plus,
-                                size: 28,
-                                color: theme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
               SizedBox(height: theme.spacing.xl),
               Text(
@@ -1248,6 +892,366 @@ class _JellyLive2DState extends State<JellyLive2D> {
           ),
         );
       },
+    );
+  }
+
+  /// 底部资源条：导航栏子栏图标点开后，在底部导航上方水平滚动展示资源；
+  /// 点击缩略图切换，角标按钮进入对应编辑器
+  Widget _buildResourceStrip(JellyLive2dPanel panel) {
+    final theme = AppTheme.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spacing.md,
+        vertical: theme.spacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.surface.withValues(alpha: 0.92),
+        borderRadius: theme.radii.lg,
+        border: Border.all(color: theme.stroke),
+        boxShadow: theme.shadows.soft,
+      ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.bottomCenter,
+        child: switch (panel) {
+          JellyLive2dPanel.bubble => _buildBubbleStrip(theme),
+          JellyLive2dPanel.background => _buildBackgroundStrip(theme),
+          JellyLive2dPanel.statusPanel => _buildStatusPanelStrip(theme),
+        },
+      ),
+    );
+  }
+
+  Widget _buildBubbleStrip(AppThemeData theme) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final asset in [
+            ..._bubbleAssets,
+            ...Live2DPlugin.instance.customBubbleAssets,
+          ])
+            Padding(
+              padding: EdgeInsets.only(right: theme.spacing.sm),
+              child: _bubbleTile(theme, asset),
+            ),
+          _addTile(
+            theme,
+            width: 72,
+            height: 48,
+            iconSize: 22,
+            onTap: () => _uploadCustomBubble(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bubbleTile(AppThemeData theme, String asset) {
+    return GestureDetector(
+      onTap: () async {
+        await Live2DPlugin.instance.setBubbleAsset(asset);
+        if (mounted) setState(() {});
+      },
+      child: Container(
+        width: 72,
+        height: 48,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: asset == Live2DPlugin.instance.bubbleAsset
+                ? theme.primary
+                : theme.surface.withValues(alpha: 0),
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            JellyConfigurableImage(path: asset, fit: BoxFit.contain),
+            Positioned(
+              right: 0,
+              top: 0,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _editBubbleRegions(asset),
+                child: DsIcon(DsIconKind.image, size: 16, color: theme.primary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editBubbleRegions(String asset) async {
+    final regions = await showBubbleRegionEditor(
+      context: context,
+      asset: asset,
+      initial: BubbleTextRegions.fromSettings(
+        asset,
+        Live2DPlugin.instance.bubbleRegions,
+      ),
+    );
+    if (regions == null) return;
+    await _applyBubbleRegions(asset, regions);
+  }
+
+  Future<void> _applyBubbleRegions(
+    String asset,
+    BubbleTextRegions regions,
+  ) async {
+    await Live2DPlugin.instance.setBubbleRegions(asset, {
+      'nameLeft': regions.modelName.left,
+      'nameTop': regions.modelName.top,
+      'nameRight': regions.modelName.right,
+      'nameBottom': regions.modelName.bottom,
+      'messageLeft': regions.message.left,
+      'messageTop': regions.message.top,
+      'messageRight': regions.message.right,
+      'messageBottom': regions.message.bottom,
+    });
+    if (mounted) setState(() {});
+  }
+
+  Widget _buildBackgroundStrip(AppThemeData theme) {
+    return SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(right: theme.spacing.sm),
+                  child: GestureDetector(
+                    onTap: () => _selectBackground(null),
+                    child: Container(
+                      width: 72,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _backgroundAsset == null
+                              ? theme.primary
+                              : theme.stroke,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: DsIcon(
+                          DsIconKind.block,
+                          size: 20,
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                for (final asset in [
+                  ..._backgroundAssets,
+                  ...Live2DPlugin.instance.customBackgroundAssets,
+                ])
+                  Padding(
+                    padding: EdgeInsets.only(right: theme.spacing.sm),
+                    child: GestureDetector(
+                      onTap: () => _selectBackground(asset),
+                      child: Container(
+                        width: 72,
+                        height: 48,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: asset == _backgroundAsset
+                                ? theme.primary
+                                : theme.surface.withValues(alpha: 0),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: JellyConfigurableImage(
+                          path: asset,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                _addTile(
+                  theme,
+                  width: 72,
+                  height: 48,
+                  iconSize: 22,
+                  onTap: () => _uploadCustomBackground(context),
+                ),
+              ],
+            ),
+          ),
+          // 背景生效时尾随固定的模糊/不透明度滑杆（不参与横向滚动，
+          // 避免与滑杆拖动手势冲突）
+          if (_backgroundAsset != null) ...[
+            SizedBox(width: theme.spacing.md),
+            Container(width: 1, height: 36, color: theme.stroke),
+            SizedBox(width: theme.spacing.md),
+            DsIcon(DsIconKind.blur, size: 14, color: theme.textSub),
+            SizedBox(
+              width: 72,
+              child: DSSlider(
+                value: (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
+                onChanged: (ratio) => _previewBackground(
+                  () => _backgroundBlur = ratio * _backgroundBlurMax,
+                ),
+                onChangeEnd: (ratio) => Live2DPlugin.instance
+                    .setBackgroundBlur(ratio * _backgroundBlurMax),
+              ),
+            ),
+            SizedBox(width: theme.spacing.sm),
+            DsIcon(DsIconKind.opacity, size: 14, color: theme.textSub),
+            SizedBox(
+              width: 72,
+              child: DSSlider(
+                value: _backgroundOpacity.clamp(0.0, 1.0),
+                onChanged: (ratio) =>
+                    _previewBackground(() => _backgroundOpacity = ratio),
+                onChangeEnd: (ratio) =>
+                    Live2DPlugin.instance.setBackgroundOpacity(ratio),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPanelStrip(AppThemeData theme) {
+    unawaited(JellyStatusPanelSettings.instance.load());
+    final settings = JellyStatusPanelSettings.instance;
+    return AnimatedBuilder(
+      animation: settings,
+      builder: (context, _) => SizedBox(
+        height: 104,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            for (final style in settings.styles)
+              Padding(
+                padding: EdgeInsets.only(right: theme.spacing.sm),
+                child: _statusPanelTile(theme, settings, style),
+              ),
+            _addTile(
+              theme,
+              width: 132,
+              height: 104,
+              iconSize: 24,
+              onTap: () => settings.upload(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusPanelTile(
+    AppThemeData theme,
+    JellyStatusPanelSettings settings,
+    JellyStatusPanelStyle style,
+  ) {
+    return GestureDetector(
+      onTap: () => settings.selectStyle(style.id),
+      child: Container(
+        width: 132,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: style.id == settings.selectedStyle.id
+                ? theme.primary
+                : theme.stroke,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  JellyConfigurableImage(
+                    path: style.asset,
+                    fit: BoxFit.contain,
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        await settings.selectStyle(style.id);
+                        if (mounted) await settings.edit(context);
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.surface.withValues(alpha: 0.9),
+                        ),
+                        child: Center(
+                          child: DsIcon(
+                            DsIconKind.edit,
+                            size: 14,
+                            color: theme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              style.label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DsTypography.label.copyWith(color: theme.text),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 资源条尾部的“添加自定义资源”占位块
+  Widget _addTile(
+    AppThemeData theme, {
+    required double width,
+    required double height,
+    required double iconSize,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.stroke),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: DsIcon(DsIconKind.plus, size: iconSize, color: theme.primary),
+        ),
+      ),
     );
   }
 
@@ -1519,6 +1523,26 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     width: layoutWidth,
                     height: layoutHeight,
                   ),
+                  // 子栏图标驱动的资源条：悬浮在底部导航（含其向上溢出的
+                  // 弧顶绘制区）之上
+                  if (widget.panel != null)
+                    ValueListenableBuilder<JellyLive2dPanel?>(
+                      valueListenable: widget.panel!,
+                      builder: (context, activePanel, _) {
+                        if (activePanel == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return Positioned(
+                          left: theme.spacing.lg,
+                          right: theme.spacing.lg,
+                          bottom:
+                              navigationPadding +
+                              _radialDockOverflowTop +
+                              theme.spacing.xs,
+                          child: _buildResourceStrip(activePanel),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

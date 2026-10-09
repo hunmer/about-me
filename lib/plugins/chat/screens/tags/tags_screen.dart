@@ -129,7 +129,12 @@ class _TagsScreenState extends State<TagsScreen> {
     final message =
         _searchQuery.isEmpty ? 'chat_noTagsFound'.tr : 'chat_noMatchingTags'.tr;
 
-    return Center(child: DSEmptyState(emoji: '🏷️', title: message));
+    return Center(
+      child: DSEmptyState(
+        svgAsset: 'assets/icons/svg/tag.svg',
+        title: message,
+      ),
+    );
   }
 
   @override

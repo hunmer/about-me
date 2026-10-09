@@ -1,6 +1,8 @@
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
+import 'jelly_live2d_panel.dart';
+
 /// 果冻小屋主导航的四个页签
 enum JellyTab { cottage, schedule, board, mine }
 
@@ -22,6 +24,7 @@ class JellyBottomNav extends StatelessWidget {
     this.onTap,
     this.onToggleChat,
     this.chatActive = false,
+    this.live2dPanel,
   });
 
   /// 当前所在页签
@@ -37,6 +40,9 @@ class JellyBottomNav extends StatelessWidget {
 
   /// 聊天表单当前是否显示（按钮高亮态）
   final bool chatActive;
+
+  /// Live2D 底部资源面板开关（仅小屋页签显示对应的子栏图标）
+  final ValueNotifier<JellyLive2dPanel?>? live2dPanel;
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +103,61 @@ class JellyBottomNav extends StatelessWidget {
                   )
                   : null,
           onLeadingTap: onToggleChat,
+          // 小屋页签：子栏提供 气泡/背景/状态面板 资源面板入口
+          subActions:
+              current == JellyTab.cottage && live2dPanel != null
+                  ? [
+                    _live2dPanelAction(
+                      live2dPanel!,
+                      JellyLive2dPanel.bubble,
+                      '气泡样式',
+                      DsIconKind.bubble,
+                    ),
+                    _live2dPanelAction(
+                      live2dPanel!,
+                      JellyLive2dPanel.background,
+                      '背景图片',
+                      DsIconKind.image,
+                    ),
+                    _live2dPanelAction(
+                      live2dPanel!,
+                      JellyLive2dPanel.statusPanel,
+                      '状态面板',
+                      DsIconKind.spaceDashboard,
+                    ),
+                  ]
+                  : null,
         ),
       ),
+    );
+  }
+
+  /// 子栏资源面板图标：点按在 打开/收起 间切换（再次点击同图标收起），
+  /// 图标颜色随当前打开的面板高亮
+  RadialSubAction _live2dPanelAction(
+    ValueNotifier<JellyLive2dPanel?> panel,
+    JellyLive2dPanel value,
+    String label,
+    DsIconKind icon,
+  ) {
+    return RadialSubAction(
+      label: label,
+      icon: ValueListenableBuilder<JellyLive2dPanel?>(
+        valueListenable: panel,
+        builder: (context, active, _) {
+          final navTheme = AppTheme.of(context);
+          return DsIcon(
+            icon,
+            size: 16,
+            color: active == value ? navTheme.primary : navTheme.textSub,
+          );
+        },
+      ),
+      onTap: () {
+        // 打开面板时收起聊天表单，两者都悬浮在页面底部
+        if (panel.value != value && chatActive) onToggleChat?.call();
+        panel.value = panel.value == value ? null : value;
+      },
     );
   }
 }

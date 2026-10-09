@@ -1,24 +1,32 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'button.dart';
 import 'jelly_box.dart';
 
-/// 果冻空状态：大表情 + 标题 + 说明 + 可选操作按钮
+/// 果冻空状态：大表情/SVG 图标 + 标题 + 说明 + 可选操作按钮
 /// （对应设计稿「还没有记录哦」）
 class DSEmptyState extends StatelessWidget {
   const DSEmptyState({
     super.key,
-    required this.emoji,
+    this.emoji,
+    this.svgAsset,
     required this.title,
     this.message,
     this.actionLabel,
     this.onAction,
-  });
+  }) : assert(
+         emoji != null || svgAsset != null,
+         'emoji 与 svgAsset 至少提供一个',
+       );
 
   /// 主视觉表情（如 🐰）
-  final String emoji;
+  final String? emoji;
+
+  /// 主视觉 SVG 资源路径（如 assets/icons/svg/tag.svg），优先于 emoji
+  final String? svgAsset;
   final String title;
   final String? message;
   final String? actionLabel;
@@ -39,7 +47,15 @@ class DSEmptyState extends StatelessWidget {
           color: theme.surfaceAlt,
           raised: true,
           alignment: Alignment.center,
-          child: Text(emoji, style: const TextStyle(fontSize: 42)),
+          child:
+              svgAsset != null
+                  ? SvgPicture.asset(
+                    svgAsset!,
+                    width: 44,
+                    height: 44,
+                    colorFilter: ColorFilter.mode(theme.textSub, BlendMode.srcIn),
+                  )
+                  : Text(emoji!, style: const TextStyle(fontSize: 42)),
         ),
         SizedBox(height: theme.spacing.lg),
         Text(

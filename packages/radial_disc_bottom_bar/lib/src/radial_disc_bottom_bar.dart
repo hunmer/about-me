@@ -24,6 +24,24 @@ enum RadialSubBarBehavior {
 /// 子栏分段选项
 enum RadialSubOption { left, right }
 
+/// 上层子栏的图标动作项（沿子栏弧线均匀排布的圆钮，与 [RadialDiscBottomBar.subLabels] 互斥）
+class RadialSubAction {
+  const RadialSubAction({
+    required this.label,
+    required this.icon,
+    this.onTap,
+  });
+
+  /// 语义标签 / 无障碍描述（圆钮不渲染文字）
+  final String label;
+
+  /// 圆钮内图标；选中高亮由调用方在 icon 内自行处理
+  /// （如用 ValueListenableBuilder 切换颜色）
+  final Widget icon;
+
+  final VoidCallback? onTap;
+}
+
 /// 弧形圆盘导航栏的 tab 项
 class RadialDiscTab {
   const RadialDiscTab({
@@ -61,6 +79,7 @@ class RadialDiscBottomBar extends StatelessWidget {
     this.subOption = RadialSubOption.left,
     this.onSubOptionChange,
     this.subLabels,
+    this.subActions,
     this.leadingAction,
     this.onLeadingTap,
     this.trailingAction,
@@ -70,7 +89,11 @@ class RadialDiscBottomBar extends StatelessWidget {
     this.frosted = false,
     this.frostSigma = 10,
     this.hapticsEnabled = true,
-  }) : assert(tabs.length > 0, 'tabs 不能为空');
+  }) : assert(tabs.length > 0, 'tabs 不能为空'),
+       assert(
+         subLabels == null || subActions == null,
+         'subLabels 与 subActions 不能同时使用',
+       );
 
   final List<RadialDiscTab> tabs;
   final int activeIndex;
@@ -80,6 +103,9 @@ class RadialDiscBottomBar extends StatelessWidget {
   final RadialSubOption subOption;
   final ValueChanged<RadialSubOption>? onSubOptionChange;
   final (String, String)? subLabels;
+
+  /// 上层子栏的图标动作（与 [subLabels] 互斥），沿子栏弧线均匀排布
+  final List<RadialSubAction>? subActions;
 
   /// 子栏左侧圆按钮图标（null 则不渲染该按钮）。
   /// 无 subLabels 时圆按钮不画空胶囊，常驻浮动在子栏弧线左端
@@ -124,10 +150,12 @@ class RadialDiscBottomBar extends StatelessWidget {
         );
     final count = tabs.length;
     final index = activeIndex.clamp(0, count - 1);
-    // 子栏胶囊（含折叠动画）只在有分段选项 subLabels 时出现；
-    // 仅传圆按钮时不画空胶囊，圆按钮以常驻浮动圆盘渲染在子栏弧线两端
+    // 子栏胶囊（含折叠动画）只在有分段选项 subLabels 或图标动作
+    // subActions 时出现；仅传圆按钮时不画空胶囊，圆按钮以常驻浮动
+    // 圆盘渲染在子栏弧线两端
     final subBarPossible =
-        subBarBehavior != RadialSubBarBehavior.never && subLabels != null;
+        subBarBehavior != RadialSubBarBehavior.never &&
+        (subLabels != null || (subActions?.isNotEmpty ?? false));
     final hasFloatingDiscs =
         !subBarPossible && (leadingAction != null || trailingAction != null);
     final wantsSubBar = switch (subBarBehavior) {
@@ -229,6 +257,21 @@ class RadialDiscBottomBar extends StatelessWidget {
                             onTap: onTrailingTap,
                             style: resolvedStyle,
                           ),
+                          if (subActions != null)
+                            for (var i = 0; i < subActions!.length; i++)
+                              _roundButton(
+                                angle: RadialGeometry.subActionAngle(
+                                  i,
+                                  subActions!.length,
+                                ),
+                                icon: Semantics(
+                                  button: true,
+                                  label: subActions![i].label,
+                                  child: subActions![i].icon,
+                                ),
+                                onTap: subActions![i].onTap,
+                                style: resolvedStyle,
+                              ),
                         ],
                       ),
                     ),

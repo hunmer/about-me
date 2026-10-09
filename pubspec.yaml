@@ -153,6 +153,8 @@ dependencies:
   # 桌面端窗口位置/大小记忆
   window_manager: ^0.5.1
   screen_retriever: ^0.2.0
+  flutter_svg: ^2.2.0
+  liquid_glass_easy: ^4.3.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -200,6 +202,7 @@ flutter:
     - assets/images/jelly_status_panel_a3.png
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
+    - assets/icons/svg/  # SVG 图标（空状态等）
     - assets/animations/  # Lottie animations
     - assets/floating_ball_icons/  # Preset images for floating ball
     - assets/models/mao/

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -14,6 +16,7 @@ import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
 import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
+import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
@@ -42,21 +45,41 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   /// Live2D 聊天表单是否显示（由导航栏子栏左侧聊天按钮切换）
   bool _chatVisible = false;
 
+  /// Live2D 底部资源面板开关：导航栏子栏图标写入，
+  /// 小屋页签的 JellyLive2D 读取并渲染资源列表
+  final ValueNotifier<JellyLive2dPanel?> _live2dPanel =
+      ValueNotifier<JellyLive2dPanel?>(null);
+
+  @override
+  void dispose() {
+    _live2dPanel.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // IndexedStack 保活各页签状态（滚动位置、编辑进度等）；
     // 页面内容铺满全屏，底部导航悬浮其上
     return JellyBottomNav(
       current: JellyTab.values[_tabIndex],
-      onTap: (index) => setState(() => _tabIndex = index),
+      onTap: (index) {
+        setState(() => _tabIndex = index);
+        // 离开小屋页签时收起资源面板（IndexedStack 保活，不会自动消失）
+        if (index != 0) _live2dPanel.value = null;
+      },
       chatActive: _chatVisible,
-      onToggleChat: () => setState(() => _chatVisible = !_chatVisible),
+      onToggleChat: () {
+        setState(() => _chatVisible = !_chatVisible);
+        // 打开聊天表单时收起资源面板，两者都悬浮在页面底部
+        if (_chatVisible) _live2dPanel.value = null;
+      },
+      live2dPanel: _live2dPanel,
       child: IndexedStack(
         index: _tabIndex,
         children: [
           HeroMode(
             enabled: _tabIndex == 0,
-            child: _CottageTab(chatVisible: _chatVisible),
+            child: _CottageTab(chatVisible: _chatVisible, panel: _live2dPanel),
           ),
           HeroMode(enabled: _tabIndex == 1, child: const HomeScheduleScreen()),
           HeroMode(
@@ -74,10 +97,13 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 /// 顶部信息面板与右侧陪伴状态按钮，
 /// 底部聊天表单按需切换显示。
 class _CottageTab extends StatefulWidget {
-  const _CottageTab({this.chatVisible = false});
+  const _CottageTab({this.chatVisible = false, this.panel});
 
   /// Live2D 聊天表单是否显示
   final bool chatVisible;
+
+  /// Live2D 底部资源面板开关（透传给 JellyLive2D 渲染资源列表）
+  final ValueListenable<JellyLive2dPanel?>? panel;
 
   @override
   State<_CottageTab> createState() => _CottageTabState();
@@ -131,6 +157,7 @@ class _CottageTabState extends State<_CottageTab> {
               JellyLive2D(
                 fill: false,
                 fitContainer: true,
+                panel: widget.panel,
                 message: _live2dMessage,
                 reaction: _live2dReaction,
                 initialModel: modelDefinitionForArchive(
@@ -146,7 +173,7 @@ class _CottageTabState extends State<_CottageTab> {
               JellyStatusPanel(controller: _companion),
               // 右侧按钮：陪伴状态（原状态卡信息改为弹窗展示）
               Align(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.topRight,
                 child: _buildSideButton(
                   theme,
                   icon: DsIconKind.bot,
@@ -181,7 +208,13 @@ class _CottageTabState extends State<_CottageTab> {
     required VoidCallback onTap,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: theme.spacing.sm),
+      // 按钮位于右上角，顶部留出间距避免贴边
+      padding: EdgeInsets.fromLTRB(
+        theme.spacing.sm,
+        theme.spacing.sm,
+        theme.spacing.sm,
+        0,
+      ),
       child: Pressable(
         onPressed: onTap,
         semanticLabel: semanticLabel,
@@ -384,7 +417,18 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         final controller = snapshot.data;
         if (snapshot.hasError) return const Text('Live2D 聊天初始化失败');
         if (controller == null) return const SizedBox.shrink();
-        return MessageInput(controller: controller);
+        // 液态玻璃磨砂背景：Impeller 下实时折射背景，
+        // Skia/无 LiquidGlassView 时自动降级为磨砂（模糊 + 着色 + 描边）
+        return LiquidGlassLens(
+          style: const LiquidGlassStyle(
+            shape: LiquidGlassShape.roundedRectangle(cornerRadius: 28),
+            appearance: LiquidGlassAppearance(
+              blur: LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
+              color: Color(0x59FFFFFF),
+            ),
+          ),
+          child: MessageInput(controller: controller),
+        );
       },
     );
   }

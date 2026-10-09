@@ -64,6 +64,10 @@ enum DsIconKind {
   play,
   pause,
   mood,
+  bubble,
+  spaceDashboard,
+  blur,
+  opacity,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -127,6 +131,10 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.play: Icons.play_arrow,
   DsIconKind.pause: Icons.pause,
   DsIconKind.mood: Icons.emoji_emotions_outlined,
+  DsIconKind.bubble: Icons.chat_bubble,
+  DsIconKind.spaceDashboard: Icons.space_dashboard_outlined,
+  DsIconKind.blur: Icons.blur_on,
+  DsIconKind.opacity: Icons.opacity,
 };
 
 /// 图标组件：基于系统 Material Icons

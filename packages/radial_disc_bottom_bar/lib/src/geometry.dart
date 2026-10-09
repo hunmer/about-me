@@ -40,6 +40,10 @@ abstract final class RadialGeometry {
   static const double optionRightAngle = 5.4; // 选项二
   static const double subPillHalfWidth = 4.8; // 药丸角宽度的一半 (10.2-0.6)/2
 
+  // 子栏图标动作的排布角度范围：35px 圆钮折算半角约 1.65°，
+  // 两端再与 leading/trailing 圆钮（±15.4°）留出间隙
+  static const double subActionAngleSpan = 7.2;
+
   // 尺寸
   static const double pillWidth = 56;
   static const double pillHeight = 42;
@@ -71,6 +75,11 @@ abstract final class RadialGeometry {
     double span = tabAngleSpan,
   }) =>
       count <= 1 ? 0 : -span + 2 * span * index / (count - 1);
+
+  /// 第 [index] 个（共 [count] 个）子栏图标动作的角度，均匀分布在
+  /// 子栏扇环（±10.8°）中段
+  static double subActionAngle(int index, int count) =>
+      continuousTabAngle(index.toDouble(), count, span: subActionAngleSpan);
 
   /// 极坐标转画布坐标：0° 指向正上方（弧顶），正角向右
   static Offset polar(double angleDeg, double radius) {
