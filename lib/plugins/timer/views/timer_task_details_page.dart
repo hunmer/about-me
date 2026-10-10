@@ -159,6 +159,11 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
       _currentTask.pause();
       WhiteNoiseService.instance.pause();
     } else {
+      // 已完成的任务再次点开始：先重置再重新跑，否则会立即触发结算
+      if (_currentTask.isCompleted) {
+        _currentTask.reset();
+        _settlementShown = false;
+      }
       _currentTask.start();
       _taskHasRun = true;
       WhiteNoiseService.instance.resume();
