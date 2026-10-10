@@ -1,5 +1,6 @@
 import 'package:aboutme_nfc/aboutme_nfc.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:get/get.dart';
 
 /// NFC 控制器 - 处理所有 NFC 相关的业务逻辑
 class NfcController {
@@ -26,7 +27,7 @@ class NfcController {
     if (!_isNfcEnabled) {
       return NfcReadResult(
         success: false,
-        error: '请先启用NFC',
+        error: 'nfc_nfcDisabled'.tr,
       );
     }
 
@@ -40,7 +41,7 @@ class NfcController {
     } catch (e) {
       return NfcReadResult(
         success: false,
-        error: '读取错误: $e',
+        error: 'nfc_readError'.trParams({'error': e.toString()}),
       );
     }
   }
@@ -50,7 +51,7 @@ class NfcController {
     if (!_isNfcEnabled) {
       return NfcWriteResult(
         success: false,
-        error: '请先启用NFC',
+        error: 'nfc_nfcDisabled'.tr,
       );
     }
 
@@ -63,7 +64,7 @@ class NfcController {
     } catch (e) {
       return NfcWriteResult(
         success: false,
-        error: '写入错误: $e',
+        error: 'nfc_writeError'.trParams({'error': e.toString()}),
       );
     }
   }
@@ -83,11 +84,11 @@ class NfcController {
     try {
       final success = await _nfc.openNfcSettings();
       if (!success) {
-        showError('无法打开NFC设置');
+        showError('nfc_openSettingsFailed'.tr);
       }
     } catch (e) {
       print('Error opening NFC settings: $e');
-      showError('打开设置失败: $e');
+      showError('nfc_openSettingsError'.trParams({'error': e.toString()}));
     }
   }
 }

@@ -15,6 +15,7 @@ import 'card_handlers/checkin_card_handler.dart';
 import 'card_handlers/goods_usage_card_handler.dart';
 import 'card_handlers/habit_timer_card_handler.dart';
 import 'card_handlers/tracker_progress_card_handler.dart';
+import 'widgets/nfc_waiting_dialog.dart';
 
 /// NFC控制器插件主视图
 class NfcMainView extends StatefulWidget {
@@ -66,25 +67,16 @@ class _NfcMainViewState extends State<NfcMainView> {
 
     bool isCancelled = false;
 
-    showDSDialog(
-      context: context,
-      barrierDismissible: false,
-      theme: DSThemeBridge.resolve(context),
-      builder: (dialogContext) => PopScope(
-        canPop: false,
-        child: _NfcWaitingDialog(
-          message: 'nfc_pleaseBringPhoneNearNFC'.tr,
-          detail: 'nfc_readingData'.tr,
-          cancelText: 'nfc_cancel'.tr,
-          onCancel: () {
-            isCancelled = true;
-            Navigator.of(dialogContext).pop();
-            setState(() {
-              _isReading = false;
-            });
-          },
-        ),
-      ),
+    showNfcWaitingDialog(
+      context,
+      detail: 'nfc_readingData'.tr,
+      cancelText: 'nfc_cancel'.tr,
+      onCancel: () {
+        isCancelled = true;
+        setState(() {
+          _isReading = false;
+        });
+      },
     );
 
     try {
@@ -137,18 +129,10 @@ class _NfcMainViewState extends State<NfcMainView> {
     // 显示等待对话框
     if (!mounted) return;
 
-    showDSDialog(
-      context: context,
-      barrierDismissible: false,
-      theme: DSThemeBridge.resolve(context),
-      builder: (context) => PopScope(
-        canPop: false,
-        child: _NfcWaitingDialog(
-          message: 'nfc_pleaseBringPhoneNearNFC'.tr,
-          detail: 'nfc_writingRecords'
-              .trParams({'count': records.length.toString()}),
-        ),
-      ),
+    showNfcWaitingDialog(
+      context,
+      detail: 'nfc_writingRecords'
+          .trParams({'count': records.length.toString()}),
     );
 
     try {
@@ -327,63 +311,6 @@ class _NfcMainViewState extends State<NfcMainView> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// NFC 等待对话框：果冻面板 + 加载动画 + 可选取消按钮
-class _NfcWaitingDialog extends StatelessWidget {
-  const _NfcWaitingDialog({
-    required this.message,
-    this.detail,
-    this.cancelText,
-    this.onCancel,
-  });
-
-  final String message;
-
-  /// 副标题（当前操作说明）
-  final String? detail;
-
-  final String? cancelText;
-  final VoidCallback? onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
-
-    return JellyBox(
-      radius: theme.radii.xxl,
-      padding: EdgeInsets.all(theme.spacing.xl),
-      constraints: const BoxConstraints(maxWidth: 320),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const DSLoadingDots(size: 14),
-          SizedBox(height: theme.spacing.md),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: DsTypography.body.copyWith(color: theme.text),
-          ),
-          if (detail != null) ...[
-            SizedBox(height: theme.spacing.sm),
-            Text(
-              detail!,
-              textAlign: TextAlign.center,
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-          ],
-          if (cancelText != null && onCancel != null) ...[
-            SizedBox(height: theme.spacing.xl),
-            DSButton(
-              label: cancelText!,
-              variant: DSButtonVariant.outline,
-              onPressed: onCancel,
-            ),
-          ],
-        ],
       ),
     );
   }

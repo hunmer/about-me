@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// NFC 记录类型
 enum NfcRecordType {
-  uri('URI', '链接/URI', Icons.link),
-  text('TEXT', '纯文本', Icons.text_fields),
-  mime('MIME', 'MIME类型', Icons.data_object),
-  aar('AAR', '应用记录', Icons.android),
-  external_('EXTERNAL', '外部类型', Icons.extension);
+  uri('URI', Icons.link),
+  text('TEXT', Icons.text_fields),
+  mime('MIME', Icons.data_object),
+  aar('AAR', Icons.android),
+  external_('EXTERNAL', Icons.extension);
 
   final String value;
-  final String label;
   final IconData icon;
-  const NfcRecordType(this.value, this.label, this.icon);
+  const NfcRecordType(this.value, this.icon);
+}
+
+extension NfcRecordTypeL10n on NfcRecordType {
+  /// 本地化类型标签
+  String get localizedLabel => switch (this) {
+    NfcRecordType.uri => 'nfc_typeUri'.tr,
+    NfcRecordType.text => 'nfc_typeText'.tr,
+    NfcRecordType.mime => 'nfc_typeMime'.tr,
+    NfcRecordType.aar => 'nfc_typeAar'.tr,
+    NfcRecordType.external_ => 'nfc_typeExternal'.tr,
+  };
 }
