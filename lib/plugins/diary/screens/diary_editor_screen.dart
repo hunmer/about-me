@@ -50,20 +50,6 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
   // 取消编辑时还原标签（mood 与阅读态共享，维持即改即生效）
   List<String> _backupTags = const [];
 
-  // 心情表情列表
-  final List<String> _moods = [
-    '😊',
-    '😢',
-    '😡',
-    '😴',
-    '🤔',
-    '😎',
-    '😍',
-    '🤮',
-    '😱',
-    '🥳',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -224,7 +210,7 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
               runSpacing: theme.spacing.sm,
               alignment: WrapAlignment.center,
               children: [
-                for (final mood in _moods)
+                    for (final mood in diaryMoodEmojis)
                   _MoodOption(
                     emoji: mood,
                     selected: mood == _selectedMood,
