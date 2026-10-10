@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_card.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_list_tile.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
+import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class WarehouseDetailScreen extends StatefulWidget {
@@ -457,7 +458,14 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                           child: GoodsItemCard(
                             item: item,
                             warehouseId: _warehouse.id,
-                            onTap: () => _showEditItemDialog(item),
+                            onTap:
+                                () => NavigationHelper.push(
+                                  context,
+                                  GoodsItemDetailScreen(
+                                    itemId: item.id,
+                                    warehouseId: _warehouse.id,
+                                  ),
+                                ),
                           ),
                         );
                       }),

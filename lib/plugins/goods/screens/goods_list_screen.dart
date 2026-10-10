@@ -2,6 +2,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -9,6 +10,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_card.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_list_tile.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
@@ -784,7 +786,14 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                             item: item,
                             warehouseTitle: warehouse.title,
                             warehouseId: warehouse.id,
-                            onTap: () => _showEditItemDialog(item, warehouse),
+                            onTap:
+                                () => NavigationHelper.push(
+                                  context,
+                                  GoodsItemDetailScreen(
+                                    itemId: item.id,
+                                    warehouseId: warehouse.id,
+                                  ),
+                                ),
                           );
                         },
                       );
