@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/common/checkin_item_card.dart' show CheckinWeekdayHeader;
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
@@ -111,28 +112,38 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: StaggeredGrid.count(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 0,
-                          crossAxisSpacing: 0,
-                          children:
-                              filteredItems.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final item = entry.value;
-                                return StaggeredGridTile.fit(
-                                  crossAxisCellCount:
-                                      item.cardStyle == CheckinCardStyle.small
-                                          ? 1
-                                          : 2,
-                                  child: CheckinItemCard(
-                                    item: item,
-                                    index: index,
-                                    itemIndex: index,
-                                    controller: controller,
-                                    onStateChanged: _handleStateChanged,
-                                  ),
-                                );
-                              }).toList(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 全局星期表头：存在周视图卡片时显示一次，与圆点列对齐
+                            if (filteredItems.any(
+                              (item) => item.cardStyle == CheckinCardStyle.weekly,
+                            ))
+                              const CheckinWeekdayHeader(),
+                            StaggeredGrid.count(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 0,
+                              crossAxisSpacing: 0,
+                              children:
+                                  filteredItems.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    return StaggeredGridTile.fit(
+                                      crossAxisCellCount:
+                                          item.cardStyle == CheckinCardStyle.small
+                                              ? 1
+                                              : 2,
+                                      child: CheckinItemCard(
+                                        item: item,
+                                        index: index,
+                                        itemIndex: index,
+                                        controller: controller,
+                                        onStateChanged: _handleStateChanged,
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -184,26 +195,36 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: StaggeredGrid.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 0,
-            mainAxisSpacing: 0,
-            children:
-                searchResults.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return StaggeredGridTile.fit(
-                    crossAxisCellCount:
-                        item.cardStyle == CheckinCardStyle.small ? 1 : 2,
-                    child: CheckinItemCard(
-                      item: item,
-                      index: index,
-                      itemIndex: index,
-                      controller: controller,
-                      onStateChanged: _handleStateChanged,
-                    ),
-                  );
-                }).toList(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 全局星期表头：与周视图卡片圆点列对齐
+              if (searchResults.any(
+                (item) => item.cardStyle == CheckinCardStyle.weekly,
+              ))
+                const CheckinWeekdayHeader(),
+              StaggeredGrid.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 0,
+                mainAxisSpacing: 0,
+                children:
+                    searchResults.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      return StaggeredGridTile.fit(
+                        crossAxisCellCount:
+                            item.cardStyle == CheckinCardStyle.small ? 1 : 2,
+                        child: CheckinItemCard(
+                          item: item,
+                          index: index,
+                          itemIndex: index,
+                          controller: controller,
+                          onStateChanged: _handleStateChanged,
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ],
           ),
         ),
       );

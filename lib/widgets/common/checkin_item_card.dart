@@ -3,6 +3,15 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+// weekly 风格单行布局常量（CheckinWeekdayHeader 依赖这些值对齐圆点列，修改需同步）
+const double _kWeeklyIconSize = 32;
+const double _kWeeklyGapAfterIcon = 8;
+const double _kWeeklyGapBeforeCircles = 6;
+const double _kWeeklyCirclesWidth = 154; // 7 列 × 22
+const double _kWeeklyColumnWidth = 22;
+const double _kWeeklyGapBeforePlus = 6;
+const double _kWeeklyPlusSize = 30;
+
 /// 打卡项目卡片组件
 ///
 /// 用于展示打卡项目的卡片，支持三种风格：weekly、small、calendar。
@@ -125,57 +134,54 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
 
   // --- Weekly Style ---
   Widget _buildWeeklyStyle(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 头部：图标 + 标题/频次徽章 + 快捷打卡按钮
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _buildIcon(theme),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  // 频次徽章（如：每天 / 每周5天）
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      _getFrequencyText(),
-                      style: TextStyle(fontSize: 10, color: theme.hintColor),
-                    ),
-                  ),
-                ],
+        _buildIcon(theme, size: _kWeeklyIconSize),
+        const SizedBox(width: _kWeeklyGapAfterIcon),
+        // 标题 + 频次徽章
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.item.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(width: 12),
-            _buildPlusOneButton(context, size: 44),
-          ],
+              const SizedBox(height: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _getFrequencyText(),
+                  style: TextStyle(fontSize: 10, color: theme.hintColor),
+                ),
+              ),
+            ],
+          ),
         ),
-
-        const SizedBox(height: 12),
-
-        // 周打卡圆点（整行铺满，与列表顶部固定星期表头对齐）
-        SizedBox(height: 28, child: _buildWeeklyCircles(theme)),
+        const SizedBox(width: _kWeeklyGapBeforeCircles),
+        // 周打卡圆点（与列表顶部全局星期表头逐列对齐）
+        SizedBox(
+          width: _kWeeklyCirclesWidth,
+          height: 24,
+          child: _buildWeeklyCircles(theme),
+        ),
+        const SizedBox(width: _kWeeklyGapBeforePlus),
+        // 快捷打卡按钮
+        _buildPlusOneButton(context, size: _kWeeklyPlusSize),
       ],
     );
   }
@@ -345,15 +351,15 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
 
   // --- Helper Widgets ---
 
-  Widget _buildIcon(ThemeData theme) {
+  Widget _buildIcon(ThemeData theme, {double size = 40}) {
     return Container(
-      width: 40,
-      height: 40,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: widget.item.color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(widget.item.icon, color: widget.item.color, size: 24),
+      child: Icon(widget.item.icon, color: widget.item.color, size: size * 0.6),
     );
   }
 
@@ -365,7 +371,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
         height: size,
         decoration: BoxDecoration(
           color: widget.item.color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(size * 0.3),
         ),
         child: Center(
           child: Text(
@@ -472,8 +478,8 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 widget.onDateSelected?.call(normalizedDate);
               },
               child: Container(
-                width: 28,
-                height: 28,
+                width: 20,
+                height: 20,
                 alignment: Alignment.center,
                 decoration: hasCheckin
                     ? BoxDecoration(
@@ -485,15 +491,15 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: widget.item.color.withValues(alpha: 0.6),
-                              width: 1.5,
+                              width: 1.2,
                             ),
                           )
                         : null,
                 child: hasCheckin
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    ? const Icon(Icons.check, size: 12, color: Colors.white)
                     : Container(
-                        width: 8,
-                        height: 8,
+                        width: 6,
+                        height: 6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isFuture
@@ -621,11 +627,12 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
   }
 }
 
-/// 周视图固定星期表头
+/// 周视图全局星期表头
 ///
-/// 与 [CheckinItemCardWidget] weekly 风格卡片内的打卡圆点列对齐：
-/// 外边距 8 + 内边距 16 与卡片容器一致，7 列均分宽度。
-/// 今天对应的星期加粗高亮。
+/// 供打卡列表页在卡片列表上方展示一次，替代在每张卡片内显示星期。
+/// 水平结构与 [CheckinItemCardWidget] weekly 风格单行布局镜像一致
+/// （外边距 8 + 内边距 16 与卡片容器相同，图标/标题/圆点/按钮占位相同），
+/// 因此 7 个星期字与卡片内打卡圆点逐列对齐。今天对应的星期加粗。
 class CheckinWeekdayHeader extends StatelessWidget {
   const CheckinWeekdayHeader({super.key});
 
@@ -640,21 +647,38 @@ class CheckinWeekdayHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          for (int i = 0; i < 7; i++)
-            Expanded(
-              child: Center(
-                child: Text(
-                  weekdayChars[i],
-                  style: TextStyle(
-                    fontSize: 11,
-                    height: 1.2,
-                    color: theme.hintColor,
-                    fontWeight:
-                        i + 1 == todayWeekday ? FontWeight.bold : FontWeight.normal,
+          // 图标 + 间距占位
+          SizedBox(width: _kWeeklyIconSize + _kWeeklyGapAfterIcon),
+          // 标题弹性区占位
+          const Expanded(child: SizedBox.shrink()),
+          SizedBox(width: _kWeeklyGapBeforeCircles),
+          // 圆点区：与卡片内圆点列逐列对齐
+          SizedBox(
+            width: _kWeeklyCirclesWidth,
+            child: Row(
+              children: [
+                for (int i = 0; i < 7; i++)
+                  SizedBox(
+                    width: _kWeeklyColumnWidth,
+                    child: Center(
+                      child: Text(
+                        weekdayChars[i],
+                        style: TextStyle(
+                          fontSize: 10,
+                          height: 1.2,
+                          color: theme.hintColor,
+                          fontWeight: i + 1 == todayWeekday
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+              ],
             ),
+          ),
+          // +1 按钮占位
+          SizedBox(width: _kWeeklyGapBeforePlus + _kWeeklyPlusSize),
         ],
       ),
     );

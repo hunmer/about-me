@@ -1160,7 +1160,6 @@ class _ActivityMainViewState extends State<ActivityMainView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late int _currentPage;
-  final Set<int> _visitedTabs = {0}; // 记录已访问的 tab，默认第一个已访问
   final GlobalKey _bottomBarKey = GlobalKey(debugLabel: 'activity_bottom_bar');
 
   @override
@@ -1175,32 +1174,8 @@ class _ActivityMainViewState extends State<ActivityMainView>
       if (value != _currentPage && mounted) {
         setState(() {
           _currentPage = value;
-          _visitedTabs.add(value); // 记录已访问的 tab
         });
       }
-    });
-
-    // 监听 tab 点击事件，立即预加载目标页面
-    _tabController.addListener(() {
-      if (mounted && _tabController.indexIsChanging) {
-        final targetIndex = _tabController.index;
-        if (!_visitedTabs.contains(targetIndex)) {
-          setState(() {
-            _visitedTabs.add(targetIndex); // 立即标记为已访问，触发预加载
-          });
-        }
-      }
-    });
-
-    // 预加载统计页面：在首页加载完成后延迟加载统计页面，作为备用方案
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted && !_visitedTabs.contains(1)) {
-          setState(() {
-            _visitedTabs.add(1); // 预加载统计页面
-          });
-        }
-      });
     });
   }
 
@@ -1250,28 +1225,19 @@ class _ActivityMainViewState extends State<ActivityMainView>
         controller: _tabController,
         dragStartBehavior: DragStartBehavior.down,
         physics: const NeverScrollableScrollPhysics(),
+        // 三个页面常驻构建（各自 initState 异步加载数据）：
+        // 不做懒加载占位插入——切换时 setState 插入全新子树，
+        // 新 RenderObject 在完成首次布局前被指针事件 hit test
+        // 会触发 "Cannot hit test a render box that has never
+        // been laid out" 崩溃
         children: [
           const ActivityTimelineScreen(),
-          _visitedTabs.contains(1)
-              ? ActivityStatisticsScreen(
-                  activityService: ActivityPlugin.instance.activityService,
-                )
-              // DSLoadingDots 内部取 AppTheme，需包桥
-              : Center(
-                  child: DSThemeBridge(
-                    child: Builder(builder: (_) => const DSLoadingDots()),
-                  ),
-                ),
-          _visitedTabs.contains(2)
-              ? ActivityCalendarScreen(
-                  activityService: ActivityPlugin.instance.activityService,
-                )
-              // DSLoadingDots 内部取 AppTheme，需包桥
-              : Center(
-                  child: DSThemeBridge(
-                    child: Builder(builder: (_) => const DSLoadingDots()),
-                  ),
-                ),
+          ActivityStatisticsScreen(
+            activityService: ActivityPlugin.instance.activityService,
+          ),
+          ActivityCalendarScreen(
+            activityService: ActivityPlugin.instance.activityService,
+          ),
         ],
       ),
       fab: _buildFab(),
