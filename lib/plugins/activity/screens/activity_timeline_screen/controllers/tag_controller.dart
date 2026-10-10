@@ -1,6 +1,7 @@
 import 'dart:core';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 
@@ -178,31 +179,18 @@ class TagController {
     onTagsChanged();
   }
 
-  // 显示标签管理对话框
-  Future<void> showTagManagerDialog(BuildContext context) async {
-    final result = await TagsDialog.show(
-      context,
-      groups: tagGroups,
-      selectedTags: List.from(selectedTags),
-      config: const TagsDialogConfig(
-        title: '标签管理',
-        selectionMode: TagsSelectionMode.multiple,
-        enableEditing: true,
-        enableBatchEdit: true,
-      ),
-      onGroupsChanged: (newGroups) async {
-        tagGroups = newGroups;
-        await _saveTagGroups();
-        onTagsChanged();
-      },
-    );
+  // 重新加载标签分组（标签管理页保存后由 activity_tags_changed 事件触发）
+  Future<void> reload() async {
+    await _loadTagGroups();
+    onTagsChanged();
+  }
 
-    if (result != null) {
-      selectedTags = result;
-      // 更新最近使用的标签
-      await updateRecentTags(result);
-      onTagsChanged();
-    }
+  /// 应用标签管理页修改的分组：持久化并广播 activity_tags_changed 事件
+  Future<void> updateGroups(List<TagGroupWithTags> groups) async {
+    tagGroups = groups;
+    await _saveTagGroups();
+    eventManager.broadcast('activity_tags_changed', EventArgs());
+    onTagsChanged();
   }
 
   /// 根据标签名称获取 TagItem（包含图标）

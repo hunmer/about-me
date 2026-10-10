@@ -10,7 +10,6 @@ import 'package:aboutme/plugins/checkin/screens/checkin_form_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
-import 'package:aboutme/plugins/checkin/widgets/group_sort_dialog.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -61,9 +60,30 @@ class CheckinListController {
     return ['全部', ...g];
   }
 
-  // 选择分组
-  void selectGroup(String group) {
-    selectedGroup = group;
+  // 应用多条件过滤栏的过滤条件（分组 + 排序）
+  Future<void> applyFilters(Map<String, dynamic> values) async {
+    selectedGroup = (values['group'] as String?) ?? '全部';
+
+    final sort = values['sort'];
+    if (sort is Map) {
+      currentSortType = GroupSortType.values[
+        sort['type'] as int? ?? GroupSortType.upcoming.index
+      ];
+      isReversed = sort['reversed'] as bool? ?? false;
+    } else {
+      currentSortType = GroupSortType.upcoming;
+      isReversed = false;
+    }
+
+    // 持久化排序设置
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('lastSortType', currentSortType.index);
+      await prefs.setBool('isReversed', isReversed);
+    } catch (e) {
+      print('保存排序设置失败: $e');
+    }
+
     onStateChanged();
   }
 
@@ -96,7 +116,7 @@ class CheckinListController {
 
   // ========== 原有过滤逻辑 ==========
 
-  /// 获取过滤后的打卡项目（普通视图）
+  /// 获取过滤后的打卡项目（普通视图，按当前排序设置排序）
   List<CheckinItem> get filteredItems {
     List<CheckinItem> items;
     if (selectedGroup == '全部') {
@@ -106,11 +126,7 @@ class CheckinListController {
           checkinItems.where((item) => item.group == selectedGroup).toList();
     }
 
-    // 这里可以应用排序，如果需要的话。目前保持默认顺序或添加简单的排序。
-    // 暂时保持添加顺序，或者可以复用 GroupSortService 对 flat list 进行排序 (需要修改 Service 支持 List<CheckinItem>)
-    // 简单起见，这里先不进行复杂排序，或者复用之前的排序逻辑但应用在 List<CheckinItem> 上
-
-    return items;
+    return GroupSortService.sortItems(items, currentSortType, isReversed);
   }
 
   // 更新卡片风格
@@ -200,29 +216,6 @@ class CheckinListController {
       currentSortType = GroupSortType.upcoming;
       isReversed = false;
     }
-  }
-
-  // 显示分组排序对话框 (可能需要调整为列表排序)
-  Future<void> showGroupSortDialog() async {
-    // Temporary: keep as is, or disable if sorting isn't prioritized in this refactor
-    await showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => GroupSortDialog(
-            currentSortType: currentSortType,
-            isReversed: isReversed,
-            onSortChanged: (sortType, reversed) async {
-              currentSortType = sortType;
-              isReversed = reversed;
-              // 保存排序设置
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setInt('lastSortType', sortType.index);
-              await prefs.setBool('isReversed', reversed);
-              onStateChanged();
-            },
-          ),
-    );
   }
 
   // 切换编辑模式

@@ -24,6 +24,11 @@ enum FilterType {
   custom,
 }
 
+/// 过滤项值变更回调
+/// [done] 为 true 表示本次选择已完成（如单选场景），
+/// MultiFilterBar 会自动返回第一层
+typedef FilterItemChanged = void Function(dynamic value, {bool? done});
+
 /// 过滤条件配置
 class FilterItem {
   /// 唯一标识
@@ -39,11 +44,11 @@ class FilterItem {
   /// 参数：
   /// - context: BuildContext
   /// - currentValue: 当前值
-  /// - onChanged: 值变更回调
+  /// - onChanged: 值变更回调（done: true 表示选择完成，自动返回第一层）
   final Widget Function(
     BuildContext context,
     dynamic currentValue,
-    ValueChanged<dynamic> onChanged,
+    FilterItemChanged onChanged,
   ) builder;
 
   /// 从值生成 Badge 文本
@@ -70,7 +75,7 @@ class FilterItem {
     Widget Function(
       BuildContext context,
       dynamic currentValue,
-      ValueChanged<dynamic> onChanged,
+      FilterItemChanged onChanged,
     )? builder,
     String? Function(dynamic value)? getBadge,
     dynamic initialValue,

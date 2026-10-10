@@ -261,65 +261,50 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
                   children: [
-                    // 头像悬浮于气泡上方外侧，仅组内首条显示（参考对话 UI 风格）
-                    if (widget.showAvatar && widget.isFirstOfGroup)
+                    // 自己的消息：头像悬浮于气泡上方外侧，仅组内首条显示
+                    if (_isCurrentUser &&
+                        widget.showAvatar &&
+                        widget.isFirstOfGroup)
                       Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 6,
-                          left: _isCurrentUser ? 0 : 4,
-                          right: _isCurrentUser ? 4 : 0,
-                        ),
+                        padding: const EdgeInsets.only(bottom: 6, right: 4),
                         child: MessageAvatar(
                           user: _currentMessage.user,
                           onTap: widget.onAvatarTap,
                         ),
                       ),
-                    // 他人消息上方悬浮光标按钮行：气泡下移留出空间，按钮行贴整行右缘显示
-                    _isCurrentUser
-                        ? _buildBubble(theme, backgroundColor, textColor)
-                        : Stack(
-                            clipBehavior: Clip.none,
-                            children: [
+                    // 他人消息：头像与光标按钮行同一栏，按钮贴整行右缘
+                    if (!_isCurrentUser)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          children: [
+                            if (widget.showAvatar && widget.isFirstOfGroup)
                               Padding(
-                                padding: const EdgeInsets.only(top: 32),
-                                child: _buildBubble(
-                                  theme,
-                                  backgroundColor,
-                                  textColor,
+                                padding: const EdgeInsets.only(left: 4),
+                                child: MessageAvatar(
+                                  user: _currentMessage.user,
+                                  onTap: widget.onAvatarTap,
                                 ),
                               ),
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: SizedBox(
-                                  height: 32,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      AnimatedSize(
-                                        duration: const Duration(
-                                          milliseconds: 200,
-                                        ),
-                                        curve: Curves.easeOutCubic,
-                                        alignment: Alignment.centerRight,
-                                        child: _showActions
-                                            ? MessageActions(
-                                                onEdit: widget.onEdit,
-                                                onDelete: widget.onDelete,
-                                                onCopy: widget.onCopy,
-                                                onSetFixedSymbol:
-                                                    widget.onSetFixedSymbol,
-                                              )
-                                            : const SizedBox.shrink(),
-                                      ),
-                                      _buildActionsToggle(theme),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            const Spacer(),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              alignment: Alignment.centerRight,
+                              child: _showActions
+                                  ? MessageActions(
+                                      onEdit: widget.onEdit,
+                                      onDelete: widget.onDelete,
+                                      onCopy: widget.onCopy,
+                                      onSetFixedSymbol: widget.onSetFixedSymbol,
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                            _buildActionsToggle(theme),
+                          ],
+                        ),
+                      ),
+                    _buildBubble(theme, backgroundColor, textColor),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

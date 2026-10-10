@@ -8,9 +8,11 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/calendar_strip_date_picker.dart';
+import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/plugins/activity/widgets/activity_timeline.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/plugins/activity/screens/activity_calendar_screen.dart';
 import 'components/activity_grid_view.dart';
 import 'controllers/activity_controller.dart';
@@ -39,6 +41,9 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
   String _searchQuery = '';
   List<dynamic> _searchResults = [];
 
+  /// 标签过滤选中的标签（MultiFilterBar 标签过滤项）
+  List<String> _filterTags = const [];
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +66,9 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
 
     // 监听同步刷新事件（WebSocket 同步后触发）
     eventManager.subscribe('activity_refresh', _onSyncRefresh);
+
+    // 监听标签变更事件（标签管理页保存后触发）
+    eventManager.subscribe('activity_tags_changed', _onTagsChanged);
 
     _initializeService().then((_) {
       if (mounted) {
@@ -136,6 +144,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     eventManager.unsubscribe('activity_deleted', _onActivityChanged);
     eventManager.unsubscribe('activity_updated', _onActivityChanged);
     eventManager.unsubscribe('activity_refresh', _onSyncRefresh);
+    eventManager.unsubscribe('activity_tags_changed', _onTagsChanged);
 
     // 清理控制器
     _viewModeController.dispose();
@@ -160,6 +169,15 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
 
     // 重新加载当前日期的活动列表
     _activityController.loadActivities(_selectedDate).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// 标签分组在标签管理页被修改后重新加载（刷新过滤项与标签图标）
+  void _onTagsChanged(EventArgs args) {
+    if (!_isInitialized || !mounted) return;
+
+    _tagController.reload().then((_) {
       if (mounted) setState(() {});
     });
   }
@@ -469,6 +487,63 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     }
   }
 
+  /// MultiFilterBar 过滤变更：提取标签过滤选中项
+  void _onMultiFilterChanged(Map<String, dynamic> filters) {
+    final tags = filters['tag'];
+    setState(() {
+      _filterTags = tags is List ? List<String>.from(tags) : const [];
+    });
+  }
+
+  /// 标签过滤后的活动列表（含任一选中标签的活动保留）
+  List<ActivityRecord> get _filteredActivities {
+    if (_filterTags.isEmpty) return _activityController.activities;
+    return _activityController.activities
+        .where((activity) => activity.tags.any(_filterTags.contains))
+        .toList();
+  }
+
+  /// 构建多条件过滤项：标签过滤（多选）
+  List<FilterItem> _buildFilterItems() {
+    // 汇总所有分组的标签（按名称去重，"最近使用"分组只是引用副本）
+    final tags = <String>[];
+    for (final group in _tagController.tagGroups) {
+      for (final tag in group.tags) {
+        if (!tags.contains(tag.name)) tags.add(tag.name);
+      }
+    }
+
+    return [
+      FilterItem(
+        id: 'tag',
+        title: '标签',
+        type: FilterType.tagsMultiple,
+        builder: (context, value, onChanged) {
+          final selected = value is List ? List<String>.from(value) : <String>[];
+          return DSThemeBridge(
+            child: Wrap(
+              spacing: 8,
+              children: [
+                for (final tag in tags)
+                  DSChip(
+                    label: tag,
+                    selected: selected.contains(tag),
+                    onSelected: (_) {
+                      final next = List<String>.from(selected);
+                      next.contains(tag) ? next.remove(tag) : next.add(tag);
+                      onChanged(next);
+                    },
+                  ),
+              ],
+            ),
+          );
+        },
+        getBadge: (value) =>
+            value is List && value.isNotEmpty ? '${value.length}' : null,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -490,6 +565,9 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
       onSearchChanged: _onSearchChanged,
       enableSearchFilter: true,
       onSearchFilterChanged: _onSearchFilterChanged,
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _onMultiFilterChanged,
       body: Stack(
         children: [
           Column(
@@ -521,7 +599,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                             key: ValueKey(
                               'grid_${_selectedDate.millisecondsSinceEpoch}',
                             ),
-                            activities: _activityController.activities,
+                            activities: _filteredActivities,
                             selectedDate: _selectedDate,
                             onActivityTap:
                                 (activity) => _activityController.editActivity(
@@ -553,7 +631,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                             key: ValueKey(
                               'timeline_${_selectedDate.millisecondsSinceEpoch}',
                             ),
-                            activities: _activityController.activities,
+                            activities: _filteredActivities,
                             onDeleteActivity:
                                 _activityController.deleteActivity,
                             onActivityTap:
@@ -629,22 +707,6 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                 );
               },
             ),
-          ),
-        ),
-        // 标签管理按钮
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.tag,
-                size: 36,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                tooltip: '标签管理',
-                onPressed: () => _tagController.showTagManagerDialog(context),
-              );
-            },
           ),
         ),
         // 添加活动的按钮

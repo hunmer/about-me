@@ -5,6 +5,8 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -143,28 +145,11 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
       onSearchChanged: (query) => controller.onSearchChanged(query),
       onSearchSubmitted: (query) => controller.onSearchChanged(query),
       searchBody: _buildSearchResults(searchResults),
-      // ========== 过滤栏配置 ==========
-      enableFilterBar: true,
-      filterBarChild: _buildFilterBar(),
+      // ========== 多条件过滤栏配置（分组 + 排序） ==========
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _handleFilterChanged,
       actions: [
-        // 排序按钮（SuperCupertino actions 需外包 DSThemeBridge，陷阱 2）
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.sort,
-                size: 40,
-                color: theme.surfaceAlt,
-                iconColor: theme.text,
-                onPressed: () async {
-                  await controller.showGroupSortDialog();
-                  if (mounted) setState(() {});
-                },
-              );
-            },
-          ),
-        ),
         DSThemeBridge(
           child: Builder(
             builder: (context) {
@@ -244,35 +229,91 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildFilterBar() {
-    final groups = controller.groups;
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: groups.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final group = groups[index];
-          final isSelected = group == controller.selectedGroup;
-          return DSThemeBridge(
-            child: DSChip(
-              label: group,
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  controller.selectGroup(group);
-                  // 更新路由上下文
-                  _updateRouteContext();
-                }
-              },
-            ),
+  /// 构建多条件过滤项：分组切换 + 分组排序
+  List<FilterItem> _buildFilterItems() {
+    final groupOptions = {
+      for (var g in controller.groups)
+        if (g != '全部') g: g,
+    };
+
+    return [
+      // 分组切换
+      FilterItem(
+        id: 'group',
+        title: 'checkin_groupFilterTitle'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            // 单选完成即返回第一层
+            onChanged: (value) => onChanged(value, done: true),
+            options: groupOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'checkin_allGroups'.tr,
+          );
+        },
+        getBadge:
+            (value) => FilterBuilders.singleChoiceBadge(value, groupOptions),
+      ),
+
+      // 分组排序
+      FilterItem(
+        id: 'sort',
+        title: 'checkin_sortFilterTitle'.tr,
+        type: FilterType.custom,
+        initialValue: {
+          'type': controller.currentSortType.index,
+          'reversed': controller.isReversed,
+        },
+        getBadge: (value) {
+          if (value is Map && value['type'] != null) {
+            final type = GroupSortType.values[value['type'] as int];
+            return GroupSortService.getSortTypeName(type, context);
+          }
+          return null;
+        },
+        builder: (context, currentValue, onChanged) {
+          final value = (currentValue as Map<String, dynamic>?) ?? {};
+          final sortType = GroupSortType.values[
+            value['type'] as int? ?? GroupSortType.upcoming.index
+          ];
+          final reversed = value['reversed'] as bool? ?? false;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final type in GroupSortType.values)
+                DSChip(
+                  label: GroupSortService.getSortTypeName(type, context),
+                  icon: type == sortType ? DsIconKind.check : DsIconKind.sort,
+                  selected: type == sortType,
+                  onSelected: (selected) {
+                    if (selected) {
+                      onChanged({...value, 'type': type.index}, done: true);
+                    }
+                  },
+                ),
+              DSChip(
+                label: 'checkin_reverseSort'.tr,
+                icon: DsIconKind.sort,
+                selected: reversed,
+                onSelected: (selected) {
+                  onChanged({...value, 'reversed': selected}, done: true);
+                },
+              ),
+            ],
           );
         },
       ),
-    );
+    ];
+  }
+
+  /// 处理多条件过滤栏变化
+  void _handleFilterChanged(Map<String, dynamic> values) {
+    controller.applyFilters(values);
+    _updateRouteContext();
+    if (mounted) setState(() {});
   }
 
   /// 根据 itemId 显示打卡记录对话框

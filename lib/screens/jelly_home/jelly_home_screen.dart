@@ -154,18 +154,20 @@ class _CottageTabState extends State<_CottageTab> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Live2D 角色填充状态面板下方的可用区域，点击命中角色本体
-              //（hit area）算一次陪伴互动。
+              // Live2D 角色铺满整个页签，背景图随之延伸到状态面板下方；
+              // 角色可用高度通过 topInset 扣除状态面板高度，
+              // 点击命中角色本体（hit area）算一次陪伴互动。
               Positioned(
                 left: 0,
                 right: 0,
-                top: _statusPanelHeight(mq.size.width),
+                top: 0,
                 bottom: 0,
                 child: AnimatedBuilder(
                   animation: JellyStatusPanelSettings.instance,
                   builder: (context, _) => JellyLive2D(
                     fill: false,
                     fitContainer: true,
+                    topInset: _statusPanelHeight(mq.size.width),
                     panel: widget.panel,
                     message: _live2dMessage,
                     reaction: _live2dReaction,

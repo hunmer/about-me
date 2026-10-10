@@ -497,8 +497,31 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
             onTap: () => _showDeleteConfirmDialog(conversation),
           ),
         ],
-        child: Pressable(
-          onPressed: () {
+        child: DSListItemCard(
+          title: conversation.title,
+          icon: conversation.isPinned ? DsIconKind.pin : DsIconKind.chat,
+          subtitle: conversation.lastMessagePreview,
+          trailingText: _formatDateTime(conversation.lastMessageAt),
+          trailing:
+              conversation.unreadCount > 0
+                  ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.danger,
+                      borderRadius: theme.radii.pill,
+                    ),
+                    child: Text(
+                      '${conversation.unreadCount}',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.onDanger,
+                      ),
+                    ),
+                  )
+                  : null,
+          onTap: () {
             NavigationHelper.openContainerWithHero(
               context,
               (context) => ChatScreen(
@@ -509,99 +532,6 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
               ),
             );
           },
-          semanticLabel: conversation.title,
-          builder:
-              (context, states) => Container(
-                decoration: BoxDecoration(
-                  color: theme.surface,
-                  border: Border.all(
-                    color: theme.textSub.withValues(alpha: 0.3),
-                    width: 1.0,
-                  ),
-                  borderRadius: theme.radii.md,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: theme.primary.mixWhite(0.88),
-                          shape: BoxShape.circle,
-                        ),
-                        child: DsIcon(
-                          conversation.isPinned
-                              ? DsIconKind.pin
-                              : DsIconKind.chat,
-                          size: 22,
-                          color: theme.primaryText,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    conversation.title,
-                                    style: DsTypography.body.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.text,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (conversation.unreadCount > 0)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme.danger,
-                                      borderRadius: theme.radii.pill,
-                                    ),
-                                    child: Text(
-                                      '${conversation.unreadCount}',
-                                      style: DsTypography.caption.copyWith(
-                                        color: theme.onDanger,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            if (conversation.lastMessagePreview != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                conversation.lastMessagePreview!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatDateTime(conversation.lastMessageAt),
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
         ),
       ),
     );

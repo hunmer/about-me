@@ -21,6 +21,7 @@ import 'screens/activity_timeline_screen/controllers/activity_controller.dart';
 import 'screens/activity_statistics_screen.dart';
 import 'screens/activity_edit_screen.dart';
 import 'screens/activity_settings_screen.dart';
+import 'screens/tag_manage_screen.dart';
 import 'services/activity_service.dart';
 import 'services/activity_notification_service.dart';
 import 'services/activity_tts_announcement_service.dart';
@@ -1225,6 +1226,19 @@ class _ActivityMainViewState extends State<ActivityMainView>
     );
   }
 
+  /// 打开标签管理完整页面
+  void _openTagManageScreen() {
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TagManageScreen(
+          activityService: ActivityPlugin.instance.activityService,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomBottomBar(
@@ -1250,6 +1264,13 @@ class _ActivityMainViewState extends State<ActivityMainView>
         ],
       ),
       fab: _buildFab(),
+      // 弧形导航左上浮动圆钮：标签管理入口（完整页面）
+      leadingAction: DsIcon(
+        DsIconKind.tag,
+        size: 16,
+        color: DSThemeBridge.resolve(context).textSub,
+      ),
+      onLeadingTap: () => _openTagManageScreen(),
       items: [
         DSNavItem(icon: DsIconKind.list, label: 'activity_timeline'.tr),
         DSNavItem(icon: DsIconKind.columns, label: 'activity_statistics'.tr),

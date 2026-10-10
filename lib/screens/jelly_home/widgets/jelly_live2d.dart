@@ -38,6 +38,7 @@ class JellyLive2D extends StatefulWidget {
     this.motionRequest,
     this.fill = false,
     this.fitContainer = false,
+    this.topInset = 0,
     this.panel,
   });
 
@@ -59,6 +60,10 @@ class JellyLive2D extends StatefulWidget {
   /// container above the bottom navigation area. The parent should provide
   /// finite constraints.
   final bool fitContainer;
+
+  /// 顶部预留高度（如状态面板）：背景图仍铺满整个容器，
+  /// 仅角色视口的可用高度扣除该值
+  final double topInset;
 
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
@@ -458,6 +463,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
   Widget _buildBubbleInContainer({
     required double width,
     required double height,
+    double topInset = 0,
   }) {
     final previewing = _bubblePositionPreview;
     final message = _bubbleMessage ?? (previewing ? '气泡预览' : null);
@@ -475,8 +481,9 @@ class _JellyLive2DState extends State<JellyLive2D> {
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
     final top = ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
-        .clamp(0.0, max(0.0, height - bubbleHeight))
-        .toDouble();
+            .clamp(0.0, max(0.0, height - bubbleHeight))
+            .toDouble() +
+        topInset;
     final left = ((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
       margin,
       width - margin - bubbleWidth,
@@ -1515,7 +1522,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
           final displaySize = computeJellyLive2DDisplaySize(
             savedSize: size,
             containerWidth: containerWidth,
-            containerHeight: containerHeight,
+            // 角色可用高度扣除顶部预留（状态面板），背景图仍铺满容器
+            containerHeight: containerHeight - widget.topInset,
             bottomReserve: bottomReserve,
             fill: widget.fill,
             fitContainer: widget.fitContainer,
@@ -1762,7 +1770,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                     ),
                     _buildBubbleInContainer(
                       width: layoutWidth,
-                      height: layoutHeight,
+                      height: max(0.0, layoutHeight - widget.topInset),
+                      topInset: widget.topInset,
                     ),
                     // 子栏图标驱动的资源条：悬浮在底部导航（含其向上溢出的
                     // 弧顶绘制区）之上

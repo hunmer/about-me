@@ -24,10 +24,10 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'widgets/message_list.dart';
 import 'widgets/message_input/index.dart';
+import 'widgets/chat_screen_scaffold.dart';
 import 'dialogs/clear_messages_dialog.dart';
 import 'utils/message_list_builder.dart';
 // SuperCupertino 导航包装器
-import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:intl/intl.dart';
 
@@ -235,30 +235,26 @@ class _ChatScreenState extends State<ChatScreen> {
     showDSDialog(
       context: currentContext,
       theme: DSThemeBridge.resolve(currentContext),
-      builder:
-          (BuildContext dialogContext) => ClearMessagesDialog(
-            onConfirm: () async {
-              await _controller.clearMessages();
-              if (!mounted) return;
-              _updateMessages(); // 更新消息列表
-              if (currentContext.mounted) {
-                Navigator.of(dialogContext).pop();
-              }
-            },
-            onCancel: () {
-              Navigator.of(dialogContext).pop();
-            },
-          ),
+      builder: (BuildContext dialogContext) => ClearMessagesDialog(
+        onConfirm: () async {
+          await _controller.clearMessages();
+          if (!mounted) return;
+          _updateMessages(); // 更新消息列表
+          if (currentContext.mounted) {
+            Navigator.of(dialogContext).pop();
+          }
+        },
+        onCancel: () {
+          Navigator.of(dialogContext).pop();
+        },
+      ),
     );
   }
 
   void _copySelectedMessages() {
-    final selectedMessages =
-        _controller.messages
-            .where(
-              (msg) => _controller.selectedMessageIds.value.contains(msg.id),
-            )
-            .toList();
+    final selectedMessages = _controller.messages
+        .where((msg) => _controller.selectedMessageIds.value.contains(msg.id))
+        .toList();
 
     if (selectedMessages.isEmpty) return;
 
@@ -274,12 +270,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 删除多条选中的消息
   Future<void> _deleteSelectedMessages() async {
-    final selectedMessages =
-        _controller.messages
-            .where(
-              (msg) => _controller.selectedMessageIds.value.contains(msg.id),
-            )
-            .toList();
+    final selectedMessages = _controller.messages
+        .where((msg) => _controller.selectedMessageIds.value.contains(msg.id))
+        .toList();
 
     if (selectedMessages.isEmpty) return;
 
@@ -287,22 +280,19 @@ class _ChatScreenState extends State<ChatScreen> {
     final confirmed = await showDSDialog<bool>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => DSDialog(
-                    title: 'chat_deleteMessages'.tr,
-                    message:
-                        '确定要删除选中的 ${selectedMessages.length} 条消息吗？此操作不可撤销。',
-                    cancelText: 'app_cancel'.tr,
-                    confirmText: 'chat_delete'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () => Navigator.pop(context, true),
-                    onCancel: () => Navigator.pop(context, false),
-                  ),
-            ),
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => DSDialog(
+            title: 'chat_deleteMessages'.tr,
+            message: '确定要删除选中的 ${selectedMessages.length} 条消息吗？此操作不可撤销。',
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'chat_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(context, true),
+            onCancel: () => Navigator.pop(context, false),
           ),
+        ),
+      ),
     );
 
     if (confirmed != true) return;
@@ -354,15 +344,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // 应用搜索
     if (_searchQuery.isNotEmpty) {
-      result =
-          result.where((msg) {
-            return msg.content.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                ) ||
-                msg.user.username.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                );
-          }).toList();
+      result = result.where((msg) {
+        return msg.content.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            msg.user.username.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            );
+      }).toList();
     }
 
     // 应用发送人过滤
@@ -379,22 +366,21 @@ class _ChatScreenState extends State<ChatScreen> {
       final startDate = dateRange['start'];
       final endDate = dateRange['end'];
 
-      result =
-          result.where((msg) {
-            if (startDate != null && msg.date.isBefore(startDate)) return false;
-            if (endDate != null) {
-              final endOfDay = DateTime(
-                endDate.year,
-                endDate.month,
-                endDate.day,
-                23,
-                59,
-                59,
-              );
-              if (msg.date.isAfter(endOfDay)) return false;
-            }
-            return true;
-          }).toList();
+      result = result.where((msg) {
+        if (startDate != null && msg.date.isBefore(startDate)) return false;
+        if (endDate != null) {
+          final endOfDay = DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+            23,
+            59,
+            59,
+          );
+          if (msg.date.isAfter(endOfDay)) return false;
+        }
+        return true;
+      }).toList();
     }
 
     // 应用标签过滤
@@ -402,13 +388,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (selectedTags != null &&
         selectedTags is List &&
         selectedTags.isNotEmpty) {
-      result =
-          result.where((msg) {
-            final messageTags = msg.metadata?['tags'] as List<String>?;
-            if (messageTags == null || messageTags.isEmpty) return false;
-            // 检查消息是否包含任意一个选中的标签
-            return selectedTags.any((tag) => messageTags.contains(tag));
-          }).toList();
+      result = result.where((msg) {
+        final messageTags = msg.metadata?['tags'] as List<String>?;
+        if (messageTags == null || messageTags.isEmpty) return false;
+        // 检查消息是否包含任意一个选中的标签
+        return selectedTags.any((tag) => messageTags.contains(tag));
+      }).toList();
     }
 
     setState(() {
@@ -453,17 +438,16 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context, currentValue, onChanged) {
           return Wrap(
             spacing: 8,
-            children:
-                allUsers.map((user) {
-                  final isSelected = currentValue == user.id;
-                  return DSChip(
-                    label: user.username,
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      onChanged(selected ? user.id : null);
-                    },
-                  );
-                }).toList(),
+            children: allUsers.map((user) {
+              final isSelected = currentValue == user.id;
+              return DSChip(
+                label: user.username,
+                selected: isSelected,
+                onSelected: (selected) {
+                  onChanged(selected ? user.id : null);
+                },
+              );
+            }).toList(),
           );
         },
         getBadge: (value) {
@@ -497,10 +481,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     final theme = DSThemeBridge.resolve(context);
                     return DSChip(
                       icon: DsIconKind.calendar,
-                      label:
-                          startDate == null
-                              ? '开始日期'
-                              : DateFormat('MM/dd').format(startDate),
+                      label: startDate == null
+                          ? '开始日期'
+                          : DateFormat('MM/dd').format(startDate),
                       onSelected: (_) async {
                         final picked = await showDSDatePickerDialog(
                           context: context,
@@ -522,10 +505,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     final theme = DSThemeBridge.resolve(context);
                     return DSChip(
                       icon: DsIconKind.calendar,
-                      label:
-                          endDate == null
-                              ? '结束日期'
-                              : DateFormat('MM/dd').format(endDate),
+                      label: endDate == null
+                          ? '结束日期'
+                          : DateFormat('MM/dd').format(endDate),
                       onSelected: (_) async {
                         final picked = await showDSDatePickerDialog(
                           context: context,
@@ -585,23 +567,22 @@ class _ChatScreenState extends State<ChatScreen> {
             final List<String> selectedTags = currentValue ?? [];
             return Wrap(
               spacing: 8,
-              children:
-                  allTags.map((tag) {
-                    final isSelected = selectedTags.contains(tag);
-                    return DSChip(
-                      label: tag,
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        final newTags = List<String>.from(selectedTags);
-                        if (selected) {
-                          newTags.add(tag);
-                        } else {
-                          newTags.remove(tag);
-                        }
-                        onChanged(newTags.isEmpty ? null : newTags);
-                      },
-                    );
-                  }).toList(),
+              children: allTags.map((tag) {
+                final isSelected = selectedTags.contains(tag);
+                return DSChip(
+                  label: tag,
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    final newTags = List<String>.from(selectedTags);
+                    if (selected) {
+                      newTags.add(tag);
+                    } else {
+                      newTags.remove(tag);
+                    }
+                    onChanged(newTags.isEmpty ? null : newTags);
+                  },
+                );
+              }).toList(),
             );
           },
           getBadge: (value) {
@@ -666,94 +647,33 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 使用已加载的背景路径构建UI
-    return _buildMainUI(_backgroundPath);
-  }
-
-  // 构建主UI，接收可选的背景路径参数
-  Widget _buildMainUI(String? backgroundPath) {
-    // 调试输出当前UI构建状态
-    debugPrint(
-      'Building UI with background: $backgroundPath, isLoading: $_isLoadingBackground',
-    );
-
-    return Scaffold(
-      // 根据是否有背景图片决定背景颜色
-      backgroundColor:
-          backgroundPath != null
-              ? const Color(0x00000000)
-              : DSThemeBridge.resolve(context).surface,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 默认白色背景 - 当没有背景图片时显示
-          if (backgroundPath == null && !_isLoadingBackground)
-            Container(
-              color: DSThemeBridge.resolve(context).surface,
-              width: double.infinity,
-              height: double.infinity,
-            ),
-          // 背景层 - 确保这是Stack中的底层元素
-          if (backgroundPath != null && !_isLoadingBackground)
-            Builder(
-              builder: (context) {
-                final file = File(backgroundPath);
-                if (!file.existsSync()) {
-                  debugPrint(
-                    'Background image file does not exist: $backgroundPath',
-                  );
-                  return const SizedBox.shrink();
-                }
-                // 使用Container包装图片，确保它占满整个屏幕
-                return Container(
-                  color: const Color(0x00000000), // 确保容器背景透明
-                  child: Image.file(
-                    file,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    // 添加key以强制重建
-                    key: ValueKey(backgroundPath),
-                    errorBuilder: (context, error, stackTrace) {
-                      debugPrint('Error loading background image: $error');
-                      debugPrint('Stack trace: $stackTrace');
-                      return Container(
-                        color: DSThemeBridge.resolve(
-                          context,
-                        ).danger.withAlpha(77),
-                      ); // 错误时显示红色背景以便调试
-                    },
-                  ),
-                );
-              },
-            ),
-          // 半透明遮罩层
-          if (backgroundPath != null && !_isLoadingBackground)
-            Container(color: Colors.black.withAlpha(128)),
-          // 加载指示器
-          if (_isLoadingBackground)
-            Center(
-              child: DSLoadingDots(
-                color: DSThemeBridge.resolve(context).textSub,
-              ),
-            ),
-          // 使用 SuperCupertinoNavigationWrapper 的主内容
-          _buildSuperCupertinoContent(backgroundPath),
-        ],
-      ),
+    // 使用已加载的背景路径构建UI（通用壳负责背景图层与 SuperCupertino 导航壳）
+    return ChatScreenScaffold(
+      title: Text(widget.channel.title),
+      largeTitle: widget.channel.title,
+      backgroundPath: _backgroundPath,
+      isLoadingBackground: _isLoadingBackground,
+      enableSearchBar: true,
+      searchPlaceholder: '搜索消息内容、发送人...',
+      onSearchChanged: _handleSearchChanged,
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _handleFilterChanged,
+      actions: _buildActions(),
+      body: _buildListenableContent(),
     );
   }
 
-  /// 构建 SuperCupertinoNavigationWrapper 内容
-  Widget _buildSuperCupertinoContent(String? backgroundPath) {
+  /// 构建监听 controller 的消息主体内容
+  Widget _buildListenableContent() {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
         // 获取显示的消息（根据是否有搜索/过滤来决定）
         final displayMessages =
             _searchQuery.isNotEmpty || _filterState.hasAnyFilter
-                ? _filteredMessages
-                : _controller.messages;
+            ? _filteredMessages
+            : _controller.messages;
 
         return FutureBuilder<List<dynamic>>(
           future: MessageListBuilder.buildMessageListWithDateSeparators(
@@ -767,26 +687,11 @@ class _ChatScreenState extends State<ChatScreen> {
               messageIndexMap[displayMessages[i].id] = i;
             }
 
-            return SuperCupertinoNavigationWrapper(
-              title: Text(widget.channel.title),
-              largeTitle: widget.channel.title,
-              body: _buildChatBody(
-                messageItems,
-                messageIndexMap,
-                displayMessages,
-                backgroundPath,
-              ),
-              enableLargeTitle: false,
-              enableSearchBar: true,
-              searchPlaceholder: '搜索消息内容、发送人...',
-              onSearchChanged: _handleSearchChanged,
-              enableMultiFilter: true,
-              multiFilterItems: _buildFilterItems(),
-              multiFilterBarHeight: 50,
-              onMultiFilterChanged: _handleFilterChanged,
-              backgroundColor:
-                  backgroundPath != null ? Colors.transparent : null,
-              actions: _buildActions(),
+            return _buildChatBody(
+              messageItems,
+              messageIndexMap,
+              displayMessages,
+              _backgroundPath,
             );
           },
         );
@@ -847,29 +752,28 @@ class _ChatScreenState extends State<ChatScreen> {
               _showClearConfirmationDialog();
             }
           },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'multi_select',
-                  child: Row(
-                    children: [
-                      DsIcon(DsIconKind.list, size: 18, color: ds.textSub),
-                      const SizedBox(width: 12),
-                      const Text('多选模式'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'clear',
-                  child: Row(
-                    children: [
-                      DsIcon(DsIconKind.trash, size: 18, color: ds.danger),
-                      const SizedBox(width: 12),
-                      const Text('清空消息'),
-                    ],
-                  ),
-                ),
-              ],
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'multi_select',
+              child: Row(
+                children: [
+                  DsIcon(DsIconKind.list, size: 18, color: ds.textSub),
+                  const SizedBox(width: 12),
+                  const Text('多选模式'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  DsIcon(DsIconKind.trash, size: 18, color: ds.danger),
+                  const SizedBox(width: 12),
+                  const Text('清空消息'),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     ];
@@ -944,12 +848,10 @@ class _ChatScreenState extends State<ChatScreen> {
             onMessageEdit: _showEditDialog,
             onMessageDelete: _controller.deleteMessage,
             onMessageCopy: (message) => _messageOperations.copyMessage(message),
-            onSetFixedSymbol:
-                (message, symbol) =>
-                    _messageOperations.setFixedSymbol(message, symbol),
-            onSetBubbleColor:
-                (message, color) =>
-                    _messageOperations.setBubbleColor(message, color),
+            onSetFixedSymbol: (message, symbol) =>
+                _messageOperations.setFixedSymbol(message, symbol),
+            onSetBubbleColor: (message, color) =>
+                _messageOperations.setBubbleColor(message, color),
             onReply: _handleReply,
             onToggleFavorite: _handleToggleFavorite,
             onToggleMessageSelection: _controller.toggleMessageSelection,
@@ -1003,11 +905,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 final updatedUser = await showDSDialog<User>(
                   context: context,
                   theme: DSThemeBridge.resolve(context),
-                  builder:
-                      (context) => ProfileEditDialog(
-                        user: targetUser,
-                        chatPlugin: chatPlugin,
-                      ),
+                  builder: (context) => ProfileEditDialog(
+                    user: targetUser,
+                    chatPlugin: chatPlugin,
+                  ),
                 );
 
                 if (updatedUser != null && mounted) {
@@ -1027,24 +928,28 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         MessageInput(
           controller: _controller.draftController,
-          onSendMessage: (content, {metadata, String type = 'text', replyTo}) async {
-            final sent = await _controller.sendMessage(
-              content,
-              metadata: metadata,
-              type: type,
-              replyTo: _replyToMessage,
-            );
-            // 广播真实存入频道的消息实例（触发 AI/积分/小组件等订阅方）
-            if (sent != null) {
-              eventManager.broadcast('chat_message_sent', aboutme_event.Value<Message>(sent));
-            }
-            // 发送后清除回复状态
-            if (_replyToMessage != null) {
-              setState(() {
-                _replyToMessage = null;
-              });
-            }
-          },
+          onSendMessage:
+              (content, {metadata, String type = 'text', replyTo}) async {
+                final sent = await _controller.sendMessage(
+                  content,
+                  metadata: metadata,
+                  type: type,
+                  replyTo: _replyToMessage,
+                );
+                // 广播真实存入频道的消息实例（触发 AI/积分/小组件等订阅方）
+                if (sent != null) {
+                  eventManager.broadcast(
+                    'chat_message_sent',
+                    aboutme_event.Value<Message>(sent),
+                  );
+                }
+                // 发送后清除回复状态
+                if (_replyToMessage != null) {
+                  setState(() {
+                    _replyToMessage = null;
+                  });
+                }
+              },
           onSaveDraft: _controller.saveDraft,
           replyTo: _replyToMessage,
           focusNode: _controller.focusNode,

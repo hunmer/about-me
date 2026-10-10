@@ -35,6 +35,12 @@ class CustomBottomBar extends StatefulWidget {
   /// 上层子栏双选项文案(null 则不启用子栏)
   final (String, String)? subLabels;
 
+  /// 子栏弧线左端的常驻浮动圆钮图标(如标签管理入口)
+  final Widget? leadingAction;
+
+  /// 左侧浮动圆钮点击回调
+  final VoidCallback? onLeadingTap;
+
   /// 当前选中的子栏选项
   final RadialSubOption subOption;
 
@@ -61,6 +67,8 @@ class CustomBottomBar extends StatefulWidget {
     required this.body,
     this.fab,
     this.subLabels,
+    this.leadingAction,
+    this.onLeadingTap,
     this.subOption = RadialSubOption.left,
     this.onSubOptionChange,
     this.widthRatio = 0.85,
@@ -203,6 +211,8 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   subLabels: widget.subLabels,
                   subOption: widget.subOption,
                   onSubOptionChange: widget.onSubOptionChange,
+                  leadingAction: widget.leadingAction,
+                  onLeadingTap: widget.onLeadingTap,
                 ),
               ],
             ),

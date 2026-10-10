@@ -33,6 +33,13 @@ class MessageList extends StatefulWidget {
   final bool shouldHighlight;
   final Map<String, int>? messageIndexMap;
 
+  /// 自定义气泡构建器（传入时替换默认 MessageBubble，
+  /// 长按菜单/AI线程入口/多选样式由使用方气泡自行处理）
+  final Widget Function(BuildContext context, Message message)? bubbleBuilder;
+
+  /// 固定在列表视觉底部的组件（reverse 列表 index 0 位置，随内容滚动）
+  final Widget? listBottomWidget;
+
   const MessageList({
     super.key,
     required this.items,
@@ -54,6 +61,8 @@ class MessageList extends StatefulWidget {
     this.highlightedMessage,
     this.shouldHighlight = false,
     this.messageIndexMap,
+    this.bubbleBuilder,
+    this.listBottomWidget,
   });
 
   @override
@@ -106,8 +115,7 @@ class _SelectableMessageBubbleState extends State<_SelectableMessageBubble> {
   }
 
   void _handleSelectionChanged() {
-    final selected =
-        widget.selectedMessageIds.value.contains(widget.messageId);
+    final selected = widget.selectedMessageIds.value.contains(widget.messageId);
     if (selected != _isSelected) {
       setState(() => _isSelected = selected);
     }
@@ -120,15 +128,25 @@ class _SelectableMessageBubbleState extends State<_SelectableMessageBubble> {
 }
 
 class _MessageListState extends State<MessageList> {
+  bool get _hasBottomWidget => widget.listBottomWidget != null;
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       controller: widget.scrollController,
       reverse: true,
-      itemCount: widget.items.length,
+      itemCount: widget.items.length + (_hasBottomWidget ? 1 : 0),
       itemBuilder: (context, index) {
-        var item = widget.items[index];
-        final nextItem = index > 0 ? widget.items[index - 1] : null;
+        // 视觉底部插槽（reverse 列表 index 0 位置）
+        if (_hasBottomWidget && index == 0) {
+          return KeyedSubtree(
+            key: const ValueKey('list_bottom_widget'),
+            child: widget.listBottomWidget!,
+          );
+        }
+        final itemIndex = _hasBottomWidget ? index - 1 : index;
+        var item = widget.items[itemIndex];
+        final nextItem = itemIndex > 0 ? widget.items[itemIndex - 1] : null;
 
         // 处理日期分隔符
         Widget? dateSeparator;
@@ -147,10 +165,25 @@ class _MessageListState extends State<MessageList> {
           final tagIndex = widget.messageIndexMap?[item.id] ?? index;
           // 列表 reverse: true，视觉上方（时间更早）的消息在 index + 1；
           // 与上一条非同一用户（或中间隔着日期分隔符）时视为组内首条
-          final prevItem =
-              index + 1 < widget.items.length
-                  ? widget.items[index + 1]
-                  : null;
+          final prevItem = itemIndex + 1 < widget.items.length
+              ? widget.items[itemIndex + 1]
+              : null;
+
+          // 自定义气泡路径：日期分隔符 + 使用方气泡，跳过长按菜单/AI线程入口
+          if (widget.bubbleBuilder != null) {
+            return AutoScrollTag(
+              key: ValueKey(item.id),
+              controller: widget.scrollController,
+              index: tagIndex,
+              child: Column(
+                children: [
+                  if (dateSeparator != null) dateSeparator,
+                  widget.bubbleBuilder!(context, item),
+                ],
+              ),
+            );
+          }
+
           final isFirstOfGroup =
               prevItem is! Message || prevItem.user.id != item.user.id;
           return AutoScrollTag(
@@ -194,58 +227,60 @@ class _MessageListState extends State<MessageList> {
                     selectedMessageIds: widget.selectedMessageIds,
                     messageId: item.id,
                     builder: (isSelected) => MessageBubble(
-                        message: item,
-                        isSelected: isSelected,
-                        isMultiSelectMode: widget.isMultiSelectMode,
-                        onEdit: () => widget.onMessageEdit(item),
-                        onDelete: () => widget.onMessageDelete(item),
-                        onCopy: () => widget.onMessageCopy(item),
-                        onSetFixedSymbol:
-                            (symbol) => widget.onSetFixedSymbol(item, symbol),
-                        onLongPress: null, // 移除重复的长按处理
-                        onTap:
-                            widget.isMultiSelectMode
-                                ? () => widget.onToggleMessageSelection(item.id)
-                                : () {
-                                  if ((item.type == MessageType.file ||
-                                          item.type == MessageType.video ||
-                                          item.type == MessageType.image) &&
-                                      item.metadata != null &&
-                                      item.metadata![Message.metadataKeyFileInfo] !=
-                                          null) {
-                                    try {
-                                      final fileInfo = FileMessage.fromJson(
-                                        Map<String, dynamic>.from(
-                                          item.metadata![Message.metadataKeyFileInfo],
-                                        ),
-                                      );
-                                      NavigationHelper.push(context, FilePreviewScreen(
-                                                filePath: fileInfo.filePath,
-                                                fileName: fileInfo.fileName,
-                                                mimeType:
-                                                    fileInfo.mimeType ??
-                                                    'application/octet-stream',
-                                                fileSize: fileInfo.fileSize,),
-                                      );
-                                    } catch (e) {
-                                      Toast.error('chat_errorFilePreviewFailed'.tr);
-                                    }
-                                  }
-                                },
-                        onAvatarTap:
-                            widget.onAvatarTap != null
-                                ? () => widget.onAvatarTap!(item)
-                                : null,
-                        showAvatar: widget.showAvatar,
-                        isFirstOfGroup: isFirstOfGroup,
-                        currentUserId: widget.currentUserId ?? '',
-                        isHighlighted:
-                            widget.shouldHighlight &&
-                            widget.highlightedMessage != null &&
-                            item.id == widget.highlightedMessage?.id,
-                        onToggleFavorite: () => widget.onToggleFavorite(item),
-                        onReplyTap: widget.onReplyTap,
-                      ),
+                      message: item,
+                      isSelected: isSelected,
+                      isMultiSelectMode: widget.isMultiSelectMode,
+                      onEdit: () => widget.onMessageEdit(item),
+                      onDelete: () => widget.onMessageDelete(item),
+                      onCopy: () => widget.onMessageCopy(item),
+                      onSetFixedSymbol: (symbol) =>
+                          widget.onSetFixedSymbol(item, symbol),
+                      onLongPress: null, // 移除重复的长按处理
+                      onTap: widget.isMultiSelectMode
+                          ? () => widget.onToggleMessageSelection(item.id)
+                          : () {
+                              if ((item.type == MessageType.file ||
+                                      item.type == MessageType.video ||
+                                      item.type == MessageType.image) &&
+                                  item.metadata != null &&
+                                  item.metadata![Message.metadataKeyFileInfo] !=
+                                      null) {
+                                try {
+                                  final fileInfo = FileMessage.fromJson(
+                                    Map<String, dynamic>.from(
+                                      item.metadata![Message
+                                          .metadataKeyFileInfo],
+                                    ),
+                                  );
+                                  NavigationHelper.push(
+                                    context,
+                                    FilePreviewScreen(
+                                      filePath: fileInfo.filePath,
+                                      fileName: fileInfo.fileName,
+                                      mimeType:
+                                          fileInfo.mimeType ??
+                                          'application/octet-stream',
+                                      fileSize: fileInfo.fileSize,
+                                    ),
+                                  );
+                                } catch (e) {
+                                  Toast.error('chat_errorFilePreviewFailed'.tr);
+                                }
+                              }
+                            },
+                      onAvatarTap: widget.onAvatarTap != null
+                          ? () => widget.onAvatarTap!(item)
+                          : null,
+                      showAvatar: widget.showAvatar,
+                      isFirstOfGroup: isFirstOfGroup,
+                      currentUserId: widget.currentUserId ?? '',
+                      isHighlighted:
+                          widget.shouldHighlight &&
+                          widget.highlightedMessage != null &&
+                          item.id == widget.highlightedMessage?.id,
+                      onToggleFavorite: () => widget.onToggleFavorite(item),
+                      onReplyTap: widget.onReplyTap,
+                    ),
                   ),
                 ),
                 // AI 回复线程入口（@AI 消息下方：有 xx 条回复 / 正在输入…）

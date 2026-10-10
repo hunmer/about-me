@@ -190,12 +190,16 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(right: 12),
-            child: item.builder(context, widget.filterState.getValue(item.id), (
-              value,
-            ) {
-              widget.filterState.setValue(item.id, value);
-              setState(() {}); // 更新UI
-            }),
+            child: item.builder(
+              context,
+              widget.filterState.getValue(item.id),
+              (value, {bool? done}) {
+                widget.filterState.setValue(item.id, value);
+                setState(() {}); // 更新UI
+                // 选择完成（如单选）时自动返回第一层
+                if (done == true) _backToList();
+              },
+            ),
           ),
         ),
       ],
