@@ -330,28 +330,42 @@ class BasicInfoTab extends StatelessWidget {
     final theme = DSThemeBridge.resolve(context);
     Widget buildBrokenPlaceholder() =>
         DsIcon(DsIconKind.image, color: theme.textSub);
-    final displayPath = controller.thumbPath ?? controller.imagePath;
-    if (displayPath == null) {
-      return buildBrokenPlaceholder();
+
+    // 缩略图文件可能未生成（如平台不支持压缩），不存在时回退原图
+    Future<String?> resolveDisplayPath() async {
+      final candidates = [controller.thumbPath, controller.imagePath];
+      for (final candidatePath in candidates) {
+        if (candidatePath == null || candidatePath.isEmpty) continue;
+        if (candidatePath.startsWith('http://') ||
+            candidatePath.startsWith('https://')) {
+          return candidatePath;
+        }
+        final absolutePath = await ImageUtils.getAbsolutePath(candidatePath);
+        if (absolutePath.isNotEmpty && await File(absolutePath).exists()) {
+          return absolutePath;
+        }
+      }
+      return null;
     }
 
-    if (displayPath.startsWith('http://') ||
-        displayPath.startsWith('https://')) {
-      return Image.network(
-        displayPath,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => buildBrokenPlaceholder(),
-      );
-    }
-
-    return FutureBuilder<String>(
-      future: ImageUtils.getAbsolutePath(displayPath),
+    return FutureBuilder<String?>(
+      future: resolveDisplayPath(),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          final displayPath = snapshot.data!;
+          if (displayPath.startsWith('http://') ||
+              displayPath.startsWith('https://')) {
+            return Image.network(
+              displayPath,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder:
+                  (context, error, stackTrace) => buildBrokenPlaceholder(),
+            );
+          }
           return Image.file(
-            File(snapshot.data!),
+            File(displayPath),
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,

@@ -8,6 +8,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/store/widgets/product_card.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -23,6 +24,7 @@ class ProductList extends StatefulWidget {
 class _ProductListState extends State<ProductList> {
   int _sortIndex = 0; // 0:默认, 1:库存, 2:价格, 3:兑换期限
   String _searchQuery = ''; // 搜索查询关键词
+  Map<String, dynamic> _multiFilters = {}; // 多条件过滤值
 
   @override
   void initState() {
@@ -72,8 +74,11 @@ class _ProductListState extends State<ProductList> {
             .values
             .toList();
 
+    // 应用多条件过滤
+    final filteredBase = uniqueProducts.where(_passesMultiFilters).toList();
+
     // 应用排序
-    final sortedProducts = _applySort(uniqueProducts);
+    final sortedProducts = _applySort(filteredBase);
 
     // 应用搜索筛选
     final filteredProducts = _searchProducts(_searchQuery, sortedProducts);
@@ -91,7 +96,9 @@ class _ProductListState extends State<ProductList> {
                     DsIcon(DsIconKind.cart, size: 64, color: theme.textSub),
                     const SizedBox(height: 16),
                     Text(
-                      _searchQuery.isEmpty ? 'store_noProducts'.tr : '未找到匹配的商品',
+                      _searchQuery.isEmpty && _multiFilters.isEmpty
+                        ? 'store_noProducts'.tr
+                        : '未找到匹配的商品',
                       style: DsTypography.body.copyWith(color: theme.textSub),
                     ),
                   ],
@@ -150,57 +157,272 @@ class _ProductListState extends State<ProductList> {
     }
 
     return SuperCupertinoNavigationWrapper(
-      title: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return DsIcon(DsIconKind.cart, color: theme.primary, size: 24);
-        },
-      ),
-      largeTitle: '商品列表',
+      title: Text('store_productList'.tr),
+      largeTitle: 'store_productList'.tr,
       body: buildProductGrid(filteredProducts),
       searchBody: buildProductGrid(filteredProducts), // 搜索结果页面
       enableLargeTitle: true,
       enableSearchBar: true,
       searchPlaceholder: 'store_searchProductPlaceholder'.tr,
       onSearchChanged: _handleSearchChanged,
-      actions: [
-        // 第三方导航栏回调：气泡经根 Overlay 展示，需包主题桥
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSPopover(
-                width: 170,
-                contentBuilder: (context, close) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (index, label) in [
-                        (0, 'store_defaultSort'.tr),
-                        (1, 'store_sortByStock'.tr),
-                        (2, 'store_sortByPrice'.tr),
-                        (3, 'store_sortByExpiryDate'.tr),
-                      ])
-                        DSSheetAction(
-                          icon: DsIconKind.sort,
-                          label: label,
-                          onTap: () {
-                            close();
-                            setState(() {
-                              _sortIndex = index;
-                            });
-                          },
-                        ),
-                    ],
-                  );
-                },
-                child: DsIcon(DsIconKind.sort, size: 22, color: theme.text),
+      // 多条件过滤栏，排序入口合并到过滤栏尾部圆形按钮
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _applyMultiFilters,
+      multiFilterBarTrailing: _buildSortButton(),
+    );
+  }
+
+  /// 排序选项 i18n key，索引与 [_sortIndex] 对应
+  static const List<String> _sortLabels = [
+    'store_defaultSort',
+    'store_sortByStock',
+    'store_sortByPrice',
+    'store_sortByExpiryDate',
+  ];
+
+  /// 构建多条件过滤项
+  List<FilterItem> _buildFilterItems() {
+    final exchangeOptions = {
+      'ongoing': 'store_exchanging'.tr,
+      'upcoming': 'store_notStarted'.tr,
+      'ended': 'store_exchangeEnded'.tr,
+    };
+    final stockOptions = {
+      'inStock': 'store_inStock'.tr,
+      'outOfStock': 'store_outOfStock'.tr,
+    };
+
+    return [
+      // 1. 兑换状态
+      FilterItem(
+        id: 'exchangeStatus',
+        title: 'store_exchangeStatus'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return DSThemeBridge(
+            child: FilterBuilders.buildSingleChoiceFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              options: exchangeOptions,
+              allItemsKey: 'all',
+              allItemsLabel: 'store_all'.tr,
+            ),
+          );
+        },
+        getBadge:
+            (value) => FilterBuilders.singleChoiceBadge(value, exchangeOptions),
+      ),
+
+      // 2. 库存
+      FilterItem(
+        id: 'stock',
+        title: 'store_stockStatus'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return DSThemeBridge(
+            child: FilterBuilders.buildSingleChoiceFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              options: stockOptions,
+              allItemsKey: 'all',
+              allItemsLabel: 'store_all'.tr,
+            ),
+          );
+        },
+        getBadge:
+            (value) => FilterBuilders.singleChoiceBadge(value, stockOptions),
+      ),
+
+      // 3. 价格区间（积分）
+      FilterItem(
+        id: 'priceRange',
+        title: 'store_priceRange'.tr,
+        type: FilterType.custom,
+        builder: (context, currentValue, onChanged) {
+          return _buildPriceRangeFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+          );
+        },
+        getBadge: (value) {
+          if (value == null) return null;
+          final range = value as Map<String, double?>;
+          final min = range['min'];
+          final max = range['max'];
+          if (min != null && max != null) return '$min - $max';
+          if (min != null) return '≥ $min';
+          if (max != null) return '≤ $max';
+          return null;
+        },
+      ),
+    ];
+  }
+
+  /// 构建价格区间过滤器（积分）
+  Widget _buildPriceRangeFilter({
+    required BuildContext context,
+    required dynamic currentValue,
+    required ValueChanged<dynamic> onChanged,
+  }) {
+    final range =
+        (currentValue as Map<String, double?>?) ?? {'min': null, 'max': null};
+    final minController = TextEditingController(
+      text: range['min']?.toString() ?? '',
+    );
+    final maxController = TextEditingController(
+      text: range['max']?.toString() ?? '',
+    );
+    final theme = DSThemeBridge.resolve(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'store_priceRange'.tr,
+            style: DsTypography.heading.copyWith(color: theme.text),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: minController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'store_minPrice'.tr,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    final newRange = Map<String, double?>.from(range);
+                    newRange['min'] = double.tryParse(value);
+                    onChanged(newRange);
+                  },
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('-'),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: maxController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'store_maxPrice'.tr,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    final newRange = Map<String, double?>.from(range);
+                    newRange['max'] = double.tryParse(value);
+                    onChanged(newRange);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 应用多条件过滤
+  void _applyMultiFilters(Map<String, dynamic> filters) {
+    // addPostFrameCallback 避免在 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters = filters;
+        });
+      }
+    });
+  }
+
+  /// 检查商品是否通过所有多条件过滤
+  bool _passesMultiFilters(Product product) {
+    if (_multiFilters.isEmpty) return true;
+
+    // 1. 兑换状态
+    final exchangeStatus = _multiFilters['exchangeStatus'] as String?;
+    if (exchangeStatus != null) {
+      final now = DateTime.now();
+      switch (exchangeStatus) {
+        case 'ongoing': // 兑换中：当前时间在兑换起止时间内
+          if (now.isBefore(product.exchangeStart) ||
+              now.isAfter(product.exchangeEnd)) {
+            return false;
+          }
+        case 'upcoming': // 未开始
+          if (!now.isBefore(product.exchangeStart)) return false;
+        case 'ended': // 已结束
+          if (!now.isAfter(product.exchangeEnd)) return false;
+      }
+    }
+
+    // 2. 库存
+    final stock = _multiFilters['stock'] as String?;
+    if (stock != null) {
+      if (stock == 'inStock' && product.stock <= 0) return false;
+      if (stock == 'outOfStock' && product.stock > 0) return false;
+    }
+
+    // 3. 价格区间
+    if (_multiFilters['priceRange'] != null) {
+      final range = _multiFilters['priceRange'] as Map<String, double?>;
+      final min = range['min'];
+      final max = range['max'];
+      if (min != null && product.price < min) return false;
+      if (max != null && product.price > max) return false;
+    }
+
+    return true;
+  }
+
+  /// 过滤栏尾部圆形排序入口（DSPopover 经根 Overlay 展示需 DSThemeBridge 包裹）
+  Widget _buildSortButton() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSPopover(
+            width: 170,
+            contentBuilder: (context, close) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, label) in _sortLabels.indexed)
+                    DSSheetAction(
+                      icon: DsIconKind.sort,
+                      label: label.tr,
+                      onTap: () {
+                        close();
+                        setState(() {
+                          _sortIndex = index;
+                        });
+                      },
+                    ),
+                ],
               );
             },
-          ),
-        ),
-      ],
+            child: JellyBox(
+              width: 36,
+              height: 36,
+              radius: theme.radii.circle,
+              color: theme.surfaceAlt,
+              child: Center(
+                child: DsIcon(DsIconKind.sort, size: 18, color: theme.textSub),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

@@ -116,6 +116,12 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
 
       debugPrint('缩略图已生成: $compressedPath');
 
+      // 压缩服务在不支持的平台会返回源路径而不生成文件，需验证缩略图真实存在
+      if (!await File(thumbPath).exists()) {
+        debugPrint('缩略图未实际生成，跳过thumbUrl');
+        return {'url': relativePath, 'thumbUrl': null};
+      }
+
       // 计算缩略图的相对路径
       final thumbRelativePath = await ImageUtils.toRelativePath(thumbPath);
 

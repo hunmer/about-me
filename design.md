@@ -68,7 +68,10 @@ return SuperCupertinoNavigationWrapper(
 - `previousPageTitle`：返回按钮旁的前页标题文字
 - `transitionBetweenRoutes`：导航栏是否参与路由 hero 转场，默认 true
 
-注意：**同一路由下嵌套第二个 wrapper（如 tab 内嵌页）必须传 `transitionBetweenRoutes: false`**，否则两个导航栏的默认 Hero tag 冲突。
+注意：
+
+- **`title` 一律传纯文本 `Text`**（折叠态标题/hero 渐变依赖文本提取），不要传图标 Widget；图标只用于 `largeTitleActions`/`actions` 等按钮位
+- **同一路由下嵌套第二个 wrapper（如 tab 内嵌页）必须传 `transitionBetweenRoutes: false`**，否则两个导航栏的默认 Hero tag 冲突。
 
 ## 2. PersistentNavigationBar — 嵌入式导航栏
 
@@ -197,6 +200,28 @@ Text('screens_errorHabitNotFound'.trParams({'id': itemId}))  // 带参数
 - **新增键必须同时补 zh 和 en 两个文件**，缺一个会直接显示键名
 - 键名用 `<前缀>_<页面/模块>_<语义>` 层级命名（如 `checkin_searchPlaceholder`）
 
+## 8. 列表筛选与排序：统一走多条件过滤栏
+
+列表页的筛选/排序**不放 header actions 图标弹层，也不放 body 内通栏按钮**，统一收敛到 wrapper 的多条件过滤栏（参考实现：`lib/plugins/goods/screens/goods_list_screen.dart`、`lib/plugins/store/widgets/store_view/product_list.dart`）：
+
+```dart
+SuperCupertinoNavigationWrapper(
+  // ...
+  enableMultiFilter: true,
+  multiFilterItems: _buildFilterItems(),       // List<FilterItem>（filter_models.dart）
+  onMultiFilterChanged: _applyMultiFilters,    // postFrameCallback + setState 存入 _multiFilters
+  multiFilterBarTrailing: _buildSortButton(),  // 排序入口（可选）：过滤栏尾部圆形按钮
+);
+```
+
+要点：
+
+- 筛选项用 `FilterItem` + `FilterType`（tagsSingle / tagsMultiple / input / dateRange / checkbox / custom），常用 UI 直接调 `FilterBuilders`（`filter_builders.dart`），选中态 badge 走 `getBadge`；两者由 `super_cupertino_navigation_wrapper/index.dart` 导出
+- **排序入口是过滤栏第一层尾部的圆形图标按钮**（`JellyBox` 36×36 circle + `DsIconKind.sort`，点击 `DSPopover` 弹菜单），不放 header actions
+- 过滤判断集中一个 `_passesMultiFilters(item)`，数据链路：原始列表 → 多条件过滤 → 排序 → 搜索
+- 经根 Overlay 展示的 DS 组件（`DSPopover`、过滤栏内的 `DSChip` 等）需包 `DSThemeBridge` 提供主题
+- 启用 `enableMultiFilter` 后搜索栏默认收起，由 header 右上切换按钮同时展开过滤栏与搜索框（`multiFilterToggleable` 默认 true）
+
 ## 新建页面检查清单
 
 1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）
@@ -207,3 +232,4 @@ Text('screens_errorHabitNotFound'.trParams({'id': itemId}))  // 带参数
 6. 根级宿主页才放 `DSBottomNavigation`，子页面不放
 7. 颜色全部来自 `DSThemeBridge.resolve(context)`，无硬编码色值
 8. 所有用户可见文案走 `.tr` / `.trParams`，zh/en 翻译文件同步补齐
+9. 列表筛选/排序走多条件过滤栏（`enableMultiFilter`），排序入口用过滤栏尾部圆形按钮；导航栏 `title` 传纯文本 `Text`

@@ -307,9 +307,8 @@ class _PointsHistoryState extends State<PointsHistory> {
   }
 
   Widget _buildEmptyView() {
-    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      title: DsIcon(DsIconKind.clock, color: theme.success, size: 24),
+      title: Text('store_pointsHistory'.tr),
       largeTitle: 'store_pointsHistory'.tr,
       body: Builder(
         builder: (context) {
@@ -350,12 +349,7 @@ class _PointsHistoryState extends State<PointsHistory> {
         .fold<int>(0, (sum, log) => sum + log.value);
 
     return SuperCupertinoNavigationWrapper(
-      title: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return DsIcon(DsIconKind.clock, color: theme.success, size: 24);
-        },
-      ),
+      title: Text('store_pointsHistory'.tr),
       largeTitle: 'store_pointsHistory'.tr,
       body: DSThemeBridge(
         child: Builder(

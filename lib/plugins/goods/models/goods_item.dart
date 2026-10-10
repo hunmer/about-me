@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'usage_record.dart';
@@ -23,12 +25,15 @@ class GoodsItem {
   }
 
   // 获取缩略图URL，如果是相对路径则转换为绝对路径
+  // 缩略图文件可能因平台不支持压缩而未生成，此时返回null由调用方回退到原图
   Future<String?> getThumbUrl() async {
     if (_thumbUrl == null || _thumbUrl == "") return null;
     final appDir = await StorageManager.getApplicationDocumentsDirectory();
-    return GoodsPathConstants.cleanPath(
+    final absolutePath = GoodsPathConstants.cleanPath(
       GoodsPathConstants.toAbsolutePath(appDir.path, _thumbUrl),
     );
+    if (!await File(absolutePath).exists()) return null;
+    return absolutePath;
   }
 
   // 同步获取相对路径

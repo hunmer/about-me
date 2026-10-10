@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/store/widgets/user_item_detail_page.dart';
 import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -27,13 +28,18 @@ class UserItems extends StatefulWidget {
 }
 
 class _UserItemsState extends State<UserItems> {
-  late int _statusIndex; // 0:全部, 1:可使用, 2:已过期
+  final Map<String, dynamic> _multiFilters = {}; // 多条件过滤值
   String _searchQuery = ''; // 搜索查询文本
 
   @override
   void initState() {
     super.initState();
-    _statusIndex = widget.initialStatusIndex;
+    // 兼容旧的状态索引参数：1 可使用 / 2 已过期
+    if (widget.initialStatusIndex == 1) {
+      _multiFilters['status'] = 'usable';
+    } else if (widget.initialStatusIndex == 2) {
+      _multiFilters['status'] = 'expired';
+    }
     widget.controller.addListener(_onControllerUpdate);
   }
 
@@ -47,9 +53,47 @@ class _UserItemsState extends State<UserItems> {
     if (mounted) setState(() {});
   }
 
-  void updateStatusFilter(int statusIndex) {
-    setState(() {
-      _statusIndex = statusIndex;
+  /// 构建多条件过滤项
+  List<FilterItem> _buildFilterItems() {
+    final statusOptions = {
+      'usable': 'store_usable'.tr,
+      'expired': 'store_expired'.tr,
+    };
+
+    return [
+      FilterItem(
+        id: 'status',
+        title: 'store_itemStatus'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return DSThemeBridge(
+            child: FilterBuilders.buildSingleChoiceFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              options: statusOptions,
+              allItemsKey: 'all',
+              allItemsLabel: 'store_all'.tr,
+            ),
+          );
+        },
+        getBadge:
+            (value) => FilterBuilders.singleChoiceBadge(value, statusOptions),
+      ),
+    ];
+  }
+
+  /// 应用多条件过滤
+  void _applyMultiFilters(Map<String, dynamic> filters) {
+    // addPostFrameCallback 避免在 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters
+            ..clear()
+            ..addAll(filters);
+        });
+      }
     });
   }
 
@@ -83,9 +127,8 @@ class _UserItemsState extends State<UserItems> {
   }
 
   Widget _buildEmptyView() {
-    final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      title: DsIcon(DsIconKind.gift, color: theme.primary, size: 24),
+      title: Text('store_myItems'.tr),
       largeTitle: 'store_myItems'.tr,
       body: Builder(
         builder: (context) {
@@ -127,12 +170,7 @@ class _UserItemsState extends State<UserItems> {
     final groupedItems = _groupItems(items);
 
     return SuperCupertinoNavigationWrapper(
-      title: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return DsIcon(DsIconKind.gift, color: theme.primary, size: 24);
-        },
-      ),
+      title: Text('store_myItems'.tr),
       largeTitle: 'store_myItems'.tr,
       body:
           groupedItems.isEmpty
@@ -245,54 +283,22 @@ class _UserItemsState extends State<UserItems> {
       // 搜索结果页面
       searchBody: _buildSearchResultsView(),
       enableLargeTitle: true,
-      actions: [
-        // 第三方导航栏回调：气泡经根 Overlay 展示，需包主题桥
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSPopover(
-                width: 160,
-                contentBuilder: (context, close) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (index, label) in [
-                        (0, 'store_allItems'.tr),
-                        (1, 'store_usable'.tr),
-                        (2, 'store_expired'.tr),
-                      ])
-                        DSSheetAction(
-                          icon:
-                              index == 2 ? DsIconKind.block : DsIconKind.check,
-                          label: label,
-                          onTap: () {
-                            close();
-                            setState(() {
-                              _statusIndex = index;
-                            });
-                          },
-                        ),
-                    ],
-                  );
-                },
-                child: DsIcon(DsIconKind.sort, size: 22, color: theme.text),
-              );
-            },
-          ),
-        ),
-      ],
+      // 多条件过滤栏（状态筛选从 header 迁入）
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _applyMultiFilters,
+      initialMultiFilters: _multiFilters.isNotEmpty ? _multiFilters : null,
     );
   }
 
   List<UserItem> _getFilteredItems() {
     final now = DateTime.now();
+    final status = _multiFilters['status'] as String?;
     return widget.controller.userItems.where((item) {
-      switch (_statusIndex) {
-        case 1: // 可使用
+      switch (status) {
+        case 'usable': // 可使用
           return item.expireDate.isAfter(now);
-        case 2: // 已过期
+        case 'expired': // 已过期
           return item.expireDate.isBefore(now);
         default: // 全部
           return true;
