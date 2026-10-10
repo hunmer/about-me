@@ -382,11 +382,17 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
             );
           }
 
-          // 两列卡片网格（宽屏下按最大列宽自适应多列）
+          // 两列卡片网格（宽屏下按最大列宽自适应多列）；
+          // 底部留出悬浮导航栏高度（extendBody 注入的 padding.bottom）
           return RefreshIndicator(
             onRefresh: _refreshScripts,
             child: GridView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
               gridDelegate:
                   const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 240,

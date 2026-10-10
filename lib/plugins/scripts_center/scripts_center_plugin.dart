@@ -606,62 +606,66 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
           ),
         ),
       ],
-      // 三个页签共用外层 header，IndexedStack 保留各页签状态
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          ScriptsListScreen(
-            scriptManager: _plugin.scriptManager,
-            scriptExecutor: _plugin.scriptExecutor,
-            searchQuery: _searchQuery,
-          ),
-          ScriptExecutionLogScreen(
-            logger: _plugin.scriptExecutor.executionLogger,
-            executor: _plugin.scriptExecutor,
-            embedded: true,
-          ),
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(
-                value: _plugin.scriptStoreManager,
-              ),
-              ChangeNotifierProvider.value(
-                value: _plugin.scriptDownloadManager,
-              ),
-              ChangeNotifierProvider.value(value: _plugin.scriptManager),
-            ],
-            child: const ScriptStoreScreen(embedded: true),
-          ),
-        ],
-      ),
+      // 三个页签共用外层 header，IndexedStack 保留各页签状态。
+      // 弧形底部导航经内层 Scaffold 停靠屏幕底部（wrapper 的
+      // bottomBarChild 参数实际不生效），extendBody 让内容延伸到栏下
+      body: Scaffold(
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            ScriptsListScreen(
+              scriptManager: _plugin.scriptManager,
+              scriptExecutor: _plugin.scriptExecutor,
+              searchQuery: _searchQuery,
+            ),
+            ScriptExecutionLogScreen(
+              logger: _plugin.scriptExecutor.executionLogger,
+              executor: _plugin.scriptExecutor,
+              embedded: true,
+            ),
+            MultiProvider(
+              providers: [
+                ChangeNotifierProvider.value(
+                  value: _plugin.scriptStoreManager,
+                ),
+                ChangeNotifierProvider.value(
+                  value: _plugin.scriptDownloadManager,
+                ),
+                ChangeNotifierProvider.value(value: _plugin.scriptManager),
+              ],
+              child: const ScriptStoreScreen(embedded: true),
+            ),
+          ],
+        ),
 
-      // 底部弧形导航：脚本 / 执行记录 / 脚本商场
-      enableBottomBar: true,
-      bottomBarHeight: 60,
-      bottomBarChild: DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            final theme = DSThemeBridge.resolve(context);
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.surface,
-                border: Border(top: BorderSide(color: theme.stroke)),
-              ),
-              child: DSBottomNavigation(
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                items: const [
-                  DSNavItem(icon: DsIconKind.code, label: '脚本'),
-                  DSNavItem(icon: DsIconKind.clock, label: '执行记录'),
-                  DSNavItem(icon: DsIconKind.store, label: '插件商场'),
-                ],
-              ),
-            );
-          },
+        // 底部弧形导航：脚本 / 执行记录 / 脚本商场
+        bottomNavigationBar: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.all(theme.spacing.lg),
+                  child: DSBottomNavigation(
+                    currentIndex: _currentIndex,
+                    onTap: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    items: const [
+                      DSNavItem(icon: DsIconKind.code, label: '脚本'),
+                      DSNavItem(icon: DsIconKind.clock, label: '执行记录'),
+                      DSNavItem(icon: DsIconKind.store, label: '插件商场'),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

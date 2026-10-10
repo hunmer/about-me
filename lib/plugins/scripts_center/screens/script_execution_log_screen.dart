@@ -409,7 +409,11 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                // 底部留出悬浮导航栏高度（内嵌 tab 时经 extendBody 注入）
                 return ListView(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.paddingOf(context).bottom,
+                  ),
                   children: [
                     // 运行中的脚本（实时状态，可终止）
                     for (final r in widget.logger.running)

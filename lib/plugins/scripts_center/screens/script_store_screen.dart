@@ -132,6 +132,8 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
       title: Text('scripts_center_scriptStore'.tr),
       largeTitle: 'scripts_center_scriptStore'.tr,
       automaticallyImplyLeading: !widget.embedded,
+      // 内嵌 tab 时外层 wrapper 已带转场 Hero，内层必须关闭避免默认 tag 冲突
+      transitionBetweenRoutes: !widget.embedded,
 
       // 启用搜索栏
       enableSearchBar: true,
@@ -175,7 +177,13 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                     : filteredScripts.isEmpty
                     ? _buildEmptyView()
                     : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      // 底部留出悬浮导航栏高度（内嵌 tab 时经 extendBody 注入）
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        16 + MediaQuery.paddingOf(context).bottom,
+                      ),
                       itemCount: filteredScripts.length,
                       itemBuilder: (context, index) {
                         return _buildScriptCard(filteredScripts[index]);

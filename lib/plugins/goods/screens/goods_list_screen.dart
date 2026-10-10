@@ -670,7 +670,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
         );
 
         return SizedBox(
-          height: 64,
+          height: 72,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

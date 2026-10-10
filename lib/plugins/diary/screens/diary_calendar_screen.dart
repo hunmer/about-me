@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -53,6 +54,11 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   // 搜索相关状态
   String _searchQuery = '';
   List<DiaryEntry> _searchResults = [];
+
+  // smooth_sheets 0.15.0 的内置拖拽识别器仅接收触摸设备；桌面端鼠标
+  // 拖拽通过内容层的指针事件补充，触摸手势仍由 smooth_sheets 处理。
+  double? _mouseDragLastY;
+  bool _mouseDragging = false;
 
   // GlobalKeys for OpenContainer animation
   final GlobalKey _editButtonKey = GlobalKey();
@@ -176,6 +182,51 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   void _closeDetailSheet() {
     _sheetController.animateTo(
       const SheetOffset.absolute(0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _handleMousePointerDown(PointerDownEvent event) {
+    if (event.kind == PointerDeviceKind.mouse &&
+        event.buttons == kPrimaryButton) {
+      _mouseDragging = true;
+      _mouseDragLastY = event.position.dy;
+    }
+  }
+
+  void _handleMousePointerMove(PointerMoveEvent event) {
+    if (!_mouseDragging || _mouseDragLastY == null) return;
+    final metrics = _sheetController.metrics;
+    if (metrics == null) return;
+
+    final deltaY = event.position.dy - _mouseDragLastY!;
+    _mouseDragLastY = event.position.dy;
+    final nextOffset = (metrics.offset - deltaY).clamp(
+      metrics.minOffset,
+      metrics.maxOffset,
+    );
+    _sheetController.animateTo(
+      SheetOffset.absolute(nextOffset),
+      duration: Duration.zero,
+      curve: Curves.linear,
+    );
+  }
+
+  void _handleMousePointerEnd(PointerEvent event) {
+    if (!_mouseDragging) return;
+    _mouseDragging = false;
+    _mouseDragLastY = null;
+
+    final metrics = _sheetController.metrics;
+    if (metrics == null) return;
+    final stops = <double>[metrics.minOffset, _detailSnapPx, metrics.maxOffset];
+    final target = stops.reduce(
+      (a, b) =>
+          (a - metrics.offset).abs() <= (b - metrics.offset).abs() ? a : b,
+    );
+    _sheetController.animateTo(
+      SheetOffset.absolute(target),
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
     );
@@ -549,158 +600,165 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
             // 固定内容高度 = viewport 高，fit 模式下与三档吸附配合；
             // 注意：设置 scrollConfiguration 后 sheet 只对 scrollable 内容
             // 响应拖拽，因此把手/日期行也放进 ListView（整体可拖）
-            child: SizedBox(
-              height: viewportHeight,
-              child: ListView(
-                padding: EdgeInsets.only(bottom: bottomInset + 16),
-                children: [
-                  // 把手
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: theme.stroke,
-                        borderRadius: BorderRadius.circular(2),
+            child: Listener(
+              onPointerDown: _handleMousePointerDown,
+              onPointerMove: _handleMousePointerMove,
+              onPointerUp: _handleMousePointerEnd,
+              onPointerCancel: _handleMousePointerEnd,
+              child: SizedBox(
+                height: viewportHeight,
+                child: ListView(
+                  padding: EdgeInsets.only(bottom: bottomInset + 16),
+                  children: [
+                    // 把手
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: theme.stroke,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // 日期和编辑按钮行（收起态仍可见）
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _selectedDay != null
-                              ? DateFormat('MMMM d, yyyy').format(_selectedDay!)
-                              : '',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
+                    // 日期和编辑按钮行（收起态仍可见）
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedDay != null
+                                ? DateFormat(
+                                    'MMMM d, yyyy',
+                                  ).format(_selectedDay!)
+                                : '',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 关闭图标：完全隐藏 sheet
-                            IconButton(
-                              icon: Icon(
-                                Icons.close_rounded,
-                                size: 20,
-                                color: textColor,
-                              ),
-                              tooltip: 'app_close'.tr,
-                              onPressed: _closeDetailSheet,
-                            ),
-                            DSButton(
-                              key: _editButtonKey,
-                              label: selectedEntry != null
-                                  ? 'diary_edit'.tr
-                                  : 'diary_create'.tr,
-                              icon: selectedEntry != null
-                                  ? DsIconKind.edit
-                                  : DsIconKind.plus,
-                              size: DSButtonSize.sm,
-                              onPressed: () {
-                                final targetDay =
-                                    _selectedDay ?? DateTime.now();
-                                final normalizedTargetDay = DateTime(
-                                  targetDay.year,
-                                  targetDay.month,
-                                  targetDay.day,
-                                );
-                                NavigationHelper.openContainerWithHero(
-                                  context,
-                                  (_) => DiaryEditorScreen(
-                                    date: normalizedTargetDay,
-                                    storage: widget.storage,
-                                    initialTitle: selectedEntry?.title ?? '',
-                                    initialContent:
-                                        selectedEntry?.content ?? '',
-                                  ),
-                                  sourceKey: _editButtonKey,
-                                  heroTag: 'diary_edit_button',
-                                  closedColor: primaryColor,
-                                  closedShape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ).then((_) => _loadDiaryEntries());
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // 内容
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: selectedEntry != null
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Images list (if any)
-                              Builder(
-                                builder: (context) {
-                                  final images = extractImagesFromContent(
-                                    selectedEntry.content,
+                              // 关闭图标：完全隐藏 sheet
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  size: 20,
+                                  color: textColor,
+                                ),
+                                tooltip: 'app_close'.tr,
+                                onPressed: _closeDetailSheet,
+                              ),
+                              DSButton(
+                                key: _editButtonKey,
+                                label: selectedEntry != null
+                                    ? 'diary_edit'.tr
+                                    : 'diary_create'.tr,
+                                icon: selectedEntry != null
+                                    ? DsIconKind.edit
+                                    : DsIconKind.plus,
+                                size: DSButtonSize.sm,
+                                onPressed: () {
+                                  final targetDay =
+                                      _selectedDay ?? DateTime.now();
+                                  final normalizedTargetDay = DateTime(
+                                    targetDay.year,
+                                    targetDay.month,
+                                    targetDay.day,
                                   );
-                                  if (images.isEmpty) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Container(
-                                    height: 100,
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: images.length,
-                                      itemBuilder: (context, index) {
-                                        return Container(
-                                          width: 100,
-                                          margin: const EdgeInsets.only(
-                                            right: 8,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                images[index],
-                                              ), // Or FileImage if local
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                  NavigationHelper.openContainerWithHero(
+                                    context,
+                                    (_) => DiaryEditorScreen(
+                                      date: normalizedTargetDay,
+                                      storage: widget.storage,
+                                      initialTitle: selectedEntry?.title ?? '',
+                                      initialContent:
+                                          selectedEntry?.content ?? '',
                                     ),
-                                  );
+                                    sourceKey: _editButtonKey,
+                                    heroTag: 'diary_edit_button',
+                                    closedColor: primaryColor,
+                                    closedShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ).then((_) => _loadDiaryEntries());
                                 },
                               ),
-                              QuillViewer(
-                                data: selectedEntry.content,
-                                selectable: true,
-                              ),
                             ],
-                          )
-                        : SizedBox(
-                            height: 160,
-                            child: Center(
-                              child: DSEmptyState(
-                                emoji: '📖',
-                                title: 'diary_noDiaryForDate'.tr,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // 内容
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: selectedEntry != null
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Images list (if any)
+                                Builder(
+                                  builder: (context) {
+                                    final images = extractImagesFromContent(
+                                      selectedEntry.content,
+                                    );
+                                    if (images.isEmpty) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Container(
+                                      height: 100,
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: images.length,
+                                        itemBuilder: (context, index) {
+                                          return Container(
+                                            width: 100,
+                                            margin: const EdgeInsets.only(
+                                              right: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                  images[index],
+                                                ), // Or FileImage if local
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                                QuillViewer(
+                                  data: selectedEntry.content,
+                                  selectable: true,
+                                ),
+                              ],
+                            )
+                          : SizedBox(
+                              height: 160,
+                              child: Center(
+                                child: DSEmptyState(
+                                  emoji: '📖',
+                                  title: 'diary_noDiaryForDate'.tr,
+                                ),
                               ),
                             ),
-                          ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -65,6 +65,11 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 当为 null 时,非移动端(桌面平台)默认不显示,移动端默认显示
   final bool? automaticallyImplyLeading;
 
+  /// 是否让导航栏参与路由转场 Hero 动画。
+  /// 同一路由下嵌套第二个本组件时（如 tab 内嵌页）必须传 false，
+  /// 否则两个导航栏的默认 Hero tag 冲突
+  final bool transitionBetweenRoutes;
+
   /// 返回按钮标题
   final String? previousPageTitle;
 
@@ -167,6 +172,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     this.largeTitleActions,
     this.backgroundColor,
     this.automaticallyImplyLeading,
+    this.transitionBetweenRoutes = true,
     this.previousPageTitle,
     this.previousPageTitleStyle,
     this.onCollapsed,
@@ -443,10 +449,11 @@ class _SuperCupertinoNavigationWrapperState
       },
       child: Scaffold(
         backgroundColor: _resolveBackgroundColor(),
-        body: SuperScaffold(
-          onCollapsed: widget.onCollapsed,
-          stretch: widget.stretch,
-          appBar: _buildSuperAppBar(),
+          body: SuperScaffold(
+            onCollapsed: widget.onCollapsed,
+            stretch: widget.stretch,
+            transitionBetweenRoutes: widget.transitionBetweenRoutes,
+            appBar: _buildSuperAppBar(),
           body: Column(
             children: [
               // 高级搜索条件筛选器
