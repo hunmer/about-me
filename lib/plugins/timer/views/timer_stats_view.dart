@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:aboutme/core/services/timer/storage/timer_storage.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 计时器统计页（专注统计）
 ///
@@ -13,7 +14,14 @@ import 'package:aboutme/plugins/timer/models/timer_task.dart';
 class TimerStatsView extends StatefulWidget {
   final List<TimerTask> tasks;
 
-  const TimerStatsView({super.key, required this.tasks});
+  /// 刷新令牌：变化时重新加载历史记录（宿主切到统计 tab 时递增）
+  final int refreshToken;
+
+  const TimerStatsView({
+    super.key,
+    required this.tasks,
+    this.refreshToken = 0,
+  });
 
   @override
   State<TimerStatsView> createState() => _TimerStatsViewState();
@@ -28,6 +36,14 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   void initState() {
     super.initState();
     _loadHistory();
+  }
+
+  @override
+  void didUpdateWidget(TimerStatsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshToken != oldWidget.refreshToken) {
+      _loadHistory();
+    }
   }
 
   Future<void> _loadHistory() async {
@@ -81,9 +97,14 @@ class _TimerStatsViewState extends State<TimerStatsView> {
         (i) => _dayOf(DateTime.now()).subtract(Duration(days: 6 - i)),
       );
 
-  /// 从任务的计时器项里查类型，用于类型徽章配色
+  /// 从任务的计时器项里查类型，用于类型徽章配色。
+  /// 历史记录的 timerId 是启动方传入的 id——可能是 item.id 也可能是
+  /// task.id（TimerTask._startUnifiedTimer 用任务 id 注册），两者都匹配
   TimerType? _typeOf(String timerId) {
     for (final task in widget.tasks) {
+      if (task.id == timerId && task.timerItems.isNotEmpty) {
+        return task.timerItems.first.type;
+      }
       for (final item in task.timerItems) {
         if (item.id == timerId) return item.type;
       }
@@ -118,90 +139,67 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     }
 
     final theme = Theme.of(context);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
-      children: [
-        _buildHeader(theme),
-        const SizedBox(height: 12),
-        _buildHeroCard(theme),
-        const SizedBox(height: 16),
-        _buildBarChartCard(theme),
-        const SizedBox(height: 24),
-        _buildTimelineSection(theme),
-      ],
+    return SuperCupertinoNavigationWrapper(
+      // 收缩态标题；大标题与日期胶囊由导航栏承担（原页面内 header 移除）
+      title: const Text('专注统计'),
+      largeTitle: '专注统计',
+      enableSearchBar: false,
+      largeTitleActions: [_buildWeekPill(theme)],
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
+        children: [
+          _buildHeroCard(theme),
+          const SizedBox(height: 16),
+          _buildBarChartCard(theme),
+          const SizedBox(height: 24),
+          _buildTimelineSection(theme),
+        ],
+      ),
     );
   }
 
-  // ===== 顶部标题区 =====
+  // ===== 本周日期胶囊（大标题行右侧 action） =====
 
-  Widget _buildHeader(ThemeData theme) {
+  Widget _buildWeekPill(ThemeData theme) {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final label =
         '${weekStart.month}.${weekStart.day} - ${now.month}.${now.day}';
 
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'FOCUS ANALYTICS',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1.2,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '专注统计',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.5,
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.5,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.calendar_today,
+            size: 14,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '本周 ($label)',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
             ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '本周 ($label)',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.expand_more,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
+          const SizedBox(width: 4),
+          Icon(
+            Icons.expand_more,
+            size: 16,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -508,41 +506,51 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             ),
           ),
           const SizedBox(height: 6),
-          // 胶囊轨道
+          // 胶囊轨道：LayoutBuilder 拿到有界高度后再计算填充高度
+          // （FractionallySizedBox 在 Column 中收到无界约束会断言失败）
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                color: isToday
-                    ? accent.withValues(alpha: 0.25)
-                    : theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.4),
-              ),
-              padding: const EdgeInsets.all(2.5),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  FractionallySizedBox(
-                    widthFactor: 1,
-                    heightFactor: ratio,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: isToday ? accent : muted,
-                        boxShadow: isToday
-                            ? [
-                                BoxShadow(
-                                  color: accent.withValues(alpha: 0.35),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const trackPadding = 2.5;
+                final trackHeight =
+                    constraints.maxHeight - trackPadding * 2;
+                final fillHeight =
+                    (trackHeight * ratio).clamp(6.0, trackHeight);
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: isToday
+                        ? accent.withValues(alpha: 0.25)
+                        : theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.4),
+                  ),
+                  padding: const EdgeInsets.all(trackPadding),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SizedBox(
+                      height: fillHeight,
+                      child: FractionallySizedBox(
+                        widthFactor: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: isToday ? accent : muted,
+                            boxShadow: isToday
+                                ? [
+                                    BoxShadow(
+                                      color: accent.withValues(alpha: 0.35),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 8),

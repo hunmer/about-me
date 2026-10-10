@@ -33,6 +33,9 @@ class _TimerMainViewState extends State<TimerMainView> {
   // 底部导航当前 tab：0 任务列表 / 1 统计
   int _currentTab = 0;
 
+  // 统计页刷新令牌：每次切到统计 tab 递增，触发重新加载历史记录
+  int _statsRefreshToken = 0;
+
   // 多条件过滤参数
   Map<String, dynamic> _multiFilters = {};
 
@@ -194,7 +197,10 @@ class _TimerMainViewState extends State<TimerMainView> {
         currentIndex: _currentTab,
         // onTap 不能为 null：null 会触发内部 IgnorePointer 包裹整个导航栏，
         // 连同 trailingAction 添加圆钮的点击一起被吞掉
-        onTap: (index) => setState(() => _currentTab = index),
+        onTap: (index) => setState(() {
+          _currentTab = index;
+          if (index == 1) _statsRefreshToken++;
+        }),
         trailingAction: DsIcon(
           DsIconKind.plus,
           size: 20,
@@ -207,6 +213,33 @@ class _TimerMainViewState extends State<TimerMainView> {
 
   @override
   Widget build(BuildContext context) {
+    // 每个 tab 持有自己的 SuperCupertinoNavigationWrapper：
+    // 任务 tab（计时器大标题+搜索+过滤）、统计 tab（专注统计大标题），
+    // 避免共享外层导航栏时统计页叠出两条 bar
+    return Stack(
+      children: [
+        IndexedStack(
+          index: _currentTab,
+          children: [
+            _buildTaskTab(),
+            TimerStatsView(
+              tasks: _tasks,
+              refreshToken: _statsRefreshToken,
+            ),
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _buildBottomBar(),
+        ),
+      ],
+    );
+  }
+
+  /// 任务 tab：导航栏（大标题/搜索/过滤）+ 任务列表
+  Widget _buildTaskTab() {
     return SuperCupertinoNavigationWrapper(
       title: Text(_plugin.getPluginName(context)!),
       largeTitle: '计时器',
@@ -220,24 +253,7 @@ class _TimerMainViewState extends State<TimerMainView> {
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _applyMultiFilters,
-
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentTab,
-            children: [
-              _buildTaskList(),
-              TimerStatsView(tasks: _tasks),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBottomBar(),
-          ),
-        ],
-      ),
+      body: _buildTaskList(),
     );
   }
 

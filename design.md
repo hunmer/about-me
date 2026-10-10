@@ -1,0 +1,209 @@
+# 标准页面结构规范
+
+参考实现：`lib/plugins/checkin/screens/checkin_list_screen/checkin_list_screen.dart`
+
+## 总览
+
+一个标准页面自上而下由三部分组成：
+
+```
+┌─────────────────────────────────────┐
+│  SuperCupertinoNavigationWrapper    │  ← 页面导航栏（大标题/搜索/过滤/操作按钮）
+│  （内部含 PersistentNavigationBar） │
+├─────────────────────────────────────┤
+│                                     │
+│              body                   │  ← 页面内容（Expanded 包裹，可滚动）
+│                                     │
+├─────────────────────────────────────┤
+│  DSBottomNavigation                 │  ← 根级弧形圆盘底部导航（仅宿主页）
+└─────────────────────────────────────┘
+```
+
+交互约定：
+
+| 操作 | 方式 |
+| --- | --- |
+| 新建/快捷操作 | 底部 sheet：`showDSBottomSheet` |
+| 打开子页面 | `NavigationHelper.push*` 平台路由，导航栏走 hero 过渡 |
+| 弹窗 | `showDSDialog` |
+
+## 1. SuperCupertinoNavigationWrapper — 页面导航栏
+
+定义：`lib/widgets/super_cupertino_navigation_wrapper.dart`
+
+所有普通页面的统一导航入口，封装大标题、搜索栏、多条件过滤栏、底部栏与主题样式。**新页面优先用它，不要手写 Scaffold AppBar。**
+
+最小结构（摘自 checkin_list_screen）：
+
+```dart
+return SuperCupertinoNavigationWrapper(
+  title: Text('checkin_name'.tr),          // 导航栏折叠态标题
+  largeTitle: 'checkin_checkinListTitle'.tr, // 大标题（enableLargeTitle 控制显隐）
+  body: Column(
+    children: [
+      // 固定不随列表滚动的表头（可选）
+      const CheckinWeekdayHeader(),
+      Expanded(
+        child: SingleChildScrollView( /* 列表内容 */ ),
+      ),
+    ],
+  ),
+  // ===== 搜索（可选）=====
+  enableSearchBar: true,
+  searchPlaceholder: 'checkin_searchPlaceholder'.tr,
+  onSearchChanged: (query) => controller.onSearchChanged(query),
+  searchBody: _buildSearchResults(searchResults), // 聚焦/有内容时替换 body
+  // ===== 多条件过滤栏（可选）=====
+  enableMultiFilter: true,
+  multiFilterItems: _buildFilterItems(), // List<FilterItem>
+  onMultiFilterChanged: _handleFilterChanged,
+  enableLargeTitle: false,
+);
+```
+
+常用参数：
+
+- `actions` / `largeTitleActions`：导航栏操作按钮
+- `enableLargeTitle`：大标题模式；列表页可设 false 直接显示小标题
+- `previousPageTitle`：返回按钮旁的前页标题文字
+- `transitionBetweenRoutes`：导航栏是否参与路由 hero 转场，默认 true
+
+注意：**同一路由下嵌套第二个 wrapper（如 tab 内嵌页）必须传 `transitionBetweenRoutes: false`**，否则两个导航栏的默认 Hero tag 冲突。
+
+## 2. PersistentNavigationBar — 嵌入式导航栏
+
+定义：`packages/super_cupertino_navigation_bar/lib/utils/persistent_nav_bar.dart`
+
+`SuperCupertinoNavigationWrapper` 内部使用的固定高度（56）导航栏，走 `SafeArea(top)` + `NavigationToolbar`（leading / middle / trailing）布局。只有当 wrapper 无法满足需求时才直接使用它，例如编辑页要在自定义布局中嵌入一行固定导航（见 `lib/plugins/scripts_center/screens/script_edit_screen.dart:731`）：
+
+```dart
+PersistentNavigationBar(
+  components: NavigationBarStaticComponents(
+    keys: _navBarKeys,
+    route: null,
+    userLeading: Align(   // NavigationToolbar 紧约束会拉变形按钮，用 Align 转宽松
+      alignment: AlignmentDirectional.centerStart,
+      child: DSIconButton(icon: DsIconKind.chevronLeft, ...),
+    ),
+    userMiddle: ..., userTrailing: ...,
+  ),
+);
+```
+
+约束：直接放进 Column 等宽松父级时必须依赖其内部 `SizedBox(height: 56)`，勿在外层再去掉高度约束。
+
+## 3. DSBottomNavigation — 弧形圆盘底部导航
+
+实现：`lib/design_system/components/navigation_bar.dart`，底层包 `packages/radial_disc_bottom_bar`
+
+同心圆弧 dock + 沿切线滑动的选中药丸，可选磨砂玻璃扇环。**只用于根级宿主页（tab 容器），子页面不放底部导航。**
+
+```dart
+DSBottomNavigation(
+  items: [DSNavItem(icon: DsIconKind.home, label: '首页'), ...],
+  currentIndex: currentIndex,
+  onTap: (i) => ...,
+  floatingAction: addBtn,      // 子栏右圆钮位置的常驻浮动钮（如"添加"）
+  subLabels: ('日', '周'),      // 上层子栏双选项（与 subActions 互斥）
+  frosted: true,               // 磨砂玻璃
+);
+```
+
+要点：
+
+- 子栏元素（`subLabels` / `subActions` / `leadingAction` / `trailingAction`）随 tab 动态出现的宿主应恒传 `subBarBehavior: RadialSubBarBehavior.auto`，避免占位高度跳变
+- `subBarVisible` 手动控制子栏显隐时，子栏元素需常驻（不随 tab 增删）才有弹簧折叠动画
+
+## 4. 新建/快捷操作用 sheet
+
+定义：`lib/design_system/components/bottom_sheet.dart`
+
+新建入口（如列表页"+"）不跳页面，弹出底部 sheet：
+
+```dart
+showDSBottomSheet(
+  context: context,
+  title: '新建打卡',
+  builder: (context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      DSSheetAction(icon: DsIconKind.add, label: '手动创建', onTap: ...),
+      DSSheetAction(icon: DsIconKind.close, label: '删除', destructive: true, onTap: ...),
+    ],
+  ),
+);
+```
+
+自带：底部滑入动画（260ms easeOutCubic）、遮罩点击关闭、拖拽把手、标题行 + 关闭按钮、`DSSheetAction` 操作行（`destructive: true` 为红色危险操作）。走 rootNavigator，不占用页面路由栈。
+
+## 5. 打开子页面用 hero 过渡
+
+子页面跳转统一走 `NavigationHelper`（`lib/core/navigation/navigation_helper.dart`）：
+
+```dart
+NavigationHelper.push(context, DetailScreen(...), routeName: '/detail');
+// 或命名路由
+NavigationHelper.pushNamed(context, '/checkin_detail', arguments: {'id': itemId});
+```
+
+- iOS 用 `CupertinoPageRoute`（支持左滑返回），其他平台 `MaterialPageRoute`
+- 路由转场时导航栏做 hero 渐变过渡（上一页标题渐隐、本页标题渐显），由 wrapper 的 `transitionBetweenRoutes`（默认 true）驱动，**页面无需手写 Hero**
+- 嵌套 wrapper 的内层必须 `transitionBetweenRoutes: false`（见第 1 节）
+
+## 6. 颜色：禁止硬编码，一律走主题
+
+**不要在页面/组件里写死 `Color(0xFF...)`、`Colors.white` 等背景颜色**，否则深色模式下必然出错。统一通过主题取色：
+
+```dart
+// 页面/插件侧：经桥接获取 design_system 主题
+final theme = DSThemeBridge.resolve(context);
+
+Container(
+  color: theme.surface,      // 页面/卡片背景
+  // theme.surfaceAlt        次级背景、按压态
+  // theme.primary/onPrimary 主题色及其上前景
+  // theme.text / textSub    主/次文字
+  // theme.danger            危险操作
+  // theme.barrier           遮罩
+);
+```
+
+要点：
+
+- 需要 `Theme`/暗色联动的小片段可用 `DSThemeBridge(child: Builder(...))` 局部注入（见 checkin_list_screen 过滤栏 trailing 的用法）
+- design_system 包内部组件用 `AppTheme.of(context)` 取色
+- 仅允许在主题定义处（`design_system` 的 theme token）出现具体色值；透明度衍生用 `theme.xxx.withValues(alpha: ...)`
+
+## 7. 文案：一律 I18N，禁止硬编码中文/英文字符串
+
+**不要在代码里写死用户可见文案**，统一用 GetX 翻译键：
+
+```dart
+Text('checkin_name'.tr)
+Text('app_cancel'.tr)
+Text('screens_errorHabitNotFound'.trParams({'id': itemId}))  // 带参数
+```
+
+翻译键定义位置与命名：
+
+| 范围 | 文件 | 键前缀 |
+| --- | --- | --- |
+| 应用级 | `lib/l10n/app_translations_{zh,en}.dart` | `app_` |
+| 插件级 | `lib/plugins/<plugin>/l10n/<plugin>_translations_{zh,en}.dart` | `<plugin>_`（如 `checkin_`） |
+
+要点：
+
+- 参数化文案用 `@paramName` 占位，调用侧 `.trParams({...})`
+- **新增键必须同时补 zh 和 en 两个文件**，缺一个会直接显示键名
+- 键名用 `<前缀>_<页面/模块>_<语义>` 层级命名（如 `checkin_searchPlaceholder`）
+
+## 新建页面检查清单
+
+1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）
+2. body 内容用 `Expanded` 包裹，可滚动区域底部留 `MediaQuery.paddingOf(context).bottom` 安全区
+3. "新建"类入口用 `showDSBottomSheet`，不放导航按钮跳转
+4. 子页面用 `NavigationHelper.push*`，享受平台转场 + 导航栏 hero
+5. 嵌套第二层 wrapper 时传 `transitionBetweenRoutes: false`
+6. 根级宿主页才放 `DSBottomNavigation`，子页面不放
+7. 颜色全部来自 `DSThemeBridge.resolve(context)`，无硬编码色值
+8. 所有用户可见文案走 `.tr` / `.trParams`，zh/en 翻译文件同步补齐
