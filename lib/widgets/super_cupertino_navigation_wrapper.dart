@@ -145,6 +145,9 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 初始多条件过滤值（用于页面跳转时传递初始筛选条件）
   final Map<String, dynamic>? initialMultiFilters;
 
+  /// 多条件过滤栏第一层最右侧的固定尾部部件（如排序按钮）
+  final Widget? multiFilterBarTrailing;
+
   const SuperCupertinoNavigationWrapper({
     super.key,
     required this.title,
@@ -189,6 +192,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     this.onMultiFilterChanged,
     this.multiFilterToggleable = true,
     this.initialMultiFilters,
+    this.multiFilterBarTrailing,
   });
 
   @override
@@ -461,6 +465,7 @@ class _SuperCupertinoNavigationWrapperState
                 filterState: _multiFilterState,
                 onFilterChanged: widget.onMultiFilterChanged,
                 height: widget.multiFilterBarHeight,
+                trailing: widget.multiFilterBarTrailing,
               ),
             // 过滤栏 - 只在非搜索状态下显示（保持向后兼容）
             if (widget.enableFilterBar &&

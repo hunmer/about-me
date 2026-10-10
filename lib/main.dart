@@ -251,6 +251,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       light: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
+        // 全局默认字体：阿里巴巴普惠体（含中英文，500/700 真字重）
+        fontFamily: 'AlibabaPuHuiTi',
         scaffoldBackgroundColor: Colors.white,
         cardColor: Colors.white, // 卡片背景设为纯白色
         appBarTheme: const AppBarTheme(
@@ -279,6 +281,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       dark: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
+        fontFamily: 'AlibabaPuHuiTi',
         // 使用无动画构建器以提升性能,特别是键盘弹出时
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {

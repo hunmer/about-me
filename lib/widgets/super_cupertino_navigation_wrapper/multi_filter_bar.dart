@@ -16,12 +16,16 @@ class MultiFilterBar extends StatefulWidget {
   /// 高度
   final double height;
 
+  /// 第一层最右侧的固定尾部部件（如排序按钮）
+  final Widget? trailing;
+
   const MultiFilterBar({
     super.key,
     required this.filterItems,
     required this.filterState,
     this.onFilterChanged,
     this.height = 50,
+    this.trailing,
   });
 
   @override
@@ -143,6 +147,13 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
             },
           ),
         ),
+
+        // 第一层尾部固定部件（如排序按钮）
+        if (widget.trailing != null)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: widget.trailing,
+          ),
 
         // 清空所有按钮
         if (widget.filterState.hasAnyFilter)

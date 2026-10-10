@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -99,7 +100,7 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
                 ),
               ),
               const SizedBox(height: 14),
-              _buildMoodScroller(palette),
+              _buildMoodSection(palette),
               const SizedBox(height: 8),
               Text(
                 widget.noticeText ?? moodName,
@@ -124,9 +125,41 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
     );
   }
 
+  /// 今日已有心情时直接显示大表情（不显示选择列表）；
+  /// 未记录时显示横滚列表供选择
+  Widget _buildMoodSection(DiaryCalendarPalette palette) {
+    final todayMood = widget.todayMood;
+    if (todayMood != null) {
+      return SizedBox(
+        height: 64,
+        child: Center(
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              // 今日已记录，点击仅提示今日心情
+              onTap: () => widget.onMoodTap(todayMood),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: palette.centerRing,
+                  shape: BoxShape.circle,
+                ),
+                child: DiaryMoodFaceCircle(
+                  spec: diaryMoodSpecOf(todayMood),
+                  size: 44,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return _buildMoodScroller(palette);
+  }
+
   /// 可左右滚动的心情列表（全部表情）：位于视口中间的表情放大，
-  /// 点击交给宿主处理；今日已记录的心情白圈高亮。
-  /// 鼠标指针手型 + 不透明命中区域，修复桌面端点击无响应
+  /// 点击交给宿主处理。支持鼠标拖拽滚动（桌面默认仅触摸）
   Widget _buildMoodScroller(DiaryCalendarPalette palette) {
     return SizedBox(
       height: 64,
@@ -136,61 +169,75 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
           return AnimatedBuilder(
             animation: _moodScrollController,
             builder: (context, _) {
-              return ListView.separated(
-                controller: _moodScrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: _kListPadding),
-                itemCount: diaryMoodEmojis.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final emoji = diaryMoodEmojis[index];
-                  final spec = diaryMoodSpecOf(emoji);
-                  final isTodayMood = emoji == widget.todayMood;
+              return ScrollConfiguration(
+                // 桌面端默认禁用鼠标拖拽滚动，显式放开
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: const {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.stylus,
+                    PointerDeviceKind.trackpad,
+                  },
+                ),
+                child: ListView.separated(
+                  controller: _moodScrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _kListPadding,
+                  ),
+                  itemCount: diaryMoodEmojis.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final emoji = diaryMoodEmojis[index];
+                    final spec = diaryMoodSpecOf(emoji);
+                    final isTodayMood = emoji == widget.todayMood;
 
-                  // 中间放大：item 中心离视口中心越近缩放越大
-                  final itemCenter = _kListPadding + index * _kItemExtent + 22;
-                  final scrollOffset = _moodScrollController.hasClients
-                      ? _moodScrollController.offset
-                      : 0.0;
-                  final viewportCenter = scrollOffset + viewportWidth / 2;
-                  final distance = (itemCenter - viewportCenter).abs();
-                  final t = (distance / (viewportWidth / 2)).clamp(0.0, 1.0);
-                  final scale = 1.0 + 0.35 * (1.0 - t);
+                    // 中间放大：item 中心离视口中心越近缩放越大
+                    final itemCenter =
+                        _kListPadding + index * _kItemExtent + 22;
+                    final scrollOffset = _moodScrollController.hasClients
+                        ? _moodScrollController.offset
+                        : 0.0;
+                    final viewportCenter = scrollOffset + viewportWidth / 2;
+                    final distance = (itemCenter - viewportCenter).abs();
+                    final t = (distance / (viewportWidth / 2)).clamp(0.0, 1.0);
+                    final scale = 1.0 + 0.35 * (1.0 - t);
 
-                  return Center(
-                    child: Transform.scale(
-                      scale: scale,
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => widget.onMoodTap(emoji),
-                          child: Container(
-                            padding: const EdgeInsets.all(2.5),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isTodayMood
-                                  ? palette.pillBg
-                                  : Colors.transparent,
-                              boxShadow: isTodayMood
-                                  ? [
-                                      BoxShadow(
-                                        color: palette.haloSelected,
-                                        spreadRadius: 2,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: DiaryMoodFaceCircle(
-                              spec: spec,
-                              size: isTodayMood ? 50 : 44,
+                    return Center(
+                      child: Transform.scale(
+                        scale: scale,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => widget.onMoodTap(emoji),
+                            child: Container(
+                              padding: const EdgeInsets.all(2.5),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isTodayMood
+                                    ? palette.pillBg
+                                    : Colors.transparent,
+                                boxShadow: isTodayMood
+                                    ? [
+                                        BoxShadow(
+                                          color: palette.haloSelected,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: DiaryMoodFaceCircle(
+                                spec: spec,
+                                size: isTodayMood ? 50 : 44,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           );

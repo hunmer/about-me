@@ -497,6 +497,87 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     );
   }
 
+  /// 排序按钮（展示在多条件过滤栏尾部，DSPopover 经根 Overlay 展示需 DSThemeBridge 包裹）
+  Widget _buildSortButton() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSPopover(
+            width: 190,
+            contentBuilder: (popoverContext, close) {
+              final popoverTheme = DSThemeBridge.resolve(popoverContext);
+              Widget menuRow(String value, String label) {
+                return Pressable(
+                  onPressed: () {
+                    close();
+                    setState(() {
+                      _sortBy = value;
+                    });
+                  },
+                  builder: (context, states) {
+                    final pressed = states.contains(WidgetState.pressed);
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: popoverTheme.spacing.sm,
+                        vertical: popoverTheme.spacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: pressed ? popoverTheme.surfaceAlt : null,
+                        borderRadius: popoverTheme.radii.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          DsIcon(
+                            _sortBy == value
+                                ? DsIconKind.check
+                                : DsIconKind.sort,
+                            size: 18,
+                            color: popoverTheme.text,
+                          ),
+                          SizedBox(width: popoverTheme.spacing.sm),
+                          Text(
+                            label,
+                            style: DsTypography.body.copyWith(
+                              color: popoverTheme.text,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  menuRow('none', 'goods_defaultSort'.tr),
+                  menuRow('price', 'goods_sortByPrice'.tr),
+                  menuRow('lastUsed', 'goods_sortByLastUsedTime'.tr),
+                ],
+              );
+            },
+            child: JellyBox(
+              width: 36,
+              height: 36,
+              radius: theme.radii.circle,
+              color: theme.surfaceAlt,
+              child: Center(
+                child: DsIcon(
+                  DsIconKind.sort,
+                  size: 18,
+                  color: theme.textSub,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final allItems = _getAllItems();
@@ -518,6 +599,8 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
       multiFilterItems: _buildFilterItems(),
       multiFilterBarHeight: 50,
       onMultiFilterChanged: _applyMultiFilters,
+      // 排序按钮合并到多条件过滤栏尾部
+      multiFilterBarTrailing: _buildSortButton(),
       // 传递初始筛选条件（用于页面跳转时）
       initialMultiFilters: _multiFilters.isNotEmpty ? _multiFilters : null,
       // 将原有的 AppBar actions 移到右上角
@@ -540,84 +623,6 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                     _isGridView = !_isGridView;
                   });
                 },
-              );
-            },
-          ),
-        ),
-        // 排序按钮(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSPopover(
-                width: 190,
-                contentBuilder: (popoverContext, close) {
-                  final popoverTheme = DSThemeBridge.resolve(popoverContext);
-                  Widget menuRow(String value, String label) {
-                    return Pressable(
-                      onPressed: () {
-                        close();
-                        setState(() {
-                          _sortBy = value;
-                        });
-                      },
-                      builder: (context, states) {
-                        final pressed = states.contains(WidgetState.pressed);
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: popoverTheme.spacing.sm,
-                            vertical: popoverTheme.spacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: pressed ? popoverTheme.surfaceAlt : null,
-                            borderRadius: popoverTheme.radii.sm,
-                          ),
-                          child: Row(
-                            children: [
-                              DsIcon(
-                                _sortBy == value
-                                    ? DsIconKind.check
-                                    : DsIconKind.sort,
-                                size: 18,
-                                color: popoverTheme.text,
-                              ),
-                              SizedBox(width: popoverTheme.spacing.sm),
-                              Text(
-                                label,
-                                style: DsTypography.body.copyWith(
-                                  color: popoverTheme.text,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }
-
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      menuRow('none', 'goods_defaultSort'.tr),
-                      menuRow('price', 'goods_sortByPrice'.tr),
-                      menuRow('lastUsed', 'goods_sortByLastUsedTime'.tr),
-                    ],
-                  );
-                },
-                child: JellyBox(
-                  width: 36,
-                  height: 36,
-                  radius: theme.radii.circle,
-                  color: theme.surfaceAlt,
-                  child: Center(
-                    child: DsIcon(
-                      DsIconKind.sort,
-                      size: 18,
-                      color: theme.textSub,
-                    ),
-                  ),
-                ),
               );
             },
           ),
