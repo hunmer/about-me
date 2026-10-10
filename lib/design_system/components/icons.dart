@@ -72,6 +72,7 @@ enum DsIconKind {
   switchAccount,
   code,
   chart,
+  nfc,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -143,6 +144,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.switchAccount: Icons.switch_account,
   DsIconKind.code: Icons.code,
   DsIconKind.chart: Icons.bar_chart,
+  DsIconKind.nfc: Icons.nfc,
 };
 
 /// 图标组件：基于系统 Material Icons

@@ -45,4 +45,23 @@ const Map<String, String> nfcTranslationsZh = {
   'nfc_copiedToClipboard': '已复制到剪贴板',
   'nfc_allRecordsCopied': '已复制全部记录',
   'nfc_previewData': '预览数据',
+
+  // 主界面
+  'nfc_pluginDescription': '读取和写入NFC标签',
+  'nfc_refreshStatus': '刷新NFC状态',
+  'nfc_statusEnabled': 'NFC已启用',
+  'nfc_statusDisabled': 'NFC未启用',
+  'nfc_deviceNotSupported': '设备不支持NFC功能',
+  'nfc_nfcDisabled': '请先开启NFC功能',
+  'nfc_nfcEnabledToast': '已开启NFC',
+  'nfc_readingData': '等待读取NFC数据...',
+  'nfc_writingRecords': '正在写入 @count 条记录...',
+  'nfc_readDataLabel': '读取到的数据：',
+  'nfc_readSuccess': '读取成功',
+  'nfc_readFailed': '读取失败',
+  'nfc_readError': '读取错误: @error',
+  'nfc_noDataDetected': '未检测到NFC数据',
+  'nfc_writeSuccess': '写入成功',
+  'nfc_writeFailed': '写入失败',
+  'nfc_writeError': '写入错误: @error',
 };

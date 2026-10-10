@@ -45,4 +45,23 @@ const Map<String, String> nfcTranslationsEn = {
   'nfc_copiedToClipboard': 'Copied to clipboard',
   'nfc_allRecordsCopied': 'All records copied',
   'nfc_previewData': 'Preview Data',
+
+  // Main view
+  'nfc_pluginDescription': 'Read and write NFC tags',
+  'nfc_refreshStatus': 'Refresh NFC status',
+  'nfc_statusEnabled': 'NFC enabled',
+  'nfc_statusDisabled': 'NFC disabled',
+  'nfc_deviceNotSupported': 'NFC is not supported on this device',
+  'nfc_nfcDisabled': 'Please enable NFC first',
+  'nfc_nfcEnabledToast': 'NFC is on',
+  'nfc_readingData': 'Waiting for NFC data...',
+  'nfc_writingRecords': 'Writing @count record(s)...',
+  'nfc_readDataLabel': 'Data read:',
+  'nfc_readSuccess': 'Read successfully',
+  'nfc_readFailed': 'Read failed',
+  'nfc_readError': 'Read error: @error',
+  'nfc_noDataDetected': 'No NFC data detected',
+  'nfc_writeSuccess': 'Written successfully',
+  'nfc_writeFailed': 'Write failed',
+  'nfc_writeError': 'Write error: @error',
 };
