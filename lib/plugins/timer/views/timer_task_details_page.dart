@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/plugins/timer/services/white_noise_service.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
 
 /// 专注详情页，复刻 Warm Minimalist 设计稿：
@@ -50,6 +51,20 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     _loadTask();
     _subscribeToEvents();
     _updateRouteContext();
+    WhiteNoiseService.instance.error.addListener(_onNoiseError);
+  }
+
+  /// 在线音源加载失败提示（消费后清理）
+  void _onNoiseError() {
+    final key = WhiteNoiseService.instance.error.value;
+    if (key == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(key.tr),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    WhiteNoiseService.instance.error.value = null;
   }
 
   void _loadTask() {
@@ -118,6 +133,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   @override
   void dispose() {
     _pulse.dispose();
+    WhiteNoiseService.instance.error.removeListener(_onNoiseError);
     EventManager.instance.unsubscribe('timer_task_changed', onTimerTaskChanged);
     EventManager.instance.unsubscribe('timer_item_progress', onTimerItemProgress);
     EventManager.instance.unsubscribe('timer_item_changed', onTimerItemChanged);
@@ -147,6 +163,176 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
       SnackBar(
         content: Text('timer_comingSoon'.tr),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// 白噪音选择弹窗（复刻设计稿音源卡片，分本地/在线两组）
+  void _openSoundscapeSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.headphones_rounded,
+                        size: 20, color: _currentTask.color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'timer_soundscapes'.tr,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: _onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.expand_more_rounded,
+                          size: 22, color: _onSurfaceVariant),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+                Flexible(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([
+                      WhiteNoiseService.instance.currentId,
+                      WhiteNoiseService.instance.loadingId,
+                    ]),
+                    builder: (context, _) => SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('timer_noise_local'.tr),
+                          _buildNoiseGrid(WhiteNoiseService.localPresets),
+                          const SizedBox(height: 14),
+                          _buildSectionLabel('timer_noise_online'.tr),
+                          _buildNoiseGrid(WhiteNoiseService.onlinePresets),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: _muted,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoiseGrid(List<WhiteNoisePreset> presets) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 1.15,
+      children: [
+        for (final preset in presets)
+          _buildNoiseTile(
+            preset,
+            WhiteNoiseService.instance.currentId.value == preset.id,
+            WhiteNoiseService.instance.loadingId.value == preset.id,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildNoiseTile(WhiteNoisePreset preset, bool active, bool loading) {
+    final highlight = _currentTask.color;
+    return Material(
+      color: active ? _container : _containerLow,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          WhiteNoiseService.instance.toggle(preset.id);
+          Navigator.of(context).pop();
+        },
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (loading)
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: highlight,
+                        ),
+                      )
+                    else
+                      Icon(
+                        preset.icon,
+                        size: 24,
+                        color: active ? highlight : _onSurfaceVariant,
+                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      preset.nameKey.tr,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: active ? highlight : _onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // 在线音源角标
+            if (preset.isOnline)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Icon(
+                  Icons.cloud_outlined,
+                  size: 12,
+                  color: active ? highlight : _muted.withOpacity(0.7),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -230,32 +416,61 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
           iconColor: _onSurface,
           onTap: () => Navigator.of(context).pop(),
         ),
-        Material(
-          color: _container,
-          borderRadius: BorderRadius.circular(999),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: _showComingSoon,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.graphic_eq_rounded,
-                      size: 16, color: _currentTask.color),
-                  const SizedBox(width: 6),
-                  Text(
-                    'timer_whiteNoise'.tr,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _onSurfaceVariant,
-                    ),
+        AnimatedBuilder(
+          animation: Listenable.merge([
+            WhiteNoiseService.instance.currentId,
+            WhiteNoiseService.instance.loadingId,
+          ]),
+          builder: (context, _) {
+            final service = WhiteNoiseService.instance;
+            final playing = service.currentId.value != null;
+            final loading = service.loadingId.value != null;
+            return Material(
+              color: _container,
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: _openSoundscapeSheet,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (loading)
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: _currentTask.color,
+                          ),
+                        )
+                      else
+                        _PulsingIcon(
+                          controller: _pulse,
+                          icon: Icons.graphic_eq_rounded,
+                          size: 16,
+                          color: _currentTask.color,
+                          animate: playing,
+                        ),
+                      const SizedBox(width: 6),
+                      Text(
+                        playing
+                            ? service.currentPreset!.nameKey.tr
+                            : 'timer_whiteNoise'.tr,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
@@ -364,11 +579,17 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                 strokeWidth: 7,
                 color: Colors.white.withOpacity(0.20),
               ),
-              CircularProgressIndicator(
-                value: progress,
-                strokeWidth: 8,
-                strokeCap: StrokeCap.round,
-                color: Colors.white,
+              // 进度弧平滑过渡：每秒刷新时以 1s 线性补间，形成连续扫动
+              TweenAnimationBuilder<double>(
+                tween: Tween(end: progress),
+                duration: const Duration(seconds: 1),
+                curve: Curves.linear,
+                builder: (context, value, _) => CircularProgressIndicator(
+                  value: value,
+                  strokeWidth: 8,
+                  strokeCap: StrokeCap.round,
+                  color: Colors.white,
+                ),
               ),
               Center(
                 child: Column(
@@ -559,6 +780,43 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
           child: Icon(icon, size: size * iconScale, color: iconColor),
         ),
       ),
+    );
+  }
+}
+
+/// 脉冲图标：播放白噪音时呼吸缩放（设计稿 graphic_eq animate-pulse）
+class _PulsingIcon extends StatelessWidget {
+  final AnimationController controller;
+  final IconData icon;
+  final double size;
+  final Color color;
+  final bool animate;
+
+  const _PulsingIcon({
+    required this.controller,
+    required this.icon,
+    required this.size,
+    required this.color,
+    this.animate = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!animate) return Icon(icon, size: size, color: color);
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        // 三角波 0→1→0，实现一次呼吸周期
+        final t = controller.value;
+        final phase = t < 0.5 ? t * 2 : (1 - t) * 2;
+        return Transform.scale(
+          scale: 1.0 + 0.25 * phase,
+          child: Opacity(
+            opacity: 0.7 + 0.3 * phase,
+            child: Icon(icon, size: size, color: color),
+          ),
+        );
+      },
     );
   }
 }
