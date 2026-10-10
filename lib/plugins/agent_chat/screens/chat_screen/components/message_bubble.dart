@@ -122,6 +122,8 @@ class AgentMessageContent extends StatelessWidget {
           final theme = DSThemeBridge.resolve(context);
           // 智能解析content，提取思考内容和AI回复
           final parsedContent = _parseToolCallContent(message.content);
+          // 流式生成中的实时预览正文（剥离内联 think 标签）
+          final generatingBody = ChatMessage.splitThink(message.content).$2;
 
           // 检查工具调用是否已经被解析（有steps）
           final toolCallParsed = message.toolCall?.steps.isNotEmpty ?? false;
@@ -137,9 +139,9 @@ class AgentMessageContent extends StatelessWidget {
               // 只有当工具调用还未解析时，才显示正在生成的 markdown
               else if (!toolCallParsed &&
                   message.isGenerating &&
-                  message.content.isNotEmpty) ...[
+                  generatingBody.isNotEmpty) ...[
                 // 实时显示正在生成的 Markdown 内容
-                MarkdownContent(content: message.content, textColor: textColor),
+                MarkdownContent(content: generatingBody, textColor: textColor),
                 const SizedBox(height: 12),
               ]
               // 如果正在生成但没有内容，显示加载占位符
@@ -191,6 +193,7 @@ class AgentMessageContent extends StatelessWidget {
 
   /// 解析工具调用消息的content
   /// 返回: {'thinking': '...', 'finalReply': '...'}
+  /// 内联 think 标签已剥离（思考内容经时间戳行入口查看）
   Map<String, String> _parseToolCallContent(String content) {
     final result = <String, String>{};
 
@@ -200,7 +203,9 @@ class AgentMessageContent extends StatelessWidget {
     if (finalReplyIndex != -1) {
       // 只提取AI最终回复部分
       final replyStart = finalReplyIndex + '[AI最终回复]'.length;
-      result['finalReply'] = content.substring(replyStart).trim();
+      result['finalReply'] = ChatMessage.splitThink(
+        content.substring(replyStart),
+      ).$2;
     } else {
       // 如果没有 [AI最终回复] 标记，可能是旧数据，尝试提取工具执行结果之前的内容
       final toolResultIndex = content.indexOf('[工具执行结果]');
@@ -215,6 +220,12 @@ class AgentMessageContent extends StatelessWidget {
         // 其他情况，全部作为思考内容
         result['thinking'] = _stripToolJsonBlocks(content).trim();
       }
+    }
+
+    // thinking 区域同样剥离内联 think 标签，避免原样渲染
+    final thinking = result['thinking'];
+    if (thinking != null && thinking.isNotEmpty) {
+      result['thinking'] = ChatMessage.splitThink(thinking).$2;
     }
 
     return result;
@@ -519,9 +530,12 @@ class AgentMessageContent extends StatelessWidget {
       }
     }
 
-    // 没有找到工具结果标记，直接显示内容
+    // 没有找到工具结果标记，直接显示内容（剥离内联 think 标签）
     if (toolResultIndex == -1) {
-      return MarkdownContent(content: content, textColor: textColor);
+      return MarkdownContent(
+        content: ChatMessage.splitThink(content).$2,
+        textColor: textColor,
+      );
     }
 
     // 找到工具结果后面的内容
@@ -551,8 +565,10 @@ class AgentMessageContent extends StatelessWidget {
     }
 
     if (finalReplyStart != -1) {
-      // 找到了最终回复的开始位置
-      final finalReply = content.substring(finalReplyStart).trim();
+      // 找到了最终回复的开始位置（剥离内联 think 标签）
+      final finalReply = ChatMessage.splitThink(
+        content.substring(finalReplyStart).trim(),
+      ).$2;
 
       if (finalReply.isEmpty) {
         // 最终回复为空，显示加载状态

@@ -108,17 +108,17 @@ class ChatMessage {
   /// 解析 content 中内联的 `<think>` 标签（部分模型如 DeepSeek R1 混在正文里）
   ///
   /// 返回 (思考内容, 剥离后的正文)；未闭合的 `<think>`（流式生成中）视为思考内容
-  (String, String) splitThinkContent() {
+  (String, String) splitThinkContent() => splitThink(content);
+
+  /// 对任意文本剥离内联 `<think>` 标签（工具调用子串等场景复用）
+  static (String, String) splitThink(String content) {
     final regexp = RegExp(
       r'<think>([\s\S]*?)(?:</think>|$)',
       caseSensitive: false,
     );
     final matches = regexp.allMatches(content).toList();
     if (matches.isEmpty) return ('', content);
-    final thinking = matches
-        .map((m) => m.group(1) ?? '')
-        .join('\n\n')
-        .trim();
+    final thinking = matches.map((m) => m.group(1) ?? '').join('\n\n').trim();
     final body = content.replaceAll(regexp, '').trim();
     return (thinking, body);
   }
