@@ -36,6 +36,7 @@ import 'package:aboutme/plugins/tracker/tracker_route_handler.dart';
 
 // 导入页面组件（用于 routes Map）
 import 'package:aboutme/screens/home_screen/home_screen.dart';
+import 'package:aboutme/screens/startup/startup_gate.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/diary/diary_plugin.dart';
@@ -136,15 +137,17 @@ class AppRoutes extends NavigatorObserver {
   static const String activity = '/activity';
   static const String checkin = '/checkin';
   static const String settings = '/settings';
-    static const String jsonDynamicTest = '/json_dynamic_test';
+  static const String jsonDynamicTest = '/json_dynamic_test';
   static const String notificationTest = '/notification_test';
-  static const String backgroundAnnouncementTest = '/background_announcement_test';
+  static const String backgroundAnnouncementTest =
+      '/background_announcement_test';
   static const String superCupertinoTest = '/super_cupertino_test';
   static const String overlayTest = '/overlay_test';
   static const String widgetsGallery = '/widgets_gallery';
   static const String designSystem = '/design_system';
   static const String jellyHome = '/jelly_home';
   static const String log = '/log';
+  static const String startup = '/startup';
 
   // 插件路由路径
   static const String agentChat = '/agent_chat';
@@ -202,7 +205,8 @@ class AppRoutes extends NavigatorObserver {
   static const String trackerGoalSelector = '/tracker_goal_selector';
 
   // 目标追踪进度条小组件配置路由
-  static const String trackerGoalProgressSelector = '/tracker_goal_progress_selector';
+  static const String trackerGoalProgressSelector =
+      '/tracker_goal_progress_selector';
 
   // 习惯计时器小组件配置路由
   static const String habitTimerSelector = '/habit_timer_selector';
@@ -229,7 +233,8 @@ class AppRoutes extends NavigatorObserver {
   static const String habitGroupListSelector = '/habit_group_list_selector';
 
   // 每周相册小组件配置路由
-  static const String calendarAlbumWeeklySelector = '/calendar_album_weekly_selector';
+  static const String calendarAlbumWeeklySelector =
+      '/calendar_album_weekly_selector';
 
   // 标签统计页面路由（从小组件打开）
   static const String tagStatistics = '/tag_statistics';
@@ -268,6 +273,7 @@ class AppRoutes extends NavigatorObserver {
 
   // ==================== 简化路由 Map（用于 GetX）====================
   static Map<String, WidgetBuilder> get routes => {
+    startup: (context) => const StartupGate(),
     home: (context) => const HomeScreen(),
     chat: (context) => const ChatMainView(),
     diary: (context) => const DiaryMainView(),
@@ -293,10 +299,12 @@ class AppRoutes extends NavigatorObserver {
     todo: (context) => const TodoBottomBarView(),
     tracker: (context) => const TrackerMainView(),
     floatingBall: (context) => const FloatingBallScreen(),
-    activityDailyConfig: (context) => const ActivityDailyConfigScreen(widgetId: 0),
+    activityDailyConfig: (context) =>
+        const ActivityDailyConfigScreen(widgetId: 0),
     jsonDynamicTest: (context) => const JsonDynamicTestScreen(),
     notificationTest: (context) => const NotificationTestPage(),
-    backgroundAnnouncementTest: (context) => const BackgroundAnnouncementTestScreen(),
+    backgroundAnnouncementTest: (context) =>
+        const BackgroundAnnouncementTestScreen(),
     'data_selector_test': (context) => const DataSelectorTestScreen(),
     'live_activities_test': (context) => const LiveActivitiesTestScreen(),
   };
@@ -304,6 +312,6 @@ class AppRoutes extends NavigatorObserver {
   // 默认启动路由：首次启动先进引导页，之后直接进果冻小屋
   static String get initialRoute =>
       globalConfigManager.getAppConfigValue<bool>('onboardingCompleted', false)
-          ? jellyHome
-          : onboarding;
+      ? startup
+      : onboarding;
 }

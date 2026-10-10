@@ -68,6 +68,20 @@ class DiaryTranslationsEn {
     'diary_edit': 'Edit',
     'diary_create': 'Create',
 
+    // 日历页心情头部
+    'diary_moodQuestion': 'How Was Your Day?',
+    'diary_noMoodRecord': 'No mood recorded',
+    'diary_mood_happy': 'Happy',
+    'diary_mood_excited': 'Excited',
+    'diary_mood_loved': 'Loved',
+    'diary_mood_surprised': 'Surprised',
+    'diary_mood_tired': 'Tired',
+    'diary_mood_sick': 'Sick',
+    'diary_mood_thinking': 'Thinking',
+    'diary_mood_cool': 'Cool',
+    'diary_mood_sad': 'Sad',
+    'diary_mood_angry': 'Angry',
+
     // 额外的翻译（在实现类中但未在抽象类中声明）
     'diary_cancel': 'Cancel',
     'diary_save': 'Save',

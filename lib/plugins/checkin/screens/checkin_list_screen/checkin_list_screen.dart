@@ -101,6 +101,11 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
       largeTitle: 'checkin_checkinListTitle'.tr,
       body: Column(
         children: [
+          // 全局星期表头（固定，不随列表滚动）：存在周视图卡片时显示
+          if (filteredItems.any(
+            (item) => item.cardStyle == CheckinCardStyle.weekly,
+          ))
+            const CheckinWeekdayHeader(),
           // 打卡项目列表（不包含过滤栏）
           Expanded(
             child:
@@ -112,38 +117,28 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // 全局星期表头：存在周视图卡片时显示一次，与圆点列对齐
-                            if (filteredItems.any(
-                              (item) => item.cardStyle == CheckinCardStyle.weekly,
-                            ))
-                              const CheckinWeekdayHeader(),
-                            StaggeredGrid.count(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 0,
-                              crossAxisSpacing: 0,
-                              children:
-                                  filteredItems.asMap().entries.map((entry) {
-                                    final index = entry.key;
-                                    final item = entry.value;
-                                    return StaggeredGridTile.fit(
-                                      crossAxisCellCount:
-                                          item.cardStyle == CheckinCardStyle.small
-                                              ? 1
-                                              : 2,
-                                      child: CheckinItemCard(
-                                        item: item,
-                                        index: index,
-                                        itemIndex: index,
-                                        controller: controller,
-                                        onStateChanged: _handleStateChanged,
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ],
+                        child: StaggeredGrid.count(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 0,
+                          crossAxisSpacing: 0,
+                          children:
+                              filteredItems.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final item = entry.value;
+                                return StaggeredGridTile.fit(
+                                  crossAxisCellCount:
+                                      item.cardStyle == CheckinCardStyle.small
+                                          ? 1
+                                          : 2,
+                                  child: CheckinItemCard(
+                                    item: item,
+                                    index: index,
+                                    itemIndex: index,
+                                    controller: controller,
+                                    onStateChanged: _handleStateChanged,
+                                  ),
+                                );
+                              }).toList(),
                         ),
                       ),
                     ),
@@ -189,44 +184,45 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
     }
 
     if (controller.isSearching && searchResults.isNotEmpty) {
-      return SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 全局星期表头：与周视图卡片圆点列对齐
-              if (searchResults.any(
-                (item) => item.cardStyle == CheckinCardStyle.weekly,
-              ))
-                const CheckinWeekdayHeader(),
-              StaggeredGrid.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
-                children:
-                    searchResults.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final item = entry.value;
-                      return StaggeredGridTile.fit(
-                        crossAxisCellCount:
-                            item.cardStyle == CheckinCardStyle.small ? 1 : 2,
-                        child: CheckinItemCard(
-                          item: item,
-                          index: index,
-                          itemIndex: index,
-                          controller: controller,
-                          onStateChanged: _handleStateChanged,
-                        ),
-                      );
-                    }).toList(),
+      return Column(
+        children: [
+          // 全局星期表头（固定，不随列表滚动）
+          if (searchResults.any(
+            (item) => item.cardStyle == CheckinCardStyle.weekly,
+          ))
+            const CheckinWeekdayHeader(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom,
               ),
-            ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: StaggeredGrid.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
+                  children:
+                      searchResults.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        return StaggeredGridTile.fit(
+                          crossAxisCellCount:
+                              item.cardStyle == CheckinCardStyle.small ? 1 : 2,
+                          child: CheckinItemCard(
+                            item: item,
+                            index: index,
+                            itemIndex: index,
+                            controller: controller,
+                            onStateChanged: _handleStateChanged,
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       );
     }
 

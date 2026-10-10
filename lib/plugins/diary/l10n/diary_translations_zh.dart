@@ -66,6 +66,20 @@ class DiaryTranslationsZh {
     'diary_edit': '编辑',
     'diary_create': '新建',
 
+    // 日历页心情头部
+    'diary_moodQuestion': '今天过得怎么样？',
+    'diary_noMoodRecord': '没有心情记录',
+    'diary_mood_happy': '开心',
+    'diary_mood_excited': '兴奋',
+    'diary_mood_loved': '心动',
+    'diary_mood_surprised': '惊讶',
+    'diary_mood_tired': '困倦',
+    'diary_mood_sick': '不适',
+    'diary_mood_thinking': '思考',
+    'diary_mood_cool': '酷',
+    'diary_mood_sad': '难过',
+    'diary_mood_angry': '生气',
+
     // 额外的翻译（在实现类中但未在抽象类中声明）
     'diary_cancel': '取消',
     'diary_save': '保存',

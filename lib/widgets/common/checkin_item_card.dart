@@ -137,7 +137,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _buildIcon(theme, size: _kWeeklyIconSize),
+        _buildIcon(theme, size: _kWeeklyIconSize, borderRadius: 10),
         const SizedBox(width: _kWeeklyGapAfterIcon),
         // 标题 + 频次徽章
         Expanded(
@@ -351,13 +351,16 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
 
   // --- Helper Widgets ---
 
-  Widget _buildIcon(ThemeData theme, {double size = 40}) {
+  /// 图标容器，[borderRadius] 为 null 时圆形，否则方形圆角
+  Widget _buildIcon(ThemeData theme, {double size = 40, double? borderRadius}) {
+    final rounded = borderRadius != null;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         color: widget.item.color.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
+        shape: rounded ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: rounded ? BorderRadius.circular(borderRadius) : null,
       ),
       child: Icon(widget.item.icon, color: widget.item.color, size: size * 0.6),
     );
@@ -486,27 +489,21 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                         color: widget.item.color,
                         shape: BoxShape.circle,
                       )
-                    : isToday
-                        ? BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: widget.item.color.withValues(alpha: 0.6),
-                              width: 1.2,
-                            ),
-                          )
-                        : null,
+                    : BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isFuture
+                            ? theme.hintColor.withValues(alpha: 0.06)
+                            : theme.hintColor.withValues(alpha: 0.12),
+                        border: isToday
+                            ? Border.all(
+                                color: widget.item.color.withValues(alpha: 0.6),
+                                width: 1.2,
+                              )
+                            : null,
+                      ),
                 child: hasCheckin
                     ? const Icon(Icons.check, size: 12, color: Colors.white)
-                    : Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isFuture
-                              ? theme.hintColor.withValues(alpha: 0.2)
-                              : theme.hintColor.withValues(alpha: 0.4),
-                        ),
-                      ),
+                    : null,
               ),
             ),
           ),
@@ -629,10 +626,11 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
 
 /// 周视图全局星期表头
 ///
-/// 供打卡列表页在卡片列表上方展示一次，替代在每张卡片内显示星期。
+/// 供打卡列表页固定展示在卡片列表上方（不随滚动），替代在每张卡片内显示星期。
 /// 水平结构与 [CheckinItemCardWidget] weekly 风格单行布局镜像一致
-/// （外边距 8 + 内边距 16 与卡片容器相同，图标/标题/圆点/按钮占位相同），
-/// 因此 7 个星期字与卡片内打卡圆点逐列对齐。今天对应的星期加粗。
+/// （外边距 16 + 内边距 16 与卡片容器 8+8+16 的内容偏移相同，
+/// 图标/标题/圆点/按钮占位相同），因此 7 个星期列与卡片内打卡圆点逐列对齐。
+/// 每列上方为星期字、下方为对应日期数字，今天整列高亮。
 class CheckinWeekdayHeader extends StatelessWidget {
   const CheckinWeekdayHeader({super.key});
 
@@ -640,11 +638,18 @@ class CheckinWeekdayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     const weekdayChars = ['一', '二', '三', '四', '五', '六', '日'];
-    final todayWeekday = DateTime.now().weekday; // 1=周一 ... 7=周日
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final weekDates = [
+      for (int i = 0; i < 7; i++)
+        DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day + i),
+    ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
       child: Row(
         children: [
           // 图标 + 间距占位
@@ -660,18 +665,35 @@ class CheckinWeekdayHeader extends StatelessWidget {
                 for (int i = 0; i < 7; i++)
                   SizedBox(
                     width: _kWeeklyColumnWidth,
-                    child: Center(
-                      child: Text(
-                        weekdayChars[i],
-                        style: TextStyle(
-                          fontSize: 10,
-                          height: 1.2,
-                          color: theme.hintColor,
-                          fontWeight: i + 1 == todayWeekday
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          weekdayChars[i],
+                          style: TextStyle(
+                            fontSize: 9,
+                            height: 1.2,
+                            color: theme.hintColor,
+                            fontWeight: weekDates[i] == today
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${weekDates[i].day}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.1,
+                            color: weekDates[i] == today
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                            fontWeight: weekDates[i] == today
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
