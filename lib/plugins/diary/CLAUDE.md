@@ -207,7 +207,11 @@ class DiaryEntry {
 | 组件 | 文件 | 职责 |
 |------|------|------|
 | `DiaryMainView` | `diary_plugin.dart` | 插件主视图容器 |
-| `DiaryCalendarScreen` | `screens/diary_calendar_screen.dart` | 日历视图主界面 |
+| `DiaryCalendarScreen` | `screens/diary_calendar_screen.dart` | 日历视图主界面（状态/数据/SfCalendar/详情/FAB） |
+| `DiaryCalendarHeader` | `widgets/diary_calendar_header.dart` | 粉色圆角头部（心情轮播 + 月份胶囊/弹窗） |
+| `DiaryCalendarDayCell` | `widgets/diary_calendar_day_cell.dart` | 日历格（心情圆 + 日期 + ✦ 图片标记） |
+| `DiaryMoodFaceCircle` | `widgets/diary_mood_face.dart` | 心情 emoji 映射与手绘表情绘制 |
+| `DiaryCalendarPalette` | `widgets/diary_calendar_palette.dart` | 日历页明暗色板 |
 | `DiaryEditorScreen` | `screens/diary_editor_screen.dart` | 日记编辑界面 |
 
 ### DiaryCalendarScreen 布局
@@ -502,6 +506,12 @@ diary/
 ├── screens/
 │   ├── diary_calendar_screen.dart       # 日历视图界面
 │   └── diary_editor_screen.dart         # 编辑器界面
+├── widgets/
+│   ├── diary_entry_card.dart            # 搜索结果日记卡片
+│   ├── diary_calendar_header.dart       # 日历页粉色头部（心情轮播+月份胶囊）
+│   ├── diary_calendar_day_cell.dart     # 日历页日期格子
+│   ├── diary_calendar_palette.dart      # 日历页明暗色板
+│   └── diary_mood_face.dart             # 心情 emoji 映射与手绘表情绘制
 ├── controls/
 │   └── prompt_controller.dart           # Prompt 控制器（注册到 OpenAI）
 ├── utils/

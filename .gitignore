@@ -91,4 +91,3 @@ packages/server-nodejs/admin/
 # Service account credentials
 packages/server-nodejs/service-account.json
 ios/build/*
-lib/screens/settings_screen/screens/data_management_screen.dart

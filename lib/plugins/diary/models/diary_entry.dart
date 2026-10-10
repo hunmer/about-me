@@ -5,6 +5,7 @@ class DiaryEntry {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? mood; // 心情表情符号
+  final List<String> tags; // 多标签
 
   DiaryEntry({
     required this.date,
@@ -13,6 +14,7 @@ class DiaryEntry {
     required this.createdAt,
     required this.updatedAt,
     this.mood,
+    this.tags = const [],
   });
 
   factory DiaryEntry.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class DiaryEntry {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       mood: json['mood'],
+      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
     );
   }
 
@@ -34,6 +37,7 @@ class DiaryEntry {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'mood': mood,
+      'tags': tags,
     };
   }
 
@@ -44,6 +48,7 @@ class DiaryEntry {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? mood,
+    List<String>? tags,
   }) {
     return DiaryEntry(
       date: date ?? this.date,
@@ -52,6 +57,7 @@ class DiaryEntry {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       mood: mood ?? this.mood,
+      tags: tags ?? this.tags,
     );
   }
 }

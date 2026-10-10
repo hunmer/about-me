@@ -20,6 +20,9 @@ import '../types.dart';
 /// 内置表情资源目录（assets/emojis 下的图片作为表情包）
 const String kBuiltInEmojiAssetDir = 'assets/emojis';
 
+/// 方块表情资源目录（assets/emoji_faces 下的透明 WebP 表情）
+const String kEmojiFaceAssetDir = 'assets/emoji_faces';
+
 /// 内置表情在 Emoji.value 中的标记前缀，用于与 Unicode 表情/贴图区分
 const String kBuiltInEmojiPrefix = 'aboutme_emoji:';
 
@@ -36,7 +39,8 @@ Future<void> handleEmojiSelection({
   required OnFileSelected? onFileSelected,
   TextEditingController? textController,
 }) async {
-  final emojiAssets = await _loadBuiltInEmojiAssets();
+  final emojiFaces = await _loadEmojiAssets(kEmojiFaceAssetDir);
+  final emojiAssets = await _loadEmojiAssets(kBuiltInEmojiAssetDir);
   final stickerCollections = await StickerService.instance.listCollections();
   if (!context.mounted) return;
 
@@ -69,7 +73,10 @@ Future<void> handleEmojiSelection({
                 ),
                 Expanded(
                   child: EmojiPicker(
-                    prependCategories: [_buildBuiltInCategory(emojiAssets)].lock,
+                    prependCategories: [
+                      _buildEmojiCategory(emojiFaces, '方块表情'),
+                      _buildEmojiCategory(emojiAssets, '内置表情'),
+                    ].lock,
                     appendCategories: _buildStickerCategories(
                       stickerCollections,
                     ),
@@ -101,29 +108,31 @@ Future<void> handleEmojiSelection({
   );
 }
 
-/// 枚举内置表情资源（assets/emojis 目录，PNG 静态 + GIF 动图）
-Future<List<String>> _loadBuiltInEmojiAssets() async {
+/// 枚举表情资源目录（PNG/WebP 静态 + GIF 动图）
+Future<List<String>> _loadEmojiAssets(String dir) async {
   try {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     final assets =
         manifest
             .listAssets()
             .where((asset) {
-              if (!asset.startsWith('$kBuiltInEmojiAssetDir/')) return false;
+              if (!asset.startsWith('$dir/')) return false;
               final lower = asset.toLowerCase();
-              return lower.endsWith('.png') || lower.endsWith('.gif');
+              return lower.endsWith('.png') ||
+                  lower.endsWith('.gif') ||
+                  lower.endsWith('.webp');
             })
             .toList()
           ..sort();
     return assets;
   } catch (e) {
-    debugPrint('加载内置表情资源失败: $e');
+    debugPrint('加载表情资源失败: $e');
     return const [];
   }
 }
 
-/// 构建内置表情分类
-EmojiCategory _buildBuiltInCategory(List<String> assets) {
+/// 构建表情分类
+EmojiCategory _buildEmojiCategory(List<String> assets, String categoryName) {
   String nameOf(String asset) =>
       path.basenameWithoutExtension(asset).replaceAll('_', ' ');
 
@@ -134,7 +143,7 @@ EmojiCategory _buildBuiltInCategory(List<String> assets) {
       height: 20,
       errorBuilder: (_, _, _) => const Icon(Icons.emoji_emotions, size: 20),
     ),
-    name: '内置表情',
+    name: categoryName,
     emojis: assets
         .map(
           (asset) => Emoji(

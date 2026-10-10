@@ -77,6 +77,7 @@ class DiaryUtils {
     String content, {
     String title = '',
     String? mood,
+    List<String>? tags,
   }) async {
     final storage = _storage;
     try {
@@ -102,6 +103,7 @@ class DiaryUtils {
           title: title,
           content: content,
           mood: mood,
+          tags: tags,
           updatedAt: now,
         );
       } else {
@@ -111,6 +113,7 @@ class DiaryUtils {
           title: title,
           content: content,
           mood: mood,
+          tags: tags ?? const [],
           createdAt: now,
           updatedAt: now,
         );

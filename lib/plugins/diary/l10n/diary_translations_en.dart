@@ -70,6 +70,10 @@ class DiaryTranslationsEn {
 
     // 日历页心情头部
     'diary_moodQuestion': 'How Was Your Day?',
+    'diary_untitled': 'Untitled',
+    'diary_wordUnit': 'chars',
+    'diary_emptyContent': 'Nothing here yet. Tap edit below to start writing',
+    'diary_addTag': 'Add tag',
     'diary_noMoodRecord': 'No mood recorded',
     'diary_mood_happy': 'Happy',
     'diary_mood_excited': 'Excited',

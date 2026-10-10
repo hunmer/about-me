@@ -68,6 +68,10 @@ class DiaryTranslationsZh {
 
     // 日历页心情头部
     'diary_moodQuestion': '今天过得怎么样？',
+    'diary_untitled': '无标题',
+    'diary_wordUnit': '字',
+    'diary_emptyContent': '这一天还没有内容，点击下方编辑开始记录',
+    'diary_addTag': '添加标签',
     'diary_noMoodRecord': '没有心情记录',
     'diary_mood_happy': '开心',
     'diary_mood_excited': '兴奋',
