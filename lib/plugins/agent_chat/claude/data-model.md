@@ -6,7 +6,7 @@
 
 | 类 | 用途 |
 |----|------|
-| `Conversation`（含 `ToolAgentConfig`） | 会话：`agentId`（单 Agent）或 `agentChain`（链式）；toolDetectionConfig / toolExecutionConfig（两阶段工具专用 Agent）；groups / contextMessageCount / isPinned / ttsConfig / voiceCallConfig |
+| `Conversation`（含 `ToolAgentConfig`） | 会话：`agentId`（单 Agent）或 `agentChain`（链式）；toolAgentConfig（两阶段共用的工具专用 Agent）；groups / contextMessageCount / isPinned / ttsConfig / voiceCallConfig |
 | `ChatMessage` | 消息：isUser / tokenCount / attachments / toolCall / matchedTemplateIds / parentId / isSessionDivider / generatedByAgentId / **chainStepIndex + chainExecutionId + isFinalSummary**（链调用标记）/ thinkingContent（Claude thinking 单独存储） |
 | `AgentChainNode` + `AgentContextMode` | 链节点与上下文模式（conversationContext / chainContext / previousOnly） |
 | `AgentChainPreset` | 可复用 Agent 链预设 |

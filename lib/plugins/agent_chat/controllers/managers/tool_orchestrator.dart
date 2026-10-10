@@ -213,8 +213,8 @@ class ToolOrchestrator {
     final imageFiles =
         files.where((f) => f.path != null && f.path.isNotEmpty).toList();
 
-    // 获取工具识别agent配置
-    final toolDetectionConfig = conversation.toolDetectionConfig;
+    // 获取工具专用agent配置（两个阶段共用）
+    final toolAgentConfig = conversation.toolAgentConfig;
 
     AIAgent effectiveAgent = agent;
     Map<String, String>? additionalPrompts;
@@ -235,19 +235,19 @@ class ToolOrchestrator {
         }
       }
 
-      if (toolDetectionConfig != null && getToolAgent != null) {
-        // 使用专用工具识别agent（启用工具调用，返回JSON格式的工具需求）
+      if (toolAgentConfig != null && getToolAgent != null) {
+        // 使用专用工具agent（启用工具调用，返回JSON格式的工具需求）
         final toolAgent = await getToolAgent!(
-          toolDetectionConfig,
+          toolAgentConfig,
           enableFunctionCalling: true,
         );
         if (toolAgent != null) {
           effectiveAgent = toolAgent;
           debugPrint(
-            '🔧 [第一阶段] 使用专用工具识别Agent: ${toolDetectionConfig.providerId}/${toolDetectionConfig.modelId}',
+            '🔧 [第一阶段] 使用专用工具Agent: ${toolAgentConfig.providerId}/${toolAgentConfig.modelId}',
           );
         } else {
-          debugPrint('⚠️ [第一阶段] 创建工具识别Agent失败，使用原agent');
+          debugPrint('⚠️ [第一阶段] 创建工具Agent失败，使用原agent');
         }
       } else {
         // 未配置专用agent，使用当前agent + 工具提示词（通过占位符传递）
@@ -392,8 +392,8 @@ class ToolOrchestrator {
     required Function(String error) onError,
     Function(String)? onThinking,
   }) async {
-    // 从最新会话中获取工具执行agent配置
-    final toolExecutionConfig = conversation.toolExecutionConfig;
+    // 从最新会话中获取工具专用agent配置（两个阶段共用）
+    final toolAgentConfig = conversation.toolAgentConfig;
 
     AIAgent executionAgent = agent;
 
@@ -407,19 +407,19 @@ class ToolOrchestrator {
       secondAdditionalPrompts = {'tool_detail': detailPrompt};
     }
 
-    if (toolExecutionConfig != null && getToolAgent != null) {
-      // 使用专用工具执行agent（不启用工具调用，只返回JSON格式的代码）
+    if (toolAgentConfig != null && getToolAgent != null) {
+      // 使用专用工具agent（不启用工具调用，只返回JSON格式的代码）
       final toolAgent = await getToolAgent!(
-        toolExecutionConfig,
+        toolAgentConfig,
         enableFunctionCalling: false,
       );
       if (toolAgent != null) {
         executionAgent = toolAgent;
         debugPrint(
-          '🔧 [第二阶段] 使用专用工具执行Agent: ${toolExecutionConfig.providerId}/${toolExecutionConfig.modelId}',
+          '🔧 [第二阶段] 使用专用工具Agent: ${toolAgentConfig.providerId}/${toolAgentConfig.modelId}',
         );
       } else {
-        debugPrint('⚠️ [第二阶段] 创建工具执行Agent失败，使用原agent');
+        debugPrint('⚠️ [第二阶段] 创建工具Agent失败，使用原agent');
       }
     } else {
       // 未配置专用agent，使用当前agent + 工具详细文档（通过占位符传递）

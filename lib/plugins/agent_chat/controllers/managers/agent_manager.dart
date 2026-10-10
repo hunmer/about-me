@@ -130,15 +130,14 @@ class AgentManager {
     }
   }
 
-  /// 配置工具调用专用 Agent (适用于单 Agent 和 Agent 链模式)
+  /// 配置工具调用专用 Agent（单 Agent 和 Agent 链模式通用，两个阶段共用）
   Future<void> configureToolAgents({
-    ToolAgentConfig? toolDetectionConfig,
-    ToolAgentConfig? toolExecutionConfig,
+    ToolAgentConfig? toolAgentConfig,
   }) async {
     try {
       final updatedConversation = _currentConversation!.copyWith(
-        toolDetectionConfig: toolDetectionConfig,
-        toolExecutionConfig: toolExecutionConfig,
+        toolAgentConfig: toolAgentConfig,
+        clearToolAgents: toolAgentConfig == null,
       );
       await conversationService.updateConversation(updatedConversation);
 
@@ -146,19 +145,12 @@ class AgentManager {
       context.notify();
 
       debugPrint('✅ 工具 Agent 配置成功');
-      if (toolDetectionConfig != null) {
+      if (toolAgentConfig != null) {
         debugPrint(
-          '  工具需求识别: ${toolDetectionConfig.providerId}/${toolDetectionConfig.modelId}',
+          '  专用Agent: ${toolAgentConfig.providerId}/${toolAgentConfig.modelId}',
         );
       } else {
-        debugPrint('  工具需求识别：使用默认 prompt');
-      }
-      if (toolExecutionConfig != null) {
-        debugPrint(
-          '  工具执行: ${toolExecutionConfig.providerId}/${toolExecutionConfig.modelId}',
-        );
-      } else {
-        debugPrint('  工具执行：使用默认 prompt');
+        debugPrint('  使用默认 prompt');
       }
     } catch (e) {
       debugPrint('❌ 配置工具 Agent 失败: $e');
@@ -242,8 +234,8 @@ class AgentManager {
 
       // 临时创建一个 AIAgent 对象，使用真实的服务商配置
       // 使用占位符，RequestService 会根据阶段自动替换：
-      // - toolDetectionConfig（第一阶段）：只替换 {tool_brief}，{tool_detail} 为空
-      // - toolExecutionConfig（第二阶段）：只替换 {tool_detail}，{tool_brief} 为空
+      // - 第一阶段（工具识别）：只替换 {tool_brief}，{tool_detail} 为空
+      // - 第二阶段（工具执行）：只替换 {tool_detail}，{tool_brief} 为空
       final agent = AIAgent(
         id: 'temp_tool_${config.providerId}_${config.modelId}',
         name: '工具调用 Agent (${config.modelName ?? config.modelId})',

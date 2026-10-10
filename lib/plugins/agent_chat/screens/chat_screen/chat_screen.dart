@@ -30,6 +30,9 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -38,7 +41,6 @@ import 'components/message_bubble.dart';
 import 'components/message_input.dart';
 import 'components/save_tool_dialog.dart';
 import 'components/agent_chain_config_dialog.dart';
-import 'components/tool_agents_config_dialog.dart';
 import 'components/markdown_content.dart';
 import 'components/tool_detail_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
@@ -2399,35 +2401,192 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 显示工具调用 Agent 配置对话框
+  /// 显示工具调用 Agent 配置对话框（工具识别与工具执行两个阶段共用一个 agent）
   Future<void> _showToolAgentsConfig() async {
     if (!mounted) return;
+
+    // 加载已保存的服务商列表
+    List<Map<String, dynamic>> providers = [];
+    try {
+      final openAIPlugin =
+          PluginManager.instance.getPlugin('openai') as OpenAIPlugin?;
+      if (openAIPlugin != null) {
+        final result = await openAIPlugin.useCase.getServiceProviders({});
+        if (result.isSuccess && result.dataOrNull != null) {
+          providers = result.dataOrNull!;
+        }
+      }
+    } catch (e) {
+      debugPrint('加载服务商列表失败: $e');
+    }
+    if (!mounted) return;
+
+    final initialConfig = _controller.conversation.toolAgentConfig;
+    String? selectedProviderId = initialConfig?.providerId;
+    String? selectedModelId = initialConfig?.modelId;
 
     await showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder: (context) => ToolAgentsConfigDialog(
-        initialToolDetectionConfig:
-            _controller.conversation.toolDetectionConfig,
-        initialToolExecutionConfig:
-            _controller.conversation.toolExecutionConfig,
-        onSave: (toolDetectionConfig, toolExecutionConfig) async {
-          try {
-            await _controller.configureToolAgents(
-              toolDetectionConfig: toolDetectionConfig,
-              toolExecutionConfig: toolExecutionConfig,
-            );
-            if (mounted) {
-              toastService.showToast('工具 Agent 配置成功');
-            }
-          } catch (e) {
-            if (mounted) {
-              toastService.showToast('配置失败: $e');
-            }
-          }
-        },
-      ),
+      builder:
+          (dialogContext) => StatefulBuilder(
+            builder:
+                (dialogContext, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (ctx) {
+                      final theme = DSThemeBridge.resolve(ctx);
+                      final models = _getModelsForProvider(selectedProviderId);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                DsIcon(
+                                  DsIconKind.gear,
+                                  color: theme.primaryText,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '工具调用 Agent 配置',
+                                  style: DsTypography.title.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: theme.spacing.md),
+                            Text(
+                              '为工具调用的两个阶段（工具识别、生成调用代码）配置共用的专用 Agent。未配置时使用默认 prompt 替换当前 agent 的 system prompt。',
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 选择服务商
+                            DSSelect<String>(
+                              value: selectedProviderId,
+                              hint: '请选择服务商',
+                              items: providers
+                                  .map(
+                                    (p) => DSSelectItem<String>(
+                                      value: p['id'] as String,
+                                      label: p['label'] as String,
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedProviderId = value;
+                                  selectedModelId = null;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 选择模型
+                            if (selectedProviderId != null)
+                              DSSelect<String>(
+                                value: selectedModelId,
+                                hint: '请选择模型',
+                                items: models
+                                    .map(
+                                      (m) => DSSelectItem<String>(
+                                        value: m.id,
+                                        label: m.name,
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  setDialogState(() => selectedModelId = value);
+                                },
+                              ),
+                            SizedBox(height: theme.spacing.lg),
+                            Row(
+                              children: [
+                                if (initialConfig != null) ...[
+                                  Expanded(
+                                    child: DSButton(
+                                      label: '清除配置',
+                                      variant: DSButtonVariant.destructive,
+                                      onPressed: () {
+                                        _saveToolAgentConfig(null);
+                                        Navigator.pop(dialogContext);
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                ],
+                                Expanded(
+                                  child: DSButton(
+                                    label: '取消',
+                                    variant: DSButtonVariant.outline,
+                                    onPressed:
+                                        () => Navigator.pop(dialogContext),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DSButton(
+                                    label: '保存',
+                                    onPressed: () {
+                                      if (selectedProviderId != null &&
+                                          selectedModelId != null) {
+                                        final model = models.firstWhere(
+                                          (m) => m.id == selectedModelId,
+                                        );
+                                        _saveToolAgentConfig(
+                                          ToolAgentConfig(
+                                            providerId: selectedProviderId!,
+                                            modelId: selectedModelId!,
+                                            modelName: model.name,
+                                          ),
+                                        );
+                                        Navigator.pop(dialogContext);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          ),
     );
+  }
+
+  /// 获取指定服务商的所有模型
+  List<LLMModel> _getModelsForProvider(String? providerId) {
+    if (providerId == null) return [];
+    for (final group in llmModelGroups) {
+      if (group.id == providerId) {
+        return group.models;
+      }
+    }
+    return [];
+  }
+
+  /// 保存/清除工具调用专用 Agent 配置
+  Future<void> _saveToolAgentConfig(ToolAgentConfig? config) async {
+    try {
+      await _controller.configureToolAgents(toolAgentConfig: config);
+      if (mounted) {
+        toastService.showToast('工具 Agent 配置成功');
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('配置失败: $e');
+      }
+    }
   }
 
   /// 获取 Agent 显示文本

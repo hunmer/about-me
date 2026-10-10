@@ -771,15 +771,11 @@ class ChatController extends ChangeNotifier {
     await _agentManager.selectAgentChain(chainNodes);
   }
 
-  /// 配置工具调用专用 Agent
+  /// 配置工具调用专用 Agent（两个阶段共用）
   Future<void> configureToolAgents({
-    ToolAgentConfig? toolDetectionConfig,
-    ToolAgentConfig? toolExecutionConfig,
+    ToolAgentConfig? toolAgentConfig,
   }) async {
-    await _agentManager.configureToolAgents(
-      toolDetectionConfig: toolDetectionConfig,
-      toolExecutionConfig: toolExecutionConfig,
-    );
+    await _agentManager.configureToolAgents(toolAgentConfig: toolAgentConfig);
   }
 
   /// 切换回单 Agent 模式
