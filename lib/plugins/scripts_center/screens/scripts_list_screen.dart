@@ -355,138 +355,60 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: widget.scriptManager,
-      child: Column(
-        children: [
-          // 脚本列表
-          Expanded(
-            child: Consumer<ScriptManager>(
-              builder: (context, manager, child) {
-                if (manager.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
+      child: Consumer<ScriptManager>(
+        builder: (context, manager, child) {
+          if (manager.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                final scripts = _getFilteredScripts();
+          final scripts = _getFilteredScripts();
 
-                if (scripts.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.code_off,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isNotEmpty
-                              ? '未找到匹配的脚本'
-                              : '暂无脚本\n点击右下角按钮创建新脚本',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refreshScripts,
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    itemCount: scripts.length,
-                    itemBuilder: (context, index) {
-                      final script = scripts[index];
-                      return ScriptCard(
-                        script: script,
-                        onTap: () => _showScriptDialog(script: script),
-                        onLongPress: () => _showActionSheet(script),
-                        onToggle: (enabled) => _toggleScript(script),
-                        onRun: () => _runScript(script),
-                      );
-                    },
+          if (scripts.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.code_off, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isNotEmpty
+                        ? '未找到匹配的脚本'
+                        : '暂无脚本\n点击右下角按钮创建新脚本',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
+                ],
+              ),
+            );
+          }
+
+          // 两列卡片网格（宽屏下按最大列宽自适应多列）
+          return RefreshIndicator(
+            onRefresh: _refreshScripts,
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 240,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.95,
+                  ),
+              itemCount: scripts.length,
+              itemBuilder: (context, index) {
+                final script = scripts[index];
+                return ScriptCard(
+                  script: script,
+                  onTap: () => _showScriptDialog(script: script),
+                  onLongPress: () => _showActionSheet(script),
+                  onToggle: (enabled) => _toggleScript(script),
+                  onRun: () => _runScript(script),
                 );
               },
             ),
-          ),
-
-          // 底部统计信息
-          Consumer<ScriptManager>(
-            builder: (context, manager, child) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatChip(
-                      '总数',
-                      manager.scriptCount.toString(),
-                      Colors.blue,
-                    ),
-                    _buildStatChip(
-                      '已启用',
-                      manager.enabledScriptCount.toString(),
-                      Colors.green,
-                    ),
-                    _buildStatChip(
-                      '已禁用',
-                      (manager.scriptCount - manager.enabledScriptCount)
-                          .toString(),
-                      Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildStatChip(String label, String value, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[700],
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -13,7 +13,10 @@ import 'package:aboutme/core/services/toast_service.dart';
 
 /// 脚本商场主界面
 class ScriptStoreScreen extends StatefulWidget {
-  const ScriptStoreScreen({super.key});
+  const ScriptStoreScreen({super.key, this.embedded = false});
+
+  /// 内嵌模式：作为 tab 内容嵌入主视图时不显示返回按钮
+  final bool embedded;
 
   @override
   State<ScriptStoreScreen> createState() => _ScriptStoreScreenState();
@@ -128,7 +131,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
     return SuperCupertinoNavigationWrapper(
       title: Text('scripts_center_scriptStore'.tr),
       largeTitle: 'scripts_center_scriptStore'.tr,
-      automaticallyImplyLeading: true,
+      automaticallyImplyLeading: !widget.embedded,
 
       // 启用搜索栏
       enableSearchBar: true,

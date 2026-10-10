@@ -534,6 +534,10 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
             ),
             // 内容滚动到底后再拖动才会收起 sheet
             scrollConfiguration: const SheetScrollConfiguration(),
+            // 把整个面板设为拖拽区域，避免只能从可滚动内容区域拖动
+            dragConfiguration: const SheetDragConfiguration(
+              hitTestBehavior: HitTestBehavior.opaque,
+            ),
             decoration: MaterialSheetDecoration(
               size: SheetSize.fit,
               color: theme.surface,

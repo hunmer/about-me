@@ -486,6 +486,9 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
   late ScriptsCenterPlugin _plugin;
   String _searchQuery = '';
 
+  /// 底部导航当前页签：0 脚本 / 1 执行记录 / 2 脚本商场
+  int _currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -502,80 +505,22 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
 
   @override
   Widget build(BuildContext context) {
+    final tabTitles = [
+      'scripts_center_scriptCenter'.tr,
+      '执行记录',
+      'scripts_center_scriptStore'.tr,
+    ];
     return SuperCupertinoNavigationWrapper(
-      title: Text('scripts_center_scriptCenter'.tr),
-      largeTitle: 'scripts_center_scriptCenter'.tr,
+      title: Text(tabTitles[_currentIndex]),
+      largeTitle: tabTitles[_currentIndex],
       enableLargeTitle: true,
-      enableSearchBar: true,
+      // 搜索栏只作用于脚本列表页签
+      enableSearchBar: _currentIndex == 0,
       searchPlaceholder: 'scripts_center_search'.tr,
       onSearchChanged: _setSearchQuery,
       onSearchSubmitted: _setSearchQuery,
 
       actions: [
-        // 执行记录按钮
-        DSThemeBridge(
-          child: Builder(
-            builder: (buildContext) {
-              final theme = DSThemeBridge.resolve(buildContext);
-              return DSIconButton(
-                icon: DsIconKind.clock,
-                size: 36,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                tooltip: '执行记录',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ScriptExecutionLogScreen(
-                        logger: _plugin.scriptExecutor.executionLogger,
-                        executor: _plugin.scriptExecutor,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        // 脚本商场按钮
-        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
-        DSThemeBridge(
-          child: Builder(
-            builder: (buildContext) {
-              final theme = DSThemeBridge.resolve(buildContext);
-              return DSIconButton(
-                icon: DsIconKind.store,
-                size: 36,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                tooltip: 'scripts_center_scriptStore'.tr,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => MultiProvider(
-                            providers: [
-                              ChangeNotifierProvider.value(
-                                value: _plugin.scriptStoreManager,
-                              ),
-                              ChangeNotifierProvider.value(
-                                value: _plugin.scriptDownloadManager,
-                              ),
-                              ChangeNotifierProvider.value(
-                                value: _plugin.scriptManager,
-                              ),
-                            ],
-                            child: const ScriptStoreScreen(),
-                          ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
         // 新建/导入脚本菜单(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
         DSThemeBridge(
           child: Builder(
@@ -661,10 +606,63 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
           ),
         ),
       ],
-      body: ScriptsListScreen(
-        scriptManager: _plugin.scriptManager,
-        scriptExecutor: _plugin.scriptExecutor,
-        searchQuery: _searchQuery,
+      // 三个页签共用外层 header，IndexedStack 保留各页签状态
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          ScriptsListScreen(
+            scriptManager: _plugin.scriptManager,
+            scriptExecutor: _plugin.scriptExecutor,
+            searchQuery: _searchQuery,
+          ),
+          ScriptExecutionLogScreen(
+            logger: _plugin.scriptExecutor.executionLogger,
+            executor: _plugin.scriptExecutor,
+            embedded: true,
+          ),
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider.value(
+                value: _plugin.scriptStoreManager,
+              ),
+              ChangeNotifierProvider.value(
+                value: _plugin.scriptDownloadManager,
+              ),
+              ChangeNotifierProvider.value(value: _plugin.scriptManager),
+            ],
+            child: const ScriptStoreScreen(embedded: true),
+          ),
+        ],
+      ),
+
+      // 底部弧形导航：脚本 / 执行记录 / 脚本商场
+      enableBottomBar: true,
+      bottomBarHeight: 60,
+      bottomBarChild: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border(top: BorderSide(color: theme.stroke)),
+              ),
+              child: DSBottomNavigation(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                items: const [
+                  DSNavItem(icon: DsIconKind.code, label: '脚本'),
+                  DSNavItem(icon: DsIconKind.clock, label: '执行记录'),
+                  DSNavItem(icon: DsIconKind.store, label: '插件商场'),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -70,6 +70,7 @@ enum DsIconKind {
   opacity,
   tune,
   switchAccount,
+  code,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -139,6 +140,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.opacity: Icons.opacity,
   DsIconKind.tune: Icons.tune,
   DsIconKind.switchAccount: Icons.switch_account,
+  DsIconKind.code: Icons.code,
 };
 
 /// 图标组件：基于系统 Material Icons

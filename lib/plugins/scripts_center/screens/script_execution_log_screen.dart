@@ -18,11 +18,16 @@ class ScriptExecutionLogScreen extends StatefulWidget {
   /// 可选：仅显示该脚本的记录
   final String? scriptId;
 
+  /// 内嵌模式：作为 tab 内容嵌入主视图时去掉自带的 Scaffold/AppBar，
+  /// "清空记录"按钮内联到过滤栏行尾
+  final bool embedded;
+
   const ScriptExecutionLogScreen({
     super.key,
     required this.logger,
     this.executor,
     this.scriptId,
+    this.embedded = false,
   });
 
   @override
@@ -320,6 +325,9 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return _buildBody();
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('执行记录'),
@@ -334,49 +342,63 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 过滤栏
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('仅失败'),
-                  selected: _onlyFailed,
-                  onSelected: (v) => setState(() => _onlyFailed = v),
-                ),
-                const SizedBox(width: 8),
-                if (_scriptOptions.length > 1) ...[
-                  Expanded(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String?>(
-                        value: _filterScriptId,
-                        isExpanded: true,
-                        hint: const Text('全部脚本'),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('全部脚本'),
-                          ),
-                          ..._scriptOptions.map(
-                            (id) => DropdownMenuItem<String?>(
-                              value: id,
-                              child: Text(
-                                id,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        // 过滤栏（内嵌模式下行尾附清空按钮）
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              FilterChip(
+                label: const Text('仅失败'),
+                selected: _onlyFailed,
+                onSelected: (v) => setState(() => _onlyFailed = v),
+              ),
+              const SizedBox(width: 8),
+              if (_scriptOptions.length > 1) ...[
+                Expanded(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: _filterScriptId,
+                      isExpanded: true,
+                      hint: const Text('全部脚本'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('全部脚本'),
+                        ),
+                        ..._scriptOptions.map(
+                          (id) => DropdownMenuItem<String?>(
+                            value: id,
+                            child: Text(
+                              id,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ],
-                        onChanged: (v) => setState(() => _filterScriptId = v),
-                      ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _filterScriptId = v),
                     ),
                   ),
-                ],
+                ),
               ],
-            ),
+              if (widget.embedded)
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_sweep_outlined,
+                    color: Colors.red.withValues(alpha: 0.8),
+                  ),
+                  tooltip: '清空记录',
+                  onPressed: _confirmClear,
+                ),
+            ],
           ),
+        ),
           const Divider(height: 1),
           // 记录列表（含运行中区域）
           Expanded(
@@ -478,8 +500,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   /// 已运行时长（mm:ss / h:mm:ss）

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 
-/// 脚本卡片组件
+/// 脚本卡片组件（两列网格紧凑样式）
 ///
-/// 在列表中展示单个脚本的信息
+/// 参考 DSListItemCard：卡片内部为脚本色调亮的浅色底 + 原色描边，
+/// 脚本图标放大后贴在卡片右下角作为背景水印，置于内容层之下，
+/// 超出圆角的部分被裁剪
 class ScriptCard extends StatelessWidget {
   final ScriptInfo script;
   final VoidCallback? onTap;
@@ -22,176 +24,155 @@ class ScriptCard extends StatelessWidget {
     this.onRun,
   });
 
+  /// 右下角水印图标边长
+  static const double _watermarkSize = 88;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final enabled = script.enabled;
+    final baseColor = enabled ? Colors.deepPurple : Colors.grey;
+    final cardColor = Color.lerp(baseColor, Colors.white, 0.85);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: baseColor, width: 1.8),
+      ),
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 标题行：图标 + 名称 + 开关
-              Row(
+        child: Stack(
+          children: [
+            // 右下角图标水印：放大贴角，处于内容层之下，溢出被裁剪
+            Positioned(
+              right: -10,
+              bottom: -10,
+              child: Opacity(
+                opacity: 0.12,
+                child: Icon(
+                  _getIconData(script.icon),
+                  size: _watermarkSize,
+                  color: baseColor,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 状态指示器
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: script.enabled ? Colors.green : Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // 图标
-                  Icon(
-                    _getIconData(script.icon),
-                    size: 28,
-                    color: script.enabled
-                        ? Colors.deepPurple
-                        : Colors.grey[400],
-                  ),
-                  const SizedBox(width: 12),
-
-                  // 脚本名称
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  // 状态指示器 + 脚本名称
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: enabled ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
                           script.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: script.enabled ? null : Colors.grey,
+                            color: enabled
+                                ? theme.textTheme.bodyLarge?.color
+                                : Colors.grey,
                           ),
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'v${script.version} by ${script.author}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  // 版本与作者
+                  Text(
+                    'v${script.version} · ${script.author}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
 
-                  // 启用开关
-                  AdaptiveSwitch(
-                    value: script.enabled,
-                    onChanged: onToggle,
-                    activeThumbColor: Colors.deepPurple,
-                  ),
-                ],
-              ),
-
-              // 描述
-              if (script.description.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  script.description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: script.enabled ? null : Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-
-              // 触发器标签
-              if (script.triggers.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: script.triggers.take(3).map((trigger) {
-                    return Chip(
-                      label: Text(
-                        trigger.event,
-                        style: const TextStyle(fontSize: 11),
+                  // 描述
+                  if (script.description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      script.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: enabled ? theme.hintColor : Colors.grey,
                       ),
-                      backgroundColor: Colors.deepPurple.withValues(alpha: 0.1),
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              // 类型、更新时间和运行按钮
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  // 脚本类型
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: script.isModule
-                          ? Colors.blue.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      script.type.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: script.isModule ? Colors.blue : Colors.orange,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // 更新时间
-                  if (script.updatedAt != null)
-                    Expanded(
-                      child: Text(
-                        _formatDateTime(script.updatedAt!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-
-                  // 运行按钮（仅当脚本启用时显示）
-                  if (script.enabled && onRun != null) ...[
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: onRun,
-                      icon: const Icon(Icons.play_arrow, size: 18),
-                      label: Text('scripts_center_run'.tr),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
+
+                  const Spacer(),
+
+                  // 底部行：类型徽章 + 运行按钮 + 启用开关
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (script.isModule
+                                  ? Colors.blue
+                                  : Colors.orange)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          script.type.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: script.isModule
+                                ? Colors.blue
+                                : Colors.orange,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (enabled && onRun != null)
+                        IconButton(
+                          onPressed: onRun,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          icon: const Icon(
+                            Icons.play_arrow_rounded,
+                            size: 22,
+                            color: Colors.green,
+                          ),
+                          tooltip: 'scripts_center_run'.tr,
+                        ),
+                      AdaptiveSwitch(
+                        value: enabled,
+                        onChanged: onToggle,
+                        activeThumbColor: Colors.deepPurple,
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -220,22 +201,6 @@ class ScriptCard extends StatelessWidget {
         return Icons.autorenew;
       default:
         return Icons.code;
-    }
-  }
-
-  /// 格式化日期时间
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays == 0) {
-      return '今天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      return '昨天';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
-    } else {
-      return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
     }
   }
 }
