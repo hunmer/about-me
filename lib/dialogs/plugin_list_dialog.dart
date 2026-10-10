@@ -111,11 +111,19 @@ class PluginListDialog extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 插件图标
-                Icon(
-                  plugin.icon ?? Icons.extension,
-                  size: 36,
-                  color: plugin.color ?? Theme.of(context).primaryColor,
+                // 插件图标：图标颜色作背景，图标白色高亮
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: plugin.color ?? Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    plugin.icon ?? Icons.extension,
+                    size: 28,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 // 插件名称

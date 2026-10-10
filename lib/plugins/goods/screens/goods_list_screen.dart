@@ -578,6 +578,132 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     );
   }
 
+  /// 快速切换仓库筛选（同步多条件过滤状态，使过滤栏badge保持一致）
+  void _selectWarehouse(String? warehouseId) {
+    if (_filterWarehouseId == warehouseId) return;
+    setState(() {
+      _filterWarehouseId = warehouseId;
+      // 使用新Map实例触发wrapper同步过滤栏状态
+      _multiFilters = Map.from(_multiFilters);
+      if (warehouseId == null) {
+        _multiFilters.remove('warehouse');
+      } else {
+        _multiFilters['warehouse'] = warehouseId;
+      }
+    });
+    _updateRouteContext();
+  }
+
+  /// 横向仓库快切卡片条
+  Widget _buildWarehouseStrip() {
+    final warehouses = GoodsPlugin.instance.warehouses;
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+
+        Widget card({
+          required Widget icon,
+          required String title,
+          required String subtitle,
+          required bool selected,
+          required VoidCallback onTap,
+        }) {
+          return Pressable(
+            onPressed: onTap,
+            builder: (context, states) {
+              return Container(
+                width: 118,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? theme.primary.withValues(alpha: 0.08)
+                      : theme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected
+                        ? theme.primary
+                        : theme.stroke.withValues(alpha: 0.3),
+                    width: selected ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        icon,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                              fontWeight: selected ? FontWeight.bold : null,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+
+        final totalCount = warehouses.fold<int>(
+          0,
+          (sum, w) => sum + w.items.length,
+        );
+
+        return SizedBox(
+          height: 64,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            children: [
+              card(
+                icon: Icon(Icons.apps, size: 16, color: theme.primary),
+                title: 'goods_allWarehouses'.tr,
+                subtitle: '$totalCount 件物品',
+                selected: _filterWarehouseId == null,
+                onTap: () => _selectWarehouse(null),
+              ),
+              for (var warehouse in warehouses)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: card(
+                    icon: Icon(
+                      warehouse.icon,
+                      size: 16,
+                      color: warehouse.iconColor,
+                    ),
+                    title: warehouse.title,
+                    subtitle: '${warehouse.items.length} 件物品',
+                    selected: _filterWarehouseId == warehouse.id,
+                    onTap: () => _selectWarehouse(warehouse.id),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final allItems = _getAllItems();
@@ -628,53 +754,62 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
           ),
         ),
       ],
-      body:
-          allItems.isEmpty
-              ? Center(child: Text('goods_noItems'.tr))
-              : _isGridView
-              ? LayoutBuilder(
-                builder: (context, constraints) {
-                  return MasonryGridView.count(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      16,
-                      16,
-                      16 + MediaQuery.paddingOf(context).bottom,
+      body: Column(
+        children: [
+          // 横向仓库快切卡片
+          if (GoodsPlugin.instance.warehouses.isNotEmpty) _buildWarehouseStrip(),
+          Expanded(
+            child: allItems.isEmpty
+                ? Center(child: Text('goods_noItems'.tr))
+                : _isGridView
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      return MasonryGridView.count(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          16,
+                          16,
+                          16 + MediaQuery.paddingOf(context).bottom,
+                        ),
+                        crossAxisCount:
+                            constraints.maxWidth > 600 ? 3 : 2, // 响应式列数
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        itemCount: allItems.length,
+                        itemBuilder: (context, index) {
+                          final item = allItems[index]['item'] as GoodsItem;
+                          final warehouse =
+                              allItems[index]['warehouse'] as Warehouse;
+                          return GoodsItemCard(
+                            item: item,
+                            warehouseTitle: warehouse.title,
+                            warehouseId: warehouse.id,
+                            onTap: () => _showEditItemDialog(item, warehouse),
+                          );
+                        },
+                      );
+                    },
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom,
                     ),
-                    crossAxisCount: constraints.maxWidth > 600 ? 3 : 2, // 响应式列数
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
                     itemCount: allItems.length,
                     itemBuilder: (context, index) {
                       final item = allItems[index]['item'] as GoodsItem;
                       final warehouse =
                           allItems[index]['warehouse'] as Warehouse;
-                      return GoodsItemCard(
+                      return GoodsItemListTile(
                         item: item,
                         warehouseTitle: warehouse.title,
                         warehouseId: warehouse.id,
                         onTap: () => _showEditItemDialog(item, warehouse),
                       );
                     },
-                  );
-                },
-              )
-              : ListView.builder(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: allItems.length,
-                itemBuilder: (context, index) {
-                  final item = allItems[index]['item'] as GoodsItem;
-                  final warehouse = allItems[index]['warehouse'] as Warehouse;
-                  return GoodsItemListTile(
-                    item: item,
-                    warehouseTitle: warehouse.title,
-                    warehouseId: warehouse.id,
-                    onTap: () => _showEditItemDialog(item, warehouse),
-                  );
-                },
-              ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

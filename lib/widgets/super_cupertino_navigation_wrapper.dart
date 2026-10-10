@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
+import 'package:collection/collection.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:super_cupertino_navigation_bar/super_cupertino_navigation_bar.dart';
@@ -278,6 +279,20 @@ class _SuperCupertinoNavigationWrapperState
     });
   }
 
+  @override
+  void didUpdateWidget(SuperCupertinoNavigationWrapper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 外部过滤值变化时（如仓库卡片快切）同步到过滤栏状态
+    if (!const MapEquality().equals(
+      oldWidget.initialMultiFilters ?? const {},
+      widget.initialMultiFilters ?? const {},
+    )) {
+      _multiFilterState.initializeFromMap(
+        Map<String, dynamic>.from(widget.initialMultiFilters ?? const {}),
+      );
+    }
+  }
+
   /// 更新搜索过滤器状态
   void _updateSearchFilter(String key, bool value) {
     setState(() {
@@ -307,10 +322,9 @@ class _SuperCupertinoNavigationWrapperState
     }
 
     // 获取过滤器标签（使用默认或自定义）
-    final filterLabels =
-        widget.filterLabels.isNotEmpty
-            ? widget.filterLabels
-            : _getDefaultFilterLabels();
+    final filterLabels = widget.filterLabels.isNotEmpty
+        ? widget.filterLabels
+        : _getDefaultFilterLabels();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -340,35 +354,34 @@ class _SuperCupertinoNavigationWrapperState
           const SizedBox(height: 8),
           Wrap(
             spacing: 16,
-            children:
-                filterLabels.entries.map((entry) {
-                  final key = entry.key;
-                  final label = entry.value;
-                  final value = _searchFilters[key] ?? true;
+            children: filterLabels.entries.map((entry) {
+              final key = entry.key;
+              final label = entry.value;
+              final value = _searchFilters[key] ?? true;
 
-                  // 简化过滤项：让点击直接触发更新，不影响焦点
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DSCheckbox(
-                        value: value,
-                        onChanged: (bool? newValue) {
-                          if (newValue != null) {
-                            _updateSearchFilter(key, newValue);
-                          }
-                        },
-                        semanticLabel: label,
-                      ),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyMedium?.color,
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+              // 简化过滤项：让点击直接触发更新，不影响焦点
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DSCheckbox(
+                    value: value,
+                    onChanged: (bool? newValue) {
+                      if (newValue != null) {
+                        _updateSearchFilter(key, newValue);
+                      }
+                    },
+                    semanticLabel: label,
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
           ),
           const SizedBox(height: 4),
         ],
@@ -430,58 +443,58 @@ class _SuperCupertinoNavigationWrapperState
       },
       child: Scaffold(
         backgroundColor: _resolveBackgroundColor(),
-      body: SuperScaffold(
-        onCollapsed: widget.onCollapsed,
-        stretch: widget.stretch,
-        appBar: _buildSuperAppBar(),
-        body: Column(
-          children: [
-            // 高级搜索条件筛选器
-            if (widget.enableAdvancedSearch &&
-                widget.searchFilters != null &&
-                widget.searchFilters!.isNotEmpty)
-              Container(
-                height: 60,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+        body: SuperScaffold(
+          onCollapsed: widget.onCollapsed,
+          stretch: widget.stretch,
+          appBar: _buildSuperAppBar(),
+          body: Column(
+            children: [
+              // 高级搜索条件筛选器
+              if (widget.enableAdvancedSearch &&
+                  widget.searchFilters != null &&
+                  widget.searchFilters!.isNotEmpty)
+                Container(
+                  height: 60,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: widget.searchFilters!,
+                  ),
                 ),
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: widget.searchFilters!,
+              // 搜索过滤器 - 依赖 _isSearchFocused 状态
+              if (widget.enableSearchFilter && _isSearchFocused)
+                _buildSearchFilter(),
+              // 多条件过滤栏 - 只在非搜索状态下且可见时显示
+              if (widget.enableMultiFilter &&
+                  widget.multiFilterItems != null &&
+                  widget.multiFilterItems!.isNotEmpty &&
+                  !_isSearchFocused &&
+                  _isToolbarVisible)
+                MultiFilterBar(
+                  filterItems: widget.multiFilterItems!,
+                  filterState: _multiFilterState,
+                  onFilterChanged: widget.onMultiFilterChanged,
+                  height: widget.multiFilterBarHeight,
+                  trailing: widget.multiFilterBarTrailing,
                 ),
-              ),
-            // 搜索过滤器 - 依赖 _isSearchFocused 状态
-            if (widget.enableSearchFilter && _isSearchFocused)
-              _buildSearchFilter(),
-            // 多条件过滤栏 - 只在非搜索状态下且可见时显示
-            if (widget.enableMultiFilter &&
-                widget.multiFilterItems != null &&
-                widget.multiFilterItems!.isNotEmpty &&
-                !_isSearchFocused &&
-                _isToolbarVisible)
-              MultiFilterBar(
-                filterItems: widget.multiFilterItems!,
-                filterState: _multiFilterState,
-                onFilterChanged: widget.onMultiFilterChanged,
-                height: widget.multiFilterBarHeight,
-                trailing: widget.multiFilterBarTrailing,
-              ),
-            // 过滤栏 - 只在非搜索状态下显示（保持向后兼容）
-            if (widget.enableFilterBar &&
-                widget.filterBarChild != null &&
-                !_isSearchFocused &&
-                !widget.enableMultiFilter)
-              Container(
-                height: widget.filterBarHeight,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: widget.filterBarChild,
-              ),
-            // 主体内容 - 根据搜索状态切换
-            Expanded(child: currentBody),
-          ],
+              // 过滤栏 - 只在非搜索状态下显示（保持向后兼容）
+              if (widget.enableFilterBar &&
+                  widget.filterBarChild != null &&
+                  !_isSearchFocused &&
+                  !widget.enableMultiFilter)
+                Container(
+                  height: widget.filterBarHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: widget.filterBarChild,
+                ),
+              // 主体内容 - 根据搜索状态切换
+              Expanded(child: currentBody),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -559,7 +572,9 @@ class _SuperCupertinoNavigationWrapperState
           route != null &&
           route.canPop &&
           !(route is PageRoute && route.fullscreenDialog);
-      return canBack ? _buildDefaultBackButton(() => _defaultBack(context)) : null;
+      return canBack
+          ? _buildDefaultBackButton(() => _defaultBack(context))
+          : null;
     }
 
     if (!(UniversalPlatform.isAndroid || UniversalPlatform.isIOS) &&
@@ -617,17 +632,18 @@ class _SuperCupertinoNavigationWrapperState
     final searchBar =
         widget.enableSearchBar &&
             (!(_hasFilterToggle || _hasSearchToggle) || _isToolbarVisible)
-            ? _buildSearchBar()
-            : SuperSearchBar(
-              enabled: false,
-              scrollBehavior: SearchBarScrollBehavior.pinned,
-              resultBehavior: SearchBarResultBehavior.neverVisible,
-            );
+        ? _buildSearchBar()
+        : SuperSearchBar(
+            enabled: false,
+            scrollBehavior: SearchBarScrollBehavior.pinned,
+            resultBehavior: SearchBarResultBehavior.neverVisible,
+          );
 
     // 当 automaticallyImplyLeading 为 null 时,根据平台自动设置
     // 非移动端(桌面平台)默认不显示返回按钮,移动端默认显示
     final bool effectiveAutomaticallyImplyLeading =
-        widget.automaticallyImplyLeading ?? !(UniversalPlatform.isAndroid || UniversalPlatform.isIOS);
+        widget.automaticallyImplyLeading ??
+        !(UniversalPlatform.isAndroid || UniversalPlatform.isIOS);
 
     return SuperAppBar(
       backgroundColor: _resolveBackgroundColor(),
@@ -675,20 +691,14 @@ class _SuperCupertinoNavigationWrapperState
       // 空态为浅紫填充 + 浅描边，进入搜索状态后填充/描边向主色调染，
       // 呼应 DSInput 的聚焦变色
       searchFieldDecoration: BoxDecoration(
-        color:
-            _isSearchFocused
-                ? Color.lerp(
-                  ds.backgroundAlt,
-                  ds.primary,
-                  ds.isDark ? 0.30 : 0.14,
-                )!
-                : ds.backgroundAlt,
+        color: _isSearchFocused
+            ? Color.lerp(ds.backgroundAlt, ds.primary, ds.isDark ? 0.30 : 0.14)!
+            : ds.backgroundAlt,
         borderRadius: ds.radii.pill,
         border: Border.all(
-          color:
-              _isSearchFocused
-                  ? ds.primary
-                  : ds.textSub.withValues(alpha: 0.45),
+          color: _isSearchFocused
+              ? ds.primary
+              : ds.textSub.withValues(alpha: 0.45),
           width: 1.6,
         ),
         boxShadow: ds.shadows.soft,
@@ -700,15 +710,22 @@ class _SuperCupertinoNavigationWrapperState
       ),
       cancelButtonText: 'core_cancel'.tr,
       cancelTextStyle: DsTypography.button.copyWith(color: ds.primaryText),
-      placeholderText:
-          widget.searchPlaceholder.isNotEmpty
-              ? widget.searchPlaceholder
-              : _getDefaultSearchPlaceholder(),
+      placeholderText: widget.searchPlaceholder.isNotEmpty
+          ? widget.searchPlaceholder
+          : _getDefaultSearchPlaceholder(),
       searchController: _searchController,
       onChanged: (value) {
         widget.onSearchChanged?.call(value);
         widget.onAdvancedSearchChanged?.call({'query': value});
-        // onChanged 回调已经在 _searchController.addListener 中处理了
+        // onChanged 回调已经在 _searchController.addListener 中处理了；
+        // 这里额外直接同步搜索态，防止 controller 实例与 listener
+        // 脱节（如热重载后 State 重建）导致 searchBody 不切换
+        final expected = value.isNotEmpty || _isTextFieldFocused;
+        if (mounted && _isSearchFocused != expected) {
+          setState(() {
+            _isSearchFocused = expected;
+          });
+        }
       },
       onSubmitted: widget.onSearchSubmitted,
     );

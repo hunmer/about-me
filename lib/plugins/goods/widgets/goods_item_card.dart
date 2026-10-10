@@ -31,6 +31,12 @@ class GoodsItemCard extends StatefulWidget {
 class _GoodsItemCardState extends State<GoodsItemCard> {
   String? _resolvedImageUrl;
 
+  /// 图片真实宽高比（null表示未探测到，瀑布流退回固定高度）
+  double? _imageAspect;
+
+  /// 图片宽高比内存缓存（key: 图片路径/URL）
+  static final Map<String, double> _aspectCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +62,9 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
           setState(() {
             _resolvedImageUrl = url;
           });
+          if (url != null) {
+            _probeImageAspect(url);
+          }
         }
       } catch (e) {
         debugPrint('获取图片URL失败: $e');
@@ -66,6 +75,44 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
         }
       }
     }
+  }
+
+  /// 探测图片真实宽高比（经ImageCache，不额外解码），结果内存缓存
+  Future<void> _probeImageAspect(String url) async {
+    final cached = _aspectCache[url];
+    if (cached != null) {
+      if (mounted && _imageAspect != cached) {
+        setState(() => _imageAspect = cached);
+      }
+      return;
+    }
+
+    final ImageProvider provider =
+        url.startsWith('http://') || url.startsWith('https://')
+            ? NetworkImage(url)
+            : FileImage(File(url));
+    final stream = provider.resolve(const ImageConfiguration());
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (info, _) {
+        stream.removeListener(listener);
+        final width = info.image.width;
+        final height = info.image.height;
+        final aspect = (width > 0 && height > 0) ? width / height : null;
+        if (aspect != null) {
+          _aspectCache[url] = aspect;
+        }
+        if (mounted && _imageAspect != aspect) {
+          setState(() {
+            _imageAspect = aspect;
+          });
+        }
+      },
+      onError: (error, stackTrace) {
+        stream.removeListener(listener);
+      },
+    );
+    stream.addListener(listener);
   }
 
   void _showMenu() {
@@ -212,34 +259,24 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    // Calculate daily cost
-    double? dailyCost;
-    if (widget.item.totalPrice != null && widget.item.purchaseDate != null) {
-      final days = DateTime.now().difference(widget.item.purchaseDate!).inDays;
-      final effectiveDays = days < 1 ? 1 : days;
-      dailyCost = widget.item.totalPrice! / effectiveDays;
-    }
+    // 瀑布流错落（兜底）：未探测到图片宽高比时按物品ID确定性变化（150-220）
+    final imageHeight = 150.0 + (widget.item.id.hashCode.abs() % 8) * 10.0;
 
-    // Usage stats
-    final daysOwned =
-        widget.item.purchaseDate != null
-            ? DateTime.now().difference(widget.item.purchaseDate!).inDays
-            : 0;
-    final usageCount = widget.item.usageRecords.length;
+    // 副标题：优先仓库名，其次首个标签
+    final subtitle =
+        (widget.warehouseTitle != null && widget.warehouseTitle!.isNotEmpty)
+        ? widget.warehouseTitle!
+        : (widget.item.tags.isNotEmpty ? widget.item.tags.first : '');
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.stroke.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -248,31 +285,20 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
         child: InkWell(
           onTap: widget.onTap,
           onLongPress: _showMenu,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.only(
-              left: 12,
-              right: 12,
-              top: 12,
-              bottom: 8,
-            ),
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image Section
+                // 图片区（优先按真实宽高比错落，形成瀑布流）
                 Stack(
                   children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child:
-                            widget.item.imageUrl != null
-                                ? _buildImage()
-                                : _buildIcon(),
-                      ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: _buildImageSection(imageHeight),
                     ),
-                    // Badge (using subItems count as a placeholder for quantity if any)
+                    // 子物品数量角标
                     if (widget.item.subItems.isNotEmpty)
                       Positioned(
                         top: 6,
@@ -299,12 +325,12 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
                 ),
                 const SizedBox(height: 10),
 
-                // Title
+                // 标题
                 Text(
                   widget.item.title,
                   style: DsTypography.heading.copyWith(
                     color: theme.text,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -312,137 +338,26 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
 
                 const SizedBox(height: 4),
 
-                // Daily Cost
+                // 空间名 + 价格
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '¥',
-                          style: DsTypography.caption.copyWith(
-                            color: theme.success,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          'goods_dailyCost'.tr,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      dailyCost != null
-                          ? '¥${dailyCost.toStringAsFixed(3)}/${'goods_day'.tr}'
-                          : '-',
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 4),
-
-                // Category & Price
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Row(
-                        children: [
-                          Icon(
-                            widget.item.icon ?? Icons.category_outlined,
-                            size: 14,
-                            color: theme.primary,
-                          ),
-                          const SizedBox(width: 2),
-                          Expanded(
-                            child: Text(
-                              widget.item.tags.isNotEmpty
-                                  ? widget.item.tags.first
-                                  : 'goods_noItems'.tr
-                                      .replaceAll('没有物品', '未分类')
-                                      .replaceAll(
-                                        'No Items',
-                                        'Uncategorized',
-                                      ), // Fallback
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                                fontSize: 10,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                       child: Text(
-                        '¥${(widget.item.totalPrice ?? 0).toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        subtitle,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Divider
-                Divider(height: 1, color: theme.stroke.withValues(alpha: 0.2)),
-
-                const SizedBox(height: 8),
-
-                // Usage Stats & Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                    const SizedBox(width: 8),
                     Text(
-                      '$daysOwned${'goods_days'.tr} / $usageCount${'goods_times'.tr}',
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                        fontSize: 10,
+                      '¥${(widget.item.totalPrice ?? 0).toStringAsFixed(0)}',
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: theme.success,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'goods_inPlace'.tr,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -451,6 +366,24 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 图片区域：探测到宽高比时用AspectRatio（clamp 0.7-1.4防极端比例），
+  /// 否则退回固定高度兜底
+  Widget _buildImageSection(double fallbackHeight) {
+    final content =
+        widget.item.imageUrl != null ? _buildImage() : _buildIcon();
+    if (_imageAspect != null) {
+      return AspectRatio(
+        aspectRatio: _imageAspect!.clamp(0.7, 1.4),
+        child: content,
+      );
+    }
+    return SizedBox(
+      height: fallbackHeight,
+      width: double.infinity,
+      child: content,
     );
   }
 

@@ -44,8 +44,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   // 底部详情 sheet 控制器（smooth_sheets：拖拽吸附，点日期展开）
   final SheetController _sheetController = SheetController();
 
-  // sheet 吸附档位像素（_buildDetailSheet 布局时缓存，供展开/FAB 淡出使用）
-  double _collapsedSnapPx = 110;
+  // sheet 中档吸附像素（_buildDetailSheet 布局时缓存，供点日期展开使用）
   double _detailSnapPx = 300;
 
   // 头部心情提示文案（点击表情且今日已记录时显示，选日期时清除）
@@ -171,6 +170,15 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     } catch (_) {
       return null;
     }
+  }
+
+  /// 关闭详情 sheet（完全隐藏）
+  void _closeDetailSheet() {
+    _sheetController.animateTo(
+      const SheetOffset.absolute(0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   /// 点击头部表情：今日未记录则带心情打开编辑页，已记录则提示今日心情
@@ -439,9 +447,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                   },
                 ),
               ),
-
-              // 日历下方留出收起 sheet（把手+日期行）的空间
-              SizedBox(height: 84 + MediaQuery.of(context).padding.bottom),
             ],
           ),
         ),
@@ -455,13 +460,10 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
           child: AnimatedBuilder(
             animation: _sheetController,
             builder: (context, child) {
-              // controller.value 为 sheet 可见高度（像素），拖离收起档后渐隐；
-              // sheet 首帧布局完成前 offset 不可读，视为收起态（FAB 可见）
-              final offset = _safeSheetOffset() ?? _collapsedSnapPx;
-              final progress = ((offset - _collapsedSnapPx) / 120).clamp(
-                0.0,
-                1.0,
-              );
+              // controller.value 为 sheet 可见高度（像素），弹出后渐隐；
+              // sheet 首帧布局完成前 offset 不可读，视为隐藏态（FAB 可见）
+              final offset = _safeSheetOffset() ?? 0;
+              final progress = (offset / 120).clamp(0.0, 1.0);
               final opacity = 1 - progress;
               return IgnorePointer(
                 ignoring: opacity < 0.5,
@@ -514,20 +516,18 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportHeight = constraints.maxHeight;
-        // 收起态可见高度：把手 + 日期行 + 底部安全区
-        final collapsedPx = 84 + bottomInset;
         final detailPx = viewportHeight * 0.45;
-        // 缓存档位像素，供点日期展开与 FAB 淡出计算使用
-        _collapsedSnapPx = collapsedPx;
+        // 缓存中档像素，供点日期展开使用
         _detailSnapPx = detailPx;
 
         return SheetViewport(
           child: Sheet(
             controller: _sheetController,
-            initialOffset: SheetOffset.absolute(collapsedPx),
+            // 默认完全隐藏（可见高度 0），点选日期后弹出
+            initialOffset: SheetOffset.absolute(0),
             snapGrid: SheetSnapGrid(
               snaps: [
-                SheetOffset.absolute(collapsedPx),
+                const SheetOffset.absolute(0),
                 SheetOffset.absolute(detailPx),
                 SheetOffset.absolute(viewportHeight),
               ],
@@ -542,13 +542,15 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
               ),
               shadowColor: Colors.black.withValues(alpha: 0.18),
             ),
-            // 固定内容高度 = viewport 高，fit 模式下与三档吸附配合
+            // 固定内容高度 = viewport 高，fit 模式下与三档吸附配合；
+            // 注意：设置 scrollConfiguration 后 sheet 只对 scrollable 内容
+            // 响应拖拽，因此把手/日期行也放进 ListView（整体可拖）
             child: SizedBox(
               height: viewportHeight,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ListView(
+                padding: EdgeInsets.only(bottom: bottomInset + 16),
                 children: [
-                  // 把手（整块 header 可拖拽）
+                  // 把手
                   Center(
                     child: Container(
                       width: 36,
@@ -577,94 +579,114 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                             color: textColor,
                           ),
                         ),
-                        DSButton(
-                          key: _editButtonKey,
-                          label: selectedEntry != null
-                              ? 'diary_edit'.tr
-                              : 'diary_create'.tr,
-                          icon: selectedEntry != null
-                              ? DsIconKind.edit
-                              : DsIconKind.plus,
-                          size: DSButtonSize.sm,
-                          onPressed: () {
-                            final targetDay = _selectedDay ?? DateTime.now();
-                            final normalizedTargetDay = DateTime(
-                              targetDay.year,
-                              targetDay.month,
-                              targetDay.day,
-                            );
-                            NavigationHelper.openContainerWithHero(
-                              context,
-                              (_) => DiaryEditorScreen(
-                                date: normalizedTargetDay,
-                                storage: widget.storage,
-                                initialTitle: selectedEntry?.title ?? '',
-                                initialContent: selectedEntry?.content ?? '',
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 关闭图标：完全隐藏 sheet
+                            IconButton(
+                              icon: Icon(
+                                Icons.close_rounded,
+                                size: 20,
+                                color: textColor,
                               ),
-                              sourceKey: _editButtonKey,
-                              heroTag: 'diary_edit_button',
-                              closedColor: primaryColor,
-                              closedShape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ).then((_) => _loadDiaryEntries());
-                          },
+                              tooltip: 'app_close'.tr,
+                              onPressed: _closeDetailSheet,
+                            ),
+                            DSButton(
+                              key: _editButtonKey,
+                              label: selectedEntry != null
+                                  ? 'diary_edit'.tr
+                                  : 'diary_create'.tr,
+                              icon: selectedEntry != null
+                                  ? DsIconKind.edit
+                                  : DsIconKind.plus,
+                              size: DSButtonSize.sm,
+                              onPressed: () {
+                                final targetDay =
+                                    _selectedDay ?? DateTime.now();
+                                final normalizedTargetDay = DateTime(
+                                  targetDay.year,
+                                  targetDay.month,
+                                  targetDay.day,
+                                );
+                                NavigationHelper.openContainerWithHero(
+                                  context,
+                                  (_) => DiaryEditorScreen(
+                                    date: normalizedTargetDay,
+                                    storage: widget.storage,
+                                    initialTitle: selectedEntry?.title ?? '',
+                                    initialContent:
+                                        selectedEntry?.content ?? '',
+                                  ),
+                                  sourceKey: _editButtonKey,
+                                  heroTag: 'diary_edit_button',
+                                  closedColor: primaryColor,
+                                  closedShape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ).then((_) => _loadDiaryEntries());
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
 
-                  // 内容（滚动与 sheet 拖拽协调）
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 12,
-                        bottom: bottomInset + 16,
-                      ),
-                      children: [
-                        if (selectedEntry != null) ...[
-                          // Images list (if any)
-                          Builder(
-                            builder: (context) {
-                              final images = extractImagesFromContent(
-                                selectedEntry.content,
-                              );
-                              if (images.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return Container(
-                                height: 100,
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: images.length,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      width: 100,
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            images[index],
-                                          ), // Or FileImage if local
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                          QuillViewer(
-                            data: selectedEntry.content,
-                            selectable: true,
-                          ),
-                        ] else
-                          SizedBox(
+                  const SizedBox(height: 12),
+
+                  // 内容
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: selectedEntry != null
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Images list (if any)
+                              Builder(
+                                builder: (context) {
+                                  final images = extractImagesFromContent(
+                                    selectedEntry.content,
+                                  );
+                                  if (images.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Container(
+                                    height: 100,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: images.length,
+                                      itemBuilder: (context, index) {
+                                        return Container(
+                                          width: 100,
+                                          margin: const EdgeInsets.only(
+                                            right: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                images[index],
+                                              ), // Or FileImage if local
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                              QuillViewer(
+                                data: selectedEntry.content,
+                                selectable: true,
+                              ),
+                            ],
+                          )
+                        : SizedBox(
                             height: 160,
                             child: Center(
                               child: DSEmptyState(
@@ -673,8 +695,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                               ),
                             ),
                           ),
-                      ],
-                    ),
                   ),
                 ],
               ),
