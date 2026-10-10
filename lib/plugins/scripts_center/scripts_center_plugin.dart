@@ -22,6 +22,7 @@ import 'package:aboutme/core/services/plugin_data_selector/models/selector_step.
 import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'services/script_loader.dart';
 import 'services/script_manager.dart';
 import 'services/script_executor.dart';
@@ -503,6 +504,34 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
     });
   }
 
+  /// 底部导航子栏右侧圆钮：新建/导入脚本菜单
+  void _showCreateMenu() {
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: Text('scripts_center_newScript'.tr),
+            onTap: () {
+              Navigator.pop(context);
+              _showCreateScriptDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.download),
+            title: const Text('导入JS文件'),
+            onTap: () {
+              Navigator.pop(context);
+              _showImportScriptDialog(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabTitles = [
@@ -520,92 +549,6 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
       onSearchChanged: _setSearchQuery,
       onSearchSubmitted: _setSearchQuery,
 
-      actions: [
-        // 新建/导入脚本菜单(DSPopover 经根 Overlay 展示,需 DSThemeBridge 包裹)
-        DSThemeBridge(
-          child: Builder(
-            builder: (buildContext) {
-              final theme = DSThemeBridge.resolve(buildContext);
-              return DSPopover(
-                width: 190,
-                contentBuilder: (popoverContext, close) {
-                  final popoverTheme = DSThemeBridge.resolve(popoverContext);
-
-                  Widget menuRow(
-                    DsIconKind icon,
-                    String label,
-                    VoidCallback onTap,
-                  ) {
-                    return Pressable(
-                      onPressed: () {
-                        close();
-                        onTap();
-                      },
-                      builder: (context, states) {
-                        final pressed = states.contains(WidgetState.pressed);
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: popoverTheme.spacing.sm,
-                            vertical: popoverTheme.spacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: pressed ? popoverTheme.surfaceAlt : null,
-                            borderRadius: popoverTheme.radii.sm,
-                          ),
-                          child: Row(
-                            children: [
-                              DsIcon(icon, size: 18, color: popoverTheme.text),
-                              SizedBox(width: popoverTheme.spacing.sm),
-                              Text(
-                                label,
-                                style: DsTypography.body.copyWith(
-                                  color: popoverTheme.text,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }
-
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      menuRow(
-                        DsIconKind.plus,
-                        'scripts_center_newScript'.tr,
-                        () => _showCreateScriptDialog(context),
-                      ),
-                      menuRow(
-                        DsIconKind.download,
-                        '导入JS文件',
-                        () {
-                          _showImportScriptDialog(context);
-                        },
-                      ),
-                    ],
-                  );
-                },
-                child: JellyBox(
-                  width: 40,
-                  height: 40,
-                  radius: theme.radii.circle,
-                  color: theme.primary,
-                  child: Center(
-                    child: DsIcon(
-                      DsIconKind.plus,
-                      size: 20,
-                      color: theme.onPrimary,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
       // 三个页签共用外层 header，IndexedStack 保留各页签状态。
       // 弧形底部导航经内层 Scaffold 停靠屏幕底部（wrapper 的
       // bottomBarChild 参数实际不生效），extendBody 让内容延伸到栏下
@@ -656,6 +599,15 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
                         _currentIndex = index;
                       });
                     },
+                    // 子栏右侧圆钮：新建/导入脚本菜单（无子栏胶囊，
+                    // 恒传 never 保持仅 dock 的紧凑占位）
+                    trailingAction: DsIcon(
+                      DsIconKind.plus,
+                      size: 16,
+                      color: theme.primary,
+                    ),
+                    onTrailingTap: _showCreateMenu,
+                    subBarBehavior: RadialSubBarBehavior.never,
                     items: const [
                       DSNavItem(icon: DsIconKind.code, label: '脚本'),
                       DSNavItem(icon: DsIconKind.clock, label: '执行记录'),

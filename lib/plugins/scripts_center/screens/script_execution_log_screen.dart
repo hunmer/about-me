@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_execution_logger.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
@@ -8,7 +12,8 @@ import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
 /// 脚本执行记录页面
 ///
 /// 展示所有脚本的历史执行记录（手动/事件/互调/自动运行），
-/// 支持仅看失败、按脚本过滤、查看详情与清空，运行中脚本可终止
+/// 支持仅看失败、按脚本过滤、查看详情与清空，运行中脚本可终止。
+/// "清空记录"停靠在 PersistentNavigationBar 右上角
 class ScriptExecutionLogScreen extends StatefulWidget {
   final ScriptExecutionLogger logger;
 
@@ -18,8 +23,7 @@ class ScriptExecutionLogScreen extends StatefulWidget {
   /// 可选：仅显示该脚本的记录
   final String? scriptId;
 
-  /// 内嵌模式：作为 tab 内容嵌入主视图时去掉自带的 Scaffold/AppBar，
-  /// "清空记录"按钮内联到过滤栏行尾
+  /// 内嵌模式：作为 tab 内容嵌入主视图时不显示返回按钮
   final bool embedded;
 
   const ScriptExecutionLogScreen({
@@ -38,6 +42,10 @@ class ScriptExecutionLogScreen extends StatefulWidget {
 class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
   bool _onlyFailed = false;
   String? _filterScriptId;
+
+  /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
+  final NavigationBarStaticComponentsKeys _navBarKeys =
+      NavigationBarStaticComponentsKeys();
 
   /// 每秒跳动一次，驱动"运行中"条目的已运行时长刷新
   Timer? _ticker;
@@ -325,31 +333,73 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.embedded) {
-      return _buildBody();
-    }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('执行记录'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.delete_sweep_outlined,
-              color: Colors.red.withValues(alpha: 0.8),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return Scaffold(
+            backgroundColor: theme.background,
+            body: Column(
+              children: [
+                // Super Cupertino 风格的固定 header；
+                // "清空记录"停靠右上角（内嵌 tab 模式不显示返回按钮）
+                PersistentNavigationBar(
+                  components: NavigationBarStaticComponents(
+                    keys: _navBarKeys,
+                    route: null,
+                    // NavigationToolbar 对 leading 施加紧高度约束会把按钮
+                    // 拉变形，用 Align 转成宽松约束保持正圆
+                    userLeading:
+                        widget.embedded
+                            ? null
+                            : Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: DSIconButton(
+                                icon: DsIconKind.chevronLeft,
+                                size: 36,
+                                color: theme.surfaceAlt,
+                                iconColor: theme.textSub,
+                                tooltip: '返回',
+                                onPressed:
+                                    () => Navigator.of(context).maybePop(),
+                              ),
+                            ),
+                    automaticallyImplyLeading: false,
+                    automaticallyImplyTitle: false,
+                    previousPageTitle: null,
+                    userMiddle: Text(
+                      '执行记录',
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    userTrailing: DSIconButton(
+                      icon: DsIconKind.trash,
+                      size: 36,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.danger,
+                      tooltip: '清空记录',
+                      onPressed: _confirmClear,
+                    ),
+                    userLargeTitle: null,
+                    largeTitleActions: null,
+                    appbarBottom: null,
+                    padding: null,
+                    large: false,
+                  ),
+                ),
+                Expanded(child: _buildBody()),
+              ],
             ),
-            tooltip: '清空记录',
-            onPressed: _confirmClear,
-          ),
-        ],
+          );
+        },
       ),
-      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
     return Column(
       children: [
-        // 过滤栏（内嵌模式下行尾附清空按钮）
+        // 过滤栏
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: Row(
@@ -387,15 +437,6 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                   ),
                 ),
               ],
-              if (widget.embedded)
-                IconButton(
-                  icon: Icon(
-                    Icons.delete_sweep_outlined,
-                    color: Colors.red.withValues(alpha: 0.8),
-                  ),
-                  tooltip: '清空记录',
-                  onPressed: _confirmClear,
-                ),
             ],
           ),
         ),

@@ -40,6 +40,12 @@ class TimerTranslationsEn {
     'timer_pause': 'Pause',
     'timer_play': 'Play',
     'timer_running': 'Running',
+    'timer_phase': 'Phase',
+    'timer_paused': 'Paused',
+    'timer_whiteNoise': 'White Noise',
+    'timer_comingSoon': 'White noise coming soon',
+    'timer_breathingHint': 'Stay focused, breathe slowly',
+    'timer_immersiveHint': 'Flip your phone face down for immersive dim',
 
     // Widget Home Strings
     'timer_widgetName': 'Timer',

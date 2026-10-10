@@ -40,6 +40,12 @@ class TimerTranslationsZh {
     'timer_pause': '暂停',
     'timer_play': '开始',
     'timer_running': '运行中',
+    'timer_phase': '阶段',
+    'timer_paused': '已暂停',
+    'timer_whiteNoise': '白噪音',
+    'timer_comingSoon': '白噪音功能开发中，敬请期待',
+    'timer_breathingHint': '保持专注，平稳呼吸',
+    'timer_immersiveHint': '翻转手机朝下可自动熄屏进入沉浸暗光',
 
     // Widget Home Strings
     'timer_widgetName': '计时器',

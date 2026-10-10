@@ -10,9 +10,18 @@ class PersistentNavigationBar extends StatelessWidget {
     required this.components,
     this.padding,
     this.middleVisible,
+    this.height = 56.0,
   });
 
   final NavigationBarStaticComponents components;
+
+  /// 工具栏内容高度（不含顶部安全区内边距，默认 56，同 Material
+  /// [kToolbarHeight] 与包内部 primaryToolbarHeight）。
+  ///
+  /// NavigationToolbar 会占满父级给的剩余高度：直接用于 Column 等宽松
+  /// 父级时（尤其存在 IndexedStack 等兄弟节点）可能拿到无界高度约束
+  /// 而崩溃，因此这里必须显式限定；内部展开态挂载同样以该高度传入
+  final double height;
 
   /// Padding for the contents of the navigation bar.
   ///
@@ -81,7 +90,7 @@ class PersistentNavigationBar extends StatelessWidget {
 
     return SafeArea(
       bottom: false,
-      child: paddedToolbar,
+      child: SizedBox(height: height, child: paddedToolbar),
     );
   }
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
@@ -17,11 +21,12 @@ import 'package:get/get.dart';
 
 /// 脚本编辑屏幕
 ///
-/// 完整的脚本编辑界面，包含：
+/// 完整的脚本编辑界面（DS 风格：PersistentNavigationBar 头部 +
+/// 底部弧形导航切换分区），包含：
 /// - 基本信息编辑
 /// - 代码编辑器
-/// - 触发条件选择器
-/// - 高级设置
+/// - 高级设置（含触发条件、输入参数）
+/// - 配置
 class ScriptEditScreen extends StatefulWidget {
   /// 如果为null则为创建模式，否则为编辑模式
   final ScriptInfo? script;
@@ -52,9 +57,18 @@ class _EventOption {
   _EventOption(this.eventName, this.category, this.description);
 }
 
-class _ScriptEditScreenState extends State<ScriptEditScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ScriptEditScreenState extends State<ScriptEditScreen> {
+  /// 底部导航当前分区：0 基本信息 / 1 代码 / 2 高级设置 / 3 配置
+  int _currentTabIndex = 0;
+
+  /// 已访问过的分区（首次访问才构建，之后保留状态）。
+  /// 不一次挂载全部分区：配置分区的表单带 ValueKey+GlobalKey，
+  /// 打开瞬间与异步加载同时做子树迁移会触发框架断言
+  final List<int> _visitedTabs = [0];
+
+  /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
+  final NavigationBarStaticComponentsKeys _navBarKeys =
+      NavigationBarStaticComponentsKeys();
 
   // 基本信息 Tab 的表单状态
   final GlobalKey<FormBuilderState> _basicInfoFormKey =
@@ -222,9 +236,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   void initState() {
     super.initState();
 
-    // 初始化Tab控制器
-    _tabController = TabController(length: 5, vsync: this);
-
     // 初始化代码控制器
     _codeController = TextEditingController();
 
@@ -345,7 +356,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _codeController.dispose();
     super.dispose();
   }
@@ -571,6 +581,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   /// 获取基本信息表单字段配置
   List<FormFieldConfig> _getBasicInfoFields() {
+    final theme = DSThemeBridge.resolve(context);
     final script = widget.script;
     final initialData = widget.initialData;
 
@@ -584,9 +595,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         name: 'icon',
         type: FormFieldType.circleIconPicker,
         labelText: 'scripts_center_icon'.tr,
-        initialValue: {'icon': iconData, 'color': Colors.deepPurple},
+        initialValue: {'icon': iconData, 'color': theme.primary},
         extra: {
-          'initialBackgroundColor': Colors.deepPurple,
+          'initialBackgroundColor': theme.primary,
           'showLabel': true,
           'labelText': 'scripts_center_selectIcon'.tr,
         },
@@ -705,71 +716,127 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          isEditMode
-              ? 'scripts_center_editScript'.tr
-              : 'scripts_center_createNewScript'.tr,
-        ),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-        actions: [
-          TextButton.icon(
-            onPressed: _saveScript,
-            icon: Icon(
-              isEditMode ? Icons.save : Icons.add,
-              color: Colors.white,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return Scaffold(
+            backgroundColor: theme.background,
+            body: Column(
+              children: [
+                // Super Cupertino 风格的固定 header（super_cupertino_navigation_bar
+                // 包内 PersistentNavigationBar，与 SuperAppBar 展开态同源；
+                // 自带默认工具栏高度，无需再给定高父级）
+                PersistentNavigationBar(
+                  components: NavigationBarStaticComponents(
+                    keys: _navBarKeys,
+                    route: null,
+                    // NavigationToolbar 对 leading 施加紧高度约束会把按钮
+                    // 拉变形，用 Align 转成宽松约束保持正圆（包内返回键同款）
+                    userLeading: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 36,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        tooltip: 'core_back'.tr,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                    ),
+                    automaticallyImplyLeading: false,
+                    automaticallyImplyTitle: false,
+                    previousPageTitle: null,
+                    userMiddle: Text(
+                      isEditMode
+                          ? 'scripts_center_editScript'.tr
+                          : 'scripts_center_createNewScript'.tr,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    userTrailing: DSIconButton(
+                      icon: DsIconKind.check,
+                      size: 36,
+                      color: theme.primary,
+                      iconColor: theme.onPrimary,
+                      tooltip:
+                          isEditMode
+                              ? 'scripts_center_save'.tr
+                              : 'scripts_center_create'.tr,
+                      onPressed: _saveScript,
+                    ),
+                    userLargeTitle: null,
+                    largeTitleActions: null,
+                    appbarBottom: null,
+                    padding: null,
+                    large: false,
+                  ),
+                ),
+
+                // 已访问的编辑分区，IndexedStack 保留各分区状态
+                Expanded(
+                  child: IndexedStack(
+                    index: _visitedTabs.indexOf(_currentTabIndex),
+                    children: [for (final tab in _visitedTabs) _buildTab(tab)],
+                  ),
+                ),
+
+                // 底部弧形导航：基本信息 / 代码 / 高级设置 / 配置
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.all(theme.spacing.lg),
+                    child: DSBottomNavigation(
+                      currentIndex: _currentTabIndex,
+                      onTap: (index) {
+                        setState(() {
+                          if (!_visitedTabs.contains(index)) {
+                            _visitedTabs.add(index);
+                          }
+                          _currentTabIndex = index;
+                        });
+                      },
+                      items: [
+                        DSNavItem(
+                          icon: DsIconKind.info,
+                          label: 'scripts_center_basicInfo'.tr,
+                        ),
+                        DSNavItem(
+                          icon: DsIconKind.code,
+                          label: 'scripts_center_codeEditor'.tr,
+                        ),
+                        DSNavItem(
+                          icon: DsIconKind.gear,
+                          label: 'scripts_center_advancedSettings'.tr,
+                        ),
+                        DSNavItem(
+                          icon: DsIconKind.tune,
+                          label: 'scripts_center_config'.tr,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            label: Text(
-              isEditMode
-                  ? 'scripts_center_save'.tr
-                  : 'scripts_center_create'.tr,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: [
-            Tab(
-              icon: const Icon(Icons.info_outline),
-              text: 'scripts_center_basicInfo'.tr,
-            ),
-            Tab(
-              icon: const Icon(Icons.code),
-              text: 'scripts_center_codeEditor'.tr,
-            ),
-            Tab(
-              icon: const Icon(Icons.bolt),
-              text: 'scripts_center_triggers'.tr,
-            ),
-            Tab(
-              icon: const Icon(Icons.settings_outlined),
-              text: 'scripts_center_advancedSettings'.tr,
-            ),
-            Tab(
-              icon: const Icon(Icons.tune_outlined),
-              text: 'scripts_center_config'.tr,
-            ),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _KeepAliveTab(child: _buildBasicInfoTab()),
-          _KeepAliveTab(child: _buildCodeEditorTab()),
-          _KeepAliveTab(child: _buildTriggersTab()),
-          _KeepAliveTab(child: _buildAdvancedTab()),
-          _KeepAliveTab(child: _buildConfigTab()),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  /// 按分区序号构建对应内容
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0:
+        return _buildBasicInfoTab();
+      case 1:
+        return _buildCodeEditorTab();
+      case 2:
+        return _buildAdvancedTab();
+      default:
+        return _buildConfigTab();
+    }
   }
 
   /// 构建基本信息标签页
@@ -792,21 +859,22 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   /// 构建代码编辑器标签页
   Widget _buildCodeEditorTab() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
       children: [
         // 工具栏
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Colors.grey[100],
+          color: theme.surfaceAlt,
           child: Row(
             children: [
-              const Icon(Icons.code, size: 20, color: Colors.deepPurple),
+              DsIcon(DsIconKind.code, size: 20, color: theme.primary),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'JavaScript 代码',
-                style: TextStyle(
+                style: DsTypography.body.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: theme.primary,
                 ),
               ),
               const Spacer(),
@@ -848,20 +916,19 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         // 本地文件路径选择
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: Colors.grey[50],
+          color: theme.backgroundAlt,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.link, size: 18, color: Colors.deepPurple),
+                  DsIcon(DsIconKind.pin, size: 18, color: theme.primary),
                   const SizedBox(width: 8),
                   Text(
                     '本地文件链接',
-                    style: TextStyle(
+                    style: DsTypography.body.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                      fontSize: 14,
+                      color: theme.text,
                     ),
                   ),
                   const Spacer(),
@@ -870,7 +937,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                       onPressed: _clearLocalScriptPath,
                       icon: const Icon(Icons.clear, size: 16),
                       label: const Text('清除'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.danger,
+                      ),
                     ),
                   TextButton.icon(
                     onPressed: _pickLocalScriptFile,
@@ -884,18 +953,16 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.surface,
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: Colors.deepPurple.withOpacity(0.3),
-                    ),
+                    border: Border.all(color: theme.stroke),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.insert_drive_file,
+                      DsIcon(
+                        DsIconKind.copy,
                         size: 16,
-                        color: Colors.deepPurple,
+                        color: theme.primary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -915,7 +982,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                 const SizedBox(height: 4),
                 Text(
                   '初始化时将从此文件同步最新代码',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],
             ],
@@ -923,16 +990,17 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         ),
         // 提示信息
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(12),
-          color: Colors.blue[50],
+          color: theme.surfaceAlt,
           child: Row(
             children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+              DsIcon(DsIconKind.info, size: 16, color: theme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '脚本将在满足触发条件时执行。可以访问 context 对象获取应用上下文。',
-                  style: TextStyle(fontSize: 12, color: Colors.blue[900]),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ),
             ],
@@ -942,33 +1010,39 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
     );
   }
 
-  /// 构建触发条件标签页
-  Widget _buildTriggersTab() {
+  /// 构建触发条件区块（嵌入高级设置 Tab，随页面整体滚动）
+  Widget _buildTriggersSection() {
+    final theme = DSThemeBridge.resolve(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 自动运行开关
         Container(
           padding: const EdgeInsets.all(16),
-          color: Colors.blue[50],
+          decoration: BoxDecoration(
+            color: theme.surfaceAlt,
+            borderRadius: theme.radii.lg,
+          ),
           child: Row(
             children: [
-              const Icon(Icons.autorenew, color: Colors.blue),
+              DsIcon(DsIconKind.refresh, color: theme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '自动运行',
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: DsTypography.body.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: theme.primary,
                       ),
                     ),
                     Text(
                       '开启后将在插件初始化时自动执行此脚本',
-                      style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                   ],
                 ),
@@ -980,169 +1054,108 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                     _autoRun = value;
                   });
                 },
-                activeColor: Colors.blue,
+                activeColor: theme.primary,
               ),
             ],
           ),
         ),
-        const Divider(height: 1),
 
         // 自动运行开启时隐藏触发条件选项
         if (!_autoRun) ...[
-          // 添加触发器按钮
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.bolt, color: Colors.deepPurple),
-                const SizedBox(width: 8),
-                const Text(
-                  '触发条件',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: _showAddTriggerDialog,
-                  icon: const Icon(Icons.add),
-                  label: Text('scripts_center_addTrigger'.tr),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
+          const SizedBox(height: 16),
 
-          // 触发器列表
-          Expanded(
-            child:
-                _triggers.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.bolt_outlined,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '暂无触发条件',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '点击上方按钮添加触发条件',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _triggers.length,
-                      itemBuilder: (context, index) {
-                        final trigger = _triggers[index];
-                        final eventOption = _availableEvents.firstWhere(
-                          (e) => e.eventName == trigger.event,
-                          orElse:
-                              () => _EventOption(
-                                trigger.event,
-                                '未知',
-                                trigger.event,
-                              ),
-                        );
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.deepPurple,
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            title: Text(eventOption.eventName),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'scripts_center_categoryLabel'.trParams({
-                                    'category': eventOption.category,
-                                  }),
-                                ),
-                                Text(
-                                  'scripts_center_descriptionLabel'.trParams({
-                                    'description': eventOption.description,
-                                  }),
-                                ),
-                                if (trigger.delay != null && trigger.delay! > 0)
-                                  Text(
-                                    'scripts_center_delayLabel'.trParams({
-                                      'delay': trigger.delay!.toString(),
-                                    }),
-                                  ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                setState(() {
-                                  _triggers.removeAt(index);
-                                });
-                              },
-                            ),
-                            isThreeLine: true,
-                          ),
-                        );
-                      },
-                    ),
+          // 标题行 + 添加触发器按钮
+          Row(
+            children: [
+              Icon(Icons.bolt, color: theme.primary),
+              const SizedBox(width: 8),
+              Text(
+                '触发条件',
+                style: DsTypography.heading.copyWith(color: theme.text),
+              ),
+              const Spacer(),
+              DSButton(
+                label: 'scripts_center_addTrigger'.tr,
+                icon: DsIconKind.plus,
+                size: DSButtonSize.sm,
+                onPressed: _showAddTriggerDialog,
+              ),
+            ],
           ),
-        ] else
-          // 自动运行开启时的提示信息
-          Expanded(
-            child: Center(
+          const SizedBox(height: 12),
+
+          // 触发器列表（顺序排布，随页面滚动）
+          if (_triggers.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.stroke),
+                borderRadius: theme.radii.lg,
+              ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.autorenew, size: 64, color: Colors.blue[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    '已启用自动运行',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Icon(Icons.bolt_outlined, size: 40, color: theme.disabled),
                   const SizedBox(height: 8),
                   Text(
-                    '此脚本将在插件初始化时自动执行',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    '暂无触发条件，点击右上角按钮添加',
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
-            ),
-          ),
+            )
+          else
+            for (var index = 0; index < _triggers.length; index++)
+              _buildTriggerCard(index),
+        ],
       ],
     );
   }
 
-  /// 构建高级设置标签页
+  /// 构建单个触发器卡片
+  Widget _buildTriggerCard(int index) {
+    final theme = DSThemeBridge.resolve(context);
+    final trigger = _triggers[index];
+    final eventOption = _availableEvents.firstWhere(
+      (e) => e.eventName == trigger.event,
+      orElse: () => _EventOption(trigger.event, '未知', trigger.event),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DSListItemCard(
+        title: '${index + 1}. ${eventOption.eventName}',
+        subtitle: [
+          'scripts_center_categoryLabel'.trParams({
+            'category': eventOption.category,
+          }),
+          'scripts_center_descriptionLabel'.trParams({
+            'description': eventOption.description,
+          }),
+          if (trigger.delay != null && trigger.delay! > 0)
+            'scripts_center_delayLabel'.trParams({
+              'delay': trigger.delay!.toString(),
+            }),
+        ].join(' · '),
+        iconColor: theme.primary,
+        trailing: DSIconButton(
+          icon: DsIconKind.trash,
+          size: 32,
+          color: theme.surfaceAlt,
+          iconColor: theme.danger,
+          tooltip: 'app_delete'.tr,
+          onPressed: () {
+            setState(() {
+              _triggers.removeAt(index);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 构建高级设置标签页（含触发条件、输入参数）
   Widget _buildAdvancedTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -1164,6 +1177,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
           const SizedBox(height: 24),
 
+          // 触发条件（自动运行开关 + 触发器列表）
+          _buildTriggersSection(),
+
+          const SizedBox(height: 24),
+
           // 输入参数设置（保留原有逻辑）
           _buildInputsSection(),
         ],
@@ -1173,6 +1191,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
   /// 构建输入参数部分
   Widget _buildInputsSection() {
+    final theme = DSThemeBridge.resolve(context);
     final scriptType =
         _advancedFormKey.currentState?.value['type'] ??
         widget.script?.type ??
@@ -1187,19 +1206,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.input_outlined,
-              size: 20,
-              color: Colors.deepPurple,
-            ),
+            DsIcon(DsIconKind.clipboard, size: 20, color: theme.primary),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               '输入参数',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
-              ),
+              style: DsTypography.heading.copyWith(color: theme.text),
             ),
           ],
         ),
@@ -1210,21 +1221,21 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: theme.stroke),
+              borderRadius: theme.radii.lg,
             ),
             child: Column(
               children: [
-                Icon(Icons.info_outline, size: 48, color: Colors.grey[400]),
+                DsIcon(DsIconKind.info, size: 40, color: theme.disabled),
                 const SizedBox(height: 12),
                 Text(
                   '暂无输入参数',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: DsTypography.body.copyWith(color: theme.textSub),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '为 Module 类型脚本添加输入参数，执行时会显示表单收集用户输入',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -1237,15 +1248,15 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.stroke),
+                borderRadius: theme.radii.lg,
               ),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.deepPurple.withValues(alpha: 0.1),
+                  backgroundColor: theme.primary.withValues(alpha: 0.1),
                   child: Icon(
                     _getInputTypeIcon(input.type),
-                    color: Colors.deepPurple,
+                    color: theme.primary,
                     size: 20,
                   ),
                 ),
@@ -1253,12 +1264,17 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                   children: [
                     Text(
                       input.label,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: DsTypography.body.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '(${input.key})',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                     if (input.required) ...[
                       const SizedBox(width: 8),
@@ -1268,14 +1284,13 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                          color: theme.warning.withValues(alpha: 0.1),
+                          borderRadius: theme.radii.sm,
                         ),
-                        child: const Text(
+                        child: Text(
                           '必填',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 10,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.warning,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1285,19 +1300,20 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                 ),
                 subtitle: Text(
                   input.description ?? '类型: ${input.type}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20),
+                      color: theme.textSub,
                       onPressed: () => _editInput(index),
                       tooltip: '编辑',
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, size: 20),
-                      color: Colors.red,
+                      color: theme.danger,
                       onPressed: () => _deleteInput(index),
                       tooltip: '删除',
                     ),
@@ -1310,15 +1326,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
         const SizedBox(height: 12),
 
         // 添加参数按钮
-        OutlinedButton.icon(
+        DSButton(
+          label: 'scripts_center_addInputParameter'.tr,
+          icon: DsIconKind.plus,
+          variant: DSButtonVariant.outline,
           onPressed: _addInput,
-          icon: const Icon(Icons.add),
-          label: Text('scripts_center_addInputParameter'.tr),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.deepPurple,
-            side: const BorderSide(color: Colors.deepPurple),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
         ),
       ],
     );
@@ -1494,51 +1506,36 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
 
     // 没有配置表单字段定义时显示说明界面
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.info_outline, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '该脚本无需配置',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '此脚本没有定义配置选项，可以直接使用',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
+      child: DSEmptyState(
+        emoji: '⚙️',
+        title: '该脚本无需配置',
+        message: '此脚本没有定义配置选项，可以直接使用',
       ),
     );
   }
 
   /// 构建配置文件管理栏（选择/新建/重命名/删除/设为默认）
   Widget _buildProfileBar() {
+    final theme = DSThemeBridge.resolve(context);
     _ensureProfiles();
     final current = _currentProfile;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.3)),
+        color: theme.primary.withValues(alpha: 0.06),
+        borderRadius: theme.radii.lg,
+        border: Border.all(color: theme.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.tune, size: 20, color: Colors.deepPurple),
+          DsIcon(DsIconKind.tune, size: 20, color: theme.primary),
           const SizedBox(width: 8),
           Text(
             '配置文件',
-            style: const TextStyle(
-              fontSize: 14,
+            style: DsTypography.body.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.deepPurple,
+              color: theme.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -1564,7 +1561,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
                             Icon(
                               Icons.star,
                               size: 14,
-                              color: Colors.orange[700],
+                              color: theme.warning,
                             ),
                           ],
                         ],
@@ -1582,12 +1579,12 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.add, size: 20),
-            color: Colors.deepPurple,
+            color: theme.primary,
             tooltip: '新建配置文件',
             onPressed: _addProfile,
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 20),
+            icon: Icon(Icons.more_vert, size: 20, color: theme.textSub),
             tooltip: '配置文件操作',
             onSelected: (action) {
               switch (action) {
@@ -1623,11 +1620,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
               PopupMenuItem(
                 value: 'delete',
                 enabled: _profiles.length > 1,
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    Icon(Icons.delete_outline, size: 18, color: theme.danger),
                     SizedBox(width: 8),
-                    Text('删除'),
+                    Text('删除', style: TextStyle(color: theme.danger)),
                   ],
                 ),
               ),
@@ -1859,27 +1856,5 @@ class _ScriptEditScreenState extends State<ScriptEditScreen>
   IconData? _parseIconData(String? iconName) {
     if (iconName == null) return null;
     return _iconMap[iconName];
-  }
-}
-
-/// 保持Tab存活的Wrapper
-class _KeepAliveTab extends StatefulWidget {
-  final Widget child;
-
-  const _KeepAliveTab({required this.child});
-
-  @override
-  State<_KeepAliveTab> createState() => _KeepAliveTabState();
-}
-
-class _KeepAliveTabState extends State<_KeepAliveTab>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context); // 必须调用
-    return widget.child;
   }
 }

@@ -57,8 +57,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   // smooth_sheets 0.15.0 的内置拖拽识别器仅接收触摸设备；桌面端鼠标
   // 拖拽通过内容层的指针事件补充，触摸手势仍由 smooth_sheets 处理。
-  double? _mouseDragLastY;
   bool _mouseDragging = false;
+  double? _mouseDragOffset;
 
   // GlobalKeys for OpenContainer animation
   final GlobalKey _editButtonKey = GlobalKey();
@@ -187,36 +187,35 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     );
   }
 
-  void _handleMousePointerDown(PointerDownEvent event) {
-    if (event.kind == PointerDeviceKind.mouse &&
-        event.buttons == kPrimaryButton) {
-      _mouseDragging = true;
-      _mouseDragLastY = event.position.dy;
-    }
+  void _handleMouseDragStart(DragStartDetails details) {
+    final offset = _sheetController.value;
+    if (offset == null) return;
+    _mouseDragging = true;
+    _mouseDragOffset = offset;
   }
 
-  void _handleMousePointerMove(PointerMoveEvent event) {
-    if (!_mouseDragging || _mouseDragLastY == null) return;
+  void _handleMouseDragUpdate(DragUpdateDetails details) {
+    if (!_mouseDragging) return;
     final metrics = _sheetController.metrics;
-    if (metrics == null) return;
+    final offset = _mouseDragOffset;
+    if (metrics == null || offset == null) return;
 
-    final deltaY = event.position.dy - _mouseDragLastY!;
-    _mouseDragLastY = event.position.dy;
-    final nextOffset = (metrics.offset - deltaY).clamp(
+    final nextOffset = (offset - details.delta.dy).clamp(
       metrics.minOffset,
       metrics.maxOffset,
     );
+    _mouseDragOffset = nextOffset;
     _sheetController.animateTo(
       SheetOffset.absolute(nextOffset),
-      duration: Duration.zero,
+      duration: const Duration(milliseconds: 1),
       curve: Curves.linear,
     );
   }
 
-  void _handleMousePointerEnd(PointerEvent event) {
+  void _handleMouseDragEnd(DragEndDetails details) {
     if (!_mouseDragging) return;
     _mouseDragging = false;
-    _mouseDragLastY = null;
+    _mouseDragOffset = null;
 
     final metrics = _sheetController.metrics;
     if (metrics == null) return;
@@ -600,11 +599,12 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
             // 固定内容高度 = viewport 高，fit 模式下与三档吸附配合；
             // 注意：设置 scrollConfiguration 后 sheet 只对 scrollable 内容
             // 响应拖拽，因此把手/日期行也放进 ListView（整体可拖）
-            child: Listener(
-              onPointerDown: _handleMousePointerDown,
-              onPointerMove: _handleMousePointerMove,
-              onPointerUp: _handleMousePointerEnd,
-              onPointerCancel: _handleMousePointerEnd,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              supportedDevices: const {PointerDeviceKind.mouse},
+              onVerticalDragStart: _handleMouseDragStart,
+              onVerticalDragUpdate: _handleMouseDragUpdate,
+              onVerticalDragEnd: _handleMouseDragEnd,
               child: SizedBox(
                 height: viewportHeight,
                 child: ListView(

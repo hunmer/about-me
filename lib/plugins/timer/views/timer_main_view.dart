@@ -5,7 +5,6 @@ import 'package:aboutme/plugins/timer/views/add_timer_task_dialog.dart';
 import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
@@ -15,6 +14,7 @@ import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:collection/collection.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/widgets/common/timer_card_widget.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class TimerMainView extends StatefulWidget {
   const TimerMainView({super.key});
@@ -156,6 +156,47 @@ class _TimerMainViewState extends State<TimerMainView> {
     ];
   }
 
+  /// 从底部弹出添加任务 sheet
+  void _showAddTaskSheet() async {
+    final newTask = await SmoothBottomSheet.show<TimerTask>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: AddTimerTaskDialog(
+          groups: _plugin.timerController.getGroups(),
+        ),
+      ),
+    );
+    if (newTask != null) {
+      await _plugin.addTask(newTask);
+      setState(() {
+        _tasks = _plugin.getTasks();
+        _groupedTasks = groupBy(_tasks, (TimerTask task) => task.group);
+      });
+    }
+  }
+
+  /// 底部弧形圆盘导航栏：subbar 右侧圆钮为添加入口
+  Widget _buildBottomBar() {
+    return SafeArea(
+      top: false,
+      child: DSBottomNavigation(
+        items: const [DSNavItem(icon: DsIconKind.clock, label: '计时器')],
+        currentIndex: 0,
+        // 单 tab 无切换需求；null 使 dock 忽略指针，仅保留添加圆钮交互
+        onTap: null,
+        trailingAction: DsIcon(
+          DsIconKind.plus,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        onTrailingTap: _showAddTaskSheet,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SuperCupertinoNavigationWrapper(
@@ -172,73 +213,55 @@ class _TimerMainViewState extends State<TimerMainView> {
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _applyMultiFilters,
 
-      actions: [
-        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              return DSIconButton(
-                icon: DsIconKind.plus,
-                size: 40,
-                tooltip: 'timer_addTimer'.tr,
-                onPressed: () async {
-                  final newTask = await NavigationHelper.openContainer<TimerTask>(
-                    context,
-                    (context) => AddTimerTaskDialog(
-                      groups: _plugin.timerController.getGroups(),
-                    ),
-                  );
-                  if (newTask != null) {
-                    await _plugin.addTask(newTask);
-                    setState(() {
-                      _tasks = _plugin.getTasks();
-                      _groupedTasks = groupBy(_tasks, (TimerTask task) => task.group);
-                    });
-                  }
-                },
+      body: Stack(
+        children: [
+          ListView.separated(
+            // 底部留白避开悬浮导航栏
+            padding: const EdgeInsets.all(16).copyWith(bottom: 130),
+            itemCount: _filteredByGroup.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final task = _filteredByGroup[index];
+              // 根据计时器数量决定是否使用网格布局
+              final useGridLayout = task.timerItems.length >= 3;
+
+              return SwipeActionWrapper(
+                key: ValueKey(task.id),
+                trailingActions: [
+                  SwipeActionPresets.edit(
+                    onTap: () => _editTask(task),
+                  ),
+                  SwipeActionOption(
+                    label: '重置',
+                    icon: Icons.replay,
+                    backgroundColor: Colors.orange,
+                    textColor: Colors.white,
+                    onTap: () => _resetTask(task),
+                  ),
+                  SwipeActionPresets.delete(
+                    onTap: () => _deleteTask(task),
+                    showConfirm: false,
+                  ),
+                ],
+                child: TimerCardWidget(
+                  task: task,
+                  onTap: _showTaskDetails,
+                  onEdit: _editTask,
+                  onReset: _resetTask,
+                  onDelete: _deleteTask,
+                  showGroup: true,  // 显示分组名称
+                  useGridLayout: useGridLayout,  // 根据计时器数量决定布局
+                ),
               );
             },
           ),
-        ),
-      ],
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _filteredByGroup.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final task = _filteredByGroup[index];
-          // 根据计时器数量决定是否使用网格布局
-          final useGridLayout = task.timerItems.length >= 3;
-
-          return SwipeActionWrapper(
-            key: ValueKey(task.id),
-            trailingActions: [
-              SwipeActionPresets.edit(
-                onTap: () => _editTask(task),
-              ),
-              SwipeActionOption(
-                label: '重置',
-                icon: Icons.replay,
-                backgroundColor: Colors.orange,
-                textColor: Colors.white,
-                onTap: () => _resetTask(task),
-              ),
-              SwipeActionPresets.delete(
-                onTap: () => _deleteTask(task),
-                showConfirm: false,
-              ),
-            ],
-            child: TimerCardWidget(
-              task: task,
-              onTap: _showTaskDetails,
-              onEdit: _editTask,
-              onReset: _resetTask,
-              onDelete: _deleteTask,
-              showGroup: true,  // 显示分组名称
-              useGridLayout: useGridLayout,  // 根据计时器数量决定布局
-            ),
-          );
-        },
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBottomBar(),
+          ),
+        ],
       ),
     );
   }

@@ -6,7 +6,7 @@ import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 /// 脚本卡片组件（两列网格紧凑样式）
 ///
 /// 参考 DSListItemCard：卡片内部为脚本色调亮的浅色底 + 原色描边，
-/// 脚本图标放大后贴在卡片右下角作为背景水印，置于内容层之下，
+/// 脚本图标放大后贴在卡片右上角作为背景水印，置于内容层之下，
 /// 超出圆角的部分被裁剪
 class ScriptCard extends StatelessWidget {
   final ScriptInfo script;
@@ -48,10 +48,10 @@ class ScriptCard extends StatelessWidget {
         onLongPress: onLongPress,
         child: Stack(
           children: [
-            // 右下角图标水印：放大贴角，处于内容层之下，溢出被裁剪
+            // 右上角图标水印：放大贴角，处于内容层之下，溢出被裁剪
             Positioned(
               right: -10,
-              bottom: -10,
+              top: -10,
               child: Opacity(
                 opacity: 0.12,
                 child: Icon(
