@@ -74,6 +74,8 @@ class DiaryTranslationsEn {
     'diary_wordUnit': 'chars',
     'diary_emptyContent': 'Nothing here yet. Tap edit below to start writing',
     'diary_addTag': 'Add tag',
+    'diary_todayMoodPrefix': 'Your mood today is',
+    'diary_todayMoodNone': 'No mood recorded in today\u0027s diary',
     'diary_noMoodRecord': 'No mood recorded',
     'diary_mood_happy': 'Happy',
     'diary_mood_excited': 'Excited',

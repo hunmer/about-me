@@ -35,13 +35,7 @@ class _StartupGateState extends State<StartupGate> {
 
     if (manager.autoOpenLastPlugin && lastPlugin != null) {
       debugPrint('[StartupGate] 直接恢复插件 ${lastPlugin.id}，跳过主页构建');
-      manager.recordPluginOpen(lastPlugin);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          settings: RouteSettings(name: '/plugin/${lastPlugin.id}'),
-          builder: (_) => lastPlugin.buildMainView(context),
-        ),
-      );
+      manager.openPlugin(context, lastPlugin, replaceCurrent: true);
     } else {
       Navigator.of(context).pushReplacementNamed(AppRoutes.jellyHome);
     }

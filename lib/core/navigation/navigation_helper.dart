@@ -263,15 +263,27 @@ class NavigationHelper {
       return;
     }
     if (destination == AppRoutes.jellyHome) {
-      // 保留已有首页实例。启动恢复场景中首页可能不是根路由，不能继续
-      // pop 到根，否则会销毁首页上的 Live2D 组件。
-      Navigator.of(
-        context,
-      ).popUntil((route) => route.settings.name == AppRoutes.jellyHome);
+      returnToHome(context);
     } else {
       Navigator.of(
         context,
       ).pushNamedAndRemoveUntil(destination, (route) => false);
+    }
+  }
+
+  /// 返回小屋：优先复用已有页面；启动恢复场景没有小屋栈时重新创建。
+  static void returnToHome(BuildContext context) {
+    final navigator = Navigator.of(context);
+    var hasHomeRoute = false;
+    navigator.popUntil((route) {
+      if (route.settings.name == AppRoutes.jellyHome) {
+        hasHomeRoute = true;
+        return true;
+      }
+      return route.isFirst;
+    });
+    if (!hasHomeRoute) {
+      navigator.pushNamedAndRemoveUntil(AppRoutes.jellyHome, (route) => false);
     }
   }
 

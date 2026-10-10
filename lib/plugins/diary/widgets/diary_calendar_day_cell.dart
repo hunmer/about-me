@@ -24,9 +24,6 @@ class DiaryCalendarDayCell extends StatelessWidget {
   final bool isOtherMonth;
   final bool isFuture;
 
-  /// 心情筛选（null 为不筛选），不匹配的日子淡出
-  final DiaryMoodFaceKind? moodFilter;
-
   const DiaryCalendarDayCell({
     super.key,
     required this.palette,
@@ -36,7 +33,6 @@ class DiaryCalendarDayCell extends StatelessWidget {
     required this.isToday,
     required this.isOtherMonth,
     required this.isFuture,
-    this.moodFilter,
   });
 
   @override
@@ -48,9 +44,6 @@ class DiaryCalendarDayCell extends StatelessWidget {
     var opacity = 1.0;
     if (isOtherMonth) opacity = 0.55;
     if (isFuture) opacity = math.min(opacity, 0.35);
-    if (moodFilter != null && spec?.kind != moodFilter) {
-      opacity = math.min(opacity, 0.18);
-    }
 
     final hasImages =
         entry != null && extractImagesFromContent(entry.content).isNotEmpty;
@@ -58,46 +51,49 @@ class DiaryCalendarDayCell extends StatelessWidget {
     return Opacity(
       opacity: opacity,
       child: Center(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _buildDayCircle(spec),
-                  if (hasImages)
-                    const Positioned(
-                      top: -4,
-                      right: -5,
-                      child: Text(
-                        '✦',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFFFBBF24),
+        // 上下留白形成日期行间隔，FittedBox 保证内容不溢出
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3.5),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _buildDayCircle(spec),
+                    if (hasImages)
+                      const Positioned(
+                        top: -4,
+                        right: -5,
+                        child: Text(
+                          '✦',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFFBBF24),
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                '${day.day}',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      (isToday || isSelected) ? FontWeight.w800 : FontWeight.w600,
-                  color:
-                      isOtherMonth
-                          ? palette.textOtherMonth
-                          : ((isToday || isSelected)
-                              ? palette.textPrimary
-                              : palette.textMuted),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 3),
+                Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                        (isToday || isSelected) ? FontWeight.w800 : FontWeight.w600,
+                    // 提高可视度：常规日期也用主文字色
+                    color:
+                        isOtherMonth
+                            ? palette.textOtherMonth
+                            : palette.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -130,13 +126,10 @@ class DiaryCalendarDayCell extends StatelessWidget {
         ),
       );
     } else {
-      circle = Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: palette.emptyBubble,
-          shape: BoxShape.circle,
-        ),
+      // 无日记：占位表情（中性脸）低透明度显示
+      circle = Opacity(
+        opacity: 0.35,
+        child: DiaryMoodFaceCircle(spec: neutralMoodSpec, size: 30),
       );
     }
 

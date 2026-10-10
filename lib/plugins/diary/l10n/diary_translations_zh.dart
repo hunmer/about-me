@@ -72,6 +72,8 @@ class DiaryTranslationsZh {
     'diary_wordUnit': '字',
     'diary_emptyContent': '这一天还没有内容，点击下方编辑开始记录',
     'diary_addTag': '添加标签',
+    'diary_todayMoodPrefix': '你今日的心情为',
+    'diary_todayMoodNone': '今日日记还没有记录心情',
     'diary_noMoodRecord': '没有心情记录',
     'diary_mood_happy': '开心',
     'diary_mood_excited': '兴奋',

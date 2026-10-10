@@ -7,17 +7,21 @@ import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_palette.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
 
-/// 粉色圆角头部：问题标题 + 心情轮播 + 心情名 + 悬浮月份胶囊。
-/// 心情筛选与月份切换通过回调交由宿主屏幕处理
-/// （日历格渲染与日历控制器都在宿主侧）
+/// 粉色圆角头部：问题标题 + 横向滚动心情列表 + 心情提示 + 悬浮月份胶囊。
+/// 点击表情由宿主处理（今日未记录则打开编辑页，已记录则显示提示）
 class DiaryCalendarHeader extends StatefulWidget {
   final DiaryCalendarPalette palette;
   final DiaryEntry? selectedEntry;
   final DateTime focusedDay;
 
-  /// 当前心情筛选（null 为不筛选）
-  final DiaryMoodFaceKind? moodFilter;
-  final ValueChanged<DiaryMoodFaceKind?> onMoodFilterChanged;
+  /// 今日已记录的心情（列表中高亮该表情）
+  final String? todayMood;
+
+  /// 点击表情回调（emoji）
+  final ValueChanged<String> onMoodTap;
+
+  /// 覆盖心情名的提示文案（如「你今日的心情为 😊 开心」），null 时显示选中日心情
+  final String? noticeText;
 
   /// 月份选择回调（弹窗已自动关闭，宿主负责更新日历显示）
   final ValueChanged<DateTime> onMonthSelected;
@@ -31,11 +35,12 @@ class DiaryCalendarHeader extends StatefulWidget {
     required this.palette,
     required this.selectedEntry,
     required this.focusedDay,
-    required this.onMoodFilterChanged,
+    required this.onMoodTap,
     required this.onMonthSelected,
     required this.getMonthStats,
     required this.buildMonthStats,
-    this.moodFilter,
+    this.todayMood,
+    this.noticeText,
   });
 
   @override
@@ -43,15 +48,25 @@ class DiaryCalendarHeader extends StatefulWidget {
 }
 
 class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
+  final ScrollController _moodScrollController = ScrollController();
+
+  // 表情项步进宽度（44 表情 + 12 间距），用于计算中间放大系数
+  static const double _kItemExtent = 56.0;
+  static const double _kListPadding = 8.0;
+
+  @override
+  void dispose() {
+    _moodScrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = widget.palette;
     final mood = widget.selectedEntry?.mood;
-    final centerSpec = mood != null ? diaryMoodSpecOf(mood) : neutralMoodSpec;
-    final moodName =
-        mood != null
-            ? (diaryMoodNameKeys[mood]?.tr ?? mood)
-            : 'diary_noMoodRecord'.tr;
+    final moodName = mood != null
+        ? (diaryMoodNameKeys[mood]?.tr ?? mood)
+        : 'diary_noMoodRecord'.tr;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -84,10 +99,11 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
                 ),
               ),
               const SizedBox(height: 14),
-              _buildMoodCarousel(palette, centerSpec),
+              _buildMoodScroller(palette),
               const SizedBox(height: 8),
               Text(
-                moodName,
+                widget.noticeText ?? moodName,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -108,51 +124,77 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
     );
   }
 
-  /// 心情轮播：中间大圆为选中日期的心情，两侧表情可点击筛选日历
-  Widget _buildMoodCarousel(DiaryCalendarPalette palette, DiaryMoodSpec centerSpec) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildCarouselFace(palette, '😴', size: 36),
-        const SizedBox(width: 14),
-        _buildCarouselFace(palette, '🥳', size: 40),
-        const SizedBox(width: 12),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: palette.centerRing,
-            shape: BoxShape.circle,
-          ),
-          child: DiaryMoodFaceCircle(spec: centerSpec, size: 56),
-        ),
-        const SizedBox(width: 12),
-        _buildCarouselFace(palette, '😍', size: 40),
-        const SizedBox(width: 14),
-        _buildCarouselFace(palette, '😱', size: 36),
-      ],
-    );
-  }
+  /// 可左右滚动的心情列表（全部表情）：位于视口中间的表情放大，
+  /// 点击交给宿主处理；今日已记录的心情白圈高亮。
+  /// 鼠标指针手型 + 不透明命中区域，修复桌面端点击无响应
+  Widget _buildMoodScroller(DiaryCalendarPalette palette) {
+    return SizedBox(
+      height: 64,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final viewportWidth = constraints.maxWidth;
+          return AnimatedBuilder(
+            animation: _moodScrollController,
+            builder: (context, _) {
+              return ListView.separated(
+                controller: _moodScrollController,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: _kListPadding),
+                itemCount: diaryMoodEmojis.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final emoji = diaryMoodEmojis[index];
+                  final spec = diaryMoodSpecOf(emoji);
+                  final isTodayMood = emoji == widget.todayMood;
 
-  Widget _buildCarouselFace(
-    DiaryCalendarPalette palette,
-    String emoji, {
-    required double size,
-  }) {
-    final spec = diaryMoodSpecOf(emoji);
-    final active = widget.moodFilter == spec.kind;
-    return GestureDetector(
-      onTap: () =>
-          widget.onMoodFilterChanged(active ? null : spec.kind),
-      child: Opacity(
-        opacity: active ? 1 : 0.92,
-        child: Container(
-          padding: const EdgeInsets.all(2.5),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active ? palette.pillBg : Colors.transparent,
-          ),
-          child: DiaryMoodFaceCircle(spec: spec, size: size),
-        ),
+                  // 中间放大：item 中心离视口中心越近缩放越大
+                  final itemCenter = _kListPadding + index * _kItemExtent + 22;
+                  final scrollOffset = _moodScrollController.hasClients
+                      ? _moodScrollController.offset
+                      : 0.0;
+                  final viewportCenter = scrollOffset + viewportWidth / 2;
+                  final distance = (itemCenter - viewportCenter).abs();
+                  final t = (distance / (viewportWidth / 2)).clamp(0.0, 1.0);
+                  final scale = 1.0 + 0.35 * (1.0 - t);
+
+                  return Center(
+                    child: Transform.scale(
+                      scale: scale,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => widget.onMoodTap(emoji),
+                          child: Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isTodayMood
+                                  ? palette.pillBg
+                                  : Colors.transparent,
+                              boxShadow: isTodayMood
+                                  ? [
+                                      BoxShadow(
+                                        color: palette.haloSelected,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: DiaryMoodFaceCircle(
+                              spec: spec,
+                              size: isTodayMood ? 50 : 44,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }

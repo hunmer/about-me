@@ -18,6 +18,7 @@ class DiaryEditorScreen extends StatefulWidget {
   final StorageManager storage;
   final String initialTitle;
   final String initialContent;
+  final String? initialMood; // 外部预选心情（如日历页头部快捷选心情）
 
   const DiaryEditorScreen({
     super.key,
@@ -25,6 +26,7 @@ class DiaryEditorScreen extends StatefulWidget {
     required this.storage,
     this.initialTitle = '',
     required this.initialContent,
+    this.initialMood,
   });
 
   @override
@@ -55,6 +57,7 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
     super.initState();
     _title = widget.initialTitle;
     _contentJson = widget.initialContent;
+    _selectedMood = widget.initialMood;
     _isNewEntry = widget.initialContent.trim().isEmpty;
     _wordCount = _countChars(_contentJson);
     if (_isNewEntry) {

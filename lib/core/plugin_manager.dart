@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
@@ -93,9 +92,8 @@ class PluginManager {
     }
 
     // 按访问时间降序排序，并排除指定的插件ID
-    var sortedEntries =
-        _pluginAccessTimes.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+    var sortedEntries = _pluginAccessTimes.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     // 找到第一个不是被排除ID的插件
     for (var entry in sortedEntries) {
@@ -151,7 +149,9 @@ class PluginManager {
 
       // 加载最后打开的插件ID
       final lastPlugin = config['lastOpenedPlugin'] as String?;
-      _lastOpenedPluginId = (lastPlugin?.isNotEmpty ?? false) ? lastPlugin : null;
+      _lastOpenedPluginId = (lastPlugin?.isNotEmpty ?? false)
+          ? lastPlugin
+          : null;
     } catch (e) {
       debugPrint('Warning: Failed to load plugin manager config: $e');
     }
@@ -180,7 +180,8 @@ class PluginManager {
   String? getCurrentPluginId() => _currentPlugin?.id;
 
   /// 获取是否自动打开最后使用的插件
-  bool get autoOpenLastPlugin => _settings['autoOpenLastPlugin'] as bool? ?? true;
+  bool get autoOpenLastPlugin =>
+      _settings['autoOpenLastPlugin'] as bool? ?? true;
 
   /// 设置是否自动打开最后使用的插件
   set autoOpenLastPlugin(bool value) {
@@ -202,7 +203,11 @@ class PluginManager {
   }
 
   /// 打开插件界面
-  void openPlugin(BuildContext context, PluginBase plugin) {
+  void openPlugin(
+    BuildContext context,
+    PluginBase plugin, {
+    bool replaceCurrent = false,
+  }) {
     // 检查当前路由是否已经是该插件主界面（openPlugin 推入的路由名），
     // 防止悬浮球等入口把同一插件叠加多层
     final isPluginAlreadyOpen =
@@ -216,20 +221,22 @@ class PluginManager {
     // （/plugin/<id> → 固定回首页），不要在此包 PopScope——canPop:false
     // 会拦截一切 pop()/popUntil()，与返回逻辑叠加曾导致无限递归崩溃
     // 使用 NavigationHelper.push 以支持 iOS 左滑返回
-    NavigationHelper.push(
-      context,
-      plugin.buildMainView(context),
-      routeName: '/plugin/${plugin.id}',
-    );
+    final page = plugin.buildMainView(context);
+    if (replaceCurrent) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          settings: RouteSettings(name: '/plugin/${plugin.id}'),
+          builder: (_) => page,
+        ),
+      );
+    } else {
+      NavigationHelper.push(context, page, routeName: '/plugin/${plugin.id}');
+    }
   }
 
   static toHomeScreen(BuildContext context) {
     PluginManager.instance._currentPlugin = null; // 清除当前插件记录
     // 清除所有历史路由，回到根路由（默认主页：果冻小屋）
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.initialRoute,
-      (route) => false,
-    );
+    NavigationHelper.returnToHome(context);
   }
 }

@@ -11,6 +11,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:smooth_sheets/smooth_sheets.dart';
 import 'diary_editor_screen.dart';
 import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
@@ -40,8 +41,15 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   Map<DateTime, DiaryEntry> _diaryEntries = {};
   late CalendarController _calendarController;
 
-  // 心情筛选（点击头部两侧表情切换，null 为不筛选）
-  DiaryMoodFaceKind? _moodFilter;
+  // 底部详情 sheet 控制器（smooth_sheets：拖拽吸附，点日期展开）
+  final SheetController _sheetController = SheetController();
+
+  // sheet 吸附档位像素（_buildDetailSheet 布局时缓存，供展开/FAB 淡出使用）
+  double _collapsedSnapPx = 110;
+  double _detailSnapPx = 300;
+
+  // 头部心情提示文案（点击表情且今日已记录时显示，选日期时清除）
+  String? _moodNotice;
 
   // 搜索相关状态
   String _searchQuery = '';
@@ -73,6 +81,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     // 取消订阅，避免内存泄漏
     EventManager.instance.unsubscribe('diary_refresh', _handleSyncRefresh);
     _calendarController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -124,7 +133,14 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     setState(() {
       _selectedDay = normalizedSelectedDay;
       _focusedDay = focusedDay;
+      _moodNotice = null;
     });
+    // 展开详情 sheet 到中档
+    _sheetController.animateTo(
+      SheetOffset.absolute(_detailSnapPx),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
 
     // 更新路由上下文，使"询问当前上下文"功能能获取到当前日期
     final dateStr =
@@ -139,6 +155,49 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   bool _isSameDay(DateTime? a, DateTime b) {
     if (a == null) return false;
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// 今日（仅年月日）的日记条目
+  DiaryEntry? _todayEntry() {
+    final now = DateTime.now();
+    return _diaryEntries[DateTime(now.year, now.month, now.day)];
+  }
+
+  /// 读取 sheet 当前可见比例；sheet 未完成首帧布局前 offset 为 null
+  /// （读取会触发空断言），此时返回 null
+  double? _safeSheetOffset() {
+    try {
+      return _sheetController.value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 点击头部表情：今日未记录则带心情打开编辑页，已记录则提示今日心情
+  void _onHeaderMoodTap(String emoji) {
+    final today = _todayEntry();
+    if (today == null) {
+      final now = DateTime.now();
+      final normalizedToday = DateTime(now.year, now.month, now.day);
+      NavigationHelper.push(
+        context,
+        DiaryEditorScreen(
+          date: normalizedToday,
+          storage: widget.storage,
+          initialContent: '',
+          initialMood: emoji,
+        ),
+      ).then((_) => _loadDiaryEntries());
+      return;
+    }
+
+    final mood = today.mood;
+    setState(() {
+      _moodNotice = mood != null
+          ? '${'diary_todayMoodPrefix'.tr} $mood ${diaryMoodNameKeys[mood]?.tr ?? ''}'
+                .trim()
+          : 'diary_todayMoodNone'.tr;
+    });
   }
 
   /// 月份选择回调：选中日可能超出目标月天数（如31日切到2月），取月末兜底
@@ -156,11 +215,9 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   /// 月份统计：日记篇数与总字数（供头部月份选择弹窗展示）
   Map<String, double> _getMonthStats(DateTime month) {
-    final monthEntries =
-        _diaryEntries.entries.where((entry) {
-          return entry.key.year == month.year &&
-              entry.key.month == month.month;
-        }).toList();
+    final monthEntries = _diaryEntries.entries.where((entry) {
+      return entry.key.year == month.year && entry.key.month == month.month;
+    }).toList();
 
     final entryCount = monthEntries.length;
     final totalWords = monthEntries.fold(
@@ -235,29 +292,28 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
     return Container(
       color: theme.background,
-      child:
-          _searchResults.isEmpty
-              ? Center(
-                child: DSEmptyState(
-                  emoji: '🔍',
-                  title: '没有找到匹配的日记',
-                  message: _searchQuery.isNotEmpty ? '搜索词：$_searchQuery' : null,
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _searchResults.length,
-                itemBuilder: (context, index) {
-                  final entry = _searchResults[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: DiarySearchResultTile(
-                      entry: entry,
-                      onTap: () => _navigateToEntry(entry),
-                    ),
-                  );
-                },
+      child: _searchResults.isEmpty
+          ? Center(
+              child: DSEmptyState(
+                emoji: '🔍',
+                title: '没有找到匹配的日记',
+                message: _searchQuery.isNotEmpty ? '搜索词：$_searchQuery' : null,
               ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _searchResults.length,
+              itemBuilder: (context, index) {
+                final entry = _searchResults[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: DiarySearchResultTile(
+                    entry: entry,
+                    onTap: () => _navigateToEntry(entry),
+                  ),
+                );
+              },
+            ),
     );
   }
 
@@ -278,18 +334,12 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   Widget _buildCalendarView(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     // 确保_selectedDay也是标准化的
-    final normalizedSelectedDay =
-        _selectedDay != null
-            ? DateTime(
-              _selectedDay!.year,
-              _selectedDay!.month,
-              _selectedDay!.day,
-            )
-            : null;
-    final selectedEntry =
-        normalizedSelectedDay != null
-            ? _diaryEntries[normalizedSelectedDay]
-            : null;
+    final normalizedSelectedDay = _selectedDay != null
+        ? DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day)
+        : null;
+    final selectedEntry = normalizedSelectedDay != null
+        ? _diaryEntries[normalizedSelectedDay]
+        : null;
     final textColor = theme.text;
     final primaryColor = theme.primary;
     final palette = DiaryCalendarPalette.of(theme.isDark);
@@ -299,26 +349,26 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
       children: [
         Container(
           color: palette.canvas,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // 粉色圆角头部：标题 + 心情轮播 + 悬浮月份胶囊
-                DiaryCalendarHeader(
-                  palette: palette,
-                  selectedEntry: selectedEntry,
-                  focusedDay: _focusedDay,
-                  moodFilter: _moodFilter,
-                  onMoodFilterChanged:
-                      (filter) => setState(() => _moodFilter = filter),
-                  onMonthSelected: _onMonthSelected,
-                  getMonthStats: _getMonthStats,
-                  buildMonthStats: _buildMonthStats,
-                ),
+          child: Column(
+            children: [
+              // 粉色圆角头部：标题 + 横滚心情列表 + 悬浮月份胶囊
+              DiaryCalendarHeader(
+                palette: palette,
+                selectedEntry: selectedEntry,
+                focusedDay: _focusedDay,
+                todayMood: _todayEntry()?.mood,
+                noticeText: _moodNotice,
+                onMoodTap: _onHeaderMoodTap,
+                onMonthSelected: _onMonthSelected,
+                getMonthStats: _getMonthStats,
+                buildMonthStats: _buildMonthStats,
+              ),
 
-                const SizedBox(height: 34),
+              const SizedBox(height: 34),
 
-                // Calendar
-                SfCalendar(
+              // Calendar（填满剩余可用高度）
+              Expanded(
+                child: SfCalendar(
                   controller: _calendarController,
                   view: CalendarView.month,
                   initialDisplayDate: _focusedDay,
@@ -344,24 +394,28 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                   ),
                   cellBorderColor: Colors.transparent,
                   selectionDecoration: const BoxDecoration(),
-                  monthCellBuilder: (
-                    BuildContext context,
-                    MonthCellDetails details,
-                  ) {
-                    final day = details.date;
-                    return DiaryCalendarDayCell(
-                      palette: palette,
-                      day: day,
-                      entry: _diaryEntries[DateTime(day.year, day.month, day.day)],
-                      isSelected: _isSameDay(_selectedDay, day),
-                      isToday: _isSameDay(now, day),
-                      isOtherMonth:
-                          day.year != _focusedDay.year ||
-                          day.month != _focusedDay.month,
-                      isFuture: day.isAfter(DateTime(now.year, now.month, now.day)),
-                      moodFilter: _moodFilter,
-                    );
-                  },
+                  monthCellBuilder:
+                      (BuildContext context, MonthCellDetails details) {
+                        final day = details.date;
+                        return DiaryCalendarDayCell(
+                          palette: palette,
+                          day: day,
+                          entry:
+                              _diaryEntries[DateTime(
+                                day.year,
+                                day.month,
+                                day.day,
+                              )],
+                          isSelected: _isSameDay(_selectedDay, day),
+                          isToday: _isSameDay(now, day),
+                          isOtherMonth:
+                              day.year != _focusedDay.year ||
+                              day.month != _focusedDay.month,
+                          isFuture: day.isAfter(
+                            DateTime(now.year, now.month, now.day),
+                          ),
+                        );
+                      },
                   onTap: (CalendarTapDetails details) {
                     if (details.date != null) {
                       _onDayClicked(details.date!, details.date!);
@@ -372,8 +426,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                   },
                   onViewChanged: (ViewChangedDetails details) {
                     if (details.visibleDates.isNotEmpty) {
-                      final newFocusedDay =
-                          details.visibleDates[details.visibleDates.length ~/ 2];
+                      final newFocusedDay = details
+                          .visibleDates[details.visibleDates.length ~/ 2];
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
                           setState(() {
@@ -384,167 +438,244 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                     }
                   },
                 ),
+              ),
 
-                const SizedBox(height: 16),
+              // 日历下方留出收起 sheet（把手+日期行）的空间
+              SizedBox(height: 84 + MediaQuery.of(context).padding.bottom),
+            ],
+          ),
+        ),
+        // 底部详情 sheet（smooth_sheets：拖拽吸附，选中日期时展开）
+        _buildDetailSheet(theme, selectedEntry, textColor, primaryColor),
 
-                // Selected Day Details
-                if (_selectedDay != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    margin: const EdgeInsets.only(
-                      bottom: 80,
-                    ), // Add padding for FAB
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        // FAB with container transform animation（sheet 展开时随偏移淡出避让）
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: AnimatedBuilder(
+            animation: _sheetController,
+            builder: (context, child) {
+              // controller.value 为 sheet 可见高度（像素），拖离收起档后渐隐；
+              // sheet 首帧布局完成前 offset 不可读，视为收起态（FAB 可见）
+              final offset = _safeSheetOffset() ?? _collapsedSnapPx;
+              final progress = (
+                (offset - _collapsedSnapPx) / 120
+              ).clamp(0.0, 1.0);
+              final opacity = 1 - progress;
+              return IgnorePointer(
+                ignoring: opacity < 0.5,
+                child: Opacity(opacity: opacity, child: child),
+              );
+            },
+            child: DSFab(
+              key: _fabKey,
+              size: 56,
+              onPressed: () {
+                final targetDay = _selectedDay ?? DateTime.now();
+                final normalizedTargetDay = DateTime(
+                  targetDay.year,
+                  targetDay.month,
+                  targetDay.day,
+                );
+                // 获取当前选中日期的条目
+                final entry = _diaryEntries[normalizedTargetDay];
+                NavigationHelper.openContainerWithHero(
+                  context,
+                  (_) => DiaryEditorScreen(
+                    date: normalizedTargetDay,
+                    storage: widget.storage,
+                    initialTitle: entry?.title ?? '',
+                    initialContent: entry?.content ?? '',
+                  ),
+                  sourceKey: _fabKey,
+                  heroTag: 'diary_fab_add',
+                  closedColor: primaryColor,
+                  closedShape: const CircleBorder(),
+                ).then((_) => _loadDiaryEntries());
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 底部详情 sheet（对齐 airbnb 示例结构：SheetSize.fit + 固定内容高度）：
+  /// 三档吸附（收起露把手/中档详情/全屏），内容滚动与拖拽协调
+  Widget _buildDetailSheet(
+    AppThemeData theme,
+    DiaryEntry? selectedEntry,
+    Color textColor,
+    Color primaryColor,
+  ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportHeight = constraints.maxHeight;
+        // 收起态可见高度：把手 + 日期行 + 底部安全区
+        final collapsedPx = 84 + bottomInset;
+        final detailPx = viewportHeight * 0.45;
+        // 缓存档位像素，供点日期展开与 FAB 淡出计算使用
+        _collapsedSnapPx = collapsedPx;
+        _detailSnapPx = detailPx;
+
+        return SheetViewport(
+          child: Sheet(
+            controller: _sheetController,
+            initialOffset: SheetOffset.absolute(collapsedPx),
+            snapGrid: SheetSnapGrid(
+              snaps: [
+                SheetOffset.absolute(collapsedPx),
+                SheetOffset.absolute(detailPx),
+                SheetOffset.absolute(viewportHeight),
+              ],
+            ),
+            // 内容滚动到底后再拖动才会收起 sheet
+            scrollConfiguration: const SheetScrollConfiguration(),
+            decoration: MaterialSheetDecoration(
+              size: SheetSize.fit,
+              color: theme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              shadowColor: Colors.black.withValues(alpha: 0.18),
+            ),
+            // 固定内容高度 = viewport 高，fit 模式下与三档吸附配合
+            child: SizedBox(
+              height: viewportHeight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 把手（整块 header 可拖拽）
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: theme.stroke,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  // 日期和编辑按钮行（收起态仍可见）
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 日期和编辑按钮行
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              DateFormat('MMMM d, yyyy').format(_selectedDay!),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            DSButton(
-                              key: _editButtonKey,
-                              label:
-                                  selectedEntry != null
-                                      ? 'diary_edit'.tr
-                                      : 'diary_create'.tr,
-                              icon:
-                                  selectedEntry != null
-                                      ? DsIconKind.edit
-                                      : DsIconKind.plus,
-                              size: DSButtonSize.sm,
-                              onPressed: () {
-                                final targetDay = _selectedDay ?? DateTime.now();
-                                final normalizedTargetDay = DateTime(
-                                  targetDay.year,
-                                  targetDay.month,
-                                  targetDay.day,
-                                );
-                                NavigationHelper.openContainerWithHero(
-                                  context,
-                                  (_) => DiaryEditorScreen(
-                                    date: normalizedTargetDay,
-                                    storage: widget.storage,
-                                    initialTitle: selectedEntry?.title ?? '',
-                                    initialContent: selectedEntry?.content ?? '',
-                                  ),
-                                  sourceKey: _editButtonKey,
-                                  heroTag: 'diary_edit_button',
-                                  closedColor: primaryColor,
-                                  closedShape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ).then((_) => _loadDiaryEntries());
-                              },
-                            ),
-                          ],
+                        Text(
+                          _selectedDay != null
+                              ? DateFormat('MMMM d, yyyy').format(_selectedDay!)
+                              : '',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        if (selectedEntry != null) ...[
-                          // Images list (if any)
-                          Builder(
-                            builder: (context) {
-                              final images = extractImagesFromContent(
-                                selectedEntry.content,
-                              );
-                              if (images.isEmpty) return const SizedBox.shrink();
+                        DSButton(
+                          key: _editButtonKey,
+                          label: selectedEntry != null
+                              ? 'diary_edit'.tr
+                              : 'diary_create'.tr,
+                          icon: selectedEntry != null
+                              ? DsIconKind.edit
+                              : DsIconKind.plus,
+                          size: DSButtonSize.sm,
+                          onPressed: () {
+                      final targetDay = _selectedDay ?? DateTime.now();
+                      final normalizedTargetDay = DateTime(
+                        targetDay.year,
+                        targetDay.month,
+                        targetDay.day,
+                      );
+                      NavigationHelper.openContainerWithHero(
+                        context,
+                        (_) => DiaryEditorScreen(
+                          date: normalizedTargetDay,
+                          storage: widget.storage,
+                          initialTitle: selectedEntry?.title ?? '',
+                          initialContent: selectedEntry?.content ?? '',
+                        ),
+                        sourceKey: _editButtonKey,
+                        heroTag: 'diary_edit_button',
+                        closedColor: primaryColor,
+                        closedShape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ).then((_) => _loadDiaryEntries());
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // 内容（滚动与 sheet 拖拽协调）
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 12,
+                  bottom: bottomInset + 16,
+                ),
+                children: [
+                  if (selectedEntry != null) ...[
+                    // Images list (if any)
+                    Builder(
+                      builder: (context) {
+                        final images = extractImagesFromContent(
+                          selectedEntry.content,
+                        );
+                        if (images.isEmpty) return const SizedBox.shrink();
+                        return Container(
+                          height: 100,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: images.length,
+                            itemBuilder: (context, index) {
                               return Container(
-                                height: 100,
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: images.length,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      width: 100,
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            images[index],
-                                          ), // Or FileImage if local
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                width: 100,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: DecorationImage(
+                                    image: NetworkImage(
+                                      images[index],
+                                    ), // Or FileImage if local
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               );
                             },
                           ),
-                          Container(
-                            constraints: const BoxConstraints(
-                              minHeight: 200, // Minimum height for better UX
-                            ),
-                            child: QuillViewer(
-                              data: selectedEntry.content,
-                              selectable: true,
-                            ),
-                          ),
-                        ] else ...[
-                          SizedBox(
-                            height: 200,
-                            child: Center(
-                              child: DSEmptyState(
-                                emoji: '📖',
-                                title: 'diary_noDiaryForDate'.tr,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                        );
+                      },
                     ),
-                  )
-                else
-                  const SizedBox(
-                    height: 80,
-                  ), // Placeholder when no date is selected
-              ],
+                    QuillViewer(data: selectedEntry.content, selectable: true),
+                  ] else
+                    SizedBox(
+                      height: 160,
+                      child: Center(
+                        child: DSEmptyState(
+                          emoji: '📖',
+                          title: 'diary_noDiaryForDate'.tr,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
             ),
           ),
-        ),
-        // FAB with container transform animation
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: DSFab(
-            key: _fabKey,
-            size: 56,
-            onPressed: () {
-              final targetDay = _selectedDay ?? DateTime.now();
-              final normalizedTargetDay = DateTime(
-                targetDay.year,
-                targetDay.month,
-                targetDay.day,
-              );
-              // 获取当前选中日期的条目
-              final entry = _diaryEntries[normalizedTargetDay];
-              NavigationHelper.openContainerWithHero(
-                context,
-                (_) => DiaryEditorScreen(
-                  date: normalizedTargetDay,
-                  storage: widget.storage,
-                  initialTitle: entry?.title ?? '',
-                  initialContent: entry?.content ?? '',
-                ),
-                sourceKey: _fabKey,
-                heroTag: 'diary_fab_add',
-                closedColor: primaryColor,
-                closedShape: const CircleBorder(),
-              ).then((_) => _loadDiaryEntries());
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
