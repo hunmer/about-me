@@ -13,7 +13,6 @@ import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_card.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_list_tile.dart';
-import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
 
 class GoodsListScreen extends StatefulWidget {
   const GoodsListScreen({
@@ -481,24 +480,6 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     return allItems;
   }
 
-  void _showEditItemDialog(GoodsItem item, Warehouse warehouse) {
-    GoodsItemForm.show(
-      context: context,
-      initialData: item,
-      onSubmit: (updatedItem) async {
-        await GoodsPlugin.instance.saveGoodsItem(warehouse.id, updatedItem);
-        setState(() {});
-      },
-      onDelete: (itemToDelete) async {
-        await GoodsPlugin.instance.deleteGoodsItem(
-          warehouse.id,
-          itemToDelete.id,
-        );
-        setState(() {});
-      },
-    );
-  }
-
   /// 排序按钮（展示在多条件过滤栏尾部，DSPopover 经根 Overlay 展示需 DSThemeBridge 包裹）
   Widget _buildSortButton() {
     return DSThemeBridge(
@@ -812,7 +793,14 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                         item: item,
                         warehouseTitle: warehouse.title,
                         warehouseId: warehouse.id,
-                        onTap: () => _showEditItemDialog(item, warehouse),
+                        onTap:
+                            () => NavigationHelper.push(
+                              context,
+                              GoodsItemDetailScreen(
+                                itemId: item.id,
+                                warehouseId: warehouse.id,
+                              ),
+                            ),
                       );
                     },
                   ),

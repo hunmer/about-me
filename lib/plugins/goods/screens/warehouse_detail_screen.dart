@@ -278,21 +278,6 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
     return items;
   }
 
-  void _showEditItemDialog(GoodsItem item) {
-    GoodsItemForm.show(
-      context: context,
-      initialData: item,
-      onSubmit: (item) async {
-        await GoodsPlugin.instance.saveGoodsItem(_warehouse.id, item);
-        await _refreshWarehouse();
-      },
-      onDelete: (item) async {
-        await GoodsPlugin.instance.deleteGoodsItem(_warehouse.id, item.id);
-        await _refreshWarehouse();
-      },
-    );
-  }
-
   @override
   void dispose() {
     // 取消事件订阅
@@ -480,7 +465,14 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                   return GoodsItemListTile(
                     item: item,
                     warehouseId: _warehouse.id,
-                    onTap: () => _showEditItemDialog(item),
+                    onTap:
+                        () => NavigationHelper.push(
+                          context,
+                          GoodsItemDetailScreen(
+                            itemId: item.id,
+                            warehouseId: _warehouse.id,
+                          ),
+                        ),
                   );
                 },
               ),
