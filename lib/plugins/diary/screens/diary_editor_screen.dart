@@ -106,7 +106,10 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
       _contentController!.document.changes.listen((_) {
         if (mounted) {
           setState(() {
-            _wordCount = _contentController!.document.toPlainText().trim().length;
+            _wordCount = _contentController!.document
+                .toPlainText()
+                .trim()
+                .length;
           });
         }
       });
@@ -157,23 +160,14 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
 
   /// 统计字符数（兼容 JSON Delta 与纯文本）
   int _countChars(String content) {
-    if (content.trim().isEmpty) return 0;
-    try {
-      return quill.Document.fromJson(jsonDecode(content))
-          .toPlainText()
-          .trim()
-          .length;
-    } catch (e) {
-      return content.trim().length;
-    }
+    return DiaryUtils.contentToPlainText(content).trim().length;
   }
 
   Future<void> _save() async {
     final title = _titleController?.text ?? _title;
-    final content =
-        _isEditing && _contentController != null
-            ? jsonEncode(_contentController!.document.toDelta().toJson())
-            : _contentJson;
+    final content = _isEditing && _contentController != null
+        ? jsonEncode(_contentController!.document.toDelta().toJson())
+        : _contentJson;
 
     await DiaryUtils.saveDiaryEntry(
       widget.date,
@@ -211,67 +205,65 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
     showDSDialog(
       context: context,
       theme: theme,
-      builder:
-          (dialogContext) => JellyBox(
-            radius: theme.radii.xxl,
-            padding: EdgeInsets.all(theme.spacing.xl),
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (dialogContext) => JellyBox(
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.xl),
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'diary_selectMood'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.lg),
+            Wrap(
+              spacing: theme.spacing.sm,
+              runSpacing: theme.spacing.sm,
+              alignment: WrapAlignment.center,
               children: [
-                Text(
-                  'diary_selectMood'.tr,
-                  textAlign: TextAlign.center,
-                  style: DsTypography.title.copyWith(color: theme.text),
-                ),
-                SizedBox(height: theme.spacing.lg),
-                Wrap(
-                  spacing: theme.spacing.sm,
-                  runSpacing: theme.spacing.sm,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    for (final mood in _moods)
-                      _MoodOption(
-                        emoji: mood,
-                        selected: mood == _selectedMood,
-                        theme: theme,
-                        onTap: () {
-                          setState(() => _selectedMood = mood);
-                          Navigator.pop(dialogContext);
-                        },
-                      ),
-                  ],
-                ),
-                SizedBox(height: theme.spacing.lg),
-                Row(
-                  children: [
-                    if (_selectedMood != null)
-                      Expanded(
-                        child: DSButton(
-                          label: 'diary_clearSelection'.tr,
-                          variant: DSButtonVariant.outline,
-                          size: DSButtonSize.sm,
-                          onPressed: () {
-                            setState(() => _selectedMood = null);
-                            Navigator.pop(dialogContext);
-                          },
-                        ),
-                      ),
-                    if (_selectedMood != null)
-                      SizedBox(width: theme.spacing.md),
-                    Expanded(
-                      child: DSButton(
-                        label: 'app_close'.tr,
-                        size: DSButtonSize.sm,
-                        onPressed: () => Navigator.pop(dialogContext),
-                      ),
+                for (final mood in _moods)
+                  _MoodOption(
+                    emoji: mood,
+                    selected: mood == _selectedMood,
+                    theme: theme,
+                    onTap: () {
+                      setState(() => _selectedMood = mood);
+                      Navigator.pop(dialogContext);
+                    },
+                  ),
+              ],
+            ),
+            SizedBox(height: theme.spacing.lg),
+            Row(
+              children: [
+                if (_selectedMood != null)
+                  Expanded(
+                    child: DSButton(
+                      label: 'diary_clearSelection'.tr,
+                      variant: DSButtonVariant.outline,
+                      size: DSButtonSize.sm,
+                      onPressed: () {
+                        setState(() => _selectedMood = null);
+                        Navigator.pop(dialogContext);
+                      },
                     ),
-                  ],
+                  ),
+                if (_selectedMood != null) SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: 'app_close'.tr,
+                    size: DSButtonSize.sm,
+                    onPressed: () => Navigator.pop(dialogContext),
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -279,24 +271,23 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSDialog(
-            title: 'diary_confirmDeleteDiary'.tr,
-            message: 'diary_deleteDiaryMessage'.tr,
-            confirmText: 'diary_confirmDeleteDiary'.tr,
-            cancelText: 'app_cancel'.tr,
-            confirmVariant: DSButtonVariant.destructive,
-            onConfirm: () async {
-              // 关闭对话框
-              Navigator.pop(dialogContext);
-              // 删除日记
-              await DiaryUtils.deleteDiaryEntry(widget.date);
-              // 返回上一级
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-          ),
+      builder: (dialogContext) => DSDialog(
+        title: 'diary_confirmDeleteDiary'.tr,
+        message: 'diary_deleteDiaryMessage'.tr,
+        confirmText: 'diary_confirmDeleteDiary'.tr,
+        cancelText: 'app_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () async {
+          // 关闭对话框
+          Navigator.pop(dialogContext);
+          // 删除日记
+          await DiaryUtils.deleteDiaryEntry(widget.date);
+          // 返回上一级
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      ),
     );
   }
 
@@ -309,7 +300,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
       child: Scaffold(
         backgroundColor: theme.background,
         body: SafeArea(
-          child: _isEditing ? _buildEditingView(theme) : _buildReadingView(theme),
+          child: _isEditing
+              ? _buildEditingView(theme)
+              : _buildReadingView(theme),
         ),
       ),
     );
@@ -321,10 +314,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
       Localizations.localeOf(context).toString(),
     ).format(widget.date);
     final title = _title.trim().isEmpty ? 'diary_untitled'.tr : _title;
-    final moodName =
-        _selectedMood != null
-            ? (diaryMoodNameKeys[_selectedMood]?.tr ?? _selectedMood!)
-            : null;
+    final moodName = _selectedMood != null
+        ? (diaryMoodNameKeys[_selectedMood]?.tr ?? _selectedMood!)
+        : null;
 
     return Stack(
       children: [
@@ -431,7 +423,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
         border: Border.all(color: theme.stroke),
         boxShadow: [
           BoxShadow(
-            color: theme.isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0x14221918),
+            color: theme.isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : const Color(0x14221918),
             blurRadius: 36,
             offset: const Offset(0, 12),
             spreadRadius: -4,
@@ -536,9 +530,11 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
                     onTap: _showMoodSelector,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: Text(
-                        _selectedMood ?? '😊',
-                        style: const TextStyle(fontSize: 28),
+                      child: DiaryMoodFaceCircle(
+                        spec: _selectedMood != null
+                            ? diaryMoodSpecOf(_selectedMood!)
+                            : neutralMoodSpec,
+                        size: 32,
                       ),
                     ),
                   ),
@@ -579,10 +575,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
               config: quill.QuillEditorConfig(
                 placeholder: 'diary_contentHint'.tr,
                 padding: const EdgeInsets.all(16),
-                embedBuilders:
-                    kIsWeb
-                        ? FlutterQuillEmbeds.editorWebBuilders()
-                        : FlutterQuillEmbeds.editorBuilders(),
+                embedBuilders: kIsWeb
+                    ? FlutterQuillEmbeds.editorWebBuilders()
+                    : FlutterQuillEmbeds.editorBuilders(),
               ),
             ),
           ),
@@ -737,9 +732,7 @@ class _TagPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.surface.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: highlight ? theme.primary : theme.stroke,
-        ),
+        border: Border.all(color: highlight ? theme.primary : theme.stroke),
       ),
       child: Text(
         label,
@@ -775,7 +768,9 @@ class _DockButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = danger ? theme.danger.withValues(alpha: 0.12) : theme.backgroundAlt;
+    final bg = danger
+        ? theme.danger.withValues(alpha: 0.12)
+        : theme.backgroundAlt;
     final fg = danger ? theme.danger : theme.textSub;
     return Tooltip(
       message: tooltip,
@@ -791,10 +786,22 @@ class _DockButton extends StatelessWidget {
             width: 42,
             height: 42,
             child: Center(
-              child:
-                  emoji != null
-                      ? Text(emoji!, style: const TextStyle(fontSize: 20))
-                      : Icon(icon ?? fallbackIcon, size: 18, color: fg),
+              child: emoji != null
+                  ? Builder(
+                      builder: (_) {
+                        final spec = diaryMoodSpecOf(emoji!);
+                        return Image.asset(
+                          // 未知表情无图片时回退图标
+                          spec.asset ?? '',
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(fallbackIcon, size: 18, color: fg),
+                        );
+                      },
+                    )
+                  : Icon(icon ?? fallbackIcon, size: 18, color: fg),
             ),
           ),
         ),
@@ -803,7 +810,7 @@ class _DockButton extends StatelessWidget {
   }
 }
 
-/// 心情选项：果冻圆底座 + 表情，选中态主色描边
+/// 心情选项：果冻圆底座 + 表情图片，选中态主色描边
 class _MoodOption extends StatelessWidget {
   const _MoodOption({
     required this.emoji,
@@ -819,6 +826,7 @@ class _MoodOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spec = diaryMoodSpecOf(emoji);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -833,7 +841,16 @@ class _MoodOption extends StatelessWidget {
             width: selected ? 2 : 1.4,
           ),
         ),
-        child: Text(emoji, style: const TextStyle(fontSize: 26)),
+        child: spec.asset != null
+            ? Image.asset(
+                spec.asset!,
+                width: 30,
+                height: 30,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    Text(emoji, style: const TextStyle(fontSize: 26)),
+              )
+            : Text(emoji, style: const TextStyle(fontSize: 26)),
       ),
     );
   }

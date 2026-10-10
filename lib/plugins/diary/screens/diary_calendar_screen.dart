@@ -17,8 +17,8 @@ import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_day_cell.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_header.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_palette.dart';
-import 'package:aboutme/plugins/diary/widgets/diary_entry_card.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_search_result_tile.dart';
 
 class DiaryCalendarScreen extends StatefulWidget {
   final StorageManager storage;
@@ -229,7 +229,7 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     );
   }
 
-  /// 构建搜索结果视图
+  /// 构建搜索结果视图：日记条目列表（无日历）
   Widget _buildSearchResults(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
@@ -249,20 +249,15 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                 itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
                   final entry = _searchResults[index];
-                  return _buildSearchResultCard(context, entry);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: DiarySearchResultTile(
+                      entry: entry,
+                      onTap: () => _navigateToEntry(entry),
+                    ),
+                  );
                 },
               ),
-    );
-  }
-
-  /// 构建搜索结果卡片
-  Widget _buildSearchResultCard(BuildContext context, DiaryEntry entry) {
-    final theme = DSThemeBridge.resolve(context);
-    return DiaryEntryCard(
-      entry: entry,
-      primaryColor: theme.primary,
-      textColor: theme.text,
-      onTap: () => _navigateToEntry(entry),
     );
   }
 

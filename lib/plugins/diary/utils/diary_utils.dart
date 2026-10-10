@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:path/path.dart' as path;
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -9,6 +12,17 @@ import 'package:aboutme/plugins/diary/sample_data.dart';
 
 class DiaryUtils {
   static const String _pluginDir = 'diary';
+
+  /// 日记内容（JSON Delta 或纯文本）转纯文本，
+  /// 供搜索匹配与摘要展示使用
+  static String contentToPlainText(String content) {
+    if (content.trim().isEmpty) return '';
+    try {
+      return quill.Document.fromJson(jsonDecode(content)).toPlainText();
+    } catch (e) {
+      return content;
+    }
+  }
 
   // 获取插件的存储管理器
   static StorageManager get _storage => DiaryPlugin.instance.storage;
@@ -380,9 +394,15 @@ class DiaryUtils {
 
       for (final entry in allEntries.values) {
         final titleMatch = entry.title.toLowerCase().contains(searchTerm);
-        final contentMatch = entry.content.toLowerCase().contains(searchTerm);
+        // 内容是 JSON Delta，转纯文本再匹配，避免命中格式噪音
+        final contentMatch = contentToPlainText(entry.content)
+            .toLowerCase()
+            .contains(searchTerm);
+        final tagMatch = entry.tags.any(
+          (tag) => tag.toLowerCase().contains(searchTerm),
+        );
 
-        if (titleMatch || contentMatch) {
+        if (titleMatch || contentMatch || tagMatch) {
           results.add(entry);
         }
       }
