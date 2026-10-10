@@ -59,6 +59,10 @@ class TimerCardWidget extends StatefulWidget {
   /// 是否使用网格布局（当计时器数量 >= 3 时）
   final bool useGridLayout;
 
+  /// 是否启用 Hero 转场（与详情页焦点卡片共享 tag）；
+  /// 同一路由可能渲染多个相同任务卡片时（首页小组件）应保持 false
+  final bool enableHero;
+
   const TimerCardWidget({
     super.key,
     required this.task,
@@ -73,6 +77,7 @@ class TimerCardWidget extends StatefulWidget {
     this.size = const MediumSize(),
     this.showGroup = false,
     this.useGridLayout = false,
+    this.enableHero = false,
   });
 
   /// 从 props 创建实例（用于公共小组件系统）
@@ -188,7 +193,7 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
     final padding = size.getPadding();
 
     // 高度自适应：不设最小高度约束，完全由内容撑开
-    return Container(
+    Widget card = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         color: _cardColor,
@@ -256,6 +261,13 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
         ),
       ),
     );
+    if (widget.enableHero) {
+      card = Hero(
+        tag: 'timer_task_card_${widget.task.id}',
+        child: card,
+      );
+    }
+    return card;
   }
 
   // ===== 装饰层：环境圆环 + 背景大图标 =====

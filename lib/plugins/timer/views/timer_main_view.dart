@@ -251,6 +251,7 @@ class _TimerMainViewState extends State<TimerMainView> {
                   onDelete: _deleteTask,
                   showGroup: true,  // 显示分组名称
                   useGridLayout: useGridLayout,  // 根据计时器数量决定布局
+                  enableHero: true,  // 进入详情页 Hero 转场
                 ),
               );
             },

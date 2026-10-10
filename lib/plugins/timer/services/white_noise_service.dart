@@ -164,6 +164,9 @@ class WhiteNoiseService {
   /// 播放/加载失败的提示（i18n key），由 UI 消费后清理
   final ValueNotifier<String?> error = ValueNotifier<String?>(null);
 
+  /// 音量 0.0~1.0，播放器重建后恢复
+  double volume = 1.0;
+
   bool get isPlaying => currentId.value != null;
 
   WhiteNoisePreset? get currentPreset {
@@ -207,8 +210,32 @@ class WhiteNoiseService {
     }
   }
 
+  /// 与计时器暂停/恢复联动：暂停当前音源（不改变选中状态）
+  Future<void> pause() async {
+    try {
+      await _player?.pause();
+    } catch (_) {}
+  }
+
+  /// 与计时器暂停/恢复联动：恢复播放
+  Future<void> resume() async {
+    if (currentId.value == null) return;
+    try {
+      await _player?.resume();
+    } catch (_) {}
+  }
+
+  Future<void> setVolume(double value) async {
+    volume = value.clamp(0.0, 1.0);
+    try {
+      await _player?.setVolume(volume);
+    } catch (_) {}
+  }
+
   AudioPlayer _createPlayer() {
-    return AudioPlayer()..setReleaseMode(ReleaseMode.loop);
+    return AudioPlayer()
+      ..setReleaseMode(ReleaseMode.loop)
+      ..setVolume(volume);
   }
 
   Future<void> stop() async {

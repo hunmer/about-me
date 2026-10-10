@@ -68,6 +68,17 @@ class TimerTranslationsZh {
     'timer_noise_windchime': '风铃',
     'timer_breathingHint': '保持专注，平稳呼吸',
     'timer_immersiveHint': '翻转手机朝下可自动熄屏进入沉浸暗光',
+    'timer_sessionCompleted': '专注达成',
+    'timer_statPhases': '完成阶段',
+    'timer_statDuration': '总时长',
+    'timer_statAmbience': '伴随白噪',
+    'timer_moodTitle': '本次专注状态自评：',
+    'timer_moodCalm': '平静专注',
+    'timer_moodFlow': '高效心流',
+    'timer_moodTired': '略有疲惫',
+    'timer_saveFinish': '记录并完成',
+    'timer_nextRound': '开启下一轮',
+    'timer_noNoise': '无',
 
     // Widget Home Strings
     'timer_widgetName': '计时器',

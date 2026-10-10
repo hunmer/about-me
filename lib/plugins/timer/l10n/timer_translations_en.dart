@@ -68,6 +68,17 @@ class TimerTranslationsEn {
     'timer_noise_windchime': 'Wind Chimes',
     'timer_breathingHint': 'Stay focused, breathe slowly',
     'timer_immersiveHint': 'Flip your phone face down for immersive dim',
+    'timer_sessionCompleted': 'Session Completed',
+    'timer_statPhases': 'Phases',
+    'timer_statDuration': 'Duration',
+    'timer_statAmbience': 'Ambience',
+    'timer_moodTitle': 'Rate your focus:',
+    'timer_moodCalm': 'Calm',
+    'timer_moodFlow': 'Flow',
+    'timer_moodTired': 'Tired',
+    'timer_saveFinish': 'Save & Finish',
+    'timer_nextRound': 'Next Round',
+    'timer_noNoise': 'None',
 
     // Widget Home Strings
     'timer_widgetName': 'Timer',
