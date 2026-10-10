@@ -969,7 +969,10 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                         bottom: 0,
                                         left: 0,
                                         right: 0,
-                                        child: components.appbarBottom!,
+                                        // appbarBottom 为 null（如独立使用
+                                        // PersistentNavigationBar 时）不渲染内容
+                                        child: components.appbarBottom ??
+                                            const SizedBox.shrink(),
                                       ),
                                     ],
                                   ),

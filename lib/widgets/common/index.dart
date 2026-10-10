@@ -81,7 +81,7 @@ export 'user_item_card.dart' show UserItemCardWidget, UserItemCardData;
 export 'memorial_day_card.dart' show MemorialDayCardWidget;
 
 // 导出打卡项目卡片组件
-export 'checkin_item_card.dart' show CheckinItemCardWidget;
+export 'checkin_item_card.dart' show CheckinItemCardWidget, CheckinWeekdayHeader;
 
 // 导出联系人卡片组件
 export 'contact_card.dart' show ContactCardWidget, ContactCardData, ContactCardGender;

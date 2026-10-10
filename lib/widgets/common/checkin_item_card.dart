@@ -128,82 +128,54 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header Row
+        // 头部：图标 + 标题/频次徽章 + 快捷打卡按钮
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Icon and Name
+            _buildIcon(theme),
+            const SizedBox(width: 12),
             Expanded(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildIcon(theme),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  Text(
+                    widget.item.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // 频次徽章（如：每天 / 每周5天）
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Text(
-                      widget.item.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                      _getFrequencyText(),
+                      style: TextStyle(fontSize: 10, color: theme.hintColor),
                     ),
                   ),
                 ],
               ),
             ),
-            // Stats (Frequency & Last Check-in)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _getWeeklyProgressText(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: widget.item.color,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (widget.item.lastCheckinDate != null)
-                  Row(
-                    children: [
-                      Text(
-                        _formatLastCheckinTime(),
-                        style: TextStyle(fontSize: 10, color: theme.hintColor),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.access_time, size: 12, color: theme.hintColor),
-                    ],
-                  ),
-              ],
-            ),
+            const SizedBox(width: 12),
+            _buildPlusOneButton(context, size: 44),
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
 
-        // Body Row (Weekly Circles + Button)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: _buildWeeklyCircles(),
-            ),
-            const SizedBox(width: 16),
-            // +1 Button
-            _buildPlusOneButton(context, size: 56),
-          ],
-        ),
+        // 周打卡圆点（整行铺满，与列表顶部固定星期表头对齐）
+        SizedBox(height: 28, child: _buildWeeklyCircles(theme)),
       ],
     );
   }
@@ -468,12 +440,13 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
     );
   }
 
-  Widget _buildWeeklyCircles() {
+  /// 周视图打卡圆点：整行铺满 7 列，星期文字由外部固定表头（CheckinWeekdayHeader）展示
+  Widget _buildWeeklyCircles(ThemeData theme) {
     final now = DateTime.now();
     // 标准化为今天的 00:00:00
     final today = DateTime(now.year, now.month, now.day);
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final circles = <Widget>[];
+    final columns = <Widget>[];
 
     for (int i = 0; i < 7; i++) {
       final date = startOfWeek.add(Duration(days: i));
@@ -488,7 +461,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
       // 检查日期是否在未来（使用标准化日期比较）
       final isFuture = normalizedDate.isAfter(today);
 
-      circles.add(
+      columns.add(
         Expanded(
           child: Center(
             child: GestureDetector(
@@ -499,38 +472,43 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 widget.onDateSelected?.call(normalizedDate);
               },
               child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: hasCheckin
-                      ? widget.item.color.withValues(alpha: 0.2)
-                      : Colors.transparent,
-                  shape: BoxShape.circle,
-                  border: isToday && !hasCheckin
-                      ? Border.all(color: widget.item.color, width: 1.5)
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    '${date.day}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: hasCheckin ? widget.item.color : Theme.of(context).hintColor,
-                      fontWeight: hasCheckin || isToday ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ),
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: hasCheckin
+                    ? BoxDecoration(
+                        color: widget.item.color,
+                        shape: BoxShape.circle,
+                      )
+                    : isToday
+                        ? BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: widget.item.color.withValues(alpha: 0.6),
+                              width: 1.5,
+                            ),
+                          )
+                        : null,
+                child: hasCheckin
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isFuture
+                              ? theme.hintColor.withValues(alpha: 0.2)
+                              : theme.hintColor.withValues(alpha: 0.4),
+                        ),
+                      ),
               ),
             ),
           ),
         ),
       );
-      if (i < 6) {
-        circles.add(const SizedBox(width: 4));
-      }
     }
 
-    return Row(children: circles);
+    return Row(children: columns);
   }
 
   Widget _buildMonthCalendar(BuildContext context, ThemeData theme) {
@@ -606,20 +584,12 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
     return {'count': count, 'days': records.length};
   }
 
-  String _getWeeklyProgressText() {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    int completedCount = 0;
-    for (int i = 0; i < 7; i++) {
-      final date = startOfWeek.add(Duration(days: i));
-      final dateStr =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      if (widget.item.checkInRecords.containsKey(dateStr) &&
-          widget.item.checkInRecords[dateStr]!.isNotEmpty) {
-        completedCount++;
-      }
-    }
-    return '$completedCount 次/周';
+  /// 根据 frequency 配置生成频次徽章文案
+  String _getFrequencyText() {
+    final daysPerWeek = widget.item.frequency.where((enabled) => enabled).length;
+    if (daysPerWeek >= 7) return '每天';
+    if (daysPerWeek <= 0) return '未设置';
+    return '每周$daysPerWeek天';
   }
 
   String _formatLastCheckinTime() {
@@ -648,5 +618,45 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
 
   String _formatTimeOnly(DateTime dateTime) {
     return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// 周视图固定星期表头
+///
+/// 与 [CheckinItemCardWidget] weekly 风格卡片内的打卡圆点列对齐：
+/// 外边距 8 + 内边距 16 与卡片容器一致，7 列均分宽度。
+/// 今天对应的星期加粗高亮。
+class CheckinWeekdayHeader extends StatelessWidget {
+  const CheckinWeekdayHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const weekdayChars = ['一', '二', '三', '四', '五', '六', '日'];
+    final todayWeekday = DateTime.now().weekday; // 1=周一 ... 7=周日
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          for (int i = 0; i < 7; i++)
+            Expanded(
+              child: Center(
+                child: Text(
+                  weekdayChars[i],
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.2,
+                    color: theme.hintColor,
+                    fontWeight:
+                        i + 1 == todayWeekday ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

@@ -313,9 +313,13 @@ class NavigationBarStaticComponents {
     required Widget? appbarBottom,
     required ModalRoute<dynamic>? route,
   }) {
+    if (appbarBottom == null) {
+      return null;
+    }
+
     return KeyedSubtree(
       key: appbarBottomKey,
-      child: appbarBottom!,
+      child: appbarBottom,
     );
   }
 }

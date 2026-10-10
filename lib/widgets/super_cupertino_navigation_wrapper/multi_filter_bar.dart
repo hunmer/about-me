@@ -103,7 +103,7 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
       curve: Curves.easeInOut,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: AppTheme.of(context).background,
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).dividerColor.withOpacity(0.12),

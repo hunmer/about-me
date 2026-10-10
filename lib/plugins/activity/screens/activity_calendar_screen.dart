@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
@@ -22,6 +24,10 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
   late CalendarController _calendarController;
   List<ActivityRecord> _activities = [];
   bool _isLoading = true;
+
+  /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
+  final NavigationBarStaticComponentsKeys _navBarKeys =
+      NavigationBarStaticComponentsKeys();
 
   @override
   void initState() {
@@ -138,120 +144,148 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
     final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('活动日历'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.today),
-            onPressed: () {
-              _calendarController.displayDate = DateTime.now();
-              _loadActivities();
-            },
-            tooltip: '今天',
+      backgroundColor: theme.background,
+      body: Column(
+        children: [
+          // Super Cupertino 风格的固定 header（super_cupertino_navigation_bar
+          // 包内 PersistentNavigationBar，与 SuperAppBar 展开态同源）
+          PersistentNavigationBar(
+            components: NavigationBarStaticComponents(
+              keys: _navBarKeys,
+              route: null,
+              userLeading: null,
+              automaticallyImplyLeading: false,
+              automaticallyImplyTitle: false,
+              previousPageTitle: null,
+              userMiddle: Text(
+                '活动日历',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: theme.text,
+                ),
+              ),
+              userTrailing: IconButton(
+                icon: Icon(Icons.today, color: theme.textSub),
+                onPressed: () {
+                  _calendarController.displayDate = DateTime.now();
+                  _loadActivities();
+                },
+                tooltip: '今天',
+              ),
+              userLargeTitle: null,
+              largeTitleActions: null,
+              appbarBottom: null,
+              padding: null,
+              large: false,
+            ),
           ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? Center(
-                // DSLoadingDots 内部取 AppTheme，需包桥
-                child: DSThemeBridge(
-                  child: Builder(builder: (_) => const DSLoadingDots()),
-                ),
-              )
-              : AboutmeSfCalendar(
-                controller: _calendarController,
-                view: CalendarView.month,
-                allowedViews: const [
-                  CalendarView.day,
-                  CalendarView.week,
-                  CalendarView.workWeek,
-                  CalendarView.timelineDay,
-                  CalendarView.timelineWeek,
-                  CalendarView.timelineWorkWeek,
-                  CalendarView.month,
-                  CalendarView.schedule,
-                ],
-                showAgenda: true,
-                agendaViewHeight: 200,
-                appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
-                firstDayOfWeek: 1,
-                nonWorkingDays: const [6, 7], // 周六、周日不显示
-                viewHeaderHeight: 50, // 时间线视图需要更高的头部
-                viewHeaderStyle: const ViewHeaderStyle(
-                  dayTextStyle: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  dateTextStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                scheduleViewSettings: const ScheduleViewSettings(
-                  appointmentTextStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  hideEmptyScheduleWeek: false,
-                ),
-                dataSource: ActivityCalendarDataSource(_activities),
-                onViewChanged: _onViewChanged,
-                onTap: _onCalendarTap,
-                todayHighlightColor: theme.primary,
-                // SfCalendar 的 appointmentBuilder 回调位于桥之上：
-                // 内部仅用 Container/Text 与显式颜色，取令牌走 resolve，安全
-                appointmentBuilder: (context, calendarAppointmentDetails) {
-                  final appointment =
-                      calendarAppointmentDetails.appointments.first;
-                  if (appointment is ActivityAppointment) {
-                    final activity = appointment.activity;
-                    // 颜色分配逻辑：优先使用活动颜色，否则基于标签生成颜色
-                    final itemColor = _getActivityColor(context, activity);
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 1),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    // DSLoadingDots 内部取 AppTheme，需包桥
+                    child: DSThemeBridge(
+                      child: Builder(builder: (_) => const DSLoadingDots()),
+                    ),
+                  )
+                : SafeArea(
+                    // 消费外层 CustomBottomBar 注入的底部避让（弧形底栏高度）
+                    top: false,
+                    child: AboutmeSfCalendar(
+                      controller: _calendarController,
+                      view: CalendarView.month,
+                      allowedViews: const [
+                        CalendarView.day,
+                        CalendarView.week,
+                        CalendarView.workWeek,
+                        CalendarView.timelineDay,
+                        CalendarView.timelineWeek,
+                        CalendarView.timelineWorkWeek,
+                        CalendarView.month,
+                        CalendarView.schedule,
+                      ],
+                      showAgenda: true,
+                      agendaViewHeight: 200,
+                      appointmentDisplayMode:
+                          MonthAppointmentDisplayMode.appointment,
+                      firstDayOfWeek: 1,
+                      nonWorkingDays: const [6, 7], // 周六、周日不显示
+                      viewHeaderHeight: 50, // 时间线视图需要更高的头部
+                      viewHeaderStyle: const ViewHeaderStyle(
+                        dayTextStyle: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        dateTextStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: itemColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        [
-                          activity.title,
-                          if (activity.tags.isNotEmpty) activity.tags.join(' '),
-                          if (activity.description != null &&
-                              activity.description!.isNotEmpty)
-                            activity.description,
-                          _formatTimeRange(
-                            activity.startTime,
-                            activity.endTime,
-                          ),
-                        ].join(' '),
-                        style: const TextStyle(
-                          color: Colors.white,
+                      scheduleViewSettings: const ScheduleViewSettings(
+                        appointmentTextStyle: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        hideEmptyScheduleWeek: false,
                       ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-      floatingActionButton: DSThemeBridge(
-        // DSFab 内部取 AppTheme，需包桥
-        child: Builder(
-          builder:
-              (_) => DSFab(
-                onPressed:
-                    () => ActivityController.showAddActivityScreen(context),
-              ),
-        ),
+                      dataSource: ActivityCalendarDataSource(_activities),
+                      onViewChanged: _onViewChanged,
+                      onTap: _onCalendarTap,
+                      todayHighlightColor: theme.primary,
+                      // SfCalendar 的 appointmentBuilder 回调位于桥之上：
+                      // 内部仅用 Container/Text 与显式颜色，取令牌走 resolve，安全
+                      appointmentBuilder:
+                          (context, calendarAppointmentDetails) {
+                            final appointment =
+                                calendarAppointmentDetails.appointments.first;
+                            if (appointment is ActivityAppointment) {
+                              final activity = appointment.activity;
+                              // 颜色分配逻辑：优先使用活动颜色，否则基于标签生成颜色
+                              final itemColor = _getActivityColor(
+                                context,
+                                activity,
+                              );
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 1,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: itemColor,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  [
+                                    activity.title,
+                                    if (activity.tags.isNotEmpty)
+                                      activity.tags.join(' '),
+                                    if (activity.description != null &&
+                                        activity.description!.isNotEmpty)
+                                      activity.description,
+                                    _formatTimeRange(
+                                      activity.startTime,
+                                      activity.endTime,
+                                    ),
+                                  ].join(' '),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }

@@ -294,15 +294,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // 与他人消息镜像：光标在左侧（远端），按钮向右展开
+                            _buildActionsToggle(theme, mirror: true),
                             AnimatedSize(
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeOutCubic,
-                              alignment: Alignment.centerRight,
+                              alignment: Alignment.centerLeft,
                               child: _showActions
                                   ? _buildActions(theme)
                                   : const SizedBox.shrink(),
                             ),
-                            _buildActionsToggle(theme),
                           ],
                         ),
                       ),
@@ -445,7 +446,8 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildActionsToggle(AppThemeData theme) {
+  /// 光标按钮；mirror 时图标镜像（自己消息场景：未展开指向右侧的按钮行）
+  Widget _buildActionsToggle(AppThemeData theme, {bool mirror = false}) {
     return GestureDetector(
       onTap: () => setState(() => _showActions = !_showActions),
       child: Container(
@@ -457,12 +459,12 @@ class _MessageBubbleState extends State<MessageBubble> {
           boxShadow: theme.shadows.soft,
         ),
         child: Center(
-          // 展开时光标旋转180°由指向左变为指向右
+          // 展开时光标旋转180°指向按钮行的相反方向
           child: AnimatedRotation(
             turns: _showActions ? 0.5 : 0,
             duration: const Duration(milliseconds: 200),
             child: DsIcon(
-              DsIconKind.chevronLeft,
+              mirror ? DsIconKind.chevronRight : DsIconKind.chevronLeft,
               size: 16,
               color: theme.textSub,
             ),
