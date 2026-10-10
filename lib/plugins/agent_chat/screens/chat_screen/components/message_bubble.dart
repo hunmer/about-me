@@ -35,6 +35,9 @@ class AgentMessageContent extends StatelessWidget {
   /// MessageService（用于加载链式消息）
   final dynamic messageService;
 
+  /// 气泡文字颜色（由气泡框架按背景亮度计算传入，用户主色气泡为白色）
+  final Color? textColor;
+
   const AgentMessageContent({
     super.key,
     required this.message,
@@ -43,6 +46,7 @@ class AgentMessageContent extends StatelessWidget {
     this.getTemplateName,
     this.getAgentName,
     this.messageService,
+    this.textColor,
   });
 
   @override
@@ -127,7 +131,7 @@ class AgentMessageContent extends StatelessWidget {
             children: [
               // 显示AI最终回复（优先显示）
               if (parsedContent['finalReply']?.isNotEmpty ?? false) ...[
-                MarkdownContent(content: parsedContent['finalReply']!),
+                MarkdownContent(content: parsedContent['finalReply']!, textColor: textColor),
                 const SizedBox(height: 12),
               ]
               // 只有当工具调用还未解析时，才显示正在生成的 markdown
@@ -135,7 +139,7 @@ class AgentMessageContent extends StatelessWidget {
                   message.isGenerating &&
                   message.content.isNotEmpty) ...[
                 // 实时显示正在生成的 Markdown 内容
-                MarkdownContent(content: message.content),
+                MarkdownContent(content: message.content, textColor: textColor),
                 const SizedBox(height: 12),
               ]
               // 如果正在生成但没有内容，显示加载占位符
@@ -173,7 +177,7 @@ class AgentMessageContent extends StatelessWidget {
                 const SizedBox(height: 8),
                 const Divider(),
                 const SizedBox(height: 8),
-                MarkdownContent(content: parsedContent['thinking']!),
+                MarkdownContent(content: parsedContent['thinking']!, textColor: textColor),
               ],
             ],
           );
@@ -182,7 +186,7 @@ class AgentMessageContent extends StatelessWidget {
     }
 
     // 降级到普通文本显示
-    return MarkdownContent(content: message.content);
+    return MarkdownContent(content: message.content, textColor: textColor);
   }
 
   /// 解析工具调用消息的content
@@ -517,7 +521,7 @@ class AgentMessageContent extends StatelessWidget {
 
     // 没有找到工具结果标记，直接显示内容
     if (toolResultIndex == -1) {
-      return MarkdownContent(content: content);
+      return MarkdownContent(content: content, textColor: textColor);
     }
 
     // 找到工具结果后面的内容
@@ -555,7 +559,7 @@ class AgentMessageContent extends StatelessWidget {
         return _buildToolLoadingState();
       } else {
         // 显示最终回复
-        return MarkdownContent(content: finalReply);
+        return MarkdownContent(content: finalReply, textColor: textColor);
       }
     } else {
       // 没有找到最终回复，说明还在执行中，显示加载状态
@@ -781,10 +785,15 @@ class AgentMessageContent extends StatelessWidget {
     final toolTemplate =
         message.metadata?['toolTemplate'] as Map<String, dynamic>?;
     final hasToolTemplate = toolTemplate != null;
-    final hasContent = message.content.isNotEmpty;
+    // 正文剥离内联 <think> 标签（思考内容经时间戳行入口查看）
+    final visibleContent = message.splitThinkContent().$2;
+    final hasContent = visibleContent.isNotEmpty;
 
-    // 如果既没有内容也没有工具模板，显示空消息提示
+    // 无正文无模板：有思考内容（纯思考中）不渲染正文区，否则显示空消息提示
     if (!hasContent && !hasToolTemplate) {
+      if (message.resolvedThinkingContent != null) {
+        return const SizedBox.shrink();
+      }
       return Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
@@ -816,7 +825,8 @@ class AgentMessageContent extends StatelessWidget {
               ],
             ],
             // 显示文本内容（如果有）
-            if (hasContent) MarkdownContent(content: message.content),
+            if (hasContent)
+              MarkdownContent(content: visibleContent, textColor: textColor),
           ],
         );
       },

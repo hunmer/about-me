@@ -80,15 +80,9 @@ class Conversation {
   /// 如果非空，则忽略 agentId 字段
   final List<AgentChainNode>? agentChain;
 
-  /// 工具需求识别专用 Agent 配置（第一阶段）
-  /// 用于识别用户需求并返回 needed_tools
+  /// 工具调用专用 Agent 配置（工具识别与工具执行两个阶段共用）
   /// 如果未配置，则使用默认 prompt 替换当前 agent 的 system prompt
-  final ToolAgentConfig? toolDetectionConfig;
-
-  /// 工具执行专用 Agent 配置（第二阶段）
-  /// 用于生成工具调用的 JavaScript 代码
-  /// 如果未配置，则使用默认 prompt 替换当前 agent 的 system prompt
-  final ToolAgentConfig? toolExecutionConfig;
+  final ToolAgentConfig? toolAgentConfig;
 
   /// 所属分组（支持多个分组）
   List<String> groups;
@@ -126,8 +120,7 @@ class Conversation {
     required this.title,
     this.agentId,
     this.agentChain,
-    this.toolDetectionConfig,
-    this.toolExecutionConfig,
+    this.toolAgentConfig,
     this.groups = const [],
     this.contextMessageCount,
     required this.createdAt,
@@ -158,8 +151,7 @@ class Conversation {
     required String title,
     String? agentId,
     List<AgentChainNode>? agentChain,
-    ToolAgentConfig? toolDetectionConfig,
-    ToolAgentConfig? toolExecutionConfig,
+    ToolAgentConfig? toolAgentConfig,
     List<String>? groups,
     int? contextMessageCount,
   }) {
@@ -169,8 +161,7 @@ class Conversation {
       title: title,
       agentId: agentId,
       agentChain: agentChain,
-      toolDetectionConfig: toolDetectionConfig,
-      toolExecutionConfig: toolExecutionConfig,
+      toolAgentConfig: toolAgentConfig,
       groups: groups ?? [],
       contextMessageCount: contextMessageCount,
       createdAt: now,
@@ -180,27 +171,25 @@ class Conversation {
 
   /// 从JSON反序列化
   factory Conversation.fromJson(Map<String, dynamic> json) {
-    // 兼容旧版本：尝试从 toolDetectionAgentId/toolExecutionAgentId 迁移
-    ToolAgentConfig? toolDetectionConfig;
-    ToolAgentConfig? toolExecutionConfig;
+    // 兼容旧版本：优先读取新字段 toolAgentConfig，
+    // 旧的两阶段独立配置取识别阶段的值；更早的 agentId 形式仅提示重新配置
+    ToolAgentConfig? toolAgentConfig;
 
     if (json.containsKey('toolDetectionAgentId') ||
         json.containsKey('toolExecutionAgentId')) {
-      // 旧版本数据，直接迁移（使用默认配置）
-      // 注意：这只是一个占位迁移，实际使用时需要用户提供正确的配置
       print('⚠️ 检测到旧版本工具 Agent 配置，建议重新配置工具调用设置');
-    } else {
-      // 新版本数据
-      if (json.containsKey('toolDetectionConfig')) {
-        toolDetectionConfig = ToolAgentConfig.fromJson(
-          json['toolDetectionConfig'] as Map<String, dynamic>,
-        );
-      }
-      if (json.containsKey('toolExecutionConfig')) {
-        toolExecutionConfig = ToolAgentConfig.fromJson(
-          json['toolExecutionConfig'] as Map<String, dynamic>,
-        );
-      }
+    } else if (json.containsKey('toolAgentConfig')) {
+      toolAgentConfig = ToolAgentConfig.fromJson(
+        json['toolAgentConfig'] as Map<String, dynamic>,
+      );
+    } else if (json.containsKey('toolDetectionConfig')) {
+      toolAgentConfig = ToolAgentConfig.fromJson(
+        json['toolDetectionConfig'] as Map<String, dynamic>,
+      );
+    } else if (json.containsKey('toolExecutionConfig')) {
+      toolAgentConfig = ToolAgentConfig.fromJson(
+        json['toolExecutionConfig'] as Map<String, dynamic>,
+      );
     }
 
     return Conversation(
@@ -210,8 +199,7 @@ class Conversation {
       agentChain: (json['agentChain'] as List<dynamic>?)
           ?.map((e) => AgentChainNode.fromJson(e as Map<String, dynamic>))
           .toList(),
-      toolDetectionConfig: toolDetectionConfig,
-      toolExecutionConfig: toolExecutionConfig,
+      toolAgentConfig: toolAgentConfig,
       groups: (json['groups'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -240,10 +228,8 @@ class Conversation {
       'agentId': agentId,
       if (agentChain != null && agentChain!.isNotEmpty)
         'agentChain': agentChain!.map((node) => node.toJson()).toList(),
-      if (toolDetectionConfig != null)
-        'toolDetectionConfig': toolDetectionConfig!.toJson(),
-      if (toolExecutionConfig != null)
-        'toolExecutionConfig': toolExecutionConfig!.toJson(),
+      if (toolAgentConfig != null)
+        'toolAgentConfig': toolAgentConfig!.toJson(),
       'groups': groups,
       'contextMessageCount': contextMessageCount,
       'createdAt': createdAt.toIso8601String(),
@@ -263,8 +249,7 @@ class Conversation {
     String? agentId,
     List<AgentChainNode>? agentChain,
     bool clearAgentChain = false, // 用于清除链配置
-    ToolAgentConfig? toolDetectionConfig,
-    ToolAgentConfig? toolExecutionConfig,
+    ToolAgentConfig? toolAgentConfig,
     bool clearToolAgents = false, // 用于清除工具 Agent 配置
     List<String>? groups,
     int? contextMessageCount,
@@ -281,12 +266,9 @@ class Conversation {
       title: title ?? this.title,
       agentId: agentId ?? this.agentId,
       agentChain: clearAgentChain ? null : (agentChain ?? this.agentChain),
-      toolDetectionConfig: clearToolAgents
+      toolAgentConfig: clearToolAgents
           ? null
-          : (toolDetectionConfig ?? this.toolDetectionConfig),
-      toolExecutionConfig: clearToolAgents
-          ? null
-          : (toolExecutionConfig ?? this.toolExecutionConfig),
+          : (toolAgentConfig ?? this.toolAgentConfig),
       groups: groups ?? this.groups,
       contextMessageCount: contextMessageCount ?? this.contextMessageCount,
       createdAt: createdAt,

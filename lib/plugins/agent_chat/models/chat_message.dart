@@ -105,6 +105,32 @@ class ChatMessage {
     );
   }
 
+  /// 解析 content 中内联的 `<think>` 标签（部分模型如 DeepSeek R1 混在正文里）
+  ///
+  /// 返回 (思考内容, 剥离后的正文)；未闭合的 `<think>`（流式生成中）视为思考内容
+  (String, String) splitThinkContent() {
+    final regexp = RegExp(
+      r'<think>([\s\S]*?)(?:</think>|$)',
+      caseSensitive: false,
+    );
+    final matches = regexp.allMatches(content).toList();
+    if (matches.isEmpty) return ('', content);
+    final thinking = matches
+        .map((m) => m.group(1) ?? '')
+        .join('\n\n')
+        .trim();
+    final body = content.replaceAll(regexp, '').trim();
+    return (thinking, body);
+  }
+
+  /// 合并的思考内容：独立存储的 thinkingContent + content 内联 think 部分
+  String? get resolvedThinkingContent {
+    final inline = splitThinkContent().$1;
+    if (thinkingContent == null || thinkingContent!.isEmpty) {
+      return inline.isEmpty ? null : inline;
+    }
+    return inline.isEmpty ? thinkingContent : '$thinkingContent\n\n$inline';
+  }
   /// 创建AI消息
   factory ChatMessage.ai({
     required String conversationId,

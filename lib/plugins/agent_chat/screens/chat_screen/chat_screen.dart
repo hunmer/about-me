@@ -864,6 +864,7 @@ class _ChatScreenState extends State<ChatScreen> {
             contentBuilder: (context, message, textColor) =>
                 AgentMessageContent(
                   message: source,
+                  textColor: textColor,
                   onExecuteTemplate: (messageId, templateId) async {
                     final template = _controller.templateService
                         ?.getTemplateById(templateId);
@@ -1090,26 +1091,24 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 时间戳行尾部：思考过程入口（仅 AI 消息且有思考内容）
+  /// 时间戳行尾部：思考过程入口（仅 AI 消息且有思考内容，含内联 think 标签）
   Widget? _buildThinkingEntry(ChatMessage source) {
-    if (source.isUser ||
-        source.thinkingContent == null ||
-        source.thinkingContent!.isEmpty) {
+    if (source.isUser || source.resolvedThinkingContent == null) {
       return null;
     }
     return Builder(
       builder: (context) {
         final theme = DSThemeBridge.resolve(context);
         return Pressable(
-          onPressed: () => _showThinkingDialog(source),
-          semanticLabel: '显示思考过程',
+          onPressed: () => _showThinkingSheet(source),
+          semanticLabel: '查看思考过程',
           builder: (context, states) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               DsIcon(DsIconKind.bot, size: 12, color: theme.primaryText),
               const SizedBox(width: 4),
               Text(
-                '显示思考过程',
+                '查看思考过程',
                 style: DsTypography.caption.copyWith(color: theme.primaryText),
               ),
             ],
@@ -1209,52 +1208,24 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 显示思考过程对话框
-  void _showThinkingDialog(ChatMessage source) {
-    showDSDialog(
+  /// 底部 sheet 显示思考过程（独立 thinkingContent + 内联 think 合并展示）
+  void _showThinkingSheet(ChatMessage source) {
+    showDSBottomSheet(
       context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder: (dialogContext) => DSThemeBridge(
+      title: '思考过程',
+      builder: (sheetContext) => DSThemeBridge(
         child: Builder(
           builder: (ctx) {
             final theme = DSThemeBridge.resolve(ctx);
-            return JellyBox(
-              radius: theme.radii.xxl,
-              padding: EdgeInsets.all(theme.spacing.xl),
-              constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      DsIcon(
-                        DsIconKind.bot,
-                        color: theme.primaryText,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '思考过程',
-                        style: DsTypography.title.copyWith(color: theme.text),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: theme.spacing.md),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: MarkdownContent(
-                        content: source.thinkingContent ?? '',
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: theme.spacing.md),
-                  DSButton(
-                    label: '关闭',
-                    expand: true,
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                  ),
-                ],
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(ctx).height * 0.6,
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: MarkdownContent(
+                  content: source.resolvedThinkingContent ?? '',
+                ),
               ),
             );
           },

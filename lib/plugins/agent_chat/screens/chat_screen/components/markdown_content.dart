@@ -11,21 +11,26 @@ class MarkdownContent extends StatelessWidget {
   final String content;
   final bool selectable;
 
+  /// 正文文字颜色（默认主题正文色；深色气泡如用户主色气泡需传浅色）
+  final Color? textColor;
+
   const MarkdownContent({
     super.key,
     required this.content,
     this.selectable = true,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    final bodyColor = textColor ?? theme.text;
     return MarkdownBody(
       data: content,
       selectable: selectable,
       styleSheet: MarkdownStyleSheet(
         // 极简风格配置
-        p: const TextStyle(fontSize: 15, height: 1.5),
+        p: TextStyle(fontSize: 15, height: 1.5, color: bodyColor),
         code: TextStyle(
           backgroundColor: theme.surfaceAlt,
           fontFamily: 'monospace',
@@ -48,11 +53,23 @@ class MarkdownContent extends StatelessWidget {
           horizontal: 12,
           vertical: 8,
         ),
-        h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        listBullet: const TextStyle(fontSize: 15),
-        tableBody: const TextStyle(fontSize: 14),
+        h1: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: bodyColor,
+        ),
+        h2: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: bodyColor,
+        ),
+        h3: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: bodyColor,
+        ),
+        listBullet: TextStyle(fontSize: 15, color: bodyColor),
+        tableBody: TextStyle(fontSize: 14, color: bodyColor),
         tableBorder: TableBorder.all(
           color: theme.textSub.withValues(alpha: 0.4),
           width: 1,
