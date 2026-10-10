@@ -124,7 +124,12 @@ class _FloatingMenuWidgetState extends State<FloatingMenuWidget>
                       height: 60,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.red,
+                        image: DecorationImage(
+                          image: AssetImage(
+                            'assets/floating_ball_icons/a1_flat_lowerleft.webp',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black26,
@@ -133,7 +138,6 @@ class _FloatingMenuWidgetState extends State<FloatingMenuWidget>
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 32),
                     ),
                   ),
                 ),

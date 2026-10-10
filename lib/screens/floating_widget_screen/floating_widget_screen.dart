@@ -333,9 +333,9 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
         if (image == null) return;
         bytes = await image.readAsBytes();
       } else if (selectedStyle.startsWith('preset_')) {
-        // 使用预设图片
+        // 使用预设图片（id 含完整文件名，支持 png/webp）
         final presetPath =
-            'assets/floating_ball_icons/${selectedStyle.replaceFirst('preset_', '')}.png';
+            'assets/floating_ball_icons/${selectedStyle.replaceFirst('preset_', '')}';
         final byteData = await rootBundle.load(presetPath);
         bytes = byteData.buffer.asUint8List();
       }
@@ -374,7 +374,12 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
                 children: [
                   // 预设图片
                   _buildPresetItem(
-                    'preset_1',
+                    'preset_a1_flat_lowerleft.webp',
+                    'Aboutme',
+                    'assets/floating_ball_icons/a1_flat_lowerleft.webp',
+                  ),
+                  _buildPresetItem(
+                    'preset_1.png',
                     '预设1',
                     'assets/floating_ball_icons/1.png',
                   ),

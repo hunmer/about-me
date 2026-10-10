@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -388,9 +389,7 @@ class FloatingWidgetController {
       await Future.delayed(const Duration(milliseconds: 200));
 
       // 恢复主悬浮球图片
-      if (_customImageBytes != null) {
-        await FloatingBallPlugin.setFloatingBallImage(_customImageBytes!);
-      }
+      await _restoreBallImage();
 
       // 分批设置按钮图片
       await _setBatchButtonImages();
@@ -438,9 +437,7 @@ class FloatingWidgetController {
     await Future.delayed(const Duration(milliseconds: 200));
 
     // 恢复主悬浮球图片
-    if (_customImageBytes != null) {
-      await FloatingBallPlugin.setFloatingBallImage(_customImageBytes!);
-    }
+    await _restoreBallImage();
 
     // 分批设置按钮图片
     await _setBatchButtonImages();
@@ -485,6 +482,25 @@ class FloatingWidgetController {
         // 每个按钮之间稍微延迟，避免连续大量传输
         await Future.delayed(const Duration(milliseconds: 50));
       }
+    }
+  }
+
+  /// 恢复主悬浮球图片（启动后调用）
+  /// 未设置自定义图片时使用内置默认图标，避免显示系统默认样式
+  Future<void> _restoreBallImage() async {
+    if (_customImageBytes != null) {
+      await FloatingBallPlugin.setFloatingBallImage(_customImageBytes!);
+      return;
+    }
+    try {
+      final data = await rootBundle.load(
+        'assets/floating_ball_icons/a1_flat_lowerleft.webp',
+      );
+      await FloatingBallPlugin.setFloatingBallImage(
+        data.buffer.asUint8List(),
+      );
+    } catch (e) {
+      print('加载默认悬浮球图标失败: $e');
     }
   }
 

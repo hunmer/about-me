@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final String _filterStatus = '全部';
   String _currentGroup = '全部';
-  final bool _isGridView = false;
+  final bool _isGridView = true;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(8),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 1,
+          mainAxisExtent: 190, // 与 GoalCard 固定高度一致
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),
