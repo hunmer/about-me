@@ -202,6 +202,13 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
             ),
           ),
         ),
+
+        // 固定在详情层最右侧的尾部部件
+        if (item.trailing != null)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: item.trailing,
+          ),
       ],
     );
   }

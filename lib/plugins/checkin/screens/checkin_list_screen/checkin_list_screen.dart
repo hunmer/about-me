@@ -149,22 +149,6 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _handleFilterChanged,
-      actions: [
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.layers,
-                size: 40,
-                color: theme.surfaceAlt,
-                iconColor: theme.text,
-                onPressed: controller.showGroupManagementDialog,
-              );
-            },
-          ),
-        ),
-      ],
       enableLargeTitle: false,
     );
   }
@@ -255,6 +239,22 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
         },
         getBadge:
             (value) => FilterBuilders.singleChoiceBadge(value, groupOptions),
+        // 详情层最右侧的"管理分组"入口
+        trailing: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.layers,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'checkin_manageGroupsTitle'.tr,
+                onPressed: controller.showGroupManagementDialog,
+              );
+            },
+          ),
+        ),
       ),
 
       // 分组排序

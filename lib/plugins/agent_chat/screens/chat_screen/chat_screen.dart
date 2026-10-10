@@ -3,7 +3,9 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -37,6 +39,8 @@ import 'components/message_input.dart';
 import 'components/save_tool_dialog.dart';
 import 'components/agent_chain_config_dialog.dart';
 import 'components/tool_agents_config_dialog.dart';
+import 'components/markdown_content.dart';
+import 'components/tool_detail_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'package:aboutme/plugins/openai/moments/screens/moments_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
@@ -46,6 +50,9 @@ import 'package:aboutme/plugins/chat/models/message.dart'
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/chat_screen_scaffold.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_list.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/index.dart'
+    as chat_bubble;
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 /// 聊天界面
@@ -85,6 +92,9 @@ class _ChatScreenState extends State<ChatScreen> {
     <String>{},
   );
 
+  /// 是否处于多选模式（批量复制/删除）
+  bool _isMultiSelectMode = false;
+
   /// 本地用户与 AI 占位用户（仅用于通用 Message 模型的对齐与分组）
   static const User _localUser = User(
     id: 'agent_chat_local_user',
@@ -107,6 +117,11 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoadingSuggestions = false;
   final SuggestedQuestionsService _suggestionsService =
       SuggestedQuestionsService();
+
+  // 搜索和过滤状态（复用 chat 壳的搜索/过滤栏）
+  String _searchQuery = '';
+  final MultiFilterState _filterState = MultiFilterState();
+  List<ChatMessage> _filteredMessages = [];
 
   // 语音通话相关
   VoiceCallManager? _voiceCallManager;
@@ -568,6 +583,12 @@ class _ChatScreenState extends State<ChatScreen> {
     return ChatScreenScaffold(
       title: _buildAgentTitle(),
       largeTitle: widget.conversation.title,
+      enableSearchBar: true,
+      searchPlaceholder: '搜索消息内容...',
+      onSearchChanged: _handleSearchChanged,
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _handleFilterChanged,
       actions: _buildAgentActions(),
       body: _buildAgentBody(),
     );
@@ -673,6 +694,37 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Widget> _buildAgentActions() {
     // 颜色在构建期解析（按钮挂到导航壳的 actions 槽位，不依赖渲染处主题祖树）
     final theme = DSThemeBridge.resolve(context);
+
+    // 多选模式：复制/删除选中 + 退出
+    if (_isMultiSelectMode) {
+      return [
+        DSIconButton(
+          icon: DsIconKind.copy,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: _copySelectedMessages,
+          tooltip: '复制选中消息',
+        ),
+        DSIconButton(
+          icon: DsIconKind.trash,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.danger,
+          onPressed: _deleteSelectedMessages,
+          tooltip: '删除选中消息',
+        ),
+        DSIconButton(
+          icon: DsIconKind.close,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: _toggleMultiSelectMode,
+          tooltip: '退出多选模式',
+        ),
+      ];
+    }
+
     return [
       DSIconButton(
         icon: DsIconKind.gear,
@@ -741,9 +793,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 消息列表：适配为通用 Message 模型，气泡仍由 agent 自己的组件渲染
+  /// 消息列表：适配为通用 Message 模型，气泡复用 chat 框架 + agent 内容注入
   Widget _buildAgentMessageList() {
-    final messages = _controller.messages;
+    // 搜索/过滤时展示过滤结果
+    final messages = _searchQuery.isNotEmpty || _filterState.hasAnyFilter
+        ? _filteredMessages
+        : _controller.messages;
     final sourceById = <String, ChatMessage>{};
     final adapted = <Message>[];
     for (final message in messages) {
@@ -751,9 +806,20 @@ class _ChatScreenState extends State<ChatScreen> {
       adapted.add(_adaptMessage(message));
     }
 
+    // 组内首条：发送方切换或跨天时重显头像/用户名（与 chat 分组策略一致）
+    final firstOfGroupById = <String, bool>{};
+    for (var i = 0; i < messages.length; i++) {
+      final message = messages[i];
+      final prev = i > 0 ? messages[i - 1] : null;
+      firstOfGroupById[message.id] =
+          prev == null ||
+          prev.isUser != message.isUser ||
+          !_isSameDay(prev.timestamp, message.timestamp);
+    }
+
     return MessageList(
       items: _buildItemsWithDateSeparators(adapted),
-      isMultiSelectMode: false,
+      isMultiSelectMode: _isMultiSelectMode,
       selectedMessageIds: _selectedMessageIds,
       scrollController: _scrollController,
       // 新会话按钮固定在列表视觉底部（随内容滚动）
@@ -761,64 +827,77 @@ class _ChatScreenState extends State<ChatScreen> {
       bubbleBuilder: (context, message) {
         final source = sourceById[message.id];
         if (source == null) return const SizedBox.shrink();
+
+        // 会话分隔符：特殊样式，不进气泡框架
+        if (source.isSessionDivider) {
+          return _SessionDivider(message: source);
+        }
+
+        // 链式调用的后续消息/最终总结隐藏（与原 agent 气泡逻辑一致）
+        if (source.chainExecutionId != null &&
+            ((source.chainStepIndex != null && source.chainStepIndex! > 0) ||
+                source.isFinalSummary)) {
+          return const SizedBox.shrink();
+        }
+
         return _BubbleEntrance(
           isNew: source.timestamp.isAfter(
             DateTime.now().subtract(const Duration(seconds: 5)),
           ),
           alignRight: source.isUser,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: MessageBubble(
-              message: source,
-              hasAgent: _currentAgent != null,
-              storage: widget.storage,
-              onEdit: (messageId, newContent) async {
-                await _controller.editMessage(messageId, newContent);
-              },
-              onDelete: (messageId) async {
-                await _showDeleteConfirmation(messageId);
-              },
-              onRegenerate: (messageId) async {
-                await _controller.regenerateResponse(messageId);
-              },
-              onSaveTool: (message) async {
-                await _handleSaveTool(message);
-              },
-              onRerunTool: (messageId) async {
-                await _handleRerunTool(messageId);
-              },
-              onRerunStep: (messageId, stepIndex) async {
-                await _handleRerunStep(messageId, stepIndex);
-              },
-              onExecuteTemplate: (messageId, templateId) async {
-                final template = _controller.templateService?.getTemplateById(
-                  templateId,
-                );
-                if (template != null) {
-                  await _controller.executeMatchedTemplate(messageId, template);
-                }
-              },
-              getTemplateName: (templateId) {
-                return _controller.templateService
-                    ?.getTemplateById(templateId)
-                    ?.name;
-              },
-              getAgentName: (agentId) {
-                // 从 agent 链中查找
-                if (_isChainMode && _agentChain != null) {
-                  final agent = _agentChain!.firstWhere(
-                    (a) => a.id == agentId,
-                    orElse: () => _agentChain!.first,
-                  );
-                  return agent.name;
-                }
-                return _currentAgent?.name;
-              },
-              onCancel: source.isGenerating
-                  ? () => _controller.cancelSending()
-                  : null,
-              messageService: _controller.messageService,
-            ),
+          // chat 气泡框架：头像/时间戳/悬浮操作栏，内容由 agent 组件注入
+          child: chat_bubble.MessageBubble(
+            message: message,
+            isSelected: _selectedMessageIds.value.contains(source.id),
+            isMultiSelectMode: _isMultiSelectMode,
+            // 多选模式下点击气泡切换选中
+            onTap: _isMultiSelectMode
+                ? () => _toggleMessageSelection(source.id)
+                : null,
+            currentUserId: _localUser.id,
+            showAvatar: true,
+            isFirstOfGroup: firstOfGroupById[source.id] ?? true,
+            onEdit: () => _showEditMessageDialog(source),
+            onDelete: () => _showDeleteConfirmation(source.id),
+            onCopy: () => _copyMessage(source),
+            onSetFixedSymbol: (_) {},
+            contentBuilder: (context, message, textColor) =>
+                AgentMessageContent(
+                  message: source,
+                  onExecuteTemplate: (messageId, templateId) async {
+                    final template = _controller.templateService
+                        ?.getTemplateById(templateId);
+                    if (template != null) {
+                      await _controller.executeMatchedTemplate(
+                        messageId,
+                        template,
+                      );
+                    }
+                  },
+                  onRerunStep: (messageId, stepIndex) async {
+                    await _handleRerunStep(messageId, stepIndex);
+                  },
+                  getTemplateName: (templateId) {
+                    return _controller.templateService
+                        ?.getTemplateById(templateId)
+                        ?.name;
+                  },
+                  getAgentName: (agentId) {
+                    // 从 agent 链中查找
+                    if (_isChainMode && _agentChain != null) {
+                      final agent = _agentChain!.firstWhere(
+                        (a) => a.id == agentId,
+                        orElse: () => _agentChain!.first,
+                      );
+                      return agent.name;
+                    }
+                    return _currentAgent?.name;
+                  },
+                  messageService: _controller.messageService,
+                ),
+            infoBarTrailing: _buildThinkingEntry(source),
+            actionsOverride: _buildAgentActionRow(source),
+            showActionsOnOwnMessage: true,
           ),
         );
       },
@@ -835,7 +914,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 将 agent 的 ChatMessage 适配为通用 Message 模型（仅用于列表布局/日期分隔）
+  /// 将 agent 的 ChatMessage 适配为通用 Message 模型（用于气泡框架布局/日期分隔）
   Message _adaptMessage(ChatMessage message) {
     final isUser = message.isUser;
     return Message(
@@ -843,10 +922,641 @@ class _ChatScreenState extends State<ChatScreen> {
       content: message.content,
       user: isUser
           ? _localUser
-          : User(id: 'agent_chat_agent', username: _getAgentDisplayText()),
+          : User(
+              id: 'agent_chat_agent',
+              username: _getAgentDisplayText(),
+              iconPath: _currentAgent?.avatarUrl,
+            ),
       type: isUser ? MessageType.sent : MessageType.received,
       date: message.timestamp,
+      editedAt: message.editedAt,
+      metadata: {
+        ...?message.metadata,
+        // 用户消息被 AI 已读（活人感）：转换为 chat 气泡的 readBy 约定
+        if (isUser && message.metadata?['readAt'] != null)
+          'readBy': <dynamic>['ai'],
+      },
     );
+  }
+
+  /// 复制消息内容
+  void _copyMessage(ChatMessage source) {
+    Clipboard.setData(ClipboardData(text: source.content));
+    toastService.showToast('已复制到剪贴板');
+  }
+
+  /// 切换多选模式（退出时清空选中）
+  void _toggleMultiSelectMode() {
+    setState(() {
+      _isMultiSelectMode = !_isMultiSelectMode;
+      if (!_isMultiSelectMode) {
+        _selectedMessageIds.value = <String>{};
+      }
+    });
+  }
+
+  /// 切换消息选中状态
+  void _toggleMessageSelection(String messageId) {
+    final selected = Set<String>.from(_selectedMessageIds.value);
+    if (!selected.add(messageId)) {
+      selected.remove(messageId);
+    }
+    _selectedMessageIds.value = selected;
+  }
+
+  /// 复制多条选中的消息
+  void _copySelectedMessages() {
+    final selectedMessages = _controller.messages
+        .where((m) => _selectedMessageIds.value.contains(m.id))
+        .toList();
+
+    if (selectedMessages.isEmpty) return;
+
+    final textToCopy = selectedMessages
+        .map((m) => '${m.isUser ? '我' : 'AI'}: ${m.content}')
+        .join('\n\n');
+
+    Clipboard.setData(ClipboardData(text: textToCopy));
+    toastService.showToast('已复制 ${selectedMessages.length} 条消息');
+
+    _toggleMultiSelectMode();
+  }
+
+  /// 删除多条选中的消息
+  Future<void> _deleteSelectedMessages() async {
+    final selectedMessages = _controller.messages
+        .where((m) => _selectedMessageIds.value.contains(m.id))
+        .toList();
+
+    if (selectedMessages.isEmpty) return;
+
+    // 显示一次确认对话框
+    final confirm = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: '删除消息',
+            message: '确定要删除选中的 ${selectedMessages.length} 条消息吗？此操作不可撤销。',
+            cancelText: 'agent_chat_cancel'.tr,
+            confirmText: 'agent_chat_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
+          ),
+        ),
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      for (final message in selectedMessages) {
+        await _controller.deleteMessage(message.id);
+      }
+      if (mounted) {
+        toastService.showToast('已删除 ${selectedMessages.length} 条消息');
+        _toggleMultiSelectMode();
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('删除失败: $e');
+      }
+    }
+  }
+
+  /// 气泡悬浮操作栏（chat 风格）：按消息类型动态生成按钮
+  Widget _buildAgentActionRow(ChatMessage source) {
+    final isToolCallMessage =
+        source.toolCall != null && source.toolCall!.steps.isNotEmpty;
+
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        Widget action(
+          DsIconKind icon,
+          String tooltip,
+          VoidCallback onPressed, {
+          Color? iconColor,
+        }) => DSIconButton(
+          icon: icon,
+          size: 32,
+          color: theme.surfaceAlt,
+          iconColor: iconColor ?? theme.textSub,
+          onPressed: onPressed,
+          tooltip: tooltip,
+        );
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            action(DsIconKind.copy, '复制', () => _copyMessage(source)),
+            // 工具调用消息不可编辑
+            if (!isToolCallMessage)
+              action(
+                DsIconKind.edit,
+                '编辑',
+                () => _showEditMessageDialog(source),
+              ),
+            if (!source.isUser && _currentAgent != null)
+              action(
+                DsIconKind.refresh,
+                '重新生成',
+                () => _controller.regenerateResponse(source.id),
+              ),
+            if (!source.isUser && isToolCallMessage) ...[
+              action(
+                DsIconKind.download,
+                '保存工具',
+                () => _handleSaveTool(source),
+              ),
+              action(
+                DsIconKind.refresh,
+                '重新执行工具',
+                () => _handleRerunTool(source.id),
+              ),
+              action(DsIconKind.info, '查看详情', () => _showToolDetail(source)),
+            ],
+            action(
+              DsIconKind.trash,
+              '删除',
+              () => _showDeleteConfirmation(source.id),
+              iconColor: theme.danger,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 时间戳行尾部：思考过程入口（仅 AI 消息且有思考内容）
+  Widget? _buildThinkingEntry(ChatMessage source) {
+    if (source.isUser ||
+        source.thinkingContent == null ||
+        source.thinkingContent!.isEmpty) {
+      return null;
+    }
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Pressable(
+          onPressed: () => _showThinkingDialog(source),
+          semanticLabel: '显示思考过程',
+          builder: (context, states) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DsIcon(DsIconKind.bot, size: 12, color: theme.primaryText),
+              const SizedBox(width: 4),
+              Text(
+                '显示思考过程',
+                style: DsTypography.caption.copyWith(color: theme.primaryText),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 显示消息编辑对话框
+  void _showEditMessageDialog(ChatMessage source) {
+    final textController = TextEditingController(text: source.content);
+    // 与原实现一致：字符数在打开时计算一次
+    final initialLength = textController.text.length;
+
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'agent_chat_editMessage'.tr,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                      const SizedBox(width: 8),
+                      if (!source.isUser)
+                        DSBadge(
+                          label: 'AI',
+                          color: theme.secondary,
+                          textColor: theme.text,
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  DSInput(
+                    controller: textController,
+                    hint: '输入消息内容...',
+                    maxLines: null,
+                    minLines: 5,
+                    keyboardType: TextInputType.multiline,
+                  ),
+                  SizedBox(height: theme.spacing.xs),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$initialLength 字符',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'agent_chat_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.pop(dialogContext),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          label: 'agent_chat_save'.tr,
+                          onPressed: () {
+                            final newContent = textController.text.trim();
+                            if (newContent.isNotEmpty &&
+                                newContent != source.content) {
+                              _controller.editMessage(source.id, newContent);
+                            }
+                            Navigator.pop(dialogContext);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 显示思考过程对话框
+  void _showThinkingDialog(ChatMessage source) {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.bot,
+                        color: theme.primaryText,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '思考过程',
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: MarkdownContent(
+                        content: source.thinkingContent ?? '',
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  DSButton(
+                    label: '关闭',
+                    expand: true,
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 显示工具调用详情对话框
+  Future<void> _showToolDetail(ChatMessage source) async {
+    // 显示加载指示器
+    showDSDialog(
+      context: context,
+      barrierDismissible: false,
+      theme: DSThemeBridge.resolve(context),
+      builder: (_) =>
+          const DSThemeBridge(child: Center(child: DSLoadingDots())),
+    );
+
+    try {
+      // 加载消息详细数据
+      final detailService = MessageDetailService(storage: widget.storage);
+      final detail = await detailService.loadDetail(source.id);
+
+      // 关闭加载指示器
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (detail == null) {
+        if (context.mounted) {
+          toastService.showToast('未找到详细数据，可能此消息是在更新前创建的');
+        }
+        return;
+      }
+
+      // 显示详情对话框
+      if (context.mounted) {
+        showDSDialog(
+          context: context,
+          theme: DSThemeBridge.resolve(context),
+          builder: (dialogContext) => ToolDetailDialog(
+            detail: detail,
+            toolCallSteps: source.toolCall?.steps,
+          ),
+        );
+      }
+    } catch (e) {
+      // 关闭加载指示器
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        toastService.showToast('加载详情失败: $e');
+      }
+    }
+  }
+
+  /// 搜索回调
+  void _handleSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _applyFiltersAndSearch();
+    });
+  }
+
+  /// 过滤回调
+  void _handleFilterChanged(Map<String, dynamic> filters) {
+    filters.forEach((key, value) {
+      _filterState.setValue(key, value);
+    });
+    _applyFiltersAndSearch();
+  }
+
+  /// 应用搜索与过滤（发送人/日期/标签）
+  void _applyFiltersAndSearch() {
+    List<ChatMessage> result = List.from(_controller.messages);
+
+    // 应用搜索（仅匹配消息内容）
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      result = result
+          .where((m) => m.content.toLowerCase().contains(query))
+          .toList();
+    }
+
+    // 应用发送人过滤（我 / AI）
+    final selectedSender = _filterState.getValue('sender');
+    if (selectedSender == 'me') {
+      result = result.where((m) => m.isUser).toList();
+    } else if (selectedSender == 'ai') {
+      result = result.where((m) => !m.isUser).toList();
+    }
+
+    // 应用日期范围过滤
+    final dateRange = _filterState.getValue('dateRange');
+    if (dateRange != null && dateRange is Map<String, DateTime?>) {
+      final startDate = dateRange['start'];
+      final endDate = dateRange['end'];
+      result = result.where((m) {
+        if (startDate != null && m.timestamp.isBefore(startDate)) {
+          return false;
+        }
+        if (endDate != null) {
+          final endOfDay = DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+            23,
+            59,
+            59,
+          );
+          if (m.timestamp.isAfter(endOfDay)) return false;
+        }
+        return true;
+      }).toList();
+    }
+
+    // 应用标签过滤
+    final selectedTags = _filterState.getValue('tags');
+    if (selectedTags != null &&
+        selectedTags is List &&
+        selectedTags.isNotEmpty) {
+      result = result.where((m) {
+        final tags = m.metadata?['tags'] as List<String>?;
+        if (tags == null || tags.isEmpty) return false;
+        return selectedTags.any((tag) => tags.contains(tag));
+      }).toList();
+    }
+
+    setState(() {
+      _filteredMessages = result;
+    });
+  }
+
+  /// 构建过滤项配置（发送人/日期/标签）
+  List<FilterItem> _buildFilterItems() {
+    final hasTags = _controller.messages.any(
+      (m) => (m.metadata?['tags'] as List?)?.isNotEmpty == true,
+    );
+
+    return [
+      // 发送人过滤（我 / AI）
+      FilterItem(
+        id: 'sender',
+        title: '发送人',
+        type: FilterType.custom,
+        builder: (context, currentValue, onChanged) {
+          return Wrap(
+            spacing: 8,
+            children: [
+              DSChip(
+                label: '我',
+                selected: currentValue == 'me',
+                onSelected: (selected) => onChanged(selected ? 'me' : null),
+              ),
+              DSChip(
+                label: 'AI',
+                selected: currentValue == 'ai',
+                onSelected: (selected) => onChanged(selected ? 'ai' : null),
+              ),
+            ],
+          );
+        },
+        getBadge: (value) => value == 'me'
+            ? '我'
+            : value == 'ai'
+            ? 'AI'
+            : null,
+      ),
+
+      // 日期范围过滤
+      FilterItem(
+        id: 'dateRange',
+        title: '日期',
+        type: FilterType.dateRange,
+        builder: (context, currentValue, onChanged) {
+          final Map<String, DateTime?> range =
+              currentValue ?? {'start': null, 'end': null};
+          final startDate = range['start'];
+          final endDate = range['end'];
+
+          Widget dateChip({
+            required String label,
+            required DateTime? current,
+            required bool isStart,
+          }) {
+            return DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSChip(
+                    icon: DsIconKind.calendar,
+                    label: current == null
+                        ? label
+                        : DateFormat('MM/dd').format(current),
+                    onSelected: (_) async {
+                      final picked = await showDSDatePickerDialog(
+                        context: context,
+                        theme: theme,
+                        initial: current ?? DateTime.now(),
+                      );
+                      if (picked != null) {
+                        onChanged({
+                          'start': isStart ? picked : startDate,
+                          'end': isStart ? endDate : picked,
+                        });
+                      }
+                    },
+                  );
+                },
+              ),
+            );
+          }
+
+          return Wrap(
+            spacing: 8,
+            children: [
+              dateChip(label: '开始日期', current: startDate, isStart: true),
+              dateChip(label: '结束日期', current: endDate, isStart: false),
+              if (startDate != null || endDate != null)
+                DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.close,
+                        size: 32,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () => onChanged(null),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
+        getBadge: (value) {
+          if (value == null) return null;
+          final Map<String, DateTime?> range = value;
+          final start = range['start'];
+          final end = range['end'];
+          if (start != null && end != null) {
+            return '${DateFormat('MM/dd').format(start)}-${DateFormat('MM/dd').format(end)}';
+          } else if (start != null) {
+            return '从${DateFormat('MM/dd').format(start)}';
+          } else if (end != null) {
+            return '至${DateFormat('MM/dd').format(end)}';
+          }
+          return null;
+        },
+      ),
+
+      // 标签过滤（仅存在标签时显示）
+      if (hasTags)
+        FilterItem(
+          id: 'tags',
+          title: '标签',
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            final tags = _getAllMessageTags();
+            final List<String> selectedTags = currentValue ?? [];
+            return Wrap(
+              spacing: 8,
+              children: tags.map((tag) {
+                final isSelected = selectedTags.contains(tag);
+                return DSChip(
+                  label: tag,
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    final newTags = List<String>.from(selectedTags);
+                    if (selected) {
+                      newTags.add(tag);
+                    } else {
+                      newTags.remove(tag);
+                    }
+                    onChanged(newTags.isEmpty ? null : newTags);
+                  },
+                );
+              }).toList(),
+            );
+          },
+          getBadge: (value) {
+            if (value == null || (value as List).isEmpty) return null;
+            final tags = value as List<String>;
+            return tags.length == 1 ? tags[0] : '${tags.length}个标签';
+          },
+        ),
+    ];
+  }
+
+  /// 获取所有消息标签（去重排序）
+  List<String> _getAllMessageTags() {
+    final tags = <String>{};
+    for (final message in _controller.messages) {
+      final messageTags = message.metadata?['tags'] as List?;
+      if (messageTags != null) {
+        for (final tag in messageTags) {
+          if (tag is String) tags.add(tag);
+        }
+      }
+    }
+    return tags.toList()..sort();
   }
 
   /// 构建带日期分隔符的列表项（newest-first，配合 reverse ListView）
@@ -965,6 +1675,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     debugPrint('[ChatScreen] dispose 开始');
+    _filterState.dispose();
+    _selectedMessageIds.dispose();
     _voiceCallManager?.dispose();
     _aiMessageStreamController.close();
     _controller.removeListener(_onControllerChanged);
@@ -1268,6 +1980,15 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _AppBarMenuAction(
+              icon: DsIconKind.list,
+              label: '多选模式',
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                _toggleMultiSelectMode();
+              },
+            ),
             _AppBarMenuAction(
               icon: DsIconKind.gear,
               label: 'agent_chat_toolManagement'.tr,
@@ -1995,6 +2716,63 @@ class _BubbleEntrance extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// 会话分隔符（新会话标记），居中胶囊 + 两侧分割线
+class _SessionDivider extends StatelessWidget {
+  final ChatMessage message;
+
+  const _SessionDivider({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Divider(
+              color: theme.primary.withValues(alpha: 0.45),
+              thickness: 1,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.primary.mixWhite(0.88),
+                borderRadius: theme.radii.md,
+                border: Border.all(color: theme.primary),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DsIcon(DsIconKind.plus, size: 16, color: theme.primaryText),
+                  const SizedBox(width: 6),
+                  Text(
+                    message.content,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.primaryText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Divider(
+              color: theme.primary.withValues(alpha: 0.45),
+              thickness: 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -23,6 +23,7 @@ class ActivityTranslationsZh {
     // 导航和标题
     'activity_timeline': '时间线',
     'activity_statistics': '统计',
+    'activity_calendar': '日历',
 
     // 卡片视图标签
     'activity_todayActivities': '今日活动',

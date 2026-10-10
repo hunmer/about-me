@@ -19,6 +19,7 @@ import 'package:intl/intl.dart';
 import 'screens/activity_timeline_screen/activity_timeline_screen.dart';
 import 'screens/activity_timeline_screen/controllers/activity_controller.dart';
 import 'screens/activity_statistics_screen.dart';
+import 'screens/activity_calendar_screen.dart';
 import 'screens/activity_edit_screen.dart';
 import 'screens/activity_settings_screen.dart';
 import 'screens/tag_manage_screen.dart';
@@ -1166,7 +1167,7 @@ class _ActivityMainViewState extends State<ActivityMainView>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     // 监听 tab 切换动画
     _tabController.animation?.addListener(() {
@@ -1261,6 +1262,16 @@ class _ActivityMainViewState extends State<ActivityMainView>
                     child: Builder(builder: (_) => const DSLoadingDots()),
                   ),
                 ),
+          _visitedTabs.contains(2)
+              ? ActivityCalendarScreen(
+                  activityService: ActivityPlugin.instance.activityService,
+                )
+              // DSLoadingDots 内部取 AppTheme，需包桥
+              : Center(
+                  child: DSThemeBridge(
+                    child: Builder(builder: (_) => const DSLoadingDots()),
+                  ),
+                ),
         ],
       ),
       fab: _buildFab(),
@@ -1274,6 +1285,7 @@ class _ActivityMainViewState extends State<ActivityMainView>
       items: [
         DSNavItem(icon: DsIconKind.list, label: 'activity_timeline'.tr),
         DSNavItem(icon: DsIconKind.columns, label: 'activity_statistics'.tr),
+        DSNavItem(icon: DsIconKind.calendar, label: 'activity_calendar'.tr),
       ],
     );
   }

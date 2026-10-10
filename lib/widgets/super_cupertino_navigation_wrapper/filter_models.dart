@@ -58,6 +58,9 @@ class FilterItem {
   /// 初始值
   final dynamic initialValue;
 
+  /// 详情层最右侧的固定尾部部件（如管理入口按钮）
+  final Widget? trailing;
+
   const FilterItem({
     required this.id,
     required this.title,
@@ -65,6 +68,7 @@ class FilterItem {
     required this.builder,
     this.getBadge,
     this.initialValue,
+    this.trailing,
   });
 
   /// 复制并修改部分属性
@@ -79,6 +83,7 @@ class FilterItem {
     )? builder,
     String? Function(dynamic value)? getBadge,
     dynamic initialValue,
+    Widget? trailing,
   }) {
     return FilterItem(
       id: id ?? this.id,
@@ -87,6 +92,7 @@ class FilterItem {
       builder: builder ?? this.builder,
       getBadge: getBadge ?? this.getBadge,
       initialValue: initialValue ?? this.initialValue,
+      trailing: trailing ?? this.trailing,
     );
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -19,15 +18,13 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 class TagGroup {
   final String name;
   final List<String> tags;
-  final List<String>? tagIds;
 
-  TagGroup({required this.name, required this.tags, this.tagIds});
+  TagGroup({required this.name, required this.tags});
 
-  TagGroup copyWith({String? name, List<String>? tags, List<String>? tagIds}) {
+  TagGroup copyWith({String? name, List<String>? tags}) {
     return TagGroup(
       name: name ?? this.name,
       tags: tags ?? List.from(this.tags),
-      tagIds: tagIds ?? (this.tagIds != null ? List.from(this.tagIds!) : null),
     );
   }
 }
@@ -602,113 +599,16 @@ class CheckinListController {
 
   // 显示分组管理对话框
   void showGroupManagementDialog() {
-    // 获取当前的标签组
-    List<TagGroup> getCurrentTagGroups() {
-      // Re-calculate groups as selectedGroup shouldn't affect management
-      final groups =
-          checkinItems.map((item) => item.group).toSet().toList()..sort();
-      return groups.map((group) {
-        final items = groupedItems[group] ?? [];
-        return TagGroup(
-          name: group,
-          tags: items.map((item) => item.name).toList(),
-          tagIds: items.map((item) => item.id).toList(),
-        );
-      }).toList();
-    }
-
-    // 获取当前选中的标签（打卡项目）
-    List<String> getSelectedTags() {
-      return checkinItems
-          .where((item) => item.isCheckedToday())
-          .map((item) => item.name)
-          .toList();
-    }
-
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
       builder:
           (dialogContext) => TagManagerDialog(
             groups: getCurrentTagGroups(),
-            selectedTags: getSelectedTags(),
-            onAddTag: (String group, {String? tag}) async {
-              // 获取最新的标签组数据
-              final currentGroups = getCurrentTagGroups();
-              // 获取标签对应的id（如果存在）
-              String? itemId;
-              if (tag != null) {
-                for (var tagGroup in currentGroups) {
-                  if (tagGroup.name == group) {
-                    final tagIndex = tagGroup.tags.indexOf(tag);
-                    if (tagIndex != -1 &&
-                        tagGroup.tagIds != null &&
-                        tagGroup.tagIds!.length > tagIndex) {
-                      itemId = tagGroup.tagIds![tagIndex];
-                      break;
-                    }
-                  }
-                }
-              }
-
-              // 直接使用checkin的对话框，不关闭TagManager
-              final newTagName = await showAddCheckinItemDialog(
-                group: group,
-                copyFromTag: tag,
-                id: itemId, // 传递id参数用于编辑
-              );
-
-              if (newTagName != null) {
-                return newTagName;
-              }
-              return null;
-            },
-            onGroupsChanged: (List<TagGroup> updatedGroups) async {
-              // 处理分组变更
-              for (var tagGroup in updatedGroups) {
-                final existingItems = groupedItems[tagGroup.name] ?? [];
-                final existingItemNames =
-                    existingItems.map((e) => e.name).toSet();
-
-                // 更新现有项目的分组
-                for (var tag in tagGroup.tags) {
-                  // 如果标签不在现有项目中，创建新项目
-                  if (!existingItemNames.contains(tag)) {
-                    // 这里不需要显示对话框，因为已经通过onAddTag回调处理了
-                  }
-                }
-
-                // 处理被移除的项目
-                for (var item in List.from(checkinItems)) {
-                  if (item.group == tagGroup.name &&
-                      !tagGroup.tags.contains(item.name)) {
-                    checkinItems.remove(item);
-                  }
-                }
-              }
-
-              // 删除不在更新后分组列表中的项目
-              final updatedGroupNames =
-                  updatedGroups.map((g) => g.name).toSet();
-              checkinItems.removeWhere(
-                (item) => !updatedGroupNames.contains(item.group),
-              );
-
-              // 保存更改
-              await CheckinPlugin.shared.triggerSave();
-              onStateChanged();
-            },
-            onRefreshData: () async {
-              return getCurrentTagGroups();
-            },
-            config: TagManagerConfig(
-              title: 'checkin_manageGroupsTitle'.tr,
-              addGroupHint: 'checkin_addGroupHint'.tr,
-              addTagHint: 'checkin_addTagHint'.tr,
-              editGroupHint: 'checkin_editGroupHint'.tr,
-              allTagsLabel: 'checkin_allTagsLabel'.tr,
-              newGroupLabel: 'checkin_newGroupLabel'.tr,
-            ),
+            onRename: (oldName, newName) => renameGroup(oldName, newName),
+            onDelete: (name, deleteItems) =>
+                deleteGroup(name, deleteItems: deleteItems),
+            onRefreshData: () async => getCurrentTagGroups(),
           ),
     ).then((_) {
       // 关闭对话框后刷新界面
@@ -716,87 +616,53 @@ class CheckinListController {
     });
   }
 
-  // 显示添加或编辑打卡项目对话框
-  Future<String?> showAddCheckinItemDialog({
-    String? group,
-    String? copyFromTag,
-    String? id,
-  }) async {
-    final completer = Completer<String?>();
-
-    // 如果提供了id，尝试找到现有项目进行编辑
-    CheckinItem? existingItem;
-    if (id != null) {
-      try {
-        existingItem = checkinItems.firstWhere((item) => item.id == id);
-      } catch (e) {
-        // 如果找不到匹配的项目，existingItem 保持为 null
-        existingItem = null;
-      }
-    }
-
-    // 如果提供了copyFromTag且不是编辑模式，尝试找到该标签对应的CheckinItem作为模板
-    CheckinItem? templateItem;
-    if (copyFromTag != null && id == null) {
-      templateItem = checkinItems.firstWhere(
-        (item) => item.name == copyFromTag,
-        orElse:
-            () => CheckinItem(
-              name: '',
-              group: group ?? '',
-              icon: Icons.check_circle,
-              color: Colors.blue,
-            ),
+  /// 获取当前分组快照（用于分组管理对话框）
+  List<TagGroup> getCurrentTagGroups() {
+    final groups =
+        checkinItems.map((item) => item.group).toSet().toList()..sort();
+    return groups.map((group) {
+      final items = groupedItems[group] ?? [];
+      return TagGroup(
+        name: group,
+        tags: items.map((item) => item.name).toList(),
       );
+    }).toList();
+  }
 
-      // 创建一个新的CheckinItem，复制模板的属性但使用新的名称
-      templateItem = CheckinItem(
-        name: '', // 名称留空，由用户填写
-        group: group ?? templateItem.group,
-        icon: templateItem.icon,
-        color: templateItem.color,
-        // 复制其他需要的属性，但不复制记录
-      );
+  /// 重命名分组：更新组内所有项目的分组字段
+  Future<void> renameGroup(String oldName, String newName) async {
+    if (newName.isEmpty || newName == oldName) return;
+    // 重名检查
+    if (groups.contains(newName)) {
+      ToastService.instance.showToast('checkin_groupNameExistsError'.tr);
+      return;
     }
+    for (var item in checkinItems) {
+      if (item.group == oldName) item.group = newName;
+    }
+    // 同步当前选中分组
+    if (selectedGroup == oldName) selectedGroup = newName;
+    await CheckinPlugin.shared.triggerSave();
+    onStateChanged();
+  }
 
-    NavigationHelper.push<CheckinItem>(
-      context,
-      CheckinFormScreen(
-        initialItem:
-            existingItem ??
-            templateItem ??
-            (group != null
-                ? CheckinItem(
-                  name: '',
-                  group: group,
-                  icon: Icons.check_circle,
-                  color: Colors.blue,
-                )
-                : null),
-      ),
-    ).then((checkinItem) async {
-      if (checkinItem != null) {
-        if (existingItem != null) {
-          // 更新现有项目
-          final index = checkinItems.indexWhere(
-            (item) => item.id == existingItem!.id,
-          );
-          if (index != -1) {
-            checkinItems[index] = checkinItem;
-          }
-        } else {
-          // 添加新项目
-          checkinItems.add(checkinItem);
-        }
-        await CheckinPlugin.shared.triggerSave();
-        onStateChanged();
-        completer.complete(checkinItem.name);
-      } else {
-        completer.complete(null);
+  /// 删除分组
+  /// [deleteItems] 为 true 时同时删除组内打卡项目，否则将项目移至"默认分组"
+  Future<void> deleteGroup(String name, {required bool deleteItems}) async {
+    final items = checkinItems.where((item) => item.group == name).toList();
+    if (deleteItems) {
+      for (var item in items) {
+        await CheckinPlugin.instance.removeCheckinItem(item);
       }
-    });
-
-    return completer.future;
+    } else {
+      for (var item in items) {
+        item.group = '默认分组';
+      }
+      await CheckinPlugin.shared.triggerSave();
+    }
+    // 当前选中的分组被删除时回到"全部"
+    if (selectedGroup == name) selectedGroup = '全部';
+    onStateChanged();
   }
 
   // 更新指定分组中项目的顺序
@@ -833,44 +699,26 @@ class CheckinListController {
   }
 }
 
-/// 本地 TagManagerDialog 配置类
-class TagManagerConfig {
-  final String title;
-  final String addGroupHint;
-  final String addTagHint;
-  final String editGroupHint;
-  final String allTagsLabel;
-  final String newGroupLabel;
 
-  const TagManagerConfig({
-    this.title = '标签管理',
-    this.addGroupHint = '添加分组',
-    this.addTagHint = '添加标签',
-    this.editGroupHint = '编辑分组',
-    this.allTagsLabel = '全部',
-    this.newGroupLabel = '新建分组',
-  });
-}
-
-/// 本地 TagManagerDialog 组件
+/// 分组管理对话框：展示分组列表，支持重命名与删除分组
 class TagManagerDialog extends StatefulWidget {
   final List<TagGroup> groups;
-  final List<String> selectedTags;
-  final Function(List<TagGroup>)? onGroupsChanged;
-  final Function(List<String>)? onTagsSelected;
-  final Future<String?> Function(String group, {String? tag})? onAddTag;
+
+  /// 重命名分组回调 (旧名, 新名)
+  final Future<void> Function(String oldName, String newName)? onRename;
+
+  /// 删除分组回调 (分组名, 是否同时删除组内打卡项目)
+  final Future<void> Function(String name, bool deleteItems)? onDelete;
+
+  /// 操作完成后拉取最新分组数据
   final Future<List<TagGroup>> Function()? onRefreshData;
-  final TagManagerConfig? config;
 
   const TagManagerDialog({
     super.key,
     required this.groups,
-    required this.selectedTags,
-    this.onGroupsChanged,
-    this.onTagsSelected,
-    this.onAddTag,
+    this.onRename,
+    this.onDelete,
     this.onRefreshData,
-    this.config,
   });
 
   @override
@@ -879,21 +727,164 @@ class TagManagerDialog extends StatefulWidget {
 
 class _TagManagerDialogState extends State<TagManagerDialog> {
   late List<TagGroup> _groups;
-  late List<String> _selectedTags;
-  late String _selectedGroup;
+
+  /// 当前正在行内编辑的分组索引
+  int? _editingIndex;
+  final TextEditingController _editingController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _groups = List.from(widget.groups);
-    _selectedTags = List.from(widget.selectedTags);
-    _selectedGroup = _groups.isNotEmpty ? _groups[0].name : '';
+  }
+
+  @override
+  void dispose() {
+    _editingController.dispose();
+    super.dispose();
+  }
+
+  /// 操作完成后重新拉取最新分组列表
+  Future<void> _refresh() async {
+    final updated = await widget.onRefreshData?.call();
+    if (updated != null && mounted) {
+      setState(() {
+        _groups = updated;
+        _editingIndex = null;
+      });
+    }
+  }
+
+  void _startEdit(int index) {
+    setState(() {
+      _editingIndex = index;
+      _editingController.text = _groups[index].name;
+    });
+  }
+
+  Future<void> _confirmRename() async {
+    final index = _editingIndex;
+    if (index == null) return;
+    final oldName = _groups[index].name;
+    final newName = _editingController.text.trim();
+    setState(() => _editingIndex = null);
+    if (newName.isNotEmpty && newName != oldName) {
+      await widget.onRename?.call(oldName, newName);
+      await _refresh();
+    }
+  }
+
+  /// 删除分组确认对话框（可选同时删除组内打卡项目）
+  void _confirmDelete(TagGroup group) {
+    bool deleteItems = false;
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (_) => StatefulBuilder(
+            builder: (dialogContext, setDialogState) {
+              return DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return JellyBox(
+                      radius: theme.radii.xxl,
+                      padding: EdgeInsets.all(theme.spacing.xl),
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'checkin_deleteGroupTitle'.tr,
+                            textAlign: TextAlign.center,
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                          SizedBox(height: theme.spacing.md),
+                          Text(
+                            'checkin_deleteGroupMessage'.trParams({
+                              'name': group.name,
+                              'count': '${group.tags.length}',
+                            }),
+                            style: DsTypography.body.copyWith(color: theme.text),
+                          ),
+                          SizedBox(height: theme.spacing.md),
+                          // 同时删除组内打卡项目
+                          InkWell(
+                            onTap:
+                                () => setDialogState(
+                                  () => deleteItems = !deleteItems,
+                                ),
+                            child: Row(
+                              children: [
+                                DSCheckbox(
+                                  value: deleteItems,
+                                  onChanged:
+                                      (v) => setDialogState(
+                                        () => deleteItems = v ?? false,
+                                      ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    'checkin_deleteItemsWithGroup'.tr,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: theme.spacing.xs),
+                          Text(
+                            'checkin_itemsMoveHint'.tr,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                          SizedBox(height: theme.spacing.lg),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DSButton(
+                                  label: 'app_cancel'.tr,
+                                  variant: DSButtonVariant.outline,
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DSButton(
+                                  label: 'app_delete'.tr,
+                                  variant: DSButtonVariant.destructive,
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+                                    await widget.onDelete?.call(
+                                      group.name,
+                                      deleteItems,
+                                    );
+                                    await _refresh();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
-      // showDSDialog 已包裹 AppTheme，这里再包一层以兼容独立 showDialog 调用
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
@@ -909,7 +900,7 @@ class _TagManagerDialogState extends State<TagManagerDialog> {
                   Row(
                     children: [
                       Text(
-                        widget.config?.title ?? '标签管理',
+                        'checkin_manageGroupsTitle'.tr,
                         style: DsTypography.title.copyWith(color: theme.text),
                       ),
                       const Spacer(),
@@ -929,44 +920,27 @@ class _TagManagerDialogState extends State<TagManagerDialog> {
                     ),
                   ),
 
-                  // 分组选择
-                  if (_groups.isNotEmpty)
-                    Container(
-                      height: 50,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _groups.length,
-                        itemBuilder: (context, index) {
-                          final group = _groups[index];
-                          final isSelected = _selectedGroup == group.name;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: DSChip(
-                              label: group.name,
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedGroup = group.name;
-                                  });
-                                }
-                              },
+                  // 分组列表
+                  Expanded(
+                    child:
+                        _groups.isEmpty
+                            ? Center(
+                              child: Text(
+                                'checkin_emptyData'.tr,
+                                style: DsTypography.body.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            )
+                            : ListView.builder(
+                              itemCount: _groups.length,
+                              itemBuilder:
+                                  (context, index) => _buildGroupRow(
+                                    context,
+                                    index,
+                                  ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-
-                  Divider(
-                    height: 1,
-                    color: theme.stroke.withValues(
-                      alpha: theme.isDark ? 0.2 : 0.8,
-                    ),
                   ),
-
-                  // 标签列表
-                  Expanded(child: _buildTagsList()),
                 ],
               ),
             ),
@@ -976,86 +950,88 @@ class _TagManagerDialogState extends State<TagManagerDialog> {
     );
   }
 
-  Widget _buildTagsList() {
+  /// 构建单个分组行（展示态 / 行内重命名编辑态）
+  Widget _buildGroupRow(BuildContext context, int index) {
+    final group = _groups[index];
     final theme = DSThemeBridge.resolve(context);
+    final isEditing = _editingIndex == index;
 
-    if (_groups.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无分组',
-          style: DsTypography.body.copyWith(color: theme.textSub),
-        ),
-      );
-    }
-
-    final currentGroup = _groups.firstWhere(
-      (g) => g.name == _selectedGroup,
-      orElse: () => _groups[0],
-    );
-
-    if (currentGroup.tags.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '分组「${currentGroup.name}」暂无标签',
-              style: DsTypography.body.copyWith(color: theme.text),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child:
+                isEditing
+                    ? TextField(
+                      controller: _editingController,
+                      autofocus: true,
+                      style: DsTypography.body.copyWith(color: theme.text),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                      onSubmitted: (_) => _confirmRename(),
+                    )
+                    : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.name,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                        Text(
+                          'checkin_groupItemCount'.trParams({
+                            'count': '${group.tags.length}',
+                          }),
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
+          if (isEditing) ...[
+            DSIconButton(
+              icon: DsIconKind.check,
+              size: 32,
+              color: theme.surfaceAlt,
+              iconColor: theme.success,
+              onPressed: _confirmRename,
             ),
-            const SizedBox(height: 16),
-            DSButton(
-              label: '添加标签',
-              icon: DsIconKind.plus,
-              onPressed: () => _handleAddTag(currentGroup.name),
+            DSIconButton(
+              icon: DsIconKind.close,
+              size: 32,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              onPressed: () => setState(() => _editingIndex = null),
+            ),
+          ] else ...[
+            DSIconButton(
+              icon: DsIconKind.edit,
+              size: 32,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'checkin_renameGroup'.tr,
+              onPressed: () => _startEdit(index),
+            ),
+            DSIconButton(
+              icon: DsIconKind.trash,
+              size: 32,
+              color: theme.surfaceAlt,
+              iconColor: theme.danger,
+              tooltip: 'app_delete'.tr,
+              onPressed: () => _confirmDelete(group),
             ),
           ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: currentGroup.tags.length,
-      itemBuilder: (context, index) {
-        final tag = currentGroup.tags[index];
-        final isSelected = _selectedTags.contains(tag);
-        return Row(
-          children: [
-            DSCheckbox(
-              value: isSelected,
-              onChanged: (value) {
-                setState(() {
-                  if (value == true) {
-                    _selectedTags.add(tag);
-                  } else {
-                    _selectedTags.remove(tag);
-                  }
-                  widget.onTagsSelected?.call(_selectedTags);
-                });
-              },
-            ),
-            Expanded(
-              child: Text(
-                tag,
-                style: DsTypography.body.copyWith(color: theme.text),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
-  }
-
-  Future<void> _handleAddTag(String group) async {
-    final result = await widget.onAddTag?.call(group);
-    if (result != null) {
-      // 刷新数据
-      final updated = await widget.onRefreshData?.call();
-      if (updated != null) {
-        setState(() {
-          _groups = updated;
-        });
-        widget.onGroupsChanged?.call(_groups);
-      }
-    }
   }
 }

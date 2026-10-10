@@ -13,7 +13,6 @@ import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/plugins/activity/widgets/activity_timeline.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
-import 'package:aboutme/plugins/activity/screens/activity_calendar_screen.dart';
 import 'components/activity_grid_view.dart';
 import 'controllers/activity_controller.dart';
 import 'controllers/tag_controller.dart';
@@ -657,35 +656,6 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
       enableLargeTitle: true,
       // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
       actions: [
-        // 日历视图按钮
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.calendar,
-                  size: 36,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  tooltip: '日历视图',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => ActivityCalendarScreen(
-                              activityService: _activityService,
-                            ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ),
         // 视图切换按钮
         Padding(
           padding: const EdgeInsets.only(right: 8.0),

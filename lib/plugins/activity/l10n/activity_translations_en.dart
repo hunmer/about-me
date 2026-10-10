@@ -23,6 +23,7 @@ class ActivityTranslationsEn {
     // Navigation and titles
     'activity_timeline': 'Timeline',
     'activity_statistics': 'Statistics',
+    'activity_calendar': 'Calendar',
 
     // Card view labels
     'activity_todayActivities': 'Activities',

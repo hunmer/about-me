@@ -39,6 +39,19 @@ class MessageBubble extends StatefulWidget {
   final Function(String)? onReplyTap;
   final VoidCallback? onToggleFavorite;
 
+  /// 自定义气泡内容构建器（传入时替换默认 MessageContent，供其他聊天场景复用气泡框架）
+  final Widget Function(BuildContext context, Message message, Color textColor)?
+  contentBuilder;
+
+  /// 时间戳行尾部插槽（如 agent 场景的"显示思考过程"入口）
+  final Widget? infoBarTrailing;
+
+  /// 自定义悬浮操作栏内容（传入时替换默认 MessageActions 按钮行）
+  final Widget? actionsOverride;
+
+  /// 自己的消息是否也显示悬浮操作栏（默认仅他人消息显示）
+  final bool showActionsOnOwnMessage;
+
   const MessageBubble({
     super.key,
     required this.message,
@@ -57,6 +70,10 @@ class MessageBubble extends StatefulWidget {
     this.isHighlighted = false,
     this.onReplyTap,
     this.onToggleFavorite,
+    this.contentBuilder,
+    this.infoBarTrailing,
+    this.actionsOverride,
+    this.showActionsOnOwnMessage = false,
   });
 
   @override
@@ -243,10 +260,9 @@ class _MessageBubbleState extends State<MessageBubble> {
           margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment:
-                _isCurrentUser
-                    ? MainAxisAlignment.end
-                    : MainAxisAlignment.start,
+            mainAxisAlignment: _isCurrentUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               // 左侧复选框（当前用户的消息在多选模式下显示）
               if (_isCurrentUser && widget.isMultiSelectMode)
@@ -256,10 +272,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                 ),
               Flexible(
                 child: Column(
-                  crossAxisAlignment:
-                      _isCurrentUser
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
+                  crossAxisAlignment: _isCurrentUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     // 自己的消息：头像悬浮于气泡上方外侧，仅组内首条显示
                     if (_isCurrentUser &&
@@ -270,6 +285,25 @@ class _MessageBubbleState extends State<MessageBubble> {
                         child: MessageAvatar(
                           user: _currentMessage.user,
                           onTap: widget.onAvatarTap,
+                        ),
+                      ),
+                    // 自己的消息：可选的悬浮操作栏（镜像他人消息样式）
+                    if (_isCurrentUser && widget.showActionsOnOwnMessage)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              alignment: Alignment.centerRight,
+                              child: _showActions
+                                  ? _buildActions(theme)
+                                  : const SizedBox.shrink(),
+                            ),
+                            _buildActionsToggle(theme),
+                          ],
                         ),
                       ),
                     // 他人消息：头像与光标按钮行同一栏，按钮贴整行右缘
@@ -292,12 +326,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                               curve: Curves.easeOutCubic,
                               alignment: Alignment.centerRight,
                               child: _showActions
-                                  ? MessageActions(
-                                      onEdit: widget.onEdit,
-                                      onDelete: widget.onDelete,
-                                      onCopy: widget.onCopy,
-                                      onSetFixedSymbol: widget.onSetFixedSymbol,
-                                    )
+                                  ? _buildActions(theme)
                                   : const SizedBox.shrink(),
                             ),
                             _buildActionsToggle(theme),
@@ -328,15 +357,23 @@ class _MessageBubbleState extends State<MessageBubble> {
                         // 自己的消息被 AI 已读时显示标记（活人感已读机制）
                         if (_isCurrentUser &&
                             (_currentMessage.metadata?['readBy']
-                                    as List<dynamic>?)
-                                ?.isNotEmpty ==
+                                        as List<dynamic>?)
+                                    ?.isNotEmpty ==
                                 true) ...[
                           const SizedBox(width: 3),
                           Text(
                             '已读',
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontSize: 10, color: Colors.blueGrey),
+                                ?.copyWith(
+                                  fontSize: 10,
+                                  color: Colors.blueGrey,
+                                ),
                           ),
+                        ],
+                        // 时间戳行尾部插槽（agent 场景的思考过程入口等）
+                        if (widget.infoBarTrailing != null) ...[
+                          const SizedBox(width: 8),
+                          widget.infoBarTrailing!,
                         ],
                       ],
                     ),
@@ -362,10 +399,9 @@ class _MessageBubbleState extends State<MessageBubble> {
     Color textColor,
   ) {
     return Container(
-      padding:
-          _isImageMessage()
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: _isImageMessage()
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: _isImageMessage() ? const Color(0x00000000) : backgroundColor,
         borderRadius: BorderRadius.circular(_isImageMessage() ? 12.0 : 24.0),
@@ -381,17 +417,31 @@ class _MessageBubbleState extends State<MessageBubble> {
               padding: const EdgeInsets.only(bottom: 4.0),
               child: Text(
                 _currentMessage.user.username,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
               ),
             ),
           if (replyMessage != null && widget.onReplyTap != null)
             ReplyWidget(replyMessage: replyMessage!, onTap: widget.onReplyTap!),
-          MessageContent(message: _currentMessage, textColor: textColor),
+          // 自定义内容插槽（agent 等场景），默认渲染 chat 消息内容
+          if (widget.contentBuilder != null)
+            widget.contentBuilder!(context, _currentMessage, textColor)
+          else
+            MessageContent(message: _currentMessage, textColor: textColor),
         ],
       ),
+    );
+  }
+
+  /// 悬浮操作栏内容：自定义插槽优先，否则用默认按钮行
+  Widget _buildActions(AppThemeData theme) {
+    if (widget.actionsOverride != null) {
+      return widget.actionsOverride!;
+    }
+    return MessageActions(
+      onEdit: widget.onEdit,
+      onDelete: widget.onDelete,
+      onCopy: widget.onCopy,
+      onSetFixedSymbol: widget.onSetFixedSymbol,
     );
   }
 
@@ -435,16 +485,11 @@ class _MessageBubbleState extends State<MessageBubble> {
         ),
         color: widget.isSelected ? theme.primary : const Color(0x00000000),
       ),
-      child:
-          widget.isSelected
-              ? Center(
-                child: DsIcon(
-                  DsIconKind.check,
-                  size: 14,
-                  color: theme.onPrimary,
-                ),
-              )
-              : null,
+      child: widget.isSelected
+          ? Center(
+              child: DsIcon(DsIconKind.check, size: 14, color: theme.onPrimary),
+            )
+          : null,
     );
   }
 }
