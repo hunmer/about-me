@@ -1,5 +1,9 @@
 # Aboutme HTTP Storage Server (Node.js + TypeScript)
 
+> ⚠️ **已废弃（2026-10-11）**：本服务器已被 **[packages/aboutme_server](../aboutme_server)（Dart）** 取代。
+> Dart 版基于纯数据 SDK [aboutme_data_sdk](../aboutme_data_sdk)，提供完全兼容的存储/认证/插件 REST API、MCP `/mcp`、WebSocket 同步、FCM 推送与管理界面托管，数据目录（DATA_DIR）可直接接管，启动：`procm-command start server`。
+> 本目录仅作历史参考保留，不再维护。
+
 基于 Node.js + TypeScript 的 Aboutme 端到端加密 HTTP 存储服务器
 
 ## 功能特性

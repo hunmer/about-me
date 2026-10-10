@@ -1,25 +1,26 @@
-import 'dart:convert';
 import 'dart:io';
+
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'storage_interface.dart';
-import 'mobile_storage.dart';
-import 'web_storage.dart' as web_storage;
-import 'http_storage.dart';
-import 'storage_backend_config.dart';
 
-/// 轻量级存储管理器
-class StorageManager {
-  final _cache = <String, dynamic>{};
+import 'device_identity.dart';
+import 'mobile_storage.dart';
+import 'storage_backend_config.dart';
+import 'web_storage.dart' as web_storage;
+
+/// 存储管理器：在数据 SDK 的 [DataStore] 之上做 Flutter 宿主胶水 ——
+/// 默认后端选择（本地/Web/远端 HTTP）、远端配置加载与回退、应用目录解析。
+/// 数据操作语义全部复用 SDK，与服务端（aboutme_server）共享同一数据核心。
+class StorageManager extends DataStore {
   StorageManager({
     StorageInterface? storage,
     StorageBackendConfigStore? configStore,
-  }) : _storage = storage ?? _defaultStorage(),
-       _storageWasInjected = storage != null,
-       _configStore = configStore ?? LocalStorageBackendConfigStore();
+  }) : _storageWasInjected = storage != null,
+       _configStore = configStore ?? LocalStorageBackendConfigStore(),
+       super(storage: storage ?? _defaultStorage());
 
-  StorageInterface _storage;
   final bool _storageWasInjected;
   final StorageBackendConfigStore _configStore;
 
@@ -30,9 +31,6 @@ class StorageManager {
       kIsWeb ? web_storage.WebStorage.instance : MobileStorage.instance;
 
   static StorageInterface get localBackend => _defaultStorage();
-
-  bool get isRemote => _storage is HttpStorage;
-  StorageInterface get backend => _storage;
 
   /// 将共享文件物化到本地临时目录，供只接受真实路径的系统 API 使用。
   Future<File?> materializeToTemporaryFile(String storagePath) async {
@@ -51,58 +49,6 @@ class StorageManager {
     return target;
   }
 
-  /// 保存数据
-  Future<void> save(String key, dynamic value) async {
-    if (value is String) {
-      await _saveString(key, value);
-    } else {
-      await _saveJson(key, value);
-    }
-  }
-
-  /// 读取数据
-  Future<dynamic> load(String key, [dynamic defaultValue]) async {
-    return await _readJson(key, defaultValue);
-  }
-
-  /// 删除数据
-  Future<void> remove(String key) async {
-    _cache.remove(key);
-    await _storage.removeData(key);
-  }
-
-  /// 检查数据是否存在
-  Future<bool> exists(String key) async {
-    return _cache.containsKey(key) || await _storage.hasData(key);
-  }
-
-  /// 清除指定前缀的数据
-  Future<void> clearPrefix(String prefix) async {
-    await _storage.clearWithPrefix(prefix);
-    _cache.removeWhere((key, _) => key.startsWith(prefix));
-  }
-
-  /// 获取指定前缀的所有键
-  Future<List<String>> getKeysWithPrefix(String prefix) async {
-    return await _storage.getKeysWithPrefix(prefix);
-  }
-
-  /// 获取插件存储路径
-  String getPluginPath(String pluginId) => pluginId;
-
-  /// 插件数据操作
-  Future<void> savePluginData(String pluginId, String key, dynamic value) =>
-      save('${getPluginPath(pluginId)}/$key', value);
-
-  Future<dynamic> loadPluginData(
-    String pluginId,
-    String key, [
-    dynamic defaultValue,
-  ]) => load('${getPluginPath(pluginId)}/$key', defaultValue);
-
-  /// 清除内存缓存
-  void clearCache() => _cache.clear();
-
   /// 初始化存储管理器
   Future<void> initialize() async {
     if (_storageWasInjected) return;
@@ -110,11 +56,14 @@ class StorageManager {
     final config = await _configStore.load();
     if (config.isHttpEnabled) {
       try {
-        final httpStorage = HttpStorage.fromConfig(config);
+        final httpStorage = HttpStorage.fromConfig(
+          config,
+          deviceId: DeviceIdentity.id,
+        );
         // 构造不会联网，必须实际探测一次，服务器离线时才能在此回退，
         // 否则首个读取操作会抛 offline 导致核心初始化中断
         await httpStorage.testConnection();
-        _storage = httpStorage;
+        setBackend(httpStorage);
       } catch (e) {
         // 远端存储不可用（服务器未启动、凭据失效等）时回退本地存储，
         // 避免启动即崩溃；下次启动会重新尝试连接远端
@@ -122,32 +71,8 @@ class StorageManager {
         debugPrint('[StorageManager] 远端存储不可用，回退本地存储: $e');
       }
     }
-    _cache.clear();
+    clearCache();
   }
-
-  /// 读取数据 (别名方法)
-  Future<dynamic> read(String key, [dynamic defaultValue]) =>
-      readJson(key, defaultValue);
-
-  /// 写入数据 (别名方法)
-  Future<void> write(String key, dynamic value) => save(key, value);
-
-  /// 读取文件内容
-  Future<String> readFile(String path, [String defaultValue = '']) async {
-    try {
-      final String str = await readString(path);
-      return str.isEmpty ? defaultValue : str;
-    } catch (e) {
-      return defaultValue;
-    }
-  }
-
-  /// 写入文件内容
-  Future<void> writeFile(String path, String content) =>
-      writeString(path, content);
-
-  /// 获取插件存储路径 (公开方法)
-  String getPluginStoragePath(String id) => getPluginPath(id);
 
   /// 获取应用文档目录
   /// 如果是浏览器环境返回'aboutme_app'，其他环境返回正常的应用文档目录
@@ -173,132 +98,4 @@ class StorageManager {
   /// 获取应用数据目录（包含 app_data 前缀）
   /// 所有插件数据都存储在这个目录下
   Future<Directory> getApplicationDataDirectory() => appDataDirectory();
-
-  /// 创建目录
-  Future<void> createDirectory(String path) async {
-    await _storage.createDirectory(path);
-  }
-
-  /// 读取字符串内容
-  Future<String> readString(String path) async {
-    return await _storage.readString(path);
-  }
-
-  /// 写入字符串内容
-  Future<void> writeString(String path, String content) async {
-    await _storage.writeString(path, content);
-  }
-
-  /// 删除文件
-  Future<void> deleteFile(String path) async {
-    await _storage.deleteFile(path);
-  }
-
-  /// 写入JSON数据
-  Future<void> writeJson(String path, dynamic data) async {
-    await _storage.saveJson(path, data);
-  }
-
-  /// 检查文件是否存在
-  Future<bool> fileExists(String path) async {
-    return await exists(path);
-  }
-
-  /// 删除数据 (别名方法)
-  Future<void> delete(String key) async {
-    await remove(key);
-  }
-
-  /// 获取字符串数据
-  Future<String?> getString(String key) async {
-    try {
-      return await readString(key);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// 设置字符串数据
-  Future<void> setString(String key, String value) async {
-    await writeString(key, value);
-  }
-
-  /// 读取JSON数据
-  Future<dynamic> readJson(String path, [dynamic defaultValue]) async {
-    return await _storage.loadJson(path, defaultValue);
-  }
-
-  // ignore: unintended_html_in_doc_comment
-  /// 安全读取JSON数据，确保返回Map<String, dynamic>
-  Future<Map<String, dynamic>> readSafeJson(String path) async {
-    final dynamic jsonData = await _storage.loadJson(path);
-    if (jsonData == null) return {};
-
-    final Map<String, dynamic> data = {};
-    if (jsonData is Map) {
-      jsonData.forEach((key, value) {
-        data[key.toString()] = value;
-      });
-    }
-    return data;
-  }
-
-  /// 确保插件目录存在
-  Future<void> ensurePluginDirectoryExists(String pluginId) async {
-    await createDirectory(getPluginPath(pluginId));
-  }
-
-  /// 读取插件文件
-  Future<String> readPluginFile(String pluginId, String fileName) async {
-    final path = '${getPluginPath(pluginId)}/$fileName';
-    return await readString(path);
-  }
-
-  /// 写入插件文件
-  Future<void> writePluginFile(
-    String pluginId,
-    String fileName,
-    String content,
-  ) async {
-    final path = '${getPluginPath(pluginId)}/$fileName';
-    await writeString(path, content);
-  }
-
-  /// 读取二进制文件
-  Future<Uint8List?> readBytes(String path) async {
-    return await _storage.readBytes(path);
-  }
-
-  /// 写入二进制文件
-  Future<void> writeBytes(String path, Uint8List bytes) async {
-    await _storage.writeBytes(path, bytes);
-  }
-
-  // 私有方法
-  Future<void> _saveString(String key, String value) async {
-    if (!isRemote) _cache[key] = value;
-    await _storage.saveData(key, value);
-  }
-
-  Future<String> _readString(String key) async {
-    if (!isRemote && _cache.containsKey(key)) return _cache[key] as String;
-    final content = await _storage.loadData(key);
-    if (content == null) throw Exception('数据不存在: $key');
-    if (!isRemote) _cache[key] = content;
-    return content;
-  }
-
-  Future<void> _saveJson(String key, dynamic data) async {
-    final jsonStr = jsonEncode(data);
-    await _saveString(key, jsonStr);
-  }
-
-  Future<dynamic> _readJson(String key, [dynamic defaultValue]) async {
-    try {
-      final jsonStr = await _readString(key);
-      return jsonDecode(jsonStr);
-    } catch (e) {
-      return defaultValue;
-    }
-  }
 }

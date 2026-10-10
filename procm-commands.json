@@ -29,11 +29,25 @@
       "desc": "Static analysis quality gate"
     },
     "server": {
+      "script": "dart",
+      "args": ["run", "bin/server.dart"],
+      "cwd": "packages/aboutme_server",
+      "group": "aboutme",
+      "desc": "Dart storage server on port 8874: storage/auth/plugin REST API + MCP + WS, based on aboutme_data_sdk (drop-in replacement of nodejs server, same DATA_DIR layout)"
+    },
+    "server-build": {
+      "script": "dart",
+      "args": ["compile", "exe", "bin/server.dart", "-o", "bin/aboutme-server"],
+      "cwd": "packages/aboutme_server",
+      "group": "aboutme",
+      "desc": "Compile the Dart storage server into a standalone executable (bin/aboutme-server)"
+    },
+    "server-nodejs-deprecated": {
       "script": "npm",
       "args": ["run", "dev"],
       "cwd": "packages/server-nodejs",
       "group": "aboutme",
-      "desc": "Storage server (REST + admin panel + MCP /mcp) on port 8874, ts-node-dev hot reload"
+      "desc": "[DEPRECATED] Legacy Node.js storage server (JS plugin system + Vue admin dev), superseded by packages/aboutme_server"
     }
   }
 }

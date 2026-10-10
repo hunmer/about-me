@@ -39,7 +39,7 @@ void main() {
     final client = MockClient((request) async {
       if (request.method == 'HEAD') return http.Response('', 404);
       if (request.method == 'PUT') {
-        expect(request.headers['X-Force-Overwrite'], 'true');
+        expect(request.headers['If-None-Match'], '*');
         stored = request.bodyBytes;
         expect(utf8.decode(stored!), isNot(contains('private text')));
         return http.Response('', 200, headers: {'etag': etag});
@@ -61,15 +61,22 @@ void main() {
     expect(await storage.readString('notes/data.json'), 'private text');
   });
 
-  test('uses force overwrite instead of conditional writes', () async {
-    var calls = 0;
+  test('conditional write: If-None-Match for new, If-Match for known version', () async {
+    final putHeaders = <Map<String, String>>[];
+    var serverEtag = '"v2"';
+    Uint8List? stored;
     final client = MockClient((request) async {
-      calls++;
-      expect(request.method, 'PUT');
-      expect(request.headers['X-Force-Overwrite'], 'true');
-      expect(request.headers.containsKey('If-Match'), isFalse);
-      expect(request.headers.containsKey('If-None-Match'), isFalse);
-      return http.Response('', 200, headers: {'etag': '"new"'});
+      switch (request.method) {
+        case 'PUT':
+          putHeaders.add(Map.of(request.headers));
+          stored = request.bodyBytes;
+          return http.Response('', 200, headers: {'etag': serverEtag});
+        case 'GET':
+          if (stored == null) return http.Response('', 404);
+          return http.Response.bytes(stored!, 200, headers: {'etag': serverEtag});
+        default:
+          throw StateError('unexpected ${request.method}');
+      }
     });
     final storage = HttpStorage(
       serverUrl: 'https://storage.example',
@@ -79,8 +86,13 @@ void main() {
       client: client,
     );
 
-    await storage.writeBytes('data.bin', Uint8List.fromList([1, 2, 3]));
-    expect(calls, 1);
+    await storage.writeBytes('data.bin', Uint8List.fromList([1]));
+    expect(putHeaders.single['If-None-Match'], '*');
+
+    await storage.readBytes('data.bin'); // 缓存 etag
+    await storage.writeBytes('data.bin', Uint8List.fromList([2]));
+    expect(putHeaders.last['If-Match'], '"v2"');
+    expect(putHeaders.last.containsKey('If-None-Match'), isFalse);
   });
 
   test('reports offline and authentication failures explicitly', () async {

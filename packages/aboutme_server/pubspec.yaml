@@ -1,0 +1,20 @@
+name: aboutme_server
+description: "Aboutme 存储服务器（Dart）：基于 aboutme_data_sdk 开放 HTTP API，替代 nodejs server"
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  aboutme_data_sdk:
+    path: ../aboutme_data_sdk
+  basic_utils: ^5.7.0
+  shelf: ^1.4.0
+  shelf_router: ^1.1.4
+  shelf_web_socket: ^3.0.0
+  web_socket_channel: ^3.0.0
+
+dev_dependencies:
+  test: ^1.25.0
+  http: ^1.3.0

@@ -1,7 +1,7 @@
 {
   "name": "@hunmer/aboutme-server",
   "version": "1.0.3",
-  "description": "Aboutme HTTP 存储服务器 - Node.js + TypeScript 版本",
+  "description": "[DEPRECATED] Aboutme 存储服务器（已被 packages/aboutme_server 取代）- Node.js + TypeScript 版本",
   "main": "dist/index.js",
   "bin": {
     "aboutme-server": "dist/index.js"
@@ -65,5 +65,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "deprecated": "已被 packages/aboutme_server（Dart）取代，仅作历史参考保留"
 }

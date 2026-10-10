@@ -1,3 +1,4 @@
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,5 +16,7 @@ class DeviceIdentity {
     } else {
       await prefs.setString(_preferenceKey, _id);
     }
+    // 同步给数据 SDK：HttpStorage 的 X-Device-ID / WS 广播来源设备
+    HttpStorageDefaults.deviceId = _id;
   }
 }

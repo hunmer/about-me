@@ -2,11 +2,11 @@
 
 Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 26 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠等），数据本地优先存储，经自建服务器做端到端加密同步（默认首页为果冻小屋 `/jelly_home`）。2026-10 起新增 AI 伙伴拟人化能力：**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息）与 **moments 朋友圈**（AI 动态流/资产图/自主生图），均在 openai 插件内。
 
-本仓库是 monorepo：除 Flutter 客户端（`lib/`，1868 个 Dart 文件）外，还包含 1 个 Node.js 同步服务器、9 个 Dart 子包（agentlib AI 传输库、dartantic_ai 定制 SDK、super_cupertino_navigation_bar、6 个原生插件）、共享模型包（`shared_models/`）与 67 篇专题文档（`docs/`）。技术栈：Flutter/Dart ^3.10 + GetX + flutter_js，Node ≥ 18（Express、MCP SDK）。
+本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 Dart 同步服务器（`packages/aboutme_server`，基于纯数据 SDK `packages/aboutme_data_sdk`，已取代 nodejs 服务器）、多个 Dart 子包（agentlib AI 传输库、dartantic_ai 定制 SDK、super_cupertino_navigation_bar、原生插件等）、共享模型包（`shared_models/`）与专题文档（`docs/`）。技术栈：Flutter/Dart ^3.10 + GetX + flutter_js。
 
 ## 约定的规则
 
-- 同步服务器在 `packages/server-nodejs`（默认端口 **8874**）；旧文档中 `cd server && dart run ...`、`api_forwarding_server`、独立 mcp-aboutme-server、WebDAV 同步均已失效/删除，勿再引用。
+- 同步服务器在 `packages/aboutme_server`（Dart，默认端口 **8874**，`procm-command start server` 启动；数据核心在 `packages/aboutme_data_sdk`，客户端 `lib/core/storage/` 也是该 SDK 的转发）。旧 nodejs 服务器 `packages/server-nodejs` 已废弃（2026-10-11），仅历史参考。
 - 新插件必须注册到 `lib/core/builtin_plugins.dart`；JS API 命名 `get{Entity}s` / `create{Entity}` / `update{Entity}` / `delete{Entity}`；推荐 UseCase 分层（接口放 `shared_models/`）。
 - Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛，`test/` 现有 8 个测试（活人感/design_system/http_storage/live2d/agent_chat），改动相关逻辑后跑 `flutter test`。
 - ⚠️ `lib/plugins/openai/aliveness/services/aliveness_store.dart` 与 `test/aliveness_e2e_test.dart` 存在硬编码 API Key，开源/分发前必须移除。
@@ -42,7 +42,9 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 | `lib/plugins/live2d` | Live2D 桌宠：存档管理 + TTS 播报（渲染在 jelly_home） | [lib/plugins/live2d/CLAUDE.md](lib/plugins/live2d/CLAUDE.md) |
 | `lib/screens/jelly_home` | 果冻小屋主页（**应用默认启动页**，四页签 + Live2D 渲染核心） | [lib/screens/jelly_home/CLAUDE.md](lib/screens/jelly_home/CLAUDE.md) |
 | `packages/` | 10 个子包聚合索引（1 个 Node 服务 + 3 个 Dart 库 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
-| `packages/server-nodejs` | 同步服务器（REST + WS 实时同步 + 管理面板 + 服务端插件系统 + MCP 端点 /mcp） | [packages/server-nodejs/CLAUDE.md](packages/server-nodejs/CLAUDE.md) |
+| `packages/aboutme_data_sdk` | 纯数据 SDK：存储接口/HTTP 远端存储/服务端文件存储/认证/插件数据（客户端与服务器共用） | [packages/aboutme_data_sdk/README.md](packages/aboutme_data_sdk/README.md) |
+| `packages/aboutme_server` | 同步服务器（Dart，REST + WS 实时同步 + 插件 API + MCP /mcp + FCM + 管理界面托管） | [packages/aboutme_server/README.md](packages/aboutme_server/README.md) |
+| `packages/server-nodejs` | [已废弃] 旧 Node.js 同步服务器，被 aboutme_server 取代 | [packages/server-nodejs/README.md](packages/server-nodejs/README.md) |
 | `packages/agentlib` | OpenAI 兼容 HTTP/SSE 传输门面（openai/agent_chat 消费） | [packages/agentlib/CLAUDE.md](packages/agentlib/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
 | `scripts/` | 多平台构建与发布脚本 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
@@ -55,7 +57,7 @@ graph TD
     Root --> Pkg["packages/"]
     Root --> Shared["shared_models/"]
     Root --> Docs["docs/ · online/ · scripts/ · handoff/"]
-    Pkg --> Srv["server-nodejs 同步服务器（含 /mcp）"]
+    Pkg --> Srv["aboutme_server 同步服务器（含 /mcp）"]
     Pkg --> Dart["agentlib · super_cupertino"]
     Pkg --> Native["6 个原生插件"]
     Lib --> Core["core 核心层"]

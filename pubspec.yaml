@@ -131,6 +131,9 @@ dependencies:
     path: packages/aboutme_nfc
   shared_models:
     path: ./shared_models
+  # 纯数据 SDK：存储接口/远端 HTTP 存储/数据管理门面（服务端 aboutme_server 复用同一数据核心）
+  aboutme_data_sdk:
+    path: packages/aboutme_data_sdk
 
   flutter_localizations:
     sdk: flutter
