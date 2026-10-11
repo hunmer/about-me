@@ -5,11 +5,11 @@ void main() {
   const secret = 'test-secret-123';
   // 以下 token 均由 nodejs jsonwebtoken 生成
   const nodeToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWFiYyIsImlhdCI6MTc5MTY1MDI5OSwiZXhwIjoxNzkxNjUzODk5fQ.-zCkDGtT7w1Xn__TmvAXUnOs-ya07Y4ueiR1v3XUJ_o';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWFiYyIsImlhdCI6MTc5MTY1NTY2NywiZXhwIjo0OTQ3NDE1NjY3fQ.H6vD_MxxJ1B079avD3kfLZQF_sapusi3-nIoX6vkSRE';
   const wrongSecretToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWFiYyIsImlhdCI6MTc5MTY1MDI5OSwiZXhwIjoxNzkxNjUzODk5fQ.83VaejoJTXqseyPqlv8bWmvFresAbiTUo1w5uf1m0Vs';
   const expiredToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWFiYyIsImlhdCI6MTc5MTY1MDI5OSwiZXhwIjoxNzkxNjQ2Njk5fQ.x_g_YNXTPVp4zm5qjJOJyzoINJdLPSPgelMFs8vq4Zw';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWFiYyIsImlhdCI6MTc5MTY1NTY2NywiZXhwIjoxNzkxNjUyMDY3fQ.HQI3kqN0Qi1AnVd7d5lY0CXR7wlg1V_VqS62YaRK39c';
 
   test('验证 nodejs jsonwebtoken 签发的 token', () {
     final payload = JwtHs256.verify(nodeToken, secret);

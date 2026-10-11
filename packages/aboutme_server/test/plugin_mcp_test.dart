@@ -69,20 +69,20 @@ void main() {
   };
 
   group('插件 REST API', () {
-    test('缺少 X-Encryption-Key 返回 403；无效 API Key 返回 401', () async {
+    test('无需加密头即可访问；无效 API Key 返回 401', () async {
+      // 加密已取消：仅凭 API Key 即可
       final noKey = await client.getUrl(
         Uri.parse('$baseUrl/api/v1/plugins/chat/channels'),
       )
         ..headers.set('X-API-Key', apiKey);
       final noKeyResponse = await noKey.close();
-      expect(noKeyResponse.statusCode, 403);
+      expect(noKeyResponse.statusCode, 200);
       await noKeyResponse.drain();
 
       final badKey = await client.getUrl(
         Uri.parse('$baseUrl/api/v1/plugins/chat/channels'),
       )
-        ..headers.set('X-API-Key', 'mk_bad')
-        ..headers.set('X-Encryption-Key', encryptionKey);
+        ..headers.set('X-API-Key', 'mk_bad');
       final badKeyResponse = await badKey.close();
       expect(badKeyResponse.statusCode, 401);
       await badKeyResponse.drain();
@@ -174,12 +174,12 @@ void main() {
       expect(deleted['success'], isTrue);
     });
 
-    test('插件数据落盘为旧版加密文件（无明文）', () async {
+    test('插件数据落盘为明文 JSON（统一数据区）', () async {
       await _post(
         client,
         baseUrl,
         '/api/v1/plugins/timer/item',
-        {'title': 'secret-title'},
+        {'title': 'plain-title'},
         headers: _pluginHeaders(),
       );
       final usersDir = Directory('${tempDir.path}/users');
@@ -188,8 +188,83 @@ void main() {
           .whereType<File>()
           .firstWhere((f) => f.path.endsWith('timer/data.json'));
       final content = await dataFile.readAsString();
-      expect(content.contains('secret-title'), isFalse);
-      expect(content, contains('encrypted_data'));
+      // 明文存储，路径为 users/{id}/timer/data.json（无 .storage 前缀）
+      expect(content, contains('plain-title'));
+      expect(dataFile.path, contains('/timer/data.json'));
+    });
+
+    test('跨通路同数据：storage API 写的文件，插件/MCP 直接读到并修改', () async {
+      // 1) 通过 storage files API（客户端文件层）写入 todo 数据，
+      //    带客户端特有的额外字段 viewMode/completedTasks
+      final put = await client.putUrl(
+        Uri.parse('$baseUrl/api/v1/storage/files/todo/tasks.json'),
+      );
+      _pluginHeaders().forEach(put.headers.set);
+      put.headers.set('X-Force-Overwrite', 'true');
+      put.headers.contentType = ContentType.binary;
+      put.add(
+        utf8.encode(
+          '{"tasks":[{"id":"t1","title":"storage 写入","completed":false}],'
+          '"completedTasks":[],"viewMode":"ViewMode.quadrant"}',
+        ),
+      );
+      final putResponse = await put.close();
+      expect(putResponse.statusCode, 200);
+      await putResponse.drain();
+
+      // 2) 插件业务 API（同一套 SDK 处理器）读到的就是这份数据
+      final tasks = await _get(
+        client,
+        baseUrl,
+        '/api/v1/plugins/todo/tasks',
+        headers: _pluginHeaders(),
+      );
+      expect(tasks['success'], isTrue, reason: '$tasks');
+      final taskList = (tasks['data'] as Map)['data'] as List;
+      expect(taskList.length, 1);
+      expect(taskList.first['title'], 'storage 写入');
+
+      // 3) MCP 工具修改 → 同一文件，且保留客户端额外字段
+      final mcpCall = await _post(
+        client,
+        baseUrl,
+        '/mcp',
+        {
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'tools/call',
+          'params': {
+            'name': 'aboutme_todo_completeTask',
+            'arguments': {'id': 't1'},
+          },
+        },
+        headers: {
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      );
+      expect((mcpCall['result'] as Map)['isError'], isNull,
+          reason: '${mcpCall['result']}');
+
+      // 4) 落盘验证：明文、tasks 更新、额外字段保留
+      final usersDir = Directory('${tempDir.path}/users');
+      final dataFile = usersDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .firstWhere((f) => f.path.endsWith('todo/tasks.json'));
+      final content = await dataFile.readAsString();
+      expect(content, contains('"completed":true'));
+      expect(content, contains('viewMode')); // 未丢客户端字段
+      expect(content, contains('completedTasks'));
+
+      // 5) storage files API 再读 → 拿到 MCP 修改后的版本
+      final get = await client.getUrl(
+        Uri.parse('$baseUrl/api/v1/storage/files/todo/tasks.json'),
+      );
+      _pluginHeaders().forEach(get.headers.set);
+      final getResponse = await get.close();
+      final body = await getResponse.transform(utf8.decoder).join();
+      expect(body, contains('"completed":true'));
     });
 
     test('diary：按日期创建/读取', () async {

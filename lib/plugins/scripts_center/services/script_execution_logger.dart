@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 单条脚本执行记录
@@ -205,13 +206,13 @@ class ScriptExecutionLogger extends ChangeNotifier {
     _entries.clear();
     notifyListeners();
     try {
-      await storage.delete(_logPath);
+      await AboutmeDataService.instance.deletePath(_logPath);
     } catch (_) {}
   }
 
   Future<void> _load() async {
     try {
-      final data = await storage.read(_logPath);
+      final data = await AboutmeDataService.instance.readPath(_logPath);
       if (data is List) {
         _entries.addAll(
           data
@@ -232,7 +233,7 @@ class ScriptExecutionLogger extends ChangeNotifier {
 
   Future<void> _save() async {
     try {
-      await storage.write(
+      await AboutmeDataService.instance.writePath(
         _logPath,
         _entries.map((e) => e.toJson()).toList(),
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
@@ -32,9 +33,10 @@ class ContactController {
 
   // 获取所有联系人
   Future<List<Contact>> getAllContacts() async {
-    final storage = plugin.storage;
     try {
-      final dynamic rawData = await storage.readJson(contactsKey);
+      final dynamic rawData = await AboutmeDataService.instance.readPath(
+        contactsKey,
+      );
 
       // 处理数据不存在或为空的情况
       if (rawData == null) return [];
@@ -64,10 +66,9 @@ class ContactController {
 
   // 保存所有联系人
   Future<void> saveAllContacts(List<Contact> contacts) async {
-    final storage = plugin.storage;
     final List<Map<String, dynamic>> jsonData =
         contacts.map((c) => c.toJson()).toList();
-    await storage.writeJson(contactsKey, jsonData);
+    await AboutmeDataService.instance.writePath(contactsKey, jsonData);
   }
 
   // 添加联系人
@@ -152,9 +153,10 @@ class ContactController {
 
   // 获取所有交互记录
   Future<List<InteractionRecord>> getAllInteractions() async {
-    final storage = plugin.storage;
     try {
-      final dynamic rawData = await storage.readJson(interactionsKey);
+      final dynamic rawData = await AboutmeDataService.instance.readPath(
+        interactionsKey,
+      );
       if (rawData == null) {
         return [];
       }
@@ -192,8 +194,7 @@ class ContactController {
 
   // 保存所有交互记录
   Future<void> saveAllInteractions(List<InteractionRecord> interactions) async {
-    final storage = plugin.storage;
-    await storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       interactionsKey,
       interactions.map((i) => i.toJson()).toList(),
     );
@@ -249,25 +250,34 @@ class ContactController {
 
   // 保存筛选配置
   Future<void> saveFilterConfig(FilterConfig config) async {
-    final storage = plugin.storage;
-    await storage.writeJson(filterConfigKey, config.toJson());
+    await AboutmeDataService.instance.writePath(
+      filterConfigKey,
+      config.toJson(),
+    );
   }
 
   // 获取筛选配置
   Future<FilterConfig> getFilterConfig() async {
-    final storage = plugin.storage;
     try {
-      final configJson = await storage.readJson(filterConfigKey);
+      final configJson = await AboutmeDataService.instance.readPath(
+        filterConfigKey,
+      );
       if (configJson == null) {
         final defaultConfig = FilterConfig();
-        await storage.writeJson(filterConfigKey, defaultConfig.toJson());
+        await AboutmeDataService.instance.writePath(
+          filterConfigKey,
+          defaultConfig.toJson(),
+        );
         return defaultConfig;
       }
       return FilterConfig.fromJson(Map<String, dynamic>.from(configJson));
     } catch (e) {
       if (e.toString().contains('FileSystemException: 文件不存在')) {
         final defaultConfig = FilterConfig();
-        await storage.writeJson(filterConfigKey, defaultConfig.toJson());
+        await AboutmeDataService.instance.writePath(
+          filterConfigKey,
+          defaultConfig.toJson(),
+        );
         return defaultConfig;
       }
       rethrow;
@@ -276,25 +286,34 @@ class ContactController {
 
   // 保存排序配置
   Future<void> saveSortConfig(SortConfig config) async {
-    final storage = plugin.storage;
-    await storage.writeJson(sortConfigKey, config.toJson());
+    await AboutmeDataService.instance.writePath(
+      sortConfigKey,
+      config.toJson(),
+    );
   }
 
   // 获取排序配置
   Future<SortConfig> getSortConfig() async {
-    final storage = plugin.storage;
     try {
-      final configJson = await storage.readJson(sortConfigKey);
+      final configJson = await AboutmeDataService.instance.readPath(
+        sortConfigKey,
+      );
       if (configJson == null) {
         final defaultConfig = const SortConfig();
-        await storage.writeJson(sortConfigKey, defaultConfig.toJson());
+        await AboutmeDataService.instance.writePath(
+          sortConfigKey,
+          defaultConfig.toJson(),
+        );
         return defaultConfig;
       }
       return SortConfig.fromJson(Map<String, dynamic>.from(configJson));
     } catch (e) {
       if (e.toString().contains('FileSystemException: 文件不存在')) {
         final defaultConfig = const SortConfig();
-        await storage.writeJson(sortConfigKey, defaultConfig.toJson());
+        await AboutmeDataService.instance.writePath(
+          sortConfigKey,
+          defaultConfig.toJson(),
+        );
         return defaultConfig;
       }
       rethrow;
@@ -430,10 +449,10 @@ class ContactController {
   Future<void> createDefaultContacts() async {
     if (!kDebugMode) return;
 
-    final storage = plugin.storage;
-
     // 检查是否已有联系人数据
-    final existingContacts = await storage.readJson(contactsKey);
+    final existingContacts = await AboutmeDataService.instance.readPath(
+      contactsKey,
+    );
     if (existingContacts != null &&
         existingContacts is List &&
         existingContacts.isNotEmpty) {
@@ -445,13 +464,13 @@ class ContactController {
     final sampleInteractions = ContactSampleData.getSampleInteractions();
 
     // 保存示例联系人
-    await storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       contactsKey,
       sampleContacts.map((c) => c.toJson()).toList(),
     );
 
     // 保存示例交互记录
-    await storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       interactionsKey,
       sampleInteractions.map((i) => i.toJson()).toList(),
     );

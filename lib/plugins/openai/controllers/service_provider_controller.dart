@@ -1,3 +1,4 @@
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 
@@ -8,8 +9,9 @@ class ServiceProviderController {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return [];
 
-    final storage = plugin.storage;
-    final data = await storage.read('${plugin.storageDir}/providers.json');
+    final data = await AboutmeDataService.instance.readPath(
+      '${plugin.storageDir}/providers.json',
+    );
     if (data.isNotEmpty) {
       final List<dynamic> jsonList = (data['providers'] ?? []) as List<dynamic>;
       providers =
@@ -41,7 +43,7 @@ class ServiceProviderController {
     // Save all providers
     final List<Map<String, dynamic>> providersJson =
         providers.map((p) => p.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/providers.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/providers.json', {
       'providers': providersJson,
     });
   }
@@ -53,7 +55,7 @@ class ServiceProviderController {
     providers.removeWhere((provider) => provider.label == providerName);
     final List<Map<String, dynamic>> providersJson =
         providers.map((p) => p.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/providers.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/providers.json', {
       'providers': providersJson,
     });
   }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/notification_controller.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
@@ -171,6 +172,9 @@ Future<void> initializeApp() async {
     await DeviceIdentity.initialize();
     globalStorage = StorageManager();
     await globalStorage.initialize();
+
+    // 初始化统一数据入口（本地直处理 / 远程 REST 自动决定）
+    await AboutmeDataService.instance.initialize();
 
     // 初始化配置管理器
     globalConfigManager = ConfigManager(globalStorage);

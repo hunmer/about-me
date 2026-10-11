@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/js_bridge/batch_request_executor.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -349,7 +350,7 @@ class JSBridgeInjector {
 
           // 构建存储路径: app_data/webview/<key>
           final storagePath = 'webview/$key';
-          final result = await webviewPlugin.storage.read(storagePath);
+          final result = await AboutmeDataService.instance.readPath(storagePath);
 
           debugPrint(
             '[JSBridge Storage Read] key=$key, hasData=${result != null}, dataType=${result?.runtimeType}, value=$result',
@@ -408,7 +409,7 @@ class JSBridgeInjector {
 
           // 构建存储路径: app_data/webview/<key>
           final storagePath = 'webview/$key';
-          await webviewPlugin.storage.write(storagePath, value);
+          await AboutmeDataService.instance.writePath(storagePath, value);
 
           debugPrint(
             '[JSBridge Storage Write] key=$key, valueType=${value?.runtimeType}, success=true',
@@ -454,7 +455,7 @@ class JSBridgeInjector {
 
           // 构建存储路径: app_data/webview/<key>
           final storagePath = 'webview/$key';
-          await webviewPlugin.storage.delete(storagePath);
+          await AboutmeDataService.instance.deletePath(storagePath);
 
           return jsonEncode({'success': true});
         } catch (e) {

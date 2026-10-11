@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -10,107 +9,56 @@ import '../utils.dart';
 // - channel/{id}.json: 频道详情 {"channel": {...}}
 // - messages/{channelId}.json: 频道消息 {"messages": [...]}
 
-PluginHandlers createChatHandlers(PluginDataStore store) {
-  Future<List<String>> readChannelIds(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'chat',
-      'channels.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
+PluginHandlers createChatHandlers(PluginData data) {
+  Future<List<String>> readChannelIds() async {
+    final content = await data.read('chat', 'channels.json');
+    if (content is! Map) return [];
     return List<String>.from(
-      (data['channels'] as List<dynamic>? ?? []).map((e) => e.toString()),
+      (content['channels'] as List<dynamic>? ?? []).map((e) => e.toString()),
     );
   }
 
-  Future<void> saveChannelIds(
-    String userId,
-    String encryptionKey,
-    List<String> channelIds,
-  ) {
-    return store.writePluginData(
-      userId,
-      'chat',
-      'channels.json',
-      {'channels': channelIds},
-      encryptionKey,
-    );
+  Future<void> saveChannelIds(List<String> channelIds) {
+    return data.write('chat', 'channels.json', {'channels': channelIds});
   }
 
-  Future<Map<String, dynamic>?> readChannel(
-    String userId,
-    String encryptionKey,
-    String channelId,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'chat',
-      'channel/$channelId.json',
-      encryptionKey,
-    );
-    if (data is! Map) return null;
-    final channel = data['channel'];
+  Future<Map<String, dynamic>?> readChannel(String channelId) async {
+    final content = await data.read('chat', 'channel/$channelId.json');
+    if (content is! Map) return null;
+    final channel = content['channel'];
     return channel is Map<String, dynamic> ? channel : null;
   }
 
-  Future<void> saveChannel(
-    String userId,
-    String encryptionKey,
-    String channelId,
-    Map<String, dynamic> channel,
-  ) {
-    return store.writePluginData(
-      userId,
-      'chat',
-      'channel/$channelId.json',
-      {'channel': channel},
-      encryptionKey,
-    );
+  Future<void> saveChannel(String channelId, Map<String, dynamic> channel) {
+    return data.write('chat', 'channel/$channelId.json', {'channel': channel});
   }
 
-  Future<List<Map<String, dynamic>>> readMessages(
-    String userId,
-    String encryptionKey,
-    String channelId,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'chat',
-      'messages/$channelId.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
-    final messages = data['messages'];
+  Future<List<Map<String, dynamic>>> readMessages(String channelId) async {
+    final content = await data.read('chat', 'messages/$channelId.json');
+    if (content is! Map) return [];
+    final messages = content['messages'];
     if (messages is! List) return [];
     return List<Map<String, dynamic>>.from(messages);
   }
 
   Future<void> saveMessages(
-    String userId,
-    String encryptionKey,
     String channelId,
     List<Map<String, dynamic>> messages,
   ) {
-    return store.writePluginData(
-      userId,
+    return data.write(
       'chat',
       'messages/$channelId.json',
       {'messages': messages},
-      encryptionKey,
     );
   }
 
   return {
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final channelIds = await readChannelIds(userId, encryptionKey);
+        final channelIds = await readChannelIds();
         final channels = <Map<String, dynamic>>[];
         for (final channelId in channelIds) {
-          final channel = await readChannel(userId, encryptionKey, channelId);
+          final channel = await readChannel(channelId);
           if (channel != null) channels.add(channel);
         }
         return PluginResult.success(
@@ -124,13 +72,9 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
         return PluginResult.failure('获取频道失败: $e');
       }
     },
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final channel = await readChannel(
-          userId,
-          encryptionKey,
-          params['id'].toString(),
-        );
+        final channel = await readChannel(params['id'].toString());
         if (channel == null) {
           return const PluginResult.failure('频道不存在', 'NOT_FOUND');
         }
@@ -139,7 +83,7 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
         return PluginResult.failure('获取频道失败: $e');
       }
     },
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
         final channelId =
             (params['id'] as String?)?.isNotEmpty == true
@@ -153,23 +97,23 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
           'updatedAt': now,
         };
 
-        await saveChannel(userId, encryptionKey, channelId, newChannel);
-        await saveMessages(userId, encryptionKey, channelId, []);
+        await saveChannel(channelId, newChannel);
+        await saveMessages(channelId, []);
 
-        final channelIds = await readChannelIds(userId, encryptionKey);
+        final channelIds = await readChannelIds();
         if (!channelIds.contains(channelId)) {
           channelIds.add(channelId);
-          await saveChannelIds(userId, encryptionKey, channelIds);
+          await saveChannelIds(channelIds);
         }
         return PluginResult.success(newChannel);
       } catch (e) {
         return PluginResult.failure('创建频道失败: $e');
       }
     },
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
         final channelId = params['id'].toString();
-        final channel = await readChannel(userId, encryptionKey, channelId);
+        final channel = await readChannel(channelId);
         if (channel == null) {
           return const PluginResult.failure('频道不存在', 'NOT_FOUND');
         }
@@ -178,43 +122,27 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
           ...params,
           'updatedAt': jsIsoDateTime(DateTime.now()),
         };
-        await saveChannel(userId, encryptionKey, channelId, updatedChannel);
+        await saveChannel(channelId, updatedChannel);
         return PluginResult.success(updatedChannel);
       } catch (e) {
         return PluginResult.failure('更新频道失败: $e');
       }
     },
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
         final channelId = params['id'].toString();
-        await store.deletePluginFile(
-          userId,
-          'chat',
-          'channel/$channelId.json',
-        );
-        await store.deletePluginFile(
-          userId,
-          'chat',
-          'messages/$channelId.json',
-        );
-        final channelIds = await readChannelIds(userId, encryptionKey);
-        await saveChannelIds(
-          userId,
-          encryptionKey,
-          channelIds.where((id) => id != channelId).toList(),
-        );
+        await data.delete('chat', 'channel/$channelId.json');
+        await data.delete('chat', 'messages/$channelId.json');
+        final channelIds = await readChannelIds();
+        await saveChannelIds(channelIds.where((id) => id != channelId).toList());
         return PluginResult.success({'id': channelId});
       } catch (e) {
         return PluginResult.failure('删除频道失败: $e');
       }
     },
-    'getMessages': (userId, encryptionKey, params) async {
+    'getMessages': (data, params) async {
       try {
-        final messages = await readMessages(
-          userId,
-          encryptionKey,
-          params['channelId'].toString(),
-        );
+        final messages = await readMessages(params['channelId'].toString());
         return PluginResult.success(
           createPaginatedResult(
             messages,
@@ -226,10 +154,10 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
         return PluginResult.failure('读取消息失败: $e');
       }
     },
-    'sendMessage': (userId, encryptionKey, params) async {
+    'sendMessage': (data, params) async {
       try {
         final channelId = params['channelId'].toString();
-        final messages = await readMessages(userId, encryptionKey, channelId);
+        final messages = await readMessages(channelId);
         final now = jsIsoDateTime(DateTime.now());
         final newMessage = {
           ...params,
@@ -239,40 +167,40 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
           'updatedAt': now,
         };
         messages.add(newMessage);
-        await saveMessages(userId, encryptionKey, channelId, messages);
+        await saveMessages(channelId, messages);
 
-        final channel = await readChannel(userId, encryptionKey, channelId);
+        final channel = await readChannel(channelId);
         if (channel != null) {
           channel['lastMessageTime'] = now;
-          await saveChannel(userId, encryptionKey, channelId, channel);
+          await saveChannel(channelId, channel);
         }
         return PluginResult.success(newMessage);
       } catch (e) {
         return PluginResult.failure('发送消息失败: $e');
       }
     },
-    'deleteMessage': (userId, encryptionKey, params) async {
+    'deleteMessage': (data, params) async {
       try {
         final channelId = params['channelId'].toString();
         final messageId = params['messageId'].toString();
-        final messages = await readMessages(userId, encryptionKey, channelId);
+        final messages = await readMessages(channelId);
         final index = messages.indexWhere((m) => m['id'] == messageId);
         if (index == -1) {
           return const PluginResult.failure('消息不存在', 'NOT_FOUND');
         }
         messages.removeAt(index);
-        await saveMessages(userId, encryptionKey, channelId, messages);
+        await saveMessages(channelId, messages);
         return PluginResult.success({'id': messageId});
       } catch (e) {
         return PluginResult.failure('删除消息失败: $e');
       }
     },
-    'findChannel': (userId, encryptionKey, params) async {
+    'findChannel': (data, params) async {
       try {
-        final channelIds = await readChannelIds(userId, encryptionKey);
+        final channelIds = await readChannelIds();
         var channels = <Map<String, dynamic>>[];
         for (final channelId in channelIds) {
-          final channel = await readChannel(userId, encryptionKey, channelId);
+          final channel = await readChannel(channelId);
           if (channel != null) channels.add(channel);
         }
         channels = _filterByField(channels, params);
@@ -284,23 +212,16 @@ PluginHandlers createChatHandlers(PluginDataStore store) {
         return PluginResult.failure('查找频道失败: $e');
       }
     },
-    'findMessage': (userId, encryptionKey, params) async {
+    'findMessage': (data, params) async {
       try {
         var messages = <Map<String, dynamic>>[];
         final channelId = params['channelId'];
         if (channelId != null && channelId.toString().isNotEmpty) {
-          messages = await readMessages(
-            userId,
-            encryptionKey,
-            channelId.toString(),
-          );
+          messages = await readMessages(channelId.toString());
         } else {
-          final channelIds = await readChannelIds(userId, encryptionKey);
+          final channelIds = await readChannelIds();
           for (final chId in channelIds) {
-            messages = [
-              ...messages,
-              ...await readMessages(userId, encryptionKey, chId),
-            ];
+            messages = [...messages, ...await readMessages(chId)];
           }
         }
         messages = _filterByField(messages, params);

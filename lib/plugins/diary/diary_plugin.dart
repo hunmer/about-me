@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -163,8 +164,10 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
 
     int wordCount = 0;
     try {
-      if (await storage.exists(todayFile)) {
-        final content = await storage.readFile(todayFile);
+      if (await AboutmeDataService.instance.existsPath(todayFile)) {
+        final content = await AboutmeDataService.instance.readPathText(
+          todayFile,
+        );
         if (content.isNotEmpty) {
           // 解析 JSON 文件
           final jsonData = jsonDecode(content) as Map<String, dynamic>;

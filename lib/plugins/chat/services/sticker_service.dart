@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/chat/models/sticker_collection.dart';
@@ -27,10 +28,11 @@ class StickerService {
 
   /// 列出全部合集（按更新时间倒序）
   Future<List<StickerCollection>> listCollections() async {
-    final storage = _storage;
-    if (storage == null) return [];
+    if (_storage == null) return [];
     try {
-      final raw = await storage.readString(_registryPath);
+      final raw = await AboutmeDataService.instance.readPathText(
+        _registryPath,
+      );
       if (raw == null || raw.isEmpty) return [];
       final list = jsonDecode(raw) as List<dynamic>;
       final collections = list
@@ -109,7 +111,7 @@ class StickerService {
         c.coverPath = c.stickerPaths.isNotEmpty ? c.stickerPaths.first : null;
       }
       try {
-        await _requireStorage().deleteFile(stickerPath);
+        await AboutmeDataService.instance.deletePath(stickerPath);
       } catch (e) {
         debugPrint('[StickerService] 删除贴图文件失败: $stickerPath - $e');
       }
@@ -118,8 +120,7 @@ class StickerService {
 
   /// 删除合集（注册表 + 全部贴图文件）
   Future<bool> deleteCollection(String id) async {
-    final storage = _storage;
-    if (storage == null) return false;
+    if (_storage == null) return false;
     final collections = await listCollections();
     final target = collections.where((c) => c.id == id).firstOrNull;
     if (target == null) return false;
@@ -129,7 +130,7 @@ class StickerService {
 
     for (final stickerPath in target.stickerPaths) {
       try {
-        await storage.deleteFile(stickerPath);
+        await AboutmeDataService.instance.deletePath(stickerPath);
       } catch (e) {
         debugPrint('[StickerService] 删除贴图文件失败: $stickerPath - $e');
       }
@@ -235,7 +236,7 @@ class StickerService {
       await storage.writeBytes(dst, bytes!);
       if (deleteSource) {
         try {
-          await storage.deleteFile(
+          await AboutmeDataService.instance.deletePath(
             sourcePath.replaceAll('\\', '/').replaceFirst('./', ''),
           );
         } catch (_) {}
@@ -264,8 +265,7 @@ class StickerService {
   }
 
   Future<void> _saveRegistry(List<StickerCollection> collections) async {
-    final storage = _requireStorage();
     final json = jsonEncode(collections.map((c) => c.toJson()).toList());
-    await storage.writeString(_registryPath, json);
+    await AboutmeDataService.instance.writePath(_registryPath, json);
   }
 }

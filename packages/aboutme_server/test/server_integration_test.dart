@@ -151,18 +151,23 @@ void main() {
     expect(await storage.readBytes('todo/list.json'), isNull);
   });
 
-  test('服务器落盘内容为密文（端到端加密）', () async {
+  test('服务器落盘为明文（统一数据区 = 用户根目录）', () async {
     final (userId, apiKey, __) = await provisionUser('e2e-user');
     final storage = httpStorageOf(apiKey);
     await storage.writeString('secret.json', 'plain-text-data');
 
-    final raw = File(
-      '${tempDir.path}/users/$userId/.storage/secret.json',
-    );
+    // 统一数据区：storage files API 直接写入用户根目录（无 .storage 前缀）
+    final raw = File('${tempDir.path}/users/$userId/secret.json');
     expect(await raw.exists(), isTrue);
     final content = await raw.readAsString();
-    expect(content.contains('plain-text-data'), isFalse);
-    expect(content, contains('"version":1'));
+    expect(content, 'plain-text-data');
+
+    // 插件业务 API 与 storage API 同区：写入后插件目录可直接读
+    await storage.writeString('todo/tasks.json', '{"tasks":[{"id":"t1"}]}');
+    expect(
+      await File('${tempDir.path}/users/$userId/todo/tasks.json').exists(),
+      isTrue,
+    );
   });
 
   test('ETag 条件写：服务端返回 412 与冲突元数据', () async {

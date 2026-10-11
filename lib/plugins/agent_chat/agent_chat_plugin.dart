@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -192,7 +193,7 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
       for (final conversation in controller.conversations) {
         try {
           // 加载该会话的消息
-          final data = await storage.read(
+          final data = await AboutmeDataService.instance.readPath(
             'agent_chat/messages/${conversation.id}.json',
           );
           if (data is List) {

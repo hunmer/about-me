@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -15,10 +16,24 @@ class CalendarController extends ChangeNotifier {
   List<CalendarEvent> _systemEvents = []; // 系统日历事件缓存
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedMonth = DateTime.now();
+  VoidCallback? _cancelDataSync;
 
   CalendarController(this._storage) {
     _loadEvents();
     // cleanupOrphanedSystemEvents();
+
+    // 订阅插件数据变更（远端写入后局部刷新）
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'calendar',
+      () => reloadEvents(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    _cancelDataSync = null;
+    super.dispose();
   }
 
   /// 加载系统日历事件和映射关系
@@ -148,7 +163,9 @@ class CalendarController extends ChangeNotifier {
   // 加载事件
   Future<void> _loadEvents() async {
     try {
-      final data = await _storage.read('calendar/calendar_events.json');
+      final data = await AboutmeDataService.instance.readPath(
+        'calendar/calendar_events.json',
+      );
       if (data.isNotEmpty) {
         final List<dynamic> eventsData = data['events'] ?? [];
         final List<dynamic> completedEventsData = data['completedEvents'] ?? [];
@@ -246,7 +263,7 @@ class CalendarController extends ChangeNotifier {
   // 保存事件
   Future<void> _saveEvents() async {
     try {
-      await _storage.write('calendar/calendar_events.json', {
+      await AboutmeDataService.instance.writePath('calendar/calendar_events.json', {
         'events': _events.map((e) => e.toJson()).toList(),
         'completedEvents': _completedEvents.map((e) => e.toJson()).toList(),
       });

@@ -1,4 +1,6 @@
-/// 插件处理器统一结果类型（对应 nodejs PluginResult）。
+import 'plugin_data.dart';
+
+/// 插件业务处理器统一结果类型。
 class PluginResult {
   const PluginResult.success(this.data)
       : isSuccess = true,
@@ -15,10 +17,10 @@ class PluginResult {
   final String? code;
 }
 
-/// 插件处理器：入参为用户 ID / 加密密钥 / 合并后的请求参数。
+/// 插件业务处理器：入参为数据后端 + 合并后的请求参数。
+/// 同一套处理器在客户端（本地后端）与服务端（用户目录后端）执行。
 typedef PluginHandler = Future<PluginResult> Function(
-  String userId,
-  String encryptionKey,
+  PluginData data,
   Map<String, dynamic> params,
 );
 

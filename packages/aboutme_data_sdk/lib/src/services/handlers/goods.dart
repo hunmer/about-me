@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -10,18 +9,10 @@ import '../utils.dart';
 // - warehouse/{id}.json: 仓库详情 {"warehouse": {...}}
 // - items.json: 物品列表 {"items": [...]}（旧格式兼容）
 
-PluginHandlers createGoodsHandlers(PluginDataStore store) {
+PluginHandlers createGoodsHandlers(PluginData data) {
   // 读取所有仓库
-  Future<List<Map<String, dynamic>>> readAllWarehouses(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final warehousesData = await store.readPluginData(
-      userId,
-      'goods',
-      'warehouses.json',
-      encryptionKey,
-    );
+  Future<List<Map<String, dynamic>>> readAllWarehouses() async {
+    final warehousesData = await data.read('goods', 'warehouses.json');
     if (warehousesData is! Map) return [];
 
     // 仓库 ID 列表
@@ -30,12 +21,7 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
 
     final warehouses = <Map<String, dynamic>>[];
     for (final id in warehouseIds) {
-      final warehouseData = await store.readPluginData(
-        userId,
-        'goods',
-        'warehouse/$id.json',
-        encryptionKey,
-      );
+      final warehouseData = await data.read('goods', 'warehouse/$id.json');
       final warehouse = warehouseData is Map
           ? warehouseData['warehouse']
           : null;
@@ -48,12 +34,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
   }
 
   // 读取所有物品（从仓库中提取）
-  Future<List<Map<String, dynamic>>> readAllItems(
-    String userId,
-    String encryptionKey,
-  ) async {
+  Future<List<Map<String, dynamic>>> readAllItems() async {
     // 首先尝试从仓库中提取物品
-    final warehouses = await readAllWarehouses(userId, encryptionKey);
+    final warehouses = await readAllWarehouses();
     final allItems = <Map<String, dynamic>>[];
 
     for (final warehouse in warehouses) {
@@ -73,34 +56,23 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     }
 
     // 否则尝试从 items.json 读取（兼容旧格式）
-    final data = await store.readPluginData(
-      userId,
-      'goods',
-      'items.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
-    final items = data['items'];
+    final content = await data.read('goods', 'items.json');
+    if (content is! Map) return [];
+    final items = content['items'];
     if (items is! List) return [];
     return List<Map<String, dynamic>>.from(items);
   }
 
   // 保存所有物品
-  Future<void> saveAllItems(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> items,
-  ) {
-    return store.writePluginData(userId, 'goods', 'items.json', {
-      'items': items,
-    }, encryptionKey);
+  Future<void> saveAllItems(List<Map<String, dynamic>> items) {
+    return data.write('goods', 'items.json', {'items': items});
   }
 
   return {
     // 获取仓库列表
-    'getWarehouses': (userId, encryptionKey, params) async {
+    'getWarehouses': (data, params) async {
       try {
-        final warehouses = await readAllWarehouses(userId, encryptionKey);
+        final warehouses = await readAllWarehouses();
         return PluginResult.success({
           'data': warehouses,
           'total': warehouses.length,
@@ -111,9 +83,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 获取物品列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        var items = await readAllItems(userId, encryptionKey);
+        var items = await readAllItems();
 
         // 按仓库过滤
         final warehouseId = params['warehouseId'] as String?;
@@ -134,9 +106,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final index = items.indexWhere((i) => i['id'] == params['id']);
 
         if (index == -1) {
@@ -150,9 +122,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 创建物品
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -166,7 +138,7 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
         };
 
         items.add(newItem);
-        await saveAllItems(userId, encryptionKey, items);
+        await saveAllItems(items);
 
         return PluginResult.success(newItem);
       } catch (e) {
@@ -175,9 +147,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 更新物品
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final index = items.indexWhere((i) => i['id'] == params['id']);
 
         if (index == -1) {
@@ -191,7 +163,7 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
         };
         items[index] = updatedItem;
 
-        await saveAllItems(userId, encryptionKey, items);
+        await saveAllItems(items);
         return PluginResult.success(updatedItem);
       } catch (e) {
         return PluginResult.failure('更新物品失败: $e');
@@ -199,9 +171,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 删除物品
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final initialLength = items.length;
         final filtered = items.where((i) => i['id'] != params['id']).toList();
 
@@ -209,7 +181,7 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
           return const PluginResult.failure('物品不存在', 'NOT_FOUND');
         }
 
-        await saveAllItems(userId, encryptionKey, filtered);
+        await saveAllItems(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除物品失败: $e');
@@ -217,9 +189,9 @@ PluginHandlers createGoodsHandlers(PluginDataStore store) {
     },
 
     // 搜索物品
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
-        var items = await readAllItems(userId, encryptionKey);
+        var items = await readAllItems();
 
         final keyword = params['keyword'];
         final warehouseId = params['warehouseId'];

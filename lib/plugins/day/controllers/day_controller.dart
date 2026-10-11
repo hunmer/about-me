@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:math';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
@@ -34,6 +35,7 @@ class DayController extends ChangeNotifier {
   final _plugin = DayPlugin.instance;
   final List<MemorialDay> _memorialDays = [];
   bool _isCardView = true;
+  VoidCallback? _cancelDataSync;
 
   List<MemorialDay> get memorialDays => _memorialDays;
   bool get isCardView => _isCardView;
@@ -45,6 +47,19 @@ class DayController extends ChangeNotifier {
   Future<void> initialize() async {
     await _loadMemorialDays();
     await _loadViewPreference();
+
+    // 订阅插件数据变更（远端写入后局部刷新）
+    _cancelDataSync ??= AboutmeDataService.instance.onPluginChanged(
+      'day',
+      () => reloadData(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    _cancelDataSync = null;
+    super.dispose();
   }
 
   /// 重新加载数据（供同步后刷新使用）
@@ -77,10 +92,12 @@ class DayController extends ChangeNotifier {
         'sortMode': SortMode.upcoming.toString(),
       });
 
-      final configStr = await _plugin.storage.readFile(
+      var configStr = await AboutmeDataService.instance.readPathText(
         '${'day'}/view_preference.json',
-        defaultConfig,
       );
+      if (configStr.isEmpty) {
+        configStr = defaultConfig;
+      }
 
       final config = jsonDecode(configStr);
       _isCardView = config['isCardView'] ?? true;
@@ -110,7 +127,7 @@ class DayController extends ChangeNotifier {
   // 保存视图偏好设置
   Future<void> _saveViewPreference() async {
     try {
-      await _plugin.storage.writeFile(
+      await AboutmeDataService.instance.writePath(
         '${'day'}/view_preference.json',
         jsonEncode({
           'isCardView': _isCardView,
@@ -130,7 +147,7 @@ class DayController extends ChangeNotifier {
     final filePath = '${'day'}/memorial_days.json';
 
     // 检查文件是否存在
-    final fileExists = await _plugin.storage.fileExists(filePath);
+    final fileExists = await AboutmeDataService.instance.existsPath(filePath);
 
     if (!fileExists) {
       // 文件不存在，仅开发环境写入示例数据，生产环境保持空数据
@@ -146,10 +163,10 @@ class DayController extends ChangeNotifier {
     // 设置默认的空数组JSON字符串
     final defaultContent = '[]';
 
-    final content = await _plugin.storage.readFile(
-      filePath,
-      defaultContent,
-    );
+    var content = await AboutmeDataService.instance.readPathText(filePath);
+    if (content.isEmpty) {
+      content = defaultContent;
+    }
 
     try {
       final List<dynamic> jsonList = jsonDecode(content);
@@ -181,7 +198,7 @@ class DayController extends ChangeNotifier {
   Future<void> _saveMemorialDays() async {
     try {
       final jsonList = _memorialDays.map((day) => day.toJson()).toList();
-      await _plugin.storage.writeFile(
+      await AboutmeDataService.instance.writePath(
         '${'day'}/memorial_days.json',
         jsonEncode(jsonList),
       );

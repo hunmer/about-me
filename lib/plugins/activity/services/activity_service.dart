@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/sample_data.dart';
@@ -58,7 +59,7 @@ class ActivityService {
 
       // 保存到文件
       final jsonList = activities.map((e) => e.toJson()).toList();
-      await _storage.writeJson(filePath, jsonList);
+      await AboutmeDataService.instance.writePath(filePath, jsonList);
 
       // 同步到小组件
       await _syncWidget();
@@ -86,12 +87,12 @@ class ActivityService {
       final filePath = _getActivityFilePath(date);
 
       // 检查文件是否存在
-      if (!await _storage.fileExists(filePath)) {
+      if (!await AboutmeDataService.instance.existsPath(filePath)) {
         return [];
       }
 
       // 读取并解析文件
-      final jsonString = await _storage.readString(filePath);
+      final jsonString = await AboutmeDataService.instance.readPathText(filePath);
       final dynamic jsonData = jsonDecode(jsonString);
 
       // 兼容两种格式：数组 [...] 或对象 {"activities": [...]}
@@ -140,7 +141,7 @@ class ActivityService {
           // 保存更新后的列表
           final filePath = _getActivityFilePath(date);
           final jsonList = activities.map((e) => e.toJson()).toList();
-          await _storage.writeJson(filePath, jsonList);
+          await AboutmeDataService.instance.writePath(filePath, jsonList);
 
           // 同步到小组件
           await _syncWidget();
@@ -174,7 +175,7 @@ class ActivityService {
 
       // 保存更新后的列表
       final jsonList = activities.map((e) => e.toJson()).toList();
-      await _storage.writeJson(filePath, jsonList);
+      await AboutmeDataService.instance.writePath(filePath, jsonList);
 
       // 同步到小组件
       await _syncWidget();
@@ -217,7 +218,7 @@ class ActivityService {
   Future<void> saveTagGroups(List<TagGroupWithTags> groups) async {
     try {
       final jsonList = groups.map((group) => group.toMap()).toList();
-      await _storage.writeJson(_tagGroupsFilePath, jsonList);
+      await AboutmeDataService.instance.writePath(_tagGroupsFilePath, jsonList);
     } catch (e) {
       debugPrint('Error saving tag groups: $e');
       rethrow;
@@ -227,10 +228,10 @@ class ActivityService {
   // 获取标签组
   Future<List<TagGroupWithTags>> getTagGroups() async {
     try {
-      if (!await _storage.fileExists(_tagGroupsFilePath)) {
+      if (!await AboutmeDataService.instance.existsPath(_tagGroupsFilePath)) {
         return [];
       }
-      final jsonString = await _storage.readString(_tagGroupsFilePath);
+      final jsonString = await AboutmeDataService.instance.readPathText(_tagGroupsFilePath);
       final List<dynamic> jsonList = jsonDecode(jsonString);
       return jsonList
           .map((json) => TagGroupWithTags.fromMap(json as Map<String, dynamic>))
@@ -244,7 +245,7 @@ class ActivityService {
   // 保存最近使用的标签
   Future<void> saveRecentTags(List<String> tags) async {
     try {
-      await _storage.writeJson(_recentTagsFilePath, tags);
+      await AboutmeDataService.instance.writePath(_recentTagsFilePath, tags);
     } catch (e) {
       debugPrint('Error saving recent tags: $e');
       rethrow;
@@ -254,10 +255,10 @@ class ActivityService {
   // 获取最近使用的标签
   Future<List<String>> getRecentTags() async {
     try {
-      if (!await _storage.fileExists(_recentTagsFilePath)) {
+      if (!await AboutmeDataService.instance.existsPath(_recentTagsFilePath)) {
         return [];
       }
-      final jsonString = await _storage.readString(_recentTagsFilePath);
+      final jsonString = await AboutmeDataService.instance.readPathText(_recentTagsFilePath);
       final List<dynamic> jsonList = jsonDecode(jsonString);
       return List<String>.from(jsonList);
     } catch (e) {
@@ -269,7 +270,7 @@ class ActivityService {
   // 保存最近使用的心情
   Future<void> saveRecentMoods(List<String> moods) async {
     try {
-      await _storage.writeJson(_recentMoodsFilePath, moods);
+      await AboutmeDataService.instance.writePath(_recentMoodsFilePath, moods);
     } catch (e) {
       debugPrint('Error saving recent moods: $e');
       rethrow;
@@ -279,10 +280,10 @@ class ActivityService {
   // 获取最近使用的心情
   Future<List<String>> getRecentMoods() async {
     try {
-      if (!await _storage.fileExists(_recentMoodsFilePath)) {
+      if (!await AboutmeDataService.instance.existsPath(_recentMoodsFilePath)) {
         return [];
       }
-      final jsonString = await _storage.readString(_recentMoodsFilePath);
+      final jsonString = await AboutmeDataService.instance.readPathText(_recentMoodsFilePath);
       final List<dynamic> jsonList = jsonDecode(jsonString);
       return List<String>.from(jsonList);
     } catch (e) {
@@ -405,9 +406,9 @@ class ActivityService {
   Future<void> initializeDefaultData() async {
     try {
       // 检查是否已存在任何数据文件
-      final tagGroupsExists = await _storage.fileExists(_tagGroupsFilePath);
-      final recentTagsExists = await _storage.fileExists(_recentTagsFilePath);
-      final recentMoodsExists = await _storage.fileExists(_recentMoodsFilePath);
+      final tagGroupsExists = await AboutmeDataService.instance.existsPath(_tagGroupsFilePath);
+      final recentTagsExists = await AboutmeDataService.instance.existsPath(_recentTagsFilePath);
+      final recentMoodsExists = await AboutmeDataService.instance.existsPath(_recentMoodsFilePath);
 
       // 如果标签相关文件都不存在，说明是首次使用，插入默认数据
       final isFirstTime = !tagGroupsExists && !recentTagsExists && !recentMoodsExists;

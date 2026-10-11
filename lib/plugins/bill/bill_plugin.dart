@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -250,7 +251,7 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   @override
   Future<void> loadSettings(Map<String, dynamic> defaultSettings) async {
     try {
-      final storedSettings = await storage.read(
+      final storedSettings = await AboutmeDataService.instance.readPath(
         ConfigManager.getPluginConfigPath(id),
       );
       if (storedSettings.isNotEmpty) {
@@ -272,7 +273,10 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   @override
   Future<void> saveSettings() async {
     try {
-      await storage.write(ConfigManager.getPluginConfigPath(id), _settings);
+      await AboutmeDataService.instance.writePath(
+        ConfigManager.getPluginConfigPath(id),
+        _settings,
+      );
     } catch (e) {
       debugPrint('Warning: Failed to save plugin settings: $e');
     }

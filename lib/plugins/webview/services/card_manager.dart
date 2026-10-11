@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import '../models/webview_card.dart';
@@ -30,7 +31,7 @@ class CardManager extends ChangeNotifier {
   /// 加载卡片数据
   Future<void> _loadCards() async {
     try {
-      final data = await _storage.read(_storageKey);
+      final data = await AboutmeDataService.instance.readPath(_storageKey);
       if (data != null && data is List) {
         _cards = data.map((item) => WebViewCard.fromJson(item as Map<String, dynamic>)).toList();
         notifyListeners();
@@ -43,7 +44,7 @@ class CardManager extends ChangeNotifier {
   /// 保存卡片数据
   Future<void> _saveCards() async {
     try {
-      await _storage.write(_storageKey, _cards.map((c) => c.toJson()).toList());
+      await AboutmeDataService.instance.writePath(_storageKey, _cards.map((c) => c.toJson()).toList());
     } catch (e) {
       debugPrint('保存卡片数据失败: $e');
     }

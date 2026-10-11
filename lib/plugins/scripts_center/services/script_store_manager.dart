@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_loader.dart';
@@ -337,7 +338,7 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 加载源配置
   Future<void> _loadSources() async {
     try {
-      final data = await _storage.read(_sourcesKey);
+      final data = await AboutmeDataService.instance.readPath(_sourcesKey);
       if (data != null && data is List) {
         _sources =
             data
@@ -356,7 +357,7 @@ class ScriptStoreManager extends ChangeNotifier {
   Future<void> _saveSources() async {
     try {
       final jsonList = _sources.map((s) => s.toJson()).toList();
-      await _storage.write(_sourcesKey, jsonList);
+      await AboutmeDataService.instance.writePath(_sourcesKey, jsonList);
     } catch (e) {
       debugPrint('Failed to save sources: $e');
     }
@@ -365,7 +366,7 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 加载已安装脚本
   Future<void> _loadInstalledScripts() async {
     try {
-      final data = await _storage.read(_installedKey);
+      final data = await AboutmeDataService.instance.readPath(_installedKey);
       if (data != null && data is List) {
         _installedScripts = {};
         for (var item in data) {
@@ -392,7 +393,7 @@ class ScriptStoreManager extends ChangeNotifier {
   Future<void> _saveInstalledScripts() async {
     try {
       final jsonList = _installedScripts.values.map((s) => s.toJson()).toList();
-      await _storage.write(_installedKey, jsonList);
+      await AboutmeDataService.instance.writePath(_installedKey, jsonList);
     } catch (e) {
       debugPrint('Failed to save installed scripts: $e');
     }

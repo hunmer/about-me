@@ -6,6 +6,7 @@ import 'package:agentlib/openai_compat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
@@ -13,7 +14,6 @@ import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
 /// Agent 朋友圈动态服务
@@ -51,7 +51,7 @@ class MomentsService extends ChangeNotifier {
   Future<void> loadPosts({bool force = false}) async {
     if (_loaded && !force) return;
     try {
-      final data = await OpenAIPlugin.instance.storage.read(_postsPath);
+      final data = await AboutmeDataService.instance.readPath(_postsPath);
       final list =
           (data is Map ? data['posts'] : null) as List<dynamic>? ?? [];
       _posts = list
@@ -195,7 +195,7 @@ class MomentsService extends ChangeNotifier {
   }
 
   Future<void> _save() async {
-    await OpenAIPlugin.instance.storage.write(_postsPath, {
+    await AboutmeDataService.instance.writePath(_postsPath, {
       'posts': _posts.map((p) => p.toJson()).toList(),
     });
     notifyListeners();

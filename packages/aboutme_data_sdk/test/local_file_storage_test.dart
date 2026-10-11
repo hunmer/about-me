@@ -162,13 +162,12 @@ void main() {
     );
   });
 
-  test('数据目录布局与 nodejs 一致（users/{id}/.storage）', () async {
+  test('统一数据区布局：users/{id}（无 .storage 前缀）', () async {
     await storage.writeRawFile(user, 'x.json', bytes('x'), force: true);
     final expected = p.join(
       tempDir.path,
       'users',
       user,
-      '.storage',
       'x.json',
     );
     expect(await File(expected).exists(), isTrue);

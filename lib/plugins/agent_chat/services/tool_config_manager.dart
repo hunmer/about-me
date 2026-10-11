@@ -6,6 +6,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
@@ -104,7 +105,9 @@ class ToolConfigManager {
 
     try {
       // 以索引文件是否存在判断是否已初始化过（与旧版本地文件位置兼容）
-      if (!await _manager.fileExists('$_toolsPrefix/index.json')) {
+      if (!await AboutmeDataService.instance.existsPath(
+        '$_toolsPrefix/index.json',
+      )) {
         await _copyAssetsToStorage();
       } else {
         // 增量同步：新版本新增的工具描述文件补拷给老安装（不覆盖已有文件，
@@ -127,12 +130,12 @@ class ToolConfigManager {
     var copied = false;
     for (final pluginId in _pluginIds) {
       final path = '$_toolsPrefix/$pluginId.json';
-      if (await _manager.fileExists(path)) continue;
+      if (await AboutmeDataService.instance.existsPath(path)) continue;
       try {
         final configData = await rootBundle.loadString(
           'lib/plugins/agent_chat/tools/$pluginId.json',
         );
-        await _manager.writeString(path, configData);
+        await AboutmeDataService.instance.writePath(path, configData);
         copied = true;
         print('✅ 增量补拷 $pluginId.json');
       } catch (_) {
@@ -154,7 +157,7 @@ class ToolConfigManager {
         final configData = await rootBundle.loadString(
           'lib/plugins/agent_chat/tools/$pluginId.json',
         );
-        await _manager.writeString(
+        await AboutmeDataService.instance.writePath(
           '$_toolsPrefix/$pluginId.json',
           configData,
         );
@@ -179,8 +182,9 @@ class ToolConfigManager {
     // 遍历所有插件配置文件
     for (final pluginId in _pluginIds) {
       try {
-        final jsonData = await _manager.readJson(
+        final jsonData = await AboutmeDataService.instance.readPath(
           '$_toolsPrefix/$pluginId.json',
+          null,
         );
         if (jsonData is! Map<String, dynamic>) continue;
 
@@ -222,7 +226,10 @@ class ToolConfigManager {
     // 保存新的索引文件
     try {
       final content = const JsonEncoder.withIndent('  ').convert(newIndex);
-      await _manager.writeString('$_toolsPrefix/index.json', content);
+      await AboutmeDataService.instance.writePath(
+        '$_toolsPrefix/index.json',
+        content,
+      );
       print('✅ 工具索引已生成 (共 ${newIndex.length} 个工具)');
       _invalidateNativeToolCache();
     } catch (e) {
@@ -242,7 +249,10 @@ class ToolConfigManager {
   /// 从存储加载工具索引
   Future<void> _loadToolIndexFromFile() async {
     try {
-      final jsonData = await _manager.readJson('$_toolsPrefix/index.json');
+      final jsonData = await AboutmeDataService.instance.readPath(
+        '$_toolsPrefix/index.json',
+        null,
+      );
 
       if (jsonData is List && jsonData.isNotEmpty) {
         _toolIndex =
@@ -265,8 +275,9 @@ class ToolConfigManager {
   /// 加载插件配置
   Future<void> _loadPluginConfig(String pluginId) async {
     try {
-      final jsonData = await _manager.readJson(
+      final jsonData = await AboutmeDataService.instance.readPath(
         '$_toolsPrefix/$pluginId.json',
+        null,
       );
 
       if (jsonData is Map<String, dynamic>) {
@@ -290,7 +301,10 @@ class ToolConfigManager {
 
       final jsonData = toolSet.toJson();
       final content = const JsonEncoder.withIndent('  ').convert(jsonData);
-      await _manager.writeString('$_toolsPrefix/$pluginId.json', content);
+      await AboutmeDataService.instance.writePath(
+        '$_toolsPrefix/$pluginId.json',
+        content,
+      );
       _invalidateNativeToolCache();
     } catch (e) {
       print('❌ 保存 $pluginId 配置失败: $e');
@@ -302,7 +316,10 @@ class ToolConfigManager {
   Future<void> _saveToolIndex() async {
     try {
       final content = const JsonEncoder.withIndent('  ').convert(_toolIndex);
-      await _manager.writeString('$_toolsPrefix/index.json', content);
+      await AboutmeDataService.instance.writePath(
+        '$_toolsPrefix/index.json',
+        content,
+      );
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
     }
@@ -580,7 +597,7 @@ class ToolConfigManager {
   Future<void> resetToDefault() async {
     try {
       // 清空存储中的现有工具配置
-      await _manager.clearPrefix(_toolsPrefix);
+      await AboutmeDataService.instance.clearPathPrefix(_toolsPrefix);
 
       // 重新从 assets 复制
       await _copyAssetsToStorage();

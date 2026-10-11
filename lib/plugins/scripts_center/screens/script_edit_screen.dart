@@ -16,6 +16,7 @@ import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:get/get.dart';
 
@@ -321,8 +322,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
     try {
       final configPath =
           'configs/scripts_center/${widget.script!.id}_config.json';
-      final storageManager = widget.scriptManager.loader.storage;
-      final data = await storageManager.read(configPath);
+      final data = await AboutmeDataService.instance.readPath(configPath);
       print('[ScriptConfigDebug] 8.打开编辑屏读取配置: $configPath -> $data');
       if (!mounted) return;
       // 注意：文件不存在时 read 返回空 Map（非 null），同样标记加载完成

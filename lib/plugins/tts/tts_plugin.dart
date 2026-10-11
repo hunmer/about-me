@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -53,13 +54,13 @@ class TTSPlugin extends BasePlugin {
       storagePrefix: storageDir,
       readStorage: (key) async {
         try {
-          return await storage.read(key);
+          return await AboutmeDataService.instance.readPath(key);
         } catch (e) {
           return {};
         }
       },
       writeStorage: (key, data) async {
-        await storage.write(key, data);
+        await AboutmeDataService.instance.writePath(key, data);
       },
     );
 

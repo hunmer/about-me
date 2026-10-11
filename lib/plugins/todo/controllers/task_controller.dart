@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/todo/models/models.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
@@ -16,8 +17,6 @@ enum SortBy { dueDate, priority, custom }
 enum ViewMode { quadrant, week }
 
 class TaskController extends ChangeNotifier {
-  final StorageManager _storage;
-  final String _storageDir;
   List<Task> _tasks = [];
 
   // 发送事件通知
@@ -37,9 +36,19 @@ class TaskController extends ChangeNotifier {
   // 排序方式
   SortBy _sortBy = SortBy.dueDate;
 
-  TaskController(this._storage, this._storageDir) {
+  // 参数保留以兼容既有调用方；数据操作已全部走统一数据入口
+  // ignore: avoid_unused_constructor_parameters
+  TaskController(StorageManager storage, String storageDir) {
     _loadTasks();
+    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'todo',
+      reload,
+    );
   }
+
+  /// 数据同步事件订阅取消句柄
+  VoidCallback? _cancelDataSync;
 
   // Getters
   List<Task> get tasks => _tasks;
@@ -232,10 +241,11 @@ class TaskController extends ChangeNotifier {
     await _loadTasks();
   }
 
-  // 加载任务
+  // 加载任务（经统一数据入口：本地直处理 / 远程 REST 自动决定）
   Future<void> _loadTasks() async {
-    final data = await _storage.read('$_storageDir/tasks.json');
-    if (data.isNotEmpty) {
+    final data = await AboutmeDataService.instance
+        .readFile('todo', 'tasks.json');
+    if (data is Map<String, dynamic> && data.isNotEmpty) {
       final List<dynamic> taskList = data['tasks'] as List<dynamic>;
       _tasks = taskList.map((item) => Task.fromJson(item)).toList();
 
@@ -265,14 +275,14 @@ class TaskController extends ChangeNotifier {
     }
   }
 
-  // 保存任务
+  // 保存任务（经统一数据入口，写回保留完整文件结构）
   Future<void> _saveTasks() async {
     final data = {
       'tasks': _tasks.map((task) => task.toJson()).toList(),
       'completedTasks': _completedTasks.map((task) => task.toJson()).toList(),
       'viewMode': _viewMode.toString(), // 保存视图模式设置
     };
-    await _storage.write('$_storageDir/tasks.json', data);
+    await AboutmeDataService.instance.writeFile('todo', 'tasks.json', data);
   }
 
   // 添加任务
@@ -676,5 +686,11 @@ class TaskController extends ChangeNotifier {
     } catch (e) {
       debugPrint('TaskController: 从系统日历删除任务异常: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    super.dispose();
   }
 }

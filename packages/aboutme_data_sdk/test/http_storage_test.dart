@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   const key = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 
-  test('写入加密、读取解密，X-Device-ID 取全局默认值', () async {
+  test('明文传输：写读一致，X-Device-ID 取全局默认值', () async {
     Uint8List? stored;
     var etag = '"v1"';
     final client = MockClient((request) async {
@@ -18,7 +18,7 @@ void main() {
         expect(request.headers['If-None-Match'], '*');
         expect(request.headers['X-Device-ID'], 'device-x');
         stored = request.bodyBytes;
-        expect(utf8.decode(stored!), isNot(contains('private text')));
+        expect(utf8.decode(stored!), 'private text');
         return http.Response('', 200, headers: {'etag': etag});
       }
       if (request.method == 'GET') {

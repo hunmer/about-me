@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -40,7 +41,6 @@ class DiaryUtils {
   }
 
   static Future<Map<DateTime, DiaryEntry>> loadDiaryEntries() async {
-    final storage = _storage;
     try {
       final Map<DateTime, DiaryEntry> entries = {};
 
@@ -48,17 +48,18 @@ class DiaryUtils {
       final indexPath = path.join(_pluginDir, 'diary_index.json');
 
       // 如果索引文件不存在，创建一个空的索引并添加示例数据
-      if (!await storage.fileExists(indexPath)) {
-        await storage.writeJson(indexPath, {});
+      if (!await AboutmeDataService.instance.existsPath(indexPath)) {
+        await AboutmeDataService.instance.writePath(indexPath, {});
         // 创建示例日记
         await _createSampleEntries();
         // 重新加载索引
-        final newIndex = await storage.readJson(indexPath);
+        final newIndex = await AboutmeDataService.instance.readPath(indexPath);
         if (newIndex == null) return entries;
       }
 
       // 读取索引文件
-      final Map<String, dynamic>? index = await storage.readJson(indexPath);
+      final Map<String, dynamic>? index = await AboutmeDataService.instance
+          .readPath(indexPath);
       if (index == null) return entries;
 
       // 遍历索引中的条目
@@ -66,9 +67,11 @@ class DiaryUtils {
         if (dateStr == 'diary_index.json') continue;
 
         final filePath = path.join(_pluginDir, '$dateStr.json');
-        if (await storage.fileExists(filePath)) {
+        if (await AboutmeDataService.instance.existsPath(filePath)) {
           try {
-            final jsonMap = await storage.readJson(filePath);
+            final jsonMap = await AboutmeDataService.instance.readPath(
+              filePath,
+            );
             if (jsonMap == null) continue;
             final entry = DiaryEntry.fromJson(jsonMap);
             final normalizedDate = _normalizeDate(entry.date);
@@ -103,11 +106,13 @@ class DiaryUtils {
       DiaryEntry newEntry;
 
       // 检查是否存在现有条目（保存前检查）
-      final isUpdate = await storage.fileExists(entryPath);
+      final isUpdate = await AboutmeDataService.instance.existsPath(entryPath);
 
       if (isUpdate) {
         // 更新现有条目
-        final existingData = await storage.readJson(entryPath);
+        final existingData = await AboutmeDataService.instance.readPath(
+          entryPath,
+        );
         if (existingData == null) {
           throw Exception('Failed to read existing diary entry');
         }
@@ -137,7 +142,7 @@ class DiaryUtils {
       await storage.createDirectory(_pluginDir);
 
       // 保存日记条目（在广播事件之前保存）
-      await storage.writeJson(entryPath, newEntry.toJson());
+      await AboutmeDataService.instance.writePath(entryPath, newEntry.toJson());
 
       // 更新索引文件
       await _updateDiaryIndex(dateStr);
@@ -169,7 +174,6 @@ class DiaryUtils {
   static Future<void> _createSampleEntries() async {
     if (!kDebugMode) return;
 
-    final storage = _storage;
     try {
       // 获取示例日记数据
       final sampleEntries = DiarySampleData.getSampleDiaryEntries();
@@ -180,7 +184,7 @@ class DiaryUtils {
         final dateStr = _formatDate(normalizedDate);
 
         final entryPath = _getEntryPath(normalizedDate);
-        await storage.writeJson(entryPath, entry.toJson());
+        await AboutmeDataService.instance.writePath(entryPath, entry.toJson());
 
         // 更新索引
         await _updateDiaryIndex(dateStr);
@@ -193,21 +197,20 @@ class DiaryUtils {
 
   /// 更新日记索引文件
   static Future<void> _updateDiaryIndex(String dateStr) async {
-    final storage = _storage;
     final indexPath = path.join(_pluginDir, 'diary_index.json');
 
     try {
       // 读取现有索引或创建新索引
       Map<String, dynamic> index = {};
-      if (await storage.fileExists(indexPath)) {
-        index = (await storage.readJson(indexPath))!;
+      if (await AboutmeDataService.instance.existsPath(indexPath)) {
+        index = (await AboutmeDataService.instance.readPath(indexPath))!;
       }
 
       // 更新索引
       index[dateStr] = {'lastUpdated': DateTime.now().toIso8601String()};
 
       // 保存索引
-      await storage.writeJson(indexPath, index);
+      await AboutmeDataService.instance.writePath(indexPath, index);
     } catch (e) {
       debugPrint('Error updating diary index: $e');
       // 索引更新失败不应影响主要操作
@@ -216,16 +219,15 @@ class DiaryUtils {
 
   /// 加载特定日期的日记条目
   static Future<DiaryEntry?> loadDiaryEntry(DateTime date) async {
-    final storage = _storage;
     try {
       final normalizedDate = _normalizeDate(date);
       final entryPath = _getEntryPath(normalizedDate);
 
-      if (!await storage.fileExists(entryPath)) {
+      if (!await AboutmeDataService.instance.existsPath(entryPath)) {
         return null; // 该日期没有日记条目
       }
 
-      final jsonData = await storage.readJson(entryPath);
+      final jsonData = await AboutmeDataService.instance.readPath(entryPath);
       if (jsonData == null) return null;
       return DiaryEntry.fromJson(jsonData);
     } catch (e) {
@@ -236,23 +238,24 @@ class DiaryUtils {
 
   /// 删除特定日期的日记条目
   static Future<bool> deleteDiaryEntry(DateTime date) async {
-    final storage = _storage;
     try {
       final normalizedDate = _normalizeDate(date);
       final dateStr = _formatDate(normalizedDate);
       final entryPath = _getEntryPath(normalizedDate);
 
-      if (!await storage.fileExists(entryPath)) {
+      if (!await AboutmeDataService.instance.existsPath(entryPath)) {
         return false; // 文件不存在，无需删除
       }
 
       // 获取条目内容长度
-      final entryContent = await storage.readJson(entryPath);
+      final entryContent = await AboutmeDataService.instance.readPath(
+        entryPath,
+      );
       if (entryContent == null) return false;
       final contentLength = (entryContent['content'] as String).length;
 
       // 删除日记文件
-      await storage.deleteFile(entryPath);
+      await AboutmeDataService.instance.deletePath(entryPath);
 
       // 从索引中移除并更新总字数
       await _removeFromDiaryIndex(dateStr, contentLength);
@@ -278,13 +281,13 @@ class DiaryUtils {
     String dateStr,
     int contentLength,
   ) async {
-    final storage = _storage;
     final indexPath = path.join(_pluginDir, 'diary_index.json');
 
     try {
       // 读取现有索引
-      if (await storage.fileExists(indexPath)) {
-        Map<String, dynamic>? index = await storage.readJson(indexPath);
+      if (await AboutmeDataService.instance.existsPath(indexPath)) {
+        Map<String, dynamic>? index = await AboutmeDataService.instance
+            .readPath(indexPath);
         if (index == null) return;
 
         // 从索引中移除条目
@@ -296,7 +299,7 @@ class DiaryUtils {
         index['totalCharCount'] = totalCharCount > 0 ? totalCharCount : 0;
 
         // 保存更新后的索引
-        await storage.writeJson(indexPath, index);
+        await AboutmeDataService.instance.writePath(indexPath, index);
       }
     } catch (e) {
       debugPrint('Error removing from diary index: $e');
@@ -306,23 +309,21 @@ class DiaryUtils {
 
   /// 检查特定日期是否有日记条目
   static Future<bool> hasEntryForDate(DateTime date) async {
-    final storage = _storage;
     final normalizedDate = _normalizeDate(date);
     final entryPath = _getEntryPath(normalizedDate);
-    return await storage.fileExists(entryPath);
+    return await AboutmeDataService.instance.existsPath(entryPath);
   }
 
   /// 获取所有日记的总字数
   static Future<int> getTotalCharCount() async {
-    final storage = _storage;
     final indexPath = path.join(_pluginDir, 'diary_index.json');
 
     try {
-      if (!await storage.fileExists(indexPath)) {
+      if (!await AboutmeDataService.instance.existsPath(indexPath)) {
         return 0;
       }
 
-      final index = await storage.readJson(indexPath);
+      final index = await AboutmeDataService.instance.readPath(indexPath);
       return index?['totalCharCount'] as int? ?? 0;
     } catch (e) {
       debugPrint('Error getting total char count: $e');
@@ -332,16 +333,15 @@ class DiaryUtils {
 
   /// 获取特定日期日记的字数
   static Future<int> getEntryCharCount(DateTime date) async {
-    final storage = _storage;
     final dateStr = _formatDate(_normalizeDate(date));
     final indexPath = path.join(_pluginDir, 'diary_index.json');
 
     try {
-      if (!await storage.fileExists(indexPath)) {
+      if (!await AboutmeDataService.instance.existsPath(indexPath)) {
         return 0;
       }
 
-      final index = await storage.readJson(indexPath);
+      final index = await AboutmeDataService.instance.readPath(indexPath);
       final entry = index?[dateStr] as Map<String, dynamic>?;
       return entry?['contentLength'] as int? ?? 0;
     } catch (e) {
@@ -352,15 +352,14 @@ class DiaryUtils {
 
   /// 获取日记统计信息
   static Future<Map<String, dynamic>> getDiaryStats() async {
-    final storage = _storage;
     final indexPath = path.join(_pluginDir, 'diary_index.json');
 
     try {
-      if (!await storage.fileExists(indexPath)) {
+      if (!await AboutmeDataService.instance.existsPath(indexPath)) {
         return {'totalCharCount': 0, 'entryCount': 0, 'averageCharCount': 0};
       }
 
-      final index = await storage.readJson(indexPath);
+      final index = await AboutmeDataService.instance.readPath(indexPath);
       if (index == null) {
         return {'totalCharCount': 0, 'entryCount': 0, 'averageCharCount': 0};
       }

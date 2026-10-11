@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
@@ -14,7 +15,7 @@ class ProviderController {
   // 获取所有服务商
   Future<List<ServiceProvider>> getProviders() async {
     try {
-      final data = await storage.read(storagePath);
+      final data = await AboutmeDataService.instance.readPath(storagePath);
 
       if (data.isEmpty) {
         // 首次使用，加载默认服务商并保存
@@ -56,7 +57,7 @@ class ProviderController {
   // 保存所有服务商
   Future<void> saveProviders(List<ServiceProvider> providers) async {
     try {
-      await storage.write(storagePath, {
+      await AboutmeDataService.instance.writePath(storagePath, {
         'providers': providers.map((p) => p.toJson()).toList(),
       });
     } catch (e) {

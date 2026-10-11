@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -9,47 +8,29 @@ import '../utils.dart';
 // - contacts.json: 联系人列表（数组格式）
 // - interactions.json: 互动记录 {records: [...]}
 
-PluginHandlers createContactHandlers(PluginDataStore store) {
+PluginHandlers createContactHandlers(PluginData data) {
   // 读取所有联系人
-  Future<List<Map<String, dynamic>>> readAllContacts(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'contact',
-      'contacts.json',
-      encryptionKey,
-    );
+  Future<List<Map<String, dynamic>>> readAllContacts() async {
+    final content = await data.read('contact', 'contacts.json');
     // contacts.json 直接是数组格式
-    if (data is List) return List<Map<String, dynamic>>.from(data);
-    if (data is Map) {
-      final contacts = data['contacts'];
+    if (content is List) return List<Map<String, dynamic>>.from(content);
+    if (content is Map) {
+      final contacts = content['contacts'];
       if (contacts is List) return List<Map<String, dynamic>>.from(contacts);
     }
     return [];
   }
 
   // 保存所有联系人
-  Future<void> saveAllContacts(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> contacts,
-  ) {
-    return store.writePluginData(
-      userId,
-      'contact',
-      'contacts.json',
-      contacts,
-      encryptionKey,
-    );
+  Future<void> saveAllContacts(List<Map<String, dynamic>> contacts) {
+    return data.write('contact', 'contacts.json', contacts);
   }
 
   return {
     // 获取联系人列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
 
         // 分页
         final offset = params['offset'] as int? ?? 0;
@@ -73,9 +54,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
         final index = contacts.indexWhere((c) => c['id'] == params['id']);
 
         if (index == -1) {
@@ -89,9 +70,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 创建联系人
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -103,7 +84,7 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
         };
 
         contacts.add(newContact);
-        await saveAllContacts(userId, encryptionKey, contacts);
+        await saveAllContacts(contacts);
 
         return PluginResult.success(newContact);
       } catch (e) {
@@ -112,9 +93,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 更新联系人
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
         final index = contacts.indexWhere((c) => c['id'] == params['id']);
 
         if (index == -1) {
@@ -128,7 +109,7 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
         };
         contacts[index] = updatedContact;
 
-        await saveAllContacts(userId, encryptionKey, contacts);
+        await saveAllContacts(contacts);
         return PluginResult.success(updatedContact);
       } catch (e) {
         return PluginResult.failure('更新联系人失败: $e');
@@ -136,9 +117,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 删除联系人
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
         final initialLength = contacts.length;
         final filtered = contacts
             .where((c) => c['id'] != params['id'])
@@ -148,7 +129,7 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
           return const PluginResult.failure('联系人不存在', 'NOT_FOUND');
         }
 
-        await saveAllContacts(userId, encryptionKey, filtered);
+        await saveAllContacts(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除联系人失败: $e');
@@ -156,9 +137,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 搜索联系人
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
-        var contacts = await readAllContacts(userId, encryptionKey);
+        var contacts = await readAllContacts();
         final keyword = params['keyword'];
 
         if (keyword != null && keyword.toString().isNotEmpty) {
@@ -184,9 +165,9 @@ PluginHandlers createContactHandlers(PluginDataStore store) {
     },
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final contacts = await readAllContacts(userId, encryptionKey);
+        final contacts = await readAllContacts();
 
         return PluginResult.success({
           'totalContacts': contacts.length,

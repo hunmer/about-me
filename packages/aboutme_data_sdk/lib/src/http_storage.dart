@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:http/http.dart' as http;
 
 import 'storage_config.dart';
@@ -19,21 +18,20 @@ class HttpStorageDefaults {
 
 /// HTTP 远端存储后端：对接 Aboutme 存储服务的 `/api/v1/storage/files` API。
 ///
-/// 数据在上传前做 AES-256-GCM 信封加密（服务端只存密文），下载后解密；
-/// 写操作统一走强制覆盖（X-Force-Overwrite），并记录 ETag 供诊断。
+/// 数据明文传输（服务端存储已取消加密）；写操作走条件写
+/// （If-Match / If-None-Match），冲突刷新重试、二次冲突回退强写。
 class HttpStorage implements StorageInterface {
   HttpStorage({
     required String serverUrl,
     required StorageAuthType authType,
     required String credential,
-    required String encryptionKey,
+    String? encryptionKey,
     http.Client? client,
     this.timeout = const Duration(seconds: 15),
     String? deviceId,
   }) : _baseUri = Uri.parse(serverUrl.replaceFirst(RegExp(r'/$'), '')),
        _credential = credential,
        _client = client ?? http.Client(),
-       _key = _decodeKey(encryptionKey),
        _deviceId = deviceId;
 
   factory HttpStorage.fromConfig(
@@ -46,7 +44,6 @@ class HttpStorage implements StorageInterface {
       serverUrl: config.serverUrl,
       authType: config.authType,
       credential: config.credential,
-      encryptionKey: config.encryptionKey,
       client: client,
       deviceId: deviceId,
     );
@@ -55,20 +52,13 @@ class HttpStorage implements StorageInterface {
   final Uri _baseUri;
   final String _credential;
   final http.Client _client;
-  final encrypt.Key _key;
   final String? _deviceId;
   final Duration timeout;
   final Map<String, String> _versions = {};
 
-  static encrypt.Key _decodeKey(String value) {
-    try {
-      final bytes = base64Decode(value);
-      if (bytes.length != 32) throw const FormatException();
-      return encrypt.Key(Uint8List.fromList(bytes));
-    } catch (_) {
-      throw const FormatException('加密密钥必须是 Base64 编码的 32 字节密钥');
-    }
-  }
+  String get serverUrl => _baseUri.toString();
+  String get credential => _credential;
+  String? get deviceId => _deviceId;
 
   /// HTTP 存储统一通过 X-API-Key 认证。
   Map<String, String> get _headers => {
@@ -92,44 +82,6 @@ class HttpStorage implements StorageInterface {
       queryParameters:
           normalizedPrefix == null ? null : {'prefix': normalizedPrefix},
     );
-  }
-
-  Uint8List _encrypt(Uint8List bytes) {
-    final iv = encrypt.IV.fromSecureRandom(12);
-    final encrypter = encrypt.Encrypter(
-      encrypt.AES(_key, mode: encrypt.AESMode.gcm),
-    );
-    final ciphertext = encrypter.encryptBytes(bytes, iv: iv);
-    return Uint8List.fromList(
-      utf8.encode(
-        jsonEncode({
-          'version': 1,
-          'iv': iv.base64,
-          'ciphertext': ciphertext.base64,
-        }),
-      ),
-    );
-  }
-
-  Uint8List _decrypt(Uint8List envelopeBytes) {
-    try {
-      final envelope =
-          jsonDecode(utf8.decode(envelopeBytes)) as Map<String, dynamic>;
-      if (envelope['version'] != 1) throw const FormatException('不支持的密文版本');
-      final iv = encrypt.IV.fromBase64(envelope['iv'] as String);
-      final ciphertext = encrypt.Encrypted.fromBase64(
-        envelope['ciphertext'] as String,
-      );
-      final encrypter = encrypt.Encrypter(
-        encrypt.AES(_key, mode: encrypt.AESMode.gcm),
-      );
-      return Uint8List.fromList(encrypter.decryptBytes(ciphertext, iv: iv));
-    } catch (error) {
-      throw StorageException(
-        StorageErrorKind.invalidData,
-        '远端数据无法解密: $error',
-      );
-    }
   }
 
   Future<http.Response> _request(
@@ -209,6 +161,49 @@ class HttpStorage implements StorageInterface {
     if (response.statusCode != 200) _throwFor(response);
   }
 
+  /// POST JSON（供插件业务 REST 使用），返回解码后的响应体。
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final uri = Uri.parse('${_baseUri.toString()}$path');
+    final response = await _request(
+      () => _client.post(
+        uri,
+        headers: {..._headers, 'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ),
+    );
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw StorageException(
+      StorageErrorKind.invalidData,
+      '响应格式错误: ${response.body.substring(0, 200)}',
+    );
+  }
+
+  /// GET JSON（供插件业务 REST 使用），返回解码后的响应体。
+  Future<Map<String, dynamic>> getJson(
+    String path,
+    Map<String, dynamic> query,
+  ) async {
+    var uri = Uri.parse('${_baseUri.toString()}$path');
+    if (query.isNotEmpty) {
+      uri = uri.replace(
+        queryParameters: query.map(
+          (k, v) => MapEntry(k, v?.toString() ?? ''),
+        ),
+      );
+    }
+    final response = await _request(() => _client.get(uri, headers: _headers));
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw StorageException(
+      StorageErrorKind.invalidData,
+      '响应格式错误: ${response.body.substring(0, 200)}',
+    );
+  }
+
   @override
   Future<Uint8List?> readBytes(String path) async {
     final response = await _request(
@@ -218,7 +213,7 @@ class HttpStorage implements StorageInterface {
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
     if (etag != null) _versions[path] = etag;
-    return _decrypt(response.bodyBytes);
+    return Uint8List.fromList(response.bodyBytes);
   }
 
   /// 写入文件：优先条件写（已知版本用 If-Match，新文件用 If-None-Match: *），
@@ -246,7 +241,7 @@ class HttpStorage implements StorageInterface {
     }
     final response = await _request(
       () =>
-          _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)),
+          _client.put(_filesUri(path), headers: headers, body: bytes),
     );
 
     if (response.statusCode == 412) {
@@ -271,7 +266,7 @@ class HttpStorage implements StorageInterface {
     };
     final response = await _request(
       () =>
-          _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)),
+          _client.put(_filesUri(path), headers: headers, body: bytes),
     );
     if (response.statusCode != 200) _throwFor(response);
     final etag = response.headers['etag'];
@@ -293,7 +288,7 @@ class HttpStorage implements StorageInterface {
     }
     final response = await _request(
       () =>
-          _client.put(_filesUri(path), headers: headers, body: _encrypt(bytes)),
+          _client.put(_filesUri(path), headers: headers, body: bytes),
     );
     if (response.statusCode == 412) {
       _throwFor(response);

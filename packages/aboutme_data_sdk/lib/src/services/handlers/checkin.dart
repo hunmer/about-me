@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -7,40 +6,26 @@ import '../utils.dart';
 //
 // 数据格式：items.json 文件包含打卡项目列表，每个项目有嵌套的 checkInRecords
 
-PluginHandlers createCheckinHandlers(PluginDataStore store) {
+PluginHandlers createCheckinHandlers(PluginData data) {
   // 读取所有打卡项目
-  Future<List<Map<String, dynamic>>> readAllItems(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'checkin',
-      'items.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
-    final items = data['items'];
+  Future<List<Map<String, dynamic>>> readAllItems() async {
+    final content = await data.read('checkin', 'items.json');
+    if (content is! Map) return [];
+    final items = content['items'];
     if (items is! List) return [];
     return List<Map<String, dynamic>>.from(items);
   }
 
   // 保存所有打卡项目
-  Future<void> saveAllItems(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> items,
-  ) {
-    return store.writePluginData(userId, 'checkin', 'items.json', {
-      'items': items,
-    }, encryptionKey);
+  Future<void> saveAllItems(List<Map<String, dynamic>> items) {
+    return data.write('checkin', 'items.json', {'items': items});
   }
 
   return {
     // 获取打卡项目列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
 
         return PluginResult.success(
           createPaginatedResult(
@@ -55,9 +40,9 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final index = items.indexWhere((i) => i['id'] == params['id']);
 
         if (index == -1) {
@@ -71,9 +56,9 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 创建打卡项目
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -86,7 +71,7 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
         };
 
         items.add(newItem);
-        await saveAllItems(userId, encryptionKey, items);
+        await saveAllItems(items);
 
         return PluginResult.success(newItem);
       } catch (e) {
@@ -95,9 +80,9 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 更新打卡项目
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final index = items.indexWhere((i) => i['id'] == params['id']);
 
         if (index == -1) {
@@ -111,7 +96,7 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
         };
         items[index] = updatedItem;
 
-        await saveAllItems(userId, encryptionKey, items);
+        await saveAllItems(items);
         return PluginResult.success(updatedItem);
       } catch (e) {
         return PluginResult.failure('更新打卡项目失败: $e');
@@ -119,9 +104,9 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 删除打卡项目
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final initialLength = items.length;
         final filtered = items.where((i) => i['id'] != params['id']).toList();
 
@@ -129,7 +114,7 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
           return const PluginResult.failure('打卡项目不存在', 'NOT_FOUND');
         }
 
-        await saveAllItems(userId, encryptionKey, filtered);
+        await saveAllItems(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除打卡项目失败: $e');
@@ -137,12 +122,12 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 添加签到记录
-    'addRecord': (userId, encryptionKey, params) async {
+    'addRecord': (data, params) async {
       try {
         final itemId = params['id'];
         final date = params['date'];
         final note = params['note'];
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final index = items.indexWhere((i) => i['id'] == itemId);
 
         if (index == -1) {
@@ -177,7 +162,7 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
         };
         items[index] = updatedItem;
 
-        await saveAllItems(userId, encryptionKey, items);
+        await saveAllItems(items);
         return PluginResult.success(newRecord);
       } catch (e) {
         return PluginResult.failure('签到失败: $e');
@@ -185,9 +170,9 @@ PluginHandlers createCheckinHandlers(PluginDataStore store) {
     },
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final items = await readAllItems(userId, encryptionKey);
+        final items = await readAllItems();
         final totalItems = items.length;
 
         var totalCheckins = 0;

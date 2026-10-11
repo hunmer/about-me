@@ -6,14 +6,13 @@ import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
+
 import 'auth_middleware.dart';
 import 'auth_routes.dart';
 import 'config.dart';
 import 'fcm_service.dart';
 import 'mcp/mcp_endpoint.dart';
 import 'plugin_routes.dart';
-import 'plugins/invoker.dart';
-import 'plugins/utils.dart' show jsIsoDateTime;
 import 'storage_routes.dart';
 import 'system_routes.dart';
 import 'ws_hub.dart';
@@ -34,8 +33,6 @@ Future<Handler> buildServer(ServerConfig config) async {
   );
   await auth.initialize();
 
-  final pluginData = PluginDataStore(config.dataDir);
-
   final wsHub = StorageWsHub(
     verifyToken: (token) async {
       final result = await auth.verifyApiKey(token);
@@ -46,13 +43,6 @@ Future<Handler> buildServer(ServerConfig config) async {
         keyName: result.keyName,
         isApiKey: true,
       );
-    },
-  );
-
-  final invoker = PluginInvoker(
-    pluginData,
-    onMutation: (userId, pluginId, sourceDeviceId) {
-      wsHub.broadcastFileUpdate(userId, sourceDeviceId, '$pluginId/');
     },
   );
 
@@ -75,8 +65,8 @@ Future<Handler> buildServer(ServerConfig config) async {
     fcm: fcm,
   );
 
-  final pluginApi = PluginApi(invoker: invoker);
-  final mcpApi = McpApi(invoker: invoker);
+  final pluginApi = PluginApi(storage: storage, wsHub: wsHub);
+  final mcpApi = McpApi(storage: storage, wsHub: wsHub);
   final systemApi = SystemApi(auth: auth, dataDir: config.dataDir);
   final adminStatic = AdminStatic(_resolveAdminDir(config));
 

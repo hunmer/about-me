@@ -1,9 +1,10 @@
 import 'dart:convert';
 
+import 'package:aboutme_data_sdk/io.dart';
 import 'package:shelf/shelf.dart';
 
 import '../auth_middleware.dart';
-import '../plugins/invoker.dart';
+import '../ws_hub.dart';
 import 'tools.dart';
 
 /// MCP (Model Context Protocol) HTTP 端点，Streamable HTTP 无状态模式：
@@ -11,11 +12,14 @@ import 'tools.dart';
 /// - GET    /mcp  - 405（无状态模式不支持推送流）
 /// - DELETE /mcp  - 405（无状态模式无会话）
 ///
-/// 认证复用主服务器（X-API-Key 或 Bearer），并要求 X-Encryption-Key。
+/// 认证复用主服务器（X-API-Key 或 Bearer）；数据明文，无需加密密钥。
+/// 工具与 REST/客户端使用 SDK 中同一套业务处理器。
 class McpApi {
-  McpApi({required this.invoker});
+  McpApi({required this.storage, required this.wsHub});
 
-  final PluginInvoker invoker;
+  final LocalFileStorage storage;
+  final StorageWsHub wsHub;
+  final PluginInvoker invoker = PluginInvoker();
 
   static const _serverInfo = {
     'name': '@hunmer/aboutme-server',
@@ -45,17 +49,6 @@ class McpApi {
 
     final auth = authContextOf(request);
     if (auth == null) return _jsonRpcError(401, '未认证');
-    final encryptionKey = request.headers['x-encryption-key'];
-    if (encryptionKey == null || encryptionKey.isEmpty) {
-      return Response(
-        403,
-        body: jsonEncode({
-          'success': false,
-          'error': '请通过 X-Encryption-Key 请求头传递加密密钥',
-        }),
-        headers: {'content-type': 'application/json'},
-      );
-    }
 
     dynamic payload;
     try {
@@ -64,35 +57,39 @@ class McpApi {
       return _jsonRpcError(400, '无效的 JSON 请求体');
     }
 
+    // 每个请求构建绑定该用户目录的后端；MCP 写操作同样广播 WS
+    final backend = LocalPluginBackend(
+      storage.getUserDir(auth.userId),
+      source: 'mcp',
+      onEvent: (event) {
+        wsHub.broadcastFileUpdate(
+          auth.userId,
+          request.headers['x-device-id'],
+          '${event.pluginId}/${event.filePattern}',
+        );
+      },
+    );
+
     final isBatch = payload is List;
     final messages =
         isBatch ? payload.cast<Map<String, dynamic>>() : [payload];
 
     final responses = <Map<String, dynamic>>[];
     for (final message in messages) {
-      final response = await _handleMessage(
-        message,
-        userId: auth.userId,
-        encryptionKey: encryptionKey,
-      );
+      final response = await _handleMessage(message, backend: backend);
       if (response != null) responses.add(response);
     }
 
     if (responses.isEmpty) {
-      // 全为通知：接受但不返回内容
       return Response(202);
     }
     final body = jsonEncode(isBatch ? responses : responses.first);
-    return Response.ok(
-      body,
-      headers: {'content-type': 'application/json'},
-    );
+    return Response.ok(body, headers: {'content-type': 'application/json'});
   };
 
   Future<Map<String, dynamic>?> _handleMessage(
     Map<String, dynamic> message, {
-    required String userId,
-    required String encryptionKey,
+    required LocalPluginBackend backend,
   }) async {
     final method = message['method'] as String?;
     final id = message['id'];
@@ -111,7 +108,6 @@ class McpApi {
           'jsonrpc': '2.0',
           'id': id,
           'result': {
-            // 回显客户端协议版本（兼容旧客户端），缺省用 2025-03-26
             'protocolVersion':
                 params['protocolVersion']?.toString().isNotEmpty == true
                 ? params['protocolVersion']
@@ -139,8 +135,7 @@ class McpApi {
 
         final (text, isError) = await dispatchTool(
           invoker,
-          userId,
-          encryptionKey,
+          backend,
           toolName,
           arguments,
         );
@@ -155,7 +150,6 @@ class McpApi {
           },
         };
       default:
-        // 通知（无 id）不回应；请求类未知方法返回 -32601
         if (id == null) return null;
         return _error(id, -32601, 'Method not found: $method');
     }

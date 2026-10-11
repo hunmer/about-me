@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import '../models/app_store_models.dart';
 import '../services/card_manager.dart';
@@ -332,7 +333,7 @@ class AppStoreManager extends ChangeNotifier {
   /// 加载源配置
   Future<void> _loadSources() async {
     try {
-      final data = await _storage.read(_sourcesKey);
+      final data = await AboutmeDataService.instance.readPath(_sourcesKey);
       if (data != null && data is List) {
         _sources =
             data
@@ -351,7 +352,7 @@ class AppStoreManager extends ChangeNotifier {
   Future<void> _saveSources() async {
     try {
       final jsonList = _sources.map((s) => s.toJson()).toList();
-      await _storage.write(_sourcesKey, jsonList);
+      await AboutmeDataService.instance.writePath(_sourcesKey, jsonList);
     } catch (e) {
       debugPrint('Failed to save sources: $e');
     }

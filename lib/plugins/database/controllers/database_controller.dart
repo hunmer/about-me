@@ -1,3 +1,4 @@
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -38,7 +39,7 @@ class DatabaseController {
   Future<List<Record>> getRecords(String databaseId) async {
     try {
       final records =
-          await service.plugin.storage.readJson('records_$databaseId') ?? [];
+          await AboutmeDataService.instance.readPath('records_$databaseId') ?? [];
       if (records is List) {
         return records.map((r) => Record.fromMap(r)).toList();
       }
@@ -78,7 +79,7 @@ class DatabaseController {
   }
 
   Future<void> _saveRecords(String databaseId, List<Record> records) async {
-    await service.plugin.storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       'records_$databaseId',
       records.map((r) => r.toMap()).toList(),
     );

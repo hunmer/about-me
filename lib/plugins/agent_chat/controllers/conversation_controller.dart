@@ -1,5 +1,6 @@
 import 'package:aboutme/plugins/agent_chat/data/sample_data.dart';
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
@@ -41,7 +42,16 @@ class ConversationController extends ChangeNotifier {
     // 监听服务变化
     conversationService.addListener(_onServiceChanged);
     messageService.addListener(_onServiceChanged);
+
+    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'agent_chat',
+      refresh,
+    );
   }
+
+  /// 数据同步事件订阅取消句柄
+  VoidCallback? _cancelDataSync;
 
   // ========== Getters ==========
 
@@ -85,7 +95,9 @@ class ConversationController extends ChangeNotifier {
   /// 加载全局配置
   Future<void> _loadGlobalConfig() async {
     try {
-      final config = await storage.read('agent_chat/config');
+      final config = await AboutmeDataService.instance.readPath(
+        'agent_chat/config',
+      );
       if (config is Map<String, dynamic>) {
         _defaultContextMessageCount =
             config['defaultContextMessageCount'] as int? ?? 10;
@@ -100,7 +112,7 @@ class ConversationController extends ChangeNotifier {
   /// 保存全局配置
   Future<void> _saveGlobalConfig() async {
     try {
-      await storage.write('agent_chat/config', {
+      await AboutmeDataService.instance.writePath('agent_chat/config', {
         'defaultContextMessageCount': _defaultContextMessageCount,
       });
     } catch (e) {
@@ -278,6 +290,7 @@ class ConversationController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _cancelDataSync?.call();
     conversationService.removeListener(_onServiceChanged);
     messageService.removeListener(_onServiceChanged);
     conversationService.dispose();

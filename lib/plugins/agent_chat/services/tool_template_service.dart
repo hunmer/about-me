@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 工具模板服务
@@ -156,14 +157,16 @@ class ToolTemplateService extends ChangeNotifier {
   Future<void> _loadTemplates() async {
     try {
       // 获取所有模板文件
-      final keys = await _storage.getKeysWithPrefix(_templatesDir);
+      final keys = await AboutmeDataService.instance.listPathKeys(
+        _templatesDir,
+      );
 
       _templates = [];
       for (final key in keys) {
         if (!key.endsWith('.json')) continue;
 
         try {
-          final data = await _storage.readJson(key);
+          final data = await AboutmeDataService.instance.readPath(key, null);
           if (data != null && data is Map<String, dynamic>) {
             final template = SavedToolTemplate.fromJson(data);
             _templates.add(
@@ -206,7 +209,7 @@ class ToolTemplateService extends ChangeNotifier {
       final normalizedTemplate = template.copyWith(
         steps: _normalizeSteps(template.steps),
       );
-      await _storage.writeJson(
+      await AboutmeDataService.instance.writePath(
         _getTemplatePath(template.id),
         normalizedTemplate.toJson(),
       );
@@ -219,7 +222,7 @@ class ToolTemplateService extends ChangeNotifier {
   /// 删除模板文件
   Future<void> _deleteTemplateFile(String id) async {
     try {
-      await _storage.deleteFile(_getTemplatePath(id));
+      await AboutmeDataService.instance.deletePath(_getTemplatePath(id));
     } catch (e) {
       debugPrint('删除工具模板文件失败: $e');
     }

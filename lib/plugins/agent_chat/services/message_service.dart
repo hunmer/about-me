@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/ai_message_status.dart';
@@ -50,7 +51,9 @@ class MessageService extends ChangeNotifier {
   /// 加载指定会话的消息
   Future<void> _loadMessages(String conversationId) async {
     try {
-      final data = await storage.read('agent_chat/messages/$conversationId.json');
+      final data = await AboutmeDataService.instance.readPath(
+        'agent_chat/messages/$conversationId.json',
+      );
       if (data is List) {
         final messages =
             data
@@ -77,7 +80,10 @@ class MessageService extends ChangeNotifier {
           try {
             final messages = _messageCache[conversationId] ?? [];
             final data = messages.map((m) => m.toJson()).toList();
-            await storage.write('agent_chat/messages/$conversationId.json', data);
+            await AboutmeDataService.instance.writePath(
+              'agent_chat/messages/$conversationId.json',
+              data,
+            );
           } catch (e) {
             debugPrint('❌ [MessageService] 保存消息失败: $e');
           }

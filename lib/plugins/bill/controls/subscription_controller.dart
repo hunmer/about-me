@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import '../models/subscription.dart';
 import '../models/bill.dart';
 import '../bill_plugin.dart';
@@ -50,7 +51,7 @@ class SubscriptionController with ChangeNotifier {
   /// 加载订阅服务列表
   Future<void> loadSubscriptions() async {
     try {
-      final data = await _plugin.storage.readJson(
+      final data = await AboutmeDataService.instance.readPath(
         'bill/$_subscriptionsKey.json',
         {'subscriptions': []},
       );
@@ -73,7 +74,10 @@ class SubscriptionController with ChangeNotifier {
       final data = {
         'subscriptions': _subscriptions.map((s) => s.toJson()).toList(),
       };
-      await _plugin.storage.writeJson('bill/$_subscriptionsKey.json', data);
+      await AboutmeDataService.instance.writePath(
+        'bill/$_subscriptionsKey.json',
+        data,
+      );
     } catch (e) {
       debugPrint('保存订阅服务失败: $e');
       rethrow;

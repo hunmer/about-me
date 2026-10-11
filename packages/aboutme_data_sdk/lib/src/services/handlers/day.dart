@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -7,43 +6,25 @@ import '../utils.dart';
 //
 // 数据格式：memorial_days.json 直接存储纪念日数组
 
-PluginHandlers createDayHandlers(PluginDataStore store) {
+PluginHandlers createDayHandlers(PluginData data) {
   // 读取所有纪念日
-  Future<List<Map<String, dynamic>>> readAllMemorialDays(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'day',
-      'memorial_days.json',
-      encryptionKey,
-    );
+  Future<List<Map<String, dynamic>>> readAllMemorialDays() async {
+    final content = await data.read('day', 'memorial_days.json');
     // memorial_days.json 直接是数组格式
-    if (data is! List) return [];
-    return List<Map<String, dynamic>>.from(data);
+    if (content is! List) return [];
+    return List<Map<String, dynamic>>.from(content);
   }
 
   // 保存所有纪念日
-  Future<void> saveAllMemorialDays(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> days,
-  ) {
-    return store.writePluginData(
-      userId,
-      'day',
-      'memorial_days.json',
-      days,
-      encryptionKey,
-    );
+  Future<void> saveAllMemorialDays(List<Map<String, dynamic>> days) {
+    return data.write('day', 'memorial_days.json', days);
   }
 
   return {
     // 获取纪念日列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
 
         // 排序
         final sortMode = params['sortMode'] as String?;
@@ -94,9 +75,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
         final index = days.indexWhere((d) => d['id'] == params['id']);
 
         if (index == -1) {
@@ -110,9 +91,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 创建纪念日
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -124,7 +105,7 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
         };
 
         days.add(newDay);
-        await saveAllMemorialDays(userId, encryptionKey, days);
+        await saveAllMemorialDays(days);
 
         return PluginResult.success(newDay);
       } catch (e) {
@@ -133,9 +114,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 更新纪念日
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
         final index = days.indexWhere((d) => d['id'] == params['id']);
 
         if (index == -1) {
@@ -149,7 +130,7 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
         };
         days[index] = updatedDay;
 
-        await saveAllMemorialDays(userId, encryptionKey, days);
+        await saveAllMemorialDays(days);
         return PluginResult.success(updatedDay);
       } catch (e) {
         return PluginResult.failure('更新纪念日失败: $e');
@@ -157,9 +138,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 删除纪念日
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
         final initialLength = days.length;
         final filtered = days
             .where((d) => d['id'] != params['id'])
@@ -169,7 +150,7 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
           return const PluginResult.failure('纪念日不存在', 'NOT_FOUND');
         }
 
-        await saveAllMemorialDays(userId, encryptionKey, filtered);
+        await saveAllMemorialDays(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除纪念日失败: $e');
@@ -177,9 +158,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 搜索纪念日
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
-        var days = await readAllMemorialDays(userId, encryptionKey);
+        var days = await readAllMemorialDays();
 
         final startDate = params['startDate'];
         final endDate = params['endDate'];
@@ -215,9 +196,9 @@ PluginHandlers createDayHandlers(PluginDataStore store) {
     },
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final days = await readAllMemorialDays(userId, encryptionKey);
+        final days = await readAllMemorialDays();
 
         return PluginResult.success({
           'totalDays': days.length,

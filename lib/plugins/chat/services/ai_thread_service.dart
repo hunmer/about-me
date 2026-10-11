@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -134,7 +135,7 @@ class AiThreadService {
     if (_loadedChannels.contains(channelId)) return;
     _loadedChannels.add(channelId);
     try {
-      final data = await _plugin.storage.read('chat/ai_threads/$channelId.json');
+      final data = await AboutmeDataService.instance.readPath('chat/ai_threads/$channelId.json');
       final threadsJson = data['threads'] as Map<String, dynamic>? ?? {};
       threadsJson.forEach((rootId, value) {
         _threads[rootId] = AiThread.fromJson(
@@ -222,7 +223,7 @@ class AiThreadService {
     if (removed.isEmpty) return;
     _threads.removeWhere((_, t) => t.channelId == channelId);
     try {
-      await _plugin.storage.write('chat/ai_threads/$channelId.json', {
+      await AboutmeDataService.instance.writePath('chat/ai_threads/$channelId.json', {
         'threads': {},
       });
     } catch (e) {
@@ -235,13 +236,13 @@ class AiThreadService {
 
   Future<void> _persist(AiThread thread) async {
     try {
-      final data = await _plugin.storage.read(
+      final data = await AboutmeDataService.instance.readPath(
         'chat/ai_threads/${thread.channelId}.json',
       );
       final threadsJson =
           Map<String, dynamic>.from(data['threads'] as Map? ?? {});
       threadsJson[thread.rootMessageId] = thread.toJson();
-      await _plugin.storage.write(
+      await AboutmeDataService.instance.writePath(
         'chat/ai_threads/${thread.channelId}.json',
         {'threads': threadsJson},
       );
@@ -252,11 +253,11 @@ class AiThreadService {
 
   Future<void> _deleteRoot(String rootMessageId, String channelId) async {
     try {
-      final data = await _plugin.storage.read('chat/ai_threads/$channelId.json');
+      final data = await AboutmeDataService.instance.readPath('chat/ai_threads/$channelId.json');
       final threadsJson =
           Map<String, dynamic>.from(data['threads'] as Map? ?? {});
       threadsJson.remove(rootMessageId);
-      await _plugin.storage.write('chat/ai_threads/$channelId.json', {
+      await AboutmeDataService.instance.writePath('chat/ai_threads/$channelId.json', {
         'threads': threadsJson,
       });
     } catch (e) {

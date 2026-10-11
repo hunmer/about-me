@@ -33,7 +33,7 @@ void main() {
     );
   });
 
-  test('encrypts bytes on write and decrypts them on read', () async {
+  test('明文传输：写入与读取内容一致', () async {
     Uint8List? stored;
     var etag = '"v1"';
     final client = MockClient((request) async {
@@ -41,7 +41,7 @@ void main() {
       if (request.method == 'PUT') {
         expect(request.headers['If-None-Match'], '*');
         stored = request.bodyBytes;
-        expect(utf8.decode(stored!), isNot(contains('private text')));
+        expect(utf8.decode(stored!), 'private text');
         return http.Response('', 200, headers: {'etag': etag});
       }
       if (request.method == 'GET') {

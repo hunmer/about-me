@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -189,7 +190,7 @@ class Live2DPlugin extends BasePlugin {
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
     });
-    final data = await storage.read('$storageDir/archives.json');
+    final data = await AboutmeDataService.instance.readPath('$storageDir/archives.json');
     final rawArchives = data is Map ? data['archives'] : null;
     archives
       ..clear()
@@ -201,7 +202,7 @@ class Live2DPlugin extends BasePlugin {
     selectedId = data['selectedId'] as String?;
   }
 
-  Future<void> save() async => storage.write('$storageDir/archives.json', {
+  Future<void> save() async => AboutmeDataService.instance.writePath('$storageDir/archives.json', {
     'selectedId': selectedId,
     'archives': archives.map((a) => a.toJson()).toList(),
   });

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../plugins/invoker.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 
 /// MCP 工具定义与分发（移植自 nodejs mcp/tools.ts + client.ts + server.ts）。
 
@@ -118,8 +118,7 @@ final List<Map<String, dynamic>> toolDefinitions = [
 /// 调用工具：返回 content 文本；失败返回 (text, isError=true)。
 Future<(String, bool)> dispatchTool(
   PluginInvoker invoker,
-  String userId,
-  String encryptionKey,
+  PluginData data,
   String name,
   Map<String, dynamic> args,
 ) async {
@@ -129,7 +128,7 @@ Future<(String, bool)> dispatchTool(
     Map<String, dynamic>? query,
     dynamic body,
   }) async => invoker.invoke(
-      userId, encryptionKey, method, path,
+      data, method, path,
       query: query, body: body);
 
   Map<String, dynamic> rest(Map<String, dynamic> args, List<String> extract) {

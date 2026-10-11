@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -8,27 +7,20 @@ import '../utils.dart';
 // 数据格式：使用按日期分割的文件 activities_{date}.json
 // 文件内容可以是数组 [...] 或对象 {"activities": [...]}
 
-PluginHandlers createActivityHandlers(PluginDataStore store) {
+PluginHandlers createActivityHandlers(PluginData data) {
   // 读取指定日期的活动
   Future<List<Map<String, dynamic>>> readActivitiesForDate(
-    String userId,
-    String encryptionKey,
     String dateStr,
   ) async {
-    final data = await store.readPluginData(
-      userId,
-      'activity',
-      'activities_$dateStr.json',
-      encryptionKey,
-    );
-    if (data == null) return [];
+    final content = await data.read('activity', 'activities_$dateStr.json');
+    if (content == null) return [];
 
     // 兼容两种格式：数组 [...] 或对象 {"activities": [...]}
-    if (data is List) {
-      return List<Map<String, dynamic>>.from(data);
+    if (content is List) {
+      return List<Map<String, dynamic>>.from(content);
     }
-    if (data is Map) {
-      final activities = data['activities'];
+    if (content is Map) {
+      final activities = content['activities'];
       if (activities is List) {
         return List<Map<String, dynamic>>.from(activities);
       }
@@ -38,20 +30,12 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
 
   // 保存指定日期的活动
   Future<void> saveActivitiesForDate(
-    String userId,
-    String encryptionKey,
     String dateStr,
     List<Map<String, dynamic>> activities,
   ) {
-    return store.writePluginData(
-      userId,
-      'activity',
-      'activities_$dateStr.json',
-      {
-        'activities': activities.map((a) => <String, dynamic>{...a}).toList(),
-      },
-      encryptionKey,
-    );
+    return data.write('activity', 'activities_$dateStr.json', {
+      'activities': activities.map((a) => <String, dynamic>{...a}).toList(),
+    });
   }
 
   // 按开始时间升序排序
@@ -71,14 +55,10 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
 
   return {
     // 获取活动列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          date,
-        );
+        final activities = await readActivitiesForDate(date);
 
         // 按开始时间排序
         sortByStartTime(activities);
@@ -96,14 +76,10 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          date,
-        );
+        final activities = await readActivitiesForDate(date);
         final index = activities.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -117,17 +93,13 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
     },
 
     // 创建活动
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
         final startTime = params['startTime'] as String?;
         final dateStr = startTime != null && startTime.isNotEmpty
             ? startTime.split('T')[0]
             : formatDate(DateTime.now());
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          dateStr,
-        );
+        final activities = await readActivitiesForDate(dateStr);
 
         final now = jsIsoDateTime(DateTime.now());
         final id = params['id'];
@@ -143,7 +115,7 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
         // 按开始时间排序
         sortByStartTime(activities);
 
-        await saveActivitiesForDate(userId, encryptionKey, dateStr, activities);
+        await saveActivitiesForDate(dateStr, activities);
 
         return PluginResult.success(newItem);
       } catch (e) {
@@ -152,14 +124,10 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
     },
 
     // 更新活动
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          date,
-        );
+        final activities = await readActivitiesForDate(date);
         final index = activities.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -176,7 +144,7 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
         // 按开始时间排序
         sortByStartTime(activities);
 
-        await saveActivitiesForDate(userId, encryptionKey, date, activities);
+        await saveActivitiesForDate(date, activities);
 
         return PluginResult.success(updatedItem);
       } catch (e) {
@@ -185,14 +153,10 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
     },
 
     // 删除活动
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          date,
-        );
+        final activities = await readActivitiesForDate(date);
         final index = activities.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -200,7 +164,7 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
         }
 
         activities.removeAt(index);
-        await saveActivitiesForDate(userId, encryptionKey, date, activities);
+        await saveActivitiesForDate(date, activities);
 
         return PluginResult.success({'id': params['id']});
       } catch (e) {
@@ -209,14 +173,10 @@ PluginHandlers createActivityHandlers(PluginDataStore store) {
     },
 
     // 获取今日统计
-    'getTodayStats': (userId, encryptionKey, params) async {
+    'getTodayStats': (data, params) async {
       try {
         final today = formatDate(DateTime.now());
-        final activities = await readActivitiesForDate(
-          userId,
-          encryptionKey,
-          today,
-        );
+        final activities = await readActivitiesForDate(today);
 
         var totalDuration = 0;
         for (final a in activities) {

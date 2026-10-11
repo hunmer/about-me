@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
 
@@ -56,7 +57,7 @@ class RouteAgentConfigService {
   /// 加载所有路由配置
   Future<void> _loadConfigs() async {
     try {
-      final data = await storage.read(_storageKey);
+      final data = await AboutmeDataService.instance.readPath(_storageKey);
       if (data is Map<String, dynamic>) {
         _configs = data.map(
           (key, value) => MapEntry(
@@ -77,7 +78,7 @@ class RouteAgentConfigService {
       final data = _configs.map(
         (key, value) => MapEntry(key, value.toJson()),
       );
-      await storage.write(_storageKey, data);
+      await AboutmeDataService.instance.writePath(_storageKey, data);
     } catch (e) {
       debugPrint('保存路由配置失败: $e');
     }

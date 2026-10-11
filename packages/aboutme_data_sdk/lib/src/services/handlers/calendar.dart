@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -7,35 +6,17 @@ import '../utils.dart';
 //
 // 数据格式：calendar_events.json 包含 {events: [...], completedEvents: [...]}
 
-PluginHandlers createCalendarHandlers(PluginDataStore store) {
+PluginHandlers createCalendarHandlers(PluginData data) {
   // 读取所有事件数据
-  Future<Map<String, dynamic>> readAllEventsData(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'calendar',
-      'calendar_events.json',
-      encryptionKey,
-    );
-    if (data is! Map) return {};
-    return Map<String, dynamic>.from(data);
+  Future<Map<String, dynamic>> readAllEventsData() async {
+    final content = await data.read('calendar', 'calendar_events.json');
+    if (content is! Map) return {};
+    return Map<String, dynamic>.from(content);
   }
 
   // 保存所有事件数据
-  Future<void> saveAllEventsData(
-    String userId,
-    String encryptionKey,
-    Map<String, dynamic> data,
-  ) {
-    return store.writePluginData(
-      userId,
-      'calendar',
-      'calendar_events.json',
-      data,
-      encryptionKey,
-    );
+  Future<void> saveAllEventsData(Map<String, dynamic> content) {
+    return data.write('calendar', 'calendar_events.json', content);
   }
 
   // 解析事件列表
@@ -54,10 +35,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
 
   return {
     // 获取事件列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        var events = parseEvents(data);
+        final content = await readAllEventsData();
+        var events = parseEvents(content);
 
         // 按日期范围过滤
         final startDate = params['startDate'] as String?;
@@ -103,10 +84,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        final events = parseEvents(data);
+        final content = await readAllEventsData();
+        final events = parseEvents(content);
         final index = events.indexWhere((e) => e['id'] == params['id']);
 
         if (index == -1) {
@@ -120,10 +101,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 创建事件
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        final events = parseEvents(data);
+        final content = await readAllEventsData();
+        final events = parseEvents(content);
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -135,8 +116,8 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
         };
 
         events.add(newEvent);
-        data['events'] = events;
-        await saveAllEventsData(userId, encryptionKey, data);
+        content['events'] = events;
+        await saveAllEventsData(content);
 
         return PluginResult.success(newEvent);
       } catch (e) {
@@ -145,10 +126,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 更新事件
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        final events = parseEvents(data);
+        final content = await readAllEventsData();
+        final events = parseEvents(content);
         final index = events.indexWhere((e) => e['id'] == params['id']);
 
         if (index == -1) {
@@ -161,9 +142,9 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
           'updatedAt': jsIsoDateTime(DateTime.now()),
         };
         events[index] = updatedEvent;
-        data['events'] = events;
+        content['events'] = events;
 
-        await saveAllEventsData(userId, encryptionKey, data);
+        await saveAllEventsData(content);
         return PluginResult.success(updatedEvent);
       } catch (e) {
         return PluginResult.failure('更新事件失败: $e');
@@ -171,10 +152,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 删除事件
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        final events = parseEvents(data);
+        final content = await readAllEventsData();
+        final events = parseEvents(content);
         final initialLength = events.length;
         final filtered = events
             .where((e) => e['id'] != params['id'])
@@ -184,8 +165,8 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
           return const PluginResult.failure('事件不存在', 'NOT_FOUND');
         }
 
-        data['events'] = filtered;
-        await saveAllEventsData(userId, encryptionKey, data);
+        content['events'] = filtered;
+        await saveAllEventsData(content);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除事件失败: $e');
@@ -193,11 +174,11 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 完成事件
-    'completeEvent': (userId, encryptionKey, params) async {
+    'completeEvent': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        final events = parseEvents(data);
-        final completedEvents = parseCompletedEvents(data);
+        final content = await readAllEventsData();
+        final events = parseEvents(content);
+        final completedEvents = parseCompletedEvents(content);
         final index = events.indexWhere((e) => e['id'] == params['id']);
 
         if (index == -1) {
@@ -217,9 +198,9 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
         events.removeAt(index);
         completedEvents.add(completedEvent);
 
-        data['events'] = events;
-        data['completedEvents'] = completedEvents;
-        await saveAllEventsData(userId, encryptionKey, data);
+        content['events'] = events;
+        content['completedEvents'] = completedEvents;
+        await saveAllEventsData(content);
 
         return PluginResult.success(completedEvent);
       } catch (e) {
@@ -228,10 +209,10 @@ PluginHandlers createCalendarHandlers(PluginDataStore store) {
     },
 
     // 搜索事件
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
-        final data = await readAllEventsData(userId, encryptionKey);
-        var events = parseEvents(data);
+        final content = await readAllEventsData();
+        var events = parseEvents(content);
 
         final keyword = params['keyword'];
         final startDate = params['startDate'];

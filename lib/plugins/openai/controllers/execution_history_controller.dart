@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/models/execution_history.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
 /// 执行历史控制器
 ///
@@ -32,8 +32,9 @@ class ExecutionHistoryController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final plugin = OpenAIPlugin.instance;
-      final data = await plugin.storage.read(_getStorageKey(presetId));
+      final data = await AboutmeDataService.instance.readPath(
+        _getStorageKey(presetId),
+      );
 
       if (data.isEmpty) {
         _histories = [];
@@ -158,12 +159,11 @@ class ExecutionHistoryController extends ChangeNotifier {
   /// 保存到存储
   Future<void> _saveToStorage(String presetId) async {
     try {
-      final plugin = OpenAIPlugin.instance;
       final data = {
         'presetId': presetId,
         'histories': _histories.map((h) => h.toJson()).toList(),
       };
-      await plugin.storage.write(_getStorageKey(presetId), data);
+      await AboutmeDataService.instance.writePath(_getStorageKey(presetId), data);
     } catch (e) {
       debugPrint('保存执行历史到存储失败: $e');
       rethrow;
@@ -183,8 +183,7 @@ class ExecutionHistoryController extends ChangeNotifier {
   /// 删除预设时清理对应的历史文件
   Future<void> deletePresetHistories(String presetId) async {
     try {
-      final plugin = OpenAIPlugin.instance;
-      await plugin.storage.delete(_getStorageKey(presetId));
+      await AboutmeDataService.instance.deletePath(_getStorageKey(presetId));
       debugPrint('已删除预设的历史文件: $presetId');
 
       // 如果当前加载的是这个预设的历史，清空列表

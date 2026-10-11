@@ -3,6 +3,7 @@
 /// 通过适配现有的存储系统来实现 ITrackerRepository 接口
 library;
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:shared_models/shared_models.dart';
 
 /// 客户端 Tracker Repository 实现
@@ -15,19 +16,19 @@ class ClientTrackerRepository extends ITrackerRepository {
   // ============ 内部辅助方法 ============
 
   Future<Map<String, dynamic>?> _readGoalsData() async {
-    return await storage.read('$pluginId/goals.json');
+    return await AboutmeDataService.instance.readPath('$pluginId/goals.json');
   }
 
   Future<void> _writeGoalsData(Map<String, dynamic> data) async {
-    await storage.write('$pluginId/goals.json', data);
+    await AboutmeDataService.instance.writePath('$pluginId/goals.json', data);
   }
 
   Future<Map<String, dynamic>?> _readRecordsData() async {
-    return await storage.read('$pluginId/records.json');
+    return await AboutmeDataService.instance.readPath('$pluginId/records.json');
   }
 
   Future<void> _writeRecordsData(Map<String, dynamic> data) async {
-    await storage.write('$pluginId/records.json', data);
+    await AboutmeDataService.instance.writePath('$pluginId/records.json', data);
   }
 
   List<GoalDto> _parseGoalsList(Map<String, dynamic>? data) {

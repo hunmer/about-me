@@ -4,7 +4,7 @@ const _uuid = Uuid();
 
 String generateUUID() => _uuid.v4();
 
-/// 错误码到 HTTP 状态码映射（与 nodejs errorCodeToStatus 一致）。
+/// 错误码到 HTTP 状态码映射。
 int errorCodeToStatus(String? code) {
   switch (code) {
     case 'NOT_FOUND':
@@ -41,7 +41,7 @@ String jsIsoDateTime(DateTime time) {
   return '$y-$m-${d}T$h:$min:$s.${ms}Z';
 }
 
-/// 分页（与 nodejs createPaginatedResult 一致）。
+/// 分页。
 Map<String, dynamic> createPaginatedResult(
   List<dynamic> items, {
   int? offset,
@@ -76,4 +76,20 @@ Map<String, String>? matchRoute(String pattern, String subPath) {
     }
   }
   return params;
+}
+
+/// JS 宽松真值语义模拟（业务 handler 兼容旧数据用）。
+bool truthy(dynamic value) {
+  if (value == null) return false;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) return value.isNotEmpty && value != 'false' && value != '0';
+  return true;
+}
+
+/// JS Number() 宽松数值转换模拟。
+num toNum(dynamic value, [num fallback = 0]) {
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value) ?? fallback;
+  return fallback;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
@@ -85,6 +86,9 @@ class BillController with ChangeNotifier {
   /// 订阅服务控制器
   late final SubscriptionController _subscriptionController;
 
+  /// 数据变更订阅取消函数（远端写入后局部刷新）
+  VoidCallback? _cancelDataSync;
+
   List<Account> get accounts => List.unmodifiable(_accounts);
 
   String? get selectedAccountId => _selectedAccountId;
@@ -131,9 +135,22 @@ class BillController with ChangeNotifier {
 
       // 加载订阅数据
       await _subscriptionController.loadSubscriptions();
+
+      // 订阅插件数据变更（远端写入后局部刷新）
+      _cancelDataSync ??= AboutmeDataService.instance.onPluginChanged(
+        'bill',
+        () => reloadAccounts(),
+      );
     } finally {
       _isLoading = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    _cancelDataSync = null;
+    super.dispose();
   }
 
   /// 初始化订阅控制器
@@ -165,7 +182,7 @@ class BillController with ChangeNotifier {
         return;
       }
 
-      final accountsData = await _plugin.storage.readJson(
+      final accountsData = await AboutmeDataService.instance.readPath(
         'bill/$_accountsKey.json',
         {'accounts': []},
       );
@@ -255,8 +272,8 @@ class BillController with ChangeNotifier {
       final accountsJson =
           _accounts.map((account) => jsonEncode(account.toJson())).toList();
 
-      // 将数据保存到插件的storage中
-      await _plugin.storage.write('bill/$_accountsKey.json', {
+      // 将数据保存到统一数据入口
+      await AboutmeDataService.instance.writePath('bill/$_accountsKey.json', {
         'accounts': accountsJson,
       });
     } catch (e) {

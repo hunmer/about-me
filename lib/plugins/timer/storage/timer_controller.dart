@@ -1,4 +1,5 @@
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -21,7 +22,7 @@ class TimerController {
   // 从存储加载任务
   Future<Map<String, dynamic>> loadTasks() async {
     try {
-      final data = await storage.read('timer/tasks.json');
+      final data = await AboutmeDataService.instance.readPath('timer/tasks.json');
       _tasks =
           data['tasks'] != null
               ? (data['tasks'] as List)
@@ -40,7 +41,9 @@ class TimerController {
   // 保存任务到存储
   Future<void> saveTasks(List<TimerTask> tasks) async {
     final tasksData = tasks.map((task) => task.toJson()).toList();
-    await storage.write('timer/tasks.json', {'tasks': tasksData});
+    await AboutmeDataService.instance.writePath('timer/tasks.json', {
+      'tasks': tasksData,
+    });
     await _syncWidget();
   }
 

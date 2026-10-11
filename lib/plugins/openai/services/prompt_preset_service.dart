@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/models/prompt_preset.dart';
 import 'package:aboutme/plugins/openai/sample_data.dart';
 
@@ -33,8 +32,7 @@ class PromptPresetService extends ChangeNotifier {
   /// 加载所有预设
   Future<List<PromptPreset>> loadPresets() async {
     try {
-      final plugin = PluginManager.instance.getPlugin('openai') as OpenAIPlugin;
-      final data = await plugin.storage.read(_storageKey);
+      final data = await AboutmeDataService.instance.readPath(_storageKey);
 
       if (data.isNotEmpty && data['presets'] != null) {
         _presets = (data['presets'] as List)
@@ -56,8 +54,7 @@ class PromptPresetService extends ChangeNotifier {
   /// 保存所有预设
   Future<void> _savePresets() async {
     try {
-      final plugin = PluginManager.instance.getPlugin('openai') as OpenAIPlugin;
-      await plugin.storage.write(_storageKey, {
+      await AboutmeDataService.instance.writePath(_storageKey, {
         'presets': _presets.map((p) => p.toJson()).toList(),
       });
     } catch (e) {

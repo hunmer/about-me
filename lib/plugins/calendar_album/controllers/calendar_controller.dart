@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/sample_data.dart';
@@ -131,7 +132,10 @@ class CalendarController extends ChangeNotifier {
   }
 
   Future<void> _loadEntries() async {
-    final data = await _storage.readSafeJson(_storageKey);
+    final data = await AboutmeDataService.instance.readPath(
+      _storageKey,
+      <String, dynamic>{},
+    );
 
     // 检查是否有数据，如果没有则加载示例数据
     if (data.isEmpty) {
@@ -181,7 +185,10 @@ class CalendarController extends ChangeNotifier {
     _entries.forEach((key, value) {
       data[key.toIso8601String()] = value.map((e) => e.toJson()).toList();
     });
-    await _storage.setString(_storageKey, json.encode(data));
+    await AboutmeDataService.instance.writePath(
+      _storageKey,
+      json.encode(data),
+    );
   }
 
   Future<void> addEntry(CalendarEntry entry) async {

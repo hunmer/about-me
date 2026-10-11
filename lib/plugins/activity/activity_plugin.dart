@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
@@ -304,7 +305,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复通知栏显示（如果之前是开启的）
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/notification_settings.json',
       );
       if (settings.isNotEmpty && settings['isEnabled'] == true) {
@@ -317,7 +318,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复播报服务（如果之前是开启的）
     try {
-      final ttsSettings = await storage.read(
+      final ttsSettings = await AboutmeDataService.instance.readPath(
         'activity/tts_announcement_settings.json',
       );
       if (ttsSettings.isNotEmpty && ttsSettings['isEnabled'] == true) {
@@ -624,7 +625,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       await _notificationService.enable();
       // 保存设置
-      await storage.write('activity/notification_settings.json', {
+      await AboutmeDataService.instance.writePath('activity/notification_settings.json', {
         'isEnabled': true,
         'minimumReminderInterval': minInterval,
         'updateInterval': updateInt,
@@ -641,7 +642,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     try {
       await _notificationService.disable();
       // 保存设置
-      await storage.write('activity/notification_settings.json', {
+      await AboutmeDataService.instance.writePath('activity/notification_settings.json', {
         'isEnabled': false,
       });
       debugPrint('[ActivityPlugin] 通知栏显示已禁用并保存');
@@ -659,7 +660,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取最小提醒间隔（分钟）
   Future<int> getMinimumReminderInterval() async {
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/notification_settings.json',
       );
       return settings['minimumReminderInterval'] as int? ?? 30; // 默认30分钟
@@ -672,11 +673,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置最小提醒间隔（分钟）
   Future<void> setMinimumReminderInterval(int minutes) async {
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/notification_settings.json',
       );
       settings['minimumReminderInterval'] = minutes;
-      await storage.write('activity/notification_settings.json', settings);
+      await AboutmeDataService.instance.writePath('activity/notification_settings.json', settings);
       debugPrint('[ActivityPlugin] 最小提醒间隔已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -690,7 +691,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取通知更新频率（分钟）
   Future<int> getUpdateInterval() async {
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/notification_settings.json',
       );
       return settings['updateInterval'] as int? ?? 1; // 默认1分钟
@@ -703,11 +704,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置通知更新频率（分钟）
   Future<void> setUpdateInterval(int minutes) async {
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/notification_settings.json',
       );
       settings['updateInterval'] = minutes;
-      await storage.write('activity/notification_settings.json', settings);
+      await AboutmeDataService.instance.writePath('activity/notification_settings.json', settings);
       debugPrint('[ActivityPlugin] 通知更新频率已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -853,7 +854,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取工作时间设置
   Future<Map<String, dynamic>> getWorkHoursSettings() async {
     try {
-      final settings = await storage.read(
+      final settings = await AboutmeDataService.instance.readPath(
         'activity/tts_announcement_settings.json',
       );
       return {

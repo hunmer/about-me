@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -208,7 +209,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 加载设置
   Future<void> _loadSettings() async {
     try {
-      final data = await storage.read('webview/settings.json');
+      final data = await AboutmeDataService.instance.readPath('webview/settings.json');
       if (data != null) {
         webviewSettings = WebViewSettings.fromJson(
           data as Map<String, dynamic>,
@@ -223,7 +224,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   /// 保存设置
   Future<void> saveWebviewSettings() async {
-    await storage.write('webview/settings.json', webviewSettings.toJson());
+    await AboutmeDataService.instance.writePath('webview/settings.json', webviewSettings.toJson());
 
     // 重新应用 proxy 配置
     if (proxyController.isSupported) {
@@ -236,7 +237,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 恢复标签页
   Future<void> _restoreTabs() async {
     try {
-      final data = await storage.read('webview/tabs.json');
+      final data = await AboutmeDataService.instance.readPath('webview/tabs.json');
       if (data != null && data is List) {
         await tabManager.restoreFromJson(data);
       }
@@ -248,7 +249,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 保存标签页状态
   Future<void> saveTabs() async {
     final tabsJson = tabManager.toJson();
-    await storage.write('webview/tabs.json', tabsJson);
+    await AboutmeDataService.instance.writePath('webview/tabs.json', tabsJson);
   }
 
   /// 获取本地文件存储路径

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
@@ -161,7 +162,7 @@ class ScriptExecutor {
       }
 
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
-      final data = await storage.read(configPath);
+      final data = await AboutmeDataService.instance.readPath(configPath);
       print('[ScriptConfigDebug] 9.脚本getConfig读取: $configPath -> profileId=$profileId');
 
       // 默认配置
@@ -235,7 +236,7 @@ class ScriptExecutor {
       if (profileId != null && profileId.isNotEmpty) {
         // 只更新指定配置文件的值，保留其他配置文件
         final existing = ScriptProfiles.fromStorage(
-          await storage.read(configPath),
+          await AboutmeDataService.instance.readPath(configPath),
         );
         final index = existing.profiles.indexWhere((p) => p.id == profileId);
         final updated = ScriptProfile(
@@ -248,10 +249,10 @@ class ScriptExecutor {
         } else {
           existing.profiles.add(updated);
         }
-        await storage.write(configPath, existing.toStorage());
+        await AboutmeDataService.instance.writePath(configPath, existing.toStorage());
       } else {
         // 未指定配置文件：整体覆盖（兼容旧脚本行为）
-        await storage.write(configPath, config);
+        await AboutmeDataService.instance.writePath(configPath, config);
       }
 
       return {'success': true};

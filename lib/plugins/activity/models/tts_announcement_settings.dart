@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 
 /// TTS 播报设置数据类
 class TTSAnnouncementSettings {
@@ -100,7 +101,7 @@ class TTSAnnouncementSettingsManager {
   /// 读取设置
   Future<TTSAnnouncementSettings> load() async {
     try {
-      final json = await _storage.read(_settingsFileName);
+      final json = await AboutmeDataService.instance.readPath(_settingsFileName);
       if (json.isEmpty) {
         return const TTSAnnouncementSettings();
       }
@@ -114,7 +115,10 @@ class TTSAnnouncementSettingsManager {
   /// 保存设置
   Future<void> save(TTSAnnouncementSettings settings) async {
     try {
-      await _storage.write(_settingsFileName, settings.toJson());
+      await AboutmeDataService.instance.writePath(
+        _settingsFileName,
+        settings.toJson(),
+      );
     } catch (e) {
       debugPrint('[TTSAnnouncementSettings] 保存设置失败: $e');
       rethrow;

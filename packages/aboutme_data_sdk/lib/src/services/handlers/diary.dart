@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -9,81 +8,41 @@ import '../utils.dart';
 // - {date}.json: 每天的日记文件
 // - diary_index.json: 索引文件（包含日期列表和统计信息）
 
-PluginHandlers createDiaryHandlers(PluginDataStore store) {
+PluginHandlers createDiaryHandlers(PluginData data) {
   // 读取索引文件
-  Future<Map<String, dynamic>> readIndex(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'diary',
-      'diary_index.json',
-      encryptionKey,
-    );
-    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+  Future<Map<String, dynamic>> readIndex() async {
+    final content = await data.read('diary', 'diary_index.json');
+    return content is Map<String, dynamic> ? content : <String, dynamic>{};
   }
 
   // 保存索引文件
-  Future<void> saveIndex(
-    String userId,
-    String encryptionKey,
-    Map<String, dynamic> index,
-  ) {
-    return store.writePluginData(
-      userId,
-      'diary',
-      'diary_index.json',
-      index,
-      encryptionKey,
-    );
+  Future<void> saveIndex(Map<String, dynamic> index) {
+    return data.write('diary', 'diary_index.json', index);
   }
 
   // 读取单日日记
-  Future<Map<String, dynamic>?> readEntry(
-    String userId,
-    String encryptionKey,
-    String date,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'diary',
-      '$date.json',
-      encryptionKey,
-    );
-    if (data is! Map<String, dynamic>) return null;
-    return data;
+  Future<Map<String, dynamic>?> readEntry(String date) async {
+    final content = await data.read('diary', '$date.json');
+    if (content is! Map<String, dynamic>) return null;
+    return content;
   }
 
   // 保存单日日记
-  Future<void> saveEntry(
-    String userId,
-    String encryptionKey,
-    Map<String, dynamic> entry,
-  ) {
+  Future<void> saveEntry(Map<String, dynamic> entry) {
     final date = entry['date'] as String;
-    return store.writePluginData(
-      userId,
-      'diary',
-      '$date.json',
-      entry,
-      encryptionKey,
-    );
+    return data.write('diary', '$date.json', entry);
   }
 
   // 读取所有日记（通过索引文件）
-  Future<List<Map<String, dynamic>>> readAllEntries(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final index = await readIndex(userId, encryptionKey);
+  Future<List<Map<String, dynamic>>> readAllEntries() async {
+    final index = await readIndex();
     final entries = <Map<String, dynamic>>[];
 
     for (final key in index.keys.toList()) {
       // 跳过统计字段
       if (key == 'totalCharCount') continue;
 
-      final entry = await readEntry(userId, encryptionKey, key);
+      final entry = await readEntry(key);
       if (entry != null) {
         entries.add(entry);
       }
@@ -101,9 +60,9 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
 
   return {
     // 获取日记列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        var entries = await readAllEntries(userId, encryptionKey);
+        var entries = await readAllEntries();
 
         // 按日期范围过滤
         final startDate = params['startDate'] as String?;
@@ -137,10 +96,10 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 按日期获取
-    'getByDate': (userId, encryptionKey, params) async {
+    'getByDate': (data, params) async {
       try {
         final date = params['date'].toString();
-        final entry = await readEntry(userId, encryptionKey, date);
+        final entry = await readEntry(date);
 
         if (entry == null) {
           return const PluginResult.failure('日记不存在', 'NOT_FOUND');
@@ -153,12 +112,12 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 创建日记
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
         final date = params['date'].toString();
 
         // 检查是否已存在
-        final existing = await readEntry(userId, encryptionKey, date);
+        final existing = await readEntry(date);
         if (existing != null) {
           return const PluginResult.failure('该日期已有日记', 'CONFLICT');
         }
@@ -171,15 +130,15 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
         };
 
         // 保存日记文件
-        await saveEntry(userId, encryptionKey, newEntry);
+        await saveEntry(newEntry);
 
         // 更新索引
-        final index = await readIndex(userId, encryptionKey);
+        final index = await readIndex();
         index[date] = {'lastUpdated': now};
         final totalCharCount = (index['totalCharCount'] as num?) ?? 0;
         index['totalCharCount'] =
             totalCharCount + (params['content'] ?? '').toString().length;
-        await saveIndex(userId, encryptionKey, index);
+        await saveIndex(index);
 
         return PluginResult.success(newEntry);
       } catch (e) {
@@ -188,10 +147,10 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 按日期更新
-    'updateByDate': (userId, encryptionKey, params) async {
+    'updateByDate': (data, params) async {
       try {
         final date = params['date'].toString();
-        final existing = await readEntry(userId, encryptionKey, date);
+        final existing = await readEntry(date);
 
         if (existing == null) {
           return const PluginResult.failure('日记不存在', 'NOT_FOUND');
@@ -209,14 +168,14 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
         };
 
         // 保存日记文件
-        await saveEntry(userId, encryptionKey, updatedEntry);
+        await saveEntry(updatedEntry);
 
         // 更新索引
-        final index = await readIndex(userId, encryptionKey);
+        final index = await readIndex();
         final totalCharCount = (index['totalCharCount'] as num?) ?? 0;
         index['totalCharCount'] = totalCharCount + lengthDiff;
         index[date] = {'lastUpdated': jsIsoDateTime(DateTime.now())};
-        await saveIndex(userId, encryptionKey, index);
+        await saveIndex(index);
 
         return PluginResult.success(updatedEntry);
       } catch (e) {
@@ -225,10 +184,10 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 按日期删除
-    'deleteByDate': (userId, encryptionKey, params) async {
+    'deleteByDate': (data, params) async {
       try {
         final date = params['date'].toString();
-        final existing = await readEntry(userId, encryptionKey, date);
+        final existing = await readEntry(date);
 
         if (existing == null) {
           return const PluginResult.failure('日记不存在', 'NOT_FOUND');
@@ -238,17 +197,17 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
         final contentLength = (existing['content'] ?? '').toString().length;
 
         // 删除日记文件
-        await store.deletePluginFile(userId, 'diary', '$date.json');
+        await data.delete('diary', '$date.json');
 
         // 从索引中移除
-        final index = await readIndex(userId, encryptionKey);
+        final index = await readIndex();
         index.remove(date);
         final totalCharCount = (index['totalCharCount'] as num?) ?? 0;
         final remaining = totalCharCount - contentLength < 0
             ? 0
             : totalCharCount - contentLength;
         index['totalCharCount'] = remaining;
-        await saveIndex(userId, encryptionKey, index);
+        await saveIndex(index);
 
         return PluginResult.success({'date': date});
       } catch (e) {
@@ -257,9 +216,9 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 搜索
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
-        var entries = await readAllEntries(userId, encryptionKey);
+        var entries = await readAllEntries();
 
         final keyword = params['keyword'];
         final startDate = params['startDate'];
@@ -299,9 +258,9 @@ PluginHandlers createDiaryHandlers(PluginDataStore store) {
     },
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final entries = await readAllEntries(userId, encryptionKey);
+        final entries = await readAllEntries();
 
         final totalEntries = entries.length;
         var totalWords = 0;

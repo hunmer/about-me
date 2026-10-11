@@ -11,3 +11,4 @@ export 'src/legacy_encryption.dart';
 export 'src/local_file_storage.dart';
 export 'src/pbkdf2.dart';
 export 'src/plugin_data_store.dart';
+export 'src/services/local_plugin_backend.dart';

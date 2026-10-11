@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
 import 'package:aboutme/plugins/nodes/sample_data.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -16,7 +17,14 @@ class NodesController extends ChangeNotifier {
 
   NodesController(this._storageManager) {
     _loadData();
+    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged('nodes', () {
+      reloadData();
+    });
   }
+
+  /// 数据同步事件订阅取消句柄
+  VoidCallback? _cancelDataSync;
 
   // ========== 事件通知 ==========
 
@@ -75,7 +83,7 @@ class NodesController extends ChangeNotifier {
 
   Future<void> _loadData() async {
     try {
-      final notebooksData = await _storageManager.read('nodes/nodes_notebooks.json');
+      final notebooksData = await AboutmeDataService.instance.readPath('nodes/nodes_notebooks.json');
       if (notebooksData.isNotEmpty) {
         final List<dynamic> notebooks =
             notebooksData['notebooks'] as List<dynamic>;
@@ -123,7 +131,7 @@ class NodesController extends ChangeNotifier {
       final Map<String, dynamic> data = {
         'notebooks': _notebooks.map((notebook) => notebook.toJson()).toList(),
       };
-      await _storageManager.write('nodes/nodes_notebooks.json', data);
+      await AboutmeDataService.instance.writePath('nodes/nodes_notebooks.json', data);
     } catch (e) {
       debugPrint('Error saving notebooks: $e');
     }
@@ -533,5 +541,11 @@ class NodesController extends ChangeNotifier {
 
     // 返回父节点的所有子节点
     return parentNode.children;
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    super.dispose();
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -10,18 +9,10 @@ import '../utils.dart';
 // 数据格式：accounts.json 文件包含账户列表，每个账户有嵌套的 bills 数组
 // 账户可能是 JSON 编码的字符串或 Map 对象
 
-PluginHandlers createBillHandlers(PluginDataStore store) {
+PluginHandlers createBillHandlers(PluginData data) {
   // 读取所有账户（包含嵌套的账单）
-  Future<List<Map<String, dynamic>>> readAllAccounts(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final accountsData = await store.readPluginData(
-      userId,
-      'bill',
-      'accounts.json',
-      encryptionKey,
-    );
+  Future<List<Map<String, dynamic>>> readAllAccounts() async {
+    final accountsData = await data.read('bill', 'accounts.json');
     if (accountsData is! Map) return [];
 
     final accountsRaw = accountsData['accounts'];
@@ -49,17 +40,11 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
   }
 
   // 保存所有账户
-  Future<void> saveAllAccounts(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> accounts,
-  ) {
-    return store.writePluginData(
-      userId,
+  Future<void> saveAllAccounts(List<Map<String, dynamic>> accounts) {
+    return data.write(
       'bill',
       'accounts.json',
       {'accounts': accounts.map((a) => jsonEncode(a)).toList()},
-      encryptionKey,
     );
   }
 
@@ -127,12 +112,11 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
 
   // 获取账单列表（getBills 与 getBillsByAccount 共用逻辑，TS 中为避免 this 而复制了一份）
   Future<PluginResult> listBills(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final accounts = await readAllAccounts(userId, encryptionKey);
+      final accounts = await readAllAccounts();
       final accountId = params['accountId'];
       final allBills = <Map<String, dynamic>>[];
 
@@ -168,12 +152,11 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
 
   // 创建账单（createBill 与 createBillForAccount 共用逻辑）
   Future<PluginResult> createBillImpl(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final accounts = await readAllAccounts(userId, encryptionKey);
+      final accounts = await readAllAccounts();
       final accountIndex = accounts.indexWhere(
         (a) => a['id'] == params['accountId'],
       );
@@ -209,7 +192,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
       account['balance'] = currentBalance + amount;
       account['updatedAt'] = now;
 
-      await saveAllAccounts(userId, encryptionKey, accounts);
+      await saveAllAccounts(accounts);
       return PluginResult.success(convertClientBillToDto(newBill));
     } catch (e) {
       return PluginResult.failure('创建账单失败: $e');
@@ -218,9 +201,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
 
   return {
     // 获取账户列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         final accountDtos = accounts.map(accountDto).toList();
 
         return PluginResult.success(
@@ -236,9 +219,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取账户
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         final index = accounts.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -252,9 +235,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     },
 
     // 创建账户
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         final now = jsIsoDateTime(DateTime.now());
 
         final newAccount = <String, dynamic>{
@@ -269,7 +252,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
         };
 
         accounts.add(newAccount);
-        await saveAllAccounts(userId, encryptionKey, accounts);
+        await saveAllAccounts(accounts);
 
         return PluginResult.success(newAccount);
       } catch (e) {
@@ -278,9 +261,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     },
 
     // 更新账户
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         final index = accounts.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -294,7 +277,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
         };
         accounts[index] = updatedAccount;
 
-        await saveAllAccounts(userId, encryptionKey, accounts);
+        await saveAllAccounts(accounts);
         return PluginResult.success(updatedAccount);
       } catch (e) {
         return PluginResult.failure('更新账户失败: $e');
@@ -302,9 +285,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     },
 
     // 删除账户
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         final initialLength = accounts.length;
         final filtered = accounts
             .where((a) => a['id'] != params['id'])
@@ -314,7 +297,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
           return const PluginResult.failure('账户不存在', 'NOT_FOUND');
         }
 
-        await saveAllAccounts(userId, encryptionKey, filtered);
+        await saveAllAccounts(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除账户失败: $e');
@@ -325,9 +308,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     'getBills': listBills,
 
     // 获取单个账单
-    'getBillById': (userId, encryptionKey, params) async {
+    'getBillById': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
 
         for (final account in accounts) {
           final bills = account['bills'];
@@ -351,9 +334,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     'createBill': createBillImpl,
 
     // 更新账单
-    'updateBill': (userId, encryptionKey, params) async {
+    'updateBill': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
 
         for (var i = 0; i < accounts.length; i++) {
           final account = accounts[i];
@@ -390,7 +373,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
             account['balance'] = currentBalance - oldAmount + newAmount;
             account['updatedAt'] = jsIsoDateTime(DateTime.now());
 
-            await saveAllAccounts(userId, encryptionKey, accounts);
+            await saveAllAccounts(accounts);
             return PluginResult.success(convertClientBillToDto(updatedBill));
           }
         }
@@ -402,9 +385,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     },
 
     // 删除账单
-    'deleteBill': (userId, encryptionKey, params) async {
+    'deleteBill': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
 
         for (var i = 0; i < accounts.length; i++) {
           final account = accounts[i];
@@ -435,7 +418,7 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
             account['balance'] = currentBalance - oldAmount;
             account['updatedAt'] = jsIsoDateTime(DateTime.now());
 
-            await saveAllAccounts(userId, encryptionKey, accounts);
+            await saveAllAccounts(accounts);
             return PluginResult.success({'id': params['id']});
           }
         }
@@ -453,9 +436,9 @@ PluginHandlers createBillHandlers(PluginDataStore store) {
     'createBillForAccount': createBillImpl,
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final accounts = await readAllAccounts(userId, encryptionKey);
+        final accounts = await readAllAccounts();
         num totalIncome = 0;
         num totalExpense = 0;
         var billCount = 0;

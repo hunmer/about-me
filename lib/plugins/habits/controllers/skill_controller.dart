@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -20,7 +21,10 @@ class SkillController {
     String skillId,
   ) async {
     try {
-      final data = await storage.readJson('habits/records/$skillId.json', []);
+      final data = await AboutmeDataService.instance.readPath(
+        'habits/records/$skillId.json',
+        [],
+      );
       List<Map<String, dynamic>> recordMaps = [];
       if (data is List) {
         recordMaps = List<Map<String, dynamic>>.from(
@@ -39,7 +43,7 @@ class SkillController {
 
   Future<List<Skill>> loadSkills() async {
     try {
-      final data = await storage.readJson(_skillsKey, []);
+      final data = await AboutmeDataService.instance.readPath(_skillsKey, []);
       List<Map<String, dynamic>> skillMaps = [];
       if (data is List) {
         skillMaps = List<Map<String, dynamic>>.from(
@@ -75,7 +79,7 @@ class SkillController {
     final defaultSkills = skillMaps.map((m) => Skill.fromMap(m)).toList();
 
     _skills = defaultSkills;
-    await storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       _skillsKey,
       defaultSkills.map((s) => s.toMap()).toList(),
     );
@@ -102,7 +106,10 @@ class SkillController {
     } else {
       _skills.add(skill);
     }
-    await storage.writeJson(_skillsKey, _skills.map((s) => s.toMap()).toList());
+    await AboutmeDataService.instance.writePath(
+      _skillsKey,
+      _skills.map((s) => s.toMap()).toList(),
+    );
 
     // 广播技能数据变更事件，同步小组件
     EventManager.instance.broadcast(
@@ -116,7 +123,10 @@ class SkillController {
 
   Future<void> deleteSkill(String id) async {
     _skills.removeWhere((s) => s.id == id);
-    await storage.writeJson(_skillsKey, _skills.map((s) => s.toMap()).toList());
+    await AboutmeDataService.instance.writePath(
+      _skillsKey,
+      _skills.map((s) => s.toMap()).toList(),
+    );
 
     // 广播技能数据变更事件，同步小组件
     EventManager.instance.broadcast(

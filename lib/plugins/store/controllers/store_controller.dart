@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/store/models/used_item.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -37,6 +38,9 @@ class StoreController with ChangeNotifier {
   /// 通知外部监听者数据已更新
   void notifyUpdate() => notifyListeners();
 
+  /// 数据同步事件订阅取消句柄
+  VoidCallback? _cancelDataSync;
+
   List<Product> _products = [];
   final List<Product> _archivedProducts = [];
   List<UserItem> _userItems = [];
@@ -67,10 +71,17 @@ class StoreController with ChangeNotifier {
 
     // 初始化流数据
     _updateStreams();
+
+    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'store',
+      reloadData,
+    );
   }
 
   @override
   void dispose() {
+    _cancelDataSync?.call();
     _productsStreamController.close();
     _userItemsStreamController.close();
     _pointsStreamController.close();
@@ -356,14 +367,16 @@ class StoreController with ChangeNotifier {
 
   // 保存已使用物品
   Future<void> saveUsedItems() async {
-    await plugin.storage.write('store/used_items.json', {
+    await AboutmeDataService.instance.writePath('store/used_items.json', {
       'items': _usedItems.map((item) => item.toJson()).toList(),
     });
   }
 
   // 加载已使用物品
   Future<void> loadUsedItems() async {
-    final storedUsedItems = await plugin.storage.read('store/used_items.json');
+    final storedUsedItems = await AboutmeDataService.instance.readPath(
+      'store/used_items.json',
+    );
     if (storedUsedItems is Map<String, dynamic>) {
       final itemsData = storedUsedItems['items'];
       if (itemsData is List) {
@@ -500,12 +513,18 @@ class StoreController with ChangeNotifier {
 
   // 从存储加载数据
   Future<void> loadFromStorage() async {
-    final storedProducts = await plugin.storage.read('store/products.json');
-    final storedArchivedProducts = await plugin.storage.read(
+    final storedProducts = await AboutmeDataService.instance.readPath(
+      'store/products.json',
+    );
+    final storedArchivedProducts = await AboutmeDataService.instance.readPath(
       'store/archived_products.json',
     );
-    final storedPoints = await plugin.storage.read('store/points.json');
-    final storedUserItems = await plugin.storage.read('store/user_items.json');
+    final storedPoints = await AboutmeDataService.instance.readPath(
+      'store/points.json',
+    );
+    final storedUserItems = await AboutmeDataService.instance.readPath(
+      'store/user_items.json',
+    );
     await loadUsedItems();
 
     _products.clear();
@@ -591,19 +610,21 @@ class StoreController with ChangeNotifier {
 
   // 保存商品数据
   Future<void> saveProducts() async {
-    await plugin.storage.write('store/products.json', {'products': productsJson});
+    await AboutmeDataService.instance.writePath('store/products.json', {
+      'products': productsJson,
+    });
   }
 
   // 保存存档商品数据
   Future<void> saveArchivedProducts() async {
-    await plugin.storage.write('store/archived_products.json', {
+    await AboutmeDataService.instance.writePath('store/archived_products.json', {
       'products': archivedProductsJson,
     });
   }
 
   // 保存积分数据
   Future<void> savePoints() async {
-    await plugin.storage.write('store/points.json', {
+    await AboutmeDataService.instance.writePath('store/points.json', {
       'value': _userPoints,
       'logs': _pointsLogs.map((log) => log.toJson()).toList(),
     });
@@ -611,7 +632,7 @@ class StoreController with ChangeNotifier {
 
   // 保存用户物品数据
   Future<void> saveUserItems() async {
-    await plugin.storage.write('store/user_items.json', {
+    await AboutmeDataService.instance.writePath('store/user_items.json', {
       'items': _userItems.map((item) => item.toJson()).toList(),
     });
   }

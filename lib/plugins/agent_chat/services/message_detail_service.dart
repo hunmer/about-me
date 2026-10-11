@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 /// 消息详细信息服务
@@ -37,7 +38,7 @@ class MessageDetailService {
       );
 
       final path = 'agent_chat/message_details/$messageId';
-      await storage.write(path, detail.toJson());
+      await AboutmeDataService.instance.writePath(path, detail.toJson());
 
       // 更新缓存
       _cache[messageId] = detail;
@@ -57,7 +58,7 @@ class MessageDetailService {
 
     try {
       final path = 'agent_chat/message_details/$messageId';
-      final data = await storage.read(path);
+      final data = await AboutmeDataService.instance.readPath(path);
 
       if (data == null) {
         debugPrint('⚠️ 消息详细数据不存在: $messageId');
@@ -80,7 +81,7 @@ class MessageDetailService {
   Future<void> deleteDetail(String messageId) async {
     try {
       final path = 'agent_chat/message_details/$messageId';
-      await storage.delete(path);
+      await AboutmeDataService.instance.deletePath(path);
 
       // 清除缓存
       _cache.remove(messageId);

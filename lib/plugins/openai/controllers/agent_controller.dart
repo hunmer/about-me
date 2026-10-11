@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -35,8 +36,9 @@ class AgentController extends ChangeNotifier {
     if (plugin == null) return [];
 
     try {
-      final storage = plugin.storage;
-      final data = await storage.read('${plugin.storageDir}/agents.json');
+      final data = await AboutmeDataService.instance.readPath(
+        '${plugin.storageDir}/agents.json',
+      );
       if (data.isNotEmpty) {
         final List<dynamic> jsonList = (data['agents'] ?? []) as List<dynamic>;
         _agents =
@@ -87,7 +89,7 @@ class AgentController extends ChangeNotifier {
     // Save all agents
     final List<Map<String, dynamic>> agentsJson =
         _agents.map((a) => a.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/agents.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/agents.json', {
       'agents': agentsJson,
     });
 
@@ -119,7 +121,7 @@ class AgentController extends ChangeNotifier {
     _agents.removeWhere((agent) => agent.id == agentId);
     final List<Map<String, dynamic>> agentsJson =
         _agents.map((a) => a.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/agents.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/agents.json', {
       'agents': agentsJson,
     });
 
@@ -200,9 +202,9 @@ class AgentController extends ChangeNotifier {
     if (plugin == null) return [];
 
     try {
-      final storage = plugin.storage;
-      final data =
-          await storage.read('${plugin.storageDir}/$storageKey.json');
+      final data = await AboutmeDataService.instance.readPath(
+        '${plugin.storageDir}/$storageKey.json',
+      );
       if (data.isNotEmpty) {
         final List<dynamic> jsonList = (data['agents'] ?? []) as List<dynamic>;
         return jsonList
@@ -237,7 +239,7 @@ class AgentController extends ChangeNotifier {
     // 保存
     final List<Map<String, dynamic>> agentsJson =
         existingAgents.map((a) => a.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/$storageKey.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/$storageKey.json', {
       'agents': agentsJson,
     });
     notifyListeners();
@@ -260,7 +262,7 @@ class AgentController extends ChangeNotifier {
     // 保存
     final List<Map<String, dynamic>> agentsJson =
         existingAgents.map((a) => a.toJson()).toList();
-    await plugin.storage.write('${plugin.storageDir}/$storageKey.json', {
+    await AboutmeDataService.instance.writePath('${plugin.storageDir}/$storageKey.json', {
       'agents': agentsJson,
     });
     notifyListeners();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
@@ -60,8 +61,8 @@ class NotesController {
   Future<void> _loadFolders() async {
     try {
       // 读取文件内容为字符串
-      final data = await _storage
-          .readPluginFile('notes', 'folders.json')
+      final data = await AboutmeDataService.instance
+          .readPathText('notes/folders.json')
           .catchError((_) => '');
 
       if (data.isNotEmpty) {
@@ -90,8 +91,8 @@ class NotesController {
       await _storage.ensurePluginDirectoryExists('notes/notes');
 
       // 尝试读取笔记索引文件
-      final indexData = await _storage
-          .readPluginFile('notes', 'notes/index.json')
+      final indexData = await AboutmeDataService.instance
+          .readPathText('notes/notes/index.json')
           .catchError((_) => '');
 
       if (indexData.isNotEmpty) {
@@ -99,8 +100,8 @@ class NotesController {
         final List<dynamic> noteIds = json.decode(indexData);
         for (var id in noteIds) {
           _noteIds.add(id.toString());
-          final noteData = await _storage
-              .readPluginFile('notes', 'notes/$id.json')
+          final noteData = await AboutmeDataService.instance
+              .readPathText('notes/notes/$id.json')
               .catchError((_) => '');
           if (noteData.isNotEmpty) {
             final note = Note.fromJson(json.decode(noteData));
@@ -117,7 +118,10 @@ class NotesController {
   /// 保存笔记索引
   Future<void> _saveNoteIndex(List<String> noteIds) async {
     final jsonString = json.encode(noteIds);
-    await _storage.writePluginFile('notes', 'notes/index.json', jsonString);
+    await AboutmeDataService.instance.writePath(
+      'notes/notes/index.json',
+      jsonString,
+    );
 
     // 触发缓存更新事件
     _notifyCacheUpdatedEvent();
@@ -126,19 +130,25 @@ class NotesController {
   /// 保存单个笔记到文件
   Future<void> _saveNoteToFile(Note note) async {
     final jsonString = json.encode(note.toJson());
-    await _storage.writePluginFile('notes', 'notes/${note.id}.json', jsonString);
+    await AboutmeDataService.instance.writePath(
+      'notes/notes/${note.id}.json',
+      jsonString,
+    );
   }
 
   /// 从文件删除笔记
   Future<void> _deleteNoteFile(String noteId) async {
-    await _storage.deleteFile('notes/notes/$noteId.json');
+    await AboutmeDataService.instance.deletePath('notes/notes/$noteId.json');
   }
 
   Future<void> _saveFolders() async {
     try {
       final jsonList = _folders.values.map((f) => f.toJson()).toList();
       final jsonString = json.encode(jsonList);
-      await _storage.writePluginFile('notes', 'folders.json', jsonString);
+      await AboutmeDataService.instance.writePath(
+        'notes/folders.json',
+        jsonString,
+      );
 
       // 触发缓存更新事件
       _notifyCacheUpdatedEvent();

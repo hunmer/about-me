@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import '../models/agent_chain_preset.dart';
 
@@ -33,7 +34,9 @@ class AgentChainPresetService extends ChangeNotifier {
   /// 加载所有预设
   Future<List<AgentChainPreset>> loadPresets() async {
     try {
-      final data = await storage.read('agent_chat/chain_presets');
+      final data = await AboutmeDataService.instance.readPath(
+        'agent_chat/chain_presets',
+      );
       if (data is List) {
         _presets = data
             .map((json) => AgentChainPreset.fromJson(json as Map<String, dynamic>))
@@ -57,7 +60,7 @@ class AgentChainPresetService extends ChangeNotifier {
   Future<void> _savePresets() async {
     try {
       final data = _presets.map((preset) => preset.toJson()).toList();
-      await storage.write('agent_chat/chain_presets', data);
+      await AboutmeDataService.instance.writePath('agent_chat/chain_presets', data);
     } catch (e) {
       debugPrint('保存 Agent 链预设失败: $e');
       rethrow;

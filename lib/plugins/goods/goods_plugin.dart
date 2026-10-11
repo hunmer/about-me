@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
@@ -236,7 +237,7 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
   // 保存特定仓库的排序偏好
   Future<void> saveSortPreference(String warehouseId, String sortBy) async {
     _warehouseSortPreferences[warehouseId] = sortBy;
-    await storage.write('goods/preferences.json', {
+    await AboutmeDataService.instance.writePath('goods/preferences.json', {
       'warehouseSortPreferences': _warehouseSortPreferences,
     });
   }
@@ -267,7 +268,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<void> _loadSortPreferences() async {
     try {
-      final preferencesData = await storage.read('goods/preferences.json');
+      final preferencesData = await AboutmeDataService.instance.readPath(
+        'goods/preferences.json',
+      );
       if (preferencesData.isNotEmpty &&
           preferencesData.containsKey('warehouseSortPreferences')) {
         final Map<String, dynamic> sortPrefs = Map<String, dynamic>.from(
@@ -288,7 +291,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     try {
       _warehouses.clear();
 
-      final warehousesData = await storage.read('goods/warehouses.json');
+      final warehousesData = await AboutmeDataService.instance.readPath(
+        'goods/warehouses.json',
+      );
       if (warehousesData.isNotEmpty &&
           warehousesData.containsKey('warehouses')) {
         final List<String> warehouseIds = List<String>.from(
@@ -296,7 +301,9 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
         );
 
         for (var warehouseId in warehouseIds) {
-          final data = await storage.read('goods/warehouse/$warehouseId.json');
+          final data = await AboutmeDataService.instance.readPath(
+            'goods/warehouse/$warehouseId.json',
+          );
           if (data.isNotEmpty && data.containsKey('warehouse')) {
             final warehouse = Warehouse.fromJson(data['warehouse']);
             _warehouses.add(warehouse);
@@ -354,13 +361,13 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
       }
 
       // 保存仓库信息
-      await storage.write('goods/warehouse/${warehouse.id}.json', {
+      await AboutmeDataService.instance.writePath('goods/warehouse/${warehouse.id}.json', {
         'warehouse': warehouse.toJson(),
       });
 
       // 更新仓库列表
       final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await storage.write('goods/warehouses.json', {
+      await AboutmeDataService.instance.writePath('goods/warehouses.json', {
         'warehouses': warehouseIds,
       });
 
@@ -376,11 +383,11 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<void> deleteWarehouse(String warehouseId) async {
     try {
-      await storage.delete('goods/warehouse/$warehouseId.json');
+      await AboutmeDataService.instance.deletePath('goods/warehouse/$warehouseId.json');
       _warehouses.removeWhere((w) => w.id == warehouseId);
 
       final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await storage.write('goods/warehouses.json', {
+      await AboutmeDataService.instance.writePath('goods/warehouses.json', {
         'warehouses': warehouseIds,
       });
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
@@ -333,9 +334,9 @@ class ScriptManager extends ChangeNotifier {
     try {
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
       print('[ScriptConfigDebug] 7.写入配置文件: $configPath, data=$config');
-      await loader.storage.write(configPath, config);
+      await AboutmeDataService.instance.writePath(configPath, config);
       // 回读验证写入是否生效
-      final verify = await loader.storage.read(configPath);
+      final verify = await AboutmeDataService.instance.readPath(configPath);
       print('[ScriptConfigDebug] 7.写入后回读验证: $verify');
       print('✅ 保存脚本配置成功: $scriptId -> $configPath');
     } catch (e) {
@@ -351,7 +352,7 @@ class ScriptManager extends ChangeNotifier {
   /// 兼容旧扁平格式（视为单个 default 配置文件）
   Future<ScriptProfiles> getScriptProfiles(String scriptId) async {
     final configPath = 'configs/scripts_center/${scriptId}_config.json';
-    final data = await loader.storage.read(configPath);
+    final data = await AboutmeDataService.instance.readPath(configPath);
     return ScriptProfiles.fromStorage(data);
   }
 
@@ -374,7 +375,7 @@ class ScriptManager extends ChangeNotifier {
     // metadata：脚本元数据 + id + 配置文件（含全部 profile，原样透传）
     final metadata = <String, dynamic>{...script.toJson(), 'id': script.id};
     final config =
-        await loader.storage.read('configs/scripts_center/${script.id}_config.json');
+        await AboutmeDataService.instance.readPath('configs/scripts_center/${script.id}_config.json');
     if (config is Map && config.isNotEmpty) {
       metadata['config'] = config;
     }
@@ -402,7 +403,7 @@ class ScriptManager extends ChangeNotifier {
       // 删除配置文件（如果存在）
       try {
         final configPath = 'configs/scripts_center/${scriptId}_config.json';
-        await loader.storage.delete(configPath);
+        await AboutmeDataService.instance.deletePath(configPath);
       } catch (_) {
         // 配置文件不存在，忽略错误
       }

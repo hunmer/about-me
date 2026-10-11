@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -54,7 +55,7 @@ class HabitController {
 
   Future<List<Habit>> loadHabits() async {
     try {
-      final data = await storage.readJson(_habitsKey, []);
+      final data = await AboutmeDataService.instance.readPath(_habitsKey, []);
 
       List<Map<String, dynamic>> habitMaps = [];
       if (data is List) {
@@ -81,10 +82,13 @@ class HabitController {
 
       // 如果没有习惯数据且未初始化过，创建默认习惯
       if (_habits.isEmpty) {
-        final isInitialized = await storage.readJson(_initializedKey, false);
+        final isInitialized = await AboutmeDataService.instance.readPath(
+          _initializedKey,
+          false,
+        );
         if (isInitialized == false) {
           await _createDefaultHabits();
-          await storage.writeJson(_initializedKey, true);
+          await AboutmeDataService.instance.writePath(_initializedKey, true);
         }
       }
 
@@ -105,7 +109,7 @@ class HabitController {
     final defaultHabits = habitMaps.map((m) => Habit.fromMap(m)).toList();
 
     _habits = defaultHabits;
-    await storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       _habitsKey,
       defaultHabits.map((h) => h.toMap()).toList(),
     );
@@ -125,7 +129,10 @@ class HabitController {
       final recordList = entry.value as List;
 
       if (recordList.isNotEmpty) {
-        await storage.writeJson('habits/records/$habitId.json.json', recordList);
+        await AboutmeDataService.instance.writePath(
+          'habits/records/$habitId.json.json',
+          recordList,
+        );
       }
     }
 
@@ -144,7 +151,10 @@ class HabitController {
       habits.add(habit);
     }
 
-    await storage.writeJson(_habitsKey, habits.map((h) => h.toMap()).toList());
+    await AboutmeDataService.instance.writePath(
+      _habitsKey,
+      habits.map((h) => h.toMap()).toList(),
+    );
 
     // 广播习惯数据变更事件，同步小组件
     EventManager.instance.broadcast('habit_data_changed', Value({'habit': habit}));
@@ -165,7 +175,10 @@ class HabitController {
   Future<void> deleteHabit(String id) async {
     final habits = getHabits();
     habits.removeWhere((h) => h.id == id);
-    await storage.writeJson(_habitsKey, habits.map((h) => h.toMap()).toList());
+    await AboutmeDataService.instance.writePath(
+      _habitsKey,
+      habits.map((h) => h.toMap()).toList(),
+    );
 
     // 广播习惯数据变更事件，同步小组件
     EventManager.instance.broadcast('habit_data_changed', Value({'habitId': id}));
@@ -226,7 +239,10 @@ class HabitController {
       );
 
       habits[index] = updatedHabit;
-      await storage.writeJson(_habitsKey, habits.map((h) => h.toMap()).toList());
+      await AboutmeDataService.instance.writePath(
+      _habitsKey,
+      habits.map((h) => h.toMap()).toList(),
+    );
 
       // 广播习惯数据变更事件
       EventManager.instance.broadcast('habit_data_changed', Value({'habit': updatedHabit}));

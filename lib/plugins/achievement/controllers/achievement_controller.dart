@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -195,7 +196,7 @@ class AchievementController extends ChangeNotifier {
 
   Future<void> _loadFromStorage() async {
     try {
-      final data = await plugin.storage.read(_storageKey);
+      final data = await AboutmeDataService.instance.readPath(_storageKey);
       if (data is Map<String, dynamic>) {
         data.forEach((id, value) {
           if (value is Map && kAchievementById.containsKey(id)) {
@@ -210,7 +211,7 @@ class AchievementController extends ChangeNotifier {
 
   Future<void> _save() async {
     try {
-      await plugin.storage.write(
+      await AboutmeDataService.instance.writePath(
         _storageKey,
         _progress.map((id, p) => MapEntry(id, p.toJson())),
       );

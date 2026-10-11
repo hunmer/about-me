@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/moments/models/agent_asset.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
 /// Agent 资产图服务
 ///
@@ -32,7 +32,7 @@ class AgentAssetsService extends ChangeNotifier {
   Future<List<AgentAsset>> getAssets(String agentId) async {
     if (_cache.containsKey(agentId)) return _cache[agentId]!;
     try {
-      final data = await OpenAIPlugin.instance.storage.read(_path(agentId));
+      final data = await AboutmeDataService.instance.readPath(_path(agentId));
       final list =
           (data is Map ? data['assets'] : null) as List<dynamic>? ?? [];
       _cache[agentId] = list
@@ -127,7 +127,7 @@ class AgentAssetsService extends ChangeNotifier {
 
   Future<void> _save(String agentId) async {
     final assets = _cache[agentId] ?? [];
-    await OpenAIPlugin.instance.storage.write(_path(agentId), {
+    await AboutmeDataService.instance.writePath(_path(agentId), {
       'assets': assets.map((a) => a.toJson()).toList(),
     });
     notifyListeners();

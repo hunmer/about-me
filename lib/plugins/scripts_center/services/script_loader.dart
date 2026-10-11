@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_folder.dart';
@@ -44,8 +45,8 @@ class ScriptLoader {
         final metadataPath = path.join(scriptPath, 'metadata.json');
         final codePath = path.join(scriptPath, 'script.js');
 
-        final metadataExists = await storage.fileExists(metadataPath);
-        final codeExists = await storage.fileExists(codePath);
+        final metadataExists = await AboutmeDataService.instance.existsPath(metadataPath);
+        final codeExists = await AboutmeDataService.instance.existsPath(codePath);
 
         // 读 assets 版本
         final assetsMetaJson = await rootBundle.loadString(
@@ -57,7 +58,7 @@ class ScriptLoader {
 
         if (metadataExists && codeExists) {
           // 版本相同：不动本地（可能含用户修改）
-          final localMeta = await storage.readJson(metadataPath);
+          final localMeta = await AboutmeDataService.instance.readPath(metadataPath);
           final localVersion =
               (localMeta is Map ? localMeta['version'] : null)?.toString() ??
               '0.0.0';
@@ -67,8 +68,8 @@ class ScriptLoader {
           final code = await rootBundle.loadString(
             'assets/scripts/$scriptId/script.js',
           );
-          await storage.writeString(metadataPath, assetsMetaJson);
-          await storage.writeString(codePath, code);
+          await AboutmeDataService.instance.writePath(metadataPath, assetsMetaJson);
+          await AboutmeDataService.instance.writePath(codePath, code);
           print('✅ 内置脚本已升级: $scriptId $localVersion -> $assetsVersion');
           continue;
         }
@@ -78,8 +79,8 @@ class ScriptLoader {
           'assets/scripts/$scriptId/script.js',
         );
         await _ensureScriptDirectoryExists(scriptPath);
-        await storage.writeString(metadataPath, assetsMetaJson);
-        await storage.writeString(codePath, code);
+        await AboutmeDataService.instance.writePath(metadataPath, assetsMetaJson);
+        await AboutmeDataService.instance.writePath(codePath, code);
 
         // Web 平台需要加入索引才能被扫描到
         if (kIsWeb) {
@@ -204,7 +205,7 @@ class ScriptLoader {
   Future<List<ScriptInfo>> _scanScriptsWeb(String scriptsPath) async {
     try {
       // Web平台需要维护一个scripts索引文件
-      final indexData = await storage.readJson('$scriptsPath/index.json', []);
+      final indexData = await AboutmeDataService.instance.readPath('$scriptsPath/index.json', []);
       if (indexData is! List) return [];
 
       final List<ScriptInfo> scripts = [];
@@ -237,13 +238,13 @@ class ScriptLoader {
       final metadataPath = path.join(scriptPath, 'metadata.json');
 
       // 检查metadata.json是否存在
-      if (!await storage.fileExists(metadataPath)) {
+      if (!await AboutmeDataService.instance.existsPath(metadataPath)) {
         print('⚠️ 元数据文件不存在: $metadataPath');
         return null;
       }
 
       // 读取并解析JSON
-      final jsonData = await storage.readJson(metadataPath);
+      final jsonData = await AboutmeDataService.instance.readPath(metadataPath);
       if (jsonData == null || jsonData is! Map<String, dynamic>) {
         print('⚠️ 无效的元数据格式: $scriptId');
         return null;
@@ -265,13 +266,13 @@ class ScriptLoader {
       final codePath = path.join(scriptPath, 'script.js');
 
       // 检查script.js是否存在
-      if (!await storage.fileExists(codePath)) {
+      if (!await AboutmeDataService.instance.existsPath(codePath)) {
         print('⚠️ 脚本文件不存在: $codePath');
         return null;
       }
 
       // 读取代码内容
-      return await storage.readString(codePath);
+      return await AboutmeDataService.instance.readPathText(codePath);
     } catch (e) {
       print('❌ 加载脚本代码失败: $scriptId, 错误: $e');
       return null;
@@ -292,7 +293,7 @@ class ScriptLoader {
       final updatedInfo = info.copyWith(updatedAt: DateTime.now());
 
       // 写入JSON
-      await storage.writeJson(metadataPath, updatedInfo.toJson());
+      await AboutmeDataService.instance.writePath(metadataPath, updatedInfo.toJson());
 
       print('✅ 保存脚本元数据成功: $scriptId');
     } catch (e) {
@@ -312,7 +313,7 @@ class ScriptLoader {
       await _ensureScriptDirectoryExists(scriptPath);
 
       // 写入代码
-      await storage.writeString(codePath, code);
+      await AboutmeDataService.instance.writePath(codePath, code);
 
       print('✅ 保存脚本代码成功: $scriptId');
     } catch (e) {
@@ -334,8 +335,8 @@ class ScriptLoader {
 
       if (kIsWeb) {
         // Web平台删除文件
-        await storage.deleteFile(path.join(scriptPath, 'metadata.json'));
-        await storage.deleteFile(path.join(scriptPath, 'script.js'));
+        await AboutmeDataService.instance.deletePath(path.join(scriptPath, 'metadata.json'));
+        await AboutmeDataService.instance.deletePath(path.join(scriptPath, 'script.js'));
 
         // 更新索引
         await _removeFromWebIndex(scriptId);
@@ -410,7 +411,7 @@ class ScriptLoader {
   /// 检查脚本是否存在
   Future<bool> _scriptExists(String scriptPath) async {
     if (kIsWeb) {
-      return await storage.fileExists('$scriptPath/metadata.json');
+      return await AboutmeDataService.instance.existsPath('$scriptPath/metadata.json');
     } else {
       return await Directory(scriptPath).exists();
     }
@@ -431,11 +432,11 @@ class ScriptLoader {
     try {
       final scriptsPath = await getScriptsDirectory();
       final indexData =
-          await storage.readJson('$scriptsPath/index.json', []) as List;
+          await AboutmeDataService.instance.readPath('$scriptsPath/index.json', []) as List;
 
       if (!indexData.contains(scriptId)) {
         indexData.add(scriptId);
-        await storage.writeJson('$scriptsPath/index.json', indexData);
+        await AboutmeDataService.instance.writePath('$scriptsPath/index.json', indexData);
       }
     } catch (e) {
       print('⚠️ 更新Web索引失败: $e');
@@ -447,10 +448,10 @@ class ScriptLoader {
     try {
       final scriptsPath = await getScriptsDirectory();
       final indexData =
-          await storage.readJson('$scriptsPath/index.json', []) as List;
+          await AboutmeDataService.instance.readPath('$scriptsPath/index.json', []) as List;
 
       indexData.remove(scriptId);
-      await storage.writeJson('$scriptsPath/index.json', indexData);
+      await AboutmeDataService.instance.writePath('$scriptsPath/index.json', indexData);
     } catch (e) {
       print('⚠️ 更新Web索引失败: $e');
     }

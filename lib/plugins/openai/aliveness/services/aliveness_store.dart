@@ -1,3 +1,4 @@
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 
@@ -21,7 +22,7 @@ class AlivenessStore {
   // ---------- per-agent 状态 ----------
 
   Future<AgentState> loadState(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/state.json',
     );
     if (data == null || data.isEmpty) {
@@ -31,7 +32,7 @@ class AlivenessStore {
   }
 
   Future<void> saveState(String agentId, AgentState state) async {
-    await OpenAIPlugin.instance.storage.write('${_dir(agentId)}/state.json', {
+    await AboutmeDataService.instance.writePath('${_dir(agentId)}/state.json', {
       ...state.toJson(),
       'agentId': agentId,
     });
@@ -40,7 +41,7 @@ class AlivenessStore {
   // ---------- per-agent 统计（主动消息冷却/计数，Phase 3 使用，先落盘） ----------
 
   Future<Map<String, dynamic>> loadStats(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/stats.json',
     );
     return data is Map && data.isNotEmpty
@@ -52,7 +53,7 @@ class AlivenessStore {
     String agentId,
     Map<String, dynamic> stats,
   ) async {
-    await OpenAIPlugin.instance.storage.write('${_dir(agentId)}/stats.json', {
+    await AboutmeDataService.instance.writePath('${_dir(agentId)}/stats.json', {
       ...stats,
       'agentId': agentId,
     });
@@ -61,28 +62,28 @@ class AlivenessStore {
   // ---------- per-agent 记忆（Phase 2） ----------
 
   Future<Map<String, dynamic>> loadMemory(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/memory/fragments.json',
     );
     return data is Map ? _asStringMap(data) : <String, dynamic>{};
   }
 
   Future<void> saveMemory(String agentId, Map<String, dynamic> data) async {
-    await OpenAIPlugin.instance.storage.write(
+    await AboutmeDataService.instance.writePath(
       '${_dir(agentId)}/memory/fragments.json',
       data,
     );
   }
 
   Future<Map<String, dynamic>> loadOpenLoops(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/memory/open_loops.json',
     );
     return data is Map ? _asStringMap(data) : <String, dynamic>{};
   }
 
   Future<void> saveOpenLoops(String agentId, Map<String, dynamic> data) async {
-    await OpenAIPlugin.instance.storage.write(
+    await AboutmeDataService.instance.writePath(
       '${_dir(agentId)}/memory/open_loops.json',
       data,
     );
@@ -92,7 +93,7 @@ class AlivenessStore {
 
   Future<void> appendDecision(String agentId, Map<String, dynamic> entry) async {
     final path = '${_dir(agentId)}/decisions.log';
-    final data = await OpenAIPlugin.instance.storage.read(path);
+    final data = await AboutmeDataService.instance.readPath(path);
     final List<dynamic> logs =
         data is Map ? (data['logs'] as List<dynamic>? ?? []) : [];
     logs.add({
@@ -102,11 +103,11 @@ class AlivenessStore {
     if (logs.length > 200) {
       logs.removeRange(0, logs.length - 200);
     }
-    await OpenAIPlugin.instance.storage.write(path, {'logs': logs});
+    await AboutmeDataService.instance.writePath(path, {'logs': logs});
   }
 
   Future<List<dynamic>> loadDecisions(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/decisions.log',
     );
     return data is Map ? (data['logs'] as List<dynamic>? ?? []) : [];
@@ -115,7 +116,7 @@ class AlivenessStore {
   // ---------- per-agent 每日日程（AI 的真实生活安排） ----------
 
   Future<Map<String, dynamic>?> loadSchedule(String agentId) async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/schedule.json',
     );
     return data is Map && data.isNotEmpty ? _asStringMap(data) : null;
@@ -125,7 +126,7 @@ class AlivenessStore {
     String agentId,
     Map<String, dynamic> data,
   ) async {
-    await OpenAIPlugin.instance.storage.write(
+    await AboutmeDataService.instance.writePath(
       '${_dir(agentId)}/schedule.json',
       data,
     );
@@ -134,7 +135,7 @@ class AlivenessStore {
   // ---------- 全局决策层（Jev）配置 ----------
 
   Future<Map<String, dynamic>> loadSettings() async {
-    final data = await OpenAIPlugin.instance.storage.read(
+    final data = await AboutmeDataService.instance.readPath(
       '${OpenAIPlugin.instance.storageDir}/aliveness/settings.json',
     );
     return data is Map && data.isNotEmpty
@@ -148,7 +149,7 @@ class AlivenessStore {
   }
 
   Future<void> saveSettings(Map<String, dynamic> settings) async {
-    await OpenAIPlugin.instance.storage.write(
+    await AboutmeDataService.instance.writePath(
       '${OpenAIPlugin.instance.storageDir}/aliveness/settings.json',
       settings,
     );

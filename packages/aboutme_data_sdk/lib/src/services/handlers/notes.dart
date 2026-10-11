@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -10,29 +9,16 @@ import '../utils.dart';
 // - notes/index.json: 笔记 ID 列表 ["id1", "id2", ...]
 // - notes/{id}.json: 单个笔记详情
 
-PluginHandlers createNotesHandlers(PluginDataStore store) {
+PluginHandlers createNotesHandlers(PluginData data) {
   // 读取所有笔记（从独立文件中）
-  Future<List<Map<String, dynamic>>> readAllNotes(
-    String userId,
-    String encryptionKey,
-  ) async {
+  Future<List<Map<String, dynamic>>> readAllNotes() async {
     // 读取笔记 ID 列表
-    final indexData = await store.readPluginData(
-      userId,
-      'notes',
-      'notes/index.json',
-      encryptionKey,
-    );
+    final indexData = await data.read('notes', 'notes/index.json');
     if (indexData is! List) return [];
 
     final notes = <Map<String, dynamic>>[];
     for (final id in indexData) {
-      final noteData = await store.readPluginData(
-        userId,
-        'notes',
-        'notes/$id.json',
-        encryptionKey,
-      );
+      final noteData = await data.read('notes', 'notes/$id.json');
       if (noteData is Map) {
         notes.add(Map<String, dynamic>.from(noteData));
       }
@@ -41,76 +27,41 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
   }
 
   // 保存所有笔记（到独立文件）
-  Future<void> saveAllNotes(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> notes,
-  ) async {
+  Future<void> saveAllNotes(List<Map<String, dynamic>> notes) async {
     // 保存 index.json
     final noteIds = notes.map((n) => n['id']).toList();
-    await store.writePluginData(
-      userId,
-      'notes',
-      'notes/index.json',
-      noteIds,
-      encryptionKey,
-    );
+    await data.write('notes', 'notes/index.json', noteIds);
 
     // 保存每个笔记文件
     for (final note in notes) {
-      await store.writePluginData(
-        userId,
-        'notes',
-        'notes/${note['id']}.json',
-        note,
-        encryptionKey,
-      );
+      await data.write('notes', 'notes/${note['id']}.json', note);
     }
   }
 
   // ===== 文件夹 CRUD（移植自 nodejs crud.ts 的 createCrudHandlers('notes', 'folders')）=====
 
   // 读取文件夹列表
-  Future<List<Map<String, dynamic>>> readFolders(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'notes',
-      'data.json',
-      encryptionKey,
-    );
-    if (data is List) return List<Map<String, dynamic>>.from(data);
-    if (data is Map) {
-      final items = data['folders'];
+  Future<List<Map<String, dynamic>>> readFolders() async {
+    final content = await data.read('notes', 'data.json');
+    if (content is List) return List<Map<String, dynamic>>.from(content);
+    if (content is Map) {
+      final items = content['folders'];
       if (items is List) return List<Map<String, dynamic>>.from(items);
     }
     return [];
   }
 
   // 保存文件夹列表
-  Future<void> saveFolders(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> folders,
-  ) {
-    return store.writePluginData(
-      userId,
-      'notes',
-      'data.json',
-      {'folders': folders},
-      encryptionKey,
-    );
+  Future<void> saveFolders(List<Map<String, dynamic>> folders) {
+    return data.write('notes', 'data.json', {'folders': folders});
   }
 
   Future<PluginResult> folderGetList(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final folders = await readFolders(userId, encryptionKey);
+      final folders = await readFolders();
       return PluginResult.success(
         createPaginatedResult(
           folders,
@@ -124,12 +75,11 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
   }
 
   Future<PluginResult> folderGetById(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final folders = await readFolders(userId, encryptionKey);
+      final folders = await readFolders();
       final index = folders.indexWhere((f) => f['id'] == params['id']);
       if (index == -1) {
         return const PluginResult.failure('项目不存在', 'NOT_FOUND');
@@ -141,12 +91,11 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
   }
 
   Future<PluginResult> folderCreate(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final folders = await readFolders(userId, encryptionKey);
+      final folders = await readFolders();
       final now = jsIsoDateTime(DateTime.now());
 
       final newFolder = <String, dynamic>{
@@ -160,7 +109,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
       };
 
       folders.add(newFolder);
-      await saveFolders(userId, encryptionKey, folders);
+      await saveFolders(folders);
 
       return PluginResult.success(newFolder);
     } catch (e) {
@@ -169,12 +118,11 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
   }
 
   Future<PluginResult> folderUpdate(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final folders = await readFolders(userId, encryptionKey);
+      final folders = await readFolders();
       final index = folders.indexWhere((f) => f['id'] == params['id']);
 
       if (index == -1) {
@@ -188,7 +136,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
       };
       folders[index] = updatedFolder;
 
-      await saveFolders(userId, encryptionKey, folders);
+      await saveFolders(folders);
       return PluginResult.success(updatedFolder);
     } catch (e) {
       return PluginResult.failure('更新失败: $e');
@@ -196,12 +144,11 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
   }
 
   Future<PluginResult> folderDelete(
-    String userId,
-    String encryptionKey,
+    PluginData data,
     Map<String, dynamic> params,
   ) async {
     try {
-      final folders = await readFolders(userId, encryptionKey);
+      final folders = await readFolders();
       final index = folders.indexWhere((f) => f['id'] == params['id']);
 
       if (index == -1) {
@@ -209,7 +156,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
       }
 
       folders.removeAt(index);
-      await saveFolders(userId, encryptionKey, folders);
+      await saveFolders(folders);
 
       return PluginResult.success({'id': params['id']});
     } catch (e) {
@@ -226,9 +173,9 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     'FolderDelete': folderDelete,
 
     // 获取笔记列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        var notes = await readAllNotes(userId, encryptionKey);
+        var notes = await readAllNotes();
 
         // 按文件夹过滤
         final folderId = params['folderId'];
@@ -249,9 +196,9 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取笔记
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final notes = await readAllNotes(userId, encryptionKey);
+        final notes = await readAllNotes();
         final index = notes.indexWhere((n) => n['id'] == params['id']);
 
         if (index == -1) {
@@ -265,9 +212,9 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 创建笔记
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final notes = await readAllNotes(userId, encryptionKey);
+        final notes = await readAllNotes();
         final now = jsIsoDateTime(DateTime.now());
 
         final newNote = <String, dynamic>{
@@ -281,7 +228,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
         };
 
         notes.add(newNote);
-        await saveAllNotes(userId, encryptionKey, notes);
+        await saveAllNotes(notes);
 
         return PluginResult.success(newNote);
       } catch (e) {
@@ -290,9 +237,9 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 更新笔记
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final notes = await readAllNotes(userId, encryptionKey);
+        final notes = await readAllNotes();
         final index = notes.indexWhere((n) => n['id'] == params['id']);
 
         if (index == -1) {
@@ -306,7 +253,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
         };
         notes[index] = updatedNote;
 
-        await saveAllNotes(userId, encryptionKey, notes);
+        await saveAllNotes(notes);
         return PluginResult.success(updatedNote);
       } catch (e) {
         return PluginResult.failure('更新笔记失败: $e');
@@ -314,16 +261,16 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 删除笔记
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final notes = await readAllNotes(userId, encryptionKey);
+        final notes = await readAllNotes();
         final filtered = notes.where((n) => n['id'] != params['id']).toList();
 
         if (filtered.length == notes.length) {
           return const PluginResult.failure('笔记不存在', 'NOT_FOUND');
         }
 
-        await saveAllNotes(userId, encryptionKey, filtered);
+        await saveAllNotes(filtered);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除笔记失败: $e');
@@ -342,9 +289,9 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     'deleteFolder': folderDelete,
 
     // 移动笔记
-    'moveNote': (userId, encryptionKey, params) async {
+    'moveNote': (data, params) async {
       try {
-        final notes = await readAllNotes(userId, encryptionKey);
+        final notes = await readAllNotes();
         final index = notes.indexWhere((n) => n['id'] == params['id']);
 
         if (index == -1) {
@@ -357,7 +304,7 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
           'updatedAt': jsIsoDateTime(DateTime.now()),
         };
 
-        await saveAllNotes(userId, encryptionKey, notes);
+        await saveAllNotes(notes);
         return PluginResult.success(notes[index]);
       } catch (e) {
         return PluginResult.failure('移动笔记失败: $e');
@@ -365,10 +312,10 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 获取文件夹的笔记
-    'getFolderNotes': (userId, encryptionKey, params) async {
+    'getFolderNotes': (data, params) async {
       try {
         final folderId = params['id'];
-        var notes = await readAllNotes(userId, encryptionKey);
+        var notes = await readAllNotes();
 
         notes = notes.where((n) => n['folderId'] == folderId).toList();
 
@@ -379,11 +326,11 @@ PluginHandlers createNotesHandlers(PluginDataStore store) {
     },
 
     // 搜索笔记
-    'search': (userId, encryptionKey, params) async {
+    'search': (data, params) async {
       try {
         final keyword = params['keyword'];
         final folderId = params['folderId'];
-        var notes = await readAllNotes(userId, encryptionKey);
+        var notes = await readAllNotes();
 
         if (folderId != null && folderId.toString().isNotEmpty) {
           notes = notes.where((n) => n['folderId'] == folderId).toList();

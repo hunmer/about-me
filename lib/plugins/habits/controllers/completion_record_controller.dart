@@ -1,3 +1,4 @@
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -21,7 +22,7 @@ class CompletionRecordController {
     CompletionRecord record,
   ) async {
     final path = 'habits/records/$habitId.json';
-    final data = await storage.readJson(path);
+    final data = await AboutmeDataService.instance.readPath(path);
     final records = <CompletionRecord>[];
 
     if (data != null) {
@@ -41,7 +42,10 @@ class CompletionRecordController {
     }
 
     records.add(record);
-    await storage.writeJson(path, records.map((r) => r.toMap()).toList());
+    await AboutmeDataService.instance.writePath(
+      path,
+      records.map((r) => r.toMap()).toList(),
+    );
 
     // 更新习惯的总累计时长缓存
     final totalMinutes = records.fold<int>(
@@ -81,8 +85,8 @@ class CompletionRecordController {
     // 2. 获取这些habitIds对应的records
     for (final habitId in skillHabitIds) {
       final path = 'habits/records/$habitId.json';
-      if (await storage.fileExists(path)) {
-        final data = await storage.readJson(path);
+      if (await AboutmeDataService.instance.existsPath(path)) {
+        final data = await AboutmeDataService.instance.readPath(path);
         if (data != null) {
           if (data is List) {
             matchingRecords.addAll(
@@ -125,7 +129,7 @@ class CompletionRecordController {
 
       if (records.length < initialLength) {
         recordFound = true;
-        await storage.writeJson(
+        await AboutmeDataService.instance.writePath(
           'habits/records/$habitId.json',
           records.map((r) => r.toMap()).toList(),
         );
@@ -146,7 +150,10 @@ class CompletionRecordController {
   }
 
   Future<void> clearAllCompletionRecords(String habitId) async {
-    await storage.writeJson('habits/records/$habitId.json', []);
+    await AboutmeDataService.instance.writePath(
+      'habits/records/$habitId.json',
+      [],
+    );
     // 清空记录后，重置总累计时长为 0
     await habitController.updateTotalDuration(habitId, 0);
   }
@@ -154,7 +161,9 @@ class CompletionRecordController {
   Future<List<CompletionRecord>> getHabitCompletionRecords(
     String habitId,
   ) async {
-    final data = await storage.readJson('habits/records/$habitId.json');
+    final data = await AboutmeDataService.instance.readPath(
+      'habits/records/$habitId.json',
+    );
     if (data == null) return [];
 
     final records = <CompletionRecord>[];

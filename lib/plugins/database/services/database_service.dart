@@ -1,3 +1,4 @@
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 
@@ -9,7 +10,8 @@ class DatabaseService {
   /// 获取所有数据库
   Future<List<DatabaseModel>> getAllDatabases() async {
     try {
-      final databases = await plugin.storage.readJson(storekey) ?? [];
+      final databases =
+          await AboutmeDataService.instance.readPath(storekey) ?? [];
       if (databases is List) {
         return databases.map((db) => DatabaseModel.fromMap(db)).toList();
       }
@@ -23,7 +25,7 @@ class DatabaseService {
   Future<void> createDatabase(DatabaseModel database) async {
     final databases = await getAllDatabases();
     databases.add(database);
-    await plugin.storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       storekey,
       databases.map((db) => db.toMap()).toList(),
     );
@@ -35,7 +37,7 @@ class DatabaseService {
     final index = databases.indexWhere((db) => db.id == database.id);
     if (index != -1) {
       databases[index] = database;
-      await plugin.storage.writeJson(
+      await AboutmeDataService.instance.writePath(
         storekey,
         databases.map((db) => db.toMap()).toList(),
       );
@@ -46,7 +48,7 @@ class DatabaseService {
   Future<void> deleteDatabase(String databaseId) async {
     final databases = await getAllDatabases();
     databases.removeWhere((db) => db.id == databaseId);
-    await plugin.storage.writeJson(
+    await AboutmeDataService.instance.writePath(
       storekey,
       databases.map((db) => db.toMap()).toList(),
     );

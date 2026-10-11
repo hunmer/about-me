@@ -17,6 +17,8 @@ class StorageBackendConfig {
   final String serverUrl;
   final StorageAuthType authType;
   final String credential;
+
+  /// 已废弃：服务端存储已取消加密，仅为兼容旧配置保留字段
   final String encryptionKey;
   final String userId;
 
@@ -32,7 +34,6 @@ class StorageBackendConfig {
       throw const FormatException('服务器地址必须使用 HTTPS（本机地址允许 HTTP）');
     }
     if (credential.trim().isEmpty) throw const FormatException('认证凭据不能为空');
-    if (encryptionKey.trim().isEmpty) throw const FormatException('加密密钥不能为空');
   }
 }
 

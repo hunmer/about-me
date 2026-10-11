@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import '../models/reminder.dart';
 import 'reminder_notification_service.dart';
@@ -31,7 +31,7 @@ class ReminderService {
   Future<void> _loadReminders() async {
     try {
       final pluginPath = 'reminder/$_storageKey';
-      final data = await globalStorage.readJson(pluginPath);
+      final data = await AboutmeDataService.instance.readPath(pluginPath);
       if (data != null && data.containsKey('reminders')) {
         _reminders =
             (data['reminders'] as List)
@@ -49,7 +49,7 @@ class ReminderService {
     try {
       final pluginPath = 'reminder/$_storageKey';
       final data = {'reminders': _reminders.map((r) => r.toJson()).toList()};
-      await globalStorage.writeJson(pluginPath, data);
+      await AboutmeDataService.instance.writePath(pluginPath, data);
     } catch (e) {
       debugPrint('[ReminderService] 保存提醒失败: $e');
       rethrow;

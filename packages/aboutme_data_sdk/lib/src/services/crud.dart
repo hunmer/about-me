@@ -1,65 +1,51 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import 'plugin_data.dart';
 import 'types.dart';
 import 'utils.dart';
 
-/// 通用 CRUD 处理器（数据格式 {resourceName: [...items]}），
-/// 供无专用 handler 的插件使用，语义与 nodejs crud.ts 一致。
+/// 通用 CRUD 处理器：数据格式 `{resourceName: [...items]}`。
+///
+/// 写回时保留文件中的其它字段（如客户端存于同一文件的
+/// completedTasks/viewMode 等），确保与客户端整文件写回共存不丢数据。
 PluginHandlers createCrudHandlers(
-  PluginDataStore store,
+  PluginData data,
   String pluginId,
   String resourceName, [
   String dataFile = 'data.json',
 ]) {
-  Future<List<Map<String, dynamic>>> readItems(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      pluginId,
-      dataFile,
-      encryptionKey,
-    );
-    if (data is List) return List<Map<String, dynamic>>.from(data);
-    if (data is Map && data[resourceName] is List) {
-      return List<Map<String, dynamic>>.from(data[resourceName]);
-    }
-    return [];
+  Future<Map<String, dynamic>> readFile() async {
+    final content = await data.read(pluginId, dataFile);
+    return content is Map<String, dynamic> ? content : <String, dynamic>{};
   }
 
-  Future<void> writeItems(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> items,
-  ) {
-    return store.writePluginData(
-      userId,
-      pluginId,
-      dataFile,
-      {resourceName: items},
-      encryptionKey,
-    );
+  Future<List<Map<String, dynamic>>> readItems() async {
+    final file = await readFile();
+    final items = file[resourceName];
+    return items is List
+        ? List<Map<String, dynamic>>.from(items)
+        : <Map<String, dynamic>>[];
+  }
+
+  Future<void> writeItems(Map<String, dynamic> file, List<dynamic> items) {
+    file[resourceName] = items;
+    return data.write(pluginId, dataFile, file);
   }
 
   return {
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        final items = await readItems(userId, encryptionKey);
-        return PluginResult.success(
-          createPaginatedResult(
-            items,
-            offset: params['offset'] as int?,
-            count: params['count'] as int?,
-          ),
+        final result = createPaginatedResult(
+          await readItems(),
+          offset: params['offset'] as int?,
+          count: params['count'] as int?,
         );
+        return PluginResult.success(result);
       } catch (e) {
         return PluginResult.failure('读取数据失败: $e');
       }
     },
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final items = await readItems(userId, encryptionKey);
+        final items = await readItems();
         final item = items.where((i) => i['id'] == params['id']).firstOrNull;
         if (item == null) {
           return const PluginResult.failure('项目不存在', 'NOT_FOUND');
@@ -69,9 +55,12 @@ PluginHandlers createCrudHandlers(
         return PluginResult.failure('读取数据失败: $e');
       }
     },
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final items = [...await readItems(userId, encryptionKey)];
+        final file = await readFile();
+        final items = [
+          ...(file[resourceName] is List ? file[resourceName] as List : []),
+        ];
         final now = jsIsoDateTime(DateTime.now());
         final newItem = {
           ...params,
@@ -80,15 +69,18 @@ PluginHandlers createCrudHandlers(
           'updatedAt': now,
         };
         items.add(newItem);
-        await writeItems(userId, encryptionKey, items);
+        await writeItems(file, items);
         return PluginResult.success(newItem);
       } catch (e) {
         return PluginResult.failure('创建失败: $e');
       }
     },
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final items = [...await readItems(userId, encryptionKey)];
+        final file = await readFile();
+        final items = [
+          ...(file[resourceName] is List ? file[resourceName] as List : []),
+        ];
         final index = items.indexWhere((i) => i['id'] == params['id']);
         if (index == -1) {
           return const PluginResult.failure('项目不存在', 'NOT_FOUND');
@@ -99,21 +91,24 @@ PluginHandlers createCrudHandlers(
           'updatedAt': jsIsoDateTime(DateTime.now()),
         };
         items[index] = updatedItem;
-        await writeItems(userId, encryptionKey, items);
+        await writeItems(file, items);
         return PluginResult.success(updatedItem);
       } catch (e) {
         return PluginResult.failure('更新失败: $e');
       }
     },
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final items = [...await readItems(userId, encryptionKey)];
+        final file = await readFile();
+        final items = [
+          ...(file[resourceName] is List ? file[resourceName] as List : []),
+        ];
         final index = items.indexWhere((i) => i['id'] == params['id']);
         if (index == -1) {
           return const PluginResult.failure('项目不存在', 'NOT_FOUND');
         }
         items.removeAt(index);
-        await writeItems(userId, encryptionKey, items);
+        await writeItems(file, items);
         return PluginResult.success({'id': params['id']});
       } catch (e) {
         return PluginResult.failure('删除失败: $e');

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -255,12 +256,12 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   @override
   Future<void> initializeDefaultData() async {
     // 确保 agents.json 文件存在并初始化默认智能体
-    final agentData = await storage.read('$storageDir/agents.json');
+    final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
     if (agentData.isEmpty && kDebugMode) {
       // 如果文件为空，使用示例数据中的默认智能体（仅开发环境）
       final defaultAgents = OpenAISampleData.defaultAgents;
 
-      await storage.write('$storageDir/agents.json', {'agents': defaultAgents});
+      await AboutmeDataService.instance.writePath('$storageDir/agents.json', {'agents': defaultAgents});
       debugPrint('已初始化 ${defaultAgents.length} 个默认智能体');
     }
 
@@ -271,12 +272,12 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   /// 初始化提示词预设数据
   Future<void> _initializePromptPresets() async {
     try {
-      final presetData = await storage.read('openai/prompt_presets.json');
+      final presetData = await AboutmeDataService.instance.readPath('openai/prompt_presets.json');
       if ((presetData.isEmpty || presetData['presets'] == null) && kDebugMode) {
         // 如果没有预设数据，使用示例数据中的默认预设（仅开发环境）
         final defaultPresets = OpenAISampleData.defaultPresets;
 
-        await storage.write('openai/prompt_presets.json', {
+        await AboutmeDataService.instance.writePath('openai/prompt_presets.json', {
           'presets': defaultPresets.map((p) => p.toJson()).toList(),
         });
         debugPrint('已初始化 ${defaultPresets.length} 个默认提示词预设');
@@ -315,7 +316,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<Map<String, dynamic>> _getAgentsData() async {
     try {
-      final agentData = await storage.read('$storageDir/agents.json');
+      final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
       if (agentData.isNotEmpty) {
         return Map<String, dynamic>.from(agentData);
       }
@@ -328,7 +329,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   @override
   Future<void> uninstall() async {
     // Clean up plugin data
-    await storage.delete(storageDir);
+    await AboutmeDataService.instance.deletePath(storageDir);
 
     // 停止主动消息调度
     ProactiveService.instance.stop();

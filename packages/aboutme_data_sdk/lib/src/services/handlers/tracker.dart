@@ -1,5 +1,4 @@
-import 'package:aboutme_data_sdk/io.dart';
-
+import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
@@ -9,68 +8,44 @@ import '../utils.dart';
 // - goals.json: 目标列表 {"goals": [...]}
 // - records.json: 记录列表 {"records": [...]}
 
-PluginHandlers createTrackerHandlers(PluginDataStore store) {
+PluginHandlers createTrackerHandlers(PluginData data) {
   // 读取所有目标
-  Future<List<Map<String, dynamic>>> readAllGoals(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'tracker',
-      'goals.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
-    final goals = data['goals'];
+  Future<List<Map<String, dynamic>>> readAllGoals() async {
+    final content = await data.read('tracker', 'goals.json');
+    if (content is! Map) return [];
+    final goals = content['goals'];
     if (goals is! List) return [];
     return List<Map<String, dynamic>>.from(goals);
   }
 
   // 保存所有目标
-  Future<void> saveAllGoals(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> goals,
-  ) {
-    return store.writePluginData(userId, 'tracker', 'goals.json', {
+  Future<void> saveAllGoals(List<Map<String, dynamic>> goals) {
+    return data.write('tracker', 'goals.json', {
       'goals': goals,
-    }, encryptionKey);
+    });
   }
 
   // 读取所有记录
-  Future<List<Map<String, dynamic>>> readAllRecords(
-    String userId,
-    String encryptionKey,
-  ) async {
-    final data = await store.readPluginData(
-      userId,
-      'tracker',
-      'records.json',
-      encryptionKey,
-    );
-    if (data is! Map) return [];
-    final records = data['records'];
+  Future<List<Map<String, dynamic>>> readAllRecords() async {
+    final content = await data.read('tracker', 'records.json');
+    if (content is! Map) return [];
+    final records = content['records'];
     if (records is! List) return [];
     return List<Map<String, dynamic>>.from(records);
   }
 
   // 保存所有记录
-  Future<void> saveAllRecords(
-    String userId,
-    String encryptionKey,
-    List<Map<String, dynamic>> records,
-  ) {
-    return store.writePluginData(userId, 'tracker', 'records.json', {
+  Future<void> saveAllRecords(List<Map<String, dynamic>> records) {
+    return data.write('tracker', 'records.json', {
       'records': records,
-    }, encryptionKey);
+    });
   }
 
   return {
     // 获取目标列表
-    'getList': (userId, encryptionKey, params) async {
+    'getList': (data, params) async {
       try {
-        var goals = await readAllGoals(userId, encryptionKey);
+        var goals = await readAllGoals();
 
         // 按状态过滤
         final status = params['status'] as String?;
@@ -99,9 +74,9 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 根据 ID 获取
-    'getById': (userId, encryptionKey, params) async {
+    'getById': (data, params) async {
       try {
-        final goals = await readAllGoals(userId, encryptionKey);
+        final goals = await readAllGoals();
         final index = goals.indexWhere((g) => g['id'] == params['id']);
 
         if (index == -1) {
@@ -115,9 +90,9 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 创建目标
-    'create': (userId, encryptionKey, params) async {
+    'create': (data, params) async {
       try {
-        final goals = await readAllGoals(userId, encryptionKey);
+        final goals = await readAllGoals();
         final now = jsIsoDateTime(DateTime.now());
 
         final id = params['id'];
@@ -133,7 +108,7 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
         };
 
         goals.add(newGoal);
-        await saveAllGoals(userId, encryptionKey, goals);
+        await saveAllGoals(goals);
 
         return PluginResult.success(newGoal);
       } catch (e) {
@@ -142,9 +117,9 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 更新目标
-    'update': (userId, encryptionKey, params) async {
+    'update': (data, params) async {
       try {
-        final goals = await readAllGoals(userId, encryptionKey);
+        final goals = await readAllGoals();
         final index = goals.indexWhere((g) => g['id'] == params['id']);
 
         if (index == -1) {
@@ -158,7 +133,7 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
         };
         goals[index] = updatedGoal;
 
-        await saveAllGoals(userId, encryptionKey, goals);
+        await saveAllGoals(goals);
         return PluginResult.success(updatedGoal);
       } catch (e) {
         return PluginResult.failure('更新目标失败: $e');
@@ -166,9 +141,9 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 删除目标
-    'delete': (userId, encryptionKey, params) async {
+    'delete': (data, params) async {
       try {
-        final goals = await readAllGoals(userId, encryptionKey);
+        final goals = await readAllGoals();
         final initialLength = goals.length;
         final filteredGoals = goals
             .where((g) => g['id'] != params['id'])
@@ -178,14 +153,14 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
           return const PluginResult.failure('目标不存在', 'NOT_FOUND');
         }
 
-        await saveAllGoals(userId, encryptionKey, filteredGoals);
+        await saveAllGoals(filteredGoals);
 
         // 同时删除相关记录
-        final records = await readAllRecords(userId, encryptionKey);
+        final records = await readAllRecords();
         final filteredRecords = records
             .where((r) => r['goalId'] != params['id'])
             .toList();
-        await saveAllRecords(userId, encryptionKey, filteredRecords);
+        await saveAllRecords(filteredRecords);
 
         return PluginResult.success({'id': params['id']});
       } catch (e) {
@@ -194,13 +169,13 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 添加记录
-    'addRecord': (userId, encryptionKey, params) async {
+    'addRecord': (data, params) async {
       try {
         final goalId = params['goalId'];
         final value = params['value'];
         final date = params['date'];
         final note = params['note'];
-        final records = await readAllRecords(userId, encryptionKey);
+        final records = await readAllRecords();
 
         final now = jsIsoDateTime(DateTime.now());
         final newRecord = <String, dynamic>{
@@ -214,10 +189,10 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
         };
 
         records.add(newRecord);
-        await saveAllRecords(userId, encryptionKey, records);
+        await saveAllRecords(records);
 
         // 更新目标的 currentValue
-        final goals = await readAllGoals(userId, encryptionKey);
+        final goals = await readAllGoals();
         final goalIndex = goals.indexWhere((g) => g['id'] == goalId);
 
         if (goalIndex != -1) {
@@ -227,7 +202,7 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
             'currentValue': _toNum(goal['currentValue']) + _toNum(value),
             'updatedAt': now,
           };
-          await saveAllGoals(userId, encryptionKey, goals);
+          await saveAllGoals(goals);
         }
 
         return PluginResult.success(newRecord);
@@ -237,10 +212,10 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 获取目标的记录
-    'getRecords': (userId, encryptionKey, params) async {
+    'getRecords': (data, params) async {
       try {
         final goalId = params['goalId'];
-        var records = await readAllRecords(userId, encryptionKey);
+        var records = await readAllRecords();
 
         records = records.where((r) => r['goalId'] == goalId).toList();
 
@@ -261,10 +236,10 @@ PluginHandlers createTrackerHandlers(PluginDataStore store) {
     },
 
     // 获取统计
-    'getStats': (userId, encryptionKey, params) async {
+    'getStats': (data, params) async {
       try {
-        final goals = await readAllGoals(userId, encryptionKey);
-        final records = await readAllRecords(userId, encryptionKey);
+        final goals = await readAllGoals();
+        final records = await readAllRecords();
 
         final totalGoals = goals.length;
         final activeGoals = goals

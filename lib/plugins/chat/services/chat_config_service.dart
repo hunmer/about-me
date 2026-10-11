@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
@@ -46,7 +47,7 @@ class ChatConfigService {
     await _plugin.storage.createDirectory('chat/avatars');
 
     // 从存储中加载用户信息
-    final userData = await _plugin.storage.read('chat/users', {
+    final userData = await AboutmeDataService.instance.readPath('chat/users', {
       'users': [
         {
           'id': 'default_user',
@@ -68,7 +69,9 @@ class ChatConfigService {
 
   Future<void> _initializeSettings() async {
     try {
-      final settings = await _plugin.storage.read('chat/settings.json');
+      final settings = await AboutmeDataService.instance.readPath(
+        'chat/settings.json',
+      );
       _showAvatarInChat = settings['showAvatarInChat'] ?? true;
       _showAvatarInTimeline = settings['showAvatarInTimeline'] ?? true;
       _playSoundOnSend = settings['playSoundOnSend'] ?? true;
@@ -115,7 +118,7 @@ class ChatConfigService {
   }
 
   Future<void> _saveAllUsers() async {
-    await _plugin.storage.write('chat/users', {
+    await AboutmeDataService.instance.writePath('chat/users', {
       'users': _users.map((user) => user.toJson()).toList(),
     });
   }
@@ -161,7 +164,7 @@ class ChatConfigService {
   }
 
   Future<void> _saveSettings() async {
-    await _plugin.storage.write('chat/settings.json', {
+    await AboutmeDataService.instance.writePath('chat/settings.json', {
       'showAvatarInChat': _showAvatarInChat,
       'showAvatarInTimeline': _showAvatarInTimeline,
       'playSoundOnSend': _playSoundOnSend,

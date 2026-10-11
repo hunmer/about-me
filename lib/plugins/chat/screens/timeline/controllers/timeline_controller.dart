@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/models/timeline_filter.dart';
 import 'timeline_controller/base_controller.dart';
@@ -58,6 +59,9 @@ class TimelineController extends BaseTimelineController
     saveTimelineState();
   }
 
+  /// 数据同步事件订阅取消句柄
+  VoidCallback? _cancelDataSync;
+
   TimelineController(
     ChatPlugin chatPlugin, {
     super.onMessageEdit,
@@ -85,6 +89,12 @@ class TimelineController extends BaseTimelineController
 
     // 添加聊天插件监听，当有新消息时刷新
     chatPlugin.addListener(_onChatDataChanged);
+
+    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'chat',
+      refreshTimeline,
+    );
 
     // 先恢复状态，再初始化时间线
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -178,7 +188,7 @@ class TimelineController extends BaseTimelineController
       };
 
       // 保存到存储
-      await chatPlugin.storage.write(_storagePath, timelineState);
+      await AboutmeDataService.instance.writePath(_storagePath, timelineState);
       debugPrint('Timeline: 已保存时间线状态');
     } catch (e) {
       debugPrint('Timeline: 保存时间线状态时出错: $e');
@@ -196,7 +206,9 @@ class TimelineController extends BaseTimelineController
   Future<void> _restoreTimelineState() async {
     try {
       // 从存储中读取状态
-      final timelineState = await chatPlugin.storage.read(_storagePath);
+      final timelineState = await AboutmeDataService.instance.readPath(
+        _storagePath,
+      );
       if (timelineState == null) return;
 
       // 恢复过滤器设置
@@ -250,6 +262,9 @@ class TimelineController extends BaseTimelineController
 
   @override
   void dispose() {
+    // 取消数据同步订阅
+    _cancelDataSync?.call();
+
     // 移除监听器
     chatPlugin.removeListener(_onChatDataChanged);
     searchController.removeListener(onSearchChanged);

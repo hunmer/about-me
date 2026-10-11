@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import '../openai_plugin.dart';
@@ -12,7 +13,7 @@ List<StatItemData> getAvailableStats(BuildContext context) {
 
     // 从存储中读取智能体列表
     int agentsCount = 0;
-    plugin.storage.read('openai/agents.json').then((data) {
+    AboutmeDataService.instance.readPath('openai/agents.json').then((data) {
       if (data is Map<String, dynamic>) {
         final agentsList = data['agents'] as List? ?? [];
         agentsCount = agentsList.length;

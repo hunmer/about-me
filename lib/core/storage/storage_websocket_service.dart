@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../data/aboutme_data_service.dart';
 import '../route/route_refresh_manager.dart';
 import 'device_identity.dart';
 import 'storage_backend_config.dart';
@@ -79,6 +80,9 @@ class StorageWebSocketService {
       debugPrint(
         '[SyncDebug][WS] update received path=$path source=${_shortId(data?['source_device_id'] as String?)}',
       );
+      // 转发进统一数据事件流（来源含 REST / MCP / 其它设备）
+      final pluginId = path.contains('/') ? path.split('/').first : path;
+      AboutmeDataService.instance.publishRemoteEvent(pluginId, path);
       unawaited(RouteRefreshManager().onFileSynced(path));
     } catch (error) {
       debugPrint('[SyncDebug][WS] invalid message error=$error');

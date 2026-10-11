@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
@@ -44,7 +45,9 @@ class ConversationService extends ChangeNotifier {
   /// 加载所有会话
   Future<void> _loadConversations() async {
     try {
-      final data = await storage.read('agent_chat/conversations.json');
+      final data = await AboutmeDataService.instance.readPath(
+        'agent_chat/conversations.json',
+      );
       if (data is List && data.isNotEmpty) {
         // 有数据，正常加载
         _conversations =
@@ -75,14 +78,20 @@ class ConversationService extends ChangeNotifier {
 
       // 保存会话数据
       final conversationsJson = sampleData['conversations'] as List;
-      await storage.write('agent_chat/conversations.json', conversationsJson);
+      await AboutmeDataService.instance.writePath(
+        'agent_chat/conversations.json',
+        conversationsJson,
+      );
 
       // 保存消息数据
       final messagesJson = sampleData['messages'] as Map<String, dynamic>;
       for (var entry in messagesJson.entries) {
         final conversationId = entry.key;
         final messages = entry.value as List;
-        await storage.write('agent_chat/messages/$conversationId.json', messages);
+        await AboutmeDataService.instance.writePath(
+          'agent_chat/messages/$conversationId.json',
+          messages,
+        );
       }
 
       // 提取唯一分组数量
@@ -110,7 +119,11 @@ class ConversationService extends ChangeNotifier {
       debugPrint('AgentChat插件: 加载示例数据失败: $e');
       // 如果加载示例数据失败，创建空数据
       _conversations = [];
-      await storage.write('agent_chat/conversations.json', []);      notifyListeners();
+      await AboutmeDataService.instance.writePath(
+        'agent_chat/conversations.json',
+        [],
+      );
+      notifyListeners();
     }
   }
 
@@ -122,7 +135,10 @@ class ConversationService extends ChangeNotifier {
         .then((_) async {
           try {
             final data = _conversations.map((c) => c.toJson()).toList();
-            await storage.write('agent_chat/conversations.json', data);
+            await AboutmeDataService.instance.writePath(
+              'agent_chat/conversations.json',
+              data,
+            );
           } catch (e) {
             debugPrint('保存会话失败: $e');
             rethrow; // 重新抛出异常，让调用者知道保存失败
@@ -194,7 +210,9 @@ class ConversationService extends ChangeNotifier {
 
     // 同时删除会话的所有消息
     try {
-      await storage.delete('agent_chat/messages/$id.json');
+      await AboutmeDataService.instance.deletePath(
+        'agent_chat/messages/$id.json',
+      );
     } catch (e) {
       debugPrint('删除会话失败: $e');
     }

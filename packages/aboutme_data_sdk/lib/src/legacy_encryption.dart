@@ -114,4 +114,30 @@ class LegacyEncryption {
     }
     return value;
   }
+
+  /// 解密 Storage API 的信封格式（旧版端到端加密，12 字节 IV）：
+  /// `{"version":1,"iv":base64(12),"ciphertext":base64}` → 明文字节。
+  /// 仅供一次性数据迁移使用。
+  static Uint8List decryptEnvelope(String base64Key, Uint8List envelopeBytes) {
+    final key = validateKey(base64Key);
+    final envelope =
+        jsonDecode(utf8.decode(envelopeBytes)) as Map<String, dynamic>;
+    if (envelope['version'] != 1) {
+      throw Exception('不支持的密文版本');
+    }
+    final iv = base64Decode(envelope['iv'] as String);
+    final encrypted = base64Decode(envelope['ciphertext'] as String);
+
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        false,
+        AEADParameters(
+          KeyParameter(key),
+          16 * 8,
+          Uint8List.fromList(iv),
+          Uint8List(0),
+        ),
+      );
+    return cipher.process(Uint8List.fromList(encrypted));
+  }
 }

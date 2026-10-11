@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -40,7 +41,9 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         // 尝试读取上次选中的分类
         String? lastCategory;
         try {
-          lastCategory = await widget.storage.getString(_lastCategoryKey);
+          lastCategory = await AboutmeDataService.instance.readPathText(
+            _lastCategoryKey,
+          );
         } catch (e) {
           // 如果读取失败，忽略错误
           lastCategory = null;
@@ -72,7 +75,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   /// 保存当前选中的分类
   Future<void> _saveSelectedCategory(String category) async {
     try {
-      await widget.storage.setString(_lastCategoryKey, category);
+      await AboutmeDataService.instance.writePath(_lastCategoryKey, category);
     } catch (e) {
       // 保存失败不影响功能，忽略错误
     }

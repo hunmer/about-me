@@ -9,8 +9,6 @@ import 'package:uuid/uuid.dart';
 
 import 'storage_errors.dart';
 
-const _storageDirName = '.storage';
-
 class RawFileMetadata {
   const RawFileMetadata({
     required this.etag,
@@ -67,8 +65,9 @@ class LocalFileStorage {
 
   String getUserDir(String userId) => p.join(baseDir, 'users', userId);
 
-  String getStorageDir(String userId) =>
-      p.join(getUserDir(userId), _storageDirName);
+  /// Storage API 数据目录 = 用户根目录（统一数据区：
+  /// storage files API 与插件业务 API 操作同一批文件）。
+  String getStorageDir(String userId) => getUserDir(userId);
 
   Future<void> initialize() async {
     for (final dir in [
@@ -270,6 +269,9 @@ class LocalFileStorage {
 
     final files = <RawFileEntry>[];
     await _walk(rootDir, (file, stat) {
+      final name = p.basename(file.path);
+      // 统一数据区为用户根目录：过滤隐藏文件（.file_index.json 等）
+      if (name.startsWith('.')) return;
       final relative = p.relative(file.path, from: root).replaceAll('\\', '/');
       if (normalizedPrefix.isEmpty || relative.startsWith(normalizedPrefix)) {
         files.add(

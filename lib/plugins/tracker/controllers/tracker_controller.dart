@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import '../utils/date_utils.dart' as tracker_date_utils;
@@ -9,6 +10,7 @@ import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 class TrackerController with ChangeNotifier {
   List<Goal> _goals = [];
   List<Record> _records = [];
+  VoidCallback? _cancelDataSync;
 
   Future<void> loadInitialData() async {
     final plugin = TrackerPlugin.instance;
@@ -17,7 +19,9 @@ class TrackerController with ChangeNotifier {
       'plugin=${plugin.hashCode}, storageReady=${plugin.hasStorage}',
     );
     try {
-      final savedGoals = await plugin.storage.read('tracker/goals.json') ?? {};
+      final savedGoals =
+          await AboutmeDataService.instance.readPath('tracker/goals.json') ??
+          {};
       if (savedGoals.containsKey('goals')) {
         _goals =
             (savedGoals['goals'] as List).map((g) => Goal.fromJson(g)).toList();
@@ -28,7 +32,8 @@ class TrackerController with ChangeNotifier {
 
     try {
       final savedRecords =
-          await plugin.storage.read('tracker/records.json') ?? {};
+          await AboutmeDataService.instance.readPath('tracker/records.json') ??
+          {};
       if (savedRecords.containsKey('records')) {
         _records =
             (savedRecords['records'] as List)
@@ -43,6 +48,19 @@ class TrackerController with ChangeNotifier {
     if (_goals.isEmpty) {
       await _insertDefaultData();
     }
+
+    // 订阅插件数据变更（远端写入后局部刷新）
+    _cancelDataSync ??= AboutmeDataService.instance.onPluginChanged(
+      'tracker',
+      () => reloadData(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    _cancelDataSync = null;
+    super.dispose();
   }
 
   /// 重新加载数据（供同步后刷新使用）
@@ -176,9 +194,8 @@ class TrackerController with ChangeNotifier {
   }
 
   Future<void> _saveGoals() async {
-    final plugin = TrackerPlugin.instance;
     try {
-      await plugin.storage.write('tracker/goals.json', {
+      await AboutmeDataService.instance.writePath('tracker/goals.json', {
         'goals': _goals.map((g) => g.toJson()).toList(),
         'lastUpdated': DateTime.now().toIso8601String(),
       });
@@ -188,9 +205,8 @@ class TrackerController with ChangeNotifier {
   }
 
   Future<void> _saveRecords() async {
-    final plugin = TrackerPlugin.instance;
     try {
-      await plugin.storage.write('tracker/records.json', {
+      await AboutmeDataService.instance.writePath('tracker/records.json', {
         'records': _records.map((r) => r.toJson()).toList(),
         'lastUpdated': DateTime.now().toIso8601String(),
       });
