@@ -67,16 +67,16 @@ class CalendarStripDatePicker extends StatefulWidget {
   /// 日期数字文本样式
   final TextStyle? dateTextStyle;
 
-  /// 选中项的背景颜色，默认使用主题色
+  /// 选中项描边颜色，默认使用墨线（theme.ink）
   final Color? selectedColor;
 
-  /// 未选中项的背景颜色，默认使用卡片颜色
+  /// 未选中项背景颜色（兼容参数：手绘风格下日期项统一纸底，不再生效）
   final Color? unselectedColor;
 
-  /// 今天的边框颜色，默认使用主题色
+  /// 今天的描边颜色，默认使用主题色
   final Color? todayBorderColor;
 
-  /// 选中项的阴影
+  /// 选中项阴影（兼容参数：手绘风格无柔影，不再生效）
   final List<BoxShadow>? selectedShadow;
 
   /// 自定义周名获取函数
@@ -472,49 +472,49 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
     final isSelected = _isSelected(date);
     final isToday = _isToday(date);
     final theme = DSThemeBridge.resolve(context);
-    final selectedColor = widget.selectedColor ?? theme.primary;
 
+    // 手绘胶囊：选中态加粗墨线，今天用主题色描边（无柔影，层次靠墨线）
     return Pressable(
       onPressed: () => widget.onDateChanged(date),
       semanticLabel:
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      child: Container(
+      child: JellyBox(
         width: widget.itemWidth,
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? selectedColor
-                  : (widget.unselectedColor ?? theme.surface),
-          borderRadius: BorderRadius.circular(16),
-          border:
-              isToday && !isSelected
-                  ? Border.all(
-                    color: widget.todayBorderColor ?? theme.primary,
-                    width: 1.4,
-                  )
-                  : Border.all(color: theme.stroke),
-          boxShadow:
-              isSelected ? (widget.selectedShadow ?? theme.shadows.soft) : null,
-        ),
+        height: widget.height,
+        color: theme.surface,
+        radius: BorderRadius.circular(999),
+        strokeColor:
+            isSelected
+                ? (widget.selectedColor ?? theme.ink)
+                : (isToday
+                    ? (widget.todayBorderColor ?? theme.primary)
+                    : theme.textSub.withValues(alpha: 0.35)),
+        borderWidth: isSelected ? 2.4 : 1.4,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               _getWeekDayName(date.weekday),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style:
                   widget.weekDayTextStyle ??
                   DsTypography.caption.copyWith(
-                    color: isSelected ? theme.onPrimary : theme.textSub,
+                    fontSize: 10,
+                    color: isSelected ? theme.text : theme.textSub,
                     fontWeight: FontWeight.w500,
                   ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               date.day.toString(),
               style:
                   widget.dateTextStyle ??
                   DsTypography.title.copyWith(
-                    color: isSelected ? theme.onPrimary : theme.text,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: theme.text,
                   ),
             ),
           ],
@@ -567,15 +567,15 @@ class _CalendarStripDatePickerState extends State<CalendarStripDatePicker> {
               child: Pressable(
                 onPressed: _showDatePicker,
                 semanticLabel: '选择日期',
-                child: Container(
+                child: JellyBox(
                   width: widget.itemWidth,
                   height: widget.height,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  color: theme.surfaceAlt,
+                  radius: BorderRadius.circular(999),
+                  alignment: Alignment.center,
                   child: DsIcon(
                     DsIconKind.calendar,
-                    size: 26,
+                    size: 24,
                     color: theme.primary,
                   ),
                 ),

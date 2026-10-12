@@ -10,10 +10,10 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/calendar_strip_date_picker.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
-import 'package:aboutme/plugins/activity/widgets/activity_timeline.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'components/activity_grid_view.dart';
+import 'components/activity_timeline_schedule_view.dart';
 import 'controllers/activity_controller.dart';
 import 'controllers/tag_controller.dart';
 import 'controllers/view_mode_controller.dart';
@@ -626,7 +626,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                               }
                             },
                           )
-                          : ActivityTimeline(
+                          : ActivityTimelineScheduleView(
                             key: ValueKey(
                               'timeline_${_selectedDate.millisecondsSinceEpoch}',
                             ),

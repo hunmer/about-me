@@ -9,6 +9,9 @@ class MemorialDay {
   final DateTime creationDate;
   final DateTime targetDate;
   final List<String> notes;
+
+  /// 各笔记的创建时间（与 [notes] 索引对齐；旧数据为 null）
+  final List<DateTime?> noteDates;
   final Color backgroundColor;
   final String? backgroundImageUrl;
   final int sortIndex;
@@ -21,6 +24,7 @@ class MemorialDay {
     required this.targetDate,
     DateTime? creationDate,
     List<String>? notes,
+    List<DateTime?>? noteDates,
     Color? backgroundColor,
     this.backgroundImageUrl,
     int? sortIndex,
@@ -29,6 +33,7 @@ class MemorialDay {
   }) : id = id ?? const Uuid().v4(),
        creationDate = creationDate ?? DateTime.now(),
        notes = notes ?? [],
+       noteDates = noteDates ?? [],
        backgroundColor = backgroundColor ?? _getRandomColor(),
        sortIndex = sortIndex ?? 0;
 
@@ -62,6 +67,12 @@ class MemorialDay {
       creationDate: DateTime.parse(json['creationDate']),
       targetDate: DateTime.parse(json['targetDate']),
       notes: List<String>.from(json['notes'] ?? []),
+      noteDates:
+          (json['noteDates'] as List<dynamic>? ?? [])
+              .map(
+                (e) => e == null ? null : DateTime.parse(e as String),
+              )
+              .toList(),
       backgroundColor: Color(json['backgroundColor']),
       backgroundImageUrl: json['backgroundImageUrl'],
       sortIndex: json['sortIndex'] ?? 0,
@@ -81,6 +92,7 @@ class MemorialDay {
       'creationDate': creationDate.toIso8601String(),
       'targetDate': targetDate.toIso8601String(),
       'notes': notes,
+      'noteDates': noteDates.map((d) => d?.toIso8601String()).toList(),
       // ignore: deprecated_member_use
       'backgroundColor': backgroundColor.value,
       'backgroundImageUrl': backgroundImageUrl,
@@ -117,6 +129,7 @@ class MemorialDay {
     String? title,
     DateTime? targetDate,
     List<String>? notes,
+    List<DateTime?>? noteDates,
     Color? backgroundColor,
     String? backgroundImageUrl,
     int? sortIndex,
@@ -129,6 +142,7 @@ class MemorialDay {
       creationDate: creationDate,
       targetDate: targetDate ?? this.targetDate,
       notes: notes ?? this.notes,
+      noteDates: noteDates ?? this.noteDates,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
       sortIndex: sortIndex ?? this.sortIndex,

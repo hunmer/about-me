@@ -108,14 +108,22 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     Navigator.of(dialogContext).pop();
     final day = _currentDay(widget.controller);
     widget.controller.updateMemorialDay(
-      day.copyWith(notes: [...day.notes, text]),
+      day.copyWith(
+        notes: [...day.notes, text],
+        noteDates: [...day.noteDates, DateTime.now()],
+      ),
     );
   }
 
   void _deleteNote(DayController controller, int index) {
     final day = _currentDay(controller);
     final notes = [...day.notes]..removeAt(index);
-    controller.updateMemorialDay(day.copyWith(notes: notes));
+    // 旧数据 noteDates 可能短于 notes，越界时保持不动
+    final noteDates = [...day.noteDates];
+    if (index < noteDates.length) noteDates.removeAt(index);
+    controller.updateMemorialDay(
+      day.copyWith(notes: notes, noteDates: noteDates),
+    );
   }
 
   void _showNoteMenu(DayController controller, int index) {
@@ -169,11 +177,6 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                     child: Column(
                       children: [
                         _buildHeader(context, theme, controller, day),
-                        // 骑缝加号：弧最低点凸出 36，按钮中心对齐它
-                        Transform.translate(
-                          offset: const Offset(0, 8),
-                          child: _buildAddButton(theme, controller, day),
-                        ),
                         Expanded(
                           child: _buildNotesSection(theme, controller, day),
                         ),
@@ -191,7 +194,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
 
   // ==================== Header（参考图 1 弧底色块） ====================
 
-  /// 弧线凸出深度：header 底边中央向下的弧形高度
+  /// 内容区弧形拱起的高度：拱顶高出 header 底边的距离
   static const double _arcDepth = 36;
 
   Widget _buildHeader(
@@ -202,9 +205,6 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
   ) {
     final accent = day.backgroundColor;
     final imageUrl = day.backgroundImageUrl;
-    // 大圆直径取 2 倍屏宽：弧线平缓，两端自然延伸到屏幕边缘
-    final screenW = MediaQuery.sizeOf(context).width;
-    final circleD = screenW * 2;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -226,7 +226,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
         ),
         // 内容
         Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 52),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 72),
           child: Column(
             children: [
               // 顶行：返回 / 标题 / 编辑
@@ -253,7 +253,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 44),
               // 大数字行：图标 + 天数 + 单位
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -261,21 +261,21 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                 children: [
                   WiredIcon(
                     icon: day.icon ?? Icons.favorite_border,
-                    size: 38,
+                    size: 44,
                     color: theme.text,
                     drawConfig: theme.wired.drawConfig,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Text(
                     _formatCount(
                       day.isExpired ? day.daysPassed : day.daysRemaining,
                     ),
                     style: DsTypography.display.copyWith(
-                      fontSize: 52,
+                      fontSize: 64,
                       color: theme.text,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
                     day.isExpired || day.isToday
                         ? 'day_unitDays'.tr
@@ -284,7 +284,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 26),
               // 胶囊 badges：目标日期 + 笔记数
               Wrap(
                 spacing: 8,
@@ -303,31 +303,27 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
             ],
           ),
         ),
-        // 底部下凸弧线：只露出大圆最下方的 [_arcDepth] 高度带，
-        // rough 墨线沿圆周走，弧线两端自然接在 header 底边
+        // 内容区弧形拱起：应用背景色向上拱的全宽弧线（参考图 1），
+        // 盖在 header 底边上（拱顶高出底边 [_arcDepth]，两端到 corner）
         Positioned(
           left: 0,
           right: 0,
-          bottom: -_arcDepth,
+          bottom: -1,
           child: SizedBox(
-            height: _arcDepth,
-            child: ClipRect(
-              child: OverflowBox(
-                alignment: Alignment.bottomCenter,
-                maxWidth: circleD,
-                maxHeight: circleD,
-                child: Container(
-                  width: circleD,
-                  height: circleD,
-                  decoration: dsSketchDecoration(
-                    theme: theme,
-                    fillColor: accent,
-                    circle: true,
-                    seed: 2,
-                  ),
-                ),
-              ),
+            height: _arcDepth + 1,
+            child: CustomPaint(
+              painter: _ArcHeaderPainter(theme.background),
             ),
+          ),
+        ),
+        // 骑缝加号：中心对齐弧线顶点
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 9,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: _buildAddButton(theme, controller, day),
           ),
         ),
       ],
@@ -497,6 +493,18 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // 创建日期（旧数据无时间戳时省略）
+                if (index < day.noteDates.length &&
+                    day.noteDates[index] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Text(
+                      _shortDate(day.noteDates[index]!),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ),
                 // 彩色圆底图标（参考图表情位）
                 Container(
                   width: 30,
@@ -529,6 +537,15 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     return '${d.year}.${two(d.month)}.${two(d.day)}';
   }
 
+  /// 笔记日期短格式：同年 MM.dd，跨年 yyyy.MM.dd
+  String _shortDate(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final now = DateTime.now();
+    return d.year == now.year
+        ? '${two(d.month)}.${two(d.day)}'
+        : '${d.year}.${two(d.month)}.${two(d.day)}';
+  }
+
   /// 千分位：1314 → 1,314
   static String _formatCount(int n) {
     final s = n.abs().toString();
@@ -540,6 +557,32 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     }
     return n < 0 ? '-$buf' : buf.toString();
   }
+}
+
+/// 内容区顶部弧形：应用背景色、向上拱起的贝塞尔弧，铺满全宽
+class _ArcHeaderPainter extends CustomPainter {
+  _ArcHeaderPainter(this.fillColor);
+
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 二次贝塞尔控制点取 -(高度)：拱顶正好落在矩形顶边，两端落在底边
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..quadraticBezierTo(
+        size.width / 2,
+        -size.height,
+        size.width,
+        size.height,
+      )
+      ..close();
+    canvas.drawPath(path, Paint()..color = fillColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArcHeaderPainter old) =>
+      old.fillColor != fillColor;
 }
 
 /// header 顶行圆形按钮：纸色圆底 + 墨色图标

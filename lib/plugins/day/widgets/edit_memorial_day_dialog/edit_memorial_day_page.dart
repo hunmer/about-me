@@ -8,8 +8,9 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 /// 笔记项（包装类，用于 ListAddField）
 class _NoteItem {
   final String content;
+  final DateTime? createdAt;
 
-  _NoteItem({required this.content});
+  _NoteItem({required this.content, this.createdAt});
 }
 
 class EditMemorialDayPage extends StatefulWidget {
@@ -37,10 +38,16 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     _titleController = TextEditingController(text: widget.memorialDay?.title);
     _noteController = TextEditingController();
     _selectedDate = widget.memorialDay?.targetDate ?? DateTime.now();
-    _noteItems =
-        (widget.memorialDay?.notes ?? [])
-            .map((note) => _NoteItem(content: note))
-            .toList();
+    _noteItems = [
+      for (var i = 0; i < (widget.memorialDay?.notes.length ?? 0); i++)
+        _NoteItem(
+          content: widget.memorialDay!.notes[i],
+          createdAt:
+              i < (widget.memorialDay?.noteDates.length ?? 0)
+                  ? widget.memorialDay!.noteDates[i]
+                  : null,
+        ),
+    ];
     _selectedColor = widget.memorialDay?.backgroundColor ?? Colors.blue[300]!;
     _backgroundImageUrl = widget.memorialDay?.backgroundImageUrl;
     _selectedIcon = widget.memorialDay?.icon;
@@ -98,7 +105,7 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     if (note.isEmpty) return;
 
     setState(() {
-      _noteItems.add(_NoteItem(content: note));
+      _noteItems.add(_NoteItem(content: note, createdAt: DateTime.now()));
       _noteController.clear();
     });
   }
@@ -129,6 +136,10 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
       title: _titleController.text.trim(),
       targetDate: _selectedDate,
       notes: filteredNotes,
+      noteDates: [
+        for (final item in _noteItems)
+          if (item.content.trim().isNotEmpty) item.createdAt,
+      ],
       backgroundColor: _selectedColor,
       backgroundImageUrl: _backgroundImageUrl,
       creationDate: widget.memorialDay?.creationDate ?? DateTime.now(),
