@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
@@ -121,15 +122,17 @@ class _AccordionItem extends StatelessWidget {
               );
             },
           ),
-          // 内容（高度动画展开）
+          // 内容（高度动画展开，展开挂载时墨线描画入场）
           AnimatedSize(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
             child: expanded
-                ? Padding(
-                    padding: EdgeInsets.only(bottom: theme.spacing.md),
-                    child: entry.builder(context),
+                ? WiredDraw(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: theme.spacing.md),
+                      child: entry.builder(context),
+                    ),
                   )
                 : const SizedBox(width: double.infinity),
           ),

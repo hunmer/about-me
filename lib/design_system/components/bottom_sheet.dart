@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
@@ -22,7 +23,8 @@ Future<T?> showDSBottomSheet<T>({
       reverseTransitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (c, animation, secondaryAnimation) => AppTheme(
         data: theme,
-        child: _SheetScaffold(title: title, builder: builder),
+        // sheet 打开即触发墨线描画入场（面板经 progressOf 消费进度）
+        child: WiredDraw(child: _SheetScaffold(title: title, builder: builder)),
       ),
       transitionsBuilder: (c, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
@@ -51,6 +53,8 @@ class _SheetScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // 外层 WiredDraw 注入的描画进度
+    final progress = WiredDrawTransition.progressOf(context);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -62,6 +66,7 @@ class _SheetScaffold extends StatelessWidget {
           top: Radius.circular(theme.radii.xxlValue + 4),
         ),
         padding: EdgeInsets.only(bottom: bottomInset),
+        progress: progress,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

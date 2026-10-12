@@ -74,11 +74,13 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
               DsThemePresets.all.map((preset) {
                 final selected =
                     preset.palette.id == paletteId &&
-                    preset.inkIndex == inkIndex;
+                    preset.inkIndex == inkIndex &&
+                    preset.strokeWidth == DsInkStyle.strokeWidth;
                 return GestureDetector(
                   onTap: () {
                     DsThemeColorController().setPalette(preset.palette.id);
-                    DsInkStyleController().setLevel(preset.inkIndex);
+                    DsInkStyleController()
+                        .setStyle(preset.inkIndex, preset.strokeWidth);
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

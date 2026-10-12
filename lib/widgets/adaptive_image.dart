@@ -67,6 +67,19 @@ class AdaptiveImage extends StatelessWidget {
       return _buildNetworkImage(path);
     }
 
+    // 内置资源图片（assets/ 前缀）直接加载
+    if (path.startsWith('assets/')) {
+      return _buildImageWidget(
+        Image.asset(
+          path,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+        ),
+      );
+    }
+
     // 本地图片需要转换路径
     return FutureBuilder<String>(
       future: ImageUtils.getAbsolutePath(path),

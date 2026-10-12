@@ -13,6 +13,7 @@ class DsThemePreset {
     required this.name,
     required this.palette,
     required this.inkLevel,
+    this.strokeWidth = 2.2,
   });
 
   /// 稳定标识
@@ -26,6 +27,9 @@ class DsThemePreset {
 
   /// 墨线粗糙度档位
   final WiredRoughness inkLevel;
+
+  /// 墨线笔宽（Wired* 组件描边粗细；默认 2.2 与历史版本一致）
+  final double strokeWidth;
 
   /// 墨线档位下标（与 DsInkStyle.labels 对应）
   int get inkIndex => inkLevel.index;
@@ -76,28 +80,31 @@ abstract final class DsThemePresets {
     inkLevel: WiredRoughness.playful,
   );
 
-  /// 软萌手帐（暖纸梅紫 × Gentle 细线，参考 skribble cuddly 预设）
+  /// 软萌手帐（暖纸梅紫 × Gentle 细笔，参考 skribble cuddly 预设）
   static const DsThemePreset cuddly = DsThemePreset(
     id: 'cuddly',
     name: '软萌手帐',
     palette: DsThemePalettes.cuddly,
     inkLevel: WiredRoughness.gentle,
+    strokeWidth: 1.8,
   );
 
-  /// 黄油涂鸦（奶油蜂蜜 × Expressive 狂放墨线）
+  /// 黄油涂鸦（奶油蜂蜜 × Expressive 粗笔狂放墨线）
   static const DsThemePreset butter = DsThemePreset(
     id: 'butter',
     name: '黄油涂鸦',
     palette: DsThemePalettes.butter,
     inkLevel: WiredRoughness.expressive,
+    strokeWidth: 2.6,
   );
 
-  /// 莓果夜话（莓果紫 × Expressive 浓烈墨线）
+  /// 莓果夜话（莓果紫 × Expressive 浓墨重笔）
   static const DsThemePreset berryNight = DsThemePreset(
     id: 'berry_night',
     name: '莓果夜话',
     palette: DsThemePalettes.berry,
     inkLevel: WiredRoughness.expressive,
+    strokeWidth: 2.6,
   );
 
   static const List<DsThemePreset> all = [

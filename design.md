@@ -304,3 +304,4 @@ RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pres
 8. 所有用户可见文案走 `.tr` / `.trParams`，zh/en 翻译文件同步补齐
 9. 列表筛选/排序走多条件过滤栏（`enableMultiFilter`），排序入口用过滤栏尾部圆形按钮；导航栏 `title` 传纯文本 `Text`
 10. 手绘风格统一：容器用 DS 组件或 `dsSketchDecoration`/`DsSketchPanel`（小控件纯色实底、大容器纸底排线）；无 boxShadow/渐变；图标走 `DsIcon`；颜色走 `theme.ink/paper/hatch`，不硬编码
+11. 展开/折叠、新增列表项等**新内容挂载**场景用 `WiredDraw` 包裹子树做墨线描画入场（见第 10 节）；静态常驻内容不加动画

@@ -229,6 +229,7 @@ flutter:
     - assets/bubbles/  # Live2D 气泡皮肤（透明 WebP）
     - assets/live2d_backgrounds/  # Live2D 小屋背景图（JPG）
     - assets/jelly_icons/  # 状态面板属性图标（透明 WebP，切分脚本 docs/jelly_icons/）
+    - assets/agents/  # 内置智能体封面（竖版 WebP，切分脚本 tools/agent_covers/）
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

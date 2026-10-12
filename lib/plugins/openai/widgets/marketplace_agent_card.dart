@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -38,13 +39,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
     // Material 壳为 Hero 动画源(经 openContainerWithHero),保留结构
     return Material(
       key: _cardKey,
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.stroke, width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () async {
           final result = await NavigationHelper.openContainerWithHero(
@@ -63,50 +58,57 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             widget.onAgentChanged!();
           }
         },
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Agent Icon
-                Expanded(child: Center(child: _buildAgentIcon())),
+        child: JellyBox(
+          color: theme.surface,
+          radius: BorderRadius.circular(12),
+          raised: false,
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 竖版封面区
+                  Expanded(child: _buildCover()),
 
-                // Agent Info
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        agent.name,
-                        style: DsTypography.body.copyWith(
-                          color: theme.text,
-                          fontWeight: FontWeight.bold,
+                  // Agent Info
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          agent.name,
+                          style: DsTypography.body.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '服务商: ${agent.serviceProviderId}',
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
+                        const SizedBox(height: 4),
+                        Text(
+                          'openai_providerLabel'.trParams({
+                            'provider': agent.serviceProviderId,
+                          }),
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      _buildTags(theme),
-                    ],
+                        const SizedBox(height: 4),
+                        _buildTags(theme),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
-            // 安装状态标识
-            if (widget.isInstalled || widget.hasUpdate)
-              Positioned(top: 8, right: 8, child: _buildStatusBadge()),
-          ],
+              // 安装状态标识
+              if (widget.isInstalled || widget.hasUpdate)
+                Positioned(top: 8, right: 8, child: _buildStatusBadge()),
+            ],
+          ),
         ),
       ),
     );
@@ -116,154 +118,125 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   Widget _buildStatusBadge() {
     final theme = DSThemeBridge.resolve(context);
     if (widget.hasUpdate) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: theme.warning,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DsIcon(DsIconKind.refresh, size: 14, color: theme.onWarning),
-            const SizedBox(width: 4),
-            Text(
-              '可更新',
-              style: DsTypography.label.copyWith(
-                color: theme.onWarning,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+      return _statusBadge(
+        background: theme.warning,
+        foreground: theme.onWarning,
+        icon: DsIconKind.refresh,
+        label: 'openai_updateAvailable'.tr,
       );
     }
 
     if (widget.isInstalled) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: theme.success,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DsIcon(DsIconKind.check, size: 14, color: theme.onSuccess),
-            const SizedBox(width: 4),
-            Text(
-              '已安装',
-              style: DsTypography.label.copyWith(
-                color: theme.onSuccess,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+      return _statusBadge(
+        background: theme.success,
+        foreground: theme.onSuccess,
+        icon: DsIconKind.check,
+        label: 'openai_installed'.tr,
       );
     }
 
     return const SizedBox.shrink();
   }
 
-  Widget _buildAgentIcon() {
-    // 如果有头像，优先显示头像
-    if (agent.avatarUrl != null && agent.avatarUrl!.isNotEmpty) {
-      return FutureBuilder<String>(
-        future: ImageUtils.getAbsolutePath(agent.avatarUrl),
-        builder: (context, snapshot) {
-          return SizedBox(
-            width: 80,
-            height: 80,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _getColorForServiceProvider(
-                    agent.serviceProviderId,
-                  ).withValues(alpha: 0.5),
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: ClipOval(
-                    child:
-                        agent.avatarUrl!.startsWith('http')
-                            ? Image.network(
-                              agent.avatarUrl!,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                                      _buildDefaultIcon(),
-                            )
-                            : snapshot.hasData
-                            ? Image.file(
-                              File(snapshot.data!),
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                                      _buildDefaultIcon(),
-                            )
-                            : _buildDefaultIcon(),
-                  ),
-                ),
-              ),
+  Widget _statusBadge({
+    required Color background,
+    required Color foreground,
+    required DsIconKind icon,
+    required String label,
+  }) {
+    return JellyBox(
+      color: background,
+      radius: BorderRadius.circular(999),
+      raised: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DsIcon(icon, size: 14, color: foreground),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: DsTypography.label.copyWith(
+              color: foreground,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
             ),
-          );
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建竖版封面（avatarUrl 支持 assets / 网络 / 本地文件）
+  Widget _buildCover() {
+    final avatarUrl = agent.avatarUrl;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      final errorBuilder = (context, error, stackTrace) => _buildCoverFallback();
+      if (avatarUrl.startsWith('assets/')) {
+        return _clipCover(
+          Image.asset(
+            avatarUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: errorBuilder,
+          ),
+        );
+      }
+      if (avatarUrl.startsWith('http')) {
+        return _clipCover(
+          Image.network(
+            avatarUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: errorBuilder,
+          ),
+        );
+      }
+      return FutureBuilder<String>(
+        future: ImageUtils.getAbsolutePath(avatarUrl),
+        builder: (context, snapshot) {
+          final path = snapshot.data;
+          if (snapshot.hasData && path != null && path.isNotEmpty) {
+            return _clipCover(
+              Image.file(
+                File(path),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: errorBuilder,
+              ),
+            );
+          }
+          return _buildCoverFallback();
         },
       );
     }
 
-    // 如果有自定义图标，使用自定义图标
-    if (agent.icon != null) {
-      return Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color:
-              agent.iconColor ??
-              _getColorForServiceProvider(agent.serviceProviderId),
-        ),
-        child: Icon(agent.icon, size: 40, color: Colors.white),
-      );
-    }
-
-    // 默认图标
-    return _buildDefaultIcon();
+    return _buildCoverFallback();
   }
 
-  Widget _buildDefaultIcon() {
+  Widget _clipCover(Widget child) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+      child: child,
+    );
+  }
+
+  Widget _buildCoverFallback() {
+    final color = agent.iconColor ?? _getColorForServiceProvider(agent.serviceProviderId);
     return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _getColorForServiceProvider(agent.serviceProviderId),
+      width: double.infinity,
+      height: double.infinity,
+      color: color.withValues(alpha: 0.2),
+      child: Center(
+        child: Icon(
+          agent.icon ?? Icons.smart_toy,
+          size: 48,
+          color: color,
+        ),
       ),
-      child: const Icon(Icons.smart_toy, size: 40, color: Colors.white),
     );
   }
 

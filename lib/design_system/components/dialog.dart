@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
@@ -30,7 +31,9 @@ Future<T?> showDSDialog<T>({
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 36),
-              child: builder(c),
+              // 弹窗打开即触发墨线描画入场（内容里消费
+              // WiredDrawTransition.progressOf 的墨线参与绘制）
+              child: WiredDraw(child: Builder(builder: builder)),
             ),
           ),
         ),
@@ -89,6 +92,8 @@ class DSDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // showDSDialog 已在内容外层包 WiredDraw，面板墨线随描画动画入场
+    final progress = WiredDrawTransition.progressOf(context);
 
     // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
     return ConstrainedBox(
@@ -97,6 +102,7 @@ class DSDialog extends StatelessWidget {
         theme: theme,
         radius: theme.radii.xxl,
         padding: EdgeInsets.all(theme.spacing.xl),
+        progress: progress,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

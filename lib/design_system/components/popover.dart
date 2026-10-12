@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 
@@ -91,12 +92,15 @@ class _DSPopoverState extends State<DSPopover> {
                     child: child,
                   ),
                 ),
-                child: _PopoverCard(
-                  width: widget.width,
-                  maxHeight: _availableHeight.clamp(120, viewportHeight),
-                  openUpward: _openUpward,
-                  contentBuilder: widget.contentBuilder,
-                  close: _close,
+                child: WiredDraw(
+                  // 气泡缩放淡入的同时墨线描画入场（OverlayEntry 每次打开新挂载即播）
+                  child: _PopoverCard(
+                    width: widget.width,
+                    maxHeight: _availableHeight.clamp(120, viewportHeight),
+                    openUpward: _openUpward,
+                    contentBuilder: widget.contentBuilder,
+                    close: _close,
+                  ),
                 ),
               ),
             ),
@@ -140,6 +144,8 @@ class _PopoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 外层 WiredDraw 注入的描画进度
+    final progress = WiredDrawTransition.progressOf(context);
     // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
     final card = ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -148,6 +154,7 @@ class _PopoverCard extends StatelessWidget {
         width: width,
         radius: theme.radii.lg,
         padding: EdgeInsets.all(theme.spacing.md),
+        progress: progress,
         child: contentBuilder(context, close),
       ),
     );

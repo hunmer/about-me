@@ -18,7 +18,7 @@ import 'package:skribble/skribble.dart';
 import '../theme/app_theme.dart';
 import 'typography.dart';
 
-/// 全局墨线风格档位（skribble 三档粗糙度）
+/// 全局墨线风格（skribble 三档粗糙度 + 笔宽）
 ///
 /// 由 `core/services/ds_ink_style_controller.dart` 在加载/切换时写入；
 /// 切换后经 DSThemeBridge 重建主题树全局生效。
@@ -27,6 +27,9 @@ class DsInkStyle {
   DsInkStyle._();
 
   static WiredRoughness level = WiredRoughness.playful;
+
+  /// 墨线笔宽（Wired* 组件描边粗细，随主题预设变化）
+  static double strokeWidth = 2.2;
 
   /// 档位标签（设置页与持久化用，顺序与 WiredRoughness.values 一致）
   static const List<String> labels = ['Gentle', 'Playful', 'Expressive'];
@@ -56,7 +59,7 @@ extension DsSketchTheme on AppThemeData {
         disabledTextColor: textSub,
         fillColor: surface,
         markerColor: primary,
-        strokeWidth: 2.2,
+        strokeWidth: DsInkStyle.strokeWidth,
         roughnessLevel: DsInkStyle.level,
         // Wired* 组件文字与 DsTypography 同字体（851 手写杂书体，
         // app 内注册，覆盖中/英/日；覆盖默认的 skribble bundled 字体，
@@ -65,13 +68,15 @@ extension DsSketchTheme on AppThemeData {
       );
 }
 
-/// [AppThemeData] 实例 × 墨线档位 → WiredThemeData 缓存
+/// [AppThemeData] 实例 × 墨线风格（档位 + 笔宽）→ WiredThemeData 缓存
 /// （AppThemeData 是 const 构造，实例在主题切换间稳定；
-/// 档位变化换 key 取新缓存，避免旧档位数据残留）
+/// 档位或笔宽变化换 key 取新缓存，避免旧数据残留）
 final Map<int, WiredThemeData> _wiredCache = {};
 
 int _wiredCacheKey(AppThemeData theme) =>
-    identityHashCode(theme) * 8 + DsInkStyle.index;
+    identityHashCode(theme) * 1000 +
+    DsInkStyle.index * 100 +
+    (DsInkStyle.strokeWidth * 10).round();
 
 /// 统一手绘装饰构造器
 ///
@@ -301,6 +306,7 @@ class DsSketchPanel extends StatelessWidget {
     this.alignment,
     this.hachure = true,
     this.seed = 1,
+    this.progress,
   });
 
   final Widget? child;
@@ -319,6 +325,9 @@ class DsSketchPanel extends StatelessWidget {
   /// 关闭后不画排线（纯纸底 + 描边）
   final bool hachure;
   final int seed;
+
+  /// 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+  final Animation<double>? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +356,7 @@ class DsSketchPanel extends StatelessWidget {
           hachureColor: hachureColor,
           hachureGap: 10,
           seed: seed,
+          progress: progress,
         ),
         child: content,
       ),
@@ -386,7 +396,9 @@ class _RoughUnderlay extends StatelessWidget {
 
 /// 把 [RoughBoxDecoration] 的 BoxPainter 适配成 CustomPainter
 class _BoxPainterProxy extends CustomPainter {
-  _BoxPainterProxy(this.decoration) : _painter = decoration.createBoxPainter();
+  _BoxPainterProxy(this.decoration)
+      : _painter = decoration.createBoxPainter(),
+        super(repaint: decoration.progress);
 
   final RoughBoxDecoration decoration;
   final BoxPainter _painter;

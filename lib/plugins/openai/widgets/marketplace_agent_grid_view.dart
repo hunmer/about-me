@@ -24,7 +24,7 @@ class MarketplaceAgentGridView extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.0,
+        childAspectRatio: 0.72,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
