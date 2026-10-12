@@ -142,4 +142,17 @@ const Map<String, String> todoTranslationsZh = {
   'todo_emptyTaskList': '暂无任务\n点击 + 添加新任务',
   'todo_daysRemaining': '天后截止',
   'todo_hoursRemaining': '小时后截止',
+
+  // 周视图
+  'todo_weekDateRange': '@start - @end',
+  'todo_weekTaskCount': '@count 项',
+  'todo_monthDay': '@month月@day日',
+  'todo_dayNoTasks': '无待办',
+  'todo_monday': '周一',
+  'todo_tuesday': '周二',
+  'todo_wednesday': '周三',
+  'todo_thursday': '周四',
+  'todo_friday': '周五',
+  'todo_saturday': '周六',
+  'todo_sunday': '周日',
 };

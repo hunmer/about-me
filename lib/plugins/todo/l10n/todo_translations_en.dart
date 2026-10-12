@@ -143,4 +143,17 @@ const Map<String, String> todoTranslationsEn = {
   'todo_emptyTaskList': 'No tasks yet\nTap + to add a new task',
   'todo_daysRemaining': 'days remaining',
   'todo_hoursRemaining': 'hours remaining',
+
+  // Week view
+  'todo_weekDateRange': '@start - @end',
+  'todo_weekTaskCount': '@count tasks',
+  'todo_monthDay': '@month/@day',
+  'todo_dayNoTasks': 'No tasks',
+  'todo_monday': 'Mon',
+  'todo_tuesday': 'Tue',
+  'todo_wednesday': 'Wed',
+  'todo_thursday': 'Thu',
+  'todo_friday': 'Fri',
+  'todo_saturday': 'Sat',
+  'todo_sunday': 'Sun',
 };
