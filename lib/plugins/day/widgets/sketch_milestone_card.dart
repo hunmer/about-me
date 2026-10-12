@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_background.dart';
 
 /// 手绘里程碑卡片（Warm Paper Sketch 风）
 ///
@@ -75,57 +76,56 @@ class SketchMilestoneCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // 主卡面：纸底 + 墨线描边
-              DecoratedBox(
-                decoration: dsSketchDecoration(
-                  theme: theme,
-                  fillColor: theme.surface,
-                  radius: radius,
-                  seed: seed,
-                ),
-                child: Stack(
-                  children: [
-                    // 右上淡彩晕染（裁进圆角内，不参与命中）
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: ClipRRect(
-                          borderRadius: radius,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: -30,
-                                right: -30,
-                                child: Container(
-                                  width: 112,
-                                  height: 112,
-                                  decoration: BoxDecoration(
-                                    color: accent.withValues(
-                                      alpha: isDark ? 0.12 : 0.16,
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
+              // 主卡面：纸底/背景图 + 内容 + 顶层墨线
+              Stack(
+                children: [
+                  // 圆角裁剪的背景组：纸底 + 背景图片 + 淡彩晕染
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: radius,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ColoredBox(color: theme.surface),
+                          if (memorialDay.backgroundImageUrl != null)
+                            MemorialBackgroundImage(
+                              imageUrl: memorialDay.backgroundImageUrl!,
+                              dimAlpha: isDark ? 0.55 : 0.5,
+                            ),
+                          // 右上淡彩晕染
+                          Positioned(
+                            top: -30,
+                            right: -30,
+                            child: Container(
+                              width: 112,
+                              height: 112,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(
+                                  alpha: isDark ? 0.12 : 0.16,
                                 ),
+                                shape: BoxShape.circle,
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                    // 幽灵涂鸦图标
-                    Positioned(
-                      top: 6,
-                      right: 8,
-                      child: IgnorePointer(
-                        child: WiredIcon(
-                          icon: memorialDay.icon ?? Icons.favorite_border,
-                          size: 52,
-                          color: accent.withValues(
-                            alpha: isDark ? 0.38 : 0.22,
-                          ),
-                          drawConfig: theme.wired.drawConfig,
+                  ),
+                  // 幽灵涂鸦图标
+                  Positioned(
+                    top: 6,
+                    right: 8,
+                    child: IgnorePointer(
+                      child: WiredIcon(
+                        icon: memorialDay.icon ?? Icons.favorite_border,
+                        size: 52,
+                        color: accent.withValues(
+                          alpha: isDark ? 0.38 : 0.22,
                         ),
+                        drawConfig: theme.wired.drawConfig,
                       ),
                     ),
+                  ),
                     Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
@@ -218,9 +218,18 @@ class SketchMilestoneCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // 顶层墨线描边（盖住背景图，保持手绘边框完整）
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: SketchStrokeOverlay(
+                          theme: theme,
+                          radius: radius,
+                          seed: seed,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
             ],
           ),
         );

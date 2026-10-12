@@ -7,6 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
+import 'package:aboutme/plugins/day/widgets/memorial_background.dart';
 import 'package:aboutme/plugins/day/widgets/edit_memorial_day_dialog/edit_memorial_day_page.dart';
 
 /// 纪念日详情页（Warm Paper Sketch · 复刻参考图 UI）
@@ -168,9 +169,9 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                     child: Column(
                       children: [
                         _buildHeader(context, theme, controller, day),
-                        // 骑缝加号：上移一半压在 header 弧底上
+                        // 骑缝加号：弧最低点凸出 36，按钮中心对齐它
                         Transform.translate(
-                          offset: const Offset(0, -28),
+                          offset: const Offset(0, 8),
                           child: _buildAddButton(theme, controller, day),
                         ),
                         Expanded(
@@ -190,6 +191,9 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
 
   // ==================== Header（参考图 1 弧底色块） ====================
 
+  /// 弧线凸出深度：header 底边中央向下的弧形高度
+  static const double _arcDepth = 36;
+
   Widget _buildHeader(
     BuildContext context,
     AppThemeData theme,
@@ -197,82 +201,136 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     MemorialDay day,
   ) {
     final accent = day.backgroundColor;
-    final radius = BorderRadius.vertical(bottom: Radius.circular(36));
+    final imageUrl = day.backgroundImageUrl;
+    // 大圆直径取 2 倍屏宽：弧线平缓，两端自然延伸到屏幕边缘
+    final screenW = MediaQuery.sizeOf(context).width;
+    final circleD = screenW * 2;
 
-    return Container(
-      decoration: dsSketchDecoration(theme: theme, fillColor: accent, radius: radius),
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 40),
-      child: Column(
-        children: [
-          // 顶行：返回 / 标题 / 编辑
-          Row(
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // 背景组：accent 底 + 背景图片（含纸色遮罩保证文字可读）
+        Positioned.fill(
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              _HeaderCircleButton(
-                theme: theme,
-                icon: DsIconKind.chevronLeft,
-                onTap: () => Navigator.of(context).pop(),
+              ColoredBox(color: accent),
+              if (imageUrl != null)
+                MemorialBackgroundImage(imageUrl: imageUrl, dimAlpha: 0.45),
+            ],
+          ),
+        ),
+        // 主块墨线框（叠在背景图之上）
+        Positioned.fill(
+          child: IgnorePointer(child: SketchStrokeOverlay(theme: theme)),
+        ),
+        // 内容
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 52),
+          child: Column(
+            children: [
+              // 顶行：返回 / 标题 / 编辑
+              Row(
+                children: [
+                  _HeaderCircleButton(
+                    theme: theme,
+                    icon: DsIconKind.chevronLeft,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                  Expanded(
+                    child: Text(
+                      day.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                  ),
+                  _HeaderCircleButton(
+                    theme: theme,
+                    icon: DsIconKind.edit,
+                    onTap: () => _openEditor(day),
+                  ),
+                ],
               ),
-              Expanded(
-                child: Text(
-                  day.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: DsTypography.title.copyWith(color: theme.text),
+              const SizedBox(height: 28),
+              // 大数字行：图标 + 天数 + 单位
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  WiredIcon(
+                    icon: day.icon ?? Icons.favorite_border,
+                    size: 38,
+                    color: theme.text,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _formatCount(
+                      day.isExpired ? day.daysPassed : day.daysRemaining,
+                    ),
+                    style: DsTypography.display.copyWith(
+                      fontSize: 52,
+                      color: theme.text,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    day.isExpired || day.isToday
+                        ? 'day_unitDays'.tr
+                        : 'day_unitDaysAfter'.tr,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // 胶囊 badges：目标日期 + 笔记数
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                alignment: WrapAlignment.center,
+                children: [
+                  _buildHeaderBadge(theme, _dotDate(day.targetDate)),
+                  _buildHeaderBadge(
+                    theme,
+                    'day_notesCount'.trParams({
+                      'count': day.notes.length.toString(),
+                    }),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // 底部下凸弧线：只露出大圆最下方的 [_arcDepth] 高度带，
+        // rough 墨线沿圆周走，弧线两端自然接在 header 底边
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: -_arcDepth,
+          child: SizedBox(
+            height: _arcDepth,
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.bottomCenter,
+                maxWidth: circleD,
+                maxHeight: circleD,
+                child: Container(
+                  width: circleD,
+                  height: circleD,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: accent,
+                    circle: true,
+                    seed: 2,
+                  ),
                 ),
               ),
-              _HeaderCircleButton(
-                theme: theme,
-                icon: DsIconKind.edit,
-                onTap: () => _openEditor(day),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 18),
-          // 大数字行：图标 + 天数 + 单位
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              WiredIcon(
-                icon: day.icon ?? Icons.favorite_border,
-                size: 34,
-                color: theme.text,
-                drawConfig: theme.wired.drawConfig,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                _formatCount(day.isExpired ? day.daysPassed : day.daysRemaining),
-                style: DsTypography.display.copyWith(
-                  fontSize: 48,
-                  color: theme.text,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                day.isExpired || day.isToday
-                    ? 'day_unitDays'.tr
-                    : 'day_unitDaysAfter'.tr,
-                style: DsTypography.body.copyWith(color: theme.text),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 胶囊 badges：目标日期 + 笔记数
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              _buildHeaderBadge(theme, _dotDate(day.targetDate)),
-              _buildHeaderBadge(
-                theme,
-                'day_notesCount'.trParams({'count': day.notes.length.toString()}),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -335,7 +393,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Text(
             '${'day_notes'.tr} (${day.notes.length})',
             style: DsTypography.heading.copyWith(color: theme.text),
