@@ -4,6 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+/// 手写字体参数（markdown 显式样式不走 DefaultTextStyle 继承，需显式指定）
+const TextStyle _sketchFont = TextStyle(
+  fontFamily: DsTypography.sketchFamily,
+  fontFamilyFallback: ['PingFang SC', 'Microsoft YaHei'],
+);
+
 /// Markdown内容渲染组件
 ///
 /// 使用flutter_markdown渲染消息内容
@@ -30,7 +36,7 @@ class MarkdownContent extends StatelessWidget {
       selectable: selectable,
       styleSheet: MarkdownStyleSheet(
         // 极简风格配置
-        p: TextStyle(fontSize: 15, height: 1.5, color: bodyColor),
+        p: _sketchFont.copyWith(fontSize: 15, height: 1.5, color: bodyColor),
         code: TextStyle(
           backgroundColor: theme.surfaceAlt,
           fontFamily: 'monospace',
@@ -41,7 +47,7 @@ class MarkdownContent extends StatelessWidget {
           borderRadius: theme.radii.sm,
         ),
         codeblockPadding: const EdgeInsets.all(12),
-        blockquote: TextStyle(
+        blockquote: _sketchFont.copyWith(
           color: theme.textSub,
           fontStyle: FontStyle.italic,
         ),
@@ -53,23 +59,23 @@ class MarkdownContent extends StatelessWidget {
           horizontal: 12,
           vertical: 8,
         ),
-        h1: TextStyle(
+        h1: _sketchFont.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: bodyColor,
         ),
-        h2: TextStyle(
+        h2: _sketchFont.copyWith(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: bodyColor,
         ),
-        h3: TextStyle(
+        h3: _sketchFont.copyWith(
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: bodyColor,
         ),
-        listBullet: TextStyle(fontSize: 15, color: bodyColor),
-        tableBody: TextStyle(fontSize: 14, color: bodyColor),
+        listBullet: _sketchFont.copyWith(fontSize: 15, color: bodyColor),
+        tableBody: _sketchFont.copyWith(fontSize: 14, color: bodyColor),
         tableBorder: TableBorder.all(
           color: theme.textSub.withValues(alpha: 0.4),
           width: 1,

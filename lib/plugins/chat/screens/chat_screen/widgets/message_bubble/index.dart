@@ -276,25 +276,12 @@ class _MessageBubbleState extends State<MessageBubble> {
                       ? CrossAxisAlignment.end
                       : CrossAxisAlignment.start,
                   children: [
-                    // 自己的消息：头像悬浮于气泡上方外侧，仅组内首条显示
-                    if (_isCurrentUser &&
-                        widget.showAvatar &&
-                        widget.isFirstOfGroup)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6, right: 4),
-                        child: MessageAvatar(
-                          user: _currentMessage.user,
-                          onTap: widget.onAvatarTap,
-                        ),
-                      ),
-                    // 自己的消息：可选的悬浮操作栏（镜像他人消息样式）
+                    // 自己的消息：头像与光标按钮同一栏（镜像他人消息），光标贴整行左缘、头像贴右
                     if (_isCurrentUser && widget.showActionsOnOwnMessage)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // 与他人消息镜像：光标在左侧（远端），按钮向右展开
                             _buildActionsToggle(theme, mirror: true),
                             AnimatedSize(
                               duration: const Duration(milliseconds: 200),
@@ -304,7 +291,26 @@ class _MessageBubbleState extends State<MessageBubble> {
                                   ? _buildActions(theme)
                                   : const SizedBox.shrink(),
                             ),
+                            const Spacer(),
+                            if (widget.showAvatar && widget.isFirstOfGroup)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: MessageAvatar(
+                                  user: _currentMessage.user,
+                                  onTap: widget.onAvatarTap,
+                                ),
+                              ),
                           ],
+                        ),
+                      )
+                    else if (_isCurrentUser &&
+                        widget.showAvatar &&
+                        widget.isFirstOfGroup)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6, right: 4),
+                        child: MessageAvatar(
+                          user: _currentMessage.user,
+                          onTap: widget.onAvatarTap,
                         ),
                       ),
                     // 他人消息：头像与光标按钮行同一栏，按钮贴整行右缘

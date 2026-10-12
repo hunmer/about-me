@@ -29,6 +29,17 @@ class AchievementTranslationsZh {
     'achievement_pending': '待接入',
     'achievement_hiddenHint': '隐藏成就，达成后揭晓',
 
+    // Tab 与空态
+    'achievement_tabInProgress': '正在解锁',
+    'achievement_emptyInProgress': '恭喜，所有成就均已达成！',
+    'achievement_emptyUnlocked': '还没有解锁任何成就，快去探索吧',
+
+    // 详情页
+    'achievement_detailCurrentProgress': '当前进度',
+    'achievement_detailLevelDetails': '等级明细',
+    'achievement_nextLevel': '下一级',
+    'achievement_maxed': '已满级',
+
     // 达成弹窗
     'achievement_unlocked': '— 成就达成 —',
     'achievement_unlocked_at': '达成于',

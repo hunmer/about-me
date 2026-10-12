@@ -31,6 +31,17 @@ class AchievementTranslationsEn {
     'achievement_pending': 'Coming',
     'achievement_hiddenHint': 'Hidden achievement, unlock to reveal',
 
+    // Tabs & empty states
+    'achievement_tabInProgress': 'In Progress',
+    'achievement_emptyInProgress': 'Congratulations, all achievements completed!',
+    'achievement_emptyUnlocked': 'No achievements unlocked yet — go explore!',
+
+    // Detail screen
+    'achievement_detailCurrentProgress': 'Progress',
+    'achievement_detailLevelDetails': 'Level Details',
+    'achievement_nextLevel': 'Next',
+    'achievement_maxed': 'Maxed',
+
     // Unlock dialog
     'achievement_unlocked': '— Achievement Unlocked —',
     'achievement_unlocked_at': 'Unlocked at',

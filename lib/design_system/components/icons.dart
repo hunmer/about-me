@@ -74,6 +74,8 @@ enum DsIconKind {
   code,
   chart,
   nfc,
+  eyeOff,
+  lock,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -146,6 +148,8 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.code: Icons.code,
   DsIconKind.chart: Icons.bar_chart,
   DsIconKind.nfc: Icons.nfc,
+  DsIconKind.eyeOff: Icons.visibility_off_outlined,
+  DsIconKind.lock: Icons.lock_outline,
 };
 
 /// 图标组件：基于系统 Material Icons

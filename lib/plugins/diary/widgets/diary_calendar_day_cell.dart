@@ -126,10 +126,14 @@ class DiaryCalendarDayCell extends StatelessWidget {
         ),
       );
     } else {
-      // 无日记：占位表情（中性脸）低透明度显示
-      circle = Opacity(
-        opacity: 0.35,
-        child: DiaryMoodFaceCircle(spec: neutralMoodSpec, size: 30),
+      // 无日记：emptyBubble 圆形背景占位
+      circle = Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: palette.emptyBubble,
+          shape: BoxShape.circle,
+        ),
       );
     }
 

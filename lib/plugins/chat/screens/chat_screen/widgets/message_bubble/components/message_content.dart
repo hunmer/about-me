@@ -14,6 +14,11 @@ import 'package:aboutme/widgets/file_preview/index.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'thinking_indicator.dart';
+/// 手写字体参数（markdown 显式样式不走 DefaultTextStyle 继承，需显式指定）
+const TextStyle _sketchMdFont = TextStyle(
+  fontFamily: DsTypography.sketchFamily,
+  fontFamilyFallback: ['PingFang SC', 'Microsoft YaHei'],
+);
 
 class MessageContent extends StatelessWidget {
   final Message message;
@@ -406,7 +411,7 @@ class MessageContent extends StatelessWidget {
             data: plainText,
             selectable: false,
             styleSheet: MarkdownStyleSheet(
-              p: TextStyle(color: textColor, fontSize: 15, height: 1.5),
+              p: _sketchMdFont.copyWith(color: textColor, fontSize: 15, height: 1.5),
               code: TextStyle(
                 backgroundColor: theme.surfaceAlt,
                 color: textColor,
@@ -418,7 +423,7 @@ class MessageContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               codeblockPadding: const EdgeInsets.all(12),
-              blockquote: TextStyle(
+              blockquote: _sketchMdFont.copyWith(
                 color: textColor.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
               ),
@@ -431,28 +436,34 @@ class MessageContent extends StatelessWidget {
                 horizontal: 12,
                 vertical: 8,
               ),
-              h1: TextStyle(
+              h1: _sketchMdFont.copyWith(
                 color: textColor,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
-              h2: TextStyle(
+              h2: _sketchMdFont.copyWith(
                 color: textColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
-              h3: TextStyle(
+              h3: _sketchMdFont.copyWith(
                 color: textColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-              listBullet: TextStyle(color: textColor, fontSize: 15),
-              a: TextStyle(
+              listBullet: _sketchMdFont.copyWith(color: textColor, fontSize: 15),
+              a: _sketchMdFont.copyWith(
                 color: linkColor,
                 decoration: TextDecoration.underline,
               ),
-              strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-              em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
+              strong: _sketchMdFont.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+              ),
+              em: _sketchMdFont.copyWith(
+                color: textColor,
+                fontStyle: FontStyle.italic,
+              ),
             ),
             onTapLink: (text, href, title) {
               if (href != null) {
