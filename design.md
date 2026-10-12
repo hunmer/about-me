@@ -258,6 +258,40 @@ SuperCupertinoNavigationWrapper(
 - 墨线粗糙度三档全局可切（设置 → 界面 → Ink style）：Gentle / Playful（默认）/ Expressive；由 `DsInkStyle.level` 驱动，`theme.wired.drawConfig` 自动跟随，新 UI 无需关心
 - `seed` 保持默认即可（rebuild 墨迹不抖变）；列表项可传 `seed: index` 让墨迹有变化
 
+## 10. 手绘入场动画（ink 描画，skribble motion）
+
+新内容挂载时让墨线"画出来"：描边先描（0–65%），排线/图案填充随后浮现（30–100%），纸底、实底填充、文字、图标与布局全程稳定。默认 650ms `easeInOutCubic`。参考实现：`lib/plugins/nodes/widgets/node_item.dart`（节点展开）、`node_card.dart`（卡片墨线消费进度）。
+
+### 10.1 两个入口组件
+
+| 组件 | 用法 | 适用 |
+|---|---|---|
+| `WiredDraw(child: ...)` | 包住**新挂载**的子树，挂载即播一次（收起卸载、再展开自动重播） | 展开子树、新增列表项等内容入场 |
+| `WiredDrawTransition(progress: 动画)` | 直接把墨线进度接到自有 AnimationController | 需要反向、stagger 错峰等显式控制时 |
+
+### 10.2 墨线如何消费进度
+
+- DS 装饰：`dsSketchDecoration(..., progress: WiredDrawTransition.progressOf(context))`
+- 自定义 CustomPainter：`repaint` 挂动画、绘制时传进度：
+
+```dart
+_MyPainter({required this.progress}) : super(repaint: progress);
+final Animation<double>? progress;
+// paint 内：
+RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pressure: 0);
+```
+
+- `progressOf` 返回 null（外层无 WiredDraw / 动画被禁用）＝ 立即全画，天然向后兼容：同一组件在动画场景与非动画场景可复用
+- `Wired*` 自带组件（checkbox、button 等）自动跟随环境进度，无需处理
+- `DsSketchPanel` 尚未接进度；其场景可改用 `dsSketchDecoration` 直挂或后续扩展
+
+### 10.3 约定
+
+- 只做**入场**描画；收起/退出不播反向动画（直接卸载）
+- 不要用内容淡入淡出替代——skribble 的形态就是"纸面已在，笔迹画上"
+- 自动遵守 `WiredMotion(enabled: false)` 边界与系统"减弱动态效果"，无需额外处理
+- 弹层（`showDSDialog`/`showDSBottomSheet`/`DSPopover`）如需描画，应在其**组件内部**统一包 `WiredDraw`，一处生效全 app 复用
+
 ## 新建页面检查清单
 
 1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）

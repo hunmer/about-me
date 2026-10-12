@@ -54,22 +54,32 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
     super.dispose();
   }
 
-  /// 主题颜色选择：一排色板圆点，点击即全局切换
-  Widget _buildPalettePicker() {
+  /// 完整主题选择：色板 × 墨线档位成套切换，点击即全局生效
+  Widget _buildThemePicker() {
     final theme = DSThemeBridge.resolve(context);
 
     return ListenableBuilder(
-      listenable: DsThemeColorController(),
+      // 主题 = 配色 + 墨线，两个控制器合并监听选中态
+      listenable: Listenable.merge([
+        DsThemeColorController(),
+        DsInkStyleController(),
+      ]),
       builder: (context, _) {
-        final controller = DsThemeColorController();
+        final paletteId = DsThemeColorController().paletteId;
+        final inkIndex = DsInkStyle.index;
         return Wrap(
           spacing: theme.spacing.lg,
           runSpacing: theme.spacing.md,
           children:
-              DsThemePalettes.all.map((palette) {
-                final selected = palette.id == controller.paletteId;
+              DsThemePresets.all.map((preset) {
+                final selected =
+                    preset.palette.id == paletteId &&
+                    preset.inkIndex == inkIndex;
                 return GestureDetector(
-                  onTap: () => controller.setPalette(palette.id),
+                  onTap: () {
+                    DsThemeColorController().setPalette(preset.palette.id);
+                    DsInkStyleController().setLevel(preset.inkIndex);
+                  },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -80,9 +90,11 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                         height: 48,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: palette.primary,
+                          color: preset.palette.primary,
                           border: Border.all(
-                            color: selected ? palette.text : DsColors.transparent,
+                            color: selected
+                                ? preset.palette.text
+                                : DsColors.transparent,
                             width: 2.5,
                           ),
                         ),
@@ -92,13 +104,13 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                             height: 22,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: palette.background,
+                              color: preset.palette.background,
                             ),
                             child: selected
                                 ? Icon(
                                     Icons.check,
                                     size: 16,
-                                    color: palette.primary,
+                                    color: preset.palette.primary,
                                   )
                                 : null,
                           ),
@@ -106,31 +118,24 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        palette.name,
+                        preset.name,
                         style: DsTypography.caption.copyWith(
                           color: selected ? theme.text : theme.textSub,
                           fontWeight: selected ? FontWeight.w600 : null,
+                        ),
+                      ),
+                      // 墨线档位标注：同配色不同墨线的主题以此区分
+                      Text(
+                        DsInkStyle.labels[preset.inkIndex],
+                        style: DsTypography.caption.copyWith(
+                          fontSize: 10,
+                          color: theme.textSub,
                         ),
                       ),
                     ],
                   ),
                 );
               }).toList(),
-        );
-      },
-    );
-  }
-
-  /// 墨线风格选择：三档手绘粗糙度（Gentle/Playful/Expressive），
-  /// 切换后全局即时生效（经 DSThemeBridge 重建主题树）
-  Widget _buildInkStylePicker() {
-    return ListenableBuilder(
-      listenable: DsInkStyleController(),
-      builder: (context, _) {
-        return DSSegmentedControl(
-          options: DsInkStyle.labels,
-          selected: DsInkStyle.index,
-          onChanged: (index) => DsInkStyleController().setLevel(index),
         );
       },
     );
@@ -200,21 +205,10 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            // 主题颜色：色板圆点直接切换，全局即时生效
+            // 完整主题：配色 × 墨线成套选择，点击全局即时生效
             SettingsGroup(
-              title: '主题颜色',
-              children: [_buildPalettePicker()],
-            ),
-            const SizedBox(height: 16),
-            // 墨线风格：三档手绘粗糙度，切换后全局即时生效
-            SettingsGroup(
-              title: 'Ink style（墨线风格）',
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                  child: _buildInkStylePicker(),
-                ),
-              ],
+              title: '主题',
+              children: [_buildThemePicker()],
             ),
           ],
         ),

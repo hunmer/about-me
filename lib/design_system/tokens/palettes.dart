@@ -106,12 +106,38 @@ abstract final class DsThemePalettes {
     textSub: Color(0xFFFDBA74),
   );
 
+  /// 暖纸梅紫（cuddly：暖纸底 + 梅紫墨，配 Gentle 墨线的软萌系主题）
+  static const DsThemePalette cuddly = DsThemePalette(
+    id: 'cuddly',
+    name: '暖纸梅紫',
+    primary: Color(0xFF9B6FB0),
+    secondary: Color(0xFFE8C8DC),
+    background: Color(0xFFFAF3EA),
+    backgroundAlt: Color(0xFFF3E7D8),
+    text: Color(0xFF57365E),
+    textSub: Color(0xFFB892BE),
+  );
+
+  /// 奶油蜂蜜（暖黄纸 + 蜂蜜墨，配 Expressive 墨线的涂鸦系主题）
+  static const DsThemePalette butter = DsThemePalette(
+    id: 'butter',
+    name: '奶油蜂蜜',
+    primary: Color(0xFFE0A93E),
+    secondary: Color(0xFFF9E2A8),
+    background: Color(0xFFFFFAEB),
+    backgroundAlt: Color(0xFFFDF3D3),
+    text: Color(0xFF6B4E12),
+    textSub: Color(0xFFD9B45C),
+  );
+
   static const List<DsThemePalette> all = [
     pink,
     berry,
     ocean,
     matcha,
     peach,
+    cuddly,
+    butter,
   ];
 
   /// 按 id 查找，未知 id 回落默认色板
