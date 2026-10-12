@@ -255,16 +255,6 @@ class _GoalSelectorStatefulWidgetState extends State<_GoalSelectorStatefulWidget
             'totalProgress': 10,
             'completedProgress': (percentage / 10).clamp(0, 10).toInt(),
           };
-        case 'milestoneCard':
-          return {
-            'imageUrl': null,
-            'title': name,
-            'date': formatDate(DateTime.now()),
-            'daysCount': percentage,
-            'value': currentValue.toStringAsFixed(1),
-            'unit': unitType,
-            'suffix': '/ $targetValue',
-          };
         case 'iconCircularProgressCard':
           return {
             'progress': progress,

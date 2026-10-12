@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Node;
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
@@ -42,6 +43,8 @@ class NodeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final seed = node.id.hashCode & 0x7fffffff;
+    // 环境描画动画（外层 WiredDraw 注入，如节点展开时）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
 
     // 参考稿：3.5 / 2.5 / 1.8 三档硬偏移墨影
     final shadowOffset = depth == 0 ? 3.5 : (depth == 1 ? 2.5 : 2.0);
@@ -133,6 +136,7 @@ class NodeCard extends StatelessWidget {
                 strokeWidth: 1.2,
                 radius: radius,
                 seed: seed + 13,
+                progress: progress,
               ),
             ),
           ),
@@ -144,6 +148,7 @@ class NodeCard extends StatelessWidget {
               radius: radius,
               strokeWidth: strokeWidth,
               seed: seed,
+              progress: progress,
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
@@ -204,6 +209,7 @@ class _ExpandButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final progress = WiredDrawTransition.progressOf(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -217,6 +223,7 @@ class _ExpandButton extends StatelessWidget {
           radius: BorderRadius.circular(8),
           strokeWidth: 1.4,
           seed: seed,
+          progress: progress,
         ),
         child: DsIcon(
           expanded ? DsIconKind.chevronDown : DsIconKind.chevronRight,
@@ -238,6 +245,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final progress = WiredDrawTransition.progressOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: dsSketchDecoration(
@@ -247,6 +255,7 @@ class _StatusBadge extends StatelessWidget {
         strokeWidth: 1.4,
         radius: DsRadii.pill,
         seed: seed,
+        progress: progress,
       ),
       child: Text(
         nodeStatusLabel(node.status),
@@ -266,6 +275,7 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final progress = WiredDrawTransition.progressOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: dsSketchDecoration(
@@ -275,6 +285,7 @@ class _TagChip extends StatelessWidget {
         strokeWidth: 1.2,
         radius: BorderRadius.circular(6),
         seed: seed,
+        progress: progress,
       ),
       child: Text(tag, style: DsTypography.label.copyWith(color: theme.text)),
     );

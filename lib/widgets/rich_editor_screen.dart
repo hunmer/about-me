@@ -55,6 +55,9 @@ class RichEditorScreen extends StatefulWidget {
   final String initialContent;
   final List<String> initialTags;
   final String? eyebrow;
+
+  /// 编辑态是否显示标题/字数/标签编辑行（false 为纯内容编辑，如聊天高级编辑）
+  final bool showTitle;
   final List<Widget> Function(AppThemeData theme)? readingPills;
   final List<Widget> Function(AppThemeData theme)? dockActions;
   final Widget? titleLeading;
@@ -78,6 +81,7 @@ class RichEditorScreen extends StatefulWidget {
     required this.initialContent,
     this.initialTags = const [],
     this.eyebrow,
+    this.showTitle = true,
     this.readingPills,
     this.dockActions,
     this.titleLeading,
@@ -511,9 +515,10 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
           ),
         ),
 
-        // 标题行（业务前缀 + 标题输入）+ 字数
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+        // 标题行（业务前缀 + 标题输入）+ 字数 + 标签编辑
+        if (widget.showTitle)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

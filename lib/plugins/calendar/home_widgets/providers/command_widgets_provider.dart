@@ -29,8 +29,6 @@ class CalendarCommandWidgetsProvider {
       // 每日事件卡片小组件
       'dailyEventsCard': _buildDailyEventsData(allEvents, now),
 
-      // 每日日程卡片小组件
-      'dailyScheduleCard': _buildDailyScheduleData(allEvents, now),
 
       // 时间线日程卡片小组件
       'timelineScheduleCard': _buildTimelineScheduleData(allEvents, now),
@@ -118,49 +116,6 @@ class CalendarCommandWidgetsProvider {
     };
   }
 
-  /// 构建 DailyScheduleCard 数据
-  static Map<String, dynamic> _buildDailyScheduleData(
-    List<CalendarEvent> events,
-    DateTime now,
-  ) {
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-
-    // 获取今天的事件
-    final todayEvents =
-        events
-            .where((event) {
-              final eventDate = DateTime(
-                event.startTime.year,
-                event.startTime.month,
-                event.startTime.day,
-              );
-              return eventDate.isAtSameMomentAs(today);
-            })
-            .map((event) => _convertToScheduleEventData(event))
-            .toList();
-
-    // 获取明天的事件
-    final tomorrowEvents =
-        events
-            .where((event) {
-              final eventDate = DateTime(
-                event.startTime.year,
-                event.startTime.month,
-                event.startTime.day,
-              );
-              return eventDate.isAtSameMomentAs(tomorrow);
-            })
-            .map((event) => _convertToScheduleEventData(event))
-            .toList();
-
-    return {
-      'todayDate': DateFormat('MMMM d, yyyy').format(now),
-      'todayEvents': todayEvents,
-      'tomorrowEvents': tomorrowEvents,
-    };
-  }
-
   /// 构建 TimelineScheduleCard 数据
   static Map<String, dynamic> _buildTimelineScheduleData(
     List<CalendarEvent> events,
@@ -212,37 +167,6 @@ class CalendarCommandWidgetsProvider {
     };
   }
 
-  /// 转换为 DailyScheduleCard 的 EventData 格式
-  static Map<String, dynamic> _convertToScheduleEventData(CalendarEvent event) {
-    final startTime = DateFormat.jm().format(event.startTime);
-    final endTime =
-        event.endTime != null ? DateFormat.jm().format(event.endTime!) : '';
-
-    // 解析时间字符串以分离时间和 AM/PM
-    final startParts = startTime.split(' ');
-    final startHour = startParts[0];
-    final startPeriod = startParts.length > 1 ? startParts[1] : '';
-
-    final endParts = endTime.split(' ');
-    final endHour = endParts.isNotEmpty ? endParts[0] : '';
-    final endPeriod = endParts.length > 1 ? endParts[1] : '';
-
-    // 判断颜色类型
-    final colorValue = event.color.value;
-
-    return {
-      'title': event.title,
-      'startTime': startHour,
-      'startPeriod': startPeriod,
-      'endTime': endHour,
-      'endPeriod': endPeriod,
-      'color': _mapToEventColorName(colorValue),
-      'location': event.description.isNotEmpty ? event.description : null,
-      'isAllDay': false,
-      'iconCodePoint': event.icon.codePoint,
-    };
-  }
-
   /// 转换为 TimelineScheduleCard 的 TimelineEvent 格式
   static Map<String, dynamic> _convertToTimelineEventData(CalendarEvent event) {
     final timeStr = DateFormat('h:mma').format(event.startTime);
@@ -286,50 +210,6 @@ class CalendarCommandWidgetsProvider {
     if (hours > 0 && minutes > 0) return '${hours}h ${minutes}m';
     if (hours > 0) return '${hours}h';
     return '${minutes}m';
-  }
-
-  /// 将颜色值映射到 EventColor 枚举名称
-  static String _mapToEventColorName(int colorValue) {
-    // 简单的颜色映射逻辑
-    final red = const Color(0xFFD35B5B);
-    final green = const Color(0xFF10B981);
-    final blue = const Color(0xFF3B82F6);
-    final gray = const Color(0xFF6B7280);
-
-    // 计算与各颜色的距离
-    final redDist = _colorDistance(colorValue, red.value);
-    final greenDist = _colorDistance(colorValue, green.value);
-    final blueDist = _colorDistance(colorValue, blue.value);
-    final grayDist = _colorDistance(colorValue, gray.value);
-
-    // 找出最接近的颜色
-    final minDist = [
-      redDist,
-      greenDist,
-      blueDist,
-      grayDist,
-    ].reduce((a, b) => a < b ? a : b);
-
-    if (minDist == redDist) return 'red';
-    if (minDist == greenDist) return 'green';
-    if (minDist == blueDist) return 'blue';
-    return 'gray';
-  }
-
-  /// 计算颜色距离
-  static int _colorDistance(int color1, int color2) {
-    final r1 = (color1 >> 16) & 0xFF;
-    final g1 = (color1 >> 8) & 0xFF;
-    final b1 = color1 & 0xFF;
-
-    final r2 = (color2 >> 16) & 0xFF;
-    final g2 = (color2 >> 8) & 0xFF;
-    final b2 = color2 & 0xFF;
-
-    return ((r1 - r2) * (r1 - r2) +
-            (g1 - g2) * (g1 - g2) +
-            (b1 - b2) * (b1 - b2))
-        .toInt();
   }
 
   /// 获取浅色模式背景色

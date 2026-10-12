@@ -29,7 +29,7 @@
 ## 组件分类
 
 ### 1. 编辑器类
-- **QuillEditor**：Markdown 编辑器，支持预览和工具栏
+- **RichEditorScreen**（`rich_editor_screen.dart`）：通用富文本编辑屏（阅读态 + 编辑态），标题/标签/字数 + Quill 工具栏，业务内容通过插槽挂载（日记心情等）
 
 ### 2. 选择器类
 - **LocationPicker**：位置选择器，支持搜索和当前定位
@@ -60,71 +60,54 @@
 
 ## 核心组件详解
 
-### QuillEditor
+### RichEditorScreen
 
-Markdown 编辑器组件，提供完整的 Markdown 编辑和预览功能。
+通用富文本编辑屏：阅读态（QuillViewer 只读渲染 + 底部操作 dock）与编辑态（标题/标签输入 + Quill 编辑器 + 工具栏）一体，从日记编辑屏抽离，替代已删除的嵌入式 QuillEditorWidget（`quill_editor.dart`）。
 
-#### 构造函数参数
+#### 构造函数参数（常用）
 
 | 参数 | 类型 | 必需 | 默认值 | 说明 |
 |-----|------|-----|--------|------|
-| initialTitle | String? | 否 | null | 初始标题内容 |
-| initialContent | String? | 否 | null | 初始正文内容 |
-| showTitle | bool | 否 | true | 是否显示标题输入框 |
-| titleHint | String | 否 | '输入标题...' | 标题输入框提示文本 |
-| contentHint | String | 否 | '输入内容...' | 内容输入框提示文本 |
-| onSave | Function(String, String) | 是 | - | 保存回调，返回标题和内容 |
-| onCancel | VoidCallback? | 否 | null | 取消回调 |
-| showSaveButton | bool | 否 | true | 是否显示保存按钮 |
-| showPreviewButton | bool | 否 | true | 是否显示预览按钮 |
-| autofocus | bool | 否 | true | 是否自动聚焦到内容区 |
-| actions | List<Widget>? | 否 | null | 自定义 AppBar 操作按钮 |
-| extraActions | List<Widget>? | 否 | null | 额外的操作按钮 |
+| initialTitle | String | 否 | '' | 初始标题 |
+| initialContent | String | 是 | - | 初始正文（JSON Delta 或纯文本）；为空时直接进入编辑态 |
+| initialTags | List\<String\> | 否 | [] | 初始标签 |
+| eyebrow | String? | 否 | null | 阅读态大标题上方眉题（如日期） |
+| showTitle | bool | 否 | true | 编辑态是否显示标题/字数/标签行（纯内容编辑传 false，如聊天高级编辑） |
+| readingPills | List\<Widget\> Function(AppThemeData)? | 否 | null | 阅读态标签行前置胶囊（日记心情） |
+| dockActions | List\<Widget\> Function(AppThemeData)? | 否 | null | 阅读态 dock 额外按钮（日记心情） |
+| titleLeading | Widget? | 否 | null | 编辑态标题行前缀（日记心情表情） |
+| onSave | Future\<void\> Function(String, String, List\<String\>) | 是 | - | 保存回调（标题 / JSON Delta 内容 / 标签），完成后自动 pop |
+| onDelete | Future\<void\> Function()? | 否 | null | 删除回调；null 时 dock 不显示删除按钮 |
+| reloadToken | int | 否 | 0 | 外部数据版本号，变化时重置为最新 initial 数据（编辑态下重建编辑控制器） |
+| texts | RichEditorTexts? | 否 | null | 文案覆盖（字段可空，默认沿用 diary 文案 key） |
 
 #### 功能特性
 
-- **双模式切换**：编辑模式和预览模式无缝切换
-- **富工具栏**：提供粗体、斜体、列表、代码块等常用格式
-- **语法插入**：支持 Markdown 语法快速插入
-- **实时预览**：使用 flutter_quill 渲染预览内容
+- **阅读/编辑双态**：空内容自动进入编辑态；取消时新条目直接退出、已有内容回到阅读态并还原标签
+- **插槽化扩展**：心情等业务 UI 通过 `readingPills`/`dockActions`/`titleLeading` 挂载（见 `diary_editor_screen.dart`）
+- **外部刷新**：`reloadToken` 递增触发整体重载（如 notes 的 `notes_refresh` 同步事件）
+- **字数统计**：兼容 JSON Delta 与纯文本
+- **导出子组件**：`EditorTagPill`（标签胶囊）、`EditorDockButton`（dock 圆形按钮）供插槽构造使用
 
 #### 使用示例
 
 ```dart
-import 'package:aboutme/widgets/markdown_editor/index.dart';
-
-// 基础使用
-QuillEditor(
-  initialTitle: '我的笔记',
-  initialContent: '# 标题\n内容',
-  onSave: (title, content) {
-    print('保存: $title - $content');
+RichEditorScreen(
+  initialTitle: note.title,
+  initialContent: note.content,
+  initialTags: note.tags,
+  onSave: (title, content, tags) async {
+    await controller.updateNote(/* ... */);
   },
-)
-
-// 自定义工具栏
-QuillEditor(
-  showTitle: false,
-  contentHint: '请输入备注...',
-  actions: [
-    IconButton(
-      icon: Icon(Icons.attach_file),
-      onPressed: () {
-        // 附件功能
-      },
-    ),
-  ],
-  onSave: (title, content) {
-    // 保存逻辑
-  },
+  onDelete: () => controller.deleteNote(note.id),
 )
 ```
 
 #### 注意事项
 
-- 如果 `showTitle` 为 true，保存时会验证标题不为空
-- 工具栏按钮在预览模式下会隐藏
-- 使用 `actions` 会完全替换默认按钮，使用 `extraActions` 会追加按钮
+- 自带 Scaffold + DSThemeBridge + SafeArea，作为独立路由 push 使用
+- 保存/删除完成后组件自动 pop，调用方无需处理导航
+- 删除前会弹出确认框，文案可通过 `texts` 覆盖
 
 ---
 
@@ -601,9 +584,9 @@ lib/widgets/
 │   ├── *_field.dart                            # 44 个字段组件（通用/picker/插件专用）
 │   └── builders/                               # 6 文件约 33 个 buildXxxField 工厂函数
 │
-├── markdown_editor/                            # Quill 富文本编辑器模块
+├── rich_editor_screen.dart                     # 通用富文本编辑屏（阅读态 + 编辑态）
+├── quill_viewer/                               # Quill 只读渲染模块
 │   ├── index.dart                              # 导出文件
-│   ├── quill_editor.dart                       # 编辑器实现
 │   └── quill_viewer.dart                       # 查看器实现
 │
 ├── file_preview/                               # 文件预览模块
@@ -665,7 +648,7 @@ lib/widgets/
 
 | 包名 | 用途 | 使用组件 |
 |-----|------|---------|
-| flutter_quill | Markdown 渲染 | QuillEditor |
+| flutter_quill | 富文本编辑与渲染 | RichEditorScreen, QuillViewer |
 | photo_view | 图片缩放预览 | FilePreviewScreen |
 | share_plus | 文件分享 | FilePreviewScreen |
 | image_picker | 图片选择 | ImagePickerDialog, AvatarPicker |

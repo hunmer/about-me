@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -81,32 +83,28 @@ class _AddTimerTaskDialogState extends State<AddTimerTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF0F1323) : const Color(0xFFF5F6F8);
-    final primaryColor = const Color(0xFF607AFB);
+    final theme = DSThemeBridge.resolve(context);
 
     return Dialog(
       insetPadding: EdgeInsets.zero,
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.paper,
       child: Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: theme.paper,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: backgroundColor,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios_new,
-              color: isDark ? Colors.white : Colors.grey[600],
-            ),
+          backgroundColor: theme.paper,
+          leading: DSIconButton(
+            icon: DsIconKind.chevronLeft,
+            size: 40,
+            color: theme.surfaceAlt,
+            iconColor: theme.text,
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: Text(
-            widget.initialTask != null ? '编辑计时器' : '添加计时器',
-            style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            widget.initialTask != null
+                ? 'timer_editTask'.tr
+                : 'timer_addTimer'.tr,
+            style: DsTypography.heading.copyWith(color: theme.text),
           ),
           centerTitle: true,
         ),
@@ -125,27 +123,12 @@ class _AddTimerTaskDialogState extends State<AddTimerTaskDialog> {
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(16),
-          color: backgroundColor,
+          color: theme.paper,
           child: SafeArea(
-            child: ElevatedButton(
+            child: DSButton(
+              label: 'app_save'.tr,
+              expand: true,
               onPressed: _canSubmit() ? _submit : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-                shadowColor: primaryColor.withValues(alpha: 0.4),
-              ),
-              child: Text(
-                'app_save'.tr,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             ),
           ),
         ),
@@ -211,10 +194,10 @@ class _AddTimerTaskDialogState extends State<AddTimerTaskDialog> {
         name: 'name',
         type: FormFieldType.text,
         labelText: 'timer_taskName'.tr,
-        hintText: '例如: 晨间专注',
+        hintText: 'timer_taskNameHint'.tr,
         initialValue: initialTask?.name ?? '',
         required: true,
-        validationMessage: '请输入${'timer_taskName'.tr}',
+        validationMessage: 'timer_taskNameRequired'.tr,
         onChanged: (value) {
           setState(() => _currentValues['name'] = value);
           _updateRouteContext();

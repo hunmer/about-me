@@ -91,6 +91,7 @@ RoughBoxDecoration dsSketchDecoration({
   Color? hachureColor,
   double hachureGap = 8,
   int seed = 1,
+  Animation<double>? progress,
 }) {
   final Filler? filler = fillColor == null
       ? null
@@ -122,6 +123,7 @@ RoughBoxDecoration dsSketchDecoration({
     filler: filler,
     drawConfig: theme.wired.drawConfig,
     seed: seed,
+    progress: progress,
   );
 }
 
@@ -142,6 +144,7 @@ class _DsRoughBoxDecoration extends RoughBoxDecoration {
     required super.drawConfig,
     required super.borderRadius,
     required super.seed,
+    super.progress,
   });
 
   @override
@@ -165,12 +168,28 @@ class _DsRoughBoxDecoration extends RoughBoxDecoration {
 
 class _DsRoughBoxPainter extends BoxPainter {
   _DsRoughBoxPainter(this.decoration, [VoidCallback? onChanged])
-      : super(onChanged);
+      : super(onChanged) {
+    // 跟随环境描画动画（WiredDraw/WiredDrawTransition）逐帧重绘墨线
+    final progress = decoration.progress;
+    if (onChanged != null && progress != null) {
+      progress.addListener(onChanged);
+    }
+  }
 
   final _DsRoughBoxDecoration decoration;
 
   Size? _size;
   late RoughDrawing _drawing;
+
+  @override
+  void dispose() {
+    final progress = decoration.progress;
+    final callback = onChanged;
+    if (progress != null && callback != null) {
+      progress.removeListener(callback);
+    }
+    super.dispose();
+  }
 
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
@@ -182,7 +201,11 @@ class _DsRoughBoxPainter extends BoxPainter {
     }
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
-    _drawing.paint(canvas, progress: 1, pressure: 0);
+    _drawing.paint(
+      canvas,
+      progress: decoration.progress?.value ?? 1,
+      pressure: 0,
+    );
     canvas.restore();
   }
 

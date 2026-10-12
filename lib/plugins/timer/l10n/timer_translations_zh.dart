@@ -106,5 +106,8 @@ class TimerTranslationsZh {
     'timer_searchHintSubtitle': '输入任务名称或分组名称',
     'timer_searchNoResult': '未找到匹配的任务',
     'timer_searchCurrentQuery': '当前查询：@query',
+    'timer_editTask': '编辑计时器',
+    'timer_taskNameHint': '例如: 晨间专注',
+    'timer_taskNameRequired': '请输入任务名称',
   };
 }

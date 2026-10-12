@@ -3,6 +3,9 @@ import 'dart:math';
 import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -10,9 +13,8 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/timer/services/white_noise_service.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
 
-/// 专注详情页，复刻 Warm Minimalist 设计稿：
-/// 暖奶油底 + 任务色主卡片（阶段行 / 进度环 / 目标 pill）+ 三圆控制 + 呼吸提示。
-/// 白噪音入口仅为占位。
+/// 专注详情页（手绘纸墨风）：
+/// 纸底 + 任务色主卡片（墨线框 / 阶段行 / 进度环 / 目标 pill）+ 手绘三圆控制 + 呼吸提示。
 class TimerTaskDetailsPage extends StatefulWidget {
   final String taskId;
 
@@ -27,8 +29,8 @@ class TimerTaskDetailsPage extends StatefulWidget {
 
 class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     with SingleTickerProviderStateMixin {
-  /// 配色跟随 app 主题（M3 surface 系），卡片与强调色仍用任务色
-  ColorScheme get _cs => Theme.of(context).colorScheme;
+  /// 配色跟随 app 主题（DS 手绘主题），卡片与强调色仍用任务色
+  AppThemeData get _dsTheme => DSThemeBridge.resolve(context);
 
   late TimerPlugin _plugin;
   late TimerTask _currentTask;
@@ -56,12 +58,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   void _onNoiseError() {
     final key = WhiteNoiseService.instance.error.value;
     if (key == null || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(key.tr),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showDSToast(context, message: key.tr, type: DSToastType.warning);
     WhiteNoiseService.instance.error.value = null;
   }
 
@@ -183,22 +180,13 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('timer_comingSoon'.tr),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showDSToast(context, message: 'timer_comingSoon'.tr, type: DSToastType.info);
   }
 
-  /// 专注结算对话框（复刻设计稿 settlement overlay）
+  /// 专注结算对话框（手绘面板：达成徽章 + 总时长 + 统计格 + 心情自评）
   Future<void> _showSettlementDialog() async {
-    // 结算配色取自设计稿
-    const badgeBg = Color(0xFFFFDBCF); // primary-fixed
-    const badgeFg = Color(0xFF390C00); // on-primary-fixed
-    final statBg = _cs.surfaceContainerLow;
-    const tertiary = Color(0xFF526600);
-    const secondary = Color(0xFF635D5A);
+    final theme = _dsTheme;
+    final accent = _currentTask.color;
 
     final totalDuration = _currentTask.timerItems.fold<Duration>(
           Duration.zero,
@@ -209,187 +197,152 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     final noiseName =
         WhiteNoiseService.instance.currentPreset?.nameKey.tr ??
         'timer_noNoise'.tr;
-    final accent = _currentTask.color;
     int mood = -1; // 0 平静 1 心流 2 疲惫
 
-    await showDialog(
+    await showDSDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.45),
+      theme: theme,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => Dialog(
-          backgroundColor: _cs.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 达成徽章
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.verified_rounded,
-                          size: 16, color: Color(0xFFAA3600)),
-                      const SizedBox(width: 6),
-                      Text(
-                        'timer_sessionCompleted'.tr,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: badgeFg,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  _formatClock(totalDuration),
-                  style: TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                    letterSpacing: -1,
-                    color: _cs.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _currentTask.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: _cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                // 统计块
-                Row(
+        builder: (dialogContext, setDialogState) => DsSketchPanel(
+          theme: theme,
+          radius: BorderRadius.circular(28),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 达成徽章：手绘胶囊
+              JellyBox(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                radius: DsRadii.pill,
+                color: theme.hatch,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildStatCell(
-                      icon: Icons.local_fire_department_rounded,
-                      iconColor: const Color(0xFFAA3600),
-                      value: '${_currentTask.timerItems.length}',
-                      label: 'timer_statPhases'.tr,
-                      background: statBg,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatCell(
-                      icon: Icons.spa_rounded,
-                      iconColor: tertiary,
-                      value: '$totalMinutes min',
-                      label: 'timer_statDuration'.tr,
-                      background: statBg,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatCell(
-                      icon: Icons.graphic_eq_rounded,
-                      iconColor: secondary,
-                      value: noiseName,
-                      label: 'timer_statAmbience'.tr,
-                      background: statBg,
+                    DsIcon(DsIconKind.star, size: 16, color: theme.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'timer_sessionCompleted'.tr,
+                      style: DsTypography.label.copyWith(color: theme.text),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                // 状态自评
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'timer_moodTitle'.tr,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _cs.onSurfaceVariant,
-                    ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                _formatClock(totalDuration),
+                style: DsTypography.display.copyWith(
+                  fontSize: 44,
+                  height: 1.1,
+                  letterSpacing: -1,
+                  color: theme.text,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _currentTask.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              const SizedBox(height: 18),
+              // 统计块
+              Row(
+                children: [
+                  _buildStatCell(
+                    theme: theme,
+                    icon: DsIconKind.fire,
+                    iconColor: theme.primary,
+                    value: '${_currentTask.timerItems.length}',
+                    label: 'timer_statPhases'.tr,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildMoodOption(
-                      emoji: '😌',
-                      label: 'timer_moodCalm'.tr,
-                      selected: mood == 0,
-                      accent: accent,
-                      onTap: () => setDialogState(() => mood = 0),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildMoodOption(
-                      emoji: '⚡️',
-                      label: 'timer_moodFlow'.tr,
-                      selected: mood == 1,
-                      accent: accent,
-                      onTap: () => setDialogState(() => mood = 1),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildMoodOption(
-                      emoji: '😴',
-                      label: 'timer_moodTired'.tr,
-                      selected: mood == 2,
-                      accent: accent,
-                      onTap: () => setDialogState(() => mood = 2),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // 主按钮：记录并完成
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      Navigator.of(context).pop();
-                    },
-                    icon: Icon(Icons.check_rounded, size: 18),
-                    label: Text('timer_saveFinish'.tr),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: const StadiumBorder(),
-                      textStyle: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  const SizedBox(width: 8),
+                  _buildStatCell(
+                    theme: theme,
+                    icon: DsIconKind.sprout,
+                    iconColor: theme.primary,
+                    value: '$totalMinutes min',
+                    label: 'timer_statDuration'.tr,
                   ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: _cs.onSurfaceVariant,
-                    textStyle: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  const SizedBox(width: 8),
+                  _buildStatCell(
+                    theme: theme,
+                    icon: DsIconKind.graphicEq,
+                    iconColor: theme.textSub,
+                    value: noiseName,
+                    label: 'timer_statAmbience'.tr,
                   ),
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    _handleReset();
-                    _currentTask.start();
-                    setState(() {
-                      _isRunning = _currentTask.isRunning;
-                      _taskHasRun = _isRunning;
-                    });
-                    _plugin.updateTask(_currentTask);
-                    WhiteNoiseService.instance.resume();
-                  },
-                  child: Text('timer_nextRound'.tr),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // 状态自评
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'timer_moodTitle'.tr,
+                  style: DsTypography.label.copyWith(color: theme.textSub),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildMoodOption(
+                    theme: theme,
+                    emoji: '😌',
+                    label: 'timer_moodCalm'.tr,
+                    selected: mood == 0,
+                    accent: accent,
+                    onTap: () => setDialogState(() => mood = 0),
+                  ),
+                  const SizedBox(width: 6),
+                  _buildMoodOption(
+                    theme: theme,
+                    emoji: '⚡️',
+                    label: 'timer_moodFlow'.tr,
+                    selected: mood == 1,
+                    accent: accent,
+                    onTap: () => setDialogState(() => mood = 1),
+                  ),
+                  const SizedBox(width: 6),
+                  _buildMoodOption(
+                    theme: theme,
+                    emoji: '😴',
+                    label: 'timer_moodTired'.tr,
+                    selected: mood == 2,
+                    accent: accent,
+                    onTap: () => setDialogState(() => mood = 2),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // 主按钮：记录并完成
+              DSButton(
+                label: 'timer_saveFinish'.tr,
+                expand: true,
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).pop();
+                },
+              ),
+              const SizedBox(height: 8),
+              DSButton(
+                label: 'timer_nextRound'.tr,
+                variant: DSButtonVariant.outline,
+                expand: true,
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _handleReset();
+                  _currentTask.start();
+                  setState(() {
+                    _isRunning = _currentTask.isRunning;
+                    _taskHasRun = _isRunning;
+                  });
+                  _plugin.updateTask(_currentTask);
+                  WhiteNoiseService.instance.resume();
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -397,41 +350,39 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   Widget _buildStatCell({
-    required IconData icon,
+    required AppThemeData theme,
+    required DsIconKind icon,
     required Color iconColor,
     required String value,
     required String label,
-    required Color background,
   }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(16),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surfaceAlt.withValues(alpha: 0.5),
+          radius: BorderRadius.circular(16),
+          strokeWidth: 1.4,
         ),
         child: Column(
           children: [
-            Icon(icon, size: 18, color: iconColor),
+            DsIcon(icon, size: 18, color: iconColor),
             const SizedBox(height: 4),
             Text(
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: _cs.onSurface,
-              ),
+              style: DsTypography.heading.copyWith(color: theme.text),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: DsTypography.caption.copyWith(
                 fontSize: 10,
-                color: _cs.onSurfaceVariant,
+                color: theme.textSub,
               ),
             ),
           ],
@@ -441,6 +392,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   Widget _buildMoodOption({
+    required AppThemeData theme,
     required String emoji,
     required String label,
     required bool selected,
@@ -448,122 +400,95 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: Material(
-        color: selected ? accent.withOpacity(0.10) : _cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? accent.withOpacity(0.35) : Colors.transparent,
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return Transform.scale(
+            scale: pressed ? 0.95 : 1.0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: selected
+                    ? accent.withValues(alpha: 0.10)
+                    : theme.surfaceAlt,
+                stroke: selected ? accent : null,
+                strokeWidth: 1.2,
+                radius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(emoji, style: DsTypography.body.copyWith(fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.label.copyWith(
+                      color: selected ? accent : theme.textSub,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                Text(emoji, style: TextStyle(fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: selected ? accent : _cs.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  /// 白噪音选择弹窗（复刻设计稿音源卡片，分本地/在线两组）
+  /// 白噪音选择弹窗（手绘 sheet，分本地/在线两组）
   void _openSoundscapeSheet() {
-    showModalBottomSheet(
+    final theme = _dsTheme;
+    showDSBottomSheet(
       context: context,
-      backgroundColor: _cs.surface,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.headphones_rounded,
-                        size: 20, color: _currentTask.color),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'timer_soundscapes'.tr,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: _cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.expand_more_rounded,
-                          size: 22, color: _cs.onSurfaceVariant),
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                    ),
-                  ],
-                ),
-                _buildVolumeRow(),
-                Flexible(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge([
-                      WhiteNoiseService.instance.currentId,
-                      WhiteNoiseService.instance.loadingId,
-                    ]),
-                    builder: (context, _) => SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionLabel('timer_noise_local'.tr),
-                          _buildNoiseGrid(WhiteNoiseService.localPresets),
-                          const SizedBox(height: 14),
-                          _buildSectionLabel('timer_noise_online'.tr),
-                          _buildNoiseGrid(WhiteNoiseService.onlinePresets),
-                        ],
-                      ),
+      title: 'timer_soundscapes'.tr,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildVolumeRow(theme),
+              Flexible(
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([
+                    WhiteNoiseService.instance.currentId,
+                    WhiteNoiseService.instance.loadingId,
+                  ]),
+                  builder: (context, _) => SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel(theme, 'timer_noise_local'.tr),
+                        _buildNoiseGrid(theme, WhiteNoiseService.localPresets),
+                        const SizedBox(height: 14),
+                        _buildSectionLabel(theme, 'timer_noise_online'.tr),
+                        _buildNoiseGrid(theme, WhiteNoiseService.onlinePresets),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionLabel(String label) {
+  Widget _buildSectionLabel(AppThemeData theme, String label) {
     return Padding(
       padding: const EdgeInsets.only(left: 2, bottom: 8),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: _cs.onSurfaceVariant.withValues(alpha: 0.6),
+        style: DsTypography.label.copyWith(
+          color: theme.textSub.withValues(alpha: 0.6),
           letterSpacing: 0.3,
         ),
       ),
@@ -571,19 +496,15 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   /// 音量调节行：图标 + 滑杆 + 百分比
-  Widget _buildVolumeRow() {
+  Widget _buildVolumeRow(AppThemeData theme) {
     final service = WhiteNoiseService.instance;
     return StatefulBuilder(
       builder: (context, setSheetState) => Row(
         children: [
-          Icon(
-            service.volume <= 0
-                ? Icons.volume_off_rounded
-                : service.volume < 0.5
-                    ? Icons.volume_down_rounded
-                    : Icons.volume_up_rounded,
+          DsIcon(
+            service.volume <= 0 ? DsIconKind.volumeOff : DsIconKind.volumeUp,
             size: 18,
-            color: _cs.onSurfaceVariant,
+            color: theme.textSub,
           ),
           Expanded(
             child: SliderTheme(
@@ -596,7 +517,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
               child: Slider(
                 value: service.volume,
                 activeColor: _currentTask.color,
-                inactiveColor: _cs.surfaceContainer,
+                inactiveColor: theme.surfaceAlt,
                 onChanged: (value) {
                   setSheetState(() {});
                   service.setVolume(value);
@@ -609,11 +530,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             child: Text(
               '${(service.volume * 100).toInt()}%',
               textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: _cs.onSurfaceVariant,
-              ),
+              style: DsTypography.label.copyWith(color: theme.textSub),
             ),
           ),
         ],
@@ -621,7 +538,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildNoiseGrid(List<WhiteNoisePreset> presets) {
+  Widget _buildNoiseGrid(AppThemeData theme, List<WhiteNoisePreset> presets) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -632,6 +549,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
       children: [
         for (final preset in presets)
           _buildNoiseTile(
+            theme,
             preset,
             WhiteNoiseService.instance.currentId.value == preset.id,
             WhiteNoiseService.instance.loadingId.value == preset.id,
@@ -640,69 +558,85 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildNoiseTile(WhiteNoisePreset preset, bool active, bool loading) {
+  Widget _buildNoiseTile(
+    AppThemeData theme,
+    WhiteNoisePreset preset,
+    bool active,
+    bool loading,
+  ) {
     final highlight = _currentTask.color;
-    return Material(
-      color: active ? _cs.surfaceContainer : _cs.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          WhiteNoiseService.instance.toggle(preset.id);
-          Navigator.of(context).pop();
-        },
-        child: Stack(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (loading)
-                      SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          color: highlight,
-                        ),
-                      )
-                    else
-                      Icon(
-                        preset.icon,
-                        size: 24,
-                        color: active ? highlight : _cs.onSurfaceVariant,
-                      ),
-                    const SizedBox(height: 6),
-                    Text(
-                      preset.nameKey.tr,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: active ? highlight : _cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return Pressable(
+      onPressed: () {
+        WhiteNoiseService.instance.toggle(preset.id);
+        Navigator.of(context).pop();
+      },
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.94 : 1.0,
+          child: Container(
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: active ? theme.hatch : theme.surfaceAlt,
+              stroke: active ? highlight : null,
+              strokeWidth: 1.2,
+              radius: BorderRadius.circular(16),
             ),
-            // 在线音源角标
-            if (preset.isOnline)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Icon(
-                  Icons.cloud_outlined,
-                  size: 12,
-                  color: active ? highlight : _cs.onSurfaceVariant.withValues(alpha: 0.45),
+            child: Stack(
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (loading)
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: highlight,
+                            ),
+                          )
+                        else
+                          WiredIcon(
+                            icon: preset.icon,
+                            size: 24,
+                            color: active ? highlight : theme.textSub,
+                            drawConfig: theme.wired.drawConfig,
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          preset.nameKey.tr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.label.copyWith(
+                            color: active ? highlight : theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ),
+                // 在线音源角标
+                if (preset.isOnline)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: DsIcon(
+                      DsIconKind.cloud,
+                      size: 12,
+                      color: active
+                          ? highlight
+                          : theme.textSub.withValues(alpha: 0.45),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -714,15 +648,20 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
   }
 
+  /// 任务色卡片上的前景色：按卡片底色亮度取纸色/墨色
+  Color _onCardOf(Color cardColor) =>
+      cardColor.computeLuminance() < 0.5 ? DsColors.white : DsColors.text;
+
   @override
   Widget build(BuildContext context) {
     if (_currentTask.timerItems.isEmpty) {
       return Scaffold(
-        backgroundColor: _cs.surface,
+        backgroundColor: _dsTheme.paper,
         body: Center(child: Text('timer_taskEmpty'.tr)),
       );
     }
 
+    final theme = _dsTheme;
     final currentTimer = _currentTask.timerItems[_currentTimerIndex];
     final progress = (currentTimer.completedDuration.inSeconds /
             currentTimer.duration.inSeconds)
@@ -730,19 +669,20 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     final cardColor = _currentTask.color;
 
     return Scaffold(
-      backgroundColor: _cs.surface,
+      backgroundColor: theme.paper,
       body: SafeArea(
         child: Stack(
           children: [
-            // 背景水印：任务图标淡色斜置
+            // 背景水印：任务图标幽灵涂鸦斜置
             Positioned.fill(
               child: Center(
                 child: Transform.rotate(
                   angle: 12 * pi / 180,
-                  child: Icon(
-                    _currentTask.icon,
+                  child: WiredIcon(
+                    icon: _currentTask.icon,
                     size: 340,
-                    color: cardColor.withOpacity(0.07),
+                    color: cardColor.withValues(alpha: 0.07),
+                    drawConfig: theme.wired.drawConfig,
                   ),
                 ),
               ),
@@ -751,20 +691,20 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: _buildTopBar(cardColor),
+                  child: _buildTopBar(theme, cardColor),
                 ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: _buildFocusCard(currentTimer, progress, cardColor),
+                    child: _buildFocusCard(theme, currentTimer, progress, cardColor),
                   ),
                 ),
                 const SizedBox(height: 24),
-                _buildControls(cardColor),
+                _buildControls(theme, cardColor),
                 const SizedBox(height: 20),
-                _buildBreathingPill(cardColor),
+                _buildBreathingPill(theme, cardColor),
                 const SizedBox(height: 14),
-                _buildImmersiveHint(),
+                _buildImmersiveHint(theme),
                 const SizedBox(height: 16),
               ],
             ),
@@ -774,15 +714,16 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildTopBar(Color cardColor) {
+  Widget _buildTopBar(AppThemeData theme, Color cardColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _roundIconBtn(
+          theme: theme,
           size: 40,
-          background: Colors.white,
-          icon: Icons.close_rounded,
-          iconColor: _cs.onSurface,
+          background: theme.paper,
+          icon: DsIconKind.close,
+          iconColor: theme.text,
           onTap: () => Navigator.of(context).pop(),
         ),
         AnimatedBuilder(
@@ -794,48 +735,52 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             final service = WhiteNoiseService.instance;
             final playing = service.currentId.value != null;
             final loading = service.loadingId.value != null;
-            return Material(
-              color: _cs.surfaceContainer,
-              borderRadius: BorderRadius.circular(999),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(999),
-                onTap: _openSoundscapeSheet,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (loading)
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: _currentTask.color,
+            return Pressable(
+              onPressed: _openSoundscapeSheet,
+              builder: (context, states) {
+                final pressed = states.contains(WidgetState.pressed);
+                return Transform.scale(
+                  scale: pressed ? 0.96 : 1.0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.surfaceAlt,
+                      radius: DsRadii.pill,
+                      strokeWidth: 1.4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (loading)
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: cardColor,
+                            ),
+                          )
+                        else
+                          DsIcon(DsIconKind.graphicEq,
+                              size: 16, color: cardColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          playing
+                              ? service.currentPreset!.nameKey.tr
+                              : 'timer_whiteNoise'.tr,
+                          style: DsTypography.label.copyWith(
+                            color: theme.textSub,
                           ),
-                        )
-                      else
-                        Icon(
-                          Icons.graphic_eq_rounded,
-                          size: 16,
-                          color: _currentTask.color,
                         ),
-                      const SizedBox(width: 6),
-                      Text(
-                        playing
-                            ? service.currentPreset!.nameKey.tr
-                            : 'timer_whiteNoise'.tr,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
         ),
@@ -843,35 +788,38 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildFocusCard(TimerItem currentTimer, double progress, Color cardColor) {
+  Widget _buildFocusCard(
+    AppThemeData theme,
+    TimerItem currentTimer,
+    double progress,
+    Color cardColor,
+  ) {
+    final onCard = _onCardOf(cardColor);
     // 与列表卡片 TimerCardWidget(enableHero) 共享 tag，实现转场放大
     return Hero(
       tag: 'timer_task_card_${widget.taskId}',
       child: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: cardColor.withOpacity(0.30),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: cardColor,
+          radius: BorderRadius.circular(32),
+          strokeWidth: 2.2,
+          seed: widget.taskId.hashCode & 0x7FFFFFFF,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
           child: Stack(
             children: [
-              // 卡片右上角任务图标剪影
+              // 卡片右上角任务图标幽灵涂鸦
               Positioned(
                 right: -56,
                 top: -56,
-                child: Icon(
-                  _currentTask.icon,
+                child: WiredIcon(
+                  icon: _currentTask.icon,
                   size: 280,
-                  color: Colors.white.withOpacity(0.10),
+                  color: onCard.withValues(alpha: 0.10),
+                  drawConfig: theme.wired.drawConfig,
                 ),
               ),
               Padding(
@@ -879,9 +827,9 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildCardHeader(currentTimer),
-                    _buildRing(progress),
-                    _buildHabitPill(),
+                    _buildCardHeader(theme, onCard, currentTimer),
+                    _buildRing(onCard, progress),
+                    _buildHabitPill(theme, onCard),
                   ],
                 ),
               ),
@@ -892,10 +840,10 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildCardHeader(TimerItem currentTimer) {
+  Widget _buildCardHeader(AppThemeData theme, Color onCard, TimerItem currentTimer) {
     return Row(
       children: [
-        _PulsingDot(controller: _pulse, color: Colors.white),
+        _PulsingDot(controller: _pulse, color: onCard),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -903,10 +851,8 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             ' · ${currentTimer.name}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+            style: DsTypography.label.copyWith(
+              color: onCard,
               letterSpacing: 0.3,
             ),
           ),
@@ -914,24 +860,23 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.20),
-            borderRadius: BorderRadius.circular(999),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: onCard.withValues(alpha: 0.20),
+            stroke: onCard.withValues(alpha: 0.5),
+            strokeWidth: 1.2,
+            radius: DsRadii.pill,
           ),
           child: Text(
             _isRunning ? 'timer_running'.tr : 'timer_paused'.tr,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
+            style: DsTypography.caption.copyWith(color: onCard),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRing(double progress) {
+  Widget _buildRing(Color onCard, double progress) {
     final remaining =
         _currentTask.timerItems[_currentTimerIndex].remainingDuration;
     return LayoutBuilder(
@@ -948,7 +893,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
               CircularProgressIndicator(
                 value: 1,
                 strokeWidth: 7,
-                color: Colors.white.withOpacity(0.20),
+                color: onCard.withValues(alpha: 0.20),
               ),
               // 进度弧平滑过渡：每秒刷新时以 1s 线性补间，形成连续扫动
               TweenAnimationBuilder<double>(
@@ -959,7 +904,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                   value: value,
                   strokeWidth: 8,
                   strokeCap: StrokeCap.round,
-                  color: Colors.white,
+                  color: onCard,
                 ),
               ),
               Center(
@@ -968,12 +913,11 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                   children: [
                     Text(
                       _formatClock(remaining),
-                      style: TextStyle(
+                      style: DsTypography.display.copyWith(
                         fontSize: hasHours ? 44 : 64,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
                         height: 1.0,
                         letterSpacing: -1,
+                        color: onCard,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -981,10 +925,9 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                       _currentTask.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: DsTypography.heading.copyWith(
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.95),
+                        color: onCard.withValues(alpha: 0.95),
                       ),
                     ),
                   ],
@@ -997,34 +940,32 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildHabitPill() {
+  Widget _buildHabitPill(AppThemeData theme, Color onCard) {
     final totalMinutes = _currentTask.timerItems
         .fold<int>(0, (sum, item) => sum + item.duration.inMinutes);
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(999),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: onCard.withValues(alpha: 0.15),
+          stroke: onCard.withValues(alpha: 0.5),
+          strokeWidth: 1.2,
+          radius: DsRadii.pill,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.local_fire_department_rounded,
-              size: 16,
-              color: Colors.white,
-            ),
+            DsIcon(DsIconKind.fire, size: 16, color: onCard),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 '${_currentTask.timerItems.length} ${'timer_phase'.tr} · $totalMinutes min',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: DsTypography.body.copyWith(
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                  color: onCard,
                 ),
               ),
             ),
@@ -1034,65 +975,47 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildControls(Color cardColor) {
+  Widget _buildControls(AppThemeData theme, Color cardColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _roundIconBtn(
+          theme: theme,
           size: 48,
-          background: _cs.surfaceContainer,
-          icon: Icons.restart_alt_rounded,
-          iconColor: _cs.onSurface,
+          background: theme.surfaceAlt,
+          icon: DsIconKind.replay,
+          iconColor: theme.text,
           onTap: _handleReset,
         ),
         const SizedBox(width: 28),
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: cardColor.withOpacity(0.30),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: _roundIconBtn(
-            size: 80,
-            background: Colors.white,
-            icon: _isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            iconColor: cardColor,
-            iconScale: 0.5,
-            onTap: _handlePlayPause,
-          ),
+        _roundIconBtn(
+          theme: theme,
+          size: 80,
+          background: _onCardOf(cardColor),
+          icon: _isRunning ? DsIconKind.pause : DsIconKind.play,
+          iconColor: cardColor,
+          iconScale: 0.5,
+          onTap: _handlePlayPause,
         ),
         const SizedBox(width: 28),
         _roundIconBtn(
+          theme: theme,
           size: 48,
-          background: _cs.surfaceContainer,
-          icon: Icons.skip_next_rounded,
-          iconColor: _cs.onSurface,
+          background: theme.surfaceAlt,
+          icon: DsIconKind.chevronRight,
+          iconColor: theme.text,
           onTap: _showComingSoon,
         ),
       ],
     );
   }
 
-  Widget _buildBreathingPill(Color cardColor) {
+  Widget _buildBreathingPill(AppThemeData theme, Color cardColor) {
     return Center(
-      child: Container(
+      child: JellyBox(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: _cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: _cs.onSurface.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        radius: DsRadii.pill,
+        color: theme.surfaceAlt,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1100,11 +1023,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             const SizedBox(width: 10),
             Text(
               'timer_breathingHint'.tr,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: _cs.onSurfaceVariant,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -1112,18 +1031,20 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildImmersiveHint() {
+  Widget _buildImmersiveHint(AppThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.screen_rotation_rounded, size: 14, color: _cs.onSurfaceVariant.withValues(alpha: 0.6)),
+        DsIcon(
+          DsIconKind.refresh,
+          size: 14,
+          color: theme.textSub.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: 6),
         Text(
           'timer_immersiveHint'.tr,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: _cs.onSurfaceVariant.withValues(alpha: 0.6),
+          style: DsTypography.caption.copyWith(
+            color: theme.textSub.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -1131,26 +1052,34 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   Widget _roundIconBtn({
+    required AppThemeData theme,
     required double size,
     required Color background,
-    required IconData icon,
+    required DsIconKind icon,
     required Color iconColor,
     required VoidCallback onTap,
     double iconScale = 0.45,
   }) {
-    return Material(
-      color: background,
-      shape: const CircleBorder(),
-      elevation: 0,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(icon, size: size * iconScale, color: iconColor),
-        ),
-      ),
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.9 : 1.0,
+          child: Container(
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: background,
+              strokeWidth: 1.8,
+            ),
+            child: DsIcon(icon, size: size * iconScale, color: iconColor),
+          ),
+        );
+      },
     );
   }
 }
@@ -1184,7 +1113,7 @@ class _PulsingDot extends StatelessWidget {
                 height: size + size * t * 1.2,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: color.withOpacity(0.45 * (1 - t)),
+                  color: color.withValues(alpha: 0.45 * (1 - t)),
                 ),
               );
             },

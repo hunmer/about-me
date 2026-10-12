@@ -137,24 +137,6 @@ Future<Map<String, Map<String, dynamic>>> provideNotesListWidgets(
     'moreCount': moreCount,
   };
 
-  // 构建 NewsUpdateCard 数据
-  final newsUpdateCardData =
-      displayNotes.isNotEmpty
-          ? {
-            'icon': 'bolt',
-            'title': displayNotes.first.title,
-            'timestamp': _formatTimeAgo(displayNotes.first.updatedAt, now),
-            'currentIndex': 0,
-            'totalItems': displayNotes.length.clamp(1, 4),
-          }
-          : {
-            'icon': 'bolt',
-            'title': 'notes_noNotes'.tr,
-            'timestamp': DateFormat('yyyy-MM-dd').format(now),
-            'currentIndex': 0,
-            'totalItems': 1,
-          };
-
   // 构建 ColorTagTaskCard 数据
   final colorTagTaskCardData = {
     'taskCount': notesCount,
@@ -212,10 +194,8 @@ Future<Map<String, Map<String, dynamic>>> provideNotesListWidgets(
             )
             .toList(),
   };
-
   return {
     'taskListCard': taskListCardData,
-    'newsUpdateCard': newsUpdateCardData,
     'colorTagTaskCard': colorTagTaskCardData,
     'inboxMessageCard': inboxMessageCardData,
     'folderNotesCard': folderNotesCardData,

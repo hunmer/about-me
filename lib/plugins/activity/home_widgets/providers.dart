@@ -304,38 +304,6 @@ Map<String, dynamic>? _getCommonWidgetDataSync(
                 .toList(),
       };
 
-    case 'watchProgressCard':
-      return {
-        'userName': '今日活动',
-        'lastWatched': '',
-        'enableHeader': false,
-        'progressLabel': '已用时间',
-        'currentCount': now.hour,
-        'totalCount': 24,
-        'items':
-            todayActivities
-                .map(
-                  (a) => {
-                    'title': a.title.isEmpty ? '未命名活动' : a.title,
-                    'subtitle':
-                        '${formatTimeStatic(a.startTime)} - ${formatTimeStatic(a.endTime)}',
-                    'thumbnailUrl': null,
-                  },
-                )
-                .toList(),
-      };
-
-    case 'dailyScheduleCard':
-      return {
-        'todayDate': '${now.month}月${now.day}日',
-        'todayEvents':
-            todayActivities.map((a) => convertActivityToEventData(a)).toList(),
-        'tomorrowEvents':
-            yesterdayActivities
-                .map((a) => convertActivityToEventData(a))
-                .toList(),
-      };
-
     case 'expenseDonutChart':
       return {
         'badgeLabel': '活动',
@@ -639,38 +607,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
                       '${formatTimeStatic(a.startTime)} - ${formatTimeStatic(a.endTime)}',
                 },
               )
-              .toList(),
-    },
-
-    // 观看进度卡片：显示活动列表
-    'watchProgressCard': {
-      'userName': '今日活动',
-      'lastWatched': '',
-      'enableHeader': false,
-      'progressLabel': '已用时间',
-      'currentCount': now.hour,
-      'totalCount': 24,
-      'items':
-          todayActivities
-              .map(
-                (a) => {
-                  'title': a.title.isEmpty ? '未命名活动' : a.title,
-                  'subtitle':
-                      '${formatTimeStatic(a.startTime)} - ${formatTimeStatic(a.endTime)}',
-                  'thumbnailUrl': null,
-                },
-              )
-              .toList(),
-    },
-
-    // 每日日程卡片：今日活动和昨日活动
-    'dailyScheduleCard': {
-      'todayDate': '${now.month}月${now.day}日',
-      'todayEvents':
-          todayActivities.map((a) => convertActivityToEventData(a)).toList(),
-      'tomorrowEvents':
-          yesterdayActivities
-              .map((a) => convertActivityToEventData(a))
               .toList(),
     },
 

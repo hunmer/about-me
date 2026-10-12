@@ -184,16 +184,6 @@ Future<Map<String, Map<String, dynamic>>> provideMemorialDayCommonWidgets(
       'progressColor': backgroundColor,
     },
 
-    // 里程碑卡片：显示纪念日详情
-    'milestoneCard': {
-      'imageUrl': data['backgroundImageUrl'] as String?,
-      'title': title,
-      'date': formattedDate,
-      'daysCount': isExpired ? daysPassed : daysRemaining,
-      'value': isExpired ? '$daysPassed' : '$daysRemaining',
-      'unit': isExpired ? '天已过' : '天',
-      'suffix': isToday ? '今天' : '',
-    },
   };
 }
 
@@ -317,13 +307,6 @@ Future<Map<String, Map<String, dynamic>>> provideDateRangeCommonWidgets(
               'subtextDarkValue': 0xFFD7CCC8,
             };
           }).toList(),
-    },
-
-    // 每日日程卡片：显示纪念日日程
-    'dailyScheduleCard': {
-      'todayDate': dateRangeLabel,
-      'todayEvents': events,
-      'tomorrowEvents': [],
     },
 
     // 彩色标签任务卡片：显示彩色标签的纪念日列表

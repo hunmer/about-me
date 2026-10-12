@@ -39,33 +39,36 @@ class NodeItem extends StatelessWidget {
     final controller = Provider.of<NodesController>(context);
     final theme = AppTheme.of(context);
     final seed = node.id.hashCode & 0x7fffffff;
+    final drawProgress = WiredDrawTransition.progressOf(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+    // 连线层包住整项（卡片 + 间隔 + 子树）：
+    // 非末枝的主干贯穿全高，展开子树后与下一同级兄弟仍连续
+    return Stack(
       children: [
-        Stack(
-          children: [
-            // 父子连线：竖主干 + 水平肘线（末枝不贯穿）
-            if (depth > 0)
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: _gutter,
-                child: CustomPaint(
-                  painter: _TreeRailPainter(
-                    theme: theme,
-                    seed: seed + 17,
-                    isLast: isLast,
-                    elbowY: _elbowY,
-                    thin: depth >= 2,
-                  ),
-                ),
+        if (depth > 0)
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: _gutter,
+            child: CustomPaint(
+              painter: _TreeRailPainter(
+                theme: theme,
+                seed: seed + 17,
+                isLast: isLast,
+                elbowY: _elbowY,
+                thin: depth >= 2,
+                progress: drawProgress,
               ),
-            Padding(
-              padding: EdgeInsets.only(left: depth > 0 ? _gutter : 0),
-              child: NodeCard(
+            ),
+          ),
+        Padding(
+          padding: EdgeInsets.only(left: depth > 0 ? _gutter : 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              NodeCard(
                 node: node,
                 depth: depth,
                 onTap:
@@ -84,28 +87,31 @@ class NodeItem extends StatelessWidget {
                         )
                         : null,
               ),
-            ),
-          ],
-        ),
-        SizedBox(height: depth == 0 ? 16 : 8),
-        // 子节点递归（缩进 + 各级连线）
-        if (node.isExpanded && node.children.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(left: _gutter),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < node.children.length; i++)
-                  NodeItem(
-                    node: node.children[i],
-                    notebookId: notebookId,
-                    depth: depth + 1,
-                    isLast: i == node.children.length - 1,
+              SizedBox(height: depth == 0 ? 16 : 8),
+              // 子节点递归：展开挂载时 WiredDraw 触发手绘描画入场
+              //（收起即卸载，再展开重新描画）
+              if (node.isExpanded && node.children.isNotEmpty)
+                WiredDraw(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: depth == 0 ? _gutter : 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < node.children.length; i++)
+                          NodeItem(
+                            node: node.children[i],
+                            notebookId: notebookId,
+                            depth: depth + 1,
+                            isLast: i == node.children.length - 1,
+                          ),
+                      ],
+                    ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }
@@ -344,7 +350,8 @@ class _TreeRailPainter extends CustomPainter {
     required this.isLast,
     required this.elbowY,
     required this.thin,
-  });
+    this.progress,
+  }) : super(repaint: progress);
 
   final AppThemeData theme;
   final int seed;
@@ -353,6 +360,9 @@ class _TreeRailPainter extends CustomPainter {
 
   /// 层级越深线越细越淡（参考稿 2.2 → 2.0 两档）
   final bool thin;
+
+  /// 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+  final Animation<double>? progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -380,9 +390,10 @@ class _TreeRailPainter extends CustomPainter {
           PointD(x + rx, elbowY),
         ]);
     final tail = generator.line(x + rx, elbowY, size.width - 2, elbowY);
-    RoughDrawing(trunk, paint, paint).paint(canvas, progress: 1, pressure: 0);
-    RoughDrawing(branch, paint, paint).paint(canvas, progress: 1, pressure: 0);
-    RoughDrawing(tail, paint, paint).paint(canvas, progress: 1, pressure: 0);
+    final t = progress?.value ?? 1;
+    RoughDrawing(trunk, paint, paint).paint(canvas, progress: t, pressure: 0);
+    RoughDrawing(branch, paint, paint).paint(canvas, progress: t, pressure: 0);
+    RoughDrawing(tail, paint, paint).paint(canvas, progress: t, pressure: 0);
   }
 
   @override
@@ -391,5 +402,6 @@ class _TreeRailPainter extends CustomPainter {
       oldDelegate.seed != seed ||
       oldDelegate.isLast != isLast ||
       oldDelegate.elbowY != elbowY ||
-      oldDelegate.thin != thin;
+      oldDelegate.thin != thin ||
+      oldDelegate.progress != progress;
 }

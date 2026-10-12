@@ -106,5 +106,8 @@ class TimerTranslationsEn {
     'timer_searchHintSubtitle': 'Enter a task or group name',
     'timer_searchNoResult': 'No matching tasks',
     'timer_searchCurrentQuery': 'Current query: @query',
+    'timer_editTask': 'Edit Timer',
+    'timer_taskNameHint': 'e.g. Morning Focus',
+    'timer_taskNameRequired': 'Please enter a task name',
   };
 }

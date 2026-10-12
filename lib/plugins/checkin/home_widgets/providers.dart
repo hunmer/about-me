@@ -95,17 +95,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
       'weeklyProgress': generateWeekProgressFromMonday(item),
     },
 
-    // 习惯连续追踪：显示连续签到和里程碑
-    'habitStreakTrackerCard': {
-      'title': name,
-      'currentStreak': consecutiveDays,
-      'bestStreak': getBestStreak(item),
-      'totalCheckins': item?.checkInRecords.length ?? 0,
-      'milestones': generateMilestones(consecutiveDays),
-      'todayChecked': isCheckedToday,
-      'weekProgress': weeklyCheckins,
-    },
-
     // 月度点追踪卡片：显示当月签到状态点
     'monthlyDotTrackerCard': {
       'title': name,
@@ -357,20 +346,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgetsForMultiple(
           }).toList(),
     },
 
-    // WatchProgressCard - 观看进度卡片（复用为打卡进度）
-    'watchProgressCard': {
-      'enableHeader': false,
-      'currentCount': monthlyCheckinCount,
-      'totalCount': daysInMonth,
-      'items':
-          checkinItemCards.map((card) {
-            return {
-              'title': card['title'],
-              'thumbnailUrl': null, // 签到项目没有缩略图
-            };
-          }).toList(),
-    },
-
     // TaskListCard - 任务列表卡片
     'taskListCard': {
       'icon': '0xe24f', // Icons.checklist - 需要字符串格式
@@ -528,17 +503,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgetsForMultiple(
       'weeklyProgress': _getWeeklyProgressFromDates(allMonthlyRecords),
     },
 
-    // HabitStreakTrackerCard - 习惯连续追踪（最佳连续天数）
-    'habitStreakTrackerCard': {
-      'title': '连续签到',
-      'currentStreak': _getCurrentStreak(allMonthlyRecords),
-      'bestStreak': bestConsecutiveDays,
-      'totalCheckins': allMonthlyRecords.length,
-      'milestones': generateMilestones(bestConsecutiveDays),
-      'todayChecked': todayCheckedCount > 0,
-      'weekProgress': todayCheckedCount,
-    },
-
     // MonthlyDotTrackerCard - 月度点追踪卡片
     'monthlyDotTrackerCard': {
       'title': '本月签到',
@@ -562,25 +526,6 @@ List<Map<String, dynamic>> _generateMonthlyDotsData(
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
     return {'day': day, 'isChecked': checkinDates.contains(dateStr)};
   });
-}
-
-/// 计算当前连续签到天数（从今天倒推）
-int _getCurrentStreak(List<String> allRecords) {
-  int streak = 0;
-  final today = DateTime.now();
-
-  for (int i = 0; i < 365; i++) {
-    final date = today.subtract(Duration(days: i));
-    final dateStr =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    if (allRecords.contains(dateStr)) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
 }
 
 /// 从日期列表生成周进度（从周一到今天）

@@ -50,15 +50,83 @@ class _NodesScreenState extends State<NodesScreen> {
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
         DSThemeBridge(
           child: Builder(
-            builder: (buildContext) {
-              return DSIconButton(
-                icon: DsIconKind.more,
-                size: 40,
-                tooltip: 'nodes_nodesSettings'.tr,
-                onPressed:
-                    currentNotebook == null
-                        ? null
-                        : () => _showNotebookMenu(context, controller),
+            builder: (context) {
+              final t = DSThemeBridge.resolve(context);
+              return DSPopover(
+                width: 200,
+                contentBuilder: (popoverContext, close) {
+                  final pt = DSThemeBridge.resolve(popoverContext);
+                  Widget menuRow(
+                    DsIconKind icon,
+                    String label,
+                    VoidCallback onTap, {
+                    bool destructive = false,
+                  }) {
+                    final tint = destructive ? pt.danger : pt.text;
+                    return Pressable(
+                      onPressed: () {
+                        close();
+                        onTap();
+                      },
+                      builder: (context, states) {
+                        final pressed = states.contains(WidgetState.pressed);
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: pt.spacing.sm,
+                            vertical: pt.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: pressed ? pt.surfaceAlt : null,
+                            borderRadius: pt.radii.sm,
+                          ),
+                          child: Row(
+                            children: [
+                              DsIcon(icon, size: 18, color: tint),
+                              SizedBox(width: pt.spacing.sm),
+                              Text(
+                                label,
+                                style: DsTypography.body.copyWith(
+                                  color: tint,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      menuRow(
+                        DsIconKind.copy,
+                        'nodes_copyToText'.tr,
+                        () => _copyToText(context, widget.notebook),
+                      ),
+                      menuRow(
+                        DsIconKind.trash,
+                        'nodes_clearNodes'.tr,
+                        () => _showClearConfirmDialog(context, controller),
+                        destructive: true,
+                      ),
+                    ],
+                  );
+                },
+                child: JellyBox(
+                  width: 36,
+                  height: 36,
+                  radius: t.radii.circle,
+                  color: t.surfaceAlt,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.more,
+                      size: 18,
+                      color: t.textSub,
+                    ),
+                  ),
+                ),
               );
             },
           ),
@@ -118,41 +186,6 @@ class _NodesScreenState extends State<NodesScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  /// 笔记本操作：复制为文本 / 清空节点（DS 底部 sheet）
-  void _showNotebookMenu(
-    BuildContext context,
-    NodesController controller,
-  ) {
-    showDSBottomSheet(
-      context: context,
-      title: widget.notebook.title,
-      builder: (sheetContext) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DSSheetAction(
-              icon: DsIconKind.copy,
-              label: 'nodes_copyToText'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _copyToText(context, widget.notebook);
-              },
-            ),
-            DSSheetAction(
-              icon: DsIconKind.trash,
-              label: 'nodes_clearNodes'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showClearConfirmDialog(context, controller);
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 

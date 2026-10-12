@@ -102,17 +102,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
       'completedProgress': (percentage / 10).clamp(0, 10).toInt(),
     },
 
-    // 里程碑卡片：显示目标追踪
-    'milestoneCard': {
-      'imageUrl': null,
-      'title': name,
-      'date': formatDate(DateTime.now()),
-      'daysCount': percentage,
-      'value': currentValue.toStringAsFixed(1),
-      'unit': unitType,
-      'suffix': '/ $targetValue',
-    },
-
     // 图标圆形进度卡片
     'iconCircularProgressCard': {
       'progress': progress,

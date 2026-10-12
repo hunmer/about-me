@@ -81,6 +81,12 @@ enum DsIconKind {
   timer,
   coffee,
   replay,
+  fire,
+  graphicEq,
+  headphones,
+  volumeOff,
+  volumeUp,
+  cloud,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -160,6 +166,12 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.timer: Icons.timer,
   DsIconKind.coffee: Icons.local_cafe,
   DsIconKind.replay: Icons.replay,
+  DsIconKind.fire: Icons.local_fire_department_rounded,
+  DsIconKind.graphicEq: Icons.graphic_eq_rounded,
+  DsIconKind.headphones: Icons.headphones_rounded,
+  DsIconKind.volumeOff: Icons.volume_off_rounded,
+  DsIconKind.volumeUp: Icons.volume_up_rounded,
+  DsIconKind.cloud: Icons.cloud_outlined,
 };
 
 /// 图标组件：基于系统 Material Icons

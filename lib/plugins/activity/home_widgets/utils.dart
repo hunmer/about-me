@@ -69,49 +69,7 @@ String formatActivitiesTimeRange(List<ActivityRecord> activities) {
   return timeRanges.join('、');
 }
 
-/// 将活动记录转换为 DailyScheduleCardWidget 的 EventData 格式
-Map<String, dynamic> convertActivityToEventData(ActivityRecord activity) {
-  // 将 24 小时制转换为 12 小时制
-  final startHour = activity.startTime.hour;
-  final endHour = activity.endTime.hour;
 
-  final startPeriod = startHour >= 12 ? 'PM' : 'AM';
-  final endPeriod = endHour >= 12 ? 'PM' : 'AM';
-
-  final startHour12 =
-      startHour == 0 ? 12 : (startHour > 12 ? startHour - 12 : startHour);
-  final endHour12 = endHour == 0 ? 12 : (endHour > 12 ? endHour - 12 : endHour);
-
-  // 根据标签选择颜色
-  String color = 'gray';
-  if (activity.tags.isNotEmpty) {
-    final primaryTag = activity.tags.first;
-    color = getColorNameFromTag(primaryTag);
-  }
-
-  return {
-    'title': activity.title.isEmpty ? '未命名活动' : activity.title,
-    'startTime': startHour12.toString().padLeft(2, '0'),
-    'startPeriod': startPeriod,
-    'endTime': endHour12.toString().padLeft(2, '0'),
-    'endPeriod': endPeriod,
-    'color': color,
-    'location': null,
-    'isAllDay': false,
-  };
-}
-
-/// 根据标签获取颜色名称
-String getColorNameFromTag(String tag) {
-  final colorValue = getColorFromTag(tag).value;
-
-  // 简单映射：根据颜色值范围选择预设颜色
-  if (colorValue == 0xFFF97316) return 'orange';
-  if (colorValue == 0xFF4ADE80) return 'green';
-  if (colorValue == 0xFF60A5FA) return 'blue';
-  if (colorValue == 0xFFF87171) return 'red';
-  return 'gray';
-}
 
 /// 构建时间线日程卡片数据
 /// 显示今天和昨天的活动（ TimelineScheduleCard 组件使用）

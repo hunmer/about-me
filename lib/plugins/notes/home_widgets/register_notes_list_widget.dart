@@ -275,23 +275,6 @@ class _NotesListStatefulWidgetState extends State<_NotesListStatefulWidget> {
             'moreCount': moreCount,
           };
 
-        case 'newsUpdateCard':
-          return displayNotes.isNotEmpty
-              ? {
-                  'icon': 'bolt',
-                  'title': displayNotes.first.title,
-                  'timestamp': _formatTimeAgo(displayNotes.first.updatedAt, now),
-                  'currentIndex': 0,
-                  'totalItems': displayNotes.length.clamp(1, 4),
-                }
-              : {
-                  'icon': 'bolt',
-                  'title': 'notes_noNotes'.tr,
-                  'timestamp': DateFormat('yyyy-MM-dd').format(now),
-                  'currentIndex': 0,
-                  'totalItems': 1,
-                };
-
         case 'colorTagTaskCard':
           return {
             'taskCount': notesCount,
