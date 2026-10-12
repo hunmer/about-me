@@ -51,12 +51,11 @@ data.events.listen((e) => print('$e'));
 | 入口 | 内容 |
 | --- | --- |
 | `aboutme_data_sdk.dart` | 全平台：`AboutmeData`、`PluginData`、插件服务层（types/route_config/invoker/crud/12 handler）、`StorageInterface`、`HttpStorage`（明文+条件写）、`DataStore`、`StorageBackendConfig` |
-| `io.dart` | IO：`LocalPluginBackend`、`LocalFileStorage`（服务端文件存储/认证/审计）、`AuthStore`、`LegacyEncryption`（仅供旧数据迁移解密） |
+| `io.dart` | IO：`LocalPluginBackend`、`LocalFileStorage`（服务端文件存储/认证/审计）、`AuthStore` |
 
 ## 历史兼容与迁移
 
-- 旧端到端加密已取消：数据明文传输与存储；`StorageBackendConfig.encryptionKey` 字段保留但已废弃
-- 旧数据迁移：`aboutme_server` 包的 `dart run tool/migrate_to_plaintext.dart <DATA_DIR> <KEY>`（信封 + 旧版两种密文一次性转明文，自动备份）
+- 旧端到端加密已取消：数据明文传输与存储，加密相关代码与配置字段已全部移除
 - 与 nodejs 服务器的认证兼容性（PBKDF2/JWT/API Key）保留
 
 ## 测试

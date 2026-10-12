@@ -93,13 +93,8 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'server_sync_syncNow': 'Sync Now',
   'server_sync_syncComplete': 'Sync complete: @success success, @conflict conflicts, @error errors',
   'server_sync_syncFailed': 'Sync failed',
-  'server_sync_encryptionKey': 'Encryption Key',
-  'server_sync_encryptionKeyHint': '⚠️ This key is used for admin panel API access. Keep it secure and do not share',
   'server_sync_copyKey': 'Copy Key',
   'server_sync_keyCopied': 'Key copied to clipboard',
-  'server_sync_refreshKey': 'Change Encryption Key',
-  'server_sync_keyRefreshed': 'Encryption key changed, all data re-encrypted',
-  'server_sync_keyRefreshFailed': 'Failed to change encryption key',
 
   // WebSocket status
   'server_sync_wsConnected': 'Real-time sync connected',

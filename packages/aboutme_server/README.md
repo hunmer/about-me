@@ -11,7 +11,7 @@ MCP(AI 工具)      ──JSON-RPC──►        ▲
 ```
 
 - **统一数据区**：`DATA_DIR/users/{userId}/{pluginId}/{file}.json`（明文）。storage files API、插件 REST、MCP、SDK 本地模式全部操作同一批文件
-- **无加密**：明文传输与存储（旧数据用 `tool/migrate_to_plaintext.dart` 迁移）
+- **无加密**：明文传输与存储
 - **客户端离线可用**：数据在服务端持续可被 REST/MCP 处理；客户端 SDK 自动回退本地
 
 ## 端点
@@ -27,14 +27,11 @@ MCP(AI 工具)      ──JSON-RPC──►        ▲
 | `/api/v1/system/*` | 管理员：插件注册表/商店配置（JS 插件执行返回 501） |
 | `/admin/` | 管理界面静态托管 |
 
-## 运行与迁移
+## 运行
 
 ```bash
 dart run bin/server.dart                                    # 开发
 dart compile exe bin/server.dart -o bin/aboutme-server      # 单文件可执行
-
-# 旧加密数据一次性迁移（自动备份）：
-dart run tool/migrate_to_plaintext.dart <DATA_DIR> <BASE64_32BYTE_KEY>
 ```
 
 环境变量同前（`PORT`/`DATA_DIR`/`JWT_SECRET`/`ADMIN_*` 等，见 `lib/src/config.dart`）。

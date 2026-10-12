@@ -112,7 +112,9 @@ void main() {
     final dataFile = usersDir
         .listSync(recursive: true)
         .whereType<File>()
-        .firstWhere((f) => f.path.endsWith('todo/tasks.json'));
+        .firstWhere(
+          (f) => f.path.replaceAll('\\', '/').endsWith('todo/tasks.json'),
+        );
     expect(await dataFile.readAsString(), contains('明文任务'));
   });
 

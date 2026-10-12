@@ -9,7 +9,6 @@ class StorageBackendConfig {
     this.serverUrl = '',
     this.authType = StorageAuthType.apiKey,
     this.credential = '',
-    this.encryptionKey = '',
     this.userId = '',
   });
 
@@ -17,9 +16,6 @@ class StorageBackendConfig {
   final String serverUrl;
   final StorageAuthType authType;
   final String credential;
-
-  /// 已废弃：服务端存储已取消加密，仅为兼容旧配置保留字段
-  final String encryptionKey;
   final String userId;
 
   bool get isHttpEnabled => type == StorageBackendType.http;

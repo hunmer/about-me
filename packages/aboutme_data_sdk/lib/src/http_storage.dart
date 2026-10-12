@@ -25,7 +25,6 @@ class HttpStorage implements StorageInterface {
     required String serverUrl,
     required StorageAuthType authType,
     required String credential,
-    String? encryptionKey,
     http.Client? client,
     this.timeout = const Duration(seconds: 15),
     String? deviceId,

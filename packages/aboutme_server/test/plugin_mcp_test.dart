@@ -14,7 +14,6 @@ void main() {
   late String apiKey;
   late HttpClient client;
 
-  const encryptionKey = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('aboutme_plugin_test');
@@ -65,7 +64,6 @@ void main() {
 
   Map<String, String> _pluginHeaders() => {
     'X-API-Key': apiKey,
-    'X-Encryption-Key': encryptionKey,
   };
 
   group('插件 REST API', () {
@@ -186,11 +184,16 @@ void main() {
       final dataFile = usersDir
           .listSync(recursive: true)
           .whereType<File>()
-          .firstWhere((f) => f.path.endsWith('timer/data.json'));
+          .firstWhere(
+            (f) => f.path.replaceAll('\\', '/').endsWith('timer/data.json'),
+          );
       final content = await dataFile.readAsString();
       // 明文存储，路径为 users/{id}/timer/data.json（无 .storage 前缀）
       expect(content, contains('plain-title'));
-      expect(dataFile.path, contains('/timer/data.json'));
+      expect(
+        dataFile.path.replaceAll('\\', '/'),
+        contains('/timer/data.json'),
+      );
     });
 
     test('跨通路同数据：storage API 写的文件，插件/MCP 直接读到并修改', () async {
@@ -251,7 +254,9 @@ void main() {
       final dataFile = usersDir
           .listSync(recursive: true)
           .whereType<File>()
-          .firstWhere((f) => f.path.endsWith('todo/tasks.json'));
+          .firstWhere(
+            (f) => f.path.replaceAll('\\', '/').endsWith('todo/tasks.json'),
+          );
       final content = await dataFile.readAsString();
       expect(content, contains('"completed":true'));
       expect(content, contains('viewMode')); // 未丢客户端字段
@@ -487,7 +492,6 @@ void main() {
   group('MCP 端点', () {
     Map<String, String> _mcpHeaders() => {
       'X-API-Key': apiKey,
-      'X-Encryption-Key': encryptionKey,
       'Content-Type': 'application/json',
     };
 

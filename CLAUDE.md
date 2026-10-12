@@ -1,6 +1,6 @@
 # Aboutme
 
-Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 26 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠等），数据本地优先存储，经自建服务器做端到端加密同步（默认首页为果冻小屋 `/jelly_home`）。2026-10 起新增 AI 伙伴拟人化能力：**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息）与 **moments 朋友圈**（AI 动态流/资产图/自主生图），均在 openai 插件内。
+Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 26 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠等），数据本地优先存储，经自建服务器同步（明文）（默认首页为果冻小屋 `/jelly_home`）。2026-10 起新增 AI 伙伴拟人化能力：**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息）与 **moments 朋友圈**（AI 动态流/资产图/自主生图），均在 openai 插件内。
 
 本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 Dart 同步服务器（`packages/aboutme_server`，基于纯数据 SDK `packages/aboutme_data_sdk`，已取代 nodejs 服务器）、多个 Dart 子包（agentlib AI 传输库、dartantic_ai 定制 SDK、super_cupertino_navigation_bar、原生插件等）、共享模型包（`shared_models/`）与专题文档（`docs/`）。技术栈：Flutter/Dart ^3.10 + GetX + flutter_js。
 

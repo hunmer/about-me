@@ -17,7 +17,6 @@ void main() {
             type: StorageBackendType.http,
             serverUrl: 'http://remote.example',
             credential: 'token',
-            encryptionKey: key,
           ).validate(),
       throwsA(isA<FormatException>()),
     );
@@ -27,7 +26,6 @@ void main() {
             type: StorageBackendType.http,
             serverUrl: 'https://remote.example',
             credential: 'token',
-            encryptionKey: key,
           ).validate(),
       returnsNormally,
     );
@@ -53,7 +51,6 @@ void main() {
       serverUrl: 'https://storage.example',
       authType: StorageAuthType.jwt,
       credential: 'token',
-      encryptionKey: key,
       client: client,
     );
 
@@ -82,7 +79,6 @@ void main() {
       serverUrl: 'https://storage.example',
       authType: StorageAuthType.apiKey,
       credential: 'key',
-      encryptionKey: key,
       client: client,
     );
 
@@ -100,7 +96,6 @@ void main() {
       serverUrl: 'https://storage.example',
       authType: StorageAuthType.jwt,
       credential: 'bad',
-      encryptionKey: key,
       client: MockClient((_) async => http.Response('', 401)),
     );
     await expectLater(
@@ -118,7 +113,6 @@ void main() {
       serverUrl: 'https://storage.example',
       authType: StorageAuthType.jwt,
       credential: 'token',
-      encryptionKey: key,
       client: MockClient((_) async => throw http.ClientException('offline')),
     );
     await expectLater(

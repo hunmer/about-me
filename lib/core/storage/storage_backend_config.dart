@@ -26,7 +26,6 @@ class LocalStorageBackendConfigStore implements StorageBackendConfigStore {
   static const _authTypeKey = 'storage_backend_auth_type';
   static const _userIdKey = 'storage_backend_user_id';
   static const _credentialKey = 'storage_backend_credential';
-  static const _encryptionKeyKey = 'storage_backend_encryption_key';
 
   final FlutterSecureStorage _secureStorage;
 
@@ -42,7 +41,6 @@ class LocalStorageBackendConfigStore implements StorageBackendConfigStore {
       // JWT 认证已移除；旧配置中的值统一按 API Key 处理。
       authType: StorageAuthType.apiKey,
       credential: await _readSecret(_credentialKey),
-      encryptionKey: await _readSecret(_encryptionKeyKey),
       userId: prefs.getString(_userIdKey) ?? '',
     );
   }
@@ -74,10 +72,6 @@ class LocalStorageBackendConfigStore implements StorageBackendConfigStore {
         key: _credentialKey,
         value: config.credential.trim(),
       );
-      await _secureStorage.write(
-        key: _encryptionKeyKey,
-        value: config.encryptionKey.trim(),
-      );
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_typeKey, config.type.name);
@@ -86,7 +80,8 @@ class LocalStorageBackendConfigStore implements StorageBackendConfigStore {
     await prefs.setString(_userIdKey, config.userId.trim());
     if (!config.isHttpEnabled) {
       await _secureStorage.delete(key: _credentialKey);
-      await _secureStorage.delete(key: _encryptionKeyKey);
+      // 清理已取消的加密密钥残留
+      await _secureStorage.delete(key: 'storage_backend_encryption_key');
     }
   }
 }

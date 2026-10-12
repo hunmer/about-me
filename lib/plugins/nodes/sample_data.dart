@@ -101,7 +101,7 @@ class NodesSampleData {
         NodeCustomField(key: '预计工期', value: '1周'),
         NodeCustomField(key: '完成度', value: '80%'),
       ],
-      notes: '实现端到端加密 HTTP 存储、主题设置等功能',
+      notes: '实现 HTTP 存储同步、主题设置等功能',
       parentId: 'node-task-2',
       pathValue: '项目A - Aboutme 应用开发/UI 界面开发/设置页面',
       color: Colors.orange,

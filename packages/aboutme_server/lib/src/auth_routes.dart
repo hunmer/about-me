@@ -28,7 +28,6 @@ class AuthApi {
     router.post('/register', _register);
     router.post('/login', _login);
     router.post('/refresh', _refresh);
-    router.get('/key-verification', _keyVerification);
     router.post('/api-keys', _createApiKey);
     router.get('/api-keys', _listApiKeys);
     router.delete('/api-keys/<keyId>', _revokeApiKey);
@@ -171,30 +170,6 @@ class AuthApi {
       'expires_at': jsIsoDateTime(result.expiresAt!),
       'user_salt': result.userSalt,
     });
-  }
-
-  /// 密钥验证文件（旧版同步协议），返回加密内容由客户端本地解密。
-  Future<Response> _keyVerification(Request request) async {
-    final userId = _userIdFromBearer(request);
-    if (userId == null) return _error(401, '未认证或 Token 无效');
-    try {
-      final file = File(
-        p.join(storage.getUserDir(userId), '.key_verification.json'),
-      );
-      if (!await file.exists()) {
-        return _ok({'exists': false, 'message': '密钥验证文件不存在'});
-      }
-      final data = jsonDecode(await file.readAsString())
-          as Map<String, dynamic>;
-      return _ok({
-        'exists': true,
-        'encrypted_data': data['encrypted_data'],
-        'md5': data['md5'],
-        'updated_at': data['updated_at'],
-      });
-    } catch (e) {
-      return _error(500, '服务器错误: $e');
-    }
   }
 
   Future<Response> _createApiKey(Request request) async {

@@ -44,8 +44,11 @@ Future<void> main() async {
     print('服务器已停止');
     exit(0);
   });
-  ProcessSignal.sigterm.watch().listen((_) async {
-    await server.close();
-    exit(0);
-  });
+  // Windows 不支持 SIGTERM（SignalException errno=50），仅非 Windows 注册
+  if (!Platform.isWindows) {
+    ProcessSignal.sigterm.watch().listen((_) async {
+      await server.close();
+      exit(0);
+    });
+  }
 }

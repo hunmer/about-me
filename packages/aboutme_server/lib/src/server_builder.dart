@@ -115,7 +115,7 @@ Future<Handler> buildServer(ServerConfig config) async {
         .addHandler(storageApi.router.call),
   );
 
-  // 插件 REST 路由（认证 + X-Encryption-Key）
+  // 插件 REST 路由（认证）
   router.mount(
     '/api/v1/plugins/',
     Pipeline()
@@ -126,7 +126,7 @@ Future<Handler> buildServer(ServerConfig config) async {
   // 插件系统管理（管理员，注册表/商店配置只读 + 501 说明）
   router.mount('/api/v1/system/', systemApi.handler);
 
-  // MCP 端点（认证 + X-Encryption-Key）
+  // MCP 端点（认证）
   router.mount(
     '/mcp',
     Pipeline()
@@ -188,7 +188,6 @@ Middleware _cors(ServerConfig config) {
     'Content-Type',
     'Authorization',
     'X-API-Key',
-    'X-Encryption-Key',
     'X-Device-ID',
     'If-Match',
     'If-None-Match',

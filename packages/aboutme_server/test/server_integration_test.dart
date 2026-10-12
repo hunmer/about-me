@@ -92,7 +92,6 @@ void main() {
     serverUrl: baseUrl,
     authType: StorageAuthType.apiKey,
     credential: apiKey,
-    encryptionKey: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
     deviceId: deviceId,
   );
 
@@ -113,7 +112,6 @@ void main() {
       serverUrl: baseUrl,
       authType: StorageAuthType.apiKey,
       credential: 'mk_invalid_key',
-      encryptionKey: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
     );
     await expectLater(
       storage.testConnection(),

@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/storage/http_storage.dart';
 import 'package:aboutme/core/storage/storage_backend_config.dart';
@@ -23,12 +20,10 @@ class _StorageBackendSettingsDialogState
   final _formKey = GlobalKey<FormState>();
   final _serverController = TextEditingController();
   final _credentialController = TextEditingController();
-  final _keyController = TextEditingController();
   final _userIdController = TextEditingController();
   final _store = LocalStorageBackendConfigStore();
   StorageBackendType _type = StorageBackendType.local;
   StorageBackendType _originalType = StorageBackendType.local;
-  String _originalKey = '';
   StorageAuthType _authType = StorageAuthType.apiKey;
   bool _loading = true;
   String? _status;
@@ -48,8 +43,6 @@ class _StorageBackendSettingsDialogState
       _authType = config.authType;
       _serverController.text = config.serverUrl;
       _credentialController.text = config.credential;
-      _keyController.text = config.encryptionKey;
-      _originalKey = config.encryptionKey;
       _userIdController.text = config.userId;
       _loading = false;
     });
@@ -60,7 +53,6 @@ class _StorageBackendSettingsDialogState
     serverUrl: _serverController.text,
     authType: _authType,
     credential: _credentialController.text,
-    encryptionKey: _keyController.text,
     userId: _userIdController.text,
   );
 
@@ -87,28 +79,6 @@ class _StorageBackendSettingsDialogState
     if (_type == StorageBackendType.http &&
         !(_formKey.currentState?.validate() ?? false)) {
       return;
-    }
-    if (_type == StorageBackendType.http &&
-        _keyController.text.trim() != _originalKey.trim()) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('更改加密密钥'),
-              content: const Text('使用新密钥后，之前使用旧密钥加密的数据将无法解密。请确认已备份旧密钥。'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('继续'),
-                ),
-              ],
-            ),
-      );
-      if (confirmed != true) return;
     }
     if (_type != _originalType) {
       final confirmed = await showDialog<bool>(
@@ -180,13 +150,6 @@ class _StorageBackendSettingsDialogState
     }
   }
 
-  void _generateKey() {
-    final random = Random.secure();
-    _keyController.text = base64Encode(
-      List<int>.generate(32, (_) => random.nextInt(256)),
-    );
-  }
-
   Future<void> _copyField(
     TextEditingController controller,
     String label,
@@ -201,7 +164,6 @@ class _StorageBackendSettingsDialogState
   void dispose() {
     _serverController.dispose();
     _credentialController.dispose();
-    _keyController.dispose();
     _userIdController.dispose();
     super.dispose();
   }
@@ -280,36 +242,6 @@ class _StorageBackendSettingsDialogState
                                 (value) =>
                                     value == null || value.trim().isEmpty
                                         ? '请输入认证凭据'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _keyController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: '端到端加密密钥',
-                              suffixIcon: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    tooltip: '复制加密密钥',
-                                    icon: const Icon(Icons.copy),
-                                    onPressed:
-                                        () =>
-                                            _copyField(_keyController, '加密密钥'),
-                                  ),
-                                  IconButton(
-                                    tooltip: '生成加密密钥',
-                                    icon: const Icon(Icons.refresh),
-                                    onPressed: _generateKey,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            validator:
-                                (value) =>
-                                    value == null || value.trim().isEmpty
-                                        ? '请输入加密密钥'
                                         : null,
                           ),
                           const SizedBox(height: 12),
