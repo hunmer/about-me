@@ -89,10 +89,13 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
                 itemCount: filteredNotebooks.length,
                 itemBuilder: (context, index) {
                   final notebook = filteredNotebooks[index];
-                  return ReorderableDelayedDragStartListener(
+                  // key 必须在列表直接子级（WiredDraw）上；挂载即描画入场
+                  return WiredDraw(
                     key: Key(notebook.id),
-                    index: index,
-                    child: _buildNotebookItem(context, controller, notebook),
+                    child: ReorderableDelayedDragStartListener(
+                      index: index,
+                      child: _buildNotebookItem(context, controller, notebook),
+                    ),
                   );
                 },
                 onReorder: (oldIndex, newIndex) {
@@ -167,8 +170,9 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
         bottom: MediaQuery.paddingOf(context).bottom + 24,
       ),
       itemCount: notebooks.length,
-      itemBuilder: (context, index) =>
-          _buildNotebookItem(context, controller, notebooks[index]),
+      itemBuilder: (context, index) => WiredDraw(
+        child: _buildNotebookItem(context, controller, notebooks[index]),
+      ),
     );
   }
 
@@ -353,6 +357,8 @@ class _NotebookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final seed = notebook.id.hashCode & 0x7fffffff;
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
 
     final nodes = notebook.nodes;
 
@@ -366,6 +372,7 @@ class _NotebookCard extends StatelessWidget {
         strokeWidth: selected ? 2 : 1.8,
         radius: const BorderRadius.vertical(top: Radius.circular(10)),
         seed: seed,
+        progress: progress,
       ),
       child: Text(
         notebook.title,
@@ -393,6 +400,7 @@ class _NotebookCard extends StatelessWidget {
         theme.spacing.lg,
         theme.spacing.md,
       ),
+      progress: progress,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -482,6 +490,7 @@ class _NodeDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final progress = WiredDrawTransition.progressOf(context);
     return SizedBox(
       width: 64,
       child: Column(
@@ -498,6 +507,7 @@ class _NodeDot extends StatelessWidget {
               stroke: node.color,
               strokeWidth: 1.8,
               seed: seed,
+              progress: progress,
             ),
             child: DsIcon(
               _statusIcon(node.status),
@@ -527,21 +537,33 @@ class _RoughConnector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final progress = WiredDrawTransition.progressOf(context);
     return SizedBox(
       width: 22,
       height: 32,
       child: CustomPaint(
-        painter: _RoughLinePainter(theme: AppTheme.of(context), seed: seed),
+        painter: _RoughLinePainter(
+          theme: AppTheme.of(context),
+          seed: seed,
+          progress: progress,
+        ),
       ),
     );
   }
 }
 
 class _RoughLinePainter extends CustomPainter {
-  _RoughLinePainter({required this.theme, required this.seed});
+  _RoughLinePainter({
+    required this.theme,
+    required this.seed,
+    this.progress,
+  }) : super(repaint: progress);
 
   final AppThemeData theme;
   final int seed;
+
+  /// 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+  final Animation<double>? progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -559,10 +581,12 @@ class _RoughLinePainter extends CustomPainter {
       drawable,
       paint,
       paint,
-    ).paint(canvas, progress: 1, pressure: 0);
+    ).paint(canvas, progress: progress?.value ?? 1, pressure: 0);
   }
 
   @override
   bool shouldRepaint(_RoughLinePainter oldDelegate) =>
-      oldDelegate.theme != theme || oldDelegate.seed != seed;
+      oldDelegate.theme != theme ||
+      oldDelegate.seed != seed ||
+      oldDelegate.progress != progress;
 }

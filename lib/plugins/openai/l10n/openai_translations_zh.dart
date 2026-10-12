@@ -237,4 +237,16 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_importFailed': '导入失败',
   'openai_nameLabel': '名称',
   'openai_descriptionLabel': '描述',
+
+  // Agent List & Marketplace
+  'openai_market': '商场',
+  'openai_marketplaceTitle': 'Agent 商场',
+  'openai_marketplaceEmpty': '商场暂无可用 Agent',
+  'openai_refresh': '刷新',
+  'openai_toggleView': '切换视图',
+  'openai_retry': '重试',
+  'openai_loadFailed': '加载失败: @error',
+  'openai_providerLabel': '服务商: @provider',
+  'openai_installed': '已安装',
+  'openai_updateAvailable': '可更新',
 };

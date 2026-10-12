@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/services/agent_marketplace_service.dart';
 import 'package:aboutme/plugins/openai/widgets/marketplace_agent_grid_view.dart';
 import 'package:aboutme/plugins/openai/widgets/marketplace_agent_list_view.dart';
-import 'package:aboutme/plugins/openai/widgets/filter_dialog.dart';
 
 /// Agent 商场页面
 /// 从远程服务器获取并展示可安装的 Agent
@@ -26,9 +27,8 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
   final AgentController _agentController = AgentController();
 
   bool _isGridView = true;
-  Set<String> _selectedProviders = {};
-  Set<String> _selectedTags = {};
   List<String> _allTags = [];
+  List<String> _allProviders = [];
 
   // 搜索相关状态
   final TextEditingController _searchController = TextEditingController();
@@ -38,6 +38,9 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
     'tags': true,
   };
   String _searchQuery = '';
+
+  // MultiFilter 过滤值
+  Map<String, dynamic> _multiFilterValues = {};
 
   // 商场数据
   List<AIAgent> _marketplaceAgents = [];
@@ -74,9 +77,15 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
       _marketplaceAgents = results[0];
       _localAgents = results[1];
 
-      // 提取所有标签
+      // 提取所有标签与服务商
       _allTags =
           _marketplaceAgents.expand((agent) => agent.tags).toSet().toList()
+            ..sort();
+      _allProviders =
+          _marketplaceAgents
+              .map((agent) => agent.serviceProviderId)
+              .toSet()
+              .toList()
             ..sort();
 
       setState(() {
@@ -85,7 +94,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = '加载失败: $e';
+        _errorMessage = 'openai_loadFailed'.trParams({'error': e.toString()});
       });
     }
   }
@@ -114,38 +123,68 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
     });
   }
 
-  void _showFilterDialog() {
-    showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: FilterDialog(
-              selectedProviders: _selectedProviders,
-              selectedTags: _selectedTags,
-              onApply: (providers, tags) {
-                setState(() {
-                  _selectedProviders = providers;
-                  _selectedTags = tags;
-                });
-              },
-            ),
-          ),
-    );
+  /// 处理 MultiFilter 变化
+  void _onMultiFilterChanged(Map<String, dynamic> filters) {
+    setState(() {
+      _multiFilterValues = filters;
+    });
+  }
+
+  /// 构建 MultiFilter 过滤项
+  List<FilterItem> _buildMultiFilterItems() {
+    return [
+      // 服务商筛选
+      if (_allProviders.isNotEmpty)
+        FilterItem(
+          id: 'providers',
+          title: 'openai_serviceProvider'.tr,
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            return FilterBuilders.buildTagsFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              availableTags: _allProviders,
+            );
+          },
+          getBadge: FilterBuilders.tagsBadge,
+          initialValue: <String>[],
+        ),
+      // 标签筛选
+      if (_allTags.isNotEmpty)
+        FilterItem(
+          id: 'tags',
+          title: 'openai_tags'.tr,
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            return FilterBuilders.buildTagsFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              availableTags: _allTags,
+            );
+          },
+          getBadge: FilterBuilders.tagsBadge,
+          initialValue: <String>[],
+        ),
+    ];
   }
 
   /// 获取过滤后的 Agent 列表
   List<AIAgent> _getFilteredAgents() {
     return _marketplaceAgents.where((agent) {
-      // 服务商筛选
+      // 服务商筛选 - 从 MultiFilter 获取
+      final selectedProviders =
+          _multiFilterValues['providers'] as List<String>? ?? [];
       bool providerMatch =
-          _selectedProviders.isEmpty ||
-          _selectedProviders.contains(agent.serviceProviderId);
+          selectedProviders.isEmpty ||
+          selectedProviders.contains(agent.serviceProviderId);
 
-      // 标签筛选
+      // 标签筛选 - 从 MultiFilter 获取
+      final selectedTags = _multiFilterValues['tags'] as List<String>? ?? [];
       bool tagMatch =
-          _selectedTags.isEmpty ||
-          agent.tags.any((tag) => _selectedTags.contains(tag));
+          selectedTags.isEmpty ||
+          agent.tags.any((tag) => selectedTags.contains(tag));
 
       // 搜索筛选
       bool searchMatch = true;
@@ -185,66 +224,12 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
     }).toList();
   }
 
-  /// 构建类别过滤器
-  Widget _buildCategoryFilter() {
-    if (_allTags.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Builder(
-      builder: (context) {
-        final theme = DSThemeBridge.resolve(context);
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'openai_tags'.tr,
-                style: DsTypography.body.copyWith(
-                  color: theme.text,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children:
-                      _allTags.map((tag) {
-                        final isSelected = _selectedTags.contains(tag);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: DSChip(
-                            label: tag,
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedTags.add(tag);
-                                } else {
-                                  _selectedTags.remove(tag);
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      }).toList(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
       child: SuperCupertinoNavigationWrapper(
-        title: const Text('Agent 商场'),
-        largeTitle: 'Agent 商场',
+        title: Text('openai_marketplaceTitle'.tr),
+        largeTitle: 'openai_marketplaceTitle'.tr,
         body: _buildBody(),
         enableLargeTitle: false,
         automaticallyImplyLeading: true,
@@ -256,11 +241,20 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
 
         // 启用搜索过滤器
         enableSearchFilter: true,
-        filterLabels: const {'name': '名称', 'description': '描述', 'tags': '标签'},
+        filterLabels: {
+          'name': 'openai_agentName'.tr,
+          'description': 'openai_description'.tr,
+          'tags': 'openai_tags'.tr,
+        },
         onSearchFilterChanged: _onSearchFilterChanged,
 
+        // 启用 MultiFilter（服务商 + 标签统一走过滤栏）
+        enableMultiFilter: true,
+        multiFilterItems: _buildMultiFilterItems(),
+        multiFilterBarHeight: 50,
+        onMultiFilterChanged: _onMultiFilterChanged,
+
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
-        // (DS 暂无"筛选漏斗"图标,filter_list 用 sort 近似)
         actions: [
           DSThemeBridge(
             child: Builder(
@@ -272,22 +266,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
                   color: theme.surfaceAlt,
                   iconColor: theme.textSub,
                   onPressed: _loadMarketplaceData,
-                  tooltip: '刷新',
-                );
-              },
-            ),
-          ),
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.sort,
-                  size: 36,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  onPressed: _showFilterDialog,
-                  tooltip: '筛选',
+                  tooltip: 'openai_refresh'.tr,
                 );
               },
             ),
@@ -306,7 +285,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
                       _isGridView = !_isGridView;
                     });
                   },
-                  tooltip: '切换视图',
+                  tooltip: 'openai_toggleView'.tr,
                 );
               },
             ),
@@ -328,7 +307,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
           child: DSEmptyState(
             emoji: '⚠️',
             title: _errorMessage!,
-            actionLabel: '重试',
+            actionLabel: 'openai_retry'.tr,
             onAction: _loadMarketplaceData,
           ),
         ),
@@ -336,29 +315,27 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
     }
 
     if (_marketplaceAgents.isEmpty) {
-      return const Center(
-        child: DSEmptyState(emoji: '🏪', title: '商场暂无可用 Agent'),
+      return Center(
+        child: DSEmptyState(
+          emoji: '🏪',
+          title: 'openai_marketplaceEmpty'.tr,
+        ),
       );
     }
 
-    return Column(
-      children: [
-        _buildCategoryFilter(),
-        Expanded(
-          child:
-              _isGridView
-                  ? MarketplaceAgentGridView(
-                    marketplaceAgents: _getFilteredAgents(),
-                    localAgents: _localAgents,
-                    onAgentChanged: _refreshLocalAgents,
-                  )
-                  : MarketplaceAgentListView(
-                    marketplaceAgents: _getFilteredAgents(),
-                    localAgents: _localAgents,
-                    onAgentChanged: _refreshLocalAgents,
-                  ),
-        ),
-      ],
+    return Expanded(
+      child:
+          _isGridView
+              ? MarketplaceAgentGridView(
+                marketplaceAgents: _getFilteredAgents(),
+                localAgents: _localAgents,
+                onAgentChanged: _refreshLocalAgents,
+              )
+              : MarketplaceAgentListView(
+                marketplaceAgents: _getFilteredAgents(),
+                localAgents: _localAgents,
+                onAgentChanged: _refreshLocalAgents,
+              ),
     );
   }
 }

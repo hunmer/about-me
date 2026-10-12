@@ -215,7 +215,11 @@ class _AgentListScreenState extends State<AgentListScreen> {
 
       // 启用搜索过滤器
       enableSearchFilter: true,
-      filterLabels: const {'name': '名称', 'description': '描述', 'tags': '标签'},
+      filterLabels: {
+        'name': 'openai_agentName'.tr,
+        'description': 'openai_description'.tr,
+        'tags': 'openai_tags'.tr,
+      },
       onSearchFilterChanged: _onSearchFilterChanged,
 
       // 启用 MultiFilter
@@ -236,7 +240,7 @@ class _AgentListScreenState extends State<AgentListScreen> {
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
                 onPressed: _openMarketplace,
-                tooltip: '商场',
+                tooltip: 'openai_market'.tr,
               );
             },
           ),
@@ -255,7 +259,7 @@ class _AgentListScreenState extends State<AgentListScreen> {
                     _isGridView = !_isGridView;
                   });
                 },
-                tooltip: '切换视图',
+                tooltip: 'openai_toggleView'.tr,
               );
             },
           ),

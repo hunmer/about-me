@@ -171,7 +171,8 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   Widget _buildCover() {
     final avatarUrl = agent.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      final errorBuilder = (context, error, stackTrace) => _buildCoverFallback();
+      Widget errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) =>
+          _buildCoverFallback();
       if (avatarUrl.startsWith('assets/')) {
         return _clipCover(
           Image.asset(

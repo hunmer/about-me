@@ -237,4 +237,16 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_importFailed': 'Import failed',
   'openai_nameLabel': 'Name',
   'openai_descriptionLabel': 'Description',
+
+  // Agent List & Marketplace
+  'openai_market': 'Market',
+  'openai_marketplaceTitle': 'Agent Market',
+  'openai_marketplaceEmpty': 'No agents available in the market yet',
+  'openai_refresh': 'Refresh',
+  'openai_toggleView': 'Toggle view',
+  'openai_retry': 'Retry',
+  'openai_loadFailed': 'Load failed: @error',
+  'openai_providerLabel': 'Provider: @provider',
+  'openai_installed': 'Installed',
+  'openai_updateAvailable': 'Update available',
 };
