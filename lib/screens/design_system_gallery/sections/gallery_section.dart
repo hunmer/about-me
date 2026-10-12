@@ -27,9 +27,13 @@ class SectionCard extends StatelessWidget {
             children: [
               DsIcon(DsIconKind.star, size: 16, color: theme.primary),
               SizedBox(width: theme.spacing.sm),
-              Text(
-                '$index $title',
-                style: DsTypography.title.copyWith(color: theme.text),
+              Expanded(
+                child: Text(
+                  '$index $title',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
               ),
             ],
           ),

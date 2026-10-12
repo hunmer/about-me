@@ -11,6 +11,10 @@ import 'sections/feedback_section.dart';
 import 'sections/inputs_section.dart';
 import 'sections/navigation_section.dart';
 import 'sections/pickers_section.dart';
+import 'sections/skribble_controls_section.dart';
+import 'sections/skribble_data_section.dart';
+import 'sections/skribble_feedback_section.dart';
+import 'sections/skribble_inputs_section.dart';
 
 /// 手绘风设计系统组件展示页
 ///
@@ -70,6 +74,15 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
                 const NavigationSection(),
                 SizedBox(height: theme.spacing.lg),
                 const ExtendedSection(),
+                SizedBox(height: theme.spacing.lg),
+                // skribble 原生组件示例（SK-1 ~ SK-4）
+                const SkribbleControlsSection(),
+                SizedBox(height: theme.spacing.lg),
+                const SkribbleInputsSection(),
+                SizedBox(height: theme.spacing.lg),
+                const SkribbleFeedbackSection(),
+                SizedBox(height: theme.spacing.lg),
+                const SkribbleDataSection(),
                 SizedBox(height: theme.spacing.lg),
                 const _TokensCard(),
                 SizedBox(height: theme.spacing.xxl),

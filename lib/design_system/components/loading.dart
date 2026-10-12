@@ -1,13 +1,16 @@
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 
-/// 手绘加载动画：三颗圆点依次弹跳
-class DSLoadingDots extends StatefulWidget {
+/// 手绘加载动画：三颗墨点依次弹跳（skribble WiredLoader）
+///
+/// 内部委托 [WiredLoader]（dots 节奏），墨点形状与全局粗糙度
+/// 档位（Ink style）一致；对外 API 保持 [size]/[color]/[label]。
+class DSLoadingDots extends StatelessWidget {
   const DSLoadingDots({super.key, this.size = 12, this.color, this.label});
 
+  /// 单颗墨点的目标直径（内部换算为 WiredLoader 的画布尺寸）
   final double size;
   final Color? color;
 
@@ -15,60 +18,25 @@ class DSLoadingDots extends StatefulWidget {
   final String? label;
 
   @override
-  State<DSLoadingDots> createState() => _DSLoadingDotsState();
-}
-
-class _DSLoadingDotsState extends State<DSLoadingDots>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final color = widget.color ?? theme.primary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: widget.size * 2,
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < 3; i++)
-                    Transform.translate(
-                      offset: Offset(0, -_bounce(_controller.value - i * 0.18)),
-                      child: _Dot(color: color, size: widget.size),
-                    ),
-                ],
-              );
-            },
-          ),
+        WiredLoader(
+          style: WiredLoaderStyle.dots,
+          // 原实现三颗 12px 点 + 间距的整体宽约 48，
+          // 按 4 倍换算保持调用处观感一致
+          size: size * 4,
+          color: color ?? theme.primary,
+          semanticLabel: label,
         ),
-        if (widget.label != null)
+        if (label != null)
           Padding(
-            padding: EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
-              widget.label!,
+              label!,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -77,31 +45,6 @@ class _DSLoadingDotsState extends State<DSLoadingDots>
             ),
           ),
       ],
-    );
-  }
-
-  /// 弹跳曲线：t 在 [0, 0.6] 内为一个正弦弧，其余时间静止
-  double _bounce(double t) {
-    t = t % 1.0;
-    if (t < 0 || t > 0.6) return 0;
-    return math.sin(t / 0.6 * math.pi) * 8;
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.size});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    // 纯色圆点（手绘风格：无渐变、无彩影）
-    return Container(
-      width: size,
-      height: size,
-      margin: EdgeInsets.symmetric(horizontal: size * 0.28),
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
