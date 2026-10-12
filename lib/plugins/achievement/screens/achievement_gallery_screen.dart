@@ -40,13 +40,12 @@ class _AchievementGalleryScreenState extends State<AchievementGalleryScreen> {
         children: [
           _OverviewCard(controller: controller),
           Expanded(
-            child: IndexedStack(
-              index: _tab,
-              children: [
-                AchievementInProgressScreen(controller: controller),
-                AchievementUnlockedScreen(controller: controller),
-              ],
-            ),
+            // 条件渲染而非 IndexedStack：两个列表默认继承 PrimaryScrollController，
+            // IndexedStack 同时保活会让同一 controller 挂两个 ScrollPosition，
+            // 桌面端自动 Scrollbar 直接崩溃
+            child: _tab == 0
+                ? AchievementInProgressScreen(controller: controller)
+                : AchievementUnlockedScreen(controller: controller),
           ),
           _BottomTabs(
             selected: _tab,
