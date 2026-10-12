@@ -1,11 +1,14 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
-import 'icons.dart';
-import 'jelly_box.dart';
 
-/// 手绘滑杆：实色进度 + 星形滑块（对应设计稿）
+/// 手绘滑杆：skribble WiredSlider
+///
+/// 内部委托 [WiredSlider]（手绘轨道 + 墨线滑块，跟随全局 Ink style
+/// 档位）；[activeColor] 经 [DsInkScope] 映射到 Wired 主题的标记色。
+/// [onChangeEnd] 通过 Pointer 监听桥接（WiredSlider 无该参数）。
 class DSSlider extends StatefulWidget {
   const DSSlider({
     super.key,
@@ -28,18 +31,13 @@ class DSSlider extends StatefulWidget {
 }
 
 class _DSSliderState extends State<DSSlider> {
-  double? _lastValue;
-
-  void _update(double ratio, BoxConstraints constraints) {
-    final t = (ratio / constraints.maxWidth).clamp(0.0, 1.0);
-    _lastValue = t;
-    widget.onChanged?.call(t);
-  }
+  double? _pendingValue;
 
   void _end() {
-    if (_lastValue != null) {
-      widget.onChangeEnd?.call(_lastValue!);
-      _lastValue = null;
+    final v = _pendingValue;
+    if (v != null) {
+      _pendingValue = null;
+      widget.onChangeEnd?.call(v);
     }
   }
 
@@ -53,79 +51,40 @@ class _DSSliderState extends State<DSSlider> {
     return Semantics(
       slider: true,
       value: '${(value * 100).round()}%',
-      increasedValue: '${(((value + 0.1).clamp(0.0, 1.0)) * 100).round()}%',
-      decreasedValue: '${(((value - 0.1).clamp(0.0, 1.0)) * 100).round()}%',
+      increasedValue: '${((value + 0.1).clamp(0.0, 1.0) * 100).round()}%',
+      decreasedValue: '${((value - 0.1).clamp(0.0, 1.0) * 100).round()}%',
       onIncrease: disabled
           ? null
-          : () => widget.onChanged!((value + 0.1).clamp(0.0, 1.0)),
+          : () {
+              final v = (value + 0.1).clamp(0.0, 1.0);
+              widget.onChanged?.call(v);
+              widget.onChangeEnd?.call(v);
+            },
       onDecrease: disabled
           ? null
-          : () => widget.onChanged!((value - 0.1).clamp(0.0, 1.0)),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final starSize = width.clamp(0, 240) * 0.14 + 14;
-
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: disabled
+          : () {
+              final v = (value - 0.1).clamp(0.0, 1.0);
+              widget.onChanged?.call(v);
+              widget.onChangeEnd?.call(v);
+            },
+      child: DsInkScope(
+        marker: color,
+        child: Listener(
+          // WiredSlider 无 onChangeEnd 参数：指针抬起/取消即视为结束
+          onPointerUp: (_) => _end(),
+          onPointerCancel: (_) => _end(),
+          child: WiredSlider(
+            value: value,
+            // 受控协议：返回 true 表示接受变更
+            onChanged: disabled
                 ? null
-                : (d) => _update(d.localPosition.dx, constraints),
-            onTapUp: disabled ? null : (_) => _end(),
-            onPanStart: disabled
-                ? null
-                : (d) => _update(d.localPosition.dx, constraints),
-            onPanUpdate: disabled
-                ? null
-                : (d) => _update(d.localPosition.dx, constraints),
-            onPanEnd: disabled ? null : (_) => _end(),
-            onPanCancel: disabled ? null : _end,
-            child: SizedBox(
-              height: starSize + 8,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.centerLeft,
-                children: [
-                  // 轨道
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: JellyBox(
-                      height: 13,
-                      radius: theme.radii.pill,
-                      raised: false,
-                      color: disabled ? theme.disabled : theme.surfaceAlt,
-                    ),
-                  ),
-                  // 实色进度（手绘风格：无渐变、无玻璃高光）
-                  Positioned(
-                    left: 0,
-                    bottom: 0,
-                    child: ClipRRect(
-                      borderRadius: theme.radii.pill,
-                      child: Container(
-                        width: (width - 4) * value + 4,
-                        height: 13,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                  // 星形滑块
-                  Positioned(
-                    left: (width - starSize) * value,
-                    bottom: -2,
-                    child: DsIcon(
-                      DsIconKind.star,
-                      size: starSize,
-                      color: disabled ? theme.disabled : color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+                : (v) {
+                    _pendingValue = v;
+                    widget.onChanged?.call(v);
+                    return true;
+                  },
+          ),
+        ),
       ),
     );
   }

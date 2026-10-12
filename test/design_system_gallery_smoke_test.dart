@@ -22,8 +22,9 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull, reason: '第 $i 屏渲染异常');
     }
-    // 卸载组件树，停掉 indeterminate 动画的 repeat Timer
+    // 卸载组件树，并推进 fake clock 让 flutter_animate 的
+    // 零时 Timer 触发完毕（避免 timersPending 断言）
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
   });
 }
