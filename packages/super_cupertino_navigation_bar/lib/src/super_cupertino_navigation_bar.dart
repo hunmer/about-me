@@ -12,6 +12,7 @@ import 'package:super_cupertino_navigation_bar/utils/hero_things.dart';
 import 'package:super_cupertino_navigation_bar/utils/measures.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
+import 'package:super_cupertino_navigation_bar/utils/sketch_font.dart';
 import 'package:super_cupertino_navigation_bar/utils/store.dart';
 import 'package:super_cupertino_navigation_bar/utils/transitionable_navigation_bar.dart';
 
@@ -1001,12 +1002,19 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                             context) ??
                                         CupertinoTheme.of(context)
                                             .barBackgroundColor,
-                                backButtonTextStyle: CupertinoTheme.of(context)
-                                    .textTheme
-                                    .navActionTextStyle,
+                                backButtonTextStyle:
+                                    CupertinoTheme.of(context)
+                                        .textTheme
+                                        .navActionTextStyle
+                                        .copyWith(
+                                          fontFamily: kSketchFontFamily,
+                                        ),
                                 titleTextStyle: CupertinoTheme.of(context)
                                     .textTheme
-                                    .navTitleTextStyle,
+                                    .navTitleTextStyle
+                                    .copyWith(
+                                      fontFamily: kSketchFontFamily,
+                                    ),
                                 largeTitleTextStyle:
                                     widget.appBar.largeTitle!.textStyle,
                                 border: const Border(),

@@ -46,6 +46,17 @@ final Map<String, String> dayTranslationsEn = {
   'day_localImage': 'Local Image',
   'day_memorialDaysListTitle': 'Memorial Days List',
   'day_searchPlaceholder': 'Search memorial days by title and notes',
+  'day_searchHintTitle': 'Type keywords to search memorial days',
+  'day_searchHintSubtitle': 'Searches titles and notes',
+  'day_searchNoResult': 'No matching memorial days',
+  'day_searchNoResultHint': 'Try different keywords',
+  'day_tagCountdown': 'Countdown',
+  'day_tagPassed': 'Remembered',
+  'day_tagToday': 'Today',
+  'day_unitDays': 'days',
+  'day_unitDaysAfter': 'days to go',
+  'day_notesCount': '@count notes',
+  'day_noNotesYet': 'No notes yet. Tap + to add one.',
 
   // Home Widget Strings
   'day_widgetName': 'Memorial Day',

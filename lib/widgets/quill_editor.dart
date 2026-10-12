@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 
+import 'package:aboutme/design_system/design_system.dart';
+
 class QuillEditorWidget extends StatefulWidget {
   final String? initialTitle;
   final String? initialContent; // 支持 JSON Delta 格式或纯文本
@@ -318,18 +320,25 @@ class _QuillEditorWidgetState extends State<QuillEditorWidget> {
             ),
           ),
         ),
-        // Quill 编辑器
+        // Quill 编辑器（Quill 默认样式派生自环境 DefaultTextStyle，
+        // 强制合并手写字体保持手绘风；代码块保留内置等宽）
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
-            child: quill.QuillEditor.basic(
-              controller: _contentController,
-              focusNode: _contentFocusNode,
-              config: quill.QuillEditorConfig(
-                placeholder: widget.contentHint,
-                embedBuilders: kIsWeb
-                    ? FlutterQuillEmbeds.editorWebBuilders()
-                    : FlutterQuillEmbeds.editorBuilders(),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(
+                fontFamily: DsTypography.sketchFamily,
+                fontFamilyFallback: ['PingFang SC', 'Microsoft YaHei'],
+              ),
+              child: quill.QuillEditor.basic(
+                controller: _contentController,
+                focusNode: _contentFocusNode,
+                config: quill.QuillEditorConfig(
+                  placeholder: widget.contentHint,
+                  embedBuilders: kIsWeb
+                      ? FlutterQuillEmbeds.editorWebBuilders()
+                      : FlutterQuillEmbeds.editorBuilders(),
+                ),
               ),
             ),
           ),

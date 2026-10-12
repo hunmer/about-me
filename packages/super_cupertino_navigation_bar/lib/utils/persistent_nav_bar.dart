@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:super_cupertino_navigation_bar/utils/measures.dart';
+import 'package:super_cupertino_navigation_bar/utils/sketch_font.dart';
 
 import 'back_button.dart';
 import 'navigation_bar_static_components.dart';
@@ -46,7 +47,11 @@ class PersistentNavigationBar extends StatelessWidget {
 
     if (middle != null) {
       middle = DefaultTextStyle(
-        style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+        // Cupertino 文本主题不带 app 全局字体，显式指定手写字体
+        style: CupertinoTheme.of(context)
+            .textTheme
+            .navTitleTextStyle
+            .copyWith(fontFamily: kSketchFontFamily),
         child: Semantics(header: true, child: middle),
       );
       // When the middle's visibility can change on the fly like with large title

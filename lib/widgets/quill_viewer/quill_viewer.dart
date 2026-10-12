@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 
+import 'package:aboutme/design_system/design_system.dart';
+
 /// Quill 内容查看器（只读模式）
 /// 用于显示 Quill Delta 格式的内容
 class QuillViewer extends StatelessWidget {
@@ -50,30 +52,39 @@ class QuillViewer extends StatelessWidget {
         readOnly: true,
       );
 
-      // 使用 IntrinsicWidth 让 QuillEditor 根据内容自适应宽度
-      return IntrinsicWidth(
-        child: quill.QuillEditor.basic(
-          controller: controller,
-          config: quill.QuillEditorConfig(
-            padding: EdgeInsets.zero,
-            customStyles: customStyles,
-            embedBuilders: kIsWeb
-                ? FlutterQuillEmbeds.editorWebBuilders()
-                : FlutterQuillEmbeds.editorBuilders(),
+      // Quill 的默认文本样式（paragraph/标题/列表等）派生自环境
+      // DefaultTextStyle——这里强制合并手写字体，宿主树无论怎么覆盖
+      // 都保持手绘风（代码块保留 Quill 内置等宽字体）
+      return DefaultTextStyle.merge(
+        style: const TextStyle(
+          fontFamily: DsTypography.sketchFamily,
+          fontFamilyFallback: ['PingFang SC', 'Microsoft YaHei'],
+        ),
+        child: IntrinsicWidth(
+          child: quill.QuillEditor.basic(
+            controller: controller,
+            config: quill.QuillEditorConfig(
+              padding: EdgeInsets.zero,
+              customStyles: customStyles,
+              embedBuilders: kIsWeb
+                  ? FlutterQuillEmbeds.editorWebBuilders()
+                  : FlutterQuillEmbeds.editorBuilders(),
+            ),
           ),
         ),
       );
     } catch (e) {
-      // 如果渲染失败，显示纯文本
+      // 如果渲染失败，显示纯文本（同样应用手写字体）
+      final fallbackStyle = const TextStyle(
+        fontSize: 14,
+        fontFamily: DsTypography.sketchFamily,
+      );
       if (selectable) {
-        return SelectableText(
-          data,
-          style: const TextStyle(fontSize: 14),
-        );
+        return SelectableText(data, style: fallbackStyle);
       } else {
         return Text(
           data,
-          style: const TextStyle(fontSize: 14),
+          style: fallbackStyle,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
         );

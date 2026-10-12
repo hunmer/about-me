@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:super_cupertino_navigation_bar/utils/sketch_font.dart';
 
 class SuperLargeTitle {
   SuperLargeTitle({
@@ -6,9 +7,8 @@ class SuperLargeTitle {
     this.actions,
     this.textStyle = const TextStyle(
       inherit: false,
-      // 851 手写杂书体（app assets 注册，按 family 名全局解析；
-      // 原 iOS 系统字体在非苹果平台上不存在）
-      fontFamily: 'TegakiZatsu',
+      // 原 iOS 系统字体在非苹果平台上不存在
+      fontFamily: kSketchFontFamily,
       fontSize: 34.0,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.41,

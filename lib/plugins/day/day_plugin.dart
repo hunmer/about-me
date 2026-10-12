@@ -7,7 +7,7 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
-import 'screens/day_home_screen.dart';
+import 'screens/day_home_screen_v2.dart';
 import 'controllers/day_controller.dart';
 import 'models/memorial_day.dart';
 import 'repositories/client_day_repository.dart';
@@ -26,7 +26,7 @@ class DayMainView extends StatefulWidget {
 class _DayMainViewState extends State<DayMainView> {
   @override
   Widget build(BuildContext context) {
-    return const DayHomeScreen();
+    return const DayHomeScreenV2();
   }
 }
 

@@ -46,6 +46,17 @@ final Map<String, String> dayTranslationsZh = {
   'day_localImage': '本地图片',
   'day_memorialDaysListTitle': '纪念日列表',
   'day_searchPlaceholder': '搜索纪念日标题和笔记',
+  'day_searchHintTitle': '输入关键词搜索纪念日',
+  'day_searchHintSubtitle': '支持搜索标题和笔记内容',
+  'day_searchNoResult': '未找到匹配的纪念日',
+  'day_searchNoResultHint': '尝试使用其他关键词搜索',
+  'day_tagCountdown': '倒计时',
+  'day_tagPassed': '已纪念',
+  'day_tagToday': '就是今天',
+  'day_unitDays': '天',
+  'day_unitDaysAfter': '天后',
+  'day_notesCount': '@count条笔记',
+  'day_noNotesYet': '还没有笔记，点 + 记一条吧',
 
   // Home Widget Strings
   'day_widgetName': '纪念日',
