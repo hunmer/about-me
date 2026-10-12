@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
 
 /// 脚本卡片组件（两列网格紧凑样式）
@@ -162,10 +162,9 @@ class ScriptCard extends StatelessWidget {
                           ),
                           tooltip: 'scripts_center_run'.tr,
                         ),
-                      AdaptiveSwitch(
+                      DSSwitch(
                         value: enabled,
                         onChanged: onToggle,
-                        activeThumbColor: Colors.deepPurple,
                       ),
                     ],
                   ),

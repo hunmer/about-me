@@ -18,7 +18,6 @@ final Map<String, String> nodesTranslationsZh = {
   'nodes_searchNotebooks': '搜索笔记本',
   'nodes_noResultsFound': '未找到匹配的笔记本',
   'nodes_noNotebooks': '还没有笔记本，点击右上角 + 新建',
-  'nodes_moreNodesHint': '还有 @count 个节点…',
 
   // 节点管理
   'nodes_nodes': '节点',

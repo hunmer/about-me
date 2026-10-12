@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import '../../models/reminder.dart';
 
 /// 提醒卡片组件
@@ -78,7 +78,7 @@ class ReminderCard extends StatelessWidget {
                               ),
                             ),
                             // 启用开关
-                            AdaptiveSwitch(
+                            DSSwitch(
                               value: reminder.isEnabled,
                               onChanged: (_) => onToggle?.call(),
                             ),

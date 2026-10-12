@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 
 /// SwipeAction 测试示例页面
@@ -499,7 +499,7 @@ class _SwipeActionTestScreenState extends State<SwipeActionTestScreen> {
                 '编辑模式下禁用滑动操作',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              AdaptiveSwitch(
+              DSSwitch(
                 value: _isEditMode,
                 onChanged: (value) {
                   setState(() {

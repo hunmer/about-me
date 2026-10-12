@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
@@ -83,7 +83,7 @@ class _FloatingBallSettingsScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('floating_ball_enableFloatingBall'.tr),
-                      AdaptiveSwitch(
+                      DSSwitch(
                         value: _isEnabled,
                         onChanged: (value) async {
                           setState(() {

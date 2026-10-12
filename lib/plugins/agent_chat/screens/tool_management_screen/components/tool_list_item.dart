@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
@@ -221,8 +220,8 @@ class ToolListItem extends StatelessWidget {
                                 ),
                               ),
                         ),
-                      // 共享 AdaptiveSwitch 保持不变
-                      AdaptiveSwitch(
+                      // 共享 DSSwitch 保持不变
+                      DSSwitch(
                         value: config.enabled,
                         onChanged: (value) => _toggleEnabled(context, value),
                       ),

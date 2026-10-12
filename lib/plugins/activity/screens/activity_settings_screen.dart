@@ -4,7 +4,6 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -524,7 +523,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                             color: theme.text,
                           ),
                         ),
-                        AdaptiveSwitch(
+                        DSSwitch(
                           value: _isNotificationEnabled,
                           onChanged: _toggleNotification,
                           activeColor: ActivityPlugin.instance.color,
@@ -659,7 +658,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                           ),
                         ),
                       ),
-                      AdaptiveSwitch(
+                      DSSwitch(
                         value: _isTTSAnnouncementEnabled,
                         onChanged: _toggleTTSAnnouncement,
                         activeColor: ActivityPlugin.instance.color,
@@ -985,7 +984,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                             color: theme.text,
                           ),
                         ),
-                        AdaptiveSwitch(
+                        DSSwitch(
                           value: _checkOnlyWorkHours,
                           onChanged: (value) {
                             setState(() {
@@ -1099,7 +1098,7 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
                             ),
                           ],
                         ),
-                        AdaptiveSwitch(
+                        DSSwitch(
                           value: _enableHapticFeedback,
                           onChanged: (value) {
                             setState(() {

@@ -18,7 +18,6 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_searchNotebooks': 'Search notebooks',
   'nodes_noResultsFound': 'No matching notebooks found',
   'nodes_noNotebooks': 'No notebooks yet. Tap + to create one',
-  'nodes_moreNodesHint': '@count more nodes…',
 
   // Node management
   'nodes_nodes': 'Nodes',

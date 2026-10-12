@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/core/services/log_service.dart';
 
 /// 日志查看界面
@@ -187,7 +187,7 @@ class _LogScreenState extends State<LogScreen> {
                     ],
                   ),
                 ),
-                AdaptiveSwitch(
+                DSSwitch(
                   value: _isEnabled,
                   onChanged: _toggleEnabled,
                 ),

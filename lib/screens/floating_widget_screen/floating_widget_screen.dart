@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
+import 'package:aboutme/design_system/components/switch.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -142,7 +142,7 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
               color: _controller.isRunning ? Colors.red : Colors.green,
             ),
             title: Text('screens_floatingBallSwitch'.tr),
-            trailing: AdaptiveSwitch(
+            trailing: DSSwitch(
               value: _controller.isRunning,
               onChanged: (_) async {
                 await _controller.toggleFloatingBall();
@@ -160,7 +160,7 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
               leading: const Icon(Icons.visibility_off),
               title: Text('screens_autoHideInApp'.tr),
               subtitle: Text('screens_autoHideInAppDescription'.tr),
-              trailing: AdaptiveSwitch(
+              trailing: DSSwitch(
                 value: _controller.autoHideInApp,
                 onChanged: (value) {
                   _controller.setAutoHideInApp(value);
@@ -181,7 +181,7 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
             ListTile(
               leading: const Icon(Icons.restore),
               title: Text('screens_autoRestoreFloatingBallState'.tr),
-              trailing: AdaptiveSwitch(
+              trailing: DSSwitch(
                 value: _controller.autoRestore,
                 onChanged: (value) {
                   _controller.setAutoRestore(value);
@@ -195,7 +195,7 @@ class _FloatingBallScreenState extends State<FloatingBallScreen> {
               leading: const Icon(Icons.animation),
               title: Text('screens_expandAnimation'.tr),
               subtitle: Text('screens_expandAnimationDescription'.tr),
-              trailing: AdaptiveSwitch(
+              trailing: DSSwitch(
                 value: _controller.expandAnimationEnabled,
                 onChanged: (value) async {
                   _controller.setExpandAnimationEnabled(value);

@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
+import 'package:skribble/skribble.dart';
 import 'nodes_screen.dart';
 
 class NotebooksScreen extends StatefulWidget {
@@ -353,8 +354,7 @@ class _NotebookCard extends StatelessWidget {
     final theme = AppTheme.of(context);
     final seed = notebook.id.hashCode & 0x7fffffff;
 
-    final rows = notebook.nodes.take(3).toList();
-    final extraCount = notebook.nodes.length - rows.length;
+    final nodes = notebook.nodes;
 
     // 标签页：纸底墨线（选中态换主题色实底）
     final tab = Container(
@@ -397,7 +397,7 @@ class _NotebookCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (rows.isEmpty)
+          if (nodes.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
@@ -405,58 +405,24 @@ class _NotebookCard extends StatelessWidget {
                 style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
             )
-          else ...[
-            for (final node in rows)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+          else
+            // 节点横向滚动条：圆点（节点色）+ 手绘连线 + 标题
+            SizedBox(
+              height: 56,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DsIcon(
-                      _statusIcon(node.status),
-                      size: 18,
-                      color:
-                          node.status == NodeStatus.done
-                              ? theme.primary
-                              : theme.textSub,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        node.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.text,
-                        ),
-                      ),
-                    ),
+                    for (var i = 0; i < nodes.length; i++) ...[
+                      if (i > 0) _RoughConnector(seed: seed + i),
+                      _NodeDot(node: nodes[i], seed: seed + i),
+                    ],
                   ],
                 ),
               ),
-            if (extraCount > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    DsIcon(DsIconKind.more, size: 18, color: theme.textSub),
-                    const SizedBox(width: 8),
-                    Text(
-                      'nodes_moreNodesHint'.trParams({'count': '$extraCount'}),
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
+            ),
           SizedBox(height: theme.spacing.md),
-          // 底部：小标签 + 头像 + 节点数 + 更多操作
-          Text(
-            'nodes_nodes'.tr,
-            style: DsTypography.label.copyWith(color: theme.textSub),
-          ),
-          const SizedBox(height: 6),
           Row(
             children: [
               DSAvatar(
@@ -504,4 +470,99 @@ class _NotebookCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 节点圆点：节点色描边 + 同色淡底 + 状态图标，标题在下方
+class _NodeDot extends StatelessWidget {
+  const _NodeDot({required this.node, required this.seed});
+
+  final Node node;
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    return SizedBox(
+      width: 64,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: node.color.withValues(alpha: 0.2),
+              stroke: node.color,
+              strokeWidth: 1.8,
+              seed: seed,
+            ),
+            child: DsIcon(
+              _statusIcon(node.status),
+              size: 15,
+              color: node.color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            node.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 节点圆点间的手绘连线：skribble rough 直线，风格随全局墨线档位
+class _RoughConnector extends StatelessWidget {
+  const _RoughConnector({required this.seed});
+
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 22,
+      height: 32,
+      child: CustomPaint(
+        painter: _RoughLinePainter(theme: AppTheme.of(context), seed: seed),
+      ),
+    );
+  }
+}
+
+class _RoughLinePainter extends CustomPainter {
+  _RoughLinePainter({required this.theme, required this.seed});
+
+  final AppThemeData theme;
+  final int seed;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final drawConfig = theme.wired.drawConfig;
+    drawConfig.randomizer.reset();
+    final generator = Generator(drawConfig, NoFiller());
+    final y = size.height / 2;
+    final drawable = generator.line(1, y, size.width - 1, y);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.6
+      ..color = theme.ink.withValues(alpha: 0.45);
+    RoughDrawing(
+      drawable,
+      paint,
+      paint,
+    ).paint(canvas, progress: 1, pressure: 0);
+  }
+
+  @override
+  bool shouldRepaint(_RoughLinePainter oldDelegate) =>
+      oldDelegate.theme != theme || oldDelegate.seed != seed;
 }

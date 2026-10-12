@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/adaptive_switch.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
@@ -1047,7 +1046,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
                   ],
                 ),
               ),
-              AdaptiveSwitch(
+              DSSwitch(
                 value: _autoRun,
                 onChanged: (value) {
                   setState(() {
