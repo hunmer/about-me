@@ -11,6 +11,7 @@ final Map<String, String> dayTranslationsEn = {
   'day_deleteConfirmation': 'Are you sure you want to delete this memorial day?',
   'day_title': 'Title',
   'day_targetDate': 'Target Date',
+  'day_selectDate': 'Select Date',
   'day_icon': 'Icon',
   'day_notes': 'Notes',
   'day_note': 'Note',
@@ -57,6 +58,8 @@ final Map<String, String> dayTranslationsEn = {
   'day_unitDaysAfter': 'days to go',
   'day_notesCount': '@count notes',
   'day_noNotesYet': 'No notes yet. Tap + to add one.',
+  'day_editNote': 'Edit Note',
+  'day_deleteNoteConfirm': 'Delete?',
 
   // Home Widget Strings
   'day_widgetName': 'Memorial Day',

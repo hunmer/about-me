@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/plugins/day/widgets/memorial_background.dart';
@@ -73,6 +74,40 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
       case DialogAction.cancel:
         break;
     }
+  }
+
+  void _showEditNoteDialog(int index) {
+    final day = _currentDay(widget.controller);
+    _noteController.text = day.notes[index];
+    showDSDialog(
+      context: context,
+      builder: (dialogContext) => DSDialog(
+        title: 'day_editNote'.tr,
+        content: DSInput(
+          controller: _noteController,
+          hint: 'day_enterNote'.tr,
+          maxLines: 3,
+          minLines: 1,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submitNoteEdit(dialogContext, index),
+        ),
+        confirmText: 'day_save'.tr,
+        cancelText: 'day_cancel'.tr,
+        onConfirm: () => _submitNoteEdit(dialogContext, index),
+        onCancel: () => Navigator.of(dialogContext).pop(),
+      ),
+    );
+  }
+
+  void _submitNoteEdit(BuildContext dialogContext, int index) {
+    final text = _noteController.text.trim();
+    if (text.isEmpty) return;
+    Navigator.of(dialogContext).pop();
+    final day = _currentDay(widget.controller);
+    final notes = [...day.notes];
+    // 编辑只改文本，保留原创建时间
+    notes[index] = text;
+    widget.controller.updateMemorialDay(day.copyWith(notes: notes));
   }
 
   void _showAddNoteDialog() {
@@ -436,7 +471,31 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     final accent = day.backgroundColor;
     final seed = index + 1;
 
-    return Pressable(
+    return SwipeActionWrapper(
+      key: ValueKey('note_swipe_${day.id}_$index'),
+      // 左滑（右侧滑出）：编辑
+      trailingActions: [
+        SwipeActionOption(
+          label: 'day_editNote'.tr,
+          icon: Icons.edit,
+          backgroundColor: theme.primary,
+          textColor: theme.onPrimary,
+          onTap: () => _showEditNoteDialog(index),
+        ),
+      ],
+      // 右滑（左侧滑出）：删除（滑到底弹确认）
+      leadingActions: [
+        SwipeActionOption(
+          label: 'day_delete'.tr,
+          icon: Icons.delete,
+          backgroundColor: theme.danger,
+          textColor: theme.onDanger,
+          isDestructive: true,
+          onTap: () => _deleteNote(controller, index),
+        ),
+      ],
+      deleteConfirmContent: 'day_deleteNoteConfirm'.tr,
+      child: Pressable(
       onLongPress: () => _showNoteMenu(controller, index),
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
@@ -529,6 +588,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
           ),
         );
       },
+      ),
     );
   }
 

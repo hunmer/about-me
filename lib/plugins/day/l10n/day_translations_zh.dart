@@ -11,6 +11,7 @@ final Map<String, String> dayTranslationsZh = {
   'day_deleteConfirmation': '确定要删除这个纪念日吗?',
   'day_title': '标题',
   'day_targetDate': '目标日期',
+  'day_selectDate': '选择日期',
   'day_icon': '图标',
   'day_notes': '笔记',
   'day_note': '笔记',
@@ -57,6 +58,8 @@ final Map<String, String> dayTranslationsZh = {
   'day_unitDaysAfter': '天后',
   'day_notesCount': '@count条笔记',
   'day_noNotesYet': '还没有笔记，点 + 记一条吧',
+  'day_editNote': '编辑笔记',
+  'day_deleteNoteConfirm': '确定删除?',
 
   // Home Widget Strings
   'day_widgetName': '纪念日',

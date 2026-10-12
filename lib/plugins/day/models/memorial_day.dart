@@ -33,9 +33,22 @@ class MemorialDay {
   }) : id = id ?? const Uuid().v4(),
        creationDate = creationDate ?? DateTime.now(),
        notes = notes ?? [],
-       noteDates = noteDates ?? [],
+       // 不变式：noteDates 与 notes 等长（缺失补 null），
+       // 否则新增笔记 append 的时间戳会错位到前面的行
+       noteDates = _alignNoteDates(notes ?? [], noteDates),
        backgroundColor = backgroundColor ?? _getRandomColor(),
        sortIndex = sortIndex ?? 0;
+
+  /// 把 [dates] 对齐到 [notes] 的长度：短的补 null，长的截断
+  static List<DateTime?> _alignNoteDates(
+    List<String> notes,
+    List<DateTime?>? dates,
+  ) {
+    return [
+      for (var i = 0; i < notes.length; i++)
+        dates != null && i < dates.length ? dates[i] : null,
+    ];
+  }
 
   // 计算剩余天数
   int get daysRemaining {

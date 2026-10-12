@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 
-/// 笔记项（包装类，用于 ListAddField）
-class _NoteItem {
-  final String content;
-  final DateTime? createdAt;
-
-  _NoteItem({required this.content, this.createdAt});
-}
-
+/// 纪念日新建/编辑页
+///
+/// 笔记不在本页编辑（统一在详情页管理），保存时保留原笔记与时间戳。
 class EditMemorialDayPage extends StatefulWidget {
   final MemorialDay? memorialDay;
 
@@ -24,9 +22,7 @@ class EditMemorialDayPage extends StatefulWidget {
 
 class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   late TextEditingController _titleController;
-  late TextEditingController _noteController;
   late DateTime _selectedDate;
-  late List<_NoteItem> _noteItems;
   late Color _selectedColor;
   String? _backgroundImageUrl;
   IconData? _selectedIcon;
@@ -36,18 +32,7 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.memorialDay?.title);
-    _noteController = TextEditingController();
     _selectedDate = widget.memorialDay?.targetDate ?? DateTime.now();
-    _noteItems = [
-      for (var i = 0; i < (widget.memorialDay?.notes.length ?? 0); i++)
-        _NoteItem(
-          content: widget.memorialDay!.notes[i],
-          createdAt:
-              i < (widget.memorialDay?.noteDates.length ?? 0)
-                  ? widget.memorialDay!.noteDates[i]
-                  : null,
-        ),
-    ];
     _selectedColor = widget.memorialDay?.backgroundColor ?? Colors.blue[300]!;
     _backgroundImageUrl = widget.memorialDay?.backgroundImageUrl;
     _selectedIcon = widget.memorialDay?.icon;
@@ -77,7 +62,6 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   @override
   void dispose() {
     _titleController.dispose();
-    _noteController.dispose();
     super.dispose();
   }
 
@@ -100,46 +84,22 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     }
   }
 
-  void _addNote() {
-    final note = _noteController.text.trim();
-    if (note.isEmpty) return;
-
-    setState(() {
-      _noteItems.add(_NoteItem(content: note, createdAt: DateTime.now()));
-      _noteController.clear();
-    });
-  }
-
-  void _removeNote(int index) {
-    setState(() {
-      _noteItems.removeAt(index);
-    });
-  }
-
-  /// 获取笔记字符串列表（保存时使用）
-  List<String> _getNotes() {
-    return _noteItems.map((item) => item.content).toList();
-  }
-
-  void _save() {
+  void _save(BuildContext context) {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
+      showDSToast(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请输入标题')));
+        message: 'day_titleRequired'.tr,
+        type: DSToastType.warning,
+      );
       return;
     }
-    final filteredNotes =
-        _getNotes().where((note) => note.trim().isNotEmpty).toList();
-
     final memorialDay = MemorialDay(
       id: widget.memorialDay?.id ?? const Uuid().v4(),
       title: _titleController.text.trim(),
       targetDate: _selectedDate,
-      notes: filteredNotes,
-      noteDates: [
-        for (final item in _noteItems)
-          if (item.content.trim().isNotEmpty) item.createdAt,
-      ],
+      // 笔记统一在详情页管理，编辑保存时保留原值
+      notes: widget.memorialDay?.notes ?? [],
+      noteDates: widget.memorialDay?.noteDates ?? [],
       backgroundColor: _selectedColor,
       backgroundImageUrl: _backgroundImageUrl,
       creationDate: widget.memorialDay?.creationDate ?? DateTime.now(),
@@ -156,126 +116,110 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     Navigator.of(context).pop(const DialogResult(action: DialogAction.delete));
   }
 
+  /// 删除确认（手绘对话框，危险色确认钮）
+  void _showDeleteConfirm() {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSDialog(
+        title: 'day_deleteMemorialDay'.tr,
+        message: 'day_deleteConfirmation'.tr,
+        confirmText: 'day_delete'.tr,
+        cancelText: 'day_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () {
+          Navigator.of(dialogContext).pop();
+          _confirmDelete();
+        },
+        onCancel: () => Navigator.of(dialogContext).pop(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isEditing = widget.memorialDay != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.memorialDay == null
-              ? 'day_addMemorialDay'.tr
-              : 'day_editMemorialDay'.tr,
-        ),
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: Text(
-              'day_save'.tr,
-              style: TextStyle(color: theme.colorScheme.primary),
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        isEditing ? 'day_editMemorialDay'.tr : 'day_addMemorialDay'.tr,
+      ),
+      previousPageTitle: 'day_memorialDays'.tr,
+      // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+      actions: [
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) => DSButton(
+              label: 'day_save'.tr,
+              size: DSButtonSize.sm,
+              onPressed: () => _save(context),
             ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            IconAvatarRowField(
-              name: 'memorial_icon',
-              initialIcon: _selectedIcon,
-              initialIconColor: _selectedIconColor,
-              initialAvatarUrl: _backgroundImageUrl,
-              onChanged: (value) {
-                setState(() {
-                  _selectedIcon = value['icon'] as IconData?;
-                  _selectedIconColor = value['iconColor'] as Color?;
-                  _backgroundImageUrl = value['avatarUrl'] as String?;
-                });
-              },
-            ),
-            const SizedBox(height: 24),
-
-            TextInputField(
-              controller: _titleController,
-              labelText: 'day_title'.tr,
-              hintText: 'day_enterTitle'.tr,
-              autofocus: widget.memorialDay == null,
-            ),
-            const SizedBox(height: 24),
-
-            // 目标日期
-            DatePickerField(
-              date: _selectedDate,
-              onTap: _selectDate,
-              formattedDate: _formatDate(_selectedDate),
-              placeholder: 'day_selectDate'.tr,
-              labelText: 'day_targetDate'.tr,
-            ),
-            const SizedBox(height: 24),
-
-            // 笔记区域
-            Text('day_notes'.tr, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ListAddField<String>(
-              items: _noteItems.map((item) => item.content).toList(),
-              controller: _noteController,
-              onAdd: _addNote,
-              onToggle: (_) {}, // 笔记不需要勾选功能
-              onRemove: _removeNote,
-              getTitle: (item) => item,
-              getIsCompleted: (_) => false,
-              addButtonText: 'day_addNote'.tr,
-            ),
-            const SizedBox(height: 32),
-
-            // 删除按钮（仅编辑模式显示）
-            if (widget.memorialDay != null)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            title: Text('day_deleteMemorialDay'.tr),
-                            content: Text('day_deleteConfirmation'.tr),
-                            actions: [
-                              TextButton(
-                                onPressed:
-                                    () => Navigator.of(context).pop(false),
-                                child: Text('day_cancel'.tr),
-                              ),
-                              TextButton(
-                                onPressed:
-                                    () => Navigator.of(context).pop(true),
-                                child: Text(
-                                  'day_delete'.tr,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                    );
-
-                    if (confirmed == true) {
-                      _confirmDelete();
-                    }
-                  },
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  label: Text(
-                    'day_delete'.tr,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                  ),
-                ),
+        ),
+      ],
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.paddingOf(context).bottom + 24,
               ),
-            const SizedBox(height: 16),
-          ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconAvatarRowField(
+                    name: 'memorial_icon',
+                    initialIcon: _selectedIcon,
+                    initialIconColor: _selectedIconColor,
+                    initialAvatarUrl: _backgroundImageUrl,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedIcon = value['icon'] as IconData?;
+                        _selectedIconColor = value['iconColor'] as Color?;
+                        _backgroundImageUrl = value['avatarUrl'] as String?;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  TextInputField(
+                    controller: _titleController,
+                    labelText: 'day_title'.tr,
+                    hintText: 'day_enterTitle'.tr,
+                    autofocus: !isEditing,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 目标日期
+                  DatePickerField(
+                    date: _selectedDate,
+                    onTap: _selectDate,
+                    formattedDate: _formatDate(_selectedDate),
+                    placeholder: 'day_selectDate'.tr,
+                    labelText: 'day_targetDate'.tr,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 删除按钮（仅编辑模式显示）
+                  if (isEditing)
+                    DSThemeBridge(
+                      child: Builder(
+                        builder: (context) => DSButton(
+                          label: 'day_delete'.tr,
+                          variant: DSButtonVariant.destructive,
+                          icon: DsIconKind.trash,
+                          expand: true,
+                          onPressed: _showDeleteConfirm,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
