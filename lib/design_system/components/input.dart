@@ -11,8 +11,9 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻输入框：基于 widgets 层 EditableText，样式完全自绘
+/// 手绘输入框：基于 widgets 层 EditableText，样式完全自绘
 ///
+/// 容器为 skribble 墨线描边 + 纯色实底（无阴影/渐变/高光）。
 /// 文本选择手柄和上下文菜单会根据当前平台自适应。
 class DSInput extends StatefulWidget {
   const DSInput({
@@ -126,166 +127,155 @@ class _DSInputState extends State<DSInput>
       // 外部（如聊天输入框）用 ConstrainedBox 限定最大高度时，Column 会给
       // 子级无限高度导致溢出而非滚动；这里把有限的 max 高度转发给输入框
       // 本体，让 EditableText 像原生 TextField 一样转入内部滚动
-      builder:
-          (context, constraints) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.label != null) ...[
-                Text(
-                  widget.label!,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                ),
-                SizedBox(height: theme.spacing.xs),
-              ],
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: constraints.maxHeight),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: theme.spacing.md,
-                    vertical: widget.maxLines == 1 ? 0 : theme.spacing.sm,
-                  ),
-                  constraints: BoxConstraints(
-                    minHeight: widget.maxLines == 1 ? 44 : 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        widget.enabled
-                            ? (hasError
-                                ? theme.danger.mixWhite(0.92)
-                                : _focused
-                                ? theme.primary.mixWhite(0.94)
-                                : theme.surface)
-                            : theme.disabled,
-                    borderRadius:
-                        widget.pill ? theme.radii.pill : theme.radii.lg,
-                    border: Border.all(
-                      color:
-                          !widget.enabled
-                              ? DsColors.transparent
-                              : hasError
-                              ? theme.danger
-                              : _focused
-                              ? theme.primary
-                              : theme.textSub.withValues(alpha: 0.45),
-                      width: 1.6,
+      builder: (context, constraints) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null) ...[
+            Text(
+              widget.label!,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+            SizedBox(height: theme.spacing.xs),
+          ],
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: EdgeInsets.symmetric(
+                horizontal: theme.spacing.md,
+                vertical: widget.maxLines == 1 ? 0 : theme.spacing.sm,
+              ),
+              constraints: BoxConstraints(
+                minHeight: widget.maxLines == 1 ? 44 : 0,
+              ),
+              // 手绘装饰间无补间（RoughBoxDecoration 不支持 lerp），
+              // 聚焦/失焦时描边与底色直接切换
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: widget.pill ? theme.radii.pill : theme.radii.lg,
+                fillColor: widget.enabled
+                    ? (hasError
+                          ? theme.danger.mixWhite(0.92)
+                          : _focused
+                          ? theme.surfaceAlt
+                          : theme.surface)
+                    : theme.disabled,
+                stroke: !widget.enabled
+                    ? DsColors.transparent
+                    : hasError
+                    ? theme.danger
+                    : _focused
+                    ? theme.primary
+                    : theme.textSub.withValues(alpha: 0.45),
+                strokeWidth: 1.6,
+              ),
+              child: Row(
+                crossAxisAlignment: widget.maxLines == 1
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  if (widget.prefix != null)
+                    Padding(
+                      padding: EdgeInsets.only(right: theme.spacing.sm),
+                      child: widget.prefix!,
                     ),
-                    boxShadow: widget.enabled ? theme.shadows.soft : null,
-                  ),
-                  child: Row(
-                    crossAxisAlignment:
-                        widget.maxLines == 1
-                            ? CrossAxisAlignment.center
-                            : CrossAxisAlignment.start,
-                    children: [
-                      if (widget.prefix != null)
-                        Padding(
-                          padding: EdgeInsets.only(right: theme.spacing.sm),
-                          child: widget.prefix!,
-                        ),
-                      Expanded(
-                        // 用 ValueListenable 驱动占位提示，避免每次输入都整树重建
-                        child: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _effectiveController,
-                          builder: (context, value, _) {
-                            final showHint =
-                                value.text.isEmpty && widget.hint != null;
-                            return Stack(
-                              children: [
-                                // 占位提示（widgets 层的 EditableText 没有 decoration）
-                                if (showHint)
-                                  Positioned(
-                                    left: 0,
-                                    top: 0,
-                                    child: Text(
-                                      widget.hint!,
-                                      maxLines: 1,
+                  Expanded(
+                    // 用 ValueListenable 驱动占位提示，避免每次输入都整树重建
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _effectiveController,
+                      builder: (context, value, _) {
+                        final showHint =
+                            value.text.isEmpty && widget.hint != null;
+                        return Stack(
+                          children: [
+                            // 占位提示（widgets 层的 EditableText 没有 decoration）
+                            if (showHint)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                child: Text(
+                                  widget.hint!,
+                                  maxLines: 1,
+                                  style: DsTypography.body.copyWith(
+                                    color: theme.textSub.withValues(
+                                      alpha: 0.75,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            IgnorePointer(
+                              ignoring: !widget.enabled,
+                              child: _selectionGestureBuilder
+                                  .buildGestureDetector(
+                                    behavior: HitTestBehavior.translucent,
+                                    child: EditableText(
+                                      key: editableTextKey,
+                                      controller: _effectiveController,
+                                      focusNode: _effectiveFocus,
+                                      readOnly: !widget.enabled,
+                                      showSelectionHandles: widget.enabled,
+                                      selectionColor: theme.primary.withValues(
+                                        alpha: 0.32,
+                                      ),
+                                      selectionControls: _selectionControls,
+                                      contextMenuBuilder: _buildContextMenu,
+                                      maxLines: widget.maxLines,
+                                      minLines: widget.minLines,
+                                      inputFormatters: widget.maxLength == null
+                                          ? null
+                                          : [
+                                              LengthLimitingTextInputFormatter(
+                                                widget.maxLength,
+                                              ),
+                                            ],
+                                      obscureText: widget.obscureText,
+                                      keyboardType: widget.keyboardType,
+                                      textInputAction: widget.textInputAction,
+                                      scrollPhysics: widget.scrollPhysics,
+                                      onChanged: widget.onChanged,
+                                      onSubmitted: widget.onSubmitted,
+                                      cursorColor: theme.primary,
+                                      backgroundCursorColor:
+                                          DsColors.transparent,
+                                      cursorWidth: 2,
+                                      cursorRadius: const Radius.circular(2),
+                                      autocorrect: false,
                                       style: DsTypography.body.copyWith(
-                                        color: theme.textSub.withValues(
-                                          alpha: 0.75,
-                                        ),
+                                        color: widget.enabled
+                                            ? theme.text
+                                            : theme.textSub,
+                                      ),
+                                      strutStyle: const StrutStyle(
+                                        fontSize: 14,
+                                        forceStrutHeight: true,
                                       ),
                                     ),
                                   ),
-                                IgnorePointer(
-                                  ignoring: !widget.enabled,
-                                  child: _selectionGestureBuilder
-                                      .buildGestureDetector(
-                                        behavior: HitTestBehavior.translucent,
-                                        child: EditableText(
-                                          key: editableTextKey,
-                                          controller: _effectiveController,
-                                          focusNode: _effectiveFocus,
-                                          readOnly: !widget.enabled,
-                                          showSelectionHandles: widget.enabled,
-                                          selectionColor: theme.primary
-                                              .withValues(alpha: 0.32),
-                                          selectionControls:
-                                              _selectionControls,
-                                          contextMenuBuilder:
-                                              _buildContextMenu,
-                                          maxLines: widget.maxLines,
-                                          minLines: widget.minLines,
-                                          inputFormatters:
-                                              widget.maxLength == null
-                                                  ? null
-                                                  : [
-                                                    LengthLimitingTextInputFormatter(
-                                                      widget.maxLength,
-                                                    ),
-                                                  ],
-                                          obscureText: widget.obscureText,
-                                          keyboardType: widget.keyboardType,
-                                          textInputAction:
-                                              widget.textInputAction,
-                                          scrollPhysics: widget.scrollPhysics,
-                                          onChanged: widget.onChanged,
-                                          onSubmitted: widget.onSubmitted,
-                                          cursorColor: theme.primary,
-                                          backgroundCursorColor:
-                                              DsColors.transparent,
-                                          cursorWidth: 2,
-                                          cursorRadius: const Radius.circular(
-                                            2,
-                                          ),
-                                          autocorrect: false,
-                                          style: DsTypography.body.copyWith(
-                                            color:
-                                                widget.enabled
-                                                    ? theme.text
-                                                    : theme.textSub,
-                                          ),
-                                          strutStyle: const StrutStyle(
-                                            fontSize: 14,
-                                            forceStrutHeight: true,
-                                          ),
-                                        ),
-                                      ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                      if (widget.suffix != null)
-                        Padding(
-                          padding: EdgeInsets.only(left: theme.spacing.sm),
-                          child: widget.suffix!,
-                        ),
-                    ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
+                  if (widget.suffix != null)
+                    Padding(
+                      padding: EdgeInsets.only(left: theme.spacing.sm),
+                      child: widget.suffix!,
+                    ),
+                ],
               ),
-              if (hasError) ...[
-                SizedBox(height: theme.spacing.xs),
-                Text(
-                  widget.errorText!,
-                  style: DsTypography.caption.copyWith(color: theme.danger),
-                ),
-              ],
-            ],
+            ),
           ),
+          if (hasError) ...[
+            SizedBox(height: theme.spacing.xs),
+            Text(
+              widget.errorText!,
+              style: DsTypography.caption.copyWith(color: theme.danger),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

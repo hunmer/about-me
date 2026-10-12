@@ -2,9 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
-import 'jelly_box.dart';
 
-/// 果冻卡片：白色面板 + 软阴影，可点击
+/// 手绘卡片：纸底 + 淡排线 + 墨线框，可点击
 class DSCard extends StatelessWidget {
   const DSCard({
     super.key,
@@ -20,15 +19,18 @@ class DSCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final BorderRadiusGeometry? radius;
 
-  /// 覆盖面板底色（默认白表面）
+  /// 覆盖面板底色（默认纸面）
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final card = JellyBox(
-      radius: radius ?? theme.radii.xl,
-      color: color,
+    final card = DsSketchPanel(
+      theme: theme,
+      radius:
+          radius?.resolve(Directionality.maybeOf(context)) ??
+          theme.radii.xl,
+      fillColor: color,
       padding: padding ?? EdgeInsets.all(theme.spacing.lg),
       child: child,
     );

@@ -6,7 +6,7 @@ import '../tokens/typography.dart';
 import 'button.dart';
 import 'jelly_box.dart';
 
-/// 果冻空状态：大表情/SVG 图标 + 标题 + 说明 + 可选操作按钮
+/// 手绘空状态：大表情/SVG 图标 + 标题 + 说明 + 可选操作按钮
 /// （对应设计稿「还没有记录哦」）
 class DSEmptyState extends StatelessWidget {
   const DSEmptyState({
@@ -39,7 +39,7 @@ class DSEmptyState extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 表情底座：果冻圆盘
+        // 表情底座：手绘圆盘
         JellyBox(
           width: 92,
           height: 92,

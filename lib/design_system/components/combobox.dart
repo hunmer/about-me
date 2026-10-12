@@ -8,7 +8,7 @@ import 'input.dart';
 import 'jelly_box.dart';
 import 'select.dart';
 
-/// 可搜索下拉（Combobox）：面板顶部带过滤输入框
+/// 可搜索下拉（Combobox）：面板顶部带过滤输入框（浮层为纸底+淡排线手绘面板）
 class DSCombobox<T> extends StatefulWidget {
   const DSCombobox({
     super.key,
@@ -70,10 +70,12 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {
           ),
           CompositedTransformFollower(
             link: _link,
-            targetAnchor:
-                _openUpward ? Alignment.topLeft : Alignment.bottomLeft,
-            followerAnchor:
-                _openUpward ? Alignment.bottomLeft : Alignment.topLeft,
+            targetAnchor: _openUpward
+                ? Alignment.topLeft
+                : Alignment.bottomLeft,
+            followerAnchor: _openUpward
+                ? Alignment.bottomLeft
+                : Alignment.topLeft,
             offset: Offset(0, _openUpward ? -8 : 8),
             child: AppTheme(
               data: theme,
@@ -126,11 +128,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {
               padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
               child: Row(
                 children: [
-                  DsIcon(
-                    DsIconKind.search,
-                    size: 18,
-                    color: theme.textSub,
-                  ),
+                  DsIcon(DsIconKind.search, size: 18, color: theme.textSub),
                   SizedBox(width: theme.spacing.sm),
                   Expanded(
                     child: Text(
@@ -195,9 +193,7 @@ class _ComboPanelState<T> extends State<_ComboPanel<T>> {
     final q = _query.text.trim().toLowerCase();
     final filtered = q.isEmpty
         ? widget.items
-        : widget.items
-            .where((e) => e.label.toLowerCase().contains(q))
-            .toList();
+        : widget.items.where((e) => e.label.toLowerCase().contains(q)).toList();
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.85, end: 1),
@@ -207,17 +203,17 @@ class _ComboPanelState<T> extends State<_ComboPanel<T>> {
         opacity: t.clamp(0, 1),
         child: Transform.scale(
           scale: t,
-          alignment:
-              widget.alignTop ? Alignment.bottomCenter : Alignment.topCenter,
+          alignment: widget.alignTop
+              ? Alignment.bottomCenter
+              : Alignment.topCenter,
           child: child,
         ),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 320, maxWidth: 320),
-        child: JellyBox(
+        child: DsSketchPanel(
+          theme: theme,
           radius: theme.radii.lg,
-          raised: false,
-          shadows: theme.shadows.float,
           padding: EdgeInsets.all(theme.spacing.sm),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -238,12 +234,14 @@ class _ComboPanelState<T> extends State<_ComboPanel<T>> {
                       if (filtered.isEmpty)
                         Padding(
                           padding: EdgeInsets.symmetric(
-                              vertical: theme.spacing.md),
+                            vertical: theme.spacing.md,
+                          ),
                           child: Text(
                             '没有匹配的选项',
                             textAlign: TextAlign.center,
-                            style: DsTypography.caption
-                                .copyWith(color: theme.textSub),
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
                         ),
                       for (final item in filtered)
@@ -297,17 +295,14 @@ class _ComboRow extends StatelessWidget {
             ),
           );
         }
+        // 悬停/按压：淡紫实底高亮（无描边，保持行内轻量）
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: theme.spacing.md,
             vertical: theme.spacing.sm + 2,
           ),
           decoration: BoxDecoration(
-            color: pressed
-                ? theme.surfaceAlt
-                : hovered
-                    ? theme.surfaceAlt.withValues(alpha: 0.55)
-                    : DsColors.transparent,
+            color: pressed || hovered ? theme.surfaceAlt : DsColors.transparent,
             borderRadius: theme.radii.md,
           ),
           child: Text(

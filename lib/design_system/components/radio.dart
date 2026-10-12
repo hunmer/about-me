@@ -2,9 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
-import 'jelly_box.dart';
 
-/// 果冻单选框
+/// 手绘单选框
 class DSRadio<T> extends StatelessWidget {
   const DSRadio({
     super.key,
@@ -26,31 +25,34 @@ class DSRadio<T> extends StatelessWidget {
     final selected = value == groupValue;
     final disabled = onChanged == null;
 
-    final Color? fill = disabled
+    // 选中 → 主色实底；未选中 → 纸面 + 淡墨描边；禁用 → 灰
+    final Color fill = disabled
         ? theme.disabled
         : selected
             ? theme.primary
-            : null;
+            : theme.surface;
 
     return Pressable(
       onPressed: disabled ? null : () => onChanged?.call(value),
       semanticLabel: semanticLabel,
       builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
         return Semantics(
           checked: selected,
           child: Padding(
             padding: const EdgeInsets.all(6),
-            child: JellyBox(
+            child: Container(
               width: 26,
               height: 26,
-              radius: theme.radii.circle,
-              color: fill,
-              strokeColor: !selected || disabled
-                  ? theme.textSub.withValues(alpha: disabled ? 0.3 : 0.6)
-                  : null,
-              raised: selected && !pressed && !disabled,
               alignment: Alignment.center,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                circle: true,
+                fillColor: fill,
+                stroke:
+                    !selected || disabled
+                        ? theme.textSub.withValues(alpha: disabled ? 0.3 : 0.6)
+                        : null,
+              ),
               child: selected
                   ? Container(
                       width: 11,

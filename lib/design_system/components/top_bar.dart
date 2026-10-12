@@ -6,7 +6,7 @@ import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻顶部导航栏：胶囊形，返回 + 标题 + 菜单
+/// 手绘顶部导航栏：胶囊形，返回 + 标题 + 菜单
 class DSTopBar extends StatelessWidget {
   const DSTopBar({
     super.key,

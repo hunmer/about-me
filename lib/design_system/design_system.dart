@@ -10,6 +10,7 @@ library;
 export 'tokens/colors.dart';
 export 'tokens/radii.dart';
 export 'tokens/shadows.dart';
+export 'tokens/sketch.dart';
 export 'tokens/spacing.dart';
 export 'tokens/typography.dart';
 

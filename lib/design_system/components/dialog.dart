@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'button.dart';
-import 'jelly_box.dart';
 
-/// 果冻对话框：缩放淡入 + 遮罩
+/// 手绘对话框：缩放淡入 + 遮罩
 ///
 /// 浮层挂在根导航上，脱离主题树，因此内部预先捕获主题并重建继承树。
 /// [theme] 用于调用点不在 AppTheme 树内时显式传入（如独立路由页面）。
@@ -23,20 +22,19 @@ Future<T?> showDSDialog<T>({
       barrierColor: effectiveTheme.barrier,
       transitionDuration: const Duration(milliseconds: 220),
       reverseTransitionDuration: const Duration(milliseconds: 160),
-      pageBuilder:
-          (c, animation, secondaryAnimation) => AppTheme(
-            data: effectiveTheme,
-            // 透明 Material 仅供 TextField 等需要 Material 祖先的组件使用，不绘制背景
-            child: Material(
-              type: MaterialType.transparency,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 36),
-                  child: builder(c),
-                ),
-              ),
+      pageBuilder: (c, animation, secondaryAnimation) => AppTheme(
+        data: effectiveTheme,
+        // 透明 Material 仅供 TextField 等需要 Material 祖先的组件使用，不绘制背景
+        child: Material(
+          type: MaterialType.transparency,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 36),
+              child: builder(c),
             ),
           ),
+        ),
+      ),
       transitionsBuilder: (c, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -54,7 +52,7 @@ Future<T?> showDSDialog<T>({
   );
 }
 
-/// 果冻对话框面板：标题 + 内容 + 操作按钮
+/// 手绘对话框面板：标题 + 内容 + 操作按钮
 class DSDialog extends StatelessWidget {
   const DSDialog({
     super.key,
@@ -92,58 +90,62 @@ class DSDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
 
-    return JellyBox(
-      radius: theme.radii.xxl,
-      padding: EdgeInsets.all(theme.spacing.xl),
+    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+    return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 320),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _SparkleRow(),
-          SizedBox(height: theme.spacing.sm),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: DsTypography.title.copyWith(color: theme.text),
-          ),
-          if (content != null)
-            Padding(
-              padding: EdgeInsets.only(top: theme.spacing.md),
-              child: content!,
-            )
-          else if (message != null)
-            Padding(
-              padding: EdgeInsets.only(top: theme.spacing.sm),
-              child: Text(
-                message!,
-                textAlign: TextAlign.center,
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _SparkleRow(),
+            SizedBox(height: theme.spacing.sm),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
             ),
-          SizedBox(height: theme.spacing.xl),
-          Row(
-            children: [
-              if (cancelText != null) ...[
+            if (content != null)
+              Padding(
+                padding: EdgeInsets.only(top: theme.spacing.md),
+                child: content!,
+              )
+            else if (message != null)
+              Padding(
+                padding: EdgeInsets.only(top: theme.spacing.sm),
+                child: Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ),
+            SizedBox(height: theme.spacing.xl),
+            Row(
+              children: [
+                if (cancelText != null) ...[
+                  Expanded(
+                    child: DSButton(
+                      label: cancelText!,
+                      variant: DSButtonVariant.outline,
+                      onPressed: onCancel ?? () => _defaultCancel(context),
+                    ),
+                  ),
+                  SizedBox(width: theme.spacing.md),
+                ],
                 Expanded(
                   child: DSButton(
-                    label: cancelText!,
-                    variant: DSButtonVariant.outline,
-                    onPressed: onCancel ?? () => _defaultCancel(context),
+                    label: confirmText,
+                    variant: confirmVariant,
+                    onPressed: onConfirm ?? () => _defaultConfirm(context),
                   ),
                 ),
-                SizedBox(width: theme.spacing.md),
               ],
-              Expanded(
-                child: DSButton(
-                  label: confirmText,
-                  variant: confirmVariant,
-                  onPressed: onConfirm ?? () => _defaultConfirm(context),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -196,20 +198,18 @@ class _SparklePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.fill;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
     final w = size.width;
     final h = size.height;
-    final path =
-        Path()
-          ..moveTo(w * 0.5, 0)
-          ..quadraticBezierTo(w * 0.58, h * 0.42, w, h * 0.5)
-          ..quadraticBezierTo(w * 0.58, h * 0.58, w * 0.5, h)
-          ..quadraticBezierTo(w * 0.42, h * 0.58, 0, h * 0.5)
-          ..quadraticBezierTo(w * 0.42, h * 0.42, w * 0.5, 0)
-          ..close();
+    final path = Path()
+      ..moveTo(w * 0.5, 0)
+      ..quadraticBezierTo(w * 0.58, h * 0.42, w, h * 0.5)
+      ..quadraticBezierTo(w * 0.58, h * 0.58, w * 0.5, h)
+      ..quadraticBezierTo(w * 0.42, h * 0.58, 0, h * 0.5)
+      ..quadraticBezierTo(w * 0.42, h * 0.42, w * 0.5, 0)
+      ..close();
     canvas.drawPath(path, paint);
   }
 

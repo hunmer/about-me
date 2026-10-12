@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 
@@ -164,10 +165,17 @@ class DsIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor =
-        color ?? AppTheme.maybeOf(context)?.text ?? const Color(0xFF4C1D95);
+    final theme = AppTheme.maybeOf(context);
+    final effectiveColor = color ?? theme?.text ?? const Color(0xFF4C1D95);
     final data =
         kind == DsIconKind.heart && fill ? Icons.favorite : _kIcons[kind]!;
-    return Icon(data, size: size, color: effectiveColor);
+    // WiredIcon：已注册的手绘图标目录命中时画手绘几何，
+    // 未收录的图标自动回退普通 Icon，风格与全局粗糙度一致
+    return WiredIcon(
+      icon: data,
+      size: size,
+      color: effectiveColor,
+      drawConfig: theme?.wired.drawConfig,
+    );
   }
 }

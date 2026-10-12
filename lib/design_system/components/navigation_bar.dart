@@ -97,19 +97,16 @@ class DSBottomNavigation extends StatelessWidget {
     final theme = AppTheme.of(context);
 
     var style = RadialDiscBarStyle.fromBrightness(theme.isDark).copyWith(
-      // 参考 stroke 在浅色主题是白色，画在浅色页面上不可见；
-      // 沿用旧果冻导航的 textSub 半透明描边，两主题均可见
-      strokeColor: theme.textSub.withValues(alpha: 0.6),
+      // dock 描边用淡墨线，贴近手绘纸墨，两主题均清晰可见
+      strokeColor: theme.ink.withValues(alpha: 0.7),
       activePillColor: theme.primary,
       activeIconColor: theme.onPrimary,
       inactiveIconColor: theme.textSub,
     );
     if (frosted) {
-      // 磨砂模式降低填充不透明度，让背景模糊可见
+      // 磨砂模式降低填充不透明度，让背景模糊可见；填充取纸色贴近手绘纸面
       style = style.copyWith(
-        fillColor: theme.isDark
-            ? const Color(0xCC1E222A)
-            : const Color(0xB3FFFFFF),
+        fillColor: theme.paper.withValues(alpha: theme.isDark ? 0.8 : 0.7),
       );
     }
 

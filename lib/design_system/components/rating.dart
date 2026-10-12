@@ -28,30 +28,27 @@ class DSRating extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final filled = color ?? theme.warning;
-    final empty = theme.surfaceAlt;
+    // 空星淡墨：衬托实星颜色，与手绘纸面协调
+    final empty = theme.textSub.withValues(alpha: 0.45);
 
     final stars = <Widget>[];
     for (var i = 0; i < max; i++) {
       final fraction = (value - i).clamp(0.0, 1.0);
       final star = DsIcon(DsIconKind.star, size: size, color: empty);
-      // 实星叠加顶部透亮光泽（ShaderMask 只作用于星星像素）
-      final glossyFilled = _StarGloss(
-        isDark: theme.isDark,
-        child: DsIcon(DsIconKind.star, size: size, color: filled),
-      );
+      final filledStar = DsIcon(DsIconKind.star, size: size, color: filled);
       final Widget cell;
       if (fraction >= 1) {
-        cell = glossyFilled;
+        cell = filledStar;
       } else if (fraction <= 0) {
         cell = star;
       } else {
-        // 半星：底层空星 + 上层裁剪实星
+        // 半星：底层空星 + 上层裁剪实星（裁剪与 child 画法无关）
         cell = Stack(
           children: [
             star,
             ClipRect(
               clipper: _FractionClipper(fraction),
-              child: glossyFilled,
+              child: filledStar,
             ),
           ],
         );
@@ -100,31 +97,4 @@ class _FractionClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(_FractionClipper oldDelegate) =>
       oldDelegate.fraction != fraction;
-}
-
-/// 星星的水晶光泽：ShaderMask 沿星形像素叠加顶部透亮渐变
-/// （srcATop 只在 child 非透明区域着色，不会糊到背景上）
-class _StarGloss extends StatelessWidget {
-  const _StarGloss({required this.isDark, required this.child});
-
-  final bool isDark;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      blendMode: BlendMode.srcATop,
-      shaderCallback: (rect) => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFFFFFFFF).withValues(alpha: isDark ? 0.25 : 0.5),
-          const Color(0xFFFFFFFF).withValues(alpha: isDark ? 0.06 : 0.15),
-          const Color(0x00000000),
-        ],
-        stops: const [0.0, 0.45, 0.75],
-      ).createShader(rect),
-      child: child,
-    );
-  }
 }

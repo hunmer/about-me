@@ -272,9 +272,10 @@ class ChatEventHandler {
             );
 
             // 立即更新 typingMessage 的内容并广播
-            if (typingMessage != null) {
-              typingMessage.content = processedContent;
-              typingMessage.metadata?.addAll({
+            final typing = typingMessage;
+            if (typing != null) {
+              typing.content = processedContent;
+              typing.metadata?.addAll({
                 'agentId': agentData['id'],
                 'lastUpdate': DateTime.now().millisecondsSinceEpoch,
               });
@@ -284,7 +285,7 @@ class ChatEventHandler {
               // 直接更新消息，不使用microtask以避免时序问题
               if (!streamController.isClosed) {
                 // 确保消息保存并触发UI更新
-                await _plugin.channelService.saveMessage(typingMessage);
+                await _plugin.channelService.saveMessage(typing);
 
                 // 添加额外的通知以确保UI更新
                 _plugin.refresh();
@@ -292,7 +293,7 @@ class ChatEventHandler {
                 // 通过事件系统广播消息更新事件
                 eventManager.broadcast(
                   'chat_message_updated',
-                  ValuesEventArgs(typingMessage, typingMessage.id),
+                  ValuesEventArgs(typing, typing.id),
                 );
               }
             }
@@ -302,16 +303,17 @@ class ChatEventHandler {
           }
         },
         onError: (error) async {
-          if (typingMessage != null) {
-            typingMessage.content = '抱歉，生成回复时出现错误：$error';
-            typingMessage.metadata?.addAll({
+          final typing = typingMessage;
+          if (typing != null) {
+            typing.content = '抱歉，生成回复时出现错误：$error';
+            typing.metadata?.addAll({
               'isError': true,
               'isCompleted': true,
               'completedAt': DateTime.now().millisecondsSinceEpoch,
             });
 
             // 保存错误消息
-            await _plugin.channelService.saveMessage(typingMessage);
+            await _plugin.channelService.saveMessage(typing);
 
             // 确保UI更新
             _plugin.refresh();
@@ -319,7 +321,7 @@ class ChatEventHandler {
             // 通过事件系统广播消息更新事件
             eventManager.broadcast(
               'chat_message_updated',
-              ValuesEventArgs(typingMessage, typingMessage.id),
+              ValuesEventArgs(typing, typing.id),
             );
           }
           // 清理资源
@@ -334,15 +336,16 @@ class ChatEventHandler {
           );
 
           // 直接更新 typingMessage 的内容和元数据
-          if (typingMessage != null) {
+          final typing = typingMessage;
+          if (typing != null) {
             // 在完成时也处理一次思考过程的标记
             String finalContent = RequestService.processThinkingContent(
               contentBuffer.toString(),
             );
-            typingMessage.content = finalContent;
+            typing.content = finalContent;
 
             // 更新元数据
-            typingMessage.metadata = {
+            typing.metadata = {
               'isAI': true,
               'agentId': agentData['id'],
               'isCompleted': true,
@@ -352,7 +355,7 @@ class ChatEventHandler {
             // 立即广播最终的消息更新事件
 
             // 直接保存消息，不使用microtask以避免时序问题
-            await _plugin.channelService.saveMessage(typingMessage);
+            await _plugin.channelService.saveMessage(typing);
 
             // 立即通知UI更新
             _plugin.refresh();
@@ -360,12 +363,12 @@ class ChatEventHandler {
             // 通过事件系统广播消息更新事件
             eventManager.broadcast(
               'chat_message_updated',
-              ValuesEventArgs(typingMessage, typingMessage.id),
+              ValuesEventArgs(typing, typing.id),
             );
 
             // 确保UI更新，使用短暂延迟后再次保存以确保消息完全更新
             await Future.delayed(const Duration(milliseconds: 100));
-            await _plugin.channelService.saveMessage(typingMessage);
+            await _plugin.channelService.saveMessage(typing);
 
             // 最后再次通知UI更新
             _plugin.refresh();

@@ -4,7 +4,7 @@ import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 
-/// 果冻标签页：文字 + 底部滑动果冻指示条
+/// 手绘标签页：文字 + 底部滑动墨线指示条
 class DSTabs extends StatelessWidget {
   const DSTabs({
     super.key,
@@ -48,7 +48,8 @@ class DSTabs extends StatelessWidget {
                             color: active
                                 ? theme.primaryText
                                 : theme.textSub.withValues(
-                                    alpha: hovered ? 0.9 : 0.75),
+                                    alpha: hovered ? 0.9 : 0.75,
+                                  ),
                           ),
                           child: Text(labels[i]),
                         ),
@@ -60,9 +61,10 @@ class DSTabs extends StatelessWidget {
           ],
         ),
         SizedBox(height: theme.spacing.xs),
-        // 滑动果冻指示条
+        // 滑动手绘指示条：主色实底胶囊 + 墨线描边
+        // （rough 引擎墨迹内收数像素，需比果冻版略高才能画成胶囊）
         SizedBox(
-          height: 5,
+          height: 12,
           child: AnimatedAlign(
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOutCubic,
@@ -76,21 +78,13 @@ class DSTabs extends StatelessWidget {
               widthFactor: 1 / labels.length,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                height: 5,
+                height: 12,
                 margin: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    theme.primary,
-                    theme.secondary,
-                  ]),
-                  borderRadius: theme.radii.pill,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.primary.withValues(alpha: 0.35),
-                      offset: const Offset(0, 2),
-                      blurRadius: 5,
-                    ),
-                  ],
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: theme.primary,
+                  radius: theme.radii.pill,
+                  strokeWidth: 1.2,
                 ),
               ),
             ),

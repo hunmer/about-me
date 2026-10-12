@@ -2,11 +2,13 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
 
-/// 果冻容器：整个组件库的质感基底
+/// 手绘墨盒：整个组件库的容器基底（前身「果冻容器」）
 ///
-/// - 传入 [color]：彩色果冻件（顶部高光渐变 + 深色描边 + 彩色投影）
-/// - 不传 [color]：白色表面（面板/卡片），软阴影 + 浅描边
-/// - [raised] 为 false 时无彩色下坠投影（输入框、滑轨等平整件）
+/// 手绘化后由 skribble rough 引擎绘制：
+/// - 传入 [color]：彩色涂色块（纯色实底 + 墨线描边）
+/// - 不传 [color]：纸面（surface 实底 + 墨线描边）
+/// - [radius] 的 pill（999）会被 rough 引擎自动钳制成胶囊/正圆
+/// - [gradient]/[shadows]/[raised] 仅保 API 兼容，手绘风格下不生效
 class JellyBox extends StatelessWidget {
   const JellyBox({
     super.key,
@@ -34,16 +36,16 @@ class JellyBox extends StatelessWidget {
   final AlignmentGeometry? alignment;
   final BoxConstraints? constraints;
 
-  /// 是否带彩色下坠投影
+  /// 兼容参数：手绘风格无彩色下坠投影
   final bool raised;
 
-  /// 覆盖描边色（默认由主题按基色派生）
+  /// 覆盖描边色（默认主题墨线）
   final Color? strokeColor;
 
-  /// 覆盖渐变（默认由主题按基色派生顶部高光）
+  /// 兼容参数：手绘风格无渐变
   final Gradient? gradient;
 
-  /// 覆盖阴影
+  /// 兼容参数：手绘风格无柔影
   final List<BoxShadow>? shadows;
 
   final double? borderWidth;
@@ -52,41 +54,7 @@ class JellyBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final r = radius ?? theme.radii.lg;
-
-    final Decoration decoration;
-    Decoration? foreground;
-    if (color == null && gradient == null) {
-      // 白色表面件
-      decoration = BoxDecoration(
-        color: theme.surface,
-        borderRadius: r,
-        border: Border.all(
-          color: strokeColor ?? theme.stroke,
-          width: borderWidth ?? (theme.isDark ? 1 : 1.4),
-        ),
-        boxShadow: shadows ?? theme.shadows.soft,
-      );
-    } else {
-      // 彩色果冻件（水晶质感）：多段渐变 + 浅色描边 + 顶部高光罩层
-      final base = color ?? theme.primary;
-      decoration = BoxDecoration(
-        gradient: gradient ??
-            LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: theme.jellyGradient(base),
-              stops: theme.jellyStops,
-            ),
-        borderRadius: r,
-        border: Border.all(
-          color: strokeColor ?? theme.jellyRim(base),
-          width: borderWidth ?? 1.5,
-        ),
-        boxShadow: shadows ?? (raised ? theme.jellyShadow(base) : null),
-      );
-      // 水晶高光罩在表层（含 child 之上）：弧形玻璃罩 + 内圈亮边 + 右下回光
-      foreground = JellyGlossDecoration(radius: r, isDark: theme.isDark);
-    }
+    final br = r.resolve(Directionality.maybeOf(context));
 
     return Container(
       width: width,
@@ -94,26 +62,22 @@ class JellyBox extends StatelessWidget {
       padding: padding,
       alignment: alignment,
       constraints: constraints,
-      decoration: decoration,
-      foregroundDecoration: foreground,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: color ?? gradient?.colors.first ?? theme.surface,
+        radius: br,
+        stroke: strokeColor,
+        strokeWidth: borderWidth ?? 1.8,
+      ),
       child: child,
     );
   }
 }
 
-/// 水晶高光装饰：绘制在果冻件表层（child 之上）
+/// 水晶高光装饰（已退役）：手绘风格下不再绘制，仅保类名兼容
 ///
-/// 对应设计稿的玻璃/水晶反光，两层叠加：
-/// 1. 顶部弧形「玻璃罩」高光带（下缘为弧线，水晶感的关键）
-/// 2. 内侧亮白描边（贴合外形的内圈亮边）
-///
-/// [JellyBox] 彩色件自动带这层效果；不用 JellyBox 的组件
-/// （switch 轨道 / slider 进度 / 底部导航选中块等）可直接把它
-/// 挂到 Container 的 `foregroundDecoration` 上复用同款质感。
-///
-/// 注：曾加过左上角点状高光斑、右下角回光（都是 RadialGradient），
-/// 但在宽扁按钮上会被拉成椭圆形斑、观感像脏污投影，均已移除——
-/// 径向光斑不适合通用罩层，高光只保留贴合外形的结构光。
+/// switch/slider/progress 曾把它挂到 Container.foregroundDecoration 复用
+/// 果冻质感；手绘化后各组件不再需要。
 class JellyGlossDecoration extends Decoration {
   const JellyGlossDecoration({required this.radius, required this.isDark});
 
@@ -122,93 +86,14 @@ class JellyGlossDecoration extends Decoration {
 
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _JellyGlossPainter(this);
+      _NoopBoxPainter(this);
 }
 
-class _JellyGlossPainter extends BoxPainter {
-  _JellyGlossPainter(this._decoration);
-
-  final JellyGlossDecoration _decoration;
-
-  static const Color _white = Color(0xFFFFFFFF);
-  static const Color _clear = Color(0x00000000);
+class _NoopBoxPainter extends BoxPainter {
+  _NoopBoxPainter(JellyGlossDecoration decoration);
 
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final size = configuration.size;
-    if (size == null || size.isEmpty) return;
-    final rect = offset & size;
-    final rrect =
-        _decoration.radius.resolve(configuration.textDirection).toRRect(rect);
-    final dark = _decoration.isDark;
-
-    canvas.save();
-    canvas.clipRRect(rrect);
-
-    // 内缩一圈，高光与内描边都贴在外描边内侧
-    final inner = rrect.deflate(2.5);
-
-    // 退化尺寸保护：宽/高 ≤ 2（如 slider 进度 value≈0 时宽仅 4px，
-    // deflate 后为负值）继续绘制会产生非法 RRect/椭圆半径，
-    // debug 下直接断言崩溃、组件被错误件替换——直接跳过罩层
-    if (inner.width <= 2 || inner.height <= 2) {
-      canvas.restore();
-      return;
-    }
-
-    // 1. 顶部弧形「玻璃罩」高光带：高度约一半，下缘用椭圆角拉出弧线
-    final glossH = rect.height * 0.52;
-    final glossRect = Rect.fromLTRB(
-      inner.left,
-      inner.top,
-      inner.right,
-      inner.top + glossH,
-    );
-    final domeY = glossH * 0.6;
-    final glossRRect = RRect.fromRectAndCorners(
-      glossRect,
-      topLeft: inner.tlRadius,
-      topRight: inner.trRadius,
-      bottomLeft: Radius.elliptical(glossRect.width / 2, domeY),
-      bottomRight: Radius.elliptical(glossRect.width / 2, domeY),
-    );
-    canvas.drawRRect(
-      glossRRect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            _white.withValues(alpha: dark ? 0.30 : 0.60),
-            _white.withValues(alpha: dark ? 0.12 : 0.28),
-            _clear,
-          ],
-          stops: const [0.0, 0.55, 1.0],
-        ).createShader(glossRect),
-    );
-
-    // 2. 内侧亮白描边（上亮下弱：先整圈弱亮，再叠加顶部半圈强亮）
-    canvas.drawRRect(
-      inner,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = _white.withValues(alpha: dark ? 0.20 : 0.45),
-    );
-    canvas.save();
-    canvas.clipRect(Rect.fromLTRB(
-        rect.left, rect.top, rect.right, rect.top + rect.height * 0.45));
-    canvas.drawRRect(
-      inner,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = _white.withValues(alpha: dark ? 0.30 : 0.55),
-    );
-    canvas.restore();
-
-    // 配对最外层的 save（clipRRect）——漏掉会导致裁剪泄漏，
-    // 本组件之后的整页内容都被这个圆角矩形裁掉（组件"不显示"）
-    canvas.restore();
+    // 手绘风格：无玻璃高光
   }
 }

@@ -14,7 +14,7 @@ class DSAccordionEntry {
   final WidgetBuilder builder;
 }
 
-/// 果冻手风琴：默认单开模式，[multiple] 为 true 时可多开
+/// 手绘手风琴：默认单开模式，[multiple] 为 true 时可多开
 class DSAccordion extends StatefulWidget {
   const DSAccordion({
     super.key,

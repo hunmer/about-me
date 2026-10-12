@@ -5,7 +5,7 @@ import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻角标：小胶囊标签（如「新功能」）
+/// 手绘角标：小胶囊标签（如「新功能」）
 class DSBadge extends StatelessWidget {
   const DSBadge({
     super.key,
@@ -81,12 +81,14 @@ class DSIconBadge extends StatelessWidget {
                 height: 18,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: badgeColor ?? theme.danger,
-                  shape: count < 10 ? BoxShape.circle : BoxShape.rectangle,
-                  borderRadius:
-                      count < 10 ? null : BorderRadius.circular(9),
-                  border: Border.all(color: theme.stroke, width: 1.6),
+                // 计数气泡：<10 画手绘正圆，否则画手绘胶囊
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  circle: count < 10,
+                  radius: count < 10 ? null : BorderRadius.circular(9),
+                  fillColor: badgeColor ?? theme.danger,
+                  stroke: theme.stroke,
+                  strokeWidth: 1.6,
                 ),
                 child: Text(
                   count > 99 ? '99+' : '$count',

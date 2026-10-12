@@ -6,7 +6,7 @@ import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻标签（Chip）：默认 / 选中 / 可删除
+/// 手绘标签（Chip）：默认 / 选中 / 可删除
 class DSChip extends StatelessWidget {
   const DSChip({
     super.key,
@@ -30,7 +30,7 @@ class DSChip extends StatelessWidget {
   /// 角标文本（如过滤项当前值的简写），跟随选中态着色
   final String? badge;
 
-  /// 是否处于选中态（果冻高亮）
+  /// 是否处于选中态（主色实底高亮）
   final bool selected;
 
   /// 点击切换选中；为 null 时非交互
@@ -131,15 +131,14 @@ class DSChip extends StatelessWidget {
             child: content,
           );
         }
+        // 未选中态：纸面实底 + 淡墨描边的手绘胶囊
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.surface,
-            borderRadius: theme.radii.pill,
-            border: Border.all(
-              color: theme.textSub.withValues(alpha: 0.4),
-              width: 1.2,
-            ),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.surface,
+            stroke: theme.textSub.withValues(alpha: 0.4),
+            radius: theme.radii.pill,
           ),
           child: content,
         );

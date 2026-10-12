@@ -5,13 +5,9 @@ import 'package:flutter/widgets.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 
-/// 果冻气泡提示：桌面悬停 / 移动端长按触发
+/// 手绘气泡提示：桌面悬停 / 移动端长按触发
 class DSTooltip extends StatefulWidget {
-  const DSTooltip({
-    super.key,
-    required this.message,
-    required this.child,
-  });
+  const DSTooltip({super.key, required this.message, required this.child});
 
   final String message;
   final Widget child;
@@ -117,24 +113,21 @@ class _Bubble extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 气泡主体（深果冻色）
+        // 气泡主体：主色实底 + 墨线描边（手绘）
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: theme.jellyGradient(theme.primaryText),
-            ),
-            borderRadius: theme.radii.md,
-            boxShadow: theme.jellyShadow(theme.primaryText, height: 4),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.primary,
+            radius: theme.radii.md,
+            strokeWidth: 1.6,
           ),
           child: Text(
             message,
-            style: DsTypography.caption.copyWith(color: theme.surface),
+            style: DsTypography.caption.copyWith(color: theme.onPrimary),
           ),
         ),
-        // 小三角（叠在气泡下缘）
+        // 小三角（叠在气泡下缘）：纯色 + 淡墨描边
         Transform.translate(
           offset: const Offset(0, -5),
           child: Transform.rotate(
@@ -143,8 +136,12 @@ class _Bubble extends StatelessWidget {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: theme.primaryText,
+                color: theme.primary,
                 borderRadius: BorderRadius.circular(2),
+                border: Border.all(
+                  color: theme.ink.withValues(alpha: 0.6),
+                  width: 1.2,
+                ),
               ),
             ),
           ),

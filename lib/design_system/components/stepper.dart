@@ -6,7 +6,7 @@ import 'button.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻数字步进器：[−] 数值 [+]
+/// 手绘数字步进器：[−] 数值 [+]
 class DSStepper extends StatelessWidget {
   const DSStepper({
     super.key,

@@ -14,7 +14,9 @@ class DSSelectItem<T> {
   final T value;
 }
 
-/// 果冻下拉选择器：Overlay + LayerLink 锚定展开
+/// 手绘下拉选择器：Overlay + LayerLink 锚定展开
+///
+/// 触发器与选中行为手绘墨盒（JellyBox），浮层面板为纸底+淡排线（DsSketchPanel）。
 class DSSelect<T> extends StatefulWidget {
   const DSSelect({
     super.key,
@@ -79,10 +81,12 @@ class _DSSelectState<T> extends State<DSSelect<T>> {
           ),
           CompositedTransformFollower(
             link: _link,
-            targetAnchor:
-                _openUpward ? Alignment.topLeft : Alignment.bottomLeft,
-            followerAnchor:
-                _openUpward ? Alignment.bottomLeft : Alignment.topLeft,
+            targetAnchor: _openUpward
+                ? Alignment.topLeft
+                : Alignment.bottomLeft,
+            followerAnchor: _openUpward
+                ? Alignment.bottomLeft
+                : Alignment.topLeft,
             offset: Offset(0, _openUpward ? -8 : 8),
             child: AppTheme(
               data: theme,
@@ -196,10 +200,9 @@ class _SelectPanel<T> extends StatelessWidget {
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 280, maxWidth: 320),
-        child: JellyBox(
+        child: DsSketchPanel(
+          theme: theme,
           radius: theme.radii.lg,
-          raised: false,
-          shadows: theme.shadows.float,
           padding: EdgeInsets.all(theme.spacing.sm),
           child: SingleChildScrollView(
             child: Column(
@@ -254,17 +257,14 @@ class _SelectRow extends StatelessWidget {
             ),
           );
         }
+        // 悬停/按压：淡紫实底高亮（无描边，保持行内轻量）
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: theme.spacing.md,
             vertical: theme.spacing.sm + 2,
           ),
           decoration: BoxDecoration(
-            color: pressed
-                ? theme.surfaceAlt
-                : hovered
-                    ? theme.surfaceAlt.withValues(alpha: 0.55)
-                    : DsColors.transparent,
+            color: pressed || hovered ? theme.surfaceAlt : DsColors.transparent,
             borderRadius: theme.radii.md,
           ),
           child: Text(

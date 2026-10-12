@@ -5,9 +5,9 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻列表项：leading + 标题/副标题 + 尾部信息，可点击
+/// 手绘列表项：leading + 标题/副标题 + 尾部信息，可点击
 ///
-/// 半透明描边面板（透出页面背景），leading 图标顶部对齐，
+/// 半透明纸面 + 淡墨描边（透出页面背景），leading 图标顶部对齐，
 /// 质感与 [DSListItemCard] 一致。
 class DSListItem extends StatelessWidget {
   const DSListItem({
@@ -43,16 +43,14 @@ class DSListItem extends StatelessWidget {
         final pressed = states.contains(WidgetState.pressed);
         return AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
-            // 半透明表面透出页面背景，与 DSListItemCard 一致
-            color: pressed
+          decoration: dsSketchDecoration(
+            theme: theme,
+            // 半透明纸面透出页面背景，与 DSListItemCard 一致
+            fillColor: pressed
                 ? theme.surfaceAlt.withValues(alpha: 0.6)
                 : theme.surface.withValues(alpha: theme.isDark ? 0.5 : 0.65),
-            borderRadius: theme.radii.xl,
-            border: Border.all(
-              color: theme.primary.withValues(alpha: theme.isDark ? 0.6 : 0.45),
-              width: 1.8,
-            ),
+            radius: theme.radii.xl,
+            stroke: theme.ink.withValues(alpha: 0.55),
           ),
           padding: EdgeInsets.symmetric(
             horizontal: theme.spacing.md,

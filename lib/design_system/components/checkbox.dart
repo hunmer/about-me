@@ -3,9 +3,8 @@ import 'package:flutter/widgets.dart';
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import 'icons.dart';
-import 'jelly_box.dart';
 
-/// 果冻复选框（支持三态：未选中 / 选中 / 半选）
+/// 手绘复选框（支持三态：未选中 / 选中 / 半选）
 class DSCheckbox extends StatelessWidget {
   const DSCheckbox({
     super.key,
@@ -42,32 +41,36 @@ class DSCheckbox extends StatelessWidget {
     final indeterminate = value == null;
     final disabled = onChanged == null;
 
-    // 选中/半选 → 主色果冻；未选中 → 白表面；禁用 → 灰
-    final Color? fill = disabled
+    // 选中/半选 → 主色实底；未选中 → 纸面 + 淡墨描边；禁用 → 灰
+    final Color fill = disabled
         ? theme.disabled
-        : (checked || indeterminate ? theme.primary : null);
+        : (checked || indeterminate ? theme.primary : theme.surface);
 
     return Pressable(
       onPressed: disabled ? null : _toggle,
       cursor: SystemMouseCursors.click,
       semanticLabel: semanticLabel,
       builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
         return Semantics(
           checked: checked,
           mixed: indeterminate,
           child: Padding(
             padding: const EdgeInsets.all(6),
-            child: JellyBox(
+            child: Container(
               width: 26,
               height: 26,
-              radius: theme.radii.sm,
-              color: fill,
-              strokeColor: (checked || indeterminate) && !disabled
-                  ? null
-                  : theme.textSub.withValues(alpha: disabled ? 0.3 : 0.6),
-              raised: (checked || indeterminate) && !pressed && !disabled,
               alignment: Alignment.center,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: theme.radii.sm,
+                fillColor: fill,
+                stroke:
+                    (checked || indeterminate) && !disabled
+                        ? null
+                        : theme.textSub.withValues(
+                            alpha: disabled ? 0.3 : 0.6,
+                          ),
+              ),
               child: checked
                   ? DsIcon(
                       DsIconKind.check,

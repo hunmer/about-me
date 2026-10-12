@@ -16,7 +16,7 @@ final List<OverlayEntry> _toastQueue = [];
 /// 单条 Toast 占用的纵向高度估算
 const double _toastSlotHeight = 64;
 
-/// 顶部滑入的果冻 Toast，自动消失；多条时纵向堆叠
+/// 顶部滑入的手绘 Toast，自动消失；多条时纵向堆叠
 void showDSToast(
   BuildContext context, {
   required String message,
@@ -35,7 +35,8 @@ void showDSToast(
         message: message,
         type: type,
         duration: duration,
-        slotTop: MediaQuery.paddingOf(context).top + 16 + index * _toastSlotHeight,
+        slotTop:
+            MediaQuery.paddingOf(context).top + 16 + index * _toastSlotHeight,
         onDismiss: () {
           _toastQueue.remove(entry);
           if (entry.mounted) entry.remove();
@@ -147,19 +148,13 @@ class _ToastViewState extends State<_ToastView>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // 类型色圆底（纯色实底，无彩影）
                   Container(
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.4),
-                          offset: const Offset(0, 2),
-                          blurRadius: 5,
-                        ),
-                      ],
                     ),
                     child: DsIcon(icon, size: 13, color: theme.onPrimary),
                   ),

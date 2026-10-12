@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 
-/// 果冻头像：渐变圆 + 白描边，内容为字符或自定义子组件
+/// 手绘头像：纯色圆 + 淡墨描边，内容为字符或自定义子组件
 class DSAvatar extends StatelessWidget {
   const DSAvatar({
     super.key,
@@ -21,10 +21,10 @@ class DSAvatar extends StatelessWidget {
   final Widget? child;
   final double size;
 
-  /// 渐变主色（默认主色）
+  /// 底色主色（默认主色）
   final Color? color;
 
-  /// 渐变辅色（默认辅助粉）
+  /// 辅色，与 [color] 混成纯色底（默认辅助粉）
   final Color? secondaryColor;
 
   @override
@@ -37,21 +37,12 @@ class DSAvatar extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [c1.mixWhite(0.35), c1, c2],
-        ),
-        border: Border.all(color: theme.stroke, width: 2.4),
-        boxShadow: [
-          BoxShadow(
-            color: c1.withValues(alpha: theme.isDark ? 0.5 : 0.3),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        circle: true,
+        fillColor: Color.lerp(c1, c2, 0.35),
+        stroke: theme.ink.withValues(alpha: 0.55),
+        strokeWidth: 2,
       ),
       child: child ??
           (label == null
@@ -59,7 +50,10 @@ class DSAvatar extends StatelessWidget {
               : FittedBox(
                   child: Text(
                     label!,
-                    style: TextStyle(fontSize: size * 0.5),
+                    style: TextStyle(
+                      fontSize: size * 0.5,
+                      color: theme.onPrimary,
+                    ),
                   ),
                 )),
     );

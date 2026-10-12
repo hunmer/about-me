@@ -158,6 +158,9 @@ dependencies:
   screen_retriever: ^0.2.0
   flutter_svg: ^2.2.0
   liquid_glass_easy: ^4.3.4
+  skribble: ^0.3.1
+  skribble_font_recursive: ^0.3.1
+  skribble_icons_material: ^0.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

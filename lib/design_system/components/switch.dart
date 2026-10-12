@@ -5,10 +5,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
-import 'jelly_box.dart';
 
-/// 果冻开关：滑块带表情（开=微笑，关=睡觉）
+/// 手绘开关：滑块带表情（开=微笑，关=睡觉）
 ///
+/// 轨道/滑块为 skribble 墨线描边 + 纯色实底；表情与カチッ挤压动画保留。
 /// 切换动画参考 yui540 motions/26「カチッ」（squash & stretch）：
 /// 1. 滑块先沿运动方向压扁（scale 1.4×0.75）
 /// 2. 冲过终点（位移约 116% 行程，scale 0.85×1.2）
@@ -40,11 +40,15 @@ class DSSwitch extends StatelessWidget {
   /// 轨道挤压总时长：120 + 120 + 100（先于滑块归位，与 CSS 节拍一致）
   static const Duration _trackDuration = Duration(milliseconds: 340);
 
-  static TweenSequenceItem<T> _seg<T>(T begin, T end, Curve curve, int weight) =>
-      TweenSequenceItem(
-        tween: Tween<T>(begin: begin, end: end).chain(CurveTween(curve: curve)),
-        weight: weight.toDouble(),
-      );
+  static TweenSequenceItem<T> _seg<T>(
+    T begin,
+    T end,
+    Curve curve,
+    int weight,
+  ) => TweenSequenceItem(
+    tween: Tween<T>(begin: begin, end: end).chain(CurveTween(curve: curve)),
+    weight: weight.toDouble(),
+  );
 
   /// 滑块位移 keyframes（对应 CSS toggle-knob 的 translate）：
   /// 0 → 37.5% → 116%（过冲）→ 94%（回弹）→ 100% 行程
@@ -60,7 +64,12 @@ class DSSwitch extends StatelessWidget {
   static final Animatable<Offset> _knobScale = TweenSequence<Offset>([
     _seg(const Offset(1, 1), const Offset(1.4, 0.75), Curves.easeIn, 120),
     _seg(const Offset(1.4, 0.75), const Offset(0.85, 1.2), Curves.easeOut, 120),
-    _seg(const Offset(0.85, 1.2), const Offset(1.08, 0.94), Curves.easeInOut, 80),
+    _seg(
+      const Offset(0.85, 1.2),
+      const Offset(1.08, 0.94),
+      Curves.easeInOut,
+      80,
+    ),
     _seg(const Offset(1.08, 0.94), const Offset(1, 1), Curves.easeOut, 80),
   ]);
 
@@ -68,7 +77,12 @@ class DSSwitch extends StatelessWidget {
   /// (1,1) → (1.14,0.9) → (0.94,1.08) → (1,1)
   static final Animatable<Offset> _trackScale = TweenSequence<Offset>([
     _seg(const Offset(1, 1), const Offset(1.14, 0.9), Curves.easeIn, 120),
-    _seg(const Offset(1.14, 0.9), const Offset(0.94, 1.08), Curves.easeOut, 120),
+    _seg(
+      const Offset(1.14, 0.9),
+      const Offset(0.94, 1.08),
+      Curves.easeOut,
+      120,
+    ),
     _seg(const Offset(0.94, 1.08), const Offset(1, 1), Curves.easeOut, 100),
   ]);
 
@@ -117,9 +131,7 @@ class DSSwitch extends StatelessWidget {
                   right: 8,
                   top: 3,
                   child: _KachiLines(
-                    color: disabled
-                        ? theme.disabled
-                        : trackColor.mixWhite(0.3),
+                    color: disabled ? theme.disabled : trackColor.mixWhite(0.3),
                     active: value && !disabled,
                   ),
                 ),
@@ -132,39 +144,26 @@ class DSSwitch extends StatelessWidget {
   }
 
   Widget _buildTrack(AppThemeData theme, Color trackColor, bool disabled) {
+    final on = value && !disabled;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
       width: 62,
       height: 36,
       padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        gradient: value && !disabled
-            ? LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: theme.jellyGradient(trackColor),
-                stops: theme.jellyStops,
-              )
-            : null,
-        color: !value || disabled
-            ? (disabled ? theme.disabled : theme.surfaceAlt)
-            : null,
-        borderRadius: theme.radii.pill,
-        border: Border.all(
-          color: value && !disabled
-              ? theme.jellyRim(trackColor)
-              : theme.textSub.withValues(alpha: disabled ? 0.25 : 0.45),
-          width: 1.2,
-        ),
-        boxShadow: value && !disabled
-            ? theme.jellyShadow(trackColor, height: 4)
-            : theme.shadows.soft,
+      // 手绘轨道：开=activeColor 实底+墨线描边；关=淡紫实底+淡墨描边。
+      // RoughBoxDecoration 间无补间，开关切换时直接换装饰
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: theme.radii.pill,
+        fillColor: on
+            ? trackColor
+            : (disabled ? theme.disabled : theme.surfaceAlt),
+        stroke: on
+            ? theme.ink
+            : theme.textSub.withValues(alpha: disabled ? 0.25 : 0.45),
+        strokeWidth: 1.2,
       ),
-      // 开启态：轨道叠加水晶玻璃罩
-      foregroundDecoration: value && !disabled
-          ? JellyGlossDecoration(radius: theme.radii.pill, isDark: theme.isDark)
-          : null,
       // 裁剪到轨道圆角内：滑块过冲时顶到轨道边缘而非溢出
       clipBehavior: Clip.antiAlias,
       child: Align(
@@ -191,26 +190,14 @@ class DSSwitch extends StatelessWidget {
   }
 
   Widget _buildKnob(AppThemeData theme, Color trackColor, bool disabled) {
+    // 白色滑块圆 + 墨线描边（手绘风格：无渐变、无投影）
     return Container(
       width: 30,
       height: 30,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            DsColors.white,
-            theme.isDark ? theme.surfaceAlt : const Color(0xFFF3EDFF),
-          ],
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: (value ? trackColor : theme.text).withValues(alpha: 0.35),
-            offset: const Offset(0, 2),
-            blurRadius: 4,
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        circle: true,
+        fillColor: DsColors.white,
       ),
       child: CustomPaint(
         painter: _SwitchFacePainter(
@@ -242,10 +229,7 @@ class _KachiLines extends StatelessWidget {
         children: [
           _line(0.24),
           const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: _line(-0.24),
-          ),
+          Padding(padding: const EdgeInsets.only(left: 6), child: _line(-0.24)),
         ],
       ),
     );
@@ -255,13 +239,17 @@ class _KachiLines extends StatelessWidget {
   /// 右側 120% → 左侧 -122%（过冲）→ 回稳 -100%（完全滑出）
   static final Animatable<double> _lineSlide = TweenSequence<double>([
     TweenSequenceItem(
-      tween: Tween(begin: 1.2, end: -1.22)
-          .chain(CurveTween(curve: Curves.easeIn)),
+      tween: Tween(
+        begin: 1.2,
+        end: -1.22,
+      ).chain(CurveTween(curve: Curves.easeIn)),
       weight: 280,
     ),
     TweenSequenceItem(
-      tween: Tween(begin: -1.22, end: -1.0)
-          .chain(CurveTween(curve: Curves.easeOut)),
+      tween: Tween(
+        begin: -1.22,
+        end: -1.0,
+      ).chain(CurveTween(curve: Curves.easeOut)),
       weight: 120,
     ),
   ]);
@@ -275,21 +263,22 @@ class _KachiLines extends StatelessWidget {
           width: 22,
           height: 3,
           // 滑入 → 稍过冲 → 回稳；反向（关闭）时被 AnimatedOpacity 隐藏
-          child: Container(
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          )
-              .animate(target: active ? 1 : 0)
-              .custom(
-                delay: 320.ms,
-                duration: 400.ms,
-                builder: (context, t, child) => FractionalTranslation(
-                  translation: Offset(_lineSlide.transform(t), 0),
-                  child: child,
-                ),
-              ),
+          child:
+              Container(
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  )
+                  .animate(target: active ? 1 : 0)
+                  .custom(
+                    delay: 320.ms,
+                    duration: 400.ms,
+                    builder: (context, t, child) => FractionalTranslation(
+                      translation: Offset(_lineSlide.transform(t), 0),
+                      child: child,
+                    ),
+                  ),
         ),
       ),
     );

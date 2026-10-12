@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'jelly_box.dart';
 
-/// 线性果冻进度条：渐变填充，可选末端挂件（如星星）
+/// 线性手绘进度条：纯色填充，可选末端挂件（如星星）
 class DSLinearProgress extends StatelessWidget {
   const DSLinearProgress({
     super.key,
@@ -55,7 +56,7 @@ class DSLinearProgress extends StatelessWidget {
                       raised: false,
                     ),
                   ),
-                  // 渐变填充（带水晶玻璃罩）
+                  // 纯色填充（手绘风格：无渐变、无玻璃高光）
                   Positioned(
                     left: 0,
                     top: thumb != null ? 14 : 0,
@@ -65,16 +66,7 @@ class DSLinearProgress extends StatelessWidget {
                         width: math.max((width - 2) * t + 2, 12),
                         height: height,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              color ?? theme.primary,
-                              theme.secondary,
-                            ],
-                          ),
-                        ),
-                        foregroundDecoration: JellyGlossDecoration(
-                          radius: theme.radii.pill,
-                          isDark: theme.isDark,
+                          color: color ?? theme.primary,
                         ),
                       ),
                     ),
@@ -84,11 +76,7 @@ class DSLinearProgress extends StatelessWidget {
                     Positioned(
                       left: (width - 26) * t,
                       top: 0,
-                      child: SizedBox(
-                        width: 26,
-                        height: 26,
-                        child: thumb!,
-                      ),
+                      child: SizedBox(width: 26, height: 26, child: thumb!),
                     ),
                 ],
               ),
@@ -100,7 +88,7 @@ class DSLinearProgress extends StatelessWidget {
   }
 }
 
-/// 圆环果冻进度：中心自定义内容
+/// 圆环手绘进度：中心自定义内容
 class DSRingProgress extends StatelessWidget {
   const DSRingProgress({
     super.key,
@@ -137,9 +125,9 @@ class DSRingProgress extends StatelessWidget {
               size: Size.square(size),
               painter: _RingPainter(
                 progress: t,
-                trackColor: theme.surfaceAlt,
+                trackColor: theme.ink.withValues(alpha: 0.3),
                 progressColor: color ?? theme.primary,
-                gradientColor: theme.secondary,
+                drawConfig: theme.wired.drawConfig,
                 strokeWidth: strokeWidth,
               ),
             ),
@@ -151,55 +139,67 @@ class DSRingProgress extends StatelessWidget {
   }
 }
 
+/// 手绘圆环：底环淡墨整圈 + 进度弧主色，均由 skribble rough 引擎画弧
 class _RingPainter extends CustomPainter {
   const _RingPainter({
     required this.progress,
     required this.trackColor,
     required this.progressColor,
-    required this.gradientColor,
+    required this.drawConfig,
     required this.strokeWidth,
   });
 
   final double progress;
   final Color trackColor;
   final Color progressColor;
-  final Color gradientColor;
+  final DrawConfig drawConfig;
   final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = strokeWidth;
-    final rect = Offset.zero & size;
-    final inset = rect.deflate(stroke / 2 + 2);
+    final center = size.center(Offset.zero);
+    // 墨线中心内收半个笔宽，避免墨迹出界
+    final diameter = size.width - strokeWidth;
+    if (diameter <= 0) return;
+    final generator = Generator(drawConfig, NoFiller());
+    final Paint ink = Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = strokeWidth;
 
-    // 轨道
-    canvas.drawCircle(
-      rect.center,
-      inset.shortestSide / 2,
-      Paint()
-        ..color = trackColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke,
+    // 底环：淡墨整圈（每次生成前重置随机流，动画各帧墨迹稳定不抖变）
+    drawConfig.randomizer.reset();
+    canvas.drawRough(
+      generator.arc(center.dx, center.dy, diameter, diameter, 0, 2 * math.pi),
+      ink..color = trackColor,
+      ink,
     );
 
-    // 进度弧（渐变 + 圆头）
-    final sweep = 2 * math.pi * progress;
-    final rectPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: -math.pi / 2,
-        endAngle: 2 * math.pi - math.pi / 2,
-        colors: [progressColor, gradientColor],
-        transform: const GradientRotation(-math.pi / 2),
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(inset, -math.pi / 2, sweep, false, rectPaint);
+    // 进度弧：12 点方向起顺时针
+    if (progress > 0) {
+      drawConfig.randomizer.reset();
+      canvas.drawRough(
+        generator.arc(
+          center.dx,
+          center.dy,
+          diameter,
+          diameter,
+          -math.pi / 2,
+          -math.pi / 2 + 2 * math.pi * progress,
+        ),
+        ink..color = progressColor,
+        ink,
+      );
+    }
   }
 
   @override
   bool shouldRepaint(_RingPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.progressColor != progressColor;
+      oldDelegate.progress != progress ||
+      oldDelegate.progressColor != progressColor ||
+      oldDelegate.trackColor != trackColor;
 }
 
 /// 进度数值组合（中心文字：如 6/8 打卡）

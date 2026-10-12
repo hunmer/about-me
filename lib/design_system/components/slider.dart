@@ -5,7 +5,7 @@ import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻滑杆：渐变进度 + 星形滑块（对应设计稿）
+/// 手绘滑杆：实色进度 + 星形滑块（对应设计稿）
 class DSSlider extends StatefulWidget {
   const DSSlider({
     super.key,
@@ -55,14 +55,12 @@ class _DSSliderState extends State<DSSlider> {
       value: '${(value * 100).round()}%',
       increasedValue: '${(((value + 0.1).clamp(0.0, 1.0)) * 100).round()}%',
       decreasedValue: '${(((value - 0.1).clamp(0.0, 1.0)) * 100).round()}%',
-      onIncrease:
-          disabled
-              ? null
-              : () => widget.onChanged!((value + 0.1).clamp(0.0, 1.0)),
-      onDecrease:
-          disabled
-              ? null
-              : () => widget.onChanged!((value - 0.1).clamp(0.0, 1.0)),
+      onIncrease: disabled
+          ? null
+          : () => widget.onChanged!((value + 0.1).clamp(0.0, 1.0)),
+      onDecrease: disabled
+          ? null
+          : () => widget.onChanged!((value - 0.1).clamp(0.0, 1.0)),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
@@ -70,19 +68,16 @@ class _DSSliderState extends State<DSSlider> {
 
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTapDown:
-                disabled
-                    ? null
-                    : (d) => _update(d.localPosition.dx, constraints),
+            onTapDown: disabled
+                ? null
+                : (d) => _update(d.localPosition.dx, constraints),
             onTapUp: disabled ? null : (_) => _end(),
-            onPanStart:
-                disabled
-                    ? null
-                    : (d) => _update(d.localPosition.dx, constraints),
-            onPanUpdate:
-                disabled
-                    ? null
-                    : (d) => _update(d.localPosition.dx, constraints),
+            onPanStart: disabled
+                ? null
+                : (d) => _update(d.localPosition.dx, constraints),
+            onPanUpdate: disabled
+                ? null
+                : (d) => _update(d.localPosition.dx, constraints),
             onPanEnd: disabled ? null : (_) => _end(),
             onPanCancel: disabled ? null : _end,
             child: SizedBox(
@@ -103,7 +98,7 @@ class _DSSliderState extends State<DSSlider> {
                       color: disabled ? theme.disabled : theme.surfaceAlt,
                     ),
                   ),
-                  // 渐变进度（带水晶玻璃罩）
+                  // 实色进度（手绘风格：无渐变、无玻璃高光）
                   Positioned(
                     left: 0,
                     bottom: 0,
@@ -112,15 +107,7 @@ class _DSSliderState extends State<DSSlider> {
                       child: Container(
                         width: (width - 4) * value + 4,
                         height: 13,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [color, theme.secondary],
-                          ),
-                        ),
-                        foregroundDecoration: JellyGlossDecoration(
-                          radius: theme.radii.pill,
-                          isDark: theme.isDark,
-                        ),
+                        color: color,
                       ),
                     ),
                   ),

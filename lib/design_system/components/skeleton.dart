@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
 
-/// 果冻骨架屏：呼吸式透明度脉冲，加载占位用
+/// 手绘骨架屏：呼吸式透明度脉冲，加载占位用
 class DSSkeleton extends StatefulWidget {
   const DSSkeleton({
     super.key,
@@ -57,16 +57,16 @@ class _DSSkeletonState extends State<DSSkeleton>
     return FadeTransition(
       opacity: _controller,
       child: Container(
-        width:
-            widget.circle ? (widget.width ?? widget.height * 2) : widget.width,
+        width: widget.circle
+            ? (widget.width ?? widget.height * 2)
+            : widget.width,
         height: widget.height,
         decoration: BoxDecoration(
           color: base,
           shape: widget.circle ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius:
-              widget.circle
-                  ? null
-                  : (widget.radius ?? BorderRadius.circular(widget.height)),
+          borderRadius: widget.circle
+              ? null
+              : (widget.radius ?? BorderRadius.circular(widget.height)),
         ),
       ),
     );
@@ -82,13 +82,15 @@ class DSSkeletonListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 手绘白卡：纸色实底 + 淡墨描边（无阴影）
     return Container(
       padding: EdgeInsets.all(theme.spacing.md),
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.lg,
-        border: Border.all(color: theme.stroke, width: 1.4),
-        boxShadow: theme.shadows.soft,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: theme.radii.lg,
+        stroke: theme.ink.withValues(alpha: 0.5),
+        strokeWidth: 1.4,
       ),
       child: Row(
         children: [

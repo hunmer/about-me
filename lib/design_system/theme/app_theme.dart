@@ -1,15 +1,20 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:skribble_icons_material/skribble_icons_material.dart';
 
 import '../tokens/colors.dart';
 import '../tokens/palettes.dart';
 import '../tokens/radii.dart';
 import '../tokens/shadows.dart';
+// ignore: unused_import, sketch.dart 反向引用本文件（循环 import 合法）
+import '../tokens/sketch.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
 
 // 转发导出：组件只 import theme 即可拿到颜色令牌与派生扩展
 export '../tokens/colors.dart';
 export '../tokens/palettes.dart';
+export '../tokens/sketch.dart';
 
 /// 主题数据：语义化设计令牌的集合
 ///
@@ -144,57 +149,33 @@ class AppThemeData {
   DsRadiiToken get radii => const DsRadiiToken();
   DsShadowsToken get shadows => const DsShadowsToken();
 
-  /// 果冻渐变（水晶质感）：顶部高光带 → 基色 → 底部加深
-  List<Color> jellyGradient(Color base) => [
-        base.mixWhite(isDark ? 0.34 : 0.55), // 顶部水晶高光带
-        base.mixWhite(isDark ? 0.14 : 0.22), // 高光衰减过渡
-        base,
-        base.mixBlack(isDark ? 0.22 : 0.08), // 底部加深，体积感
-      ];
+  /// 果冻渐变（手绘化后仅保兼容：返回纯色，无渐变）
+  List<Color> jellyGradient(Color base) => [base, base, base, base];
 
-  /// 果冻渐变的分段（上 1/3 是水晶高光区，底部压暗）
+  /// 果冻渐变的分段（保兼容）
   List<double> get jellyStops => const [0.0, 0.32, 0.55, 1.0];
 
-  /// 果冻描边（基色加深），立体感来源之一
-  Color jellyStroke(Color base) => base.mixBlack(isDark ? 0.35 : 0.18);
+  /// 果冻描边：手绘化后即基色
+  Color jellyStroke(Color base) => base;
 
-  /// 水晶描边（基色调亮的浅色外圈），对应设计稿的「白色描边」
-  Color jellyRim(Color base) => base.mixWhite(isDark ? 0.35 : 0.62);
+  /// 水晶描边：手绘化后即基色
+  Color jellyRim(Color base) => base;
 
-  /// 水晶高光罩层：叠加在果冻件表层的顶部透亮光泽（覆盖在 child 之上）
+  /// 水晶高光罩层：手绘化后全透明
   LinearGradient jellyGloss() => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
         colors: [
-          DsColors.white.withValues(alpha: isDark ? 0.14 : 0.30),
-          DsColors.white.withValues(alpha: isDark ? 0.05 : 0.10),
+          DsColors.transparent,
+          DsColors.transparent,
           DsColors.transparent,
         ],
         stops: const [0.0, 0.35, 0.6],
       );
 
-  /// 彩色果冻投影：基色晕染下坠（大而柔的深紫投影）+ 白色外圈顶光
-  List<BoxShadow> jellyShadow(Color base, {double height = 5}) => [
-        BoxShadow(
-          color: base.withValues(alpha: isDark ? 0.6 : 0.5),
-          offset: Offset(0, height + 2),
-          blurRadius: height * 3.0,
-        ),
-        BoxShadow(
-          color: stroke.withValues(alpha: isDark ? 0.12 : 0.9),
-          offset: const Offset(0, -1),
-          blurRadius: 2,
-        ),
-      ];
+  /// 投影：手绘风格无彩色柔影，返回空
+  List<BoxShadow> jellyShadow(Color base, {double height = 5}) => const [];
 
-  /// 按压态投影：下坠更少，模拟被按进果冻里
-  List<BoxShadow> pressedShadow(Color base, {double height = 5}) => [
-        BoxShadow(
-          color: base.withValues(alpha: isDark ? 0.45 : 0.30),
-          offset: Offset(0, height * 0.35),
-          blurRadius: height,
-        ),
-      ];
+  /// 按压态投影：返回空
+  List<BoxShadow> pressedShadow(Color base, {double height = 5}) => const [];
 
   /// 派生：主色文字（浅色模式直接用主色，深色模式提亮）
   Color get primaryText => isDark ? primary : primary.mixBlack(0.08);
@@ -272,14 +253,25 @@ class AppTheme extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 手绘图标目录注册（幂等：重复调用仅覆盖同一目录；
+    // 不能走 assert——release 下会被剥除导致 WiredIcon 拿不到手绘几何）
+    registerSkribbleMaterialIcons();
     return _AppThemeScope(
       data: data,
-      child: DefaultTextStyle(
-        style: DsTypography.body.copyWith(
-          color: data.text,
-          decoration: TextDecoration.none,
+      child: WiredThemeScope(
+        data: data.wired,
+        // 透明 Material 兜底：Wired* 组件内嵌的 Material 控件
+        // （TextButton/Card/Checkbox...）在纯 widgets 树里需要 Material 祖先
+        child: Material(
+          type: MaterialType.transparency,
+          child: DefaultTextStyle(
+            style: DsTypography.body.copyWith(
+              color: data.text,
+              decoration: TextDecoration.none,
+            ),
+            child: child,
+          ),
         ),
-        child: child,
       ),
     );
   }

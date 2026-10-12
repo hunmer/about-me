@@ -5,9 +5,9 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻列表卡片：标题/副标题 + 尾部信息，浅色底 + 右上角图标水印
+/// 手绘列表卡片：标题/副标题 + 尾部信息，浅色底 + 右上角图标水印
 ///
-/// 卡片内部为 [iconColor] 调亮的浅色底，描边取 [iconColor] 原色。
+/// 卡片内部为 [iconColor] 调亮的浅色底，描边取 [iconColor] 原色手绘墨线。
 /// 标志（[icon] 或 [leading]）放大后贴在卡片右上角作为背景水印，
 /// 置于内容层之下，超出圆角的部分被裁剪。
 class DSListItemCard extends StatelessWidget {
@@ -59,13 +59,14 @@ class DSListItemCard extends StatelessWidget {
       borderRadius: radius,
       child: Stack(
         children: [
-          // 浅色底 + 原色描边
+          // 浅色底 + 原色手绘描边
           Positioned.fill(
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: radius,
-                border: Border.all(color: baseColor, width: 1.8),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: cardColor,
+                stroke: baseColor,
+                radius: radius,
               ),
             ),
           ),

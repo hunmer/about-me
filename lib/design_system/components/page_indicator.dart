@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
 
-/// 果冻页面指示器：当前页为长胶囊，其余为圆点
+/// 手绘页面指示器：当前页为主色胶囊 + 墨描边，其余为淡墨圆点
 class DSPageIndicator extends StatelessWidget {
   const DSPageIndicator({
     super.key,
@@ -28,23 +28,20 @@ class DSPageIndicator extends StatelessWidget {
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             width: i == index ? 26 : 8,
-            height: 8,
+            // 当前页略高：rough 引擎墨迹内收数像素，需要足够高度画胶囊
+            height: i == index ? 12 : 8,
             margin: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              color: i == index
-                  ? active
-                  : theme.surfaceAlt,
-              borderRadius: BorderRadius.circular(999),
-              boxShadow: i == index
-                  ? [
-                      BoxShadow(
-                        color: active.withValues(alpha: 0.4),
-                        offset: const Offset(0, 2),
-                        blurRadius: 5,
-                      ),
-                    ]
-                  : null,
-            ),
+            decoration: i == index
+                ? dsSketchDecoration(
+                    theme: theme,
+                    fillColor: active,
+                    radius: theme.radii.pill,
+                    strokeWidth: 1.2,
+                  )
+                : BoxDecoration(
+                    color: theme.ink.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
           ),
       ],
     );

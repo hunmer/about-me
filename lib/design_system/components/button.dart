@@ -12,9 +12,9 @@ enum DSButtonVariant { primary, secondary, outline, ghost, destructive }
 /// 按钮尺寸
 enum DSButtonSize { sm, md, lg }
 
-/// 果冻按钮
+/// 手绘按钮：纯色实底 + 墨线描边
 ///
-/// 颜色/圆角/阴影全部来自 [AppThemeData]；按压、悬停、禁用态
+/// 颜色/圆角来自 [AppThemeData]；按压、悬停、禁用态
 /// 通过 [Pressable] 的状态回调切换。
 class DSButton extends StatelessWidget {
   const DSButton({
@@ -136,18 +136,12 @@ class DSButton extends StatelessWidget {
                     ? theme.primary.withValues(alpha: 0.55)
                     : null,
             raised: !pressed && !disabled,
-            shadows:
-                pressed && !disabled
-                    ? theme.pressedShadow(
-                      base == theme.surface ? theme.primary : base,
-                    )
-                    : null,
             alignment: Alignment.center,
             child: content,
           );
         }
 
-        // 按压时轻微回缩，强化果冻手感
+        // 按压时轻微回缩，强化按压手感
         final scaled = AnimatedScale(
           scale: pressed && !disabled ? 0.96 : 1.0,
           duration: const Duration(milliseconds: 120),
@@ -209,7 +203,6 @@ class DSIconButton extends StatelessWidget {
             radius: theme.radii.circle,
             color: effectiveBase,
             raised: !pressed && !disabled,
-            shadows: pressed && !disabled ? theme.pressedShadow(base) : null,
             alignment: Alignment.center,
             child: DsIcon(
               icon,
@@ -231,7 +224,7 @@ class DSIconButton extends StatelessWidget {
   }
 }
 
-/// 悬浮果冻按钮（FAB）
+/// 悬浮手绘按钮（FAB）
 class DSFab extends StatelessWidget {
   const DSFab({
     super.key,
@@ -272,10 +265,6 @@ class DSFab extends StatelessWidget {
             radius: theme.radii.circle,
             color: disabled ? theme.disabled : base,
             raised: !pressed,
-            shadows:
-                pressed
-                    ? theme.pressedShadow(base, height: 8)
-                    : theme.jellyShadow(base, height: 8),
             alignment: Alignment.center,
             child: DsIcon(icon, size: size * 0.46, color: effectiveIconColor),
           ),

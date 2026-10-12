@@ -8,7 +8,7 @@ import 'dialog.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 果冻月历选择器（对应设计稿：头部翻月 + 星期行 + 日期网格）
+/// 手绘月历选择器（对应设计稿：头部翻月 + 星期行 + 日期网格）
 class DSDatePicker extends StatefulWidget {
   const DSDatePicker({
     super.key,
@@ -151,17 +151,20 @@ class _DSDatePickerState extends State<DSDatePicker> {
       );
     }
 
-    final decoration = BoxDecoration(
-      shape: BoxShape.circle,
-      border: today ? Border.all(color: theme.primary, width: 1.6) : null,
-      color: today ? theme.primary.mixWhite(0.92) : null,
-    );
-
+    // 今日格：淡紫实底 + 主色墨圈；普通日期无装饰
     return Container(
       width: 34,
       height: 34,
       alignment: Alignment.center,
-      decoration: decoration,
+      decoration: today
+          ? dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: theme.primary.mixWhite(0.92),
+              stroke: theme.primary,
+              strokeWidth: 1.6,
+            )
+          : null,
       child: Text(
         '$dayIndex',
         style: DsTypography.body.copyWith(
@@ -213,40 +216,44 @@ Future<DateTime?> showDSDatePickerDialog({
   return showDSDialog<DateTime>(
     context: context,
     theme: effectiveTheme,
-    builder:
-        (context) => JellyBox(
-          radius: effectiveTheme.radii.xxl,
-          padding: EdgeInsets.all(effectiveTheme.spacing.xl),
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DSDatePicker(
-                value: initialValue,
-                initialMonth: initialValue,
-                onChanged: (date) => selected = date,
-              ),
-              SizedBox(height: effectiveTheme.spacing.lg),
-              Row(
-                children: [
-                  Expanded(
-                    child: DSButton(
-                      label: '取消',
-                      variant: DSButtonVariant.outline,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
+    // 大面板：纸底 + 淡排线 + 墨框（DsSketchPanel 无 constraints 参数，
+    // 用 ConstrainedBox 保住原 maxWidth 布局）
+    builder: (context) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: DsSketchPanel(
+        theme: effectiveTheme,
+        radius: effectiveTheme.radii.xxl,
+        padding: EdgeInsets.all(effectiveTheme.spacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DSDatePicker(
+              value: initialValue,
+              initialMonth: initialValue,
+              onChanged: (date) => selected = date,
+            ),
+            SizedBox(height: effectiveTheme.spacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: '取消',
+                    variant: DSButtonVariant.outline,
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                  SizedBox(width: effectiveTheme.spacing.md),
-                  Expanded(
-                    child: DSButton(
-                      label: '确定',
-                      onPressed: () => Navigator.of(context).pop(selected),
-                    ),
+                ),
+                SizedBox(width: effectiveTheme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: '确定',
+                    onPressed: () => Navigator.of(context).pop(selected),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    ),
   );
 }

@@ -4,14 +4,9 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
 
-/// 果冻加载动画：三颗圆点依次弹跳
+/// 手绘加载动画：三颗圆点依次弹跳
 class DSLoadingDots extends StatefulWidget {
-  const DSLoadingDots({
-    super.key,
-    this.size = 12,
-    this.color,
-    this.label,
-  });
+  const DSLoadingDots({super.key, this.size = 12, this.color, this.label});
 
   final double size;
   final Color? color;
@@ -61,10 +56,7 @@ class _DSLoadingDotsState extends State<DSLoadingDots>
                 children: [
                   for (var i = 0; i < 3; i++)
                     Transform.translate(
-                      offset: Offset(
-                        0,
-                        -_bounce(_controller.value - i * 0.18),
-                      ),
+                      offset: Offset(0, -_bounce(_controller.value - i * 0.18)),
                       child: _Dot(color: color, size: widget.size),
                     ),
                 ],
@@ -104,26 +96,12 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    // 纯色圆点（手绘风格：无渐变、无彩影）
     return Container(
       width: size,
       height: size,
       margin: EdgeInsets.symmetric(horizontal: size * 0.28),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: theme.jellyGradient(color),
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.35),
-            offset: const Offset(0, 3),
-            blurRadius: 5,
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

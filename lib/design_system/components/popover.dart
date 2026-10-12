@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
 
-/// 果冻气泡卡：点击触发，内容可交互（区别于 Tooltip 的纯提示）
+/// 手绘气泡卡：点击触发，内容可交互（区别于 Tooltip 的纯提示）
 class DSPopover extends StatefulWidget {
   const DSPopover({
     super.key,
@@ -59,50 +59,50 @@ class _DSPopoverState extends State<DSPopover> {
 
     final theme = AppTheme.of(context);
     _entry = OverlayEntry(
-      builder:
-          (context) => Stack(
-            children: [
-              // 外部点击关闭
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _removeEntry,
-                ),
-              ),
-              CompositedTransformFollower(
-                link: _link,
-                targetAnchor:
-                    _openUpward ? Alignment.topCenter : Alignment.bottomCenter,
-                followerAnchor:
-                    _openUpward ? Alignment.bottomCenter : Alignment.topCenter,
-                offset: Offset(0, _openUpward ? -10 : 10),
-                child: AppTheme(
-                  data: theme,
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.85, end: 1),
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOutBack,
-                    builder:
-                        (context, t, child) => Opacity(
-                          opacity: t.clamp(0, 1),
-                          child: Transform.scale(
-                            scale: t,
-                            alignment: Alignment.topCenter,
-                            child: child,
-                          ),
-                        ),
-                    child: _PopoverCard(
-                      width: widget.width,
-                      maxHeight: _availableHeight.clamp(120, viewportHeight),
-                      openUpward: _openUpward,
-                      contentBuilder: widget.contentBuilder,
-                      close: _close,
-                    ),
+      builder: (context) => Stack(
+        children: [
+          // 外部点击关闭
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _removeEntry,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: _openUpward
+                ? Alignment.topCenter
+                : Alignment.bottomCenter,
+            followerAnchor: _openUpward
+                ? Alignment.bottomCenter
+                : Alignment.topCenter,
+            offset: Offset(0, _openUpward ? -10 : 10),
+            child: AppTheme(
+              data: theme,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.85, end: 1),
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOutBack,
+                builder: (context, t, child) => Opacity(
+                  opacity: t.clamp(0, 1),
+                  child: Transform.scale(
+                    scale: t,
+                    alignment: Alignment.topCenter,
+                    child: child,
                   ),
                 ),
+                child: _PopoverCard(
+                  width: widget.width,
+                  maxHeight: _availableHeight.clamp(120, viewportHeight),
+                  openUpward: _openUpward,
+                  contentBuilder: widget.contentBuilder,
+                  close: _close,
+                ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
     );
     Overlay.of(context, rootOverlay: true).insert(_entry!);
   }
@@ -140,20 +140,18 @@ class _PopoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
     final card = ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxHeight),
-      child: Container(
+      child: DsSketchPanel(
+        theme: theme,
         width: width,
+        radius: theme.radii.lg,
         padding: EdgeInsets.all(theme.spacing.md),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: theme.radii.lg,
-          border: Border.all(color: theme.stroke, width: 1.4),
-          boxShadow: theme.shadows.float,
-        ),
         child: contentBuilder(context, close),
       ),
     );
+    // 小三角（纯色 + 淡墨描边）
     final triangle = Transform.translate(
       offset: Offset(0, openUpward ? 6 : -6),
       child: Transform.rotate(
@@ -164,6 +162,10 @@ class _PopoverCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.surface,
             borderRadius: BorderRadius.circular(2),
+            border: Border.all(
+              color: theme.ink.withValues(alpha: 0.6),
+              width: 1.2,
+            ),
           ),
         ),
       ),

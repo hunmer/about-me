@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
-/// 果冻底部面板：自底部滑入 + 遮罩，点遮罩关闭
+/// 手绘底部面板：自底部滑入 + 遮罩，点遮罩关闭
 Future<T?> showDSBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -22,14 +22,13 @@ Future<T?> showDSBottomSheet<T>({
       reverseTransitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (c, animation, secondaryAnimation) => AppTheme(
         data: theme,
-        child: _SheetScaffold(
-          title: title,
-          builder: builder,
-        ),
+        child: _SheetScaffold(title: title, builder: builder),
       ),
       transitionsBuilder: (c, animation, secondaryAnimation, child) {
-        final curved =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return SlideTransition(
           position: Tween(
             begin: const Offset(0, 1),
@@ -55,18 +54,18 @@ class _SheetScaffold extends StatelessWidget {
 
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（顶部大圆角，纸色铺满安全区）
+      child: DsSketchPanel(
+        theme: theme,
         width: double.infinity,
-        padding: EdgeInsets.only(bottom: bottomInset),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.xxlValue + 4)),
-          boxShadow: theme.shadows.float,
+        radius: BorderRadius.vertical(
+          top: Radius.circular(theme.radii.xxlValue + 4),
         ),
+        padding: EdgeInsets.only(bottom: bottomInset),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 拖拽把手
+            // 拖拽把手：纯色小条 + 淡墨描边（过小无法走 rough 引擎）
             Container(
               margin: EdgeInsets.symmetric(vertical: theme.spacing.md),
               width: 44,
@@ -74,6 +73,10 @@ class _SheetScaffold extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.surfaceAlt,
                 borderRadius: theme.radii.pill,
+                border: Border.all(
+                  color: theme.ink.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
               ),
             ),
             if (title != null)
@@ -88,8 +91,7 @@ class _SheetScaffold extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title!,
-                        style: DsTypography.heading
-                            .copyWith(color: theme.text),
+                        style: DsTypography.heading.copyWith(color: theme.text),
                       ),
                     ),
                     Pressable(
@@ -149,8 +151,8 @@ class DSSheetAction extends StatelessWidget {
           color: pressed
               ? theme.surfaceAlt
               : hovered
-                  ? theme.surfaceAlt.withValues(alpha: 0.55)
-                  : DsColors.transparent,
+              ? theme.surfaceAlt.withValues(alpha: 0.55)
+              : DsColors.transparent,
           child: Row(
             children: [
               DsIcon(icon, size: 20, color: tint),
