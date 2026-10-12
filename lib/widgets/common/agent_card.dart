@@ -249,14 +249,29 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
 
         // 如果有封面，优先显示（竖版通栏，含 assets/ 网络与本地路径）
         if (widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty) {
-          return ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-            child: AdaptiveImage(
-              imagePath: widget.avatarUrl,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          final radius = const BorderRadius.vertical(top: Radius.circular(11));
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(
+                borderRadius: radius,
+                child: AdaptiveImage(
+                  imagePath: widget.avatarUrl,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              // 图片墨线描边覆盖层（无填充，只画手绘边框）
+              IgnorePointer(
+                child: Container(
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: radius,
+                  ),
+                ),
+              ),
+            ],
           );
         }
 

@@ -39,18 +39,16 @@ class DSBadge extends StatelessWidget {
       base = color ?? theme.primary;
       fg = textColor ?? theme.onPrimary;
     }
+    var style = DsTypography.label.copyWith(color: fg);
+    if (fontSize != null) {
+      style = style.copyWith(fontSize: fontSize);
+    }
     return JellyBox(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       radius: theme.radii.pill,
       color: base,
       raised: false,
-      child: Text(
-        label,
-        style: DsTypography.label.copyWith(
-          color: fg,
-          if (fontSize != null) fontSize: fontSize,
-        ),
-      ),
+      child: Text(label, style: style),
     );
   }
 

@@ -248,9 +248,19 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   }
 
   Widget _clipCover(Widget child) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-      child: child,
+    final theme = DSThemeBridge.resolve(context);
+    final radius = const BorderRadius.vertical(top: Radius.circular(11));
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRRect(borderRadius: radius, child: child),
+        // 图片墨线描边覆盖层（无填充，只画手绘边框）
+        IgnorePointer(
+          child: Container(
+            decoration: dsSketchDecoration(theme: theme, radius: radius),
+          ),
+        ),
+      ],
     );
   }
 
