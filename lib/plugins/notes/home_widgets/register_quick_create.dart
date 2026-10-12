@@ -24,8 +24,8 @@ void registerQuickCreate(QuickCreateRegistry registry) {
         NavigationHelper.push(
           context,
           NoteEditScreen(
-            onSave: (title, content) async {
-              await controller.createNote(title, content, 'root');
+            onSave: (title, content, tags) async {
+              await controller.createNote(title, content, 'root', tags: tags);
             },
           ),
         );

@@ -10,15 +10,12 @@ import 'widgets/task_list_card.dart';
 import 'widgets/audio_waveform_card.dart';
 import 'widgets/line_chart_trend_card.dart';
 import 'widgets/earnings_trend_card.dart';
-import 'widgets/watch_progress_card.dart';
 import 'widgets/card_bar_chart_monitor.dart';
 import 'widgets/card_bubble_chart_display.dart';
 import 'widgets/card_trend_line_chart.dart';
 import 'widgets/image_display_card.dart';
-import 'widgets/split_image_card.dart';
 import 'widgets/segmented_progress_card.dart';
 import 'widgets/profile_card_card.dart';
-import 'widgets/milestone_card.dart';
 import 'package:aboutme/widgets/common/inbox_message_card.dart';
 import 'package:aboutme/widgets/common/rounded_task_list_card.dart';
 import 'package:aboutme/widgets/common/rounded_reminders_list_card.dart';
@@ -33,7 +30,6 @@ import 'widgets/revenue_trend_card.dart';
 import 'widgets/dual_slider_widget.dart';
 import 'widgets/daily_todo_list_widget.dart';
 import 'widgets/upcoming_tasks_widget.dart';
-import 'widgets/social_profile_card.dart';
 import 'widgets/mini_trend_card.dart';
 import 'widgets/account_balance_card.dart';
 import 'widgets/modern_rounded_spending_widget.dart';
@@ -43,24 +39,15 @@ import 'widgets/trend_value_card.dart';
 import 'widgets/trend_list_card.dart';
 import 'widgets/modern_flip_counter_card.dart';
 import 'widgets/chart_icon_display_card.dart';
-import 'widgets/news_update_card.dart';
-import 'widgets/news_card.dart';
 import 'widgets/daily_events_card.dart';
 import 'widgets/daily_reflection_card.dart';
-import 'widgets/colorful_shortcuts_grid.dart';
-import 'widgets/journal_prompt_card.dart';
-import 'widgets/social_activity_card.dart';
 import 'widgets/icon_circular_progress_card.dart';
 import 'widgets/monthly_bill_card.dart';
 import 'widgets/color_tag_task_card.dart';
-import 'widgets/timeline_status_card.dart';
 import 'widgets/spending_trend_chart.dart';
 import 'widgets/modern_rounded_bar_icon_card.dart';
-import 'widgets/daily_schedule_card.dart';
-import 'widgets/article_list_card.dart';
 import 'widgets/event_calendar_widget.dart';
 import 'widgets/rounded_task_progress_widget.dart';
-import 'widgets/dual_range_chart_card.dart';
 import 'widgets/daily_bar_chart_card.dart';
 import 'widgets/split_column_progress_bar_card.dart';
 import 'widgets/portfolio_stacked_chart.dart';
@@ -71,11 +58,9 @@ import 'widgets/ranked_bar_chart_card.dart';
 import 'widgets/rental_preview_card.dart';
 import 'widgets/rounded_property_card.dart';
 import 'widgets/task_list_stat_card.dart';
-import 'widgets/vertical_property_card.dart';
 import 'widgets/task_progress_list.dart';
 import 'widgets/dark_bar_chart_card.dart';
 import 'widgets/card_emoji_icon_display.dart';
-import 'widgets/habit_streak_tracker_card.dart';
 import 'widgets/monthly_dot_tracker_card.dart';
 import 'widgets/checkin_item_card.dart';
 import 'widgets/activity_heatmap_card.dart';
@@ -104,7 +89,6 @@ import 'package:aboutme/widgets/common/memorial_day_card.dart';
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
   circularProgressCard,
-  socialActivityCard,
   iconCircularProgressCard,
   colorTagTaskCard,
   activityProgressCard,
@@ -113,7 +97,6 @@ enum CommonWidgetId {
   taskListCard,
   audioWaveformCard,
   segmentedProgressCard,
-  milestoneCard,
   monthlyProgressDotsCard,
   multiMetricProgressCard,
   circularMetricsCard,
@@ -127,16 +110,13 @@ enum CommonWidgetId {
   earningsTrendCard,
   timerCard,
   revenueTrendCard,
-  watchProgressCard,
   stressLevelMonitor,
   dailyTodoListCard,
   upcomingTasksWidget,
   profileCardCard,
   sleepStageChartCard,
-  splitImageCard,
   imageDisplayCard,
   weightTrendChart,
-  socialProfileCard,
   miniTrendCard,
   accountBalanceCard,
   modernRoundedSpendingWidget,
@@ -145,22 +125,14 @@ enum CommonWidgetId {
   trendValueCard,
   trendListCard,
   moodChartCard,
-  newsUpdateCard,
-  newsCard,
   dailyEventsCard,
   modernEgfrHealthWidget,
   dailyReflectionCard,
-  colorfulShortcutsGrid,
-  journalPromptCard,
   monthlyBillCard,
-  timelineStatusCard,
   spendingTrendChart,
   modernRoundedMoodWidget,
-  dailyScheduleCard,
-  articleListCard,
   eventCalendarWidget,
   roundedTaskProgressWidget,
-  dualRangeChartCard,
   dailyBarChartCard,
   nutritionProgressCard,
   portfolioStackedChart,
@@ -171,11 +143,9 @@ enum CommonWidgetId {
   rentalPreviewCard,
   roundedPropertyCard,
   taskListStatCard,
-  verticalPropertyCard,
   taskProgressList,
   sleepDurationCard,
   moodTrackerCard,
-  habitStreakTrackerCard,
   monthlyDotTrackerCard,
   checkinItemCard,
   activityHeatmapCard,
@@ -297,14 +267,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.milestoneCard: CommonWidgetMetadata(
-      id: CommonWidgetId.milestoneCard,
-      name: '里程碑追踪卡片',
-      description: '时间里程碑追踪展示卡片',
-      icon: Icons.flag,
-      defaultSize: Large3Size(),
-      supportedSizes: const [LargeSize()],
-    ),
     CommonWidgetId.monthlyProgressDotsCard: const CommonWidgetMetadata(
       id: CommonWidgetId.monthlyProgressDotsCard,
       name: '月度进度圆点卡片',
@@ -401,14 +363,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.watchProgressCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.watchProgressCard,
-      name: '观看进度卡片',
-      description: '显示用户观看进度、当前/总数和观看项目列表',
-      icon: Icons.play_circle_outline,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.stressLevelMonitor: const CommonWidgetMetadata(
       id: CommonWidgetId.stressLevelMonitor,
       name: '压力水平监测',
@@ -448,22 +402,6 @@ class CommonWidgetsRegistry {
       icon: Icons.bedtime_outlined,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.splitImageCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.splitImageCard,
-      name: '图片分割卡片',
-      description: '左右分屏布局的卡片组件，左侧展示图片，右侧展示信息',
-      icon: Icons.image,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.socialProfileCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.socialProfileCard,
-      name: '社交资料卡片',
-      description: '显示用户头像、名称、账号、标签、内容和社交统计数据',
-      icon: Icons.person,
-      defaultSize: Large3Size(),
-      supportedSizes: [MediumSize(), LargeSize()],
     ),
     CommonWidgetId.miniTrendCard: const CommonWidgetMetadata(
       id: CommonWidgetId.miniTrendCard,
@@ -530,22 +468,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), LargeSize()],
     ),
-    CommonWidgetId.newsUpdateCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.newsUpdateCard,
-      name: '新闻更新卡片',
-      description: '显示新闻标题、时间戳和分页指示器，支持动画效果',
-      icon: Icons.newspaper,
-      defaultSize: Large3Size(),
-      supportedSizes: [MediumSize(), LargeSize()],
-    ),
-    CommonWidgetId.newsCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.newsCard,
-      name: '新闻卡片',
-      description: '显示头条新闻、分类标签和新闻列表，支持动画效果',
-      icon: Icons.article,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
 
     CommonWidgetId.moodChartCard: const CommonWidgetMetadata(
       id: CommonWidgetId.moodChartCard,
@@ -571,30 +493,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.colorfulShortcutsGrid: const CommonWidgetMetadata(
-      id: CommonWidgetId.colorfulShortcutsGrid,
-      name: '彩色快捷方式网格',
-      description: '显示带颜色背景的快捷方式网格，支持动画效果和自定义图标',
-      icon: Icons.grid_view,
-      defaultSize: Large3Size(),
-      supportedSizes: [MediumSize(), LargeSize()],
-    ),
-    CommonWidgetId.journalPromptCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.journalPromptCard,
-      name: '日记提示卡片',
-      description: '显示星期几、提示性问题和操作按钮（新建、同步），支持动画效果和自定义蝴蝶图标',
-      icon: Icons.book,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.socialActivityCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.socialActivityCard,
-      name: '社交活动动态卡片',
-      description: '显示用户头像、名称、关注数和社交动态列表，支持翻转计数动画和互动数据',
-      icon: Icons.people,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.monthlyBillCard: const CommonWidgetMetadata(
       id: CommonWidgetId.monthlyBillCard,
       name: '月度账单卡片',
@@ -602,14 +500,6 @@ class CommonWidgetsRegistry {
       icon: Icons.receipt_long,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.timelineStatusCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.timelineStatusCard,
-      name: '时间线状态卡片',
-      description: '显示位置、标题、描述和时间线进度，支持动画效果和网格背景',
-      icon: Icons.timeline,
-      defaultSize: MediumSize(),
-      supportedSizes: [MediumSize(), LargeSize()],
     ),
     CommonWidgetId.spendingTrendChart: const CommonWidgetMetadata(
       id: CommonWidgetId.spendingTrendChart,
@@ -627,22 +517,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.dailyScheduleCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.dailyScheduleCard,
-      name: '每日日程卡片',
-      description: '显示日期、今日活动和明日活动列表，支持时间活动和全天活动',
-      icon: Icons.event,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.articleListCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.articleListCard,
-      name: '文章列表卡片',
-      description: '显示特色文章和普通文章列表，支持图片展示和动画效果',
-      icon: Icons.article,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.eventCalendarWidget: const CommonWidgetMetadata(
       id: CommonWidgetId.eventCalendarWidget,
       name: '日历事件小组件',
@@ -656,14 +530,6 @@ class CommonWidgetsRegistry {
       name: '圆角任务进度小组件',
       description: '显示项目标题、进度条、待办任务列表、评论数、附件数和团队成员头像',
       icon: Icons.task_alt,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.dualRangeChartCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.dualRangeChartCard,
-      name: '双范围图表统计卡片',
-      description: '显示双范围柱状图，支持日期选择、周视图和范围汇总数据',
-      icon: Icons.bar_chart,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
@@ -747,14 +613,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.verticalPropertyCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.verticalPropertyCard,
-      name: '垂直属性卡片',
-      description: '显示属性信息的垂直卡片，包含图片、标题、元数据和操作按钮',
-      icon: Icons.home_outlined,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.taskProgressList: const CommonWidgetMetadata(
       id: CommonWidgetId.taskProgressList,
       name: '任务进度列表',
@@ -778,14 +636,6 @@ class CommonWidgetsRegistry {
       icon: Icons.sentiment_satisfied_alt,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.habitStreakTrackerCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.habitStreakTrackerCard,
-      name: '习惯连续追踪卡片',
-      description: '显示习惯打卡连续天数、最佳记录、里程碑和日期网格',
-      icon: Icons.local_fire_department,
-      defaultSize: Large3Size(),
-      supportedSizes: [MediumSize(), LargeSize()],
     ),
     CommonWidgetId.monthlyDotTrackerCard: const CommonWidgetMetadata(
       id: CommonWidgetId.monthlyDotTrackerCard,
@@ -1060,8 +910,6 @@ class CommonWidgetBuilder {
         return AudioWaveformCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.segmentedProgressCard:
         return SegmentedProgressCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.milestoneCard:
-        return MilestoneCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.monthlyProgressDotsCard:
         return MonthlyProgressWithDotsCardWidget.fromProps(
           finalProps,
@@ -1092,16 +940,12 @@ class CommonWidgetBuilder {
         return EarningsTrendCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.revenueTrendCard:
         return RevenueTrendCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.watchProgressCard:
-        return WatchProgressCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.stressLevelMonitor:
         return CardBarChartMonitor.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.dailyTodoListCard:
         return DailyTodoListWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.upcomingTasksWidget:
         return UpcomingTasksWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.splitImageCard:
-        return SplitImageCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.profileCardCard:
         return ProfileCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.sleepStageChartCard:
@@ -1110,8 +954,6 @@ class CommonWidgetBuilder {
         return ImageDisplayCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.weightTrendChart:
         return CardTrendLineChart.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.socialProfileCard:
-        return SocialProfileCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.miniTrendCard:
         return MiniTrendCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.accountBalanceCard:
@@ -1126,10 +968,6 @@ class CommonWidgetBuilder {
         return TrendValueCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.trendListCard:
         return TrendListCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.newsUpdateCard:
-        return NewsUpdateCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.newsCard:
-        return NewsCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.modernEgfrHealthWidget:
         return ModernFlipCounterCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.moodChartCard:
@@ -1138,30 +976,16 @@ class CommonWidgetBuilder {
         return DailyEventsCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.dailyReflectionCard:
         return DailyReflectionCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.colorfulShortcutsGrid:
-        return ColorfulShortcutsGridWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.journalPromptCard:
-        return JournalPromptCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.socialActivityCard:
-        return SocialActivityCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.monthlyBillCard:
         return MonthlyBillCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.timelineStatusCard:
-        return TimelineStatusCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.spendingTrendChart:
         return SpendingTrendChartWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.modernRoundedMoodWidget:
         return ModernRoundedBarIconCard.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.dailyScheduleCard:
-        return DailyScheduleCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.articleListCard:
-        return ArticleListCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.eventCalendarWidget:
         return EventCalendarWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.roundedTaskProgressWidget:
         return RoundedTaskProgressWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.dualRangeChartCard:
-        return DualRangeChartCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.dailyBarChartCard:
         return DailyBarChartCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.nutritionProgressCard:
@@ -1182,19 +1006,12 @@ class CommonWidgetBuilder {
         return RoundedPropertyCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.taskListStatCard:
         return TaskListStatCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.verticalPropertyCard:
-        return VerticalPropertyCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.taskProgressList:
         return TaskProgressListWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.sleepDurationCard:
         return DarkBarChartCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.moodTrackerCard:
         return CardEmojiIconDisplay.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.habitStreakTrackerCard:
-        return HabitStreakTrackerCardWidget.fromProps(
-          finalProps,
-          effectiveSize,
-        );
       case CommonWidgetId.monthlyDotTrackerCard:
         return MonthlyDotTrackerCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.checkinItemCard:

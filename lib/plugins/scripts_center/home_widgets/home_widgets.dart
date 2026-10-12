@@ -4,7 +4,6 @@
 /// - [registerIconWidget] - 1x1 简单图标组件
 /// - [registerOverviewWidget] - 2x2 详细卡片组件
 /// - [registerScriptExecutorWidget] - 脚本快速执行小组件
-/// - [registerScriptsListWidget] - 脚本列表小组件（公共组件 ColorfulShortcutsGrid）
 library;
 
 export 'utils.dart';
@@ -14,13 +13,11 @@ export 'providers.dart';
 export 'register_icon_widget.dart';
 export 'register_overview_widget.dart';
 export 'register_script_executor_widget.dart';
-export 'register_scripts_list_widget.dart';
 
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_script_executor_widget.dart';
-import 'register_scripts_list_widget.dart';
 
 /// 注册所有脚本中心插件的小组件
 void register() {
@@ -28,5 +25,4 @@ void register() {
   registerIconWidget(registry);
   registerOverviewWidget(registry);
   registerScriptExecutorWidget(registry);
-  registerScriptsListWidget(registry);
 }

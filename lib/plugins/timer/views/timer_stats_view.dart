@@ -1,6 +1,9 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:aboutme/core/services/timer/storage/timer_storage.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
@@ -535,15 +538,6 @@ class _TimerStatsViewState extends State<TimerStatsView> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(999),
                             color: isToday ? accent : muted,
-                            boxShadow: isToday
-                                ? [
-                                    BoxShadow(
-                                      color: accent.withValues(alpha: 0.35),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : null,
                           ),
                         ),
                       ),
@@ -660,7 +654,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       String two(int n) => n.toString().padLeft(2, '0');
       timeLabel =
           '${two(begin.hour)}:${two(begin.minute)} - ${two(end.hour)}:${two(end.minute)}'
-          ' · ${(record['completed'] as bool? ?? false) ? '已完成' : '中途暂停'}';
+          ' · ${(record['completed'] as bool? ?? false) ? 'timer_completed'.tr : 'timer_pausedEarly'.tr}';
     }
 
     final minutes = duration.inMinutes;
@@ -677,19 +671,15 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             child: Column(
               children: [
                 const SizedBox(height: 5),
+                // 手绘圆点：任务色实底 + 墨线描边
                 Container(
                   width: 12,
                   height: 12,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        spreadRadius: 3,
-                      ),
-                    ],
+                  decoration: dsSketchDecoration(
+                    theme: DSThemeBridge.resolve(context),
+                    circle: true,
+                    fillColor: color,
+                    strokeWidth: 1.4,
                   ),
                 ),
                 if (showLine)
@@ -776,7 +766,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   }
 }
 
-/// 统计页通用白卡：大圆角 + 超柔和环境阴影
+/// 统计页通用卡：手绘纸面板（纸底 + 淡排线 + 墨线框）
 class _Card extends StatelessWidget {
   final Widget child;
 
@@ -784,27 +774,10 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
+    return DsSketchPanel(
+      theme: DSThemeBridge.resolve(context),
+      radius: BorderRadius.circular(24),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: theme.colorScheme.surfaceContainerLowest,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            offset: const Offset(0, 8),
-            blurRadius: 24,
-            spreadRadius: -4,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            offset: const Offset(0, 2),
-            blurRadius: 6,
-            spreadRadius: -1,
-          ),
-        ],
-      ),
       child: child,
     );
   }

@@ -17,14 +17,12 @@ export 'register_icon_widget.dart';
 export 'register_overview_widget.dart';
 export 'register_card_selector.dart';
 export 'register_embedded_widget.dart';
-export 'register_card_list_widget.dart';
 
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'register_icon_widget.dart';
 import 'register_overview_widget.dart';
 import 'register_card_selector.dart';
 import 'register_embedded_widget.dart';
-import 'register_card_list_widget.dart';
 
 /// 注册所有WebView插件的小组件
 void register() {
@@ -33,5 +31,4 @@ void register() {
   registerOverviewWidget(registry);
   registerCardSelectorWidget(registry);
   registerEmbeddedWidget(registry);
-  registerCardListWidget(registry);
 }

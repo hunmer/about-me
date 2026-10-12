@@ -248,6 +248,7 @@ class NotesController {
     String content,
     String folderId, {
     String? customId,
+    List<String> tags = const [],
   }) async {
     // 如果提供了自定义 ID,检查是否已存在
     if (customId != null) {
@@ -264,6 +265,7 @@ class NotesController {
       folderId: folderId,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      tags: tags,
     );
     _notes.putIfAbsent(folderId, () => []).add(note);
     _noteIds.add(note.id);

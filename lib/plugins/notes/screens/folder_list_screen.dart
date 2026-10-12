@@ -122,11 +122,12 @@ class _FolderListScreenState extends State<FolderListScreen> {
                   context,
                   NoteEditScreen(
                     note: note,
-                    onSave: (title, content) {
+                    onSave: (title, content, tags) {
                       final updatedNote = note.copyWith(
                         title: title,
                         content: content,
                         updatedAt: DateTime.now(),
+                        tags: tags,
                       );
                       widget.controller.updateNote(updatedNote);
                     },
@@ -181,11 +182,12 @@ class _FolderListScreenState extends State<FolderListScreen> {
                                   NavigationHelper.push(
                                     context,
                                     NoteEditScreen(
-                                      onSave: (title, content) {
+                                      onSave: (title, content, tags) {
                                         widget.controller.createNote(
                                           title,
                                           content,
                                           currentFolderId,
+                                          tags: tags,
                                         );
                                       },
                                     ),

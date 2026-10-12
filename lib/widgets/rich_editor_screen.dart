@@ -66,6 +66,10 @@ class RichEditorScreen extends StatefulWidget {
   /// 删除回调；为 null 时 dock 不显示删除按钮
   final Future<void> Function()? onDelete;
 
+  /// 外部数据版本号：变化时组件重置为最新的 initial 数据
+  /// （编辑态下会重建编辑控制器，用于外部同步刷新）
+  final int reloadToken;
+
   final RichEditorTexts? texts;
 
   const RichEditorScreen({
@@ -79,6 +83,7 @@ class RichEditorScreen extends StatefulWidget {
     this.titleLeading,
     required this.onSave,
     this.onDelete,
+    this.reloadToken = 0,
     this.texts,
   });
 
@@ -123,6 +128,11 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
   @override
   void didUpdateWidget(covariant RichEditorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.reloadToken != oldWidget.reloadToken) {
+      // 外部数据已更新：整体重置（编辑态下重建编辑控制器）
+      _reloadFromInitial();
+      return;
+    }
     // 非编辑态时同步外部刷新的标签（如日记从存储重新加载）
     if (!_isEditing && !listEquals(oldWidget.initialTags, widget.initialTags)) {
       _tags = List.of(widget.initialTags);
@@ -144,17 +154,36 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
       _backupTags = List.of(_tags);
       _titleController = TextEditingController(text: _title);
       _contentController = _initQuillController(_contentJson);
-      _contentController!.document.changes.listen((_) {
-        if (mounted) {
-          setState(() {
-            _wordCount = _contentController!.document
-                .toPlainText()
-                .trim()
-                .length;
-          });
-        }
-      });
+      _listenWordCount();
     });
+  }
+
+  void _listenWordCount() {
+    _contentController!.document.changes.listen((_) {
+      if (mounted) {
+        setState(() {
+          _wordCount = _contentController!.document
+              .toPlainText()
+              .trim()
+              .length;
+        });
+      }
+    });
+  }
+
+  /// 外部数据已变化：重置为最新的 initial 数据；编辑态下重建编辑控制器
+  void _reloadFromInitial() {
+    _title = widget.initialTitle;
+    _contentJson = widget.initialContent;
+    _tags = List.of(widget.initialTags);
+    _wordCount = _countChars(_contentJson);
+    if (_isEditing) {
+      _disposeEditingControllers();
+      _backupTags = List.of(_tags);
+      _titleController = TextEditingController(text: _title);
+      _contentController = _initQuillController(_contentJson);
+      _listenWordCount();
+    }
   }
 
   void _disposeEditingControllers() {

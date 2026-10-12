@@ -244,11 +244,12 @@ class _NotesMainViewState extends NotesMainViewState
                     NavigationHelper.openContainerWithHero(
                       context,
                       (context) => NoteEditScreen(
-                        onSave: (title, content) async {
+                        onSave: (title, content, tags) async {
                           await plugin.controller.createNote(
                             title,
                             content,
                             currentFolderId,
+                            tags: tags,
                           );
                           loadCurrentFolder();
                         },

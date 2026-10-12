@@ -40,7 +40,7 @@ void _editNote(BuildContext context, Note note) {
     context,
     NoteEditScreen(
       note: note,
-      onSave: (title, content) async {
+      onSave: (title, content, tags) async {
         final updatedNote = Note(
           id: note.id,
           title: title,
@@ -48,7 +48,7 @@ void _editNote(BuildContext context, Note note) {
           folderId: note.folderId,
           createdAt: note.createdAt,
           updatedAt: DateTime.now(),
-          tags: note.tags,
+          tags: tags,
         );
         await controller.updateNote(updatedNote);
       },
@@ -62,8 +62,8 @@ void _createNote(BuildContext context) {
   NavigationHelper.push(
     context,
     NoteEditScreen(
-      onSave: (title, content) async {
-        await controller.createNote(title, content, 'root');
+      onSave: (title, content, tags) async {
+        await controller.createNote(title, content, 'root', tags: tags);
       },
     ),
   );

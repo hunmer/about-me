@@ -19,8 +19,8 @@ Future<void> createNewNote(
   await NavigationHelper.push(
     context,
     NoteEditScreen(
-      onSave: (title, content) async {
-        await controller.createNote(title, content, currentFolderId);
+      onSave: (title, content, tags) async {
+        await controller.createNote(title, content, currentFolderId, tags: tags);
       },
     ),
   );
@@ -38,7 +38,7 @@ Future<void> editNote(
     context,
     NoteEditScreen(
       note: note,
-      onSave: (title, content) async {
+      onSave: (title, content, tags) async {
         final updatedNote = Note(
           id: note.id,
           title: title,
@@ -46,7 +46,7 @@ Future<void> editNote(
           folderId: note.folderId,
           createdAt: note.createdAt,
           updatedAt: DateTime.now(),
-          tags: note.tags,
+          tags: tags,
         );
         await controller.updateNote(updatedNote);
       },

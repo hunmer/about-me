@@ -6,14 +6,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 
-/// 节点状态 → 徽章底色（主题淡彩 wash，对应参考稿 butter/sage/lilac）
-Color nodeStatusWash(AppThemeData theme, NodeStatus status) => switch (status) {
-  NodeStatus.todo => theme.hatch,
-  NodeStatus.doing => theme.warning.withValues(alpha: 0.28),
-  NodeStatus.done => theme.success.withValues(alpha: 0.28),
-  NodeStatus.none => theme.surfaceAlt,
-};
-
 /// 节点状态 → 文案
 String nodeStatusLabel(NodeStatus status) => switch (status) {
   NodeStatus.todo => 'nodes_todo'.tr,
@@ -236,7 +228,7 @@ class _ExpandButton extends StatelessWidget {
   }
 }
 
-/// 状态徽章：pill 淡彩 wash + 墨线圈
+/// 状态徽章：跟随节点色（淡 wash + 同色墨圈），状态由文案区分
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.node, required this.seed});
 
@@ -250,8 +242,8 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: dsSketchDecoration(
         theme: theme,
-        fillColor: nodeStatusWash(theme, node.status),
-        stroke: theme.ink.withValues(alpha: 0.4),
+        fillColor: node.color.withValues(alpha: 0.22),
+        stroke: node.color.withValues(alpha: 0.7),
         strokeWidth: 1.4,
         radius: DsRadii.pill,
         seed: seed,

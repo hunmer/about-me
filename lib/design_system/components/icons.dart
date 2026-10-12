@@ -76,6 +76,11 @@ enum DsIconKind {
   nfc,
   eyeOff,
   lock,
+  speed,
+  hourglass,
+  timer,
+  coffee,
+  replay,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -150,6 +155,11 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.nfc: Icons.nfc,
   DsIconKind.eyeOff: Icons.visibility_off_outlined,
   DsIconKind.lock: Icons.lock_outline,
+  DsIconKind.speed: Icons.speed,
+  DsIconKind.hourglass: Icons.hourglass_top,
+  DsIconKind.timer: Icons.timer,
+  DsIconKind.coffee: Icons.local_cafe,
+  DsIconKind.replay: Icons.replay,
 };
 
 /// 图标组件：基于系统 Material Icons

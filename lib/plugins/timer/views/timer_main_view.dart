@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/timer/timer_plugin.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:collection/collection.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/widgets/common/timer_card_widget.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -187,12 +188,13 @@ class _TimerMainViewState extends State<TimerMainView> {
 
   /// 底部弧形圆盘导航栏：任务/统计双 tab，subbar 右侧圆钮为添加入口
   Widget _buildBottomBar() {
+    final theme = DSThemeBridge.resolve(context);
     return SafeArea(
       top: false,
       child: DSBottomNavigation(
-        items: const [
-          DSNavItem(icon: DsIconKind.clock, label: '任务'),
-          DSNavItem(icon: DsIconKind.chart, label: '统计'),
+        items: [
+          DSNavItem(icon: DsIconKind.clock, label: 'timer_tabTasks'.tr),
+          DSNavItem(icon: DsIconKind.chart, label: 'timer_tabStats'.tr),
         ],
         currentIndex: _currentTab,
         // onTap 不能为 null：null 会触发内部 IgnorePointer 包裹整个导航栏，
@@ -204,7 +206,7 @@ class _TimerMainViewState extends State<TimerMainView> {
         trailingAction: DsIcon(
           DsIconKind.plus,
           size: 20,
-          color: Theme.of(context).colorScheme.onSurface,
+          color: theme.text,
         ),
         onTrailingTap: _showAddTaskSheet,
       ),
@@ -242,7 +244,7 @@ class _TimerMainViewState extends State<TimerMainView> {
   Widget _buildTaskTab() {
     return SuperCupertinoNavigationWrapper(
       title: Text(_plugin.getPluginName(context)!),
-      largeTitle: '计时器',
+      largeTitle: 'timer_name'.tr,
       enableLargeTitle: true,
       // ========== 搜索相关配置 ==========
       enableSearchBar: true,
@@ -275,10 +277,10 @@ class _TimerMainViewState extends State<TimerMainView> {
               onTap: () => _editTask(task),
             ),
             SwipeActionOption(
-              label: '重置',
+              label: 'timer_reset'.tr,
               icon: Icons.replay,
-              backgroundColor: Colors.orange,
-              textColor: Colors.white,
+              backgroundColor: DSThemeBridge.resolve(context).primary,
+              textColor: DSThemeBridge.resolve(context).onPrimary,
               onTap: () => _resetTask(task),
             ),
             SwipeActionPresets.delete(
@@ -338,30 +340,21 @@ class _TimerMainViewState extends State<TimerMainView> {
   /// 构建搜索结果
   Widget _buildSearchResults() {
     if (_currentQuery.isEmpty) {
+      final theme = DSThemeBridge.resolve(context);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
-              '搜索计时器任务',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              'timer_searchHintTitle'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
-              '输入任务名称或分组名称',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              'timer_searchHintSubtitle'.tr,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -369,30 +362,21 @@ class _TimerMainViewState extends State<TimerMainView> {
     }
 
     if (_searchResults.isEmpty) {
+      final theme = DSThemeBridge.resolve(context);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inbox,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
-              '未找到匹配的任务',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              'timer_searchNoResult'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
-              '当前查询：$_currentQuery',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              'timer_searchCurrentQuery'.trParams({'query': _currentQuery}),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -415,10 +399,10 @@ class _TimerMainViewState extends State<TimerMainView> {
               onTap: () => _editTask(task),
             ),
             SwipeActionOption(
-              label: '重置',
+              label: 'timer_reset'.tr,
               icon: Icons.replay,
-              backgroundColor: Colors.orange,
-              textColor: Colors.white,
+              backgroundColor: DSThemeBridge.resolve(context).primary,
+              textColor: DSThemeBridge.resolve(context).onPrimary,
               onTap: () => _resetTask(task),
             ),
             SwipeActionPresets.delete(

@@ -366,12 +366,23 @@ class _TreeRailPainter extends CustomPainter {
           ..strokeWidth = thin ? 1.6 : 2.0
           ..color = theme.ink.withValues(alpha: thin ? 0.45 : 0.6);
 
+    // 参考稿弧形肘线：主干竖线在 ry 处交给贝塞尔弯，弯出后接水平支线
     final x = 1.5;
-    final endY = isLast ? elbowY - 2 : size.height;
+    final rx = thin ? 8.0 : 10.0;
+    final ry = thin ? 6.0 : 8.0;
+    final endY = isLast ? elbowY - ry : size.height;
     final trunk = generator.line(x, 0, x, endY);
-    final branch = generator.line(x, elbowY, size.width - 2, elbowY);
+    final branch =
+        generator.curvePath([
+          PointD(x, elbowY - ry),
+          PointD(x + 0.6, elbowY - ry * 0.25),
+          PointD(x + rx * 0.6, elbowY - 0.5),
+          PointD(x + rx, elbowY),
+        ]);
+    final tail = generator.line(x + rx, elbowY, size.width - 2, elbowY);
     RoughDrawing(trunk, paint, paint).paint(canvas, progress: 1, pressure: 0);
     RoughDrawing(branch, paint, paint).paint(canvas, progress: 1, pressure: 0);
+    RoughDrawing(tail, paint, paint).paint(canvas, progress: 1, pressure: 0);
   }
 
   @override

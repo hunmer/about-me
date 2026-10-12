@@ -28,17 +28,14 @@ import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_exa
 import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/milestone_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/multi_metric_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/line_chart_trend_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/article_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_line_chart_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_bar_chart_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/stacked_ring_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/earnings_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/ranked_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_line_chart_card_example.dart';
@@ -46,39 +43,31 @@ import 'package:aboutme/screens/widgets_gallery/screens/audio_waveform_widget_ex
 import 'package:aboutme/screens/widgets_gallery/screens/dual_slider_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/storage_breakdown_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/route_tracking_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/watch_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/bar_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/activity_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/wallet_balance_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/habit_streak_tracker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/event_calendar_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/performance_bar_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/profile_card_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/portfolio_stacked_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/spending_trend_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/blood_pressure_tracker_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/mood_tracker_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stress_level_monitor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_todo_list_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_steps_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/dual_range_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_dot_tracker_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/mini_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_events_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/category_stack_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/timeline_schedule_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/daily_schedule_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_comparison_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/activity_rings_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_egfr_health_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_balance_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/timeline_status_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_stage_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_bill_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/journal_prompt_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/chart_icon_display_card_example.dart';
@@ -91,26 +80,17 @@ import 'package:aboutme/screens/widgets_gallery/screens/weight_trend_chart_examp
 import 'package:aboutme/screens/widgets_gallery/screens/account_balance_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/holiday_rental_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/news_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/news_update_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_reminders_list_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_metrics_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/colorful_shortcuts_grid_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rental_preview_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/split_image_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/social_profile_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/curve_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/nutrition_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_list_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/social_activity_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/screen_time_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/vertical_property_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/task_progress_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_widget_example.dart';
@@ -273,11 +253,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '分段进度条统计卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/milestone_card',
-          handler: (settings) => RouteHelpers.createRoute(const MilestoneCardExample(), settings: settings),
-          description: '里程碑追踪卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/circular_progress_card',
           handler: (settings) => RouteHelpers.createRoute(const CircularProgressCardExample(), settings: settings),
           description: '圆形进度卡片',
@@ -298,11 +273,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '折线图趋势卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/article_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const ArticleListCardExample(), settings: settings),
-          description: '文章列表卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/vertical_bar_chart_card',
           handler: (settings) => RouteHelpers.createRoute(const VerticalBarChartCardExample(), settings: settings),
           description: '垂直柱状图卡片',
@@ -321,11 +291,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/stacked_bar_chart_widget',
           handler: (settings) => RouteHelpers.createRoute(const StackedBarChartWidgetExample(), settings: settings),
           description: '堆叠条形图组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stacked_ring_chart',
-          handler: (settings) => RouteHelpers.createRoute(const StackedRingChartExample(), settings: settings),
-          description: '堆叠环形图统计卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/earnings_trend_card',
@@ -363,11 +328,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '运输追踪路线卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/watch_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const WatchProgressCardExample(), settings: settings),
-          description: '观看进度卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/bar_chart_stats_card',
           handler: (settings) => RouteHelpers.createRoute(const BarChartStatsCardExample(), settings: settings),
           description: '柱状图统计卡片',
@@ -397,11 +357,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '钱包余额概览卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/habit_streak_tracker',
-          handler: (settings) => RouteHelpers.createRoute(const HabitStreakTrackerExample(), settings: settings),
-          description: '连续打卡追踪器',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/event_calendar_widget',
           handler: (settings) => RouteHelpers.createRoute(const EventCalendarWidgetExample(), settings: settings),
           description: '日历事件卡片',
@@ -410,11 +365,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/performance_bar_chart',
           handler: (settings) => RouteHelpers.createRoute(const PerformanceBarChartExample(), settings: settings),
           description: '性能指标柱状图',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/profile_card_widget',
-          handler: (settings) => RouteHelpers.createRoute(const ProfileCardWidgetExample(), settings: settings),
-          description: '个人资料卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/portfolio_stacked_chart',
@@ -432,11 +382,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '血压追踪器',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/mood_tracker_widget',
-          handler: (settings) => RouteHelpers.createRoute(const MoodTrackerWidgetExample(), settings: settings),
-          description: '心情追踪卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/stress_level_monitor',
           handler: (settings) => RouteHelpers.createRoute(const StressLevelMonitorExample(), settings: settings),
           description: '压力水平监测卡片',
@@ -450,11 +395,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/weekly_steps_progress_card',
           handler: (settings) => RouteHelpers.createRoute(const WeeklyStepsProgressCardExample(), settings: settings),
           description: '每周步数进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/dual_range_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const DualRangeChartCardExample(), settings: settings),
-          description: '双范围图表统计卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/weekly_dot_tracker_card',
@@ -487,11 +427,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '时间线日程卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/daily_schedule_card',
-          handler: (settings) => RouteHelpers.createRoute(const DailyScheduleCardExample(), settings: settings),
-          description: '每日日程卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/expense_comparison_chart',
           handler: (settings) => RouteHelpers.createRoute(const ExpenseComparisonChartExample(), settings: settings),
           description: '支出对比图表',
@@ -514,11 +449,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/modern_rounded_balance_widget',
           handler: (settings) => RouteHelpers.createRoute(const ModernRoundedBalanceWidgetExample(), settings: settings),
           description: '余额卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/timeline_status_card',
-          handler: (settings) => RouteHelpers.createRoute(const TimelineStatusCardExample(), settings: settings),
-          description: '时间线状态卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/sleep_stage_chart',
@@ -544,11 +474,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/upcoming_tasks_widget',
           handler: (settings) => RouteHelpers.createRoute(const UpcomingTasksWidgetExample(), settings: settings),
           description: '即将到来的任务小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/journal_prompt_card',
-          handler: (settings) => RouteHelpers.createRoute(const JournalPromptCardExample(), settings: settings),
-          description: '日记提示卡片',
         ),
     RouteDefinition(
           path: '/widgets_gallery/mood_chart_card',
@@ -613,11 +538,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '彩色标签任务列表卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/holiday_rental_card',
-          handler: (settings) => RouteHelpers.createRoute(const HolidayRentalCardExample(), settings: settings),
-          description: '假期租赁卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/donut_chart_stats_card',
           handler: (settings) => RouteHelpers.createRoute(const DonutChartStatsCardExample(), settings: settings),
           description: '甜甜圈图统计卡片',
@@ -633,24 +553,9 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '笔记列表卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/news_card',
-          handler: (settings) => RouteHelpers.createRoute(const NewsCardExample(), settings: settings),
-          description: '新闻卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/news_update_card',
-          handler: (settings) => RouteHelpers.createRoute(const NewsUpdateCardExample(), settings: settings),
-          description: '新闻更新卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/circular_metrics_card',
           handler: (settings) => RouteHelpers.createRoute(const CircularMetricsCardExample(), settings: settings),
           description: '环形指标卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/colorful_shortcuts_grid',
-          handler: (settings) => RouteHelpers.createRoute(const ColorfulShortcutsGridExample(), settings: settings),
-          description: '彩色快捷方式网格',
         ),
         RouteDefinition(
           path: '/widgets_gallery/rental_preview_card',
@@ -661,16 +566,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/rounded_reminders_list',
           handler: (settings) => RouteHelpers.createRoute(const RoundedRemindersListExample(), settings: settings),
           description: '圆角提醒事项列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/split_image_card',
-          handler: (settings) => RouteHelpers.createRoute(const SplitImageCardExample(), settings: settings),
-          description: '图片分割卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/social_profile_card',
-          handler: (settings) => RouteHelpers.createRoute(const SocialProfileCardExample(), settings: settings),
-          description: '社交资料卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/curve_progress_card',
@@ -691,24 +586,9 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '趋势列表卡片',
         ),
         RouteDefinition(
-          path: '/widgets_gallery/social_activity_card',
-          handler: (settings) => RouteHelpers.createRoute(const SocialActivityCardExample(), settings: settings),
-          description: '社交活动动态卡片',
-        ),
-        RouteDefinition(
           path: '/widgets_gallery/screen_time_chart',
           handler: (settings) => RouteHelpers.createRoute(const ScreenTimeChartExample(), settings: settings),
           description: '屏幕时间统计图表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/vertical_property_card',
-          handler: (settings) => RouteHelpers.createRoute(const VerticalPropertyCardExample(), settings: settings),
-          description: '垂直属性卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/task_progress_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const TaskProgressListCardExample(), settings: settings),
-          description: '任务进度列表卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/vertical_bar_chart_widget',
@@ -816,39 +696,11 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   WidgetPreviewItem(
     category: '进度类',
     icon: Icons.task_alt,
-    title: '任务进度列表卡片',
-    subtitle: 'TaskProgressListCard',
-    route: '/widgets_gallery/task_progress_list_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
-    icon: Icons.task_alt,
     title: '圆角任务进度小组件',
     subtitle: 'RoundedTaskProgressWidget',
     route: '/widgets_gallery/rounded_task_progress_widget',
   ),
   // 追踪类
-  WidgetPreviewItem(
-    category: '追踪类',
-    icon: Icons.flag,
-    title: '里程碑追踪卡片',
-    subtitle: 'MilestoneCard',
-    route: '/widgets_gallery/milestone_card',
-  ),
-  WidgetPreviewItem(
-    category: '追踪类',
-    icon: Icons.play_circle,
-    title: '观看进度卡片',
-    subtitle: 'WatchProgressCard',
-    route: '/widgets_gallery/watch_progress_card',
-  ),
-  WidgetPreviewItem(
-    category: '追踪类',
-    icon: Icons.sentiment_satisfied,
-    title: '心情追踪卡片',
-    subtitle: 'MoodTrackerWidget',
-    route: '/widgets_gallery/mood_tracker_widget',
-  ),
   WidgetPreviewItem(
     category: '追踪类',
     icon: Icons.sentiment_satisfied_alt,
@@ -900,13 +752,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '追踪类',
-    icon: Icons.local_fire_department,
-    title: '连续打卡追踪器',
-    subtitle: 'HabitStreakTracker',
-    route: '/widgets_gallery/habit_streak_tracker',
-  ),
-  WidgetPreviewItem(
-    category: '追踪类',
     icon: Icons.directions_walk,
     title: '每周步数进度卡片',
     subtitle: 'WeeklyStepsProgressCard',
@@ -943,24 +788,10 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '日历类',
-    icon: Icons.today,
-    title: '每日日程卡片',
-    subtitle: 'DailyScheduleCard',
-    route: '/widgets_gallery/daily_schedule_card',
-  ),
-  WidgetPreviewItem(
-    category: '日历类',
     icon: Icons.schedule,
     title: '时间线日程卡片',
     subtitle: 'TimelineScheduleCard',
     route: '/widgets_gallery/timeline_schedule_card',
-  ),
-  WidgetPreviewItem(
-    category: '日历类',
-    icon: Icons.menu_book,
-    title: '日记提示卡片',
-    subtitle: 'JournalPromptCard',
-    route: '/widgets_gallery/journal_prompt_card',
   ),
   // 图表类
   WidgetPreviewItem(
@@ -1007,13 +838,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '图表类',
-    icon: Icons.donut_large,
-    title: '堆叠环形图统计卡片',
-    subtitle: 'StackedRingChartWidget',
-    route: '/widgets_gallery/stacked_ring_chart',
-  ),
-  WidgetPreviewItem(
-    category: '图表类',
     icon: Icons.bar_chart,
     title: '排名条形图卡片',
     subtitle: 'RankedBarChartCard',
@@ -1039,13 +863,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '周条形图卡片',
     subtitle: 'WeeklyBarChartCard',
     route: '/widgets_gallery/weekly_bar_chart_card',
-  ),
-  WidgetPreviewItem(
-    category: '图表类',
-    icon: Icons.bar_chart,
-    title: '双范围图表统计卡片',
-    subtitle: 'DualRangeChartCard',
-    route: '/widgets_gallery/dual_range_chart_card',
   ),
   WidgetPreviewItem(
     category: '图表类',
@@ -1127,13 +944,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   // 内容类
   WidgetPreviewItem(
     category: '内容类',
-    icon: Icons.article,
-    title: '文章列表卡片',
-    subtitle: 'ArticleListCard',
-    route: '/widgets_gallery/article_list_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
     icon: Icons.check_circle_outline,
     title: '任务列表卡片',
     subtitle: 'TaskListCard',
@@ -1148,45 +958,10 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '内容类',
-    icon: Icons.person,
-    title: '个人资料卡片',
-    subtitle: 'ProfileCardWidget',
-    route: '/widgets_gallery/profile_card_widget',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.crop_free,
-    title: '图片分割卡片',
-    subtitle: 'SplitImageCard',
-    route: '/widgets_gallery/split_image_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.update,
-    title: '新闻更新卡片',
-    subtitle: 'NewsUpdateCard',
-    route: '/widgets_gallery/news_update_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.newspaper,
-    title: '新闻卡片',
-    subtitle: 'NewsCard',
-    route: '/widgets_gallery/news_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
     icon: Icons.label_outline,
     title: '彩色标签任务列表卡片',
     subtitle: 'ColorTagTaskCard',
     route: '/widgets_gallery/color_tag_task_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.hotel,
-    title: '假期租赁卡片',
-    subtitle: 'HolidayRentalCard',
-    route: '/widgets_gallery/holiday_rental_card',
   ),
   WidgetPreviewItem(
     category: '内容类',
@@ -1208,27 +983,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '即将到来的任务小组件',
     subtitle: 'UpcomingTasksWidget',
     route: '/widgets_gallery/upcoming_tasks_widget',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.person_outline,
-    title: '社交资料卡片',
-    subtitle: 'SocialProfileCard',
-    route: '/widgets_gallery/social_profile_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.forum_outlined,
-    title: '社交活动动态卡片',
-    subtitle: 'SocialActivityCard',
-    route: '/widgets_gallery/social_activity_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
-    icon: Icons.image,
-    title: '垂直属性卡片',
-    subtitle: 'VerticalPropertyCard',
-    route: '/widgets_gallery/vertical_property_card',
   ),
   WidgetPreviewItem(
     category: '内容类',
@@ -1337,20 +1091,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '分数卡片',
     subtitle: 'ScoreCardWidget',
     route: '/widgets_gallery/score_card_widget',
-  ),
-  WidgetPreviewItem(
-    category: '工具类',
-    icon: Icons.apps,
-    title: '彩色快捷方式网格',
-    subtitle: 'ColorfulShortcutsGrid',
-    route: '/widgets_gallery/colorful_shortcuts_grid',
-  ),
-  WidgetPreviewItem(
-    category: '工具类',
-    icon: Icons.timeline,
-    title: '时间线状态卡片',
-    subtitle: 'TimelineStatusCard',
-    route: '/widgets_gallery/timeline_status_card',
   ),
   WidgetPreviewItem(
     category: '工具类',

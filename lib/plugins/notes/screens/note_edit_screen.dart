@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
-import 'package:aboutme/widgets/quill_editor.dart';
+import 'package:aboutme/widgets/rich_editor_screen.dart';
 
+/// 笔记编辑屏：通用富文本编辑屏 + 笔记特有逻辑
+/// （notes_refresh 同步刷新、路由上下文）
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
-  final Function(String title, String content) onSave;
+  final Function(String title, String content, List<String> tags) onSave;
 
   const NoteEditScreen({super.key, this.note, required this.onSave});
 
@@ -18,7 +22,7 @@ class NoteEditScreen extends StatefulWidget {
 class _NoteEditScreenState extends State<NoteEditScreen> {
   late final EventManager _eventManager;
   Note? _currentNote;
-  int _contentVersion = 0; // 内容版本号，用于强制重建编辑器
+  int _contentVersion = 0; // 内容版本号，外部同步刷新时递增以触发编辑器重载
 
   @override
   void initState() {
@@ -48,7 +52,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final updatedNote = NotesPlugin.instance.controller.getNoteById(_currentNote!.id);
     if (updatedNote != null && mounted) {
       debugPrint('[NoteEditScreen] 检测到笔记更新: ${updatedNote.title}');
-      // 更新当前笔记引用并增加版本号以触发编辑器重建
+      // 更新当前笔记引用并增加版本号以触发编辑器重载
       setState(() {
         _currentNote = updatedNote;
         _contentVersion++;
@@ -81,20 +85,35 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: QuillEditor(
-        // 使用版本号确保同步更新时能重建编辑器
-        key: _currentNote != null
-            ? Key('note_${_currentNote!.id}_v$_contentVersion')
-            : null,
-        initialTitle: _currentNote?.title,
-        initialContent: _currentNote?.content,
-        onSave: (title, content) {
-          widget.onSave(title, content);
-          Navigator.pop(context);
-        },
-        onCancel: () => Navigator.pop(context),
+    final note = _currentNote;
+    return RichEditorScreen(
+      reloadToken: _contentVersion,
+      initialTitle: note?.title ?? '',
+      initialContent: note?.content ?? '',
+      initialTags: note?.tags ?? const [],
+      eyebrow: note != null
+          ? DateFormat.yMMMMd(
+              Localizations.localeOf(context).toString(),
+            ).format(note.updatedAt)
+          : null,
+      texts: RichEditorTexts(
+        untitled: 'notes_untitled'.tr,
+        emptyContent: 'notes_emptyContent'.tr,
+        editTooltip: 'app_edit'.tr,
+        deleteTooltip: 'notes_delete'.tr,
+        confirmDeleteTitle: 'notes_deleteNote'.tr,
+        confirmDeleteMessage: 'notes_deleteNoteConfirm'.tr,
+        confirmDelete: 'notes_delete'.tr,
+        save: 'app_save'.tr,
+        titleHint: 'notes_titleHint'.tr,
+        contentHint: 'notes_contentHint'.tr,
       ),
+      onSave: (title, content, tags) async {
+        await widget.onSave(title, content, tags);
+      },
+      onDelete: note != null
+          ? () => NotesPlugin.instance.controller.deleteNote(note.id)
+          : null,
     );
   }
 }

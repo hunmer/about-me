@@ -166,13 +166,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       _buildListItem(
         context,
         icon: Icons.task_alt,
-        title: '任务进度列表卡片',
-        subtitle: 'TaskProgressListCard - 带进度条的任务列表展示卡片',
-        route: '/widgets_gallery/task_progress_list_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.task_alt,
         title: '圆角任务进度小组件',
         subtitle: 'RoundedTaskProgressWidget - 圆角风格的任务进度展示小组件',
         route: '/widgets_gallery/rounded_task_progress_widget',
@@ -184,27 +177,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
   List<Widget> _buildTrackingSection(BuildContext context) {
     return [
       _buildSectionHeader(context, '追踪类 - 习惯、活动追踪'),
-      _buildListItem(
-        context,
-        icon: Icons.flag,
-        title: '里程碑追踪卡片',
-        subtitle: 'MilestoneCard - 时间里程碑追踪展示卡片',
-        route: '/widgets_gallery/milestone_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.play_circle,
-        title: '观看进度卡片',
-        subtitle: 'WatchProgressCard - 观看进度与历史记录展示卡片',
-        route: '/widgets_gallery/watch_progress_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.sentiment_satisfied,
-        title: '心情追踪卡片',
-        subtitle: 'MoodTrackerWidget - 每周心情记录与统计卡片',
-        route: '/widgets_gallery/mood_tracker_widget',
-      ),
       _buildListItem(
         context,
         icon: Icons.sentiment_satisfied_alt,
@@ -256,13 +228,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.local_fire_department,
-        title: '连续打卡追踪器',
-        subtitle: 'HabitStreakTracker - 连续打卡天数追踪展示组件',
-        route: '/widgets_gallery/habit_streak_tracker',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.directions_walk,
         title: '每周步数进度卡片',
         subtitle: 'WeeklyStepsProgressCard - 每周步数柱状图统计卡片',
@@ -305,24 +270,10 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.today,
-        title: '每日日程卡片',
-        subtitle: 'DailyScheduleCard - 每日活动日程展示卡片',
-        route: '/widgets_gallery/daily_schedule_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.schedule,
         title: '时间线日程卡片',
         subtitle: 'TimelineScheduleCard - 双日时间线日程展示卡片',
         route: '/widgets_gallery/timeline_schedule_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.menu_book,
-        title: '日记提示卡片',
-        subtitle: 'JournalPromptCard - 日记提示问题与快捷操作卡片',
-        route: '/widgets_gallery/journal_prompt_card',
       ),
     ];
   }
@@ -375,13 +326,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.donut_large,
-        title: '堆叠环形图统计卡片',
-        subtitle: 'StackedRingChartWidget - 多类别环形图统计卡片',
-        route: '/widgets_gallery/stacked_ring_chart',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.bar_chart,
         title: '排名条形图卡片',
         subtitle: 'RankedBarChartCard - 水平排名条形图展示卡片',
@@ -407,13 +351,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '周条形图卡片',
         subtitle: 'WeeklyBarChartCard - 一周数据堆叠条形图展示卡片',
         route: '/widgets_gallery/weekly_bar_chart_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.bar_chart,
-        title: '双范围图表统计卡片',
-        subtitle: 'DualRangeChartCard - 双数值范围周统计图表卡片',
-        route: '/widgets_gallery/dual_range_chart_card',
       ),
       _buildListItem(
         context,
@@ -501,13 +438,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       _buildSectionHeader(context, '内容类 - 文章、笔记等内容展示'),
       _buildListItem(
         context,
-        icon: Icons.article,
-        title: '文章列表卡片',
-        subtitle: 'ArticleListCard - 文章内容展示列表卡片',
-        route: '/widgets_gallery/article_list_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.check_circle_outline,
         title: '任务列表卡片',
         subtitle: 'TaskListCard - 任务清单与计数展示卡片',
@@ -529,38 +459,10 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.crop_free,
-        title: '图片分割卡片',
-        subtitle: 'SplitImageCard - 左右分屏布局的图片展示卡片',
-        route: '/widgets_gallery/split_image_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.update,
-        title: '新闻更新卡片',
-        subtitle: 'NewsUpdateCard - 带分页指示器的新闻更新展示卡片',
-        route: '/widgets_gallery/news_update_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.newspaper,
-        title: '新闻卡片',
-        subtitle: 'NewsCard - 头条新闻与列表展示卡片',
-        route: '/widgets_gallery/news_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.label_outline,
         title: '彩色标签任务列表卡片',
         subtitle: 'ColorTagTaskCard - 彩色标签条的任务列表卡片',
         route: '/widgets_gallery/color_tag_task_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.hotel,
-        title: '假期租赁卡片',
-        subtitle: 'HolidayRentalCard - 图片+信息的假期租赁展示卡片',
-        route: '/widgets_gallery/holiday_rental_card',
       ),
       _buildListItem(
         context,
@@ -582,27 +484,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '即将到来的任务小组件',
         subtitle: 'UpcomingTasksWidget - 任务计数与彩色标签列表展示组件',
         route: '/widgets_gallery/upcoming_tasks_widget',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.person_outline,
-        title: '社交资料卡片',
-        subtitle: 'SocialProfileCard - 社交媒体用户资料展示卡片',
-        route: '/widgets_gallery/social_profile_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.forum_outlined,
-        title: '社交活动动态卡片',
-        subtitle: 'SocialActivityCard - 社交媒体动态信息流展示卡片',
-        route: '/widgets_gallery/social_activity_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.image,
-        title: '垂直属性卡片',
-        subtitle: 'VerticalPropertyCard - 图片+信息的垂直展示卡片',
-        route: '/widgets_gallery/vertical_property_card',
       ),
       _buildListItem(
         context,
@@ -729,20 +610,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '分数卡片',
         subtitle: 'ScoreCardWidget - 分数与行为记录展示卡片',
         route: '/widgets_gallery/score_card_widget',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.apps,
-        title: '彩色快捷方式网格',
-        subtitle: 'ColorfulShortcutsGrid - 多色彩快捷方式网格展示组件',
-        route: '/widgets_gallery/colorful_shortcuts_grid',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.timeline,
-        title: '时间线状态卡片',
-        subtitle: 'TimelineStatusCard - 时间进度状态展示卡片',
-        route: '/widgets_gallery/timeline_status_card',
       ),
       _buildListItem(
         context,

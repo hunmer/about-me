@@ -14,11 +14,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/activity_rings_card_exam
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/nutrition_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/task_progress_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/milestone_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/watch_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/mood_tracker_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/chart_icon_display_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stress_level_monitor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_duration_card_example.dart';
@@ -26,27 +22,22 @@ import 'package:aboutme/screens/widgets_gallery/screens/modern_egfr_health_widge
 import 'package:aboutme/screens/widgets_gallery/screens/hydration_tracker_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/blood_pressure_tracker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/activity_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/habit_streak_tracker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_steps_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/route_tracking_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_dot_tracker_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/event_calendar_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_events_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/daily_schedule_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/timeline_schedule_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/journal_prompt_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/line_chart_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_line_chart_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_line_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_bar_chart_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/stacked_ring_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/ranked_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/bar_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_bar_chart_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/dual_range_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/mini_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_value_card_example.dart';
@@ -58,21 +49,12 @@ import 'package:aboutme/screens/widgets_gallery/screens/sleep_stage_chart_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/performance_bar_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/portfolio_stacked_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/revenue_trend_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/article_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/profile_card_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/split_image_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/news_update_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/news_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/holiday_rental_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rental_preview_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/social_profile_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/social_activity_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/vertical_property_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/daily_todo_list_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_reminders_list_example.dart';
@@ -88,8 +70,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/monthly_bill_card_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/audio_waveform_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/dual_slider_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/colorful_shortcuts_grid_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/timeline_status_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/storage_breakdown_widget_example.dart';
 
 /// 小组件预览项数据模型
@@ -491,16 +471,9 @@ class _WidgetRegistry {
         () => const IconCircularProgressCardExample(),
     '/widgets_gallery/nutrition_progress_card':
         () => const NutritionProgressCardExample(),
-    '/widgets_gallery/task_progress_list_card':
-        () => const TaskProgressListCardExample(),
     '/widgets_gallery/rounded_task_progress_widget':
         () => const RoundedTaskProgressWidgetExample(),
     // 追踪类
-    '/widgets_gallery/milestone_card': () => const MilestoneCardExample(),
-    '/widgets_gallery/watch_progress_card':
-        () => const WatchProgressCardExample(),
-    '/widgets_gallery/mood_tracker_widget':
-        () => const MoodTrackerWidgetExample(),
     '/widgets_gallery/mood_chart_card':
         () => const ChartIconDisplayCardExample(),
     '/widgets_gallery/stress_level_monitor':
@@ -515,8 +488,6 @@ class _WidgetRegistry {
         () => const BloodPressureTrackerExample(),
     '/widgets_gallery/activity_progress_card':
         () => CardDotProgressDisplayExample(),
-    '/widgets_gallery/habit_streak_tracker':
-        () => const HabitStreakTrackerExample(),
     '/widgets_gallery/weekly_steps_progress_card':
         () => const WeeklyStepsProgressCardExample(),
     '/widgets_gallery/route_tracking_card':
@@ -527,12 +498,8 @@ class _WidgetRegistry {
     '/widgets_gallery/event_calendar_widget':
         () => const EventCalendarWidgetExample(),
     '/widgets_gallery/daily_events_card': () => const DailyEventsCardExample(),
-    '/widgets_gallery/daily_schedule_card':
-        () => const DailyScheduleCardExample(),
     '/widgets_gallery/timeline_schedule_card':
         () => const TimelineScheduleCardExample(),
-    '/widgets_gallery/journal_prompt_card':
-        () => const JournalPromptCardExample(),
     // 图表类
     '/widgets_gallery/line_chart_trend_card':
         () => const LineChartTrendCardExample(),
@@ -546,8 +513,6 @@ class _WidgetRegistry {
         () => const StackedBarChartCardExample(),
     '/widgets_gallery/stacked_bar_chart_widget':
         () => const StackedBarChartWidgetExample(),
-    '/widgets_gallery/stacked_ring_chart':
-        () => const StackedRingChartExample(),
     '/widgets_gallery/ranked_bar_chart_card':
         () => const RankedBarChartCardExample(),
     '/widgets_gallery/bar_chart_stats_card':
@@ -556,8 +521,6 @@ class _WidgetRegistry {
         () => const DailyBarChartCardExample(),
     '/widgets_gallery/weekly_bar_chart_card':
         () => const WeeklyBarChartCardExample(),
-    '/widgets_gallery/dual_range_chart_card':
-        () => const DualRangeChartCardExample(),
     '/widgets_gallery/donut_chart_stats_card':
         () => const DonutChartStatsCardExample(),
     '/widgets_gallery/mini_trend_card': () => const MiniTrendCardExample(),
@@ -576,30 +539,16 @@ class _WidgetRegistry {
     '/widgets_gallery/revenue_trend_card':
         () => const RevenueTrendCardExample(),
     // 内容类
-    '/widgets_gallery/article_list_card': () => const ArticleListCardExample(),
     '/widgets_gallery/task_list_card': () => const TaskListCardExample(),
     '/widgets_gallery/notes_list_card': () => const NotesListCardExample(),
-    '/widgets_gallery/profile_card_widget':
-        () => const ProfileCardWidgetExample(),
-    '/widgets_gallery/split_image_card': () => const SplitImageCardExample(),
-    '/widgets_gallery/news_update_card': () => const NewsUpdateCardExample(),
-    '/widgets_gallery/news_card': () => const NewsCardExample(),
     '/widgets_gallery/color_tag_task_card':
         () => const ColorTagTaskCardExample(),
-    '/widgets_gallery/holiday_rental_card':
-        () => const HolidayRentalCardExample(),
     '/widgets_gallery/rental_preview_card':
         () => const RentalPreviewCardExample(),
     '/widgets_gallery/inbox_message_card':
         () => const InboxMessageCardExample(),
     '/widgets_gallery/upcoming_tasks_widget':
         () => const UpcomingTasksWidgetExample(),
-    '/widgets_gallery/social_profile_card':
-        () => const SocialProfileCardExample(),
-    '/widgets_gallery/social_activity_card':
-        () => const SocialActivityCardExample(),
-    '/widgets_gallery/vertical_property_card':
-        () => const VerticalPropertyCardExample(),
     '/widgets_gallery/rounded_task_list_card':
         () => const RoundedTaskListCardExample(),
     '/widgets_gallery/daily_todo_list_widget':
@@ -631,10 +580,6 @@ class _WidgetRegistry {
     '/widgets_gallery/dual_slider_widget':
         () => const DualSliderWidgetExample(),
     '/widgets_gallery/score_card_widget': () => const ScoreCardWidgetExample(),
-    '/widgets_gallery/colorful_shortcuts_grid':
-        () => const ColorfulShortcutsGridExample(),
-    '/widgets_gallery/timeline_status_card':
-        () => const TimelineStatusCardExample(),
     '/widgets_gallery/storage_breakdown_widget':
         () => const StorageBreakdownWidgetExample(),
   };

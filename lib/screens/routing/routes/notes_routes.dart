@@ -35,13 +35,14 @@ class NotesRoutes implements RouteRegistry {
             }
             return RouteHelpers.createRoute(
               NoteEditScreen(
-                onSave: (title, content) async {
+                onSave: (title, content, tags) async {
                   final plugin = PluginManager.instance.getPlugin('notes') as NotesPlugin?;
                   if (plugin != null) {
                     await plugin.controller.createNote(
                       title.isEmpty ? 'untitled'.tr : title,
                       content,
                       folderId ?? 'root',
+                      tags: tags,
                     );
                   }
                 },
@@ -59,13 +60,14 @@ class NotesRoutes implements RouteRegistry {
             }
             return RouteHelpers.createRoute(
               NoteEditScreen(
-                onSave: (title, content) async {
+                onSave: (title, content, tags) async {
                   final plugin = PluginManager.instance.getPlugin('notes') as NotesPlugin?;
                   if (plugin != null) {
                     await plugin.controller.createNote(
                       title.isEmpty ? 'untitled'.tr : title,
                       content,
                       folderId ?? 'root',
+                      tags: tags,
                     );
                   }
                 },
