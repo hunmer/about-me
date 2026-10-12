@@ -159,7 +159,6 @@ dependencies:
   flutter_svg: ^2.2.0
   liquid_glass_easy: ^4.3.4
   skribble: ^0.3.1
-  skribble_font_recursive: ^0.3.1
   skribble_icons_material: ^0.3.1
 dev_dependencies:
   flutter_test:
@@ -239,13 +238,11 @@ flutter:
   # https://flutter.dev/to/asset-from-package
 
   fonts:
-    - family: AlibabaPuHuiTi
+    # 851 手写杂书体（日系手写，覆盖假名/汉字/英文），design_system 手绘风主字体
+    # （AlibabaPuHuiTi 已删除：全局字体统一为手写杂书体）
+    - family: TegakiZatsu
       fonts:
-        - asset: assets/fonts/AlibabaPuHuiTi-3-55-Regular.ttf
-        - asset: assets/fonts/AlibabaPuHuiTi-3-65-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/AlibabaPuHuiTi-3-85-Bold.ttf
-          weight: 700
+        - asset: assets/fonts/851tegaki_zatsu_normal_0883.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

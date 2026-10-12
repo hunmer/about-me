@@ -102,6 +102,11 @@ class DSBottomNavigation extends StatelessWidget {
       activePillColor: theme.primary,
       activeIconColor: theme.onPrimary,
       inactiveIconColor: theme.textSub,
+      // 手绘笔触与设计系统同源（粗糙度/笔刷一致，风格统一）
+      drawConfig: theme.wired.drawConfig,
+      // 手绘风格无柔影
+      shadows: const [],
+      roundButtonBorderColor: theme.ink.withValues(alpha: 0.5),
     );
     if (frosted) {
       // 磨砂模式降低填充不透明度，让背景模糊可见；填充取纸色贴近手绘纸面

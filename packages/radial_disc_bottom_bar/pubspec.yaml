@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # 手绘笔触引擎（扇环/药丸/圆钮的墨线抖动）
+  skribble: ^0.3.1
 
 dev_dependencies:
   flutter_test:

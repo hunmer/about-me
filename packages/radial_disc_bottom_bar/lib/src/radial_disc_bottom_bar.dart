@@ -3,6 +3,18 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart'
+    show
+        DrawConfig,
+        RoughBoxShape,
+        RoughDrawingStyle,
+        RoughPen,
+        SolidFiller,
+        WaveredContour,
+        waverPath,
+        waveredPolygons;
+
+import 'rough_edge_decoration.dart';
 
 import 'geometry.dart';
 import 'spring.dart';
@@ -336,12 +348,26 @@ class RadialDiscBottomBar extends StatelessWidget {
                   child: Container(
                     width: RadialGeometry.pillWidth,
                     height: RadialGeometry.pillHeight,
-                    decoration: BoxDecoration(
-                      color: resolvedStyle.activePillColor,
+                    // 手绘药丸：实底 + 墨线抖动描边，贴边绘制
+                    // （RoughEdgeBoxDecoration：填充与描边画在真实边界）
+                    decoration: RoughEdgeBoxDecoration(
+                      shape: RoughBoxShape.roundedRectangle,
                       borderRadius: BorderRadius.circular(
                         RadialGeometry.pillRadius,
                       ),
-                      boxShadow: [resolvedStyle.activePillShadow],
+                      fillStyle: RoughDrawingStyle(
+                        color: resolvedStyle.activePillColor,
+                      ),
+                      // SolidFiller 必传：默认 NoFiller 时实底不画，
+                      // 药丸只剩描边、与 dock 纸底融为一体
+                      filler: SolidFiller(),
+                      borderStyle: RoughDrawingStyle(
+                        width: 1.8,
+                        color: resolvedStyle.strokeColor,
+                      ),
+                      drawConfig:
+                          resolvedStyle.drawConfig ?? _fallbackSketchConfig,
+                      seed: 3,
                     ),
                   ),
                 ),
@@ -527,17 +553,22 @@ class RadialDiscBottomBar extends StatelessWidget {
           child: Container(
             width: RadialGeometry.roundButtonSize,
             height: RadialGeometry.roundButtonSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: selected ? style.activePillColor : style.roundButtonColor,
-              border: Border.all(
+            // 手绘圆钮：实底 + 墨线抖动圆，贴边绘制
+            decoration: RoughEdgeBoxDecoration(
+              shape: RoughBoxShape.circle,
+              fillStyle: RoughDrawingStyle(
+                color: selected ? style.activePillColor : style.roundButtonColor,
+              ),
+              // SolidFiller 必传：默认 NoFiller 时实底不画
+              filler: SolidFiller(),
+              borderStyle: RoughDrawingStyle(
+                width: 1.6,
                 color: selected
                     ? style.activePillColor
                     : style.roundButtonBorderColor,
               ),
-              boxShadow: [
-                selected ? style.activePillShadow : style.roundButtonShadow,
-              ],
+              drawConfig: style.drawConfig ?? _fallbackSketchConfig,
+              seed: 5,
             ),
             child: Center(
               child: IconTheme.merge(
@@ -631,6 +662,15 @@ class _RibbonClipper extends CustomClipper<Path> {
   bool shouldReclip(_RibbonClipper oldClipper) => oldClipper.fold != fold;
 }
 
+/// 包内默认手绘档（宿主未传 drawConfig 时使用，参数对齐 skribble playful）
+final DrawConfig _fallbackSketchConfig = DrawConfig.build(
+  roughness: 1.5,
+  maxRandomnessOffset: 1.6,
+  lineWobble: 0.65,
+  pen: RoughPen.ink,
+  seed: 7,
+);
+
 /// 背景画布：主 / 子两条扇环 + 子栏弧形滑动药丸
 ///
 /// [shadowsOnly] / [fillsOnly] 用于磨砂模式拆分绘制：
@@ -694,11 +734,28 @@ class _ScenePainter extends CustomPainter {
             RadialGeometry.subPillInnerRadius,
             RadialGeometry.subPillOuterRadius,
           );
+          // 手绘药丸：waver 抖动轮廓实底 + 墨线描边（path 随 optionT
+          // 连续变化，不进缓存；短弧采样代价小）
+          final config = style.drawConfig ?? _fallbackSketchConfig;
+          final subPillWavered = waveredPolygons(
+            waverPath(subPill, config, amplitude: 1.0),
+          );
           canvas.drawPath(
-            subPill,
+            subPillWavered,
             Paint()
               ..color = style.subPillColor.withValues(
                 alpha: style.subPillColor.a * progress,
+              ),
+          );
+          canvas.drawPath(
+            subPillWavered,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5
+              ..strokeJoin = StrokeJoin.round
+              ..strokeCap = StrokeCap.round
+              ..color = style.strokeColor.withValues(
+                alpha: style.strokeColor.a * progress,
               ),
           );
         }
@@ -721,21 +778,41 @@ class _ScenePainter extends CustomPainter {
   }
 
   void _paintFill(Canvas canvas, Path path, double alpha) {
+    // 手绘扇环：waver 抖动轮廓（填充边界与墨线都带手绘痕迹）
+    final config = style.drawConfig ?? _fallbackSketchConfig;
+    final wavered = waveredPolygons(_cachedContours(path, config));
     canvas.drawPath(
-      path,
+      wavered,
       Paint()
         ..color = style.fillColor.withValues(
           alpha: style.fillColor.a * alpha,
         ),
     );
     canvas.drawPath(
-      path,
+      wavered,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
+        ..strokeWidth = 1.8
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round
         ..color = style.strokeColor.withValues(
           alpha: style.strokeColor.a * alpha,
         ),
+    );
+  }
+
+  /// 固定扇环 path 的 waver 轮廓缓存（ribbon 为 static final Path，
+  /// DrawConfig 由 style 持有同样稳定；纯函数同输入同输出）
+  static final Map<int, List<WaveredContour>> _waverCache = {};
+
+  List<WaveredContour> _cachedContours(Path path, DrawConfig config) {
+    final key = Object.hash(
+      identityHashCode(path),
+      identityHashCode(config),
+    );
+    return _waverCache.putIfAbsent(
+      key,
+      () => waverPath(path, config, amplitude: 1.0),
     );
   }
 

@@ -2,6 +2,7 @@
 library;
 
 export 'src/geometry.dart';
+export 'src/rough_edge_decoration.dart';
 export 'src/radial_disc_bottom_bar.dart';
 export 'src/spring.dart';
 export 'src/style.dart';

@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   snap_scroll_physics: ^0.0.1+3
   nested_scroll_view_plus: ^1.0.2
+  # 手绘图标（WiredIcon 自动套手绘几何，未收录回退普通 Icon）
+  skribble: ^0.3.1
 
 dev_dependencies:
   flutter_test:

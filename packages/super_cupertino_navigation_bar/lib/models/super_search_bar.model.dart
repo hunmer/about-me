@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart' show WiredIcon;
 import 'package:super_cupertino_navigation_bar/models/super_search_bar_action.model.dart';
 
 class SuperSearchBar {
@@ -52,9 +53,17 @@ class SuperSearchBar {
     this.animationDuration = const Duration(milliseconds: 250),
     this.placeholderTextStyle =
         const TextStyle(color: CupertinoColors.systemGrey),
-    this.cancelTextStyle = const TextStyle(color: CupertinoColors.systemBlue),
-    this.prefixIcon = const Icon(
-      CupertinoIcons.search,
+    // 取消按钮：手绘风主紫（跟随明暗：浅色主紫 / 深色提亮），
+    // 替代默认的 Cupertino 系统蓝
+    this.cancelTextStyle = const TextStyle(
+      color: CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF885CF6),
+        darkColor: Color(0xFFA78BFA),
+      ),
+    ),
+    // 手绘放大镜（CupertinoIcons 不在 skribble 手绘目录，用等价 Material 图标）
+    this.prefixIcon = const WiredIcon(
+      icon: Icons.search,
     ),
     this.actions = const <SuperAction>[],
     this.height = 40,

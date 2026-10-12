@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skribble/skribble.dart' show WiredIcon;
 
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -95,8 +96,14 @@ void main() {
     await tester.pump();
     expect(fabTapped, isTrue);
 
-    // tab 2 可点击（经 tabController 切换）
-    await tester.tap(find.byIcon(Icons.person_outline));
+    // tab 2 可点击（经 tabController 切换）。
+    // DsIcon 手绘化后内部是 WiredIcon（不再是 Icon），
+    // 按 IconData 数据匹配而非 byIcon
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) => w is WiredIcon && w.icon == Icons.person_outline,
+      ),
+    );
     await tester.pumpAndSettle();
     expect(tabController.index, 1);
   });

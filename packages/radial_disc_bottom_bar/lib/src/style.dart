@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart' show DrawConfig;
 
 /// 扇环投影（画布经 MaskFilter.blur 绘制，sigma ≈ CSS blur / 2）
 class RadialShadow {
@@ -42,6 +43,7 @@ class RadialDiscBarStyle {
       blurRadius: 12,
       color: Color(0x14000000),
     ),
+    this.drawConfig,
   });
 
   const RadialDiscBarStyle.dark()
@@ -66,7 +68,8 @@ class RadialDiscBarStyle {
           offset: Offset(0, 4),
           blurRadius: 6,
           color: Color(0x1A000000),
-        );
+        ),
+        drawConfig = null;
 
   factory RadialDiscBarStyle.fromBrightness(bool dark) =>
       dark ? const RadialDiscBarStyle.dark() : const RadialDiscBarStyle();
@@ -107,6 +110,11 @@ class RadialDiscBarStyle {
   final Color roundButtonIconColor;
   final BoxShadow roundButtonShadow;
 
+  /// 手绘笔触配置（skribble rough 引擎）：null 时用包内默认手绘档。
+  /// 扇环 / 药丸 / 圆钮的墨线抖动幅度由此决定，可与宿主设计系统
+  /// 共用同一份 DrawConfig 保持全局风格一致
+  final DrawConfig? drawConfig;
+
   RadialDiscBarStyle copyWith({
     Color? fillColor,
     Color? strokeColor,
@@ -122,6 +130,7 @@ class RadialDiscBarStyle {
     Color? roundButtonBorderColor,
     Color? roundButtonIconColor,
     BoxShadow? roundButtonShadow,
+    DrawConfig? drawConfig,
   }) {
     return RadialDiscBarStyle(
       fillColor: fillColor ?? this.fillColor,
@@ -138,6 +147,7 @@ class RadialDiscBarStyle {
       roundButtonBorderColor: roundButtonBorderColor ?? this.roundButtonBorderColor,
       roundButtonIconColor: roundButtonIconColor ?? this.roundButtonIconColor,
       roundButtonShadow: roundButtonShadow ?? this.roundButtonShadow,
+      drawConfig: drawConfig ?? this.drawConfig,
     );
   }
 }

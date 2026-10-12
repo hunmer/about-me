@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:skribble/skribble.dart' show WiredIcon;
 
 class BackChevron extends StatelessWidget {
   const BackChevron({super.key});
@@ -8,21 +10,14 @@ class BackChevron extends StatelessWidget {
     final TextDirection textDirection = Directionality.of(context);
     final TextStyle textStyle = DefaultTextStyle.of(context).style;
 
-    // Replicate the Icon logic here to get a tightly sized icon and add
-    // custom non-square padding.
+    // 手绘返回箭头（WiredIcon 对 Material 图标套手绘几何；
+    // CupertinoIcons 不在手绘目录，用等价的 chevron_left）
     Widget iconWidget = Padding(
       padding: const EdgeInsetsDirectional.only(start: 6, end: 2),
-      child: Text.rich(
-        TextSpan(
-          text: String.fromCharCode(CupertinoIcons.back.codePoint),
-          style: TextStyle(
-            inherit: false,
-            color: textStyle.color,
-            fontSize: 25.0,
-            fontFamily: CupertinoIcons.back.fontFamily,
-            package: CupertinoIcons.back.fontPackage,
-          ),
-        ),
+      child: WiredIcon(
+        icon: Icons.chevron_left,
+        size: 25.0,
+        color: textStyle.color,
       ),
     );
     switch (textDirection) {

@@ -29,6 +29,7 @@ import 'utils/styled_toast_stub.dart'
     if (dart.library.io) 'package:flutter_styled_toast/flutter_styled_toast.dart';
 
 import 'package:flutter/material.dart';
+import 'package:skribble_icons_material/skribble_icons_material.dart';
 import 'core/services/plugin_widget_sync_helper.dart';
 import 'core/services/clipboard_service.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -45,6 +46,10 @@ void main() {
       // 0. 确保 WidgetsFlutterBinding 初始化（必须在任何平台通道操作之前）
       // 必须在 runZonedGuarded 内部调用，以避免 Zone 不匹配错误
       WidgetsFlutterBinding.ensureInitialized();
+
+      // 注册 skribble 手绘图标目录（幂等；越早越好——导航栏等
+      // 第三方包里的 WiredIcon 不等 AppTheme 主题树建好就开始取图标）
+      registerSkribbleMaterialIcons();
 
       // 注册 timeago 中文消息，避免 locale=zh 时回退英文并打印警告
       timeago.setLocaleMessages('zh', timeago.ZhMessages());
@@ -251,8 +256,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       light: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
-        // 全局默认字体：阿里巴巴普惠体（含中英文，500/700 真字重）
-        fontFamily: 'AlibabaPuHuiTi',
+        // 全局默认字体：851 手写杂书体（含中/英/日，与设计系统同源）
+        fontFamily: 'TegakiZatsu',
         scaffoldBackgroundColor: Colors.white,
         cardColor: Colors.white, // 卡片背景设为纯白色
         appBarTheme: const AppBarTheme(
@@ -281,7 +286,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       dark: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
-        fontFamily: 'AlibabaPuHuiTi',
+        fontFamily: 'TegakiZatsu',
         // 使用无动画构建器以提升性能,特别是键盘弹出时
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {

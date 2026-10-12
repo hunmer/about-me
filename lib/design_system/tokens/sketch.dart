@@ -10,10 +10,13 @@
 /// - 大容器（卡片/对话框/面板）：纸底 + 淡排线（hachure）
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
+import 'typography.dart';
 
 /// 手绘主题派生：从语义主题取墨/纸/笔参数
 extension DsSketchTheme on AppThemeData {
@@ -35,6 +38,9 @@ extension DsSketchTheme on AppThemeData {
         markerColor: primary,
         strokeWidth: 2.2,
         roughnessLevel: WiredRoughness.playful,
+        // Wired* 组件文字与 DsTypography 同字体（851 手写杂书体，
+        // app 内注册，覆盖中/英/日；覆盖默认的 skribble bundled 字体）
+        fontFamily: DsTypography.sketchFamily,
       );
 }
 
@@ -72,7 +78,7 @@ RoughBoxDecoration dsSketchDecoration({
               ),
             )
           : SolidFiller();
-  return RoughBoxDecoration(
+  return _DsRoughBoxDecoration(
     shape: circle
         ? RoughBoxShape.circle
         : (radius == null
@@ -92,6 +98,130 @@ RoughBoxDecoration dsSketchDecoration({
     drawConfig: theme.wired.drawConfig,
     seed: seed,
   );
+}
+
+/// [RoughBoxDecoration] 的项目内定制：描边贴边 + 内容不加出血
+///
+/// skribble 原版有两处「内缩」：
+/// 1. `padding` 预留墨迹出血（约 2~5px），叠加在组件显式 padding 上，
+///    会让「边框到内容」的间距莫名变大 → 本类覆盖为零；
+/// 2. painter 把形状整体 deflate 出血量，描边线条离容器真实边缘
+///    仍有数像素空隙 → 自定义 painter 仅内缩半个线宽（线完全在
+///    界内且贴边），padding 只作用于内容，不作用于描边线条。
+class _DsRoughBoxDecoration extends RoughBoxDecoration {
+  const _DsRoughBoxDecoration({
+    required super.shape,
+    required super.borderStyle,
+    required super.fillStyle,
+    required super.filler,
+    required super.drawConfig,
+    required super.borderRadius,
+    required super.seed,
+  });
+
+  @override
+  EdgeInsetsGeometry get padding => EdgeInsets.zero;
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _DsRoughBoxPainter(this, onChanged);
+}
+
+class _DsRoughBoxPainter extends BoxPainter {
+  _DsRoughBoxPainter(this.decoration, [VoidCallback? onChanged])
+      : super(onChanged);
+
+  final _DsRoughBoxDecoration decoration;
+
+  Size? _size;
+  late RoughDrawing _drawing;
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null || size.isEmpty) return;
+    if (_size != size) {
+      _drawing = _prepare(size);
+      _size = size;
+    }
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    _drawing.paint(canvas, progress: 1, pressure: 0);
+    canvas.restore();
+  }
+
+  RoughDrawing _prepare(Size size) {
+    final half = (decoration.borderStyle?.width ?? 0) / 2;
+    final rect = (Offset.zero & size).deflate(
+      math.min(half, size.shortestSide / 2),
+    );
+
+    final drawConfig =
+        decoration.drawConfig ?? DrawConfig.build(seed: decoration.seed);
+    drawConfig.randomizer.reset();
+    final filler = decoration.filler ?? NoFiller();
+    final generator = Generator(drawConfig, filler);
+
+    final borderPaint = _buildPaint(
+      decoration.borderStyle ?? const RoughDrawingStyle(),
+      rect,
+    );
+    final fillPaint = decoration.fillStyle == null
+        ? borderPaint
+        : _buildPaint(decoration.fillStyle!, rect);
+
+    final Drawable drawable;
+    switch (decoration.shape) {
+      case RoughBoxShape.rectangle:
+        drawable = generator.rectangle(
+          rect.left,
+          rect.top,
+          rect.width,
+          rect.height,
+        );
+      case RoughBoxShape.roundedRectangle:
+        final br = decoration.borderRadius ?? BorderRadius.zero;
+        drawable = generator.roundedRectangle(
+          rect.left,
+          rect.top,
+          rect.width,
+          rect.height,
+          br.topLeft.x,
+          br.topRight.x,
+          br.bottomRight.x,
+          br.bottomLeft.x,
+        );
+      case RoughBoxShape.circle:
+        drawable = generator.circle(
+          rect.center.dx,
+          rect.center.dy,
+          rect.shortestSide,
+        );
+      case RoughBoxShape.ellipse:
+        drawable = generator.ellipse(
+          rect.center.dx,
+          rect.center.dy,
+          rect.width,
+          rect.height,
+        );
+    }
+    return RoughDrawing(drawable, borderPaint, fillPaint);
+  }
+
+  Paint _buildPaint(RoughDrawingStyle style, Rect rect) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = style.width ?? 0.1
+      ..color = style.color ?? const Color(0x00000000)
+      ..shader = style.gradient?.createShader(rect);
+    if (style.blendMode != null) {
+      paint.blendMode = style.blendMode!;
+    }
+    return paint;
+  }
 }
 
 /// 大容器手绘面板：纸底 + 淡排线 + 墨线框（内容层在排线之上）
@@ -142,7 +272,7 @@ class DsSketchPanel extends StatelessWidget {
         color: fillColor ?? theme.surface,
         borderRadius: radius,
       ),
-      child: Container(
+      child: _RoughUnderlay(
         decoration: dsSketchDecoration(
           theme: theme,
           radius: radius,
@@ -157,6 +287,46 @@ class DsSketchPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 排线/描边衬层：铺在 child 之下（墨迹永远贴合内容区，
+/// 不受外层容器 alignment/padding 影响）
+class _RoughUnderlay extends StatelessWidget {
+  const _RoughUnderlay({required this.decoration, this.child});
+
+  final RoughBoxDecoration decoration;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = child;
+    if (content == null) return const SizedBox.shrink();
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(child: CustomPaint(painter: _BoxPainterProxy(decoration))),
+        ),
+        content,
+      ],
+    );
+  }
+}
+
+/// 把 [RoughBoxDecoration] 的 BoxPainter 适配成 CustomPainter
+class _BoxPainterProxy extends CustomPainter {
+  _BoxPainterProxy(this.decoration) : _painter = decoration.createBoxPainter();
+
+  final RoughBoxDecoration decoration;
+  final BoxPainter _painter;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _painter.paint(canvas, Offset.zero, ImageConfiguration(size: size));
+  }
+
+  @override
+  bool shouldRepaint(_BoxPainterProxy oldDelegate) =>
+      !identical(oldDelegate.decoration, decoration);
 }
 
 /// 局部墨色作用域：让某个 Wired*/自绘组件用指定描边色/标记色
