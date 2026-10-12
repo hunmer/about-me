@@ -292,20 +292,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
       spacing: 4,
       runSpacing: 4,
       children: agent.tags.take(2).map((tag) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: theme.surfaceAlt,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            tag,
-            style: DsTypography.label.copyWith(
-              fontSize: 10,
-              color: theme.textSub,
-            ),
-          ),
-        );
+        return DSBadge(label: tag, autoColor: true, fontSize: 10);
       }).toList(),
     );
   }

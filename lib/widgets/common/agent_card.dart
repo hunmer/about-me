@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
@@ -193,7 +194,7 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '服务商: ${widget.serviceProviderId}',
+                      '${'app_provider'.tr}: ${widget.serviceProviderId}',
                       style: TextStyle(
                         fontSize: _getSubtitleFontSize(size),
                         color: theme.textSub,
@@ -317,22 +318,10 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
       spacing: 2,
       runSpacing: 2,
       children: widget.tags.take(tagCount).map((tag) {
-        return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: _getPadding(size) / 2,
-            vertical: 2,
-          ),
-          decoration: BoxDecoration(
-            color: theme.surfaceAlt,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            tag,
-            style: TextStyle(
-              fontSize: _getSubtitleFontSize(size) - 2,
-              color: theme.textSub,
-            ),
-          ),
+        return DSBadge(
+          label: tag,
+          autoColor: true,
+          fontSize: _getSubtitleFontSize(size) - 2,
         );
       }).toList(),
     );

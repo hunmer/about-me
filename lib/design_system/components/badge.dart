@@ -12,16 +12,33 @@ class DSBadge extends StatelessWidget {
     required this.label,
     this.color,
     this.textColor,
+    this.autoColor = false,
+    this.fontSize,
   });
 
   final String label;
   final Color? color;
   final Color? textColor;
 
+  /// 开启后按 [label] 文本哈希生成浅色底 + 同色系深色文字
+  /// （显式传入 [color]/[textColor] 时优先使用显式值）
+  final bool autoColor;
+
+  /// 覆盖字号（小尺寸场景）
+  final double? fontSize;
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final base = color ?? theme.primary;
+    final Color base;
+    final Color fg;
+    if (autoColor && color == null) {
+      base = _colorFromText(label, lightness: 0.9, saturation: 0.45);
+      fg = _colorFromText(label, lightness: 0.32, saturation: 0.5);
+    } else {
+      base = color ?? theme.primary;
+      fg = textColor ?? theme.onPrimary;
+    }
     return JellyBox(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       radius: theme.radii.pill,
@@ -30,10 +47,25 @@ class DSBadge extends StatelessWidget {
       child: Text(
         label,
         style: DsTypography.label.copyWith(
-          color: textColor ?? theme.onPrimary,
+          color: fg,
+          if (fontSize != null) fontSize: fontSize,
         ),
       ),
     );
+  }
+
+  /// 文本哈希 → 稳定色相的 HSL 颜色（同文本恒同色）
+  static Color _colorFromText(
+    String text, {
+    required double lightness,
+    required double saturation,
+  }) {
+    var hash = 0;
+    for (final unit in text.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    final hue = (hash % 360).toDouble();
+    return HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
   }
 }
 
