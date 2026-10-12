@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -120,6 +121,21 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
     );
   }
 
+  /// 墨线风格选择：三档手绘粗糙度（Gentle/Playful/Expressive），
+  /// 切换后全局即时生效（经 DSThemeBridge 重建主题树）
+  Widget _buildInkStylePicker() {
+    return ListenableBuilder(
+      listenable: DsInkStyleController(),
+      builder: (context, _) {
+        return DSSegmentedControl(
+          options: DsInkStyle.labels,
+          selected: DsInkStyle.index,
+          onChanged: (index) => DsInkStyleController().setLevel(index),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_controller.isInitialized()) {
@@ -188,6 +204,17 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
             SettingsGroup(
               title: '主题颜色',
               children: [_buildPalettePicker()],
+            ),
+            const SizedBox(height: 16),
+            // 墨线风格：三档手绘粗糙度，切换后全局即时生效
+            SettingsGroup(
+              title: 'Ink style（墨线风格）',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: _buildInkStylePicker(),
+                ),
+              ],
             ),
           ],
         ),

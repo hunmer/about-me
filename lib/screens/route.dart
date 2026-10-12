@@ -92,9 +92,9 @@ class AppRoutes extends NavigatorObserver {
         TestRoutes(),
         // 组件展示路由
         WidgetGalleryRoutes(),
-        // 设计系统（软糖果冻风组件库）展示路由
+        // 设计系统（手绘风组件库）展示路由
         DesignSystemRoutes(),
-        // 果冻小屋（软糖果冻风主页布局）路由
+        // 果冻小屋（手绘风主页布局）路由
         JellyHomeRoutes(),
         // 插件路由
         ChatRoutes(),

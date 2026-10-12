@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -39,7 +40,11 @@ class DSThemeBridge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: DsThemeColorController(),
+      // 合并监听：色板与墨线档位任一变化都重建主题树
+      listenable: Listenable.merge([
+        DsThemeColorController(),
+        DsInkStyleController(),
+      ]),
       builder: (context, _) {
         final isDark =
             forceDark ?? Theme.of(context).brightness == Brightness.dark;

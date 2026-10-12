@@ -222,6 +222,42 @@ SuperCupertinoNavigationWrapper(
 - 经根 Overlay 展示的 DS 组件（`DSPopover`、过滤栏内的 `DSChip` 等）需包 `DSThemeBridge` 提供主题
 - 启用 `enableMultiFilter` 后搜索栏默认收起，由 header 右上切换按钮同时展开过滤栏与搜索框（`multiFilterToggleable` 默认 true）
 
+## 9. 手绘风格（skribble 纸墨风）：新 UI 一律走 design_system 统一工具
+
+全 app 视觉为手绘纸墨风（skribble rough 引擎绘制墨线）。新建 UI **不要**自己写 BoxDecoration 圆角描边、渐变、柔影，也不要混搭 Material 风格卡片——统一从 `package:aboutme/design_system/design_system.dart` 取工具，风格（墨色/笔刷/粗糙度/seed）自动与全局一致。
+
+### 9.1 容器分档（最重要）
+
+| 场景 | 用法 | 视觉 |
+|---|---|---|
+| 小控件（按钮/输入框/勾选框/徽章） | `dsSketchDecoration(theme, fillColor: 主题色, radius: ...)` | 纯色实底 + 墨线抖动描边 |
+| 大容器（卡片/对话框/面板/浮层） | `DsSketchPanel(theme, radius, padding, child)` | 纸底 + 淡主色排线 + 墨线框 |
+| 通用容器基底 | `JellyBox(color: ...)`（已手绘化） | 实底 + 墨线描边，pill(999) 自动胶囊 |
+
+要点：
+
+- `dsSketchDecoration` 返回 `RoughBoxDecoration`（`Decoration` 子类），直接给 `Container.decoration`；描边贴容器真实边界，padding 只作用于内容（勿在外层再包 padding 压描边层）
+- 优先直接用现成 DS 组件（`DSButton`/`DSCard`/`DSInput`/`DSSelect`/`showDSDialog`/`showDSBottomSheet`/`showDSToast`…），API 与旧版完全一致，视觉已全局手绘化
+
+### 9.2 颜色 / 字体 / 图标
+
+- 颜色：`theme.ink`（墨线）、`theme.paper`（纸底）、`theme.hatch`（排线淡彩）、`theme.primary` 等——一律 `AppTheme.of(context)` / `DSThemeBridge.resolve(context)` 取，禁止硬编码
+- 派生墨色给 Wired* 组件局部变色：`DsInkScope(border: theme.danger, child: WiredButton(...))`
+- 字体：全局 `TegakiZatsu`（851 手写杂书体，中/英/日）；`DsTypography.*` 已内置，勿另设 fontFamily
+- 图标：一律 `DsIcon(DsIconKind.xxx)`（内部 `WiredIcon` 自动套手绘几何，未收录自动回退）；新增图标先补 `DsIconKind` 枚举映射，不要在页面直接用 `Icon(Icons.x)`
+
+### 9.3 禁止项（破坏风格统一）
+
+- ❌ `boxShadow` 柔影 / blur 阴影（手绘风无柔影，层次靠排线与墨线）
+- ❌ `LinearGradient`/玻璃高光类渐变装饰（实底或排线替代）
+- ❌ 直接用 skribble 的 `Wired*` 高层组件做新 UI（内嵌 Material 控件、API 协议不同）；确需时必须包 `DsInkScope` 取色
+- ❌ 手写 `BoxDecoration(border: Border.all(...))` 直角/圆角描边替代墨线
+
+### 9.4 全局档位与 seed
+
+- 墨线粗糙度三档全局可切（设置 → 界面 → Ink style）：Gentle / Playful（默认）/ Expressive；由 `DsInkStyle.level` 驱动，`theme.wired.drawConfig` 自动跟随，新 UI 无需关心
+- `seed` 保持默认即可（rebuild 墨迹不抖变）；列表项可传 `seed: index` 让墨迹有变化
+
 ## 新建页面检查清单
 
 1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）
@@ -233,3 +269,4 @@ SuperCupertinoNavigationWrapper(
 7. 颜色全部来自 `DSThemeBridge.resolve(context)`，无硬编码色值
 8. 所有用户可见文案走 `.tr` / `.trParams`，zh/en 翻译文件同步补齐
 9. 列表筛选/排序走多条件过滤栏（`enableMultiFilter`），排序入口用过滤栏尾部圆形按钮；导航栏 `title` 传纯文本 `Text`
+10. 手绘风格统一：容器用 DS 组件或 `dsSketchDecoration`/`DsSketchPanel`（小控件纯色实底、大容器纸底排线）；无 boxShadow/渐变；图标走 `DsIcon`；颜色走 `theme.ink/paper/hatch`，不硬编码

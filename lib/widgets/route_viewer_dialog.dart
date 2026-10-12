@@ -56,8 +56,12 @@ class _RouteViewerDialogState extends State<RouteViewerDialog> {
       const RouteInfo(path: '/data_selector_test', name: '数据选择器测试', icon: Icons.assignment),
       const RouteInfo(path: '/swipe_action_test', name: '滑动操作测试', icon: Icons.swipe),
       const RouteInfo(path: '/widgets_gallery', name: '组件库', icon: Icons.widgets),
-      const RouteInfo(path: '/design_system', name: '软糖果冻风组件库', icon: Icons.extension),
-      const RouteInfo(path: '/jelly_home', name: '果冻小屋（软糖风主页）', icon: Icons.cottage),
+      const RouteInfo(
+        path: '/design_system',
+        name: '手绘风组件库',
+        icon: Icons.extension,
+      ),
+      const RouteInfo(path: '/jelly_home', name: '小屋', icon: Icons.cottage),
     ],
     '插件': [
       const RouteInfo(path: '/chat', name: '聊天', icon: Icons.chat),

@@ -36,7 +36,7 @@ class _ExtendedSectionState extends State<ExtendedSection> {
         DSAccordion(
           entries: [
             DSAccordionEntry(
-              title: '什么是软糖果冻风？',
+              title: '什么是手绘风？',
               builder:
                   (context) => Text(
                     'claymorphism 立体质感：圆润可爱、顶部高光、白色描边、彩色投影。',

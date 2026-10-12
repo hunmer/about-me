@@ -12,11 +12,11 @@ class WidgetsGalleryScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          // 设计系统（软糖果冻风组件库）
+          // 设计系统（手绘风组件库）
           _buildListItem(
             context,
             icon: Icons.auto_awesome,
-            title: '软糖果冻风设计系统',
+            title: '手绘风设计系统',
             subtitle: 'DesignSystemGallery（零依赖组件库）',
             route: '/design_system',
           ),

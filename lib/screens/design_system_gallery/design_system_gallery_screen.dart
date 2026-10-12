@@ -12,7 +12,7 @@ import 'sections/inputs_section.dart';
 import 'sections/navigation_section.dart';
 import 'sections/pickers_section.dart';
 
-/// 软糖果冻风设计系统组件展示页
+/// 手绘风设计系统组件展示页
 ///
 /// 路由：/design_system
 class DesignSystemGalleryScreen extends StatefulWidget {
@@ -85,7 +85,7 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        DSTopBar(title: '软糖果冻风 组件库'),
+        DSTopBar(title: '手绘风 组件库'),
         SizedBox(height: theme.spacing.xl),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +105,7 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
         ),
         SizedBox(height: theme.spacing.sm),
         Text(
-          '软糖果冻风 游戏 UI 组件库',
+          '手绘风 游戏 UI 组件库',
           textAlign: TextAlign.center,
           style: DsTypography.display.copyWith(color: theme.text),
         ),

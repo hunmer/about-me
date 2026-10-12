@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 /// 设计令牌：颜色调色板
 ///
-/// 取值来自「软糖果冻风」设计稿，仅定义原始色值；
+/// 取值来自「手绘风」设计稿，仅定义原始色值；
 /// 语义化配色（主色/表面/文字等）由 [AppThemeData] 组合并派生。
 abstract final class DsColors {
   /// 主色（葡萄紫）

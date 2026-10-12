@@ -1,4 +1,4 @@
-/// 软糖果冻风设计系统（shadcn 哲学：源码进项目、完全可控、行为与样式分离）
+/// 手绘风设计系统（shadcn 哲学：源码进项目、完全可控、行为与样式分离）
 ///
 /// 仅依赖 `package:flutter/widgets.dart`，零第三方包、零 Material 组件。
 /// - `AppTheme.of(context)` 读取全部设计令牌

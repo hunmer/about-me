@@ -18,6 +18,25 @@ import 'package:skribble/skribble.dart';
 import '../theme/app_theme.dart';
 import 'typography.dart';
 
+/// 全局墨线风格档位（skribble 三档粗糙度）
+///
+/// 由 `core/services/ds_ink_style_controller.dart` 在加载/切换时写入；
+/// 切换后经 DSThemeBridge 重建主题树全局生效。
+/// 字体不受档位影响（wired 显式覆盖为 TegakiZatsu）。
+class DsInkStyle {
+  DsInkStyle._();
+
+  static WiredRoughness level = WiredRoughness.playful;
+
+  /// 档位标签（设置页与持久化用，顺序与 WiredRoughness.values 一致）
+  static const List<String> labels = ['Gentle', 'Playful', 'Expressive'];
+
+  static WiredRoughness byIndex(int index) => WiredRoughness.values[index];
+
+  /// 当前档位下标（与 labels 对应）
+  static int get index => level.index;
+}
+
 /// 手绘主题派生：从语义主题取墨/纸/笔参数
 extension DsSketchTheme on AppThemeData {
   /// 墨线色：手绘描边与手绘图标的主色
@@ -30,23 +49,29 @@ extension DsSketchTheme on AppThemeData {
   Color get hatch => primary.withValues(alpha: isDark ? 0.30 : 0.22);
 
   /// 对应的 skribble 主题：Wired* 组件经 WiredTheme.of 取色的数据源
-  WiredThemeData get wired => _wiredCache[this] ??= WiredThemeData(
+  WiredThemeData get wired =>
+      _wiredCache[_wiredCacheKey(this)] ??= WiredThemeData(
         borderColor: isDark ? text : DsColors.text,
         textColor: text,
         disabledTextColor: textSub,
         fillColor: surface,
         markerColor: primary,
         strokeWidth: 2.2,
-        roughnessLevel: WiredRoughness.playful,
+        roughnessLevel: DsInkStyle.level,
         // Wired* 组件文字与 DsTypography 同字体（851 手写杂书体，
-        // app 内注册，覆盖中/英/日；覆盖默认的 skribble bundled 字体）
+        // app 内注册，覆盖中/英/日；覆盖默认的 skribble bundled 字体，
+        // 且不随粗糙度档位切换字体）
         fontFamily: DsTypography.sketchFamily,
       );
 }
 
-/// [AppThemeData] 实例 → WiredThemeData 缓存（AppThemeData 是 const 构造，
-/// 实例在主题切换间稳定，缓存避免每次 build 重建作用域）
-final Expando<WiredThemeData> _wiredCache = Expando();
+/// [AppThemeData] 实例 × 墨线档位 → WiredThemeData 缓存
+/// （AppThemeData 是 const 构造，实例在主题切换间稳定；
+/// 档位变化换 key 取新缓存，避免旧档位数据残留）
+final Map<int, WiredThemeData> _wiredCache = {};
+
+int _wiredCacheKey(AppThemeData theme) =>
+    identityHashCode(theme) * 8 + DsInkStyle.index;
 
 /// 统一手绘装饰构造器
 ///
@@ -125,6 +150,17 @@ class _DsRoughBoxDecoration extends RoughBoxDecoration {
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
       _DsRoughBoxPainter(this, onChanged);
+
+  /// 裁剪几何路径（RoughBoxDecoration 未实现，默认抛 UnsupportedError）。
+  /// 手绘墨迹本身不参与裁剪，按形状返回标准几何路径。
+  @override
+  Path getClipPath(Rect rect, TextDirection textDirection) => switch (shape) {
+        RoughBoxShape.rectangle => Path()..addRect(rect),
+        RoughBoxShape.roundedRectangle => Path()
+          ..addRRect((borderRadius ?? BorderRadius.zero).toRRect(rect)),
+        RoughBoxShape.circle || RoughBoxShape.ellipse =>
+          Path()..addOval(rect),
+      };
 }
 
 class _DsRoughBoxPainter extends BoxPainter {
@@ -263,10 +299,16 @@ class DsSketchPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 结构：底色铺满容器 → 描边/排线铺满容器 → padding 只包裹内容。
+    // （不能把 padding 放在外层 Container 上——那会把整个描边层
+    // 一起内缩，墨线画到 padding 里侧，边距「挤走」描边。）
+    Widget? content = child;
+    if (content != null && padding != null) {
+      content = Padding(padding: padding!, child: content);
+    }
     return Container(
       width: width,
       height: height,
-      padding: padding,
       alignment: alignment,
       decoration: BoxDecoration(
         color: fillColor ?? theme.surface,
@@ -283,14 +325,14 @@ class DsSketchPanel extends StatelessWidget {
           hachureGap: 10,
           seed: seed,
         ),
-        child: child,
+        child: content,
       ),
     );
   }
 }
 
-/// 排线/描边衬层：铺在 child 之下（墨迹永远贴合内容区，
-/// 不受外层容器 alignment/padding 影响）
+/// 排线/描边衬层：铺满所在容器（与内容同尺寸），
+/// 墨线画在容器真实边界上
 class _RoughUnderlay extends StatelessWidget {
   const _RoughUnderlay({required this.decoration, this.child});
 
@@ -300,11 +342,18 @@ class _RoughUnderlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = child;
-    if (content == null) return const SizedBox.shrink();
+    if (content == null) {
+      // 无内容时仅描边层（尺寸由外部约束决定）
+      return CustomPaint(
+        painter: _BoxPainterProxy(decoration),
+      );
+    }
     return Stack(
       children: [
         Positioned.fill(
-          child: IgnorePointer(child: CustomPaint(painter: _BoxPainterProxy(decoration))),
+          child: IgnorePointer(
+            child: CustomPaint(painter: _BoxPainterProxy(decoration)),
+          ),
         ),
         content,
       ],
