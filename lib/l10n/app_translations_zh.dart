@@ -191,4 +191,7 @@ const Map<String, String> appTranslationsZh = {
   'home_sortPriority': '优先级',
   'home_sortTime': '时间',
   'app_provider': '服务商',
+  'app_none': '无',
+  'app_reminders': '提醒',
+  'app_noReminders': '暂无提醒',
 };

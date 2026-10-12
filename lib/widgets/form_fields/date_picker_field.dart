@@ -89,7 +89,8 @@ class DatePickerField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: theme.textSub, size: 20),
+            // 统一手绘日历图标（[icon] 仅作持久化兼容，不参与渲染）
+            DsIcon(DsIconKind.calendar, size: 20, color: theme.textSub),
             SizedBox(width: theme.spacing.sm),
             Expanded(
               child: Text(

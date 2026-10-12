@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
@@ -46,7 +46,7 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
   void _updateRouteContext() {
     RouteHistoryManager.updateCurrentContext(
       pageId: '/todo_detail',
-      title: '待办任务详情 - ${_task.title}',
+      title: 'todo_routeDetailTitle'.trParams({'title': _task.title}),
       params: {
         'taskId': _task.id,
         'taskTitle': _task.title,
@@ -88,13 +88,13 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
   String get _priorityText {
     switch (_task.priority) {
       case TaskPriority.q1:
-        return '紧急且重要';
+        return 'todo_q1'.tr;
       case TaskPriority.q2:
-        return '重要但不紧急';
+        return 'todo_q2'.tr;
       case TaskPriority.q3:
-        return '紧急但不重要';
+        return 'todo_q3'.tr;
       case TaskPriority.q4:
-        return '不紧急不重要';
+        return 'todo_q4'.tr;
     }
   }
 
@@ -136,13 +136,11 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                 TaskPriority.q4 => theme.primary,
               };
 
-              return Container(
-                decoration: BoxDecoration(
-                  color: theme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                ),
+              // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（顶部大圆角，
+              // 纸色铺满 sheet）
+              return DsSketchPanel(
+                theme: theme,
+                radius: const BorderRadius.vertical(top: Radius.circular(20)),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min, // Only take needed height
@@ -175,15 +173,12 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                 Expanded(
                                   child: Row(
                                     children: [
-                                      Container(
+                                      JellyBox(
                                         width: 40,
                                         height: 40,
-                                        decoration: BoxDecoration(
-                                          color: theme.surfaceAlt,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
+                                        radius: theme.radii.md,
+                                        color: theme.surfaceAlt,
+                                        alignment: Alignment.center,
                                         // _task.icon 为持久化 IconData，保留 Material 图标
                                         child: Icon(
                                           _task.icon ?? Icons.work,
@@ -205,8 +200,8 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                 ),
                                 if (!widget.isReadOnly) ...[
                                   const SizedBox(width: 16),
-                                  GestureDetector(
-                                    onTap: () {
+                                  Pressable(
+                                    onPressed: () {
                                       if (_task.status ==
                                           TaskStatus.inProgress) {
                                         // If running, complete the task (and stop timer)
@@ -224,21 +219,17 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                         _startTimerUpdate();
                                       }
                                     },
-                                    child: Container(
+                                    // 小控件走实底 + 墨线描边（pill 自动胶囊）
+                                    child: JellyBox(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 8,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            _task.status ==
-                                                    TaskStatus.inProgress
-                                                ? theme.success
-                                                : theme.primary,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
+                                      radius: theme.radii.pill,
+                                      color:
+                                          _task.status == TaskStatus.inProgress
+                                              ? theme.success
+                                              : theme.primary,
                                       child: Row(
                                         children: [
                                           DsIcon(
@@ -257,8 +248,8 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                           Text(
                                             _task.status ==
                                                     TaskStatus.inProgress
-                                                ? '完成'
-                                                : '开始',
+                                                ? 'todo_done'.tr
+                                                : 'todo_start'.tr,
                                             style: DsTypography.button.copyWith(
                                               color:
                                                   _task.status ==
@@ -287,13 +278,13 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                   _buildTag(
                                     context,
                                     dot: true,
-                                    text: '进行中',
+                                    text: 'todo_statusInProgress'.tr,
                                     color: theme.primary,
                                     iconSize: 14,
                                   ),
                                 _buildTag(
                                   context,
-                                  icon: Icons.flag,
+                                  dsIcon: DsIconKind.flag,
                                   text: _priorityText,
                                   color: priorityColor,
                                   iconSize: 14,
@@ -335,7 +326,7 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                             // Subtasks
                             if (_task.subtasks.isNotEmpty) ...[
                               Text(
-                                '子任务',
+                                'todo_subtasks'.tr,
                                 style: DsTypography.body.copyWith(
                                   color: theme.text,
                                   fontSize: 16,
@@ -394,7 +385,7 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   DSButton(
-                                    label: '编辑任务',
+                                    label: 'todo_editTask'.tr,
                                     icon: DsIconKind.edit,
                                     variant: DSButtonVariant.ghost,
                                     onPressed: () {
@@ -424,25 +415,21 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
                             // Metadata
                             _buildMetadataRow(
                               context,
-                              '创建日期',
-                              DateFormat('yyyy年MM月dd日').format(_task.createdAt),
+                              'todo_created'.tr,
+                              _formatFullDate(_task.createdAt),
                             ),
                             if (_task.dueDate != null)
                               _buildMetadataRow(
                                 context,
-                                '截止日期',
-                                DateFormat(
-                                  'yyyy年MM月dd日',
-                                ).format(_task.dueDate!),
+                                'todo_dueDate'.tr,
+                                _formatFullDate(_task.dueDate!),
                               ),
                             // Assuming reminders is a list of DateTime
                             if (_task.reminders.isNotEmpty)
                               _buildMetadataRow(
                                 context,
-                                '提醒日期',
-                                DateFormat(
-                                  'yyyy年MM月dd日 HH:mm',
-                                ).format(_task.reminders.first),
+                                'todo_reminders'.tr,
+                                _formatFullDateTime(_task.reminders.first),
                               ),
                           ],
                         ),
@@ -460,31 +447,40 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
 
   Widget _buildTag(
     BuildContext context, {
-    IconData? icon,
     DsIconKind? dsIcon,
     bool dot = false,
     required String text,
     required Color color,
     required double iconSize,
   }) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
+      // 小控件走纯色实底 + 墨线描边（pill 自动胶囊）
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: color.withValues(alpha: 0.12),
+        stroke: color.withValues(alpha: 0.55),
+        strokeWidth: 1.2,
+        radius: theme.radii.pill,
+        seed: text.length,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (dot)
+            // 手绘小墨点
             Container(
               width: iconSize,
               height: iconSize,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                circle: true,
+                fillColor: color,
+                strokeWidth: 1.0,
+              ),
             )
-          else if (icon != null)
-            // flag 无自绘图标等价物，保留 Material 图标
-            Icon(icon, color: color, size: iconSize)
           else if (dsIcon != null)
             DsIcon(dsIcon, color: color, size: iconSize),
           const SizedBox(width: 6),
@@ -498,6 +494,26 @@ class _TodoItemDetailState extends State<TodoItemDetail> {
         ],
       ),
     );
+  }
+
+  /// 本地化完整日期（如 zh「2026年10月12日」/ en「2026/10/12」）
+  String _formatFullDate(DateTime date) {
+    return 'todo_fullDate'.trParams({
+      'y': '${date.year}',
+      'm': '${date.month}',
+      'd': '${date.day}',
+    });
+  }
+
+  /// 本地化完整日期时间
+  String _formatFullDateTime(DateTime date) {
+    return 'todo_fullDateTime'.trParams({
+      'y': '${date.year}',
+      'm': '${date.month}',
+      'd': '${date.day}',
+      'hh': date.hour.toString().padLeft(2, '0'),
+      'mm': date.minute.toString().padLeft(2, '0'),
+    });
   }
 
   Widget _buildMetadataRow(BuildContext context, String label, String value) {

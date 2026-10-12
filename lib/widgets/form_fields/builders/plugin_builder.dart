@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
@@ -144,8 +145,7 @@ Widget buildAmountInputField(FormFieldConfig config, GlobalKey fieldKey) {
 /// 构建提醒时间列表字段
 Widget buildRemindersField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
-  final primaryColor =
-      extra['primaryColor'] as Color? ?? const Color(0xFF607AFB);
+  final primaryColor = extra['primaryColor'] as Color?;
 
   return FormBuilderField<List<DateTime>>(
     key: fieldKey,
@@ -159,7 +159,7 @@ Widget buildRemindersField(FormFieldConfig config, GlobalKey fieldKey) {
       return RemindersField(
         reminders: reminders,
         labelText: config.labelText,
-        hintText: config.hintText ?? '无',
+        hintText: config.hintText ?? 'app_none'.tr,
         primaryColor: primaryColor,
         onRemoveReminder: (index) {
           final newReminders = List<DateTime>.from(reminders)..removeAt(index);

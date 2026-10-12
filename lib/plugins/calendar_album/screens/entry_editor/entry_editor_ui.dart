@@ -1,10 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/picker/location_picker.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
+
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/chip_selector_field.dart';
+import 'package:aboutme/widgets/picker/location_picker.dart';
 import 'entry_editor_controller.dart';
 import 'entry_editor_image_handler.dart';
 import 'entry_editor_tag_handler.dart';
@@ -29,6 +33,10 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
   late EntryEditorController controller;
   late bool isEditing;
 
+  // PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
+  final NavigationBarStaticComponentsKeys _navBarKeys =
+      NavigationBarStaticComponentsKeys();
+
   @override
   void initState() {
     super.initState();
@@ -37,18 +45,15 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: theme.paper,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, theme),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -86,74 +91,85 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Text(
-              'calendar_album_cancel'.tr,
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+  /// 顶部导航：嵌入式 PersistentNavigationBar（编辑页标准，与全局导航同源）
+  Widget _buildHeader(BuildContext context, AppThemeData theme) {
+    return PersistentNavigationBar(
+      components: NavigationBarStaticComponents(
+        keys: _navBarKeys,
+        route: null,
+        // NavigationToolbar 对 leading 施加紧高度约束会把按钮拉变形，
+        // 用 Align 转成宽松约束保持正圆
+        userLeading: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DSIconButton(
+            icon: DsIconKind.chevronLeft,
+            size: 36,
+            color: theme.surfaceAlt,
+            iconColor: theme.textSub,
+            tooltip: 'calendar_album_cancel'.tr,
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          Text(
-            isEditing ? 'calendar_album_edit_post'.tr : 'calendar_album_new_post'.tr,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          GestureDetector(
-            onTap: () async {
-              final result = controller.saveEntry(context);
-              if (result != null && mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-            child: Text(
-              'calendar_album_save'.tr,
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+        ),
+        automaticallyImplyLeading: false,
+        automaticallyImplyTitle: false,
+        previousPageTitle: null,
+        userMiddle: Text(
+          isEditing
+              ? 'calendar_album_edit_post'.tr
+              : 'calendar_album_new_post'.tr,
+          style: DsTypography.title.copyWith(color: theme.text),
+        ),
+        userTrailing: DSIconButton(
+          icon: DsIconKind.check,
+          size: 36,
+          color: theme.primary,
+          iconColor: theme.onPrimary,
+          tooltip: 'calendar_album_save'.tr,
+          onPressed: () {
+            final result = controller.saveEntry(context);
+            if (result != null && mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+        userLargeTitle: null,
+        largeTitleActions: null,
+        appbarBottom: null,
+        padding: null,
+        // 嵌入式小导航（编辑页），非大标题模式
+        large: false,
       ),
     );
   }
 
   /// 构建内容表单（标题、内容、心情）
   Widget _buildContentForm() {
+    final theme = DSThemeBridge.resolve(context);
     // 准备心情选项
-    final moods = ['Happy', 'Sad', 'Excited', 'Tired', 'Calm', 'Anxious', 'Angry', 'Content'];
-    final moodOptions = moods.map((m) => ChipOption(
-      id: m,
-      label: 'calendar_album_mood_${m.toLowerCase()}'.tr,
-    )).toList();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    final moods = [
+      'Happy',
+      'Sad',
+      'Excited',
+      'Tired',
+      'Calm',
+      'Anxious',
+      'Angry',
+      'Content',
+    ];
+    final moodOptions = moods
+        .map(
+          (m) => ChipOption(
+            id: m,
+            label: 'calendar_album_mood_${m.toLowerCase()}'.tr,
           ),
-        ],
-        border: Border.all(color: Colors.grey.shade200),
-      ),
+        )
+        .toList();
+
+    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+    return DsSketchPanel(
+      theme: theme,
+      radius: theme.radii.xl,
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           // 心情选择 + 标题输入行
@@ -183,19 +199,17 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                       hintText: 'calendar_album_title'.tr,
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
-                      hintStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+                      hintStyle: DsTypography.title.copyWith(
+                        color: theme.textSub.withValues(alpha: 0.75),
+                      ),
                     ),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
+                    style: DsTypography.title.copyWith(color: theme.text),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.grey.shade100),
+          Divider(height: 1, color: theme.ink.withValues(alpha: 0.12)),
           // 内容输入
           Padding(
             padding: const EdgeInsets.all(16),
@@ -205,10 +219,16 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                 hintText: 'calendar_album_whats_on_mind'.tr,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
+                hintStyle: DsTypography.body.copyWith(
+                  color: theme.textSub.withValues(alpha: 0.75),
+                ),
               ),
               maxLines: null,
               minLines: 8,
-              style: const TextStyle(fontSize: 16, height: 1.5),
+              style: DsTypography.body.copyWith(
+                color: theme.text,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -218,25 +238,39 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
 
   /// 构建元数据表单（位置、天气）
   Widget _buildMetadataForm() {
+    final theme = DSThemeBridge.resolve(context);
     // 准备天气选项
-    final weathers = ['Sunny', 'Cloudy', 'Rainy', 'Snowy', 'Windy', 'Foggy', 'Stormy', 'Clear'];
-    final weatherOptions = weathers.map((w) => ChipOption(
-      id: w,
-      label: 'calendar_album_weather_${w.toLowerCase()}'.tr,
-    )).toList();
+    final weathers = [
+      'Sunny',
+      'Cloudy',
+      'Rainy',
+      'Snowy',
+      'Windy',
+      'Foggy',
+      'Stormy',
+      'Clear',
+    ];
+    final weatherOptions = weathers
+        .map(
+          (w) => ChipOption(
+            id: w,
+            label: 'calendar_album_weather_${w.toLowerCase()}'.tr,
+          ),
+        )
+        .toList();
 
     return Row(
       children: [
         // 位置选择器
         Expanded(
           child: _buildMetadataCard(
-            icon: Icons.location_on,
-            iconColor: Colors.red.shade500,
-            iconBg: Colors.red.shade50,
-            label: 'calendar_album_location'.tr.toUpperCase(),
-            value: controller.locationController.text.isNotEmpty
-                ? controller.locationController.text
-                : 'calendar_album_add_location'.tr,
+            icon: DsIconKind.pin,
+            iconColor: theme.primary,
+            label: 'calendar_album_location'.tr,
+            value:
+                controller.locationController.text.isNotEmpty
+                    ? controller.locationController.text
+                    : 'calendar_album_add_location'.tr,
             onTap: () => _handleLocationSelection(widget.parentContext),
           ),
         ),
@@ -244,13 +278,13 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
         // 天气选择器
         Expanded(
           child: _buildMetadataCard(
-            icon: Icons.sunny,
-            iconColor: Colors.blue.shade500,
-            iconBg: Colors.blue.shade50,
-            label: 'calendar_album_weather'.tr.toUpperCase(),
-            value: controller.weather != null
-                ? 'calendar_album_weather_${controller.weather!.toLowerCase()}'.tr
-                : 'calendar_album_add_weather'.tr,
+            icon: DsIconKind.sun,
+            iconColor: theme.secondary,
+            label: 'calendar_album_weather'.tr,
+            value:
+                controller.weather != null
+                    ? 'calendar_album_weather_${controller.weather!.toLowerCase()}'.tr
+                    : 'calendar_album_add_weather'.tr,
             onTap: () => _showWeatherPicker(weatherOptions),
           ),
         ),
@@ -258,63 +292,40 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
     );
   }
 
-  /// 构建元数据卡片
+  /// 构建元数据卡片（手绘墨盒 + 主题色图标）
   Widget _buildMetadataCard({
-    required IconData icon,
+    required DsIconKind icon,
     required Color iconColor,
-    required Color iconBg,
     required String label,
     required String value,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: onTap,
+      child: JellyBox(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
+            JellyBox(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
+              radius: theme.radii.lg,
+              color: iconColor.mixWhite(0.88),
+              child: DsIcon(icon, size: 22, color: iconColor),
             ),
             const SizedBox(height: 12),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade400,
-                letterSpacing: 0.5,
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 2),
             Text(
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
+              style: DsTypography.body.copyWith(color: theme.text),
             ),
           ],
         ),
@@ -352,35 +363,32 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
     );
   }
 
-  /// 显示天气选择器
+  /// 显示天气选择器（手绘底部面板 + DSChip 选项）
   void _showWeatherPicker(List<ChipOption> weatherOptions) {
-    SmoothBottomSheet.show(
+    showDSBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('calendar_album_select_weather'.tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Wrap(
+      title: 'calendar_album_select_weather'.tr,
+      builder:
+          (context) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: weatherOptions.map((opt) => ActionChip(
-                label: Text(opt.label),
-                backgroundColor: controller.weather == opt.id ? Colors.blue.shade100 : null,
-                onPressed: () {
-                  setState(() {
-                    controller.weather = opt.id;
-                  });
-                  Navigator.pop(context);
-                },
-              )).toList(),
+              children: [
+                for (final opt in weatherOptions)
+                  DSChip(
+                    label: opt.label,
+                    selected: controller.weather == opt.id,
+                    onSelected: (_) {
+                      setState(() {
+                        controller.weather = opt.id;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+              ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

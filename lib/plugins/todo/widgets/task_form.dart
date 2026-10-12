@@ -184,7 +184,7 @@ class _TaskFormState extends State<TaskForm> {
               final theme = DSThemeBridge.resolve(context);
               return DSIconButton(
                 icon: DsIconKind.close,
-                size: 40,
+                size: 32,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
                 onPressed: () => Navigator.pop(context),

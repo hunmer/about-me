@@ -165,8 +165,9 @@ class TodoFourQuadrantView extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            DsIcon(
-                              icon,
+                            _buildQuadrantIcon(
+                              context,
+                              icon: icon,
                               size: 28,
                               color: color.withValues(alpha: 0.35),
                             ),
@@ -214,7 +215,7 @@ class TodoFourQuadrantView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
       child: Row(
         children: [
-          DsIcon(icon, size: 16, color: color),
+          _buildQuadrantIcon(context, icon: icon, size: 16, color: color),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -240,6 +241,23 @@ class TodoFourQuadrantView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 象限图标：sprout（eco）glyph 天然上偏，按尺寸比例下移补偿
+  Widget _buildQuadrantIcon(
+    BuildContext context, {
+    required DsIconKind icon,
+    required double size,
+    required Color color,
+  }) {
+    final child = DsIcon(icon, size: size, color: color);
+    if (icon == DsIconKind.sprout) {
+      return Transform.translate(
+        offset: Offset(0, size * 0.1),
+        child: child,
+      );
+    }
+    return child;
   }
 
   /// 数量徽章：小控件走纯色实底 + 墨线描边

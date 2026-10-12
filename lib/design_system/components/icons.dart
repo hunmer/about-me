@@ -87,6 +87,7 @@ enum DsIconKind {
   volumeOff,
   volumeUp,
   cloud,
+  flag,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -172,6 +173,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.volumeOff: Icons.volume_off_rounded,
   DsIconKind.volumeUp: Icons.volume_up_rounded,
   DsIconKind.cloud: Icons.cloud_outlined,
+  DsIconKind.flag: Icons.flag,
 };
 
 /// 图标组件：基于系统 Material Icons

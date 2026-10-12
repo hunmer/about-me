@@ -10,12 +10,12 @@ import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/enhanced_calendar/syncfusion_calendar.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:skribble/skribble.dart';
 
 import 'entry_detail_screen.dart';
 import 'entry_editor_screen.dart';
@@ -44,7 +44,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     'tag': true,
   };
   List<CalendarEntry> _searchResults = [];
-  // 移除水平视图，只保留垂直视图
 
   @override
   void initState() {
@@ -147,7 +146,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     final calendarController = Provider.of<CalendarController>(context);
     final tagController = Provider.of<TagController>(context);
     final selectedDate = calendarController.selectedDate;
-    final theme = Theme.of(context);
 
     return MultiProvider(
       providers: [
@@ -155,13 +153,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         ChangeNotifierProvider.value(value: tagController),
       ],
       child: SuperCupertinoNavigationWrapper(
-        title: Text(
-          'calendar_album_calendar_diary'.tr,
-          style: TextStyle(
-            fontSize: 18,
-            color: theme.textTheme.titleLarge?.color,
-          ),
-        ),
+        title: Text('calendar_album_calendar_diary'.tr),
         largeTitle: 'calendar_album_calendar_diary'.tr,
         // 启用搜索栏
         enableSearchBar: true,
@@ -223,30 +215,93 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /// 打开日记详情页
+  Future<void> _openEntryDetail(
+    CalendarController calendarController,
+    TagController tagController,
+    CalendarEntry entry,
+  ) async {
+    await NavigationHelper.push(
+      context,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: calendarController),
+          ChangeNotifierProvider.value(value: tagController),
+        ],
+        child: EntryDetailScreen(entry: entry),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// 打开日记编辑器
+  Future<void> _openEntryEditor({
+    CalendarEntry? entry,
+    DateTime? initialDate,
+    required bool isEditing,
+    CalendarController? calendarController,
+  }) {
+    if (entry != null && calendarController != null) {
+      // 编辑已有条目后恢复选中日期
+      final selectedDate = calendarController.selectedDate;
+      return NavigationHelper.push(
+        context,
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: calendarController),
+            ChangeNotifierProvider.value(
+              value: Provider.of<TagController>(context, listen: false),
+            ),
+          ],
+          child: EntryEditorScreen(entry: entry, isEditing: true),
+        ),
+      ).then((_) {
+        if (mounted) {
+          calendarController.selectDate(selectedDate);
+          setState(() {});
+        }
+      });
+    }
+    return NavigationHelper.push(
+      context,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+            value:
+                calendarController ??
+                Provider.of<CalendarController>(context, listen: false),
+          ),
+          ChangeNotifierProvider.value(
+            value: Provider.of<TagController>(context, listen: false),
+          ),
+        ],
+        child: EntryEditorScreen(
+          initialDate: initialDate,
+          isEditing: isEditing,
+        ),
+      ),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   /// 构建搜索结果列表
   Widget _buildSearchResults(
     CalendarController calendarController,
     TagController tagController,
   ) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     if (_searchQuery.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: theme.iconTheme.color?.withOpacity(0.3),
-            ),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               'calendar_album_enter_keyword_to_search'.tr,
-              style: TextStyle(
-                fontSize: 16,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -258,26 +313,16 @@ class _CalendarScreenState extends State<CalendarScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inbox,
-              size: 64,
-              color: theme.iconTheme.color?.withOpacity(0.3),
-            ),
+            DsIcon(DsIconKind.book, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
               'calendar_album_no_matching_diaries'.tr,
-              style: TextStyle(
-                fontSize: 16,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              ),
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
               'calendar_album_try_other_keywords'.tr,
-              style: TextStyle(
-                fontSize: 14,
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
-              ),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -291,129 +336,110 @@ class _CalendarScreenState extends State<CalendarScreen>
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final entry = _searchResults[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            title: Text(
-              entry.title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  entry.content.length > 100
-                      ? '${entry.content.substring(0, 100)}...'
-                      : entry.content,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                ),
-                const SizedBox(height: 8),
-                // 显示图片缩略图
-                if (entry.imageUrls.isNotEmpty)
-                  Container(
-                    height: 80,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount:
-                          entry.imageUrls.length > 3
-                              ? 3
-                              : entry.imageUrls.length,
-                      itemBuilder: (context, index) {
-                        final imageUrl = entry.imageUrls[index];
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: FutureBuilder<String>(
-                              future: _getImagePath(imageUrl),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return Image.file(
-                                    File(snapshot.data!),
-                                    fit: BoxFit.cover,
-                                    width: 80,
-                                    height: 80,
-                                  );
-                                }
-                                return Icon(
-                                  Icons.image,
-                                  color: theme.iconTheme.color?.withOpacity(
-                                    0.3,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          // 挂载即描画入场
+          child: WiredDraw(
+            child: DSCard(
+              onTap:
+                  () => _openEntryDetail(
+                    calendarController,
+                    tagController,
+                    entry,
+                  ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    entry.content.length > 100
+                        ? '${entry.content.substring(0, 100)}...'
+                        : entry.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.body.copyWith(
+                      color: theme.textSub,
+                      height: 1.5,
                     ),
                   ),
-                if (entry.tags.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    children:
-                        entry.tags.map((tag) {
-                          return Chip(
-                            label: Text(
-                              tag,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.primary,
+                  const SizedBox(height: 8),
+                  // 显示图片缩略图
+                  if (entry.imageUrls.isNotEmpty)
+                    SizedBox(
+                      height: 80,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount:
+                            entry.imageUrls.length > 3
+                                ? 3
+                                : entry.imageUrls.length,
+                        itemBuilder: (context, index) {
+                          final imageUrl = entry.imageUrls[index];
+                          return Container(
+                            width: 80,
+                            height: 80,
+                            margin: const EdgeInsets.only(right: 8),
+                            color: theme.surfaceAlt,
+                            child: ClipRRect(
+                              borderRadius: theme.radii.lg,
+                              child: FutureBuilder<String>(
+                                future: _getImagePath(imageUrl),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return Image.file(
+                                      File(snapshot.data!),
+                                      fit: BoxFit.cover,
+                                      width: 80,
+                                      height: 80,
+                                    );
+                                  }
+                                  return DsIcon(
+                                    DsIconKind.image,
+                                    color: theme.textSub,
+                                  );
+                                },
                               ),
                             ),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
                           );
-                        }).toList(),
-                  ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('yyyy-MM-dd').format(entry.createdAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withOpacity(
-                          0.6,
-                        ),
+                        },
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  if (entry.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children:
+                            entry.tags
+                                .map((tag) => DSChip(label: tag))
+                                .toList(),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.calendar,
+                        size: 14,
+                        color: theme.textSub,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('yyyy-MM-dd').format(entry.createdAt),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            onTap: () async {
-              await NavigationHelper.push(
-                context,
-                MultiProvider(
-                  providers: [
-                    ChangeNotifierProvider.value(value: calendarController),
-                    ChangeNotifierProvider.value(value: tagController),
-                  ],
-                  child: EntryDetailScreen(entry: entry),
-                ),
-              );
-              if (mounted) setState(() {});
-            },
           ),
         );
       },
@@ -442,18 +468,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         setState(() => _focusedDay = pressedDay);
         // 更新路由上下文
         _updateRouteContext(pressedDay);
-        NavigationHelper.push(
-          context,
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: calendarController),
-              ChangeNotifierProvider.value(
-                value: Provider.of<TagController>(context, listen: false),
-              ),
-            ],
-            child: EntryEditorScreen(initialDate: pressedDay, isEditing: false),
-          ),
-        );
+        _openEntryEditor(initialDate: pressedDay, isEditing: false);
       },
       onHeaderTapped: (focusedMonth) {
         _showDatePicker(context, calendarController);
@@ -466,83 +481,30 @@ class _CalendarScreenState extends State<CalendarScreen>
     CalendarController calendarController,
     DateTime selectedDate,
   ) {
-    // 在 SmoothBottomSheet.show 之前获取 TagController 实例
+    // 在 showDSBottomSheet 之前获取 TagController 实例
     final tagController = Provider.of<TagController>(context, listen: false);
 
-    SmoothBottomSheet.show(
+    showDSBottomSheet(
       context: context,
-      isScrollControlled: true,
+      title:
+          '${DateFormat('yyyy年MM月dd日').format(selectedDate)}${'calendar_album_diary_for_date'.tr}',
       builder:
           (context) => SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
+            height: MediaQuery.of(context).size.height * 0.55,
             child: MultiProvider(
               providers: [
                 ChangeNotifierProvider.value(value: calendarController),
                 ChangeNotifierProvider.value(value: tagController),
               ],
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            ' ${DateFormat('yyyy年MM月dd日').format(selectedDate)}${'calendar_album_diary_for_date'.tr}',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Navigator.pop(context); // 关闭抽屉
-                            NavigationHelper.push(
-                              context,
-                              MultiProvider(
-                                providers: [
-                                  ChangeNotifierProvider.value(
-                                    value: calendarController,
-                                  ),
-                                  ChangeNotifierProvider.value(
-                                    value: tagController,
-                                  ),
-                                ],
-                                child: EntryEditorScreen(
-                                  initialDate: selectedDate,
-                                  isEditing: false,
-                                ),
-                              ),
-                            ).then((_) {
-                              if (mounted) setState(() {});
-                            });
-                          },
-                          icon: const Icon(Icons.add),
-                          tooltip: 'calendar_album_new_diary'.tr,
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: Consumer<TagController>(
-                      builder: (context, tagController, child) {
-                        return _buildDrawerEntryList(
-                          context,
-                          calendarController,
-                          tagController,
-                          selectedDate,
-                        );
-                      },
-                    ),
-                  ),
-                ],
+              child: Consumer<TagController>(
+                builder: (context, tagController, child) {
+                  return _buildDrawerEntryList(
+                    context,
+                    calendarController,
+                    tagController,
+                    selectedDate,
+                  );
+                },
               ),
             ),
           ),
@@ -557,80 +519,45 @@ class _CalendarScreenState extends State<CalendarScreen>
   ) {
     return EntryList(
       entries: calendarController.getEntriesForDate(selectedDate),
-      onTap: (entry) async {
+      onTap: (entry) {
         Navigator.pop(context); // 关闭抽屉
-        await NavigationHelper.push(
-          context,
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: calendarController),
-              ChangeNotifierProvider.value(value: tagController),
-            ],
-            child: EntryDetailScreen(entry: entry),
-          ),
-        );
-        if (mounted) setState(() {});
+        _openEntryDetail(calendarController, tagController, entry);
       },
-      onEdit: (entry) async {
+      onEdit: (entry) {
         Navigator.pop(context); // 关闭抽屉
-        await NavigationHelper.push(
-          context,
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: calendarController),
-              ChangeNotifierProvider.value(value: tagController),
-            ],
-            child: EntryEditorScreen(entry: entry, isEditing: true),
-          ),
+        _openEntryEditor(
+          entry: entry,
+          isEditing: true,
+          calendarController: calendarController,
         );
-        if (mounted) {
-          calendarController.selectDate(selectedDate);
-          setState(() {});
-        }
       },
       onDelete:
-          (entry) => showDialog(
+          (entry) => showDSDialog(
             context: context,
+            theme: DSThemeBridge.resolve(context),
             builder:
-                (context) => AlertDialog(
-                  title: Text('common_delete'.tr),
-                  content: Text(
-                    '${'common_confirmDelete'.tr} "${entry.title}"?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('chat_cancel'.tr),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        calendarController.deleteEntry(entry);
-                        Navigator.pop(context); // 关闭对话框
-                        Navigator.pop(context); // 关闭抽屉并刷新
-                        setState(() {});
-                      },
-                      child: Text('common_delete'.tr),
-                    ),
-                  ],
+                (context) => DSDialog(
+                  title: 'common_delete'.tr,
+                  message: '${'common_confirmDelete'.tr} "${entry.title}"?',
+                  cancelText: 'calendar_album_cancel'.tr,
+                  confirmText: 'common_delete'.tr,
+                  confirmVariant: DSButtonVariant.destructive,
+                  onCancel: () => Navigator.pop(context),
+                  onConfirm: () {
+                    calendarController.deleteEntry(entry);
+                    Navigator.pop(context); // 关闭对话框
+                    Navigator.pop(context); // 关闭抽屉并刷新
+                    setState(() {});
+                  },
                 ),
           ),
       onCreateNew: () {
         Navigator.pop(context); // 关闭抽屉
-        NavigationHelper.push(
-          context,
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: calendarController),
-              ChangeNotifierProvider.value(value: tagController),
-            ],
-            child: EntryEditorScreen(
-              initialDate: selectedDate,
-              isEditing: false,
-            ),
-          ),
-        ).then((_) {
-          if (mounted) setState(() {});
-        });
+        _openEntryEditor(
+          initialDate: selectedDate,
+          isEditing: false,
+          calendarController: calendarController,
+        );
       },
     );
   }
@@ -639,16 +566,10 @@ class _CalendarScreenState extends State<CalendarScreen>
     BuildContext context,
     CalendarController calendarController,
   ) async {
-    final selectedDate = await showDatePicker(
+    final selectedDate = await showDSDatePickerDialog(
       context: context,
-      initialDate: _focusedDay,
-      firstDate: _calendarMinMonth,
-      lastDate: _calendarMaxMonth,
-      initialEntryMode: DatePickerEntryMode.calendarOnly,
-      initialDatePickerMode: DatePickerMode.year,
-      helpText: 'calendar_album_select_month'.tr,
-      cancelText: 'calendar_album_cancel'.tr,
-      confirmText: 'calendar_album_confirm'.tr,
+      initial: _focusedDay,
+      theme: DSThemeBridge.resolve(context),
     );
     if (selectedDate != null) {
       setState(() {
@@ -850,36 +771,28 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
 
   /// 构建单个日历月份
   Widget _buildMonthCalendar(DateTime month) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // 简化的月份标题 - 只显示文本
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(
-              DateFormat('yyyy年MM月').format(month),
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xl,
+        padding: const EdgeInsets.all(8),
+        seed: month.year * 12 + month.month,
+        child: Column(
+          children: [
+            // 简化的月份标题 - 只显示文本
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                DateFormat('yyyy年MM月').format(month),
+                style: DsTypography.heading.copyWith(color: theme.text),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          // 日历内容 - 使用 GestureDetector 包装，确保滚动事件透传给外层 ListView
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: ConstrainedBox(
+            // 日历内容 - 使用 GestureDetector 包装，确保滚动事件透传给外层 ListView
+            ConstrainedBox(
               constraints: const BoxConstraints(
                 maxHeight: 400, // 限制最大高度，防止内部滚动
               ),
@@ -900,8 +813,8 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -909,6 +822,7 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = DSThemeBridge.resolve(context);
 
     return Column(
       children: [
@@ -937,16 +851,12 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                 },
               ),
               if (_isLoading)
-                const Positioned(
+                Positioned(
                   bottom: 16,
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+                    child: DSLoadingDots(color: theme.textSub),
                   ),
                 ),
             ],

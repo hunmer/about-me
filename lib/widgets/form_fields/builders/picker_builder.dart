@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -49,6 +50,8 @@ Widget buildDateField(
                   final picked = await showDSDatePickerDialog(
                     context: context,
                     initial: initialDate,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_ok'.tr,
                     theme: DSThemeBridge.resolve(context),
                   );
                   if (picked != null) {

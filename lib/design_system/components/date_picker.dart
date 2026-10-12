@@ -205,9 +205,14 @@ class _NavButton extends StatelessWidget {
 }
 
 /// 便捷日期选择对话框：DSDatePicker + 取消/确认
+///
+/// [cancelText]/[confirmText] 未传时用内置默认，
+/// 需要本地化时由调用方注入。
 Future<DateTime?> showDSDatePickerDialog({
   required BuildContext context,
   DateTime? initial,
+  String? cancelText,
+  String? confirmText,
   AppThemeData? theme,
 }) {
   final effectiveTheme = theme ?? AppTheme.of(context);
@@ -237,7 +242,7 @@ Future<DateTime?> showDSDatePickerDialog({
               children: [
                 Expanded(
                   child: DSButton(
-                    label: '取消',
+                    label: cancelText ?? '取消',
                     variant: DSButtonVariant.outline,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -245,7 +250,7 @@ Future<DateTime?> showDSDatePickerDialog({
                 SizedBox(width: effectiveTheme.spacing.md),
                 Expanded(
                   child: DSButton(
-                    label: '确定',
+                    label: confirmText ?? '确定',
                     onPressed: () => Navigator.of(context).pop(selected),
                   ),
                 ),

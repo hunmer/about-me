@@ -205,4 +205,7 @@ const Map<String, String> appTranslationsEn = {
   'home_sortPriority': 'Priority',
   'home_sortTime': 'Time',
   'app_provider': 'Provider',
+  'app_none': 'None',
+  'app_reminders': 'Reminders',
+  'app_noReminders': 'No reminders',
 };

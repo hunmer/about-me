@@ -36,9 +36,8 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // history 系图标无自绘等价物，保留 Material 图标
-                  Icon(
-                    Icons.history_outlined,
+                  DsIcon(
+                    DsIconKind.replay,
                     size: 64,
                     color: theme.textSub.withValues(alpha: 0.5),
                   ),
@@ -52,19 +51,16 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
             );
           }
 
-          return Scaffold(
-            backgroundColor: Colors.transparent,
-            body: ListView.builder(
-              padding: EdgeInsets.only(
-                top: 8,
-                bottom: 8 + MediaQuery.paddingOf(context).bottom,
-              ),
-              itemCount: widget.completedTasks.length,
-              itemBuilder: (context, index) {
-                final task = widget.completedTasks[index];
-                return _buildTaskCard(context, task);
-              },
+          return ListView.builder(
+            padding: EdgeInsets.only(
+              top: 8,
+              bottom: 8 + MediaQuery.paddingOf(context).bottom,
             ),
+            itemCount: widget.completedTasks.length,
+            itemBuilder: (context, index) {
+              final task = widget.completedTasks[index];
+              return _buildTaskCard(context, task);
+            },
           );
         },
       ),
@@ -112,14 +108,13 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 任务图标
-                Container(
+                // 任务图标：手绘墨盒（实底 + 墨线描边）
+                JellyBox(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: task.priorityColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  radius: theme.radii.md,
+                  color: task.priorityColor.withValues(alpha: 0.15),
+                  alignment: Alignment.center,
                   // task.icon 为持久化 IconData，保留 Material 图标
                   child: Icon(
                     task.icon ?? Icons.check_circle,
@@ -296,11 +291,18 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
     required String label,
     required Color color,
   }) {
+    final theme = DSThemeBridge.resolve(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+      // 小控件走纯色实底 + 墨线描边（pill 自动胶囊）
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: color.withValues(alpha: 0.12),
+        stroke: color.withValues(alpha: 0.55),
+        strokeWidth: 1.2,
+        radius: theme.radii.pill,
+        seed: label.length,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -52,6 +52,7 @@ export 'components/slider.dart';
 export 'components/stepper.dart';
 export 'components/switch.dart';
 export 'components/tabs.dart';
+export 'components/time_picker.dart';
 export 'components/toast.dart';
 export 'components/top_bar.dart';
 export 'components/tooltip.dart';

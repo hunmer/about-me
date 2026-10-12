@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
-/// 提醒时间管理组件
+/// 提醒时间管理组件（手绘纸墨风）
 ///
 /// 功能特性：
 /// - 显示提醒时间列表
 /// - 添加新提醒（日期+时间选择器）
 /// - 删除提醒
+///
+/// 字段行走 [JellyBox]（实底 + 墨线描边），管理面板走 [showDSBottomSheet]
+/// （纸底 + 淡排线 + 墨线框 + 描画入场）。
 class RemindersField extends StatefulWidget {
   /// 提醒时间列表
   final List<DateTime> reminders;
@@ -23,8 +29,8 @@ class RemindersField extends StatefulWidget {
   /// 占位提示文本（无提醒时显示）
   final String? hintText;
 
-  /// 主题色
-  final Color primaryColor;
+  /// 主题色（未传时取 design_system 主题主色）
+  final Color? primaryColor;
 
   const RemindersField({
     super.key,
@@ -33,7 +39,7 @@ class RemindersField extends StatefulWidget {
     this.onReminderAdded,
     this.labelText,
     this.hintText,
-    this.primaryColor = const Color(0xFF607AFB),
+    this.primaryColor,
   });
 
   @override
@@ -61,51 +67,49 @@ class _RemindersFieldState extends State<RemindersField> {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
 
-    return InkWell(
-      onTap: () => _showRemindersModal(context, locale),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 50,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (widget.labelText != null)
-              Text(
-                widget.labelText!,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              )
-            else
-              Icon(
-                Icons.alarm,
-                size: 20,
-                color: Theme.of(context).colorScheme.onSurface,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return Pressable(
+            onPressed: () => _showRemindersSheet(context, locale, theme),
+            child: JellyBox(
+              height: 50,
+              radius: theme.radii.lg,
+              padding: EdgeInsets.only(
+                left: theme.spacing.md,
+                right: theme.spacing.lg,
               ),
-            Expanded(
-              child: Text(
-                _getDisplayText(locale),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 17,
-                  color:
-                      _reminders.isNotEmpty
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              child: Row(
+                children: [
+                  if (widget.labelText != null)
+                    Text(
+                      widget.labelText!,
+                      style: DsTypography.body.copyWith(color: theme.text),
+                    )
+                  else
+                    DsIcon(
+                      DsIconKind.bell,
+                      size: 20,
+                      color: widget.primaryColor ?? theme.primary,
+                    ),
+                  SizedBox(width: theme.spacing.sm),
+                  Expanded(
+                    child: Text(
+                      _getDisplayText(locale),
+                      style: DsTypography.body.copyWith(
+                        color:
+                            _reminders.isNotEmpty ? theme.text : theme.textSub,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -113,7 +117,7 @@ class _RemindersFieldState extends State<RemindersField> {
   /// 获取显示文本
   String _getDisplayText(String locale) {
     if (_reminders.isEmpty) {
-      return widget.hintText ?? '无';
+      return widget.hintText ?? 'app_none'.tr;
     }
     final first = _reminders.first;
     final formatted = DateFormat.yMMMEd(locale).add_jm().format(first);
@@ -123,77 +127,104 @@ class _RemindersFieldState extends State<RemindersField> {
     return formatted;
   }
 
-  /// 显示提醒管理模态框
-  Future<void> _showRemindersModal(BuildContext context, String locale) async {
-    await showModalBottomSheet(
+  /// 显示提醒管理底部面板（纸底 + 淡排线 + 墨线框 + 描画入场）
+  Future<void> _showRemindersSheet(
+    BuildContext context,
+    String locale,
+    AppThemeData theme,
+  ) async {
+    await showDSBottomSheet(
       context: context,
-      isScrollControlled: true,
+      title: widget.labelText ?? 'app_reminders'.tr,
       builder:
-          (modalContext) => StatefulBuilder(
-            builder: (modalContext, setModalState) {
-              return Container(
-                padding: const EdgeInsets.all(16),
-                height: 450,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          (sheetContext) => StatefulBuilder(
+            builder: (sheetContext, setModalState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 添加入口
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          widget.labelText ?? '提醒',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => _addReminder(setModalState),
+                        DSIconButton(
+                          icon: DsIconKind.plus,
+                          size: 32,
+                          onPressed: () => _addReminder(setModalState, theme),
                         ),
                       ],
                     ),
-                    const Divider(),
-                    Expanded(
-                      child:
-                          _reminders.isEmpty
-                              ? Center(
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+                  Flexible(
+                    child:
+                        _reminders.isEmpty
+                            ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              child: Center(
                                 child: Text(
-                                  widget.hintText ?? '暂无提醒',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
+                                  widget.hintText ?? 'app_noReminders'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
                                   ),
                                 ),
-                              )
-                              : ListView.builder(
-                                itemCount: _reminders.length,
-                                itemBuilder: (context, index) {
-                                  final r = _reminders[index];
-                                  return ListTile(
-                                    leading: const Icon(Icons.alarm),
-                                    title: Text(
-                                      DateFormat.yMMMEd(
-                                        locale,
-                                      ).add_jm().format(r),
-                                    ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () {
-                                        setState(
-                                          () => _reminders.removeAt(index),
-                                        );
-                                        widget.onRemoveReminder(index);
-                                        setModalState(() {});
-                                      },
-                                    ),
-                                  );
-                                },
                               ),
-                    ),
-                  ],
-                ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.fromLTRB(
+                                theme.spacing.lg,
+                                0,
+                                theme.spacing.lg,
+                                theme.spacing.sm,
+                              ),
+                              itemCount: _reminders.length,
+                              itemBuilder: (context, index) {
+                                final r = _reminders[index];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      DsIcon(
+                                        DsIconKind.bell,
+                                        size: 18,
+                                        color: theme.primary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          DateFormat.yMMMEd(
+                                            locale,
+                                          ).add_jm().format(r),
+                                          style: DsTypography.body.copyWith(
+                                            color: theme.text,
+                                          ),
+                                        ),
+                                      ),
+                                      DSIconButton(
+                                        icon: DsIconKind.trash,
+                                        size: 32,
+                                        color: theme.surfaceAlt,
+                                        iconColor: theme.danger,
+                                        onPressed: () {
+                                          setState(
+                                            () => _reminders.removeAt(index),
+                                          );
+                                          widget.onRemoveReminder(index);
+                                          setModalState(() {});
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                  ),
+                ],
               );
             },
           ),
@@ -201,23 +232,30 @@ class _RemindersFieldState extends State<RemindersField> {
   }
 
   /// 添加提醒
-  Future<void> _addReminder(StateSetter setModalState) async {
+  Future<void> _addReminder(
+    StateSetter setModalState,
+    AppThemeData theme,
+  ) async {
     final baseDate = _reminders.isNotEmpty ? _reminders.last : DateTime.now();
 
-    // 选择日期
-    final pickedDate = await showDatePicker(
+    // 选择日期（DS 手绘日历；无范围约束参数，与表单日期字段行为一致）
+    final pickedDate = await showDSDatePickerDialog(
       context: context,
-      initialDate: baseDate,
-      firstDate: DateTime.now(),
-      lastDate: baseDate.add(const Duration(days: 365)),
+      initial: baseDate,
+      cancelText: 'app_cancel'.tr,
+      confirmText: 'app_ok'.tr,
+      theme: theme,
     );
 
     if (pickedDate == null) return;
 
-    // 选择时间
-    final pickedTime = await showTimePicker(
+    // 选择时间（DS 手绘双滚轮）
+    final pickedTime = await showDSTimePickerDialog(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initial: TimeOfDay.now(),
+      cancelText: 'app_cancel'.tr,
+      confirmText: 'app_ok'.tr,
+      theme: theme,
     );
 
     if (pickedTime == null) return;

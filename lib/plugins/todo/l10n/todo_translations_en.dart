@@ -156,4 +156,10 @@ const Map<String, String> todoTranslationsEn = {
   'todo_friday': 'Fri',
   'todo_saturday': 'Sat',
   'todo_sunday': 'Sun',
+
+  // Detail
+  'todo_statusInProgress': 'In progress',
+  'todo_routeDetailTitle': 'Todo detail - @title',
+  'todo_fullDate': '@y/@m/@d',
+  'todo_fullDateTime': '@y/@m/@d @hh:@mm',
 };

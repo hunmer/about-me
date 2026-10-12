@@ -155,4 +155,10 @@ const Map<String, String> todoTranslationsZh = {
   'todo_friday': '周五',
   'todo_saturday': '周六',
   'todo_sunday': '周日',
+
+  // 详情
+  'todo_statusInProgress': '进行中',
+  'todo_routeDetailTitle': '待办任务详情 - @title',
+  'todo_fullDate': '@y年@m月@d日',
+  'todo_fullDateTime': '@y年@m月@d日 @hh:@mm',
 };
