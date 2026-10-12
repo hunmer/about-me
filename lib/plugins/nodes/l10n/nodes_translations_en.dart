@@ -17,6 +17,8 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_notebookTitle': 'Notebook title',
   'nodes_searchNotebooks': 'Search notebooks',
   'nodes_noResultsFound': 'No matching notebooks found',
+  'nodes_noNotebooks': 'No notebooks yet. Tap + to create one',
+  'nodes_moreNodesHint': '@count more nodes…',
 
   // Node management
   'nodes_nodes': 'Nodes',
@@ -101,6 +103,6 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_notebookListDescription': 'Display nodes from selected notebook',
   'nodes_notebookListWidgetName': 'Notebook List',
   'nodes_notebookListWidgetDesc': 'Display all nodes in notebook',
-  'nodes_nodeCount': 'count nodes',
+  'nodes_nodeCount': '@count nodes',
   'nodes_noNodes': 'No nodes',
 };
