@@ -13,7 +13,7 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_box_outline_blank, size: 64, color: theme.textSub),
+          DsIcon(DsIconKind.calendarCheck, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
             'checkin_noRecords'.tr,

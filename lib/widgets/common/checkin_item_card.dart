@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
+
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
@@ -15,6 +20,8 @@ const double _kWeeklyPlusSize = 30;
 /// 打卡项目卡片组件
 ///
 /// 用于展示打卡项目的卡片，支持三种风格：weekly、small、calendar。
+/// 手绘纸墨风：卡片面板走 DsSketchPanel（纸底 + 淡排线 + 墨线框），
+/// 小控件走 dsSketchDecoration，动态图标经 WiredIcon 套手绘几何。
 ///
 /// 使用示例：
 /// ```dart
@@ -87,7 +94,7 @@ class CheckinItemCardWidget extends StatefulWidget {
 class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
     Widget content;
     switch (widget.item.cardStyle) {
@@ -102,38 +109,31 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
         break;
     }
 
+    // margin/padding 与 CheckinWeekdayHeader 的对齐约定：8 + 16
     return Container(
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.3),
-          width: 0.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: widget.onTap,
-          onLongPress: widget.onLongPress,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(padding: const EdgeInsets.all(16.0), child: content),
-        ),
+      child: Pressable(
+        onPressed: widget.onTap,
+        onLongPress: widget.onLongPress,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return Transform.scale(
+            scale: pressed ? 0.97 : 1.0,
+            child: DsSketchPanel(
+              theme: theme,
+              radius: BorderRadius.circular(16),
+              padding: const EdgeInsets.all(16.0),
+              seed: widget.index + 1,
+              child: content,
+            ),
+          );
+        },
       ),
     );
   }
 
   // --- Weekly Style ---
-  Widget _buildWeeklyStyle(BuildContext context, ThemeData theme) {
+  Widget _buildWeeklyStyle(BuildContext context, AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -147,26 +147,23 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
             children: [
               Text(
                 widget.item.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: DsTypography.heading.copyWith(fontSize: 15),
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 3),
-              Container(
+              JellyBox(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
                   vertical: 2,
                 ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                radius: DsRadii.pill,
+                color: theme.surfaceAlt,
                 child: Text(
                   _getFrequencyText(),
-                  style: TextStyle(fontSize: 10, color: theme.hintColor),
+                  style: DsTypography.caption.copyWith(
+                    fontSize: 10,
+                    color: theme.textSub,
+                  ),
                 ),
               ),
             ],
@@ -181,13 +178,13 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
         ),
         const SizedBox(width: _kWeeklyGapBeforePlus),
         // 快捷打卡按钮
-        _buildPlusOneButton(context, size: _kWeeklyPlusSize),
+        _buildPlusOneButton(context, theme, size: _kWeeklyPlusSize),
       ],
     );
   }
 
   // --- Small Style ---
-  Widget _buildSmallStyle(BuildContext context, ThemeData theme) {
+  Widget _buildSmallStyle(BuildContext context, AppThemeData theme) {
     final stats = _calculateMonthlyStats();
 
     return Column(
@@ -200,13 +197,18 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
           children: [
             Row(
               children: [
-                Icon(widget.item.icon, color: widget.item.color, size: 20),
+                WiredIcon(
+                  icon: widget.item.icon,
+                  size: 20,
+                  color: widget.item.color,
+                  drawConfig: theme.wired.drawConfig,
+                ),
                 const SizedBox(width: 8),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 80),
                   child: Text(
                     widget.item.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: DsTypography.heading,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -217,9 +219,12 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 children: [
                   Text(
                     _formatTimeOnly(widget.item.lastCheckinDate!),
-                    style: TextStyle(fontSize: 10, color: theme.hintColor),
+                    style: DsTypography.caption.copyWith(
+                      fontSize: 10,
+                      color: theme.textSub,
+                    ),
                   ),
-                  Icon(Icons.edit_note, size: 14, color: theme.hintColor),
+                  DsIcon(DsIconKind.edit, size: 14, color: theme.textSub),
                 ],
               ),
           ],
@@ -229,28 +234,28 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
         // Stats Box
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.5,
-            ),
-            borderRadius: BorderRadius.circular(8),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.surfaceAlt.withValues(alpha: 0.5),
+            radius: BorderRadius.circular(10),
+            strokeWidth: 1.4,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildSmallStatItem(
-                context,
-                Icons.checklist_rtl,
+                theme,
+                DsIconKind.list,
                 stats['count']!.toString(),
-                '本次次数',
-                Colors.blue,
+                'checkin_statCount'.tr,
+                theme.primary,
               ),
               _buildSmallStatItem(
-                context,
-                Icons.calendar_today,
+                theme,
+                DsIconKind.calendar,
                 stats['days']!.toString(),
-                '本次天数',
-                Colors.purple,
+                'checkin_statDays'.tr,
+                theme.textSub,
               ),
             ],
           ),
@@ -258,17 +263,18 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
         const SizedBox(height: 12),
 
         // Progress Button (Acting as +1)
-        _buildProgressButton(context, stats),
+        _buildProgressButton(context, theme, stats),
       ],
     );
   }
 
   // --- Calendar Style ---
-  Widget _buildCalendarStyle(BuildContext context, ThemeData theme) {
+  Widget _buildCalendarStyle(BuildContext context, AppThemeData theme) {
     final stats = _calculateMonthlyStats();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Header
         Row(
@@ -280,10 +286,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 const SizedBox(width: 12),
                 Text(
                   widget.item.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: DsTypography.heading.copyWith(fontSize: 16),
                 ),
               ],
             ),
@@ -292,10 +295,10 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 children: [
                   Text(
                     _formatLastCheckinTime(),
-                    style: TextStyle(fontSize: 12, color: theme.hintColor),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.edit_note, size: 16, color: theme.hintColor),
+                  DsIcon(DsIconKind.edit, size: 16, color: theme.textSub),
                 ],
               ),
           ],
@@ -317,29 +320,24 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.surfaceAlt.withValues(alpha: 0.5),
+                      radius: BorderRadius.circular(10),
+                      strokeWidth: 1.4,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: _buildSmallStatItem(
-                            context,
-                            Icons.checklist_rtl,
-                            stats['count']!.toString(),
-                            '次数',
-                            Colors.blue,
-                          ),
-                        ),
-                      ],
+                    child: _buildSmallStatItem(
+                      theme,
+                      DsIconKind.list,
+                      stats['count']!.toString(),
+                      'checkin_statCountShort'.tr,
+                      theme.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _buildPlusOneButton(context, size: 60),
+                  _buildPlusOneButton(context, theme, size: 60),
                 ],
               ),
             ),
@@ -352,105 +350,141 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
   // --- Helper Widgets ---
 
   /// 图标容器，[borderRadius] 为 null 时圆形，否则方形圆角
-  Widget _buildIcon(ThemeData theme, {double size = 40, double? borderRadius}) {
+  Widget _buildIcon(AppThemeData theme, {double size = 40, double? borderRadius}) {
     final rounded = borderRadius != null;
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: widget.item.color.withValues(alpha: 0.1),
-        shape: rounded ? BoxShape.rectangle : BoxShape.circle,
-        borderRadius: rounded ? BorderRadius.circular(borderRadius) : null,
+      alignment: Alignment.center,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: widget.item.color.withValues(alpha: 0.12),
+        circle: !rounded,
+        radius: rounded ? BorderRadius.circular(borderRadius) : null,
+        strokeWidth: 1.6,
       ),
-      child: Icon(widget.item.icon, color: widget.item.color, size: size * 0.6),
+      child: WiredIcon(
+        icon: widget.item.icon,
+        size: size * 0.6,
+        color: widget.item.color,
+        drawConfig: theme.wired.drawConfig,
+      ),
     );
   }
 
-  Widget _buildPlusOneButton(BuildContext context, {required double size}) {
-    return InkWell(
-      onTap: widget.onStateChanged,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: widget.item.color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(size * 0.3),
-        ),
-        child: Center(
-          child: Text(
-            '+1',
-            style: TextStyle(
-              color: widget.item.color,
-              fontSize: size * 0.35,
-              fontWeight: FontWeight.bold,
+  Widget _buildPlusOneButton(
+    BuildContext context,
+    AppThemeData theme, {
+    required double size,
+  }) {
+    return Pressable(
+      onPressed: widget.onStateChanged,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.9 : 1.0,
+          child: Container(
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: widget.item.color.withValues(alpha: 0.12),
+              radius: BorderRadius.circular(size * 0.3),
+              stroke: widget.item.color,
+              strokeWidth: 1.6,
+            ),
+            child: Text(
+              '+1',
+              style: DsTypography.heading.copyWith(
+                color: widget.item.color,
+                fontSize: size * 0.35,
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProgressButton(BuildContext context, Map<String, int> stats) {
-    return InkWell(
-      onTap: widget.onStateChanged,
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: widget.item.color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Stack(
-          children: [
-            // Progress Bar
-            FractionallySizedBox(
-              widthFactor: (stats['count']! / 30).clamp(0.0, 1.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: widget.item.color.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+  Widget _buildProgressButton(
+    BuildContext context,
+    AppThemeData theme,
+    Map<String, int> stats,
+  ) {
+    final progress = (stats['count']! / 30).clamp(0.0, 1.0);
+    return Pressable(
+      onPressed: widget.onStateChanged,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.97 : 1.0,
+          child: SizedBox(
+            height: 40,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Stack(
+                children: [
+                  // Progress Bar：淡彩实底填充
+                  FractionallySizedBox(
+                    widthFactor: progress,
+                    child: ColoredBox(
+                      color: widget.item.color.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  // 墨线轨道（画在边界上）
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(10),
+                        strokeWidth: 1.6,
+                      ),
+                    ),
+                  ),
+                  // Text
+                  Center(
+                    child: Text(
+                      '${stats['count']}/30',
+                      style: DsTypography.label.copyWith(
+                        color: widget.item.color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Text
-            Center(
-              child: Text(
-                '${stats['count']}/30',
-                style: TextStyle(
-                  color: widget.item.color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildSmallStatItem(
-    BuildContext context,
-    IconData icon,
+    AppThemeData theme,
+    DsIconKind icon,
     String value,
     String label,
     Color color,
   ) {
     return Column(
       children: [
-        Icon(icon, size: 16, color: color.withValues(alpha: 0.7)),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        ),
+        DsIcon(icon, size: 16, color: color.withValues(alpha: 0.8)),
+        const SizedBox(height: 2),
+        Text(value, style: DsTypography.label),
         Text(
           label,
-          style: TextStyle(fontSize: 8, color: Theme.of(context).hintColor),
+          style: DsTypography.caption.copyWith(
+            fontSize: 9,
+            color: theme.textSub,
+          ),
         ),
       ],
     );
   }
 
   /// 周视图打卡圆点：整行铺满 7 列，星期文字由外部固定表头（CheckinWeekdayHeader）展示
-  Widget _buildWeeklyCircles(ThemeData theme) {
+  Widget _buildWeeklyCircles(AppThemeData theme) {
     final now = DateTime.now();
     // 标准化为今天的 00:00:00
     final today = DateTime(now.year, now.month, now.day);
@@ -484,25 +518,21 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
                 width: 20,
                 height: 20,
                 alignment: Alignment.center,
-                decoration: hasCheckin
-                    ? BoxDecoration(
-                        color: widget.item.color,
-                        shape: BoxShape.circle,
-                      )
-                    : BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isFuture
-                            ? theme.hintColor.withValues(alpha: 0.06)
-                            : theme.hintColor.withValues(alpha: 0.12),
-                        border: isToday
-                            ? Border.all(
-                                color: widget.item.color.withValues(alpha: 0.6),
-                                width: 1.2,
-                              )
-                            : null,
-                      ),
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  circle: true,
+                  // 已打卡：项目色实底（描边同色融为一体）；未打卡：纸面/无填充
+                  fillColor: hasCheckin
+                      ? widget.item.color
+                      : (isFuture ? null : theme.surfaceAlt),
+                  stroke: hasCheckin
+                      ? widget.item.color
+                      : (isToday ? widget.item.color : theme.ink),
+                  strokeWidth: isToday && !hasCheckin ? 1.8 : 1.2,
+                  seed: widget.index * 7 + i + 1,
+                ),
                 child: hasCheckin
-                    ? const Icon(Icons.check, size: 12, color: Colors.white)
+                    ? DsIcon(DsIconKind.check, size: 12, color: theme.paper)
                     : null,
               ),
             ),
@@ -514,7 +544,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
     return Row(children: columns);
   }
 
-  Widget _buildMonthCalendar(BuildContext context, ThemeData theme) {
+  Widget _buildMonthCalendar(BuildContext context, AppThemeData theme) {
     final now = DateTime.now();
     // 标准化为今天的 00:00:00
     final today = DateTime(now.year, now.month, now.day);
@@ -551,24 +581,26 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
             widget.onDateSelected?.call(date);
           },
           child: Container(
-            decoration: BoxDecoration(
-              color: hasCheckin
-                  ? widget.item.color.withValues(alpha: 0.2)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(4),
-              border:
-                  isToday && !hasCheckin
-                      ? Border.all(color: widget.item.color, width: 1)
-                      : null,
-            ),
+            // 仅已打卡/今天画手绘格（淡彩底 + 墨线），普通日期留白省墨
+            decoration: hasCheckin || (isToday && !hasCheckin)
+                ? dsSketchDecoration(
+                    theme: theme,
+                    fillColor: hasCheckin
+                        ? widget.item.color.withValues(alpha: 0.18)
+                        : null,
+                    stroke: isToday && !hasCheckin
+                        ? widget.item.color
+                        : theme.ink,
+                    strokeWidth: 1.2,
+                    radius: BorderRadius.circular(6),
+                    seed: day,
+                  )
+                : null,
             alignment: Alignment.center,
             child: Text(
               '$day',
-              style: TextStyle(
-                fontSize: 10,
-                color: hasCheckin ? widget.item.color : theme.hintColor,
-                fontWeight:
-                    hasCheckin || isToday ? FontWeight.bold : FontWeight.normal,
+              style: DsTypography.caption.copyWith(
+                color: hasCheckin ? widget.item.color : theme.textSub,
               ),
             ),
           ),
@@ -590,9 +622,9 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
   /// 根据 frequency 配置生成频次徽章文案
   String _getFrequencyText() {
     final daysPerWeek = widget.item.frequency.where((enabled) => enabled).length;
-    if (daysPerWeek >= 7) return '每天';
-    if (daysPerWeek <= 0) return '未设置';
-    return '每周$daysPerWeek天';
+    if (daysPerWeek >= 7) return 'checkin_freqEveryday'.tr;
+    if (daysPerWeek <= 0) return 'checkin_freqNotSet'.tr;
+    return 'checkin_freqPerWeek'.trParams({'days': daysPerWeek.toString()});
   }
 
   String _formatLastCheckinTime() {
@@ -607,13 +639,13 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
       if (records.isNotEmpty) {
         return _formatTimeOnly(records.first.checkinTime);
       }
-      return '今天';
+      return 'checkin_timeToday'.tr;
     } else if (diff.inDays == 1) {
       final records = widget.item.getDateRecords(lastDate);
       if (records.isNotEmpty) {
-        return '昨天 ${_formatTimeOnly(records.first.checkinTime)}';
+        return '${'checkin_timeYesterday'.tr} ${_formatTimeOnly(records.first.checkinTime)}';
       }
-      return '昨天';
+      return 'checkin_timeYesterday'.tr;
     } else {
       return '${lastDate.month}-${lastDate.day}';
     }
@@ -636,7 +668,7 @@ class CheckinWeekdayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     const weekdayChars = ['一', '二', '三', '四', '五', '六', '日'];
 
     final now = DateTime.now();
@@ -670,27 +702,23 @@ class CheckinWeekdayHeader extends StatelessWidget {
                       children: [
                         Text(
                           weekdayChars[i],
-                          style: TextStyle(
+                          style: DsTypography.caption.copyWith(
                             fontSize: 9,
                             height: 1.2,
-                            color: theme.hintColor,
-                            fontWeight: weekDates[i] == today
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                            color: weekDates[i] == today
+                                ? theme.text
+                                : theme.textSub,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${weekDates[i].day}',
-                          style: TextStyle(
+                          style: DsTypography.caption.copyWith(
                             fontSize: 12,
                             height: 1.1,
                             color: weekDates[i] == today
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface,
-                            fontWeight: weekDates[i] == today
-                                ? FontWeight.bold
-                                : FontWeight.w500,
+                                ? theme.primary
+                                : theme.text,
                           ),
                         ),
                       ],

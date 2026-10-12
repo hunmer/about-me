@@ -170,12 +170,12 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
             DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
-              '未找到相关打卡项目',
+              'checkin_searchEmptyTitle'.tr,
               style: DsTypography.body.copyWith(color: theme.textSub),
             ),
             const SizedBox(height: 8),
             Text(
-              '尝试使用其他关键词搜索',
+              'checkin_searchEmptyHint'.tr,
               style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ],

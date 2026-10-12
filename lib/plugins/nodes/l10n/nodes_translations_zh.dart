@@ -29,6 +29,10 @@ final Map<String, String> nodesTranslationsZh = {
   'nodes_addSiblingNode': '添加同级节点',
   'nodes_nodeTitle': '节点标题',
   'nodes_noNodesYet': '暂无节点',
+  'nodes_unnamedNode': '无标题',
+  'nodes_searchNodeHint': '搜索节点标题或笔记',
+  'nodes_searchEmpty': '输入关键词搜索节点',
+  'nodes_searchNoResults': '未找到匹配的节点',
 
   // 节点属性
   'nodes_tags': '标签',

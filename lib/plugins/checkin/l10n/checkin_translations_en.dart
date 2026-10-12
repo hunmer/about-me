@@ -120,5 +120,15 @@ class CheckinTranslationsEn {
     'checkin_multiQuickAccess': 'Multi-Item Check-in',
     'checkin_multiQuickAccessDesc': 'Display check-in status for multiple items',
     'tapToCheckin': 'Tap to check in',
+    'checkin_freqEveryday': 'Every day',
+    'checkin_freqNotSet': 'Not set',
+    'checkin_freqPerWeek': '@days days/week',
+    'checkin_statCount': 'Times this month',
+    'checkin_statDays': 'Days this month',
+    'checkin_statCountShort': 'Times',
+    'checkin_timeToday': 'Today',
+    'checkin_timeYesterday': 'Yesterday',
+    'checkin_searchEmptyTitle': 'No matching check-in items',
+    'checkin_searchEmptyHint': 'Try searching with other keywords',
   };
 }

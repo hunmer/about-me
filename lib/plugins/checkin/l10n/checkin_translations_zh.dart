@@ -120,5 +120,15 @@ class CheckinTranslationsZh {
     'checkin_multiQuickAccess': '多项目打卡',
     'checkin_multiQuickAccessDesc': '显示多个签到项目的打卡状态',
     'tapToCheckin': '点击打卡',
+    'checkin_freqEveryday': '每天',
+    'checkin_freqNotSet': '未设置',
+    'checkin_freqPerWeek': '每周@days天',
+    'checkin_statCount': '本次次数',
+    'checkin_statDays': '本次天数',
+    'checkin_statCountShort': '次数',
+    'checkin_timeToday': '今天',
+    'checkin_timeYesterday': '昨天',
+    'checkin_searchEmptyTitle': '未找到相关打卡项目',
+    'checkin_searchEmptyHint': '尝试使用其他关键词搜索',
 };
 }

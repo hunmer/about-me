@@ -44,6 +44,10 @@ final Map<String, String> notesTranslationsZh = {
 
   // 输入提示
   'notes_folderNameHint': '文件夹名称',
+  'notes_titleHint': '输入标题...',
+  'notes_contentHint': '输入内容...',
+  'notes_untitled': '无标题',
+  'notes_emptyContent': '还没有内容，点击下方编辑开始记录',
 
   // 文件夹相关
   'notes_root': '根目录',

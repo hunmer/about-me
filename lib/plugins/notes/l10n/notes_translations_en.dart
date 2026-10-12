@@ -44,6 +44,10 @@ final Map<String, String> notesTranslationsEn = {
 
   // Input hints
   'notes_folderNameHint': 'Folder name',
+  'notes_titleHint': 'Enter title...',
+  'notes_contentHint': 'Enter content...',
+  'notes_untitled': 'Untitled',
+  'notes_emptyContent': 'No content yet. Tap edit below to start writing',
 
   // Folder related
   'notes_root': 'Root',

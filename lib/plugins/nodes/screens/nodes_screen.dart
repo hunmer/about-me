@@ -4,13 +4,13 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
 import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/nodes/widgets/node_card.dart';
 import 'package:aboutme/plugins/nodes/widgets/node_item.dart';
 import 'node_edit_screen.dart';
 import 'package:uuid/uuid.dart';
@@ -30,69 +30,64 @@ class _NodesScreenState extends State<NodesScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<NodesController>(context, listen: true);
+    final theme = DSThemeBridge.resolve(context);
 
     final currentNotebook = controller.getNotebook(widget.notebook.id);
-    final theme = Theme.of(context);
 
     return SuperCupertinoNavigationWrapper(
-      title: Text(
-        widget.notebook.title,
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
-      ),
-      largeTitle: '节点',
+      title: Text(widget.notebook.title),
+      largeTitle: widget.notebook.title,
+      enableLargeTitle: false,
 
       enableSearchBar: true,
-      searchPlaceholder: '搜索节点标题或笔记',
+      searchPlaceholder: 'nodes_searchNodeHint'.tr,
       onSearchChanged: (value) {
         setState(() {
           _searchQuery = value;
         });
       },
       actions: [
-        IconButton(
-          icon: Icon(Icons.search, color: theme.iconTheme.color),
-          tooltip: '搜索节点',
-          onPressed: () {
-            // 点击搜索图标会触发搜索框聚焦，实际搜索逻辑由 onSearchChanged 处理
-          },
-        ),
-        PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: theme.iconTheme.color),
-          onSelected: (value) =>
-              _handleMenuAction(value, context, controller, currentNotebook),
-          itemBuilder: (BuildContext context) => [
-            PopupMenuItem<String>(
-              value: 'copy',
-              child: ListTile(
-                leading: const Icon(Icons.copy),
-                title: Text('nodes_copyToText'.tr),
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'clear',
-              child: ListTile(
-                leading: const Icon(Icons.clear_all),
-                title: Text('nodes_clearNodes'.tr),
-              ),
-            ),
-          ],
+        // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              return DSIconButton(
+                icon: DsIconKind.more,
+                size: 40,
+                tooltip: 'nodes_nodesSettings'.tr,
+                onPressed:
+                    currentNotebook == null
+                        ? null
+                        : () => _showNotebookMenu(context, controller),
+              );
+            },
+          ),
         ),
       ],
       body: Stack(
         children: [
           currentNotebook?.nodes.isEmpty ?? true
-              ? Center(child: Text('nodes_noNodesYet'.tr))
+              ? _buildEmptyState(
+                icon: DsIconKind.spaceDashboard,
+                message: 'nodes_emptyNodesMessage'.tr,
+              )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: currentNotebook?.nodes.length ?? 0,
-                  itemBuilder: (context, index) {
-                    return NodeItem(
-                      node: currentNotebook!.nodes[index],
-                      notebookId: widget.notebook.id,
-                      depth: 0,
-                    );
-                  },
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  MediaQuery.paddingOf(context).bottom + 96,
                 ),
+                itemCount: currentNotebook?.nodes.length ?? 0,
+                itemBuilder: (context, index) {
+                  return NodeItem(
+                    node: currentNotebook!.nodes[index],
+                    notebookId: widget.notebook.id,
+                    depth: 0,
+                    isLast: index == currentNotebook.nodes.length - 1,
+                  );
+                },
+              ),
           // FAB 覆盖层
           Positioned(
             bottom: 16,
@@ -104,26 +99,61 @@ class _NodesScreenState extends State<NodesScreen> {
           ),
         ],
       ),
-      searchBody: _buildSearchBody(controller, currentNotebook, _searchQuery),
+      searchBody: _buildSearchBody(theme, controller, currentNotebook),
     );
   }
 
-  void _handleMenuAction(
-    String value,
+  Widget _buildEmptyState({required DsIconKind icon, required String message}) {
+    final theme = DSThemeBridge.resolve(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          DsIcon(icon, size: 64, color: theme.textSub),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: DsTypography.body.copyWith(color: theme.textSub),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 笔记本操作：复制为文本 / 清空节点（DS 底部 sheet）
+  void _showNotebookMenu(
     BuildContext context,
     NodesController controller,
-    Notebook? currentNotebook,
   ) {
-    if (currentNotebook == null) return;
-
-    switch (value) {
-      case 'copy':
-        _copyToText(context, currentNotebook);
-        break;
-      case 'clear':
-        _showClearConfirmDialog(context, controller, currentNotebook);
-        break;
-    }
+    showDSBottomSheet(
+      context: context,
+      title: widget.notebook.title,
+      builder: (sheetContext) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DSSheetAction(
+              icon: DsIconKind.copy,
+              label: 'nodes_copyToText'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _copyToText(context, widget.notebook);
+              },
+            ),
+            DSSheetAction(
+              icon: DsIconKind.trash,
+              label: 'nodes_clearNodes'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showClearConfirmDialog(context, controller);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _copyToText(BuildContext context, Notebook notebook) {
@@ -150,28 +180,26 @@ class _NodesScreenState extends State<NodesScreen> {
   void _showClearConfirmDialog(
     BuildContext context,
     NodesController controller,
-    Notebook notebook,
   ) {
-    showDialog(
+    final current = controller.getNotebook(widget.notebook.id);
+    if (current == null) return;
+
+    showDSDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('nodes_clearNodesTitle'.tr),
-        content: Text('nodes_clearNodesConfirm'.tr),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('nodes_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.clearNodes(notebook.id);
-              Navigator.pop(context);
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (dialogContext) => DSDialog(
+            title: 'nodes_clearNodesTitle'.tr,
+            message: 'nodes_clearNodesConfirm'.tr,
+            cancelText: 'nodes_cancel'.tr,
+            confirmText: 'nodes_clear'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () {
+              controller.clearNodes(current.id);
+              Navigator.pop(dialogContext);
               Toast.success('nodes_nodesCleared'.tr);
             },
-            child: Text('nodes_clear'.tr),
           ),
-        ],
-      ),
     );
   }
 
@@ -197,141 +225,70 @@ class _NodesScreenState extends State<NodesScreen> {
     );
   }
 
+  void _openNodeEditor(
+    BuildContext context,
+    NodesController controller,
+    Node node,
+  ) {
+    NavigationHelper.push(
+      context,
+      ChangeNotifierProvider<NodesController>.value(
+        value: controller,
+        child: NodeEditScreen(
+          notebookId: widget.notebook.id,
+          node: node,
+          isNew: false,
+        ),
+      ),
+    );
+  }
+
   /// 构建搜索结果页面
   Widget _buildSearchBody(
+    AppThemeData theme,
     NodesController controller,
     Notebook? currentNotebook,
-    String query,
   ) {
-    if (query.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '输入关键词搜索节点',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
-        ),
+    if (_searchQuery.isEmpty) {
+      return _buildEmptyState(
+        icon: DsIconKind.search,
+        message: 'nodes_searchEmpty'.tr,
       );
     }
 
     // 执行搜索：匹配节点标题或笔记内容
     final allNodes = _getAllNodes(currentNotebook?.nodes ?? []);
+    final query = _searchQuery.toLowerCase();
     final matchedNodes = allNodes.where((node) {
-      return node.title.toLowerCase().contains(query.toLowerCase()) ||
-          node.notes.toLowerCase().contains(query.toLowerCase());
+      return node.title.toLowerCase().contains(query) ||
+          node.notes.toLowerCase().contains(query);
     }).toList();
 
     if (matchedNodes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.find_replace, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '未找到匹配的节点',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '试试其他关键词',
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
-            ),
-          ],
-        ),
+      return _buildEmptyState(
+        icon: DsIconKind.search,
+        message: 'nodes_searchNoResults'.tr,
       );
     }
 
-    // 显示搜索结果
+    // 显示搜索结果（树卡片样式 + 节点路径）
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        MediaQuery.paddingOf(context).bottom + 24,
+      ),
       itemCount: matchedNodes.length,
       itemBuilder: (context, index) {
         final node = matchedNodes[index];
-        // 获取节点路径显示
         final path = controller.getNodePath(widget.notebook.id, node.id);
-        final pathText = path.join(' / ');
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: node.color.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _getStatusIcon(node.status),
-                color: _getStatusColor(node.status),
-                size: 20,
-              ),
-            ),
-            title: Text(
-              node.title.isEmpty ? '(无标题)' : node.title,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (pathText.isNotEmpty) ...[
-                  Text(
-                    pathText,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                if (node.notes.isNotEmpty) ...[
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.only(top: 4, bottom: 4),
-                    child: ClipRect(
-                      child: SingleChildScrollView(
-                        child: QuillViewer(data: node.notes, selectable: false),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    if (node.tags.isNotEmpty)
-                      ...node.tags.map(
-                        (tag) => Chip(
-                          label: Text(
-                            tag,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            onTap: () {
-              // 点击搜索结果进入编辑界面
-              NavigationHelper.push(
-                context,
-                ChangeNotifierProvider<NodesController>.value(
-                  value: controller,
-                  child: NodeEditScreen(
-                    notebookId: widget.notebook.id,
-                    node: node,
-                    isNew: false,
-                  ),
-                ),
-              );
-            },
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: NodeCard(
+            node: node,
+            pathText: path.join(' / '),
+            onTap: () => _openNodeEditor(context, controller, node),
           ),
         );
       },
@@ -348,33 +305,5 @@ class _NodesScreenState extends State<NodesScreen> {
       }
     }
     return result;
-  }
-
-  /// 根据节点状态获取图标
-  IconData _getStatusIcon(NodeStatus status) {
-    switch (status) {
-      case NodeStatus.todo:
-        return Icons.radio_button_unchecked;
-      case NodeStatus.doing:
-        return Icons.access_time;
-      case NodeStatus.done:
-        return Icons.check_circle;
-      case NodeStatus.none:
-        return Icons.circle_outlined;
-    }
-  }
-
-  /// 根据节点状态获取颜色
-  Color _getStatusColor(NodeStatus status) {
-    switch (status) {
-      case NodeStatus.todo:
-        return Colors.grey;
-      case NodeStatus.doing:
-        return Colors.blue;
-      case NodeStatus.done:
-        return Colors.green;
-      case NodeStatus.none:
-        return Colors.grey.shade400;
-    }
   }
 }

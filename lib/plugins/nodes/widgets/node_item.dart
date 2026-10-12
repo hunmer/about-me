@@ -1,320 +1,161 @@
-import 'dart:convert';
 import 'package:get/get.dart' hide Node;
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:provider/provider.dart';
+import 'package:skribble/skribble.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
+import 'package:aboutme/plugins/nodes/widgets/node_card.dart';
 import 'package:aboutme/plugins/nodes/screens/node_edit_screen.dart';
 
-class _StatusInfo {
-  final Color color;
-  final Color textColor;
-  final Color backgroundColor;
-  final String label;
-
-  const _StatusInfo({
-    required this.color,
-    required this.textColor,
-    required this.backgroundColor,
-    required this.label,
-  });
-}
-
+/// 树内单个节点：卡片 + 父子连线 + 子节点递归 + 长按操作
 class NodeItem extends StatelessWidget {
   final Node node;
   final String notebookId;
   final int depth;
+
+  /// 是否为同级最后一个：末枝的竖线止于肘部，不贯穿到底
+  final bool isLast;
 
   const NodeItem({
     super.key,
     required this.node,
     required this.notebookId,
     required this.depth,
+    this.isLast = true,
   });
 
-  _StatusInfo _getStatusInfo(BuildContext context, NodeStatus status) {
-    // Colors based on design:
-    // Todo -> Blue (New)
-    // Doing -> Yellow (In Progress)
-    // Done -> Green (Completed)
-    // None/Other -> Grey
+  /// 连线槽宽（参考稿 ml-6 / ml-4 两档）
+  double get _gutter => depth == 0 ? 24 : 20;
 
-    switch (status) {
-      case NodeStatus.todo:
-        return _StatusInfo(
-          color: Colors.blue.shade400,
-          textColor: Colors.blue.shade800,
-          backgroundColor: Colors.blue.shade100,
-          label: 'New', // Mapping TODO to New/Blue style
-        );
-      case NodeStatus.doing:
-        return _StatusInfo(
-          color: Colors.amber.shade400,
-          textColor: Colors.amber.shade800,
-          backgroundColor: Colors.amber.shade100,
-          label: 'In Progress',
-        );
-      case NodeStatus.done:
-        return _StatusInfo(
-          color: Colors.green.shade400,
-          textColor: Colors.green.shade800,
-          backgroundColor: Colors.green.shade100,
-          label: 'Completed',
-        );
-      case NodeStatus.none:
-        return _StatusInfo(
-          color: Colors.grey.shade400,
-          textColor: Colors.grey.shade800,
-          backgroundColor: Colors.grey.shade200,
-          label: 'None',
-        );
-    }
-  }
-
-  Widget _buildStatusButton(
-    BuildContext context,
-    NodesController controller,
-    NodeStatus status,
-    String label,
-    Color backgroundColor,
-    Color textColor,
-  ) {
-    final isSelected = node.status == status;
-
-    return InkWell(
-      onTap: () {
-        final updatedNode = Node(
-          id: node.id,
-          title: node.title,
-          createdAt: node.createdAt,
-          tags: node.tags,
-          status: status,
-          startDate: node.startDate,
-          endDate: node.endDate,
-          customFields: node.customFields,
-          notes: node.notes,
-          parentId: node.parentId,
-          pathValue: node.pathValue,
-          color: node.color,
-          children: node.children,
-          isExpanded: node.isExpanded,
-        );
-        controller.updateNode(notebookId, updatedNode);
-        Navigator.pop(context);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected ? Border.all(color: textColor, width: 2) : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(BuildContext context, NodeStatus status) {
-    final info = _getStatusInfo(context, status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: info.backgroundColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        info.label,
-        style: TextStyle(
-          fontSize: 11,
-          color: info.textColor,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
+  /// 肘部高度：对齐子卡片头部行中心
+  double get _elbowY => depth == 0 ? 26 : 22;
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<NodesController>(context);
-
-    final statusInfo = _getStatusInfo(context, node.status);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final seed = node.id.hashCode & 0x7fffffff;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          onLongPress: () => _showNodeActions(context, controller),
-          child: InkWell(
-            onTap: () {
-              if (node.children.isNotEmpty) {
-                controller.toggleNodeExpansion(notebookId, node.id);
-              } else {
-                NavigationHelper.push(context, ChangeNotifierProvider<NodesController>.value(
-                              value: controller,
-                              child: NodeEditScreen(
-                                notebookId: notebookId,
-                                node: node,),
+        Stack(
+          children: [
+            // 父子连线：竖主干 + 水平肘线（末枝不贯穿）
+            if (depth > 0)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: _gutter,
+                child: CustomPaint(
+                  painter: _TreeRailPainter(
+                    theme: theme,
+                    seed: seed + 17,
+                    isLast: isLast,
+                    elbowY: _elbowY,
+                    thin: depth >= 2,
                   ),
-                );
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status Bar
-                  Container(
-                    width: 4,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: statusInfo.color,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Header: Title + Icon + Badge
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      node.title,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color:
-                                            isDark
-                                                ? Colors.grey.shade50
-                                                : Colors.grey.shade900,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (node.children.isNotEmpty) ...[
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      node.isExpanded
-                                          ? Icons.expand_more
-                                          : Icons.chevron_right,
-                                      size: 20,
-                                      color:
-                                          isDark
-                                              ? Colors.grey.shade400
-                                              : Colors.grey.shade500,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            if (node.status != NodeStatus.none) ...[
-                              const SizedBox(width: 8),
-                              _buildStatusBadge(context, node.status),
-                            ],
-                          ],
-                        ),
-
-                        // Tags
-                        if (node.tags.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children:
-                                node.tags.map((tag) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          isDark
-                                              ? Colors.grey.shade800
-                                                  .withOpacity(0.5)
-                                              : Colors.grey.shade200
-                                                  .withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      tag,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color:
-                                            isDark
-                                                ? Colors.grey.shade300
-                                                : Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-
-                        // Notes (Description)
-                        if (node.notes.isNotEmpty && _hasActualContent(node.notes)) ...[
-                          const SizedBox(height: 6),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ClipRect(
-                              child: QuillViewer(
-                                data: node.notes,
-                                selectable: false,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.only(left: depth > 0 ? _gutter : 0),
+              child: NodeCard(
+                node: node,
+                depth: depth,
+                onTap:
+                    node.children.isNotEmpty
+                        ? () => controller.toggleNodeExpansion(
+                          notebookId,
+                          node.id,
+                        )
+                        : () => _openEditor(context, controller, node),
+                onLongPress: () => _showNodeActions(context, controller),
+                onToggleExpand:
+                    node.children.isNotEmpty
+                        ? () => controller.toggleNodeExpansion(
+                          notebookId,
+                          node.id,
+                        )
+                        : null,
               ),
             ),
-          ),
+          ],
         ),
-        // Recursion for children
+        SizedBox(height: depth == 0 ? 16 : 8),
+        // 子节点递归（缩进 + 各级连线）
         if (node.isExpanded && node.children.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 36.0), // Align with HTML's pl-9
+            padding: EdgeInsets.only(left: _gutter),
             child: Column(
-              children: node.children.map(
-                (child) =>
-                    NodeItem(node: child, notebookId: notebookId, depth: depth + 1),
-              ).toList(),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < node.children.length; i++)
+                  NodeItem(
+                    node: node.children[i],
+                    notebookId: notebookId,
+                    depth: depth + 1,
+                    isLast: i == node.children.length - 1,
+                  ),
+              ],
             ),
           ),
       ],
     );
   }
 
+  void _openEditor(
+    BuildContext context,
+    NodesController controller,
+    Node target,
+  ) {
+    NavigationHelper.push(
+      context,
+      ChangeNotifierProvider<NodesController>.value(
+        value: controller,
+        child: NodeEditScreen(notebookId: notebookId, node: target),
+      ),
+    );
+  }
+
+  void _updateNode(
+    NodesController controller,
+    BuildContext context,
+    Node updated,
+  ) {
+    controller.updateNode(notebookId, updated);
+    Navigator.pop(context);
+  }
+
+  Node _copyWith(Node source, {NodeStatus? status, Color? color}) => Node(
+    id: source.id,
+    title: source.title,
+    createdAt: source.createdAt,
+    tags: source.tags,
+    status: status ?? source.status,
+    startDate: source.startDate,
+    endDate: source.endDate,
+    customFields: source.customFields,
+    notes: source.notes,
+    parentId: source.parentId,
+    pathValue: source.pathValue,
+    color: color ?? source.color,
+    children: source.children,
+    isExpanded: source.isExpanded,
+  );
+
+  /// 长按操作：状态 / 颜色 / 编辑 / 增删（DS 底部 sheet）
   void _showNodeActions(
     BuildContext context,
     NodesController controller,
   ) {
-    // 定义常用颜色列表 - keeping existing functionality though UI changed
-    final List<Color> commonColors = [
+    const commonColors = [
       Colors.grey,
       Colors.red,
       Colors.orange,
@@ -330,238 +171,214 @@ class NodeItem extends StatelessWidget {
       Colors.pink,
     ];
 
-    SmoothBottomSheet.show(
+    showDSBottomSheet(
       context: context,
-      builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Node Color',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(
-                height: 50,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: commonColors.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemBuilder: (context, index) {
-                    final color = commonColors[index];
-                    final isSelected = node.color.value == color.value;
-
-                    return GestureDetector(
-                      onTap: () {
-                        final updatedNode = Node(
-                          id: node.id,
-                          title: node.title,
-                          createdAt: node.createdAt,
-                          tags: node.tags,
-                          status: node.status,
-                          startDate: node.startDate,
-                          endDate: node.endDate,
-                          customFields: node.customFields,
-                          notes: node.notes,
-                          parentId: node.parentId,
-                          children: node.children,
-                          isExpanded: node.isExpanded,
-                          pathValue: node.pathValue,
-                          color: color,
-                        );
-                        controller.updateNode(notebookId, updatedNode);
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border:
-                              isSelected
-                                  ? Border.all(color: Colors.black, width: 2)
-                                  : null,
-                        ),
-                        child:
-                            isSelected
-                                ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                                : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Node Status',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      title: node.title.isEmpty ? 'nodes_unnamedNode'.tr : node.title,
+      builder: (sheetContext) {
+        final theme = AppTheme.of(sheetContext);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatusButton(
-                    context,
-                    controller,
-                    NodeStatus.todo,
-                    'New', // Updated label
-                    Colors.blue.shade100,
-                    Colors.blue.shade800,
+                  Text(
+                    'nodes_status'.tr,
+                    style: DsTypography.label.copyWith(color: theme.textSub),
                   ),
-                  _buildStatusButton(
-                    context,
-                    controller,
-                    NodeStatus.doing,
-                    'In Progress', // Updated label
-                    Colors.amber.shade100,
-                    Colors.amber.shade800,
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final status in [
+                        NodeStatus.todo,
+                        NodeStatus.doing,
+                        NodeStatus.done,
+                      ])
+                        DSChip(
+                          label: nodeStatusLabel(status),
+                          selected: node.status == status,
+                          onSelected: (selected) {
+                            if (selected) {
+                              _updateNode(
+                                controller,
+                                sheetContext,
+                                _copyWith(node, status: status),
+                              );
+                            }
+                          },
+                        ),
+                    ],
                   ),
-                  _buildStatusButton(
-                    context,
-                    controller,
-                    NodeStatus.done,
-                    'Completed', // Updated label
-                    Colors.green.shade100,
-                    Colors.green.shade800,
+                  const SizedBox(height: 14),
+                  Text(
+                    'nodes_nodeColor'.tr,
+                    style: DsTypography.label.copyWith(color: theme.textSub),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 34,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: commonColors.length,
+                      itemBuilder: (context, index) {
+                        final color = commonColors[index];
+                        final selected = node.color.value == color.value;
+                        return GestureDetector(
+                          onTap: () => _updateNode(
+                            controller,
+                            sheetContext,
+                            _copyWith(node, color: color),
+                          ),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: dsSketchDecoration(
+                              theme: theme,
+                              circle: true,
+                              fillColor: color,
+                              stroke: selected ? theme.text : theme.ink,
+                              strokeWidth: selected ? 2.6 : 1.4,
+                              seed: index + 1,
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    ),
                   ),
                 ],
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: Text('nodes_editNode'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  NavigationHelper.push(context, ChangeNotifierProvider<NodesController>.value(
-                                value: controller,
-                                child: NodeEditScreen(
-                                  notebookId: notebookId,
-                                  node: node,),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.add_circle_outline),
-                title: Text('nodes_addChildNode'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addChildNode(context, controller);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.add),
-                title: Text('nodes_addSiblingNode'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addSiblingNode(context, controller);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: Text('nodes_deleteNode'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteConfirmation(context, controller);
-                },
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+            DSSheetAction(
+              icon: DsIconKind.edit,
+              label: 'nodes_editNode'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _openEditor(context, controller, node);
+              },
+            ),
+            DSSheetAction(
+              icon: DsIconKind.plus,
+              label: 'nodes_addChildNode'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _addNode(context, controller, parentOf: node);
+              },
+            ),
+            DSSheetAction(
+              icon: DsIconKind.reply,
+              label: 'nodes_addSiblingNode'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _addNode(context, controller, parentId: node.parentId);
+              },
+            ),
+            DSSheetAction(
+              icon: DsIconKind.trash,
+              label: 'nodes_deleteNode'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showDeleteConfirmation(context, controller);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
     );
   }
 
-  void _addChildNode(BuildContext context, NodesController controller) {
+  void _addNode(
+    BuildContext context,
+    NodesController controller, {
+    Node? parentOf,
+    String? parentId,
+  }) {
     final newNode = Node(
       id: const Uuid().v4(),
       title: '',
       createdAt: DateTime.now(),
-      parentId: node.id,
-      status: NodeStatus.todo, // Default new nodes to Todo (New)
-    );
-
-    NavigationHelper.push(context, ChangeNotifierProvider<NodesController>.value(
-              value: controller,
-              child: NodeEditScreen(
-                notebookId: notebookId,
-                node: newNode,
-                isNew: true,),
-      ),
-    );
-  }
-
-  void _addSiblingNode(BuildContext context, NodesController controller) {
-    final newNode = Node(
-      id: const Uuid().v4(),
-      title: '',
-      createdAt: DateTime.now(),
-      parentId: node.parentId,
+      parentId: parentOf?.id ?? parentId ?? '',
       status: NodeStatus.todo,
     );
-
-    NavigationHelper.push(context, ChangeNotifierProvider<NodesController>.value(
-              value: controller,
-              child: NodeEditScreen(
-                notebookId: notebookId,
-                node: newNode,
-                isNew: true,),
-      ),
-    );
+    _openEditor(context, controller, newNode);
   }
 
   void _showDeleteConfirmation(
     BuildContext context,
     NodesController controller,
   ) {
-    showDialog(
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('nodes_deleteNode'.tr),
-            content: Text(
-              'nodes_deleteNodeConfirmation'.trParams({'title': node.title}),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('nodes_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () {
-                  controller.deleteNode(notebookId, node.id);
-                  Navigator.pop(context);
-                },
-                child: Text('nodes_delete'.tr),
-              ),
-            ],
+          (dialogContext) => DSDialog(
+            title: 'nodes_deleteNode'.tr,
+            message: 'nodes_deleteNodeConfirmation'.trParams({
+              'title': node.title,
+            }),
+            cancelText: 'nodes_cancel'.tr,
+            confirmText: 'nodes_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () {
+              controller.deleteNode(notebookId, node.id);
+              Navigator.pop(dialogContext);
+            },
           ),
     );
   }
+}
 
-  bool _hasActualContent(String notes) {
-    try {
-      final List<dynamic> delta = json.decode(notes);
-      for (var item in delta) {
-        if (item is Map<String, dynamic> && item.containsKey('insert')) {
-          final insert = item['insert'].toString();
-          if (insert.trim().isNotEmpty) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (e) {
-      // 如果解析失败，回退到简单判断
-      return notes.trim().isNotEmpty;
-    }
+/// 树形连线：竖主干 + 水平肘线（rough 手绘，风格随全局墨线档位）
+class _TreeRailPainter extends CustomPainter {
+  _TreeRailPainter({
+    required this.theme,
+    required this.seed,
+    required this.isLast,
+    required this.elbowY,
+    required this.thin,
+  });
+
+  final AppThemeData theme;
+  final int seed;
+  final bool isLast;
+  final double elbowY;
+
+  /// 层级越深线越细越淡（参考稿 2.2 → 2.0 两档）
+  final bool thin;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final drawConfig = theme.wired.drawConfig;
+    drawConfig.randomizer.reset();
+    final generator = Generator(drawConfig, NoFiller());
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = thin ? 1.6 : 2.0
+          ..color = theme.ink.withValues(alpha: thin ? 0.45 : 0.6);
+
+    final x = 1.5;
+    final endY = isLast ? elbowY - 2 : size.height;
+    final trunk = generator.line(x, 0, x, endY);
+    final branch = generator.line(x, elbowY, size.width - 2, elbowY);
+    RoughDrawing(trunk, paint, paint).paint(canvas, progress: 1, pressure: 0);
+    RoughDrawing(branch, paint, paint).paint(canvas, progress: 1, pressure: 0);
   }
+
+  @override
+  bool shouldRepaint(_TreeRailPainter oldDelegate) =>
+      oldDelegate.theme != theme ||
+      oldDelegate.seed != seed ||
+      oldDelegate.isLast != isLast ||
+      oldDelegate.elbowY != elbowY ||
+      oldDelegate.thin != thin;
 }

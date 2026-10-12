@@ -29,6 +29,10 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_addSiblingNode': 'Add sibling node',
   'nodes_nodeTitle': 'Node title',
   'nodes_noNodesYet': 'No nodes yet',
+  'nodes_unnamedNode': 'Untitled',
+  'nodes_searchNodeHint': 'Search node titles or notes',
+  'nodes_searchEmpty': 'Type keywords to search nodes',
+  'nodes_searchNoResults': 'No matching nodes found',
 
   // Node properties
   'nodes_tags': 'Tags',
