@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:skribble/skribble.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/achievement/achievement_plugin.dart';
 import 'package:aboutme/plugins/achievement/controllers/achievement_controller.dart';
+import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/screens/achievement_in_progress_screen.dart';
 import 'package:aboutme/plugins/achievement/screens/achievement_unlocked_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -61,7 +61,7 @@ class _AchievementGalleryScreenState extends State<AchievementGalleryScreen> {
   }
 }
 
-/// 顶部概览卡：解锁进度 / 累计积分 / 最近达成
+/// 顶部概览区：大数字（已解锁成就数）+ 总进度 + 积分 / 最近达成
 class _OverviewCard extends StatelessWidget {
   const _OverviewCard({required this.controller});
 
@@ -74,68 +74,57 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final unlocked = controller.unlockedLevels;
-    final total = controller.totalLevels;
+    // 至少解锁一级的成就系列数
+    final series = kAchievementDefinitions
+        .where((d) => controller.progressOf(d.id).unlockedLevel > 0)
+        .length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: DsSketchPanel(
-        theme: theme,
-        radius: BorderRadius.circular(18),
-        padding: const EdgeInsets.all(14),
-        seed: 3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                WiredIcon(
-                  icon: Icons.emoji_events_outlined,
-                  size: 18,
-                  color: theme.primary,
-                  drawConfig: theme.wired.drawConfig,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'achievement_progressTitle'.tr,
-                  style: DsTypography.heading.copyWith(color: theme.text),
-                ),
-                const Spacer(),
-                Text(
-                  '$unlocked / $total ${'achievement_levels'.tr}',
-                  style: DsTypography.title.copyWith(color: theme.primary),
-                ),
-              ],
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Column(
+        children: [
+          Text(
+            '$series',
+            style: DsTypography.display.copyWith(
+              fontSize: 44,
+              height: 1.1,
+              color: theme.text,
             ),
-            const SizedBox(height: 10),
-            DSLinearProgress(
-              value: controller.overallProgress,
-              height: 12,
-              thumb: DsIcon(DsIconKind.star, size: 22, color: theme.primary),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                DsIcon(DsIconKind.star, size: 14, color: theme.textSub),
-                const SizedBox(width: 4),
-                Text(
-                  '+${controller.totalEarnedPoints} ${'achievement_points'.tr}',
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'achievement_statUnlocked'.tr,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          const SizedBox(height: 10),
+          DSLinearProgress(
+            value: controller.overallProgress,
+            height: 10,
+            thumb: DsIcon(DsIconKind.star, size: 20, color: theme.primary),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DsIcon(DsIconKind.star, size: 13, color: theme.textSub),
+              const SizedBox(width: 4),
+              Text(
+                '+${controller.totalEarnedPoints} ${'achievement_points'.tr}',
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              const SizedBox(width: 16),
+              DsIcon(DsIconKind.clock, size: 13, color: theme.textSub),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  '${'achievement_recentUnlock'.tr} ${_fmtDate(controller.lastUnlockedAt)}',
                   style: DsTypography.caption.copyWith(color: theme.textSub),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: 16),
-                DsIcon(DsIconKind.clock, size: 14, color: theme.textSub),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    '${'achievement_recentUnlock'.tr} ${_fmtDate(controller.lastUnlockedAt)}',
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

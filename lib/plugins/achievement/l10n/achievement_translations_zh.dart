@@ -34,6 +34,11 @@ class AchievementTranslationsZh {
     'achievement_emptyInProgress': '恭喜，所有成就均已达成！',
     'achievement_emptyUnlocked': '还没有解锁任何成就，快去探索吧',
 
+    // 统计与详情
+    'achievement_statUnlocked': '成就已解锁',
+    'achievement_locked': '未解锁',
+    'achievement_nextMilestone': '下一里程碑',
+
     // 详情页
     'achievement_detailCurrentProgress': '当前进度',
     'achievement_detailLevelDetails': '等级明细',

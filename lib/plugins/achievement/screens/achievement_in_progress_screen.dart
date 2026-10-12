@@ -133,22 +133,28 @@ class _InProgressTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
+                      DSLinearProgress(
+                        value: ratio,
+                        height: 8,
+                        color: theme.primary,
+                      ),
+                      const SizedBox(height: 5),
                       Row(
                         children: [
-                          Expanded(
-                            child: DSLinearProgress(
-                              value: ratio,
-                              height: 8,
-                              color: theme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
                           Text(
                             '${progress.value}/$nextThreshold${def.unit}',
                             style: DsTypography.label.copyWith(
                               fontSize: 11,
                               color: theme.textSub,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${(ratio * 100).round()}%',
+                            style: DsTypography.label.copyWith(
+                              fontSize: 11,
+                              color: theme.primary,
                             ),
                           ),
                         ],

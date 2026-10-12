@@ -39,97 +39,55 @@ class AchievementUnlockedScreen extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        mainAxisExtent: 172,
+        crossAxisCount: 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 8,
+        mainAxisExtent: 104,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) => _UnlockedCard(
         def: items[index],
         controller: controller,
-        seed: index,
       ),
     );
   }
 }
 
-/// 已解锁徽章卡：徽章 + 名称 + 等级 pill + 最近达成日期
+/// 已解锁徽章格：六边形贴纸 + 名称（Lv 角标随徽章显示）
 class _UnlockedCard extends StatelessWidget {
-  const _UnlockedCard({
-    required this.def,
-    required this.controller,
-    required this.seed,
-  });
+  const _UnlockedCard({required this.def, required this.controller});
 
   final AchievementDefinition def;
   final AchievementController controller;
-  final int seed;
-
-  static String _fmtDate(DateTime d) =>
-      '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final level = controller.progressOf(def.id).unlockedLevel;
-    final color = AchievementLevels.borderColor(level);
-    final date = controller.unlockedDateOf(def.id, level);
 
     return Pressable(
       onPressed: () => _openDetail(context),
       builder: (context, states) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: dsSketchDecoration(
-            theme: theme,
-            fillColor: theme.surface,
-            radius: BorderRadius.circular(16),
-            seed: seed + 2,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AchievementBadge(iconAsset: def.iconAsset, level: level, size: 64),
-              const SizedBox(height: 10),
-              Text(
-                def.name,
-                style: DsTypography.button.copyWith(
-                  fontSize: 14,
-                  color: theme.text,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AchievementBadge(
+              iconAsset: def.iconAsset,
+              level: level,
+              size: 62,
+              showLevelTag: true,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              def.name,
+              style: DsTypography.label.copyWith(
+                fontSize: 11,
+                color: theme.text,
               ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                decoration: dsSketchDecoration(
-                  theme: theme,
-                  fillColor: color.withValues(alpha: 0.22),
-                  stroke: color,
-                  radius: BorderRadius.circular(999),
-                  strokeWidth: 1.2,
-                  seed: seed + 17,
-                ),
-                child: Text(
-                  'Lv$level',
-                  style: DsTypography.label.copyWith(fontSize: 11, color: color),
-                ),
-              ),
-              const SizedBox(height: 6),
-              if (date != null)
-                Text(
-                  '${'achievement_unlocked_at'.tr} ${_fmtDate(date)}',
-                  style: DsTypography.caption.copyWith(
-                    fontSize: 10,
-                    color: theme.textSub,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         );
       },
     );

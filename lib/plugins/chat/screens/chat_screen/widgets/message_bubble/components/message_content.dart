@@ -412,10 +412,9 @@ class MessageContent extends StatelessWidget {
             selectable: false,
             styleSheet: MarkdownStyleSheet(
               p: _sketchMdFont.copyWith(color: textColor, fontSize: 15, height: 1.5),
-              code: TextStyle(
+              code: _sketchMdFont.copyWith(
                 backgroundColor: theme.surfaceAlt,
                 color: textColor,
-                fontFamily: 'monospace',
                 fontSize: 14,
               ),
               codeblockDecoration: BoxDecoration(

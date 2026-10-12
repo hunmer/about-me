@@ -10,7 +10,7 @@ import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
 import 'package:aboutme/plugins/achievement/widgets/achievement_badge.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
-/// 成就详情页：徽章大图 + 当前进度面板 + 各等级达成明细
+/// 成就详情页：居中大徽章 + 达成信息 + 下一里程碑卡 + 各等级达成明细
 class AchievementDetailScreen extends StatelessWidget {
   const AchievementDetailScreen({
     super.key,
@@ -33,9 +33,6 @@ class AchievementDetailScreen extends StatelessWidget {
     final maxed = level >= def.maxLevel;
     final nextThreshold = maxed ? null : def.thresholds[level];
     final title = revealed ? def.name : '???';
-    final category = kAchievementCategories.firstWhere(
-      (c) => c.id == def.category,
-    );
 
     return SuperCupertinoNavigationWrapper(
       title: Text(title),
@@ -47,8 +44,9 @@ class AchievementDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context, theme, category, level, revealed),
-            _buildProgressPanel(theme, progress, level, maxed, nextThreshold),
+            _buildHeader(context, theme, progress, level, revealed, maxed),
+            if (!maxed) _buildMilestoneCard(theme, progress, level, nextThreshold!),
+            if (maxed) _buildMaxedCard(theme, level),
             _buildLevelDetails(theme),
           ],
         ),
@@ -56,25 +54,68 @@ class AchievementDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 头部：徽章 + 名称 + 条件 + 分类/隐藏/待接入标签
+  /// 头部：大徽章 + 等级/未解锁 + 达成时间胶囊 + 标题 + 描述
   Widget _buildHeader(
     BuildContext context,
     AppThemeData theme,
-    AchievementCategory category,
+    AchievementProgress progress,
     int level,
     bool revealed,
+    bool maxed,
   ) {
+    final lastDate = level > 0 ? controller.unlockedDateOf(def.id, level) : null;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         children: [
-          AchievementBadge(iconAsset: def.iconAsset, level: level, size: 96),
-          const SizedBox(height: 14),
+          AchievementBadge(iconAsset: def.iconAsset, level: level, size: 120),
+          const SizedBox(height: 12),
+          Text(
+            level > 0 ? 'Lv$level' : 'achievement_locked'.tr,
+            style: DsTypography.label.copyWith(
+              fontSize: 12,
+              letterSpacing: 3,
+              color: level > 0 ? theme.primary : theme.textSub,
+            ),
+          ),
+          if (lastDate != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.surfaceAlt,
+                radius: BorderRadius.circular(999),
+                strokeWidth: 1.2,
+                seed: 9,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DsIcon(
+                    DsIconKind.calendarCheck,
+                    size: 12,
+                    color: theme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${'achievement_unlocked_at'.tr} ${_fmtDate(lastDate)}',
+                    style: DsTypography.label.copyWith(
+                      fontSize: 11,
+                      color: theme.textSub,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
           Text(
             revealed ? def.name : '???',
             textAlign: TextAlign.center,
             style: DsTypography.heading.copyWith(
-              fontSize: 22,
+              fontSize: 24,
               color: theme.text,
             ),
           ),
@@ -86,84 +127,42 @@ class AchievementDetailScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              _TagPill(
+          if (kPendingAchievementIds.contains(def.id)) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: dsSketchDecoration(
                 theme: theme,
-                seed: 9,
-                children: [
-                  WiredIcon(
-                    icon: category.icon,
-                    size: 13,
-                    color: theme.primary,
-                    drawConfig: theme.wired.drawConfig,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    category.nameKey.tr,
-                    style: DsTypography.label.copyWith(
-                      fontSize: 11,
-                      color: theme.textSub,
-                    ),
-                  ),
-                ],
+                fillColor: theme.surfaceAlt,
+                radius: BorderRadius.circular(999),
+                strokeWidth: 1,
+                seed: 13,
               ),
-              if (def.hidden)
-                _TagPill(
-                  theme: theme,
-                  seed: 13,
-                  children: [
-                    DsIcon(DsIconKind.eyeOff, size: 13, color: theme.textSub),
-                    const SizedBox(width: 4),
-                    Text(
-                      'achievement_hiddenHint'.tr,
-                      style: DsTypography.label.copyWith(
-                        fontSize: 11,
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
+              child: Text(
+                'achievement_pending'.tr,
+                style: DsTypography.label.copyWith(
+                  fontSize: 10,
+                  color: theme.textSub,
                 ),
-              if (kPendingAchievementIds.contains(def.id))
-                _TagPill(
-                  theme: theme,
-                  seed: 21,
-                  children: [
-                    Text(
-                      'achievement_pending'.tr,
-                      style: DsTypography.label.copyWith(
-                        fontSize: 11,
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  /// 当前进度面板
-  Widget _buildProgressPanel(
+  /// 下一里程碑卡：目标等级 + 条件 + 进度百分比
+  Widget _buildMilestoneCard(
     AppThemeData theme,
     AchievementProgress progress,
     int level,
-    bool maxed,
-    int? nextThreshold,
+    int nextThreshold,
   ) {
-    final ratio = maxed
-        ? 1.0
-        : (progress.value / nextThreshold!).clamp(0.0, 1.0);
-    final lastDate = level > 0 ? controller.unlockedDateOf(def.id, level) : null;
+    final ratio = (progress.value / nextThreshold).clamp(0.0, 1.0);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: DsSketchPanel(
         theme: theme,
         radius: BorderRadius.circular(16),
@@ -174,35 +173,89 @@ class AchievementDetailScreen extends StatelessWidget {
           children: [
             Row(
               children: [
+                WiredIcon(
+                  icon: Icons.emoji_events_outlined,
+                  size: 16,
+                  color: theme.primary,
+                  drawConfig: theme.wired.drawConfig,
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  'achievement_detailCurrentProgress'.tr,
-                  style:
-                      DsTypography.heading.copyWith(color: theme.text),
+                  'Lv${level + 1}',
+                  style: DsTypography.button.copyWith(
+                    fontSize: 14,
+                    color: theme.text,
+                  ),
                 ),
                 const Spacer(),
                 Text(
-                  maxed
-                      ? 'achievement_maxed'.tr
-                      : '${progress.value} / $nextThreshold${def.unit}',
+                  'achievement_nextMilestone'.tr,
+                  style: DsTypography.label.copyWith(
+                    fontSize: 11,
+                    color: theme.textSub,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${def.condition} $nextThreshold${def.unit}',
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${(ratio * 100).round()}%',
                   style: DsTypography.title.copyWith(color: theme.primary),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            DSLinearProgress(
-              value: ratio,
-              height: 12,
-              thumb: DsIcon(DsIconKind.star, size: 22, color: theme.primary),
+            const SizedBox(height: 8),
+            DSLinearProgress(value: ratio, height: 8, color: theme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 已满级卡：全部等级达成 + 最近达成时间
+  Widget _buildMaxedCard(AppThemeData theme, int level) {
+    final lastDate = controller.unlockedDateOf(def.id, level);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(16),
+        padding: const EdgeInsets.all(14),
+        seed: 5,
+        child: Row(
+          children: [
+            WiredIcon(
+              icon: Icons.emoji_events_outlined,
+              size: 16,
+              color: theme.primary,
+              drawConfig: theme.wired.drawConfig,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(width: 8),
             Text(
-              maxed
-                  ? (lastDate != null
-                      ? '${'achievement_unlocked_at'.tr} ${_fmtDate(lastDate)}'
-                      : '')
-                  : '${'achievement_nextLevel'.tr}: ${def.condition} $nextThreshold${def.unit}',
-              style: DsTypography.caption.copyWith(color: theme.textSub),
+              'achievement_maxed'.tr,
+              style: DsTypography.button.copyWith(
+                fontSize: 14,
+                color: theme.text,
+              ),
             ),
+            const Spacer(),
+            if (lastDate != null)
+              Text(
+                _fmtDate(lastDate),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
           ],
         ),
       ),
@@ -212,7 +265,7 @@ class AchievementDetailScreen extends StatelessWidget {
   /// 等级明细：Lv1~LvN 各级阈值 / 积分 / 达成日期
   Widget _buildLevelDetails(AppThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -315,30 +368,6 @@ class AchievementDetailScreen extends StatelessWidget {
           }),
         ],
       ),
-    );
-  }
-}
-
-/// 详情页标签 pill：纯色实底 + 细墨线
-class _TagPill extends StatelessWidget {
-  const _TagPill({required this.theme, required this.seed, required this.children});
-
-  final AppThemeData theme;
-  final int seed;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: dsSketchDecoration(
-        theme: theme,
-        fillColor: theme.hatch.withValues(alpha: 0.4),
-        radius: BorderRadius.circular(999),
-        strokeWidth: 1.2,
-        seed: seed,
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

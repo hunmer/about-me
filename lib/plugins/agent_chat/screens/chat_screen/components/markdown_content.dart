@@ -37,9 +37,8 @@ class MarkdownContent extends StatelessWidget {
       styleSheet: MarkdownStyleSheet(
         // 极简风格配置
         p: _sketchFont.copyWith(fontSize: 15, height: 1.5, color: bodyColor),
-        code: TextStyle(
+        code: _sketchFont.copyWith(
           backgroundColor: theme.surfaceAlt,
-          fontFamily: 'monospace',
           fontSize: 14,
         ),
         codeblockDecoration: BoxDecoration(

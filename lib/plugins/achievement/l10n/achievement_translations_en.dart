@@ -36,6 +36,11 @@ class AchievementTranslationsEn {
     'achievement_emptyInProgress': 'Congratulations, all achievements completed!',
     'achievement_emptyUnlocked': 'No achievements unlocked yet — go explore!',
 
+    // Stats & detail
+    'achievement_statUnlocked': 'achievements unlocked',
+    'achievement_locked': 'Locked',
+    'achievement_nextMilestone': 'Next Milestone',
+
     // Detail screen
     'achievement_detailCurrentProgress': 'Progress',
     'achievement_detailLevelDetails': 'Level Details',
