@@ -67,25 +67,30 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 竖版封面区
-                  Expanded(child: _buildCover()),
+                  // 竖版封面区 + 左下角名称 badge
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(child: _buildCover()),
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          bottom: 8,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildNameBadge(theme),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                  // Agent Info
+                  // Agent Info（服务商 + 标签）
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          agent.name,
-                          style: DsTypography.body.copyWith(
-                            color: theme.text,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
                         Text(
                           'openai_providerLabel'.trParams({
                             'provider': agent.serviceProviderId,
@@ -110,6 +115,27 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 左下角名称 badge：skribble 手绘纸底 + 墨线描边
+  Widget _buildNameBadge(AppThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        agent.name,
+        style: DsTypography.body.copyWith(
+          color: theme.text,
+          fontWeight: FontWeight.bold,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -171,8 +197,11 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   Widget _buildCover() {
     final avatarUrl = agent.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      Widget errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) =>
-          _buildCoverFallback();
+      Widget errorBuilder(
+        BuildContext context,
+        Object error,
+        StackTrace? stackTrace,
+      ) => _buildCoverFallback();
       if (avatarUrl.startsWith('assets/')) {
         return _clipCover(
           Image.asset(
@@ -226,33 +255,35 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   }
 
   Widget _buildCoverFallback() {
-    final color = agent.iconColor ?? _getColorForServiceProvider(agent.serviceProviderId);
+    final theme = DSThemeBridge.resolve(context);
+    final color =
+        agent.iconColor ??
+        _getColorForServiceProvider(theme, agent.serviceProviderId);
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: color.withValues(alpha: 0.2),
+      color: color.withValues(alpha: 0.15),
       child: Center(
-        child: Icon(
-          agent.icon ?? Icons.smart_toy,
-          size: 48,
-          color: color,
-        ),
+        child: agent.icon != null
+            ? Icon(agent.icon, size: 48, color: color)
+            : DsIcon(DsIconKind.bot, size: 48, color: color),
       ),
     );
   }
 
-  Color _getColorForServiceProvider(String providerId) {
+  /// 根据服务商 ID 取主题语义色（不硬编码色值，随主题/深浅模式联动）
+  Color _getColorForServiceProvider(AppThemeData theme, String providerId) {
     switch (providerId) {
       case 'openai':
-        return Colors.green;
+        return theme.success;
       case 'azure':
-        return Colors.blue;
+        return theme.primary;
       case 'ollama':
-        return Colors.orange;
+        return theme.warning;
       case 'deepseek':
-        return Colors.purple;
+        return theme.secondary;
       default:
-        return Colors.grey;
+        return theme.textSub;
     }
   }
 
@@ -260,23 +291,22 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
     return Wrap(
       spacing: 4,
       runSpacing: 4,
-      children:
-          agent.tags.take(2).map((tag) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.surfaceAlt,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                tag,
-                style: DsTypography.label.copyWith(
-                  fontSize: 10,
-                  color: theme.textSub,
-                ),
-              ),
-            );
-          }).toList(),
+      children: agent.tags.take(2).map((tag) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: theme.surfaceAlt,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            tag,
+            style: DsTypography.label.copyWith(
+              fontSize: 10,
+              color: theme.textSub,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// Agent 卡片组件（公共小组件版本）
 ///
@@ -78,19 +80,19 @@ class AgentCardWidget extends StatefulWidget {
 class _AgentCardWidgetState extends State<AgentCardWidget> {
   final GlobalKey _cardKey = GlobalKey();
 
-  /// 根据服务商 ID 获取颜色
-  Color _getColorForServiceProvider(String providerId) {
+  /// 根据服务商 ID 取主题语义色（不硬编码色值，随主题/深浅模式联动）
+  Color _getColorForServiceProvider(AppThemeData theme, String providerId) {
     switch (providerId) {
       case 'openai':
-        return Colors.green;
+        return theme.success;
       case 'azure':
-        return Colors.blue;
+        return theme.primary;
       case 'ollama':
-        return Colors.orange;
+        return theme.warning;
       case 'deepseek':
-        return Colors.purple;
+        return theme.secondary;
       default:
-        return Colors.grey;
+        return theme.textSub;
     }
   }
 
@@ -141,149 +143,175 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = DSThemeBridge.resolve(context);
 
     // 使用传入的尺寸，默认 large
     final size = widget.size ?? HomeWidgetSize.large;
     final effectiveColor = widget.iconColorValue != null
         ? Color(widget.iconColorValue!)
-        : _getColorForServiceProvider(widget.serviceProviderId);
+        : _getColorForServiceProvider(theme, widget.serviceProviderId);
 
+    // Material 壳为 Hero 动画源(经 openContainerWithHero),手绘外观交给 JellyBox
     return Material(
       key: _cardKey,
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Agent Icon
-            Expanded(
-              child: Center(
-                child: _buildAgentIcon(effectiveColor, size),
+        child: JellyBox(
+          color: theme.surface,
+          radius: BorderRadius.circular(12),
+          raised: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Agent 封面（竖版通栏 + 左下角名称 badge）
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: _buildAgentIcon(theme, effectiveColor, size),
+                    ),
+                    Positioned(
+                      left: _getPadding(size),
+                      right: _getPadding(size),
+                      bottom: _getPadding(size),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildNameBadge(theme, size),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Agent Info
-            Padding(
-              padding: EdgeInsets.all(_getPadding(size)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: _getTitleFontSize(size),
+              // Agent Info（服务商 + 标签）
+              Padding(
+                padding: EdgeInsets.all(_getPadding(size)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '服务商: ${widget.serviceProviderId}',
+                      style: TextStyle(
+                        fontSize: _getSubtitleFontSize(size),
+                        color: theme.textSub,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    '服务商: ${widget.serviceProviderId}',
-                    style: TextStyle(
-                      fontSize: _getSubtitleFontSize(size),
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2),
-                  _buildTags(isDark, size),
-                ],
+                    SizedBox(height: 2),
+                    _buildTags(theme, size),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAgentIcon(Color effectiveColor, HomeWidgetSize size) {
+  /// 左下角名称 badge：skribble 手绘纸底 + 墨线描边
+  Widget _buildNameBadge(AppThemeData theme, HomeWidgetSize size) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        widget.name,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: _getTitleFontSize(size),
+          color: theme.text,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildAgentIcon(
+    AppThemeData theme,
+    Color effectiveColor,
+    HomeWidgetSize size,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableSize = constraints.maxWidth < constraints.maxHeight
             ? constraints.maxWidth
             : constraints.maxHeight;
 
-        // 如果有头像，优先显示头像
+        // 如果有封面，优先显示（竖版通栏，含 assets/ 网络与本地路径）
         if (widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty) {
-          return SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: effectiveColor.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: AdaptiveImage(
-                  imagePath: widget.avatarUrl,
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
+          return ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            child: AdaptiveImage(
+              imagePath: widget.avatarUrl,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
             ),
           );
         }
 
-        // 如果有自定义图标，使用自定义图标
+        // 如果有自定义图标，手绘底 + 主题色图标
         if (widget.iconCodePoint != null) {
           return Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: effectiveColor,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: effectiveColor,
+              radius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              dynamicIconData(widget.iconCodePoint!, fontFamily: 'MaterialIcons'),
-              size: availableSize * 0.5,
-              color: Colors.white,
+            child: Center(
+              child: Icon(
+                dynamicIconData(
+                  widget.iconCodePoint!,
+                  fontFamily: 'MaterialIcons',
+                ),
+                size: availableSize * 0.5,
+                color: theme.surface,
+              ),
             ),
           );
         }
 
         // 默认图标
-        return _buildDefaultIcon(effectiveColor, availableSize);
+        return _buildDefaultIcon(theme, effectiveColor, availableSize);
       },
     );
   }
 
-  Widget _buildDefaultIcon(Color effectiveColor, double availableSize) {
+  Widget _buildDefaultIcon(
+    AppThemeData theme,
+    Color effectiveColor,
+    double availableSize,
+  ) {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: effectiveColor,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: effectiveColor,
+        radius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        Icons.smart_toy,
-        size: availableSize * 0.5,
-        color: Colors.white,
+      child: Center(
+        child: DsIcon(
+          DsIconKind.bot,
+          size: availableSize * 0.5,
+          color: theme.surface,
+        ),
       ),
     );
   }
 
-  Widget _buildTags(bool isDark, HomeWidgetSize size) {
+  Widget _buildTags(AppThemeData theme, HomeWidgetSize size) {
     final tagCount = size.category == SizeCategory.mini ? 1 : 2;
     return Wrap(
       spacing: 2,
@@ -295,14 +323,14 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
             vertical: 2,
           ),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: theme.surfaceAlt,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             tag,
             style: TextStyle(
               fontSize: _getSubtitleFontSize(size) - 2,
-              color: isDark ? Colors.grey[300] : Colors.grey[800],
+              color: theme.textSub,
             ),
           ),
         );

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -130,12 +131,15 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                                       item.cardStyle == CheckinCardStyle.small
                                           ? 1
                                           : 2,
-                                  child: CheckinItemCard(
-                                    item: item,
-                                    index: index,
-                                    itemIndex: index,
-                                    controller: controller,
-                                    onStateChanged: _handleStateChanged,
+                                  // 挂载即描画入场
+                                  child: WiredDraw(
+                                    child: CheckinItemCard(
+                                      item: item,
+                                      index: index,
+                                      itemIndex: index,
+                                      controller: controller,
+                                      onStateChanged: _handleStateChanged,
+                                    ),
                                   ),
                                 );
                               }).toList(),
@@ -209,12 +213,15 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                         return StaggeredGridTile.fit(
                           crossAxisCellCount:
                               item.cardStyle == CheckinCardStyle.small ? 1 : 2,
-                          child: CheckinItemCard(
-                            item: item,
-                            index: index,
-                            itemIndex: index,
-                            controller: controller,
-                            onStateChanged: _handleStateChanged,
+                          // 挂载即描画入场
+                          child: WiredDraw(
+                            child: CheckinItemCard(
+                              item: item,
+                              index: index,
+                              itemIndex: index,
+                              controller: controller,
+                              onStateChanged: _handleStateChanged,
+                            ),
                           ),
                         );
                       }).toList(),

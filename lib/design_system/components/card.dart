@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:skribble/skribble.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
@@ -25,6 +26,8 @@ class DSCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
     final card = DsSketchPanel(
       theme: theme,
       radius:
@@ -32,6 +35,7 @@ class DSCard extends StatelessWidget {
           theme.radii.xl,
       fillColor: color,
       padding: padding ?? EdgeInsets.all(theme.spacing.lg),
+      progress: progress,
       child: child,
     );
 

@@ -95,6 +95,8 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
 
     Widget content;
     switch (widget.item.cardStyle) {
@@ -124,6 +126,7 @@ class _CheckinItemCardWidgetState extends State<CheckinItemCardWidget> {
               radius: BorderRadius.circular(16),
               padding: const EdgeInsets.all(16.0),
               seed: widget.index + 1,
+              progress: progress,
               child: content,
             ),
           );
