@@ -15,7 +15,6 @@ import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'bill_edit_screen.dart';
 import 'account_list_screen.dart';
-import 'subscription_list_screen.dart';
 
 class BillListScreenSupercupertino extends StatefulWidget {
   final BillPlugin billPlugin;
@@ -394,32 +393,7 @@ class _BillListScreenSupercupertinoState
             },
           ),
         ),
-        // 订阅服务(周期性扣款,用 refresh 环形箭头近似)
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.refresh,
-                size: 36,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                tooltip: '订阅服务',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => SubscriptionListScreen(
-                            billPlugin: widget.billPlugin,
-                          ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
+        // 订阅入口已移至底部栏中间 tab
         DSThemeBridge(
           child: Builder(
             builder: (context) {
@@ -477,48 +451,52 @@ class _BillListScreenSupercupertinoState
           ),
 
           // Calendar
-          SfCalendar(
-            controller: _calendarController,
-            view: CalendarView.month,
-            initialDisplayDate: _focusedDay,
-            minDate: DateTime(2020),
-            maxDate: DateTime(2030),
-            headerHeight: 0,
-            viewHeaderHeight: 40,
-            showNavigationArrow: false,
-            monthViewSettings: const MonthViewSettings(
-              showTrailingAndLeadingDates: true,
-              dayFormat: 'EEE',
+          // viewHeaderHeight(40) + 6 行 × 单元格高度；调大单元格就改这里
+          SizedBox(
+            height: 40 + 6 * 64.0,
+            child: SfCalendar(
+              controller: _calendarController,
+              view: CalendarView.month,
+              initialDisplayDate: _focusedDay,
+              minDate: DateTime(2020),
+              maxDate: DateTime(2030),
+              headerHeight: 0,
+              viewHeaderHeight: 40,
+              showNavigationArrow: false,
+              monthViewSettings: const MonthViewSettings(
+                showTrailingAndLeadingDates: true,
+                dayFormat: 'EEE',
+              ),
+              cellBorderColor: Colors.transparent,
+              selectionDecoration: const BoxDecoration(),
+              monthCellBuilder: (BuildContext context, MonthCellDetails details) {
+                final day = details.date;
+                final isSelected =
+                    _selectedDay != null && _isSameDay(day, _selectedDay!);
+                return _buildCalendarCell(day, isSelected);
+              },
+              onTap: (CalendarTapDetails details) {
+                if (details.date != null) {
+                  setState(() {
+                    _selectedDay = details.date;
+                    _focusedDay = details.date!;
+                    _calendarController.selectedDate = details.date;
+                  });
+                  // 更新路由上下文到具体日期
+                  _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
+                }
+              },
+              onViewChanged: (ViewChangedDetails details) {
+                if (details.visibleDates.isNotEmpty) {
+                  final newFocusedDay =
+                      details.visibleDates[details.visibleDates.length ~/ 2];
+                  _focusedDay = newFocusedDay;
+                  _loadMonthBills();
+                  // 更新路由上下文
+                  _updateRouteContext(newFocusedDay);
+                }
+              },
             ),
-            cellBorderColor: Colors.transparent,
-            selectionDecoration: const BoxDecoration(),
-            monthCellBuilder: (BuildContext context, MonthCellDetails details) {
-              final day = details.date;
-              final isSelected =
-                  _selectedDay != null && _isSameDay(day, _selectedDay!);
-              return _buildCalendarCell(day, isSelected);
-            },
-            onTap: (CalendarTapDetails details) {
-              if (details.date != null) {
-                setState(() {
-                  _selectedDay = details.date;
-                  _focusedDay = details.date!;
-                  _calendarController.selectedDate = details.date;
-                });
-                // 更新路由上下文到具体日期
-                _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
-              }
-            },
-            onViewChanged: (ViewChangedDetails details) {
-              if (details.visibleDates.isNotEmpty) {
-                final newFocusedDay =
-                    details.visibleDates[details.visibleDates.length ~/ 2];
-                _focusedDay = newFocusedDay;
-                _loadMonthBills();
-                // 更新路由上下文
-                _updateRouteContext(newFocusedDay);
-              }
-            },
           ),
 
           // Filter Chips
@@ -835,9 +813,16 @@ class _BillListScreenSupercupertinoState
       onPressed: onTap,
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
+        // 收入/支出行浅色底：按压时加深作为反馈
+        final tintAlpha = theme.isDark ? 0.16 : 0.12;
+        final tintColor = (bill.isExpense ? _expenseColor : _incomeColor)
+            .withValues(alpha: pressed ? tintAlpha + 0.08 : tintAlpha);
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: pressed ? theme.surfaceAlt : null,
+          decoration: BoxDecoration(
+            color: tintColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Row(
             children: [
               Container(

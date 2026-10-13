@@ -44,13 +44,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
     if (mounted) setState(() {});
   }
 
-  List<String> _getAllTags() {
-    final tags = <String>{};
-    for (final item in MediaLogPlugin.instance.items) {
-      tags.addAll(item.tags);
-    }
-    return tags.toList()..sort();
-  }
+  List<String> _getAllTags() => MediaLogPlugin.instance.getAllTags();
 
   /// 构建多条件过滤项：类型 / 标签 / 评分 / 完成时间范围
   List<FilterItem> _buildFilterItems() {
@@ -317,6 +311,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
       builder: (context) => MediaItemForm(
         kind: kind ?? MediaKind.reading,
         initial: initial,
+        availableTags: _getAllTags(),
       ),
     );
     if (result == null || !mounted) return;

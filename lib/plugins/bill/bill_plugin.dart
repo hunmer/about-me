@@ -22,6 +22,7 @@ import 'repositories/client_bill_repository.dart';
 import 'controls/bill_controller.dart';
 import 'screens/bill_list_screen_supercupertino.dart';
 import 'screens/bill_stats_screen_supercupertino.dart';
+import 'screens/subscription_list_screen.dart';
 import 'screens/account_list_screen.dart';
 import 'screens/bill_edit_screen.dart';
 import 'models/account.dart';
@@ -377,11 +378,12 @@ class _BillMainViewState extends State<BillMainView>
     // 根据参数设置初始标签页
     _currentPage = 0;
     if (widget.showStatsTab) {
-      _currentPage = 1;
+      // 0 账单列表 / 1 订阅 / 2 统计分析
+      _currentPage = 2;
     } else if (widget.showBillListTab) {
       _currentPage = 0;
     }
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     // 延迟跳转到指定标签页
     if (_currentPage != 0) {
@@ -483,6 +485,7 @@ class _BillMainViewState extends State<BillMainView>
             billPlugin: billPlugin,
             accountId: billPlugin.selectedAccount?.id ?? '',
           ),
+          SubscriptionListScreen(billPlugin: billPlugin),
           BillStatsScreenSupercupertino(
             billPlugin: billPlugin,
             accountId: billPlugin.selectedAccount?.id ?? '',
@@ -497,6 +500,8 @@ class _BillMainViewState extends State<BillMainView>
       fab: _buildFab(),
       items: const [
         DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
+        // 周期性扣款，用 refresh 环形箭头近似（原账单列表右上角入口）
+        DSNavItem(icon: DsIconKind.refresh, label: '订阅'),
         DSNavItem(icon: DsIconKind.columns, label: '统计分析'),
       ],
     );

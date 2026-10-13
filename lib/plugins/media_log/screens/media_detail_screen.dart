@@ -5,7 +5,7 @@ import 'package:aboutme/design_system/design_system.dart';
 
 import '../media_log_plugin.dart';
 import '../models/media_item.dart';
-import '../widgets/media_cover.dart';
+import '../widgets/media_cover.dart' show MediaCoverView;
 import '../widgets/media_item_card.dart';
 import '../widgets/media_item_form.dart';
 import '../widgets/media_review_form.dart';
@@ -50,7 +50,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     final result = await showDSBottomSheet<dynamic>(
       context: context,
       title: 'media_editItem'.tr,
-      builder: (context) => MediaItemForm(kind: item.kind, initial: item, showDelete: true),
+      builder: (context) => MediaItemForm(
+        kind: item.kind,
+        initial: item,
+        availableTags: MediaLogPlugin.instance.getAllTags(),
+        showDelete: true,
+      ),
     );
     if (result == null || !mounted) return;
     if (result == 'delete') {
@@ -167,7 +172,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(context).bottom),
                 child: Column(
                   children: [
-                    // 封面（错落旋转，迁移自 demo）
+                    // 封面（错落旋转，迁移自 demo；与列表卡片共享 Hero 飞行过渡）
                     Transform.rotate(
                       angle: -0.02,
                       child: Container(
@@ -180,9 +185,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           borderRadius: DsRadii.md,
                           child: SizedBox(
                             width: 168,
-                            child: AspectRatio(
-                              aspectRatio: 1 / item.aspect,
-                              child: MediaCover(style: item.cover),
+                            child: Hero(
+                              tag: item.coverHeroTag,
+                              child: ClipRRect(
+                                borderRadius: DsRadii.md,
+                                child: AspectRatio(
+                                  aspectRatio: 1 / item.aspect,
+                                  child: MediaCoverView(item: item),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -239,14 +250,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    for (var i = 0; i < item.reviews.length; i++) ...[
-                      MediaReviewCard(
-                        review: item.reviews[i],
-                        seed: i + 3,
-                        onTap: () => _showReviewActions(item, item.reviews[i]),
-                      ),
-                      if (i < item.reviews.length - 1) const SizedBox(height: 12),
-                    ],
+                    if (item.reviews.isEmpty)
+                      DSEmptyState(
+                        emoji: '💬',
+                        title: 'media_noReviews'.tr,
+                        message: 'media_noReviewsMessage'.tr,
+                      )
+                    else
+                      for (var i = 0; i < item.reviews.length; i++) ...[
+                        MediaReviewCard(
+                          review: item.reviews[i],
+                          seed: i + 3,
+                          onTap: () => _showReviewActions(item, item.reviews[i]),
+                        ),
+                        if (i < item.reviews.length - 1) const SizedBox(height: 12),
+                      ],
                   ],
                 ),
               ),

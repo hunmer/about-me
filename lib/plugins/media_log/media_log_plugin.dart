@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -12,8 +15,10 @@ import 'models/media_item.dart';
 import 'sample_data.dart';
 import 'screens/media_list_screen.dart';
 
+part 'media_log_js_api.dart';
+
 /// 媒体记录插件：阅读记录 + 观影记录（瀑布流封面网格，手绘纸墨风）
-class MediaLogPlugin extends BasePlugin {
+class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   static MediaLogPlugin? _instance;
   static MediaLogPlugin get instance {
     if (_instance == null) {
@@ -52,6 +57,8 @@ class MediaLogPlugin extends BasePlugin {
   @override
   Future<void> initialize() async {
     await _loadItems();
+    // 注册 JS API（最后一步）
+    await registerJSAPI();
   }
 
   @override
@@ -97,6 +104,15 @@ class MediaLogPlugin extends BasePlugin {
       if (item.id == id) return item;
     }
     return null;
+  }
+
+  /// 所有条目的标签集合（排序后，供表单快捷 chips / 过滤栏使用）
+  List<String> getAllTags() {
+    final tags = <String>{};
+    for (final item in _items) {
+      tags.addAll(item.tags);
+    }
+    return tags.toList()..sort();
   }
 
   /// 新增或更新条目（按 id 匹配），返回保存后的条目
@@ -157,5 +173,27 @@ class MediaLogPlugin extends BasePlugin {
   @override
   Widget buildMainView(BuildContext context) {
     return DSThemeBridge(child: const MediaListScreen());
+  }
+
+  @override
+  Map<String, Function> defineJSAPI() {
+    return {
+      // 条目相关
+      'getMediaItems': _jsGetMediaItems,
+      'getItems': _jsGetMediaItems, // 别名
+      'getMediaItem': _jsGetMediaItem,
+      'getItemById': _jsGetMediaItem, // 别名
+      'createMediaItem': _jsCreateMediaItem,
+      'createItem': _jsCreateMediaItem, // 别名
+      'updateMediaItem': _jsUpdateMediaItem,
+      'updateItem': _jsUpdateMediaItem, // 别名
+      'deleteMediaItem': _jsDeleteMediaItem,
+      'deleteItem': _jsDeleteMediaItem, // 别名
+      // 点评相关
+      'addMediaReview': _jsAddMediaReview,
+      'addReview': _jsAddMediaReview, // 别名
+      'deleteMediaReview': _jsDeleteMediaReview,
+      'deleteReview': _jsDeleteMediaReview, // 别名
+    };
   }
 }

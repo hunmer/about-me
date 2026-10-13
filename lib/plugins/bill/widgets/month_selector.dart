@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 月份选择器组件
 /// 显示一个水平滚动的月份列表，每个月份卡片显示收入和支出统计
@@ -60,8 +61,8 @@ class _MonthSelectorState extends State<MonthSelector> {
     // 添加滚动监听器
     _scrollController.addListener(_onScroll);
 
-    // 滚动到选中的月份
-    _scrollToSelectedMonth();
+    // 滚动到选中的月份（初始化直接定位，不播放滚动动画）
+    _scrollToSelectedMonth(animate: false);
   }
 
   @override
@@ -225,16 +226,17 @@ class _MonthSelectorState extends State<MonthSelector> {
   }
 
   /// 滚动到选中的月份
-  void _scrollToSelectedMonth() {
+  /// [animate] 为 false 时直接跳转定位（初始化时不播放滚动动画）
+  void _scrollToSelectedMonth({bool animate = true}) {
     // 确保月份列表已初始化
     if (_allMonths.isEmpty) return;
 
     // 使用多重延迟确保滚动可靠性
-    _performScrollWithRetry(0);
+    _performScrollWithRetry(0, animate: animate);
   }
 
   /// 带重试机制的滚动执行
-  void _performScrollWithRetry(int attempt) {
+  void _performScrollWithRetry(int attempt, {required bool animate}) {
     const maxAttempts = 5;
 
     // 根据尝试次数增加延迟时间
@@ -244,7 +246,7 @@ class _MonthSelectorState extends State<MonthSelector> {
       if (!mounted || !_scrollController.hasClients) {
         // 如果条件不满足且未超过最大尝试次数，继续重试
         if (attempt < maxAttempts) {
-          _performScrollWithRetry(attempt + 1);
+          _performScrollWithRetry(attempt + 1, animate: animate);
         } else {
           // 重试次数用尽，标记初始化完成以允许正常使用
           _isInitialized = true;
@@ -269,7 +271,7 @@ class _MonthSelectorState extends State<MonthSelector> {
       if (viewportWidth <= 0) {
         // 视口宽度无效，继续重试
         if (attempt < maxAttempts) {
-          _performScrollWithRetry(attempt + 1);
+          _performScrollWithRetry(attempt + 1, animate: animate);
         } else {
           // 重试次数用尽，标记初始化完成以允许正常使用
           _isInitialized = true;
@@ -282,10 +284,22 @@ class _MonthSelectorState extends State<MonthSelector> {
       final targetOffset =
           (selectedIndex * itemWidth) - (viewportWidth / 2) + (itemWidth / 2);
 
+      final clampedOffset = targetOffset.clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
+
+      if (!animate) {
+        // 初始化：直接定位，不播放滚动动画
+        _scrollController.jumpTo(clampedOffset);
+        _isInitialized = true;
+        return;
+      }
+
       // 执行滚动
       _scrollController
           .animateTo(
-            targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+            clampedOffset,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
           )
@@ -306,7 +320,7 @@ class _MonthSelectorState extends State<MonthSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = DSThemeBridge.resolve(context).isDark;
+    final theme = DSThemeBridge.resolve(context);
 
     // 如果需要在构建后滚动
     if (_shouldScrollOnNextBuild) {
@@ -326,97 +340,145 @@ class _MonthSelectorState extends State<MonthSelector> {
           );
         }
       },
-      child: SizedBox(
+      child: Container(
         height: 90,
-        child: ListView.separated(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          scrollDirection: Axis.horizontal,
-          itemCount: _allMonths.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
-          itemBuilder: (context, index) {
-            final month = _allMonths[index];
-            final isSelected =
-                month.year == _selectedMonth.year &&
-                month.month == _selectedMonth.month;
-            final stats = widget.getMonthStats(month);
-
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedMonth = month;
-                });
-                widget.onMonthSelected(month);
-              },
-              child: Container(
-                width: 80,
+        margin: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+        child: Stack(
+          children: [
+            // 纸底
+            Positioned.fill(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color:
-                      isSelected
-                          ? (isDark ? Colors.grey[800] : Colors.white)
-                          : (isDark ? Colors.transparent : Colors.white),
-                  borderRadius: BorderRadius.circular(16),
-                  border:
-                      isSelected
-                          ? Border.all(color: widget.primaryColor, width: 2)
-                          : null,
-                  boxShadow:
-                      isSelected || !isDark
-                          ? [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(10),
-                              blurRadius: 4,
-                            ),
-                          ]
-                          : null,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _formatMonth(month),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isSelected
-                                ? (isDark ? Colors.white : Colors.black)
-                                : (isDark
-                                    ? Colors.grey[500]
-                                    : Colors.grey[400]),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // 使用自定义构建器或默认的统计数据显示
-                    if (widget.customStatsBuilder != null)
-                      widget.customStatsBuilder!(stats)
-                    else
-                      Column(
-                        children: [
-                          Text(
-                            '+${_formatCompact(stats['income'] ?? 0)}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFF2ECC71), // 收入颜色
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '-${_formatCompact(stats['expense'] ?? 0)}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFE74C3C), // 支出颜色
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                  color: theme.paper,
+                  borderRadius: theme.radii.xl,
                 ),
               ),
-            );
-          },
+            ),
+            // 手绘墨线边框 + 淡排线背景
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillStyle: DsSketchFill.hachure,
+                  hachureColor: theme.hatch.withValues(
+                    alpha: theme.isDark ? 0.12 : 0.09,
+                  ),
+                  radius: theme.radii.xl,
+                  strokeWidth: 1.6,
+                  hachureGap: 10,
+                  seed: 3,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              // 左右边缘渐隐：月份卡片滚到面板边缘时淡出而非硬切
+              // （列表无限加载，两端不会到头，常驻渐隐不遮首尾卡片）
+              child: ShaderMask(
+                shaderCallback: (bounds) {
+                  const edge = 24.0;
+                  final t = (edge / bounds.width).clamp(0.0, 0.5);
+                  return LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: const [
+                      Colors.transparent,
+                      Colors.black,
+                      Colors.black,
+                      Colors.transparent,
+                    ],
+                    stops: [0.0, t, 1.0 - t, 1.0],
+                  ).createShader(bounds);
+                },
+                blendMode: BlendMode.dstIn,
+                child: ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
+                scrollDirection: Axis.horizontal,
+                itemCount: _allMonths.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final month = _allMonths[index];
+                  final isSelected =
+                      month.year == _selectedMonth.year &&
+                      month.month == _selectedMonth.month;
+                  final stats = widget.getMonthStats(month);
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedMonth = month;
+                      });
+                      widget.onMonthSelected(month);
+                    },
+                    child: Container(
+                      width: 80,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor:
+                            isSelected
+                                ? widget.primaryColor.withValues(
+                                  alpha: theme.isDark ? 0.28 : 0.16,
+                                )
+                                : theme.paper,
+                        stroke:
+                            isSelected
+                                ? widget.primaryColor
+                                : theme.ink.withValues(
+                                  alpha: theme.isDark ? 0.45 : 0.30,
+                                ),
+                        strokeWidth: isSelected ? 2.2 : 1.2,
+                        radius: theme.radii.lg,
+                        // 固定 seed：同月份 rebuild 时墨迹不抖变
+                        seed: month.year * 12 + month.month,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _formatMonth(month),
+                            style: DsTypography.heading.copyWith(
+                              fontSize: 12,
+                              color: isSelected ? theme.text : theme.textSub,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // 使用自定义构建器或默认的统计数据显示
+                          if (widget.customStatsBuilder != null)
+                            widget.customStatsBuilder!(stats)
+                          else
+                            Column(
+                              children: [
+                                Text(
+                                  '+${_formatCompact(stats['income'] ?? 0)}',
+                                  style: DsTypography.caption.copyWith(
+                                    fontSize: 10,
+                                    color: theme.success,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '-${_formatCompact(stats['expense'] ?? 0)}',
+                                  style: DsTypography.caption.copyWith(
+                                    fontSize: 10,
+                                    color: theme.danger,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

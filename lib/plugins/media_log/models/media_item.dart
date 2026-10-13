@@ -5,6 +5,8 @@ library;
 enum MediaKind { reading, watching }
 
 /// 程序化封面绘制风格（替代真实封面图，墨线风格与全局一致）
+///
+/// 前 12 款为书籍风；filmReel / clapper / ticket / popcorn 为观影记录的电影感封面。
 enum CoverStyle {
   sheep,
   ring,
@@ -18,6 +20,10 @@ enum CoverStyle {
   journals,
   poems,
   pinball,
+  filmReel,
+  clapper,
+  ticket,
+  popcorn,
 }
 
 /// 点评条目（可多条，带时间戳）
@@ -27,6 +33,8 @@ class MediaReview {
     required this.text,
     required this.timestamp,
     this.rating,
+    this.author,
+    this.avatar,
   });
 
   final String id;
@@ -36,12 +44,27 @@ class MediaReview {
   /// 可选评分（0~5，null = 未评分）
   final double? rating;
 
-  MediaReview copyWith({String? id, String? text, DateTime? timestamp, double? rating}) {
+  /// 点评人昵称（null = 默认"我"）
+  final String? author;
+
+  /// 点评人头像（相对路径或 URL，null = 首字母圆）
+  final String? avatar;
+
+  MediaReview copyWith({
+    String? id,
+    String? text,
+    DateTime? timestamp,
+    double? rating,
+    String? author,
+    String? avatar,
+  }) {
     return MediaReview(
       id: id ?? this.id,
       text: text ?? this.text,
       timestamp: timestamp ?? this.timestamp,
       rating: rating ?? this.rating,
+      author: author ?? this.author,
+      avatar: avatar ?? this.avatar,
     );
   }
 
@@ -52,6 +75,8 @@ class MediaReview {
       timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
       rating: (json['rating'] as num?)?.toDouble(),
+      author: json['author'] as String?,
+      avatar: json['avatar'] as String?,
     );
   }
 
@@ -60,6 +85,8 @@ class MediaReview {
         'text': text,
         'timestamp': timestamp.toIso8601String(),
         if (rating != null) 'rating': rating,
+        if (author != null) 'author': author,
+        if (avatar != null) 'avatar': avatar,
       };
 }
 
@@ -71,6 +98,7 @@ class MediaItem {
     required this.title,
     required this.cover,
     required this.createdAt,
+    this.coverImage,
     this.author,
     this.aspect = 1.42,
     this.rating,
@@ -84,6 +112,9 @@ class MediaItem {
   final MediaKind kind;
   final String title;
   final String? author;
+
+  /// 用户上传的封面图（相对路径或 URL）；非空时优先于程序化封面
+  final String? coverImage;
   final CoverStyle cover;
 
   /// 封面高 / 宽 比（瀑布流错落）
@@ -101,11 +132,15 @@ class MediaItem {
 
   bool get isFinished => finishedAt != null;
 
+  /// 封面 Hero 动画 tag（列表卡片 ↔ 详情页共用，保证两端一致）
+  String get coverHeroTag => 'media_cover_$id';
+
   MediaItem copyWith({
     String? id,
     MediaKind? kind,
     String? title,
     String? author,
+    String? coverImage,
     CoverStyle? cover,
     double? aspect,
     double? rating,
@@ -119,6 +154,7 @@ class MediaItem {
       kind: kind ?? this.kind,
       title: title ?? this.title,
       author: author ?? this.author,
+      coverImage: coverImage ?? this.coverImage,
       cover: cover ?? this.cover,
       aspect: aspect ?? this.aspect,
       rating: rating ?? this.rating,
@@ -136,6 +172,7 @@ class MediaItem {
       kind: json['kind'] == 'watching' ? MediaKind.watching : MediaKind.reading,
       title: json['title'] as String? ?? '',
       author: json['author'] as String?,
+      coverImage: json['coverImage'] as String?,
       cover: CoverStyle.values.firstWhere(
         (s) => s.name == json['cover'],
         orElse: () => CoverStyle.sheep,
@@ -160,6 +197,7 @@ class MediaItem {
         'kind': kind.name,
         'title': title,
         if (author != null) 'author': author,
+        if (coverImage != null) 'coverImage': coverImage,
         'cover': cover.name,
         'aspect': aspect,
         if (rating != null) 'rating': rating,

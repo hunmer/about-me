@@ -332,44 +332,41 @@ class _MessageInputState extends State<MessageInput> {
                       },
                     ),
 
-                    // 文本输入框
+                    // 文本输入框（表情/语音内嵌为右侧后缀）
                     Expanded(
                       child: InputField(
                         controller: widget.controller,
                         focusNode: _focusNode,
                         keyboardListenerFocusNode: _keyboardListenerFocusNode,
+                        suffix: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _InlineIconAction(
+                              icon: DsIconKind.mood,
+                              color: theme.textSub,
+                              onPressed: _showEmojiPicker,
+                              tooltip: '表情',
+                            ),
+                            if (_recognitionService != null)
+                              _InlineIconAction(
+                                icon: DsIconKind.mic,
+                                color: theme.textSub,
+                                onPressed: _showVoiceInputDialog,
+                                tooltip: '语音输入',
+                              )
+                            else
+                              _InlineIconAction(
+                                icon: DsIconKind.mic,
+                                color: theme.textSub,
+                                tooltip: '语音输入（未配置）',
+                              ),
+                          ],
+                        ),
                         onChanged: (text) => widget.onSaveDraft(text),
                         onKeyEvent: (event) =>
                             _messageInputState.handleKeyPress(event),
                       ),
                     ),
-
-                    // 表情选择按钮
-                    DSIconButton(
-                      icon: DsIconKind.mood,
-                      color: theme.surfaceAlt,
-                      iconColor: theme.textSub,
-                      onPressed: _showEmojiPicker,
-                      tooltip: '表情',
-                    ),
-
-                    // 语音输入按钮
-                    if (_recognitionService != null)
-                      DSIconButton(
-                        icon: DsIconKind.mic,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        onPressed: _showVoiceInputDialog,
-                        tooltip: '语音输入',
-                      )
-                    else
-                      DSIconButton(
-                        icon: DsIconKind.mic,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        onPressed: null,
-                        tooltip: '语音输入（未配置）',
-                      ),
 
                     // 发送按钮
                     Padding(
@@ -383,6 +380,46 @@ class _MessageInputState extends State<MessageInput> {
           );
         },
       ),
+    );
+  }
+}
+
+/// 输入框内嵌的无边框小图标按钮（表情/语音）
+class _InlineIconAction extends StatelessWidget {
+  const _InlineIconAction({
+    required this.icon,
+    required this.color,
+    this.onPressed,
+    this.tooltip,
+  });
+
+  final DsIconKind icon;
+  final Color color;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onPressed == null;
+    return Pressable(
+      onPressed: onPressed,
+      semanticLabel: tooltip,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return AnimatedScale(
+          scale: pressed && !disabled ? 0.85 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+            child: DsIcon(
+              icon,
+              size: 18,
+              color: disabled ? color.withValues(alpha: 0.4) : color,
+            ),
+          ),
+        );
+      },
     );
   }
 }

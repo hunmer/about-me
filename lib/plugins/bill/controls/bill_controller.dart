@@ -523,7 +523,7 @@ class BillController with ChangeNotifier {
       BillAddedEventArgs(bill, bill.accountId),
     );
 
-    // 通知 BillPlugin 监听器（这会触发 BillListScreen 的刷新）
+    // 通知 BillPlugin 监听器（这会触发账单列表界面的刷新）
     notifyListeners();
 
     await _syncWidget();

@@ -54,8 +54,8 @@ class BillPlugin extends PluginBase {
 **文件**: `bill_plugin.dart`
 
 **路由**: 通过 `BillPlugin.buildMainView()` 返回 `BillMainView`,内部使用 `TabBar` 切换两个界面:
-- **账单列表视图** (`BillListScreen`): 主要的账单记录界面
-- **统计分析视图** (`BillStatsScreen`): 数据可视化和统计分析
+- **账单列表视图** (`BillListScreenSupercupertino`): 主要的账单记录界面
+- **统计分析视图** (`BillStatsScreenSupercupertino`): 数据可视化和统计分析
 
 **特殊逻辑**: 如果没有账户,自动跳转到账户列表页面 (`AccountListScreen`)
 
@@ -343,8 +343,8 @@ class BillModel {
 | 组件 | 文件 | 职责 |
 |------|------|------|
 | `BillMainView` | `bill_plugin.dart` | 插件主视图容器(双Tab导航) |
-| `BillListScreen` | `screens/bill_list_screen.dart` | 账单列表主界面 |
-| `BillStatsScreen` | `screens/bill_stats_screen.dart` | 统计分析界面 |
+| `BillListScreenSupercupertino` | `screens/bill_list_screen_supercupertino.dart` | 账单列表主界面 |
+| `BillStatsScreenSupercupertino` | `screens/bill_stats_screen_supercupertino.dart` | 统计分析界面 |
 | `BillEditScreen` | `screens/bill_edit_screen.dart` | 账单编辑/创建界面 |
 | `AccountListScreen` | `screens/account_list_screen.dart` | 账户列表界面 |
 | `AccountEditScreen` | `screens/account_edit_screen.dart` | 账户编辑/创建界面 |
@@ -360,15 +360,15 @@ Scaffold
 │   ├── TabBar (账单列表/统计分析)
 │   └── 账户列表按钮
 └── TabBarView
-    ├── BillListScreen
-    └── BillStatsScreen
+    ├── BillListScreenSupercupertino
+    └── BillStatsScreenSupercupertino
 ```
 
 **特殊逻辑**:
 - 如果 `accounts` 为空,自动跳转到 `AccountListScreen`
 - 如果 `selectedAccountId` 为空,自动选择第一个账户
 
-### BillListScreen 布局
+### BillListScreenSupercupertino 布局
 
 **布局结构**:
 ```
@@ -391,7 +391,7 @@ Scaffold
 - 滑动删除: `Dismissible` 组件,支持确认对话框
 - 监听更新: 监听 `BillPlugin` 的 `notifyListeners()` 自动刷新
 
-### BillStatsScreen 统计界面
+### BillStatsScreenSupercupertino 统计界面
 
 **核心功能**:
 1. **收支概览卡片**: 显示总收入、总支出、结余
@@ -717,9 +717,9 @@ bill/
 ├── services/
 │   └── prompt_replacements.dart        # AI Prompt 替换方法
 ├── screens/
-│   ├── bill_list_screen.dart           # 账单列表界面
+│   ├── bill_list_screen_supercupertino.dart # 账单列表界面
 │   ├── bill_edit_screen.dart           # 账单编辑界面
-│   ├── bill_stats_screen.dart          # 统计分析界面
+│   ├── bill_stats_screen_supercupertino.dart # 统计分析界面
 │   ├── account_list_screen.dart        # 账户列表界面
 │   ├── account_edit_screen.dart        # 账户编辑界面
 │   └── account_bills_screen.dart       # 单账户账单界面
@@ -876,7 +876,7 @@ final record = {
 
 ## 统计功能详解
 
-### BillStatsScreen 统计界面
+### BillStatsScreenSupercupertino 统计界面
 
 **图表类型**:
 

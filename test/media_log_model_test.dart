@@ -9,6 +9,7 @@ void main() {
       kind: MediaKind.watching,
       title: 'Norwegian Wood',
       author: 'Tran Anh Hung',
+      coverImage: 'media_log/covers/demo.jpg',
       cover: CoverStyle.norwegianWood,
       aspect: 1.5,
       rating: 3.8,
@@ -22,6 +23,8 @@ void main() {
           text: '画面很美',
           timestamp: DateTime(2026, 10, 1, 21, 30),
           rating: 4,
+          author: 'Aoi',
+          avatar: 'media_log/avatars/aoi.jpg',
         ),
       ],
     );
@@ -32,6 +35,7 @@ void main() {
     expect(restored.kind, MediaKind.watching);
     expect(restored.title, 'Norwegian Wood');
     expect(restored.author, 'Tran Anh Hung');
+    expect(restored.coverImage, 'media_log/covers/demo.jpg');
     expect(restored.cover, CoverStyle.norwegianWood);
     expect(restored.aspect, 1.5);
     expect(restored.rating, 3.8);
@@ -40,6 +44,26 @@ void main() {
     expect(restored.reviews.single.text, '画面很美');
     expect(restored.reviews.single.timestamp, DateTime(2026, 10, 1, 21, 30));
     expect(restored.reviews.single.rating, 4);
+    expect(restored.reviews.single.author, 'Aoi');
+    expect(restored.reviews.single.avatar, 'media_log/avatars/aoi.jpg');
+  });
+
+  test('电影感封面样式可序列化解析', () {
+    for (final style in [
+      CoverStyle.filmReel,
+      CoverStyle.clapper,
+      CoverStyle.ticket,
+      CoverStyle.popcorn,
+    ]) {
+      final item = MediaItem(
+        id: 'x',
+        kind: MediaKind.watching,
+        title: 't',
+        cover: style,
+        createdAt: DateTime(2026, 1, 1),
+      );
+      expect(MediaItem.fromJson(item.toJson()).cover, style);
+    }
   });
 
   test('MediaItem 可空字段缺省解析', () {
@@ -91,16 +115,20 @@ void main() {
       text: '旧点评',
       timestamp: DateTime(2026, 1, 1),
       rating: 3,
+      author: 'Me',
     );
     final updated = review.copyWith(
       id: 'r2',
       text: '新点评',
       timestamp: DateTime(2026, 2, 1, 8, 5),
+      avatar: 'media_log/avatars/me.jpg',
     );
 
     expect(updated.id, 'r2');
     expect(updated.text, '新点评');
     expect(updated.timestamp, DateTime(2026, 2, 1, 8, 5));
     expect(updated.rating, 3);
+    expect(updated.author, 'Me');
+    expect(updated.avatar, 'media_log/avatars/me.jpg');
   });
 }

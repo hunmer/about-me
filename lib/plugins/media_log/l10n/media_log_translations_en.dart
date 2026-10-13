@@ -56,4 +56,12 @@ const Map<String, String> mediaLogTranslationsEn = {
   'media_reviewText': 'Review text',
   'media_reviewTimestamp': 'Timestamp',
   'media_reviewRequired': 'Review text is required',
+  'media_reviewAuthor': 'Author',
+  'media_me': 'Me',
+  'media_noReviews': 'No reviews yet',
+  'media_noReviewsMessage': 'Write down your first thoughts after reading or watching',
+
+  // Cover image
+  'media_uploadCover': 'Upload cover',
+  'media_coverImagePicked': 'Using image cover',
 };

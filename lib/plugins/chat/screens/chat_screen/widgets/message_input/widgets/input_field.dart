@@ -9,6 +9,7 @@ class InputField extends StatelessWidget {
   final FocusNode keyboardListenerFocusNode;
   final Function(String) onChanged;
   final Function(KeyEvent) onKeyEvent;
+  final Widget? suffix;
 
   const InputField({
     super.key,
@@ -17,6 +18,7 @@ class InputField extends StatelessWidget {
     required this.keyboardListenerFocusNode,
     required this.onChanged,
     required this.onKeyEvent,
+    this.suffix,
   });
 
   @override
@@ -47,6 +49,7 @@ class InputField extends StatelessWidget {
           keyboardType: TextInputType.multiline,
           textInputAction: TextInputAction.newline,
           scrollPhysics: const ClampingScrollPhysics(), // 内容超高时转入内部滚动
+          suffix: suffix,
         ),
       ),
     );

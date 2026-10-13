@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 
 import '../models/media_item.dart';
 import 'media_cover.dart';
@@ -47,9 +49,16 @@ class MediaItemCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AspectRatio(
-                      aspectRatio: 1 / item.aspect,
-                      child: MediaCover(style: item.cover),
+                    // Hero 飞行时圆角随行：ClipRRect 放进 hero child 内
+                    Hero(
+                      tag: item.coverHeroTag,
+                      child: ClipRRect(
+                        borderRadius: DsRadii.md,
+                        child: AspectRatio(
+                          aspectRatio: 1 / item.aspect,
+                          child: MediaCoverView(item: item),
+                        ),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
@@ -93,7 +102,7 @@ class MediaItemCard extends StatelessWidget {
   }
 }
 
-/// 点评卡片：时间戳 + 评分 + 内容
+/// 点评卡片：头像 + 点评人 + 时间戳 + 评分 + 内容
 ///
 /// 迁移自 ai_picks_demo 详情页的 _ReviewCard。
 class MediaReviewCard extends StatelessWidget {
@@ -107,6 +116,8 @@ class MediaReviewCard extends StatelessWidget {
   final MediaReview review;
   final int seed;
   final VoidCallback onTap;
+
+  String get _displayName => review.author ?? 'media_me'.tr;
 
   @override
   Widget build(BuildContext context) {
@@ -132,12 +143,26 @@ class MediaReviewCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    _ReviewAvatar(review: review, displayName: _displayName),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        dateText,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _displayName,
+                            style: DsTypography.heading.copyWith(
+                              fontSize: 13,
+                              color: theme.text,
+                            ),
+                          ),
+                          Text(
+                            dateText,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (review.rating != null)
@@ -156,6 +181,47 @@ class MediaReviewCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// 点评人头像：上传图片（圆形）或首字母墨盒
+class _ReviewAvatar extends StatelessWidget {
+  const _ReviewAvatar({required this.review, required this.displayName});
+
+  final MediaReview review;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    final avatar = review.avatar;
+    if (avatar != null && avatar.isNotEmpty) {
+      return SizedBox(
+        width: 34,
+        height: 34,
+        child: ClipOval(
+          child: AdaptiveImage(
+            imagePath: avatar,
+            fit: BoxFit.cover,
+            borderRadius: 0,
+          ),
+        ),
+      );
+    }
+    final initial = displayName.trim().isEmpty
+        ? '?'
+        : displayName.trim().substring(0, 1);
+    return JellyBox(
+      color: theme.surfaceAlt,
+      radius: DsRadii.circle,
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: DsTypography.heading.copyWith(color: theme.primary),
+      ),
     );
   }
 }
