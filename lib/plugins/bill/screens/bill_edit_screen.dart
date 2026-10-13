@@ -130,13 +130,13 @@ class _BillEditScreenState extends State<BillEditScreen> {
     if (isEdit && billId != null) {
       RouteHistoryManager.updateCurrentContext(
         pageId: '/bill_edit',
-        title: '编辑账单',
+        title: 'bill_editBill'.tr,
         params: {'billId': billId},
       );
     } else {
       RouteHistoryManager.updateCurrentContext(
         pageId: '/bill_create',
-        title: '新建账单',
+        title: 'bill_newBill'.tr,
         params: {},
       );
     }
@@ -151,7 +151,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
 
       // 验证金额必须大于0
       if (amount <= 0) {
-        Toast.error('请输入有效金额（需大于0）');
+        Toast.error('bill_amountMustBePositive'.tr);
         return;
       }
 
@@ -161,18 +161,18 @@ class _BillEditScreenState extends State<BillEditScreen> {
         final subscriptionDaysValue = values['subscriptionDays'];
 
         if (subscriptionName == null || subscriptionName.isEmpty) {
-          Toast.error('请输入订阅服务名称');
+          Toast.error('bill_pleaseEnterSubscriptionName'.tr);
           return;
         }
 
         if (subscriptionDaysValue == null) {
-          Toast.error('请输入订阅天数');
+          Toast.error('bill_pleaseEnterSubscriptionDays'.tr);
           return;
         }
 
         final days = int.tryParse(subscriptionDaysValue.toString());
         if (days == null || days <= 0) {
-          Toast.error('请输入有效的订阅天数');
+          Toast.error('bill_subscriptionDaysError'.tr);
           return;
         }
 
@@ -193,7 +193,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
         );
 
         if (!mounted) return;
-        Toast.success('订阅服务创建成功');
+        Toast.success('bill_subscriptionCreated'.tr);
       } else {
         // 保存为普通账单
         final title = values['title'] as String?;
@@ -243,7 +243,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         title: Text(
-          widget.bill == null ? '添加账单' : '编辑账单',
+          widget.bill == null ? 'bill_addBill'.tr : 'bill_editBill'.tr,
           style: DsTypography.title.copyWith(
             color: theme.text,
             fontWeight: FontWeight.bold,
@@ -347,7 +347,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
                 ? widget.bill!.absoluteAmount
                 : widget.initialAmount,
         required: true,
-        validationMessage: '请输入有效金额（需大于0）',
+        validationMessage: 'bill_amountMustBePositive'.tr,
         extra: {'currencySymbol': '¥', 'fontSize': 40.0},
       ),
 
@@ -356,8 +356,8 @@ class _BillEditScreenState extends State<BillEditScreen> {
         name: 'title',
         type: FormFieldType.text,
         initialValue: widget.bill?.title ?? '',
-        labelText: '标题',
-        hintText: '留空则使用分类名称',
+        labelText: 'bill_title'.tr,
+        hintText: 'bill_titleHint'.tr,
       ),
 
       // 日期选择器
@@ -365,7 +365,10 @@ class _BillEditScreenState extends State<BillEditScreen> {
         name: 'date',
         type: FormFieldType.date,
         initialValue: _selectedDate,
-        extra: {'format': 'yyyy年MM月dd日', 'inline': true},
+        extra: {
+          'format': Get.locale?.languageCode == 'zh' ? 'yyyy年MM月dd日' : 'yyyy/MM/dd',
+          'inline': true,
+        },
       ),
 
       // 备注
@@ -373,7 +376,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
         name: 'note',
         type: FormFieldType.textArea,
         initialValue: widget.bill?.note ?? '',
-        hintText: '添加备注...',
+        hintText: 'bill_addNote'.tr,
         extra: {'minLines': 3, 'maxLines': 5},
       ),
 
@@ -382,8 +385,8 @@ class _BillEditScreenState extends State<BillEditScreen> {
         name: 'isSubscription',
         type: FormFieldType.switchField,
         initialValue: false,
-        labelText: '启用订阅服务',
-        hintText: '启用后将自动生成每日账单',
+        labelText: 'bill_enableSubscription'.tr,
+        hintText: 'bill_enableSubscriptionHint'.tr,
         prefixIcon: Icons.autorenew,
         onChanged: (value) {
           setState(() {
@@ -396,16 +399,16 @@ class _BillEditScreenState extends State<BillEditScreen> {
       FormFieldConfig(
         name: 'subscriptionName',
         type: FormFieldType.text,
-        labelText: '订阅服务名称',
-        hintText: '例如：Netflix会员',
+        labelText: 'bill_subscriptionName'.tr,
+        hintText: 'bill_subscriptionNameHint'.tr,
       ),
 
       // 订阅天数
       FormFieldConfig(
         name: 'subscriptionDays',
         type: FormFieldType.number,
-        labelText: '订阅天数',
-        hintText: '例如：30',
+        labelText: 'bill_subscriptionDays'.tr,
+        hintText: 'bill_subscriptionDaysHint'.tr,
       ),
     ];
   }
@@ -456,7 +459,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '选择分类',
+            'bill_selectCategory'.tr,
             style: DsTypography.heading.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.textSub,
@@ -498,7 +501,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(
-                '备注',
+                'bill_note'.tr,
                 style: DsTypography.body.copyWith(
                   fontWeight: FontWeight.w500,
                   color: theme.textSub,
@@ -533,7 +536,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '订阅服务',
+            'bill_subscription'.tr,
             style: DsTypography.heading.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.textSub,
@@ -589,11 +592,11 @@ class _BillEditScreenState extends State<BillEditScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '单日金额',
+                    'bill_dailyAmount'.tr,
                     style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                   Text(
-                    '¥${(amount / days).toStringAsFixed(2)} / 天',
+                    '¥${(amount / days).toStringAsFixed(2)}${'bill_perDaySuffix'.tr}',
                     style: DsTypography.body.copyWith(
                       fontWeight: FontWeight.bold,
                       color: primaryColor,

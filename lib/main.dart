@@ -32,6 +32,7 @@ import 'package:flutter/material.dart';
 import 'package:skribble_icons_material/skribble_icons_material.dart';
 import 'core/services/plugin_widget_sync_helper.dart';
 import 'core/services/clipboard_service.dart';
+import 'core/services/app_usage_service.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'screens/route.dart';
 import 'core/route/route_history_manager.dart';
@@ -209,6 +210,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await initializeFlutterFloatingBall();
       // Web 平台检查 HTTP 存储服务器配置，未配置则弹设置对话框
       unawaited(ensureWebStorageBackend());
+      // App 累计使用时长统计（设置页信息栏展示）
+      unawaited(AppUsageService.instance.init());
     });
   }
 

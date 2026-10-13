@@ -4,6 +4,7 @@ import 'package:aboutme/core/builtin_plugins.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'base_settings_controller.dart';
 import 'export_controller.dart';
@@ -34,8 +35,22 @@ class SettingsScreenController extends ChangeNotifier {
     _fullBackupController = FullBackupController(context);
     _autoUpdateController = AutoUpdateController(context);
     await _loadPluginStates();
+    await _loadAppVersion();
     _initialized = true;
     notifyListeners();
+  }
+
+  // 应用版本号（头部统计展示）
+  String _appVersion = '';
+  String get appVersion => _appVersion;
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      _appVersion = packageInfo.version;
+    } catch (_) {
+      _appVersion = '';
+    }
   }
 
   Future<void> initPrefs() async {

@@ -80,24 +80,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     await showDSBottomSheet(
       context: context,
       title: 'media_reviewSection'.tr,
-      builder: (context) => Column(
+      builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           DSSheetAction(
             icon: DsIconKind.edit,
             label: 'media_editReview'.tr,
-            onTap: () async {
-              Navigator.pop(context);
-              final result = await showDSBottomSheet<MediaReview>(
-                context: context,
-                title: 'media_editReview'.tr,
-                builder: (context) => MediaReviewForm(initial: review),
-              );
-              if (result == null || !mounted) return;
-              await MediaLogPlugin.instance.saveReview(
-                item.id,
-                result.copyWith(id: review.id),
-              );
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _editReview(item, review);
             },
           ),
           DSSheetAction(
@@ -105,12 +96,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             label: 'media_deleteReview'.tr,
             destructive: true,
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetContext);
               MediaLogPlugin.instance.deleteReview(item.id, review.id);
             },
           ),
         ],
       ),
+    );
+  }
+
+  /// 编辑点评
+  Future<void> _editReview(MediaItem item, MediaReview review) async {
+    final result = await showDSBottomSheet<MediaReview>(
+      context: context,
+      title: 'media_editReview'.tr,
+      builder: (context) => MediaReviewForm(initial: review),
+    );
+    if (result == null || !mounted) return;
+    await MediaLogPlugin.instance.saveReview(
+      item.id,
+      result.copyWith(id: review.id),
     );
   }
 
@@ -126,6 +131,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       return const SizedBox.shrink();
     }
 
+    // 独立路由可能不在 AppTheme 树内，自行桥接主题
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) => _build(context, item),
+      ),
+    );
+  }
+
+  Widget _build(BuildContext context, MediaItem item) {
     final theme = AppTheme.of(context);
 
     return Scaffold(

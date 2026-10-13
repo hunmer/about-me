@@ -180,5 +180,19 @@ class BillTranslationsZh {
   
   // const Text 硬编码迁移(zh)
   'bill_statsReport': '统计报表',
+
+  // 编辑账单屏幕
+  'bill_addBill': '添加账单',
+  'bill_amountMustBePositive': '请输入有效金额（需大于0）',
+  'bill_pleaseEnterSubscriptionName': '请输入订阅服务名称',
+  'bill_pleaseEnterSubscriptionDays': '请输入订阅天数',
+  'bill_titleHint': '留空则使用分类名称',
+  'bill_enableSubscription': '启用订阅服务',
+  'bill_enableSubscriptionHint': '启用后将自动生成每日账单',
+  'bill_subscriptionNameHint': '例如：Netflix会员',
+  'bill_subscriptionDays': '订阅天数',
+  'bill_subscriptionDaysHint': '例如：30',
+  'bill_dailyAmount': '单日金额',
+  'bill_perDaySuffix': ' / 天',
 };
 }

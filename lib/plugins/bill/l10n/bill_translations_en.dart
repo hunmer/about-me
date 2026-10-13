@@ -184,5 +184,19 @@ class BillTranslationsEn {
   
   // const Text 硬编码迁移(en)
   'bill_statsReport': 'Statistics Report',
+
+  // Edit bill screen
+  'bill_addBill': 'Add Bill',
+  'bill_amountMustBePositive': 'Please enter a valid amount (must be greater than 0)',
+  'bill_pleaseEnterSubscriptionName': 'Please enter the subscription service name',
+  'bill_pleaseEnterSubscriptionDays': 'Please enter the subscription days',
+  'bill_titleHint': 'Leave blank to use category name',
+  'bill_enableSubscription': 'Enable Subscription',
+  'bill_enableSubscriptionHint': 'When enabled, a daily bill will be generated automatically',
+  'bill_subscriptionNameHint': 'e.g. Netflix membership',
+  'bill_subscriptionDays': 'Subscription Days',
+  'bill_subscriptionDaysHint': 'e.g. 30',
+  'bill_dailyAmount': 'Daily Amount',
+  'bill_perDaySuffix': ' / day',
 };
 }

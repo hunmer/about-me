@@ -4,8 +4,8 @@ import 'package:aboutme/design_system/design_system.dart';
 
 /// 设置分组：可选分组标题 + 一组设置条目
 ///
-/// 子项应为 [SettingsTile]（粉彩圆形图标 + 扁平行，参考稿风格），
-/// 组内条目之间以主题小间距排列。
+/// 参考稿风格：标题在容器外，条目收进一张次级底色墨线卡片；
+/// 子项应为 [SettingsTile]（粉彩圆形图标 + 扁平行）。
 class SettingsGroup extends StatelessWidget {
   final String? title;
   final List<Widget> children;
@@ -29,10 +29,22 @@ class SettingsGroup extends StatelessWidget {
               style: DsTypography.title.copyWith(color: theme.text),
             ),
           ),
-        for (int i = 0; i < children.length; i++) ...[
-          if (i > 0) SizedBox(height: theme.spacing.sm),
-          children[i],
-        ],
+        JellyBox(
+          color: theme.surfaceAlt,
+          radius: theme.radii.xxl,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < children.length; i++) ...[
+                if (i > 0) SizedBox(height: theme.spacing.sm),
+                children[i],
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }

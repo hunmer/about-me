@@ -150,4 +150,11 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_dataSettings': '数据管理',
   'settings_screen_appSection': '应用',
   'settings_screen_enterUsernameHint': '输入用户名',
+  'settings_screen_usageDuration': '使用时长',
+  'settings_screen_statDaysUsed': '使用天数',
+  'settings_screen_statPlugins': '插件',
+  'settings_screen_statVersion': '版本',
+  'settings_screen_durationDays': '@days 天 @hours 小时',
+  'settings_screen_durationHours': '@hours 小时 @minutes 分',
+  'settings_screen_durationMinutes': '@minutes 分钟',
 };

@@ -150,4 +150,11 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_dataSettings': 'Data Management',
   'settings_screen_appSection': 'App',
   'settings_screen_enterUsernameHint': 'Enter username',
+  'settings_screen_usageDuration': 'Usage time',
+  'settings_screen_statDaysUsed': 'Days used',
+  'settings_screen_statPlugins': 'Plugins',
+  'settings_screen_statVersion': 'Version',
+  'settings_screen_durationDays': '@days d @hours h',
+  'settings_screen_durationHours': '@hours h @minutes m',
+  'settings_screen_durationMinutes': '@minutes min',
 };
