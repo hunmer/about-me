@@ -78,6 +78,8 @@ class _UnlockDialogBody extends StatelessWidget {
       elevation: 0,
       child: Stack(
         clipBehavior: Clip.none,
+        // 透传 Dialog 内部的 minWidth 约束，避免内容收缩导致对话框尺寸变化
+        fit: StackFit.passthrough,
         children: [
           // 撒花动画：底边对齐对话框底边、按原始比例播放，允许超出弹窗
           Positioned(
