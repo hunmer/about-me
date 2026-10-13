@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -9,14 +10,14 @@ import 'package:aboutme/utils/image_utils.dart';
 /// 标签文件夹卡片
 ///
 /// 磨砂玻璃文件夹造型：前盖板压住底部，前几张图片从开口处伸出并扇形堆叠，
-/// 右下角可贴一个圆形图标贴纸，下方为标签名 + 图片数量。
+/// 右下角可贴一个圆形贴纸（图标/emoji/图片），下方为标签名 + 图片数量。
 class TagFolderCard extends StatelessWidget {
   const TagFolderCard({
     super.key,
     required this.tag,
     required this.imageUrls,
     required this.count,
-    this.stickerIcon,
+    this.sticker,
   });
 
   /// 标签名
@@ -28,8 +29,11 @@ class TagFolderCard extends StatelessWidget {
   /// 该标签下的图片总数
   final int count;
 
-  /// 右下角贴纸图标（可选）
-  final IconData? stickerIcon;
+  /// 右下角贴纸（可选）：
+  /// - `emoji:<字符>` → emoji 文字
+  /// - `img:<图片地址>` → 图片贴图
+  /// - 其他 → AppIcons.predefinedIcons 的图标键
+  final String? sticker;
 
   @override
   Widget build(BuildContext context) {
@@ -105,27 +109,12 @@ class TagFolderCard extends StatelessWidget {
                     ),
                   ),
 
-                  // 右下角图标贴纸
-                  if (stickerIcon != null)
+                  // 右下角贴纸
+                  if (sticker != null)
                     Positioned(
                       right: 10,
                       bottom: 10,
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: theme.paper,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.ink.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        child: Icon(
-                          stickerIcon,
-                          size: 16,
-                          color: theme.primaryText,
-                        ),
-                      ),
+                      child: _FolderSticker(sticker: sticker!, theme: theme),
                     ),
                 ],
               );
@@ -195,6 +184,49 @@ class TagFolderCard extends StatelessWidget {
             child: _FolderThumb(url: url, theme: theme),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 文件夹右下角圆形贴纸：emoji / 图片 / 图标三种形态
+class _FolderSticker extends StatelessWidget {
+  const _FolderSticker({required this.sticker, required this.theme});
+
+  final String sticker;
+  final AppThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmoji = sticker.startsWith('emoji:');
+    final isImage = sticker.startsWith('img:');
+
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: theme.paper,
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.ink.withValues(alpha: 0.12)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Center(
+        child:
+            isEmoji
+                ? Text(
+                  sticker.substring('emoji:'.length),
+                  style: const TextStyle(fontSize: 16),
+                )
+                : isImage
+                ? _FolderThumb(
+                  url: sticker.substring('img:'.length),
+                  theme: theme,
+                )
+                : Icon(
+                  AppIcons.predefinedIcons[sticker] ?? Icons.label_outline,
+                  size: 16,
+                  color: theme.primaryText,
+                ),
       ),
     );
   }

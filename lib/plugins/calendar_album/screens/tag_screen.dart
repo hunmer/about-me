@@ -77,17 +77,25 @@ class _TagScreenState extends State<TagScreen> {
     );
   }
 
-  /// 编辑文件夹图标：smoothsheet ModalSheet 底部抽屉 + 图标选择器
-  void _showFolderIconSheet(String tag, TagController tagController) {
+  /// 编辑文件夹贴纸：smoothsheet ModalSheet 底部抽屉 + 图标/表情/图片选择器
+  void _showFolderIconSheet(
+    String tag,
+    TagController tagController,
+    List<String> imageUrls,
+  ) {
     final theme = DSThemeBridge.resolve(context);
     SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'calendar_album_edit_folder_icon'.tr,
       backgroundColor: theme.surface,
       child: SizedBox(
-        height: 430,
+        height: 460,
         child: DSThemeBridge(
-          child: FolderIconSheet(tag: tag, tagController: tagController),
+          child: FolderIconSheet(
+            tag: tag,
+            tagController: tagController,
+            imageUrls: imageUrls,
+          ),
         ),
       ),
     );
@@ -173,7 +181,7 @@ class _TagScreenState extends State<TagScreen> {
                 tag: tag,
                 imageUrls: images,
                 count: images.length,
-                stickerIcon: tagController.getTagIcon(tag),
+                sticker: tagController.getTagSticker(tag),
               );
 
               return ArcContextMenu(
@@ -183,7 +191,9 @@ class _TagScreenState extends State<TagScreen> {
                   ArcMenuItem(
                     icon: DsIconKind.edit,
                     label: 'calendar_album_edit'.tr,
-                    onTap: () => _showFolderIconSheet(tag, tagController),
+                    onTap:
+                        () =>
+                            _showFolderIconSheet(tag, tagController, images),
                   ),
                   ArcMenuItem(
                     icon: DsIconKind.image,

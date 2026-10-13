@@ -143,7 +143,7 @@ class TagController extends ChangeNotifier {
     }
   }
 
-  /// 设置/移除标签文件夹贴纸图标（iconName 为 AppIcons.predefinedIcons 的键）
+  /// 设置/移除标签文件夹贴纸（值为图标键，或 `emoji:<字符>` / `img:<图片地址>`）
   Future<void> setTagIcon(String tag, String? iconName) async {
     if (iconName == null) {
       tagIcons.remove(tag);
@@ -155,10 +155,15 @@ class TagController extends ChangeNotifier {
     onTagsChanged?.call();
   }
 
-  /// 获取标签文件夹贴纸图标（未设置返回 null）
+  /// 获取标签文件夹贴纸原始值（图标键 / emoji: / img: 前缀，未设置返回 null）
+  String? getTagSticker(String tag) => tagIcons[tag];
+
+  /// 获取标签文件夹贴纸图标（非图标类贴纸或未设置返回 null）
   IconData? getTagIcon(String tag) {
     final name = tagIcons[tag];
-    if (name == null) return null;
+    if (name == null || name.startsWith('emoji:') || name.startsWith('img:')) {
+      return null;
+    }
     return AppIcons.predefinedIcons[name];
   }
 

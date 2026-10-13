@@ -156,9 +156,13 @@ class CalendarAlbumTranslationsEn {
 
     // Tag folders
     'calendar_album_open_folder': 'Open',
-    'calendar_album_edit_folder_icon': 'Edit Folder Icon',
-    'calendar_album_remove_folder_icon': 'Remove Icon',
-    'calendar_album_folder_icon_current': 'Current icon',
+    'calendar_album_edit_folder_icon': 'Edit Folder Sticker',
+    'calendar_album_remove_folder_icon': 'Remove Sticker',
+    'calendar_album_folder_icon_current': 'Current sticker',
+    'calendar_album_sticker_tab_icon': 'Icon',
+    'calendar_album_sticker_tab_emoji': 'Emoji',
+    'calendar_album_sticker_tab_image': 'Image',
+    'calendar_album_folder_no_images': 'No images under this tag',
     'calendar_album_tags_empty_hint':
         'Folders appear here once you add tags to entries',
     'calendar_album_route_title_tags': 'Tags - @count total',

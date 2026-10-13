@@ -153,9 +153,13 @@ class CalendarAlbumTranslationsZh {
 
     // 标签文件夹
     'calendar_album_open_folder': '打开',
-    'calendar_album_edit_folder_icon': '编辑文件夹图标',
-    'calendar_album_remove_folder_icon': '移除图标',
-    'calendar_album_folder_icon_current': '当前图标',
+    'calendar_album_edit_folder_icon': '编辑文件夹贴纸',
+    'calendar_album_remove_folder_icon': '移除贴纸',
+    'calendar_album_folder_icon_current': '当前贴纸',
+    'calendar_album_sticker_tab_icon': '图标',
+    'calendar_album_sticker_tab_emoji': '表情',
+    'calendar_album_sticker_tab_image': '图片',
+    'calendar_album_folder_no_images': '该标签下暂无图片',
     'calendar_album_tags_empty_hint': '在日记中添加标签后，这里会生成对应的文件夹',
     'calendar_album_route_title_tags': '标签管理 - 共@count个标签',
     'calendar_album_view_photo': '查看',

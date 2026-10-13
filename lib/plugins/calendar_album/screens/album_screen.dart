@@ -11,6 +11,7 @@ import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:provider/provider.dart';
+import 'package:skribble/skribble.dart';
 import 'dart:io';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
@@ -356,16 +357,6 @@ class _AlbumScreenState extends State<AlbumScreen> {
     );
   }
 
-  Widget _buildDefaultCover() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Icon(Icons.image_not_supported, color: Colors.grey),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<CalendarController>(
@@ -408,15 +399,16 @@ class _AlbumScreenState extends State<AlbumScreen> {
                 )
               : GridView.builder(
                   padding: EdgeInsets.fromLTRB(
-                    8,
-                    8,
-                    8,
-                    8 + MediaQuery.paddingOf(context).bottom,
+                    16,
+                    16,
+                    16,
+                    16 + MediaQuery.paddingOf(context).bottom,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 1,
                   ),
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
@@ -453,7 +445,10 @@ class _AlbumScreenState extends State<AlbumScreen> {
 
                     return ArcContextMenu(
                       onTap: openViewer,
-                      preview: _buildImage(record.url),
+                      preview: _PhotoCell.buildPlainImage(
+                        context,
+                        record.url,
+                      ),
                       items: [
                         ArcMenuItem(
                           icon: DsIconKind.image,
@@ -466,10 +461,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                           onTap: editEntry,
                         ),
                       ],
-                      child: Hero(
-                        tag: record.url,
-                        child: _buildImage(record.url),
-                      ),
+                      child: _PhotoCell(imageUrl: record.url),
                     );
                   },
                 ),
@@ -477,23 +469,38 @@ class _AlbumScreenState extends State<AlbumScreen> {
       },
     );
   }
+}
 
-  Widget _buildImage(String imageUrl) {
-    if (imageUrl.isEmpty) {
-      return _buildDefaultCover();
-    }
+/// 拍立得式照片格：随机微旋转 + 墨线描边纸框 + 圆角 + contain 完整显示，
+/// 挂载时入场放大（easeOutBack）并描画墨线（WiredDraw）
+class _PhotoCell extends StatefulWidget {
+  const _PhotoCell({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  State<_PhotoCell> createState() => _PhotoCellState();
+
+  /// 无框纯图渲染（ArcContextMenu.preview 复用），contain 完整显示
+  static Widget buildPlainImage(BuildContext context, String imageUrl) {
+    final theme = DSThemeBridge.resolve(context);
+
+    Widget placeholder() => Container(
+      color: theme.backgroundAlt,
+      alignment: Alignment.center,
+      child: DsIcon(DsIconKind.image, size: 28, color: theme.textSub),
+    );
+
+    if (imageUrl.isEmpty) return placeholder();
 
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint('Error loading network image: $error');
-            return _buildDefaultCover();
-          },
-        ),
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Error loading network image: $error');
+          return placeholder();
+        },
       );
     }
     return FutureBuilder<String>(
@@ -502,21 +509,101 @@ class _AlbumScreenState extends State<AlbumScreen> {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final file = File(snapshot.data!);
           if (file.existsSync()) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                file,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Error loading local image: $error');
-                  return _buildDefaultCover();
-                },
-              ),
+            return Image.file(
+              file,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Error loading local image: $error');
+                return placeholder();
+              },
             );
           }
         }
-        return _buildDefaultCover();
+        return placeholder();
       },
+    );
+  }
+}
+
+class _PhotoCellState extends State<_PhotoCell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scaleController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+  );
+
+  /// 0.6 → 1，easeOutBack 轻微过冲的果冻感
+  late final Animation<double> _scale = Tween<double>(
+    begin: 0.6,
+    end: 1.0,
+  ).animate(_scaleController.drive(CurveTween(curve: Curves.easeOutBack)));
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 遵守 WiredMotion 边界与系统"减弱动态效果"：禁用时跳过入场
+    if (!WiredMotion.enabledOf(context)) {
+      _scaleController.value = 1;
+      _started = true;
+    } else if (!_started) {
+      _started = true;
+      _scaleController.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  /// 图片 url 哈希 → ±1 确定性随机值：过滤/排序重排后同图角度不变
+  static double _unitRandom(String source) {
+    final h = source.hashCode & 0x7fffffff;
+    return (h % 1000 - 500) / 500;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final angle = _unitRandom(widget.imageUrl) * 0.045; // ±2.6° 微旋转
+    final seed = widget.imageUrl.hashCode & 0x7fffffff;
+
+    // WiredDraw 让纸框墨线在挂载时描画出来，与放大入场同步
+    return WiredDraw(
+      duration: const Duration(milliseconds: 500),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Transform.rotate(
+          angle: angle,
+          child: Container(
+            // 纸边：墨线框与照片之间的留白（描边贴容器边界，padding 只作用于内容）
+            padding: const EdgeInsets.all(7),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: theme.paper,
+              radius: BorderRadius.circular(14),
+              seed: seed,
+              progress: WiredDrawTransition.progressOf(context),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: ColoredBox(
+                // contain 留白区域的底色，与纸边区分
+                color: theme.backgroundAlt,
+                child: SizedBox.expand(
+                  child: Hero(
+                    tag: widget.imageUrl,
+                    child: _PhotoCell.buildPlainImage(context, widget.imageUrl),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
