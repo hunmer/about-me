@@ -62,7 +62,14 @@ mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
                           return Center(
                             child: DSChip(
                               label: folder.name,
-                              icon: DsIconKind.layers,
+                              leading: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: folder.color,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                               onSelected: (_) => navigateToFolder(folder),
                             ),
                           );

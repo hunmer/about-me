@@ -1098,13 +1098,13 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   Widget _imageFallback(AppThemeData theme) => Container(
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     color: theme.surfaceAlt,
-    child: DsIcon(DsIconKind.image, size: 18, color: theme.textSub),
+    child: DsIcon(DsIconKind.image, size: 16, color: theme.textSub),
   );
 
-  /// 首图缩略图：白底圆角边框 + 左右随机小角度倾斜（拍立得效果）。
+  /// 首图缩略图：白底 + 手绘墨线描边 + 左右随机小角度倾斜（拍立得效果）。
   /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
   Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) {
     const tilts = [-0.10, -0.05, 0.05, 0.10];
@@ -1113,11 +1113,13 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
       angle: angle,
       child: Container(
         padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: theme.stroke.withValues(alpha: 0.6)),
-          boxShadow: DsShadows.soft,
+        // 小控件分档：纯色实底 + 墨线抖动描边（手绘风无柔影）
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(8),
+          strokeWidth: 1.2,
+          seed: day.day,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
@@ -1125,8 +1127,8 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
           // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
           child: Image(
             image: ImageUtils.createImageProvider(imagePath),
-            width: 44,
-            height: 44,
+            width: 36,
+            height: 36,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _imageFallback(theme),
           ),

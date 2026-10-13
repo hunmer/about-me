@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Note {
   static const String typeText = 'text';
   static const String typeTodo = 'todo';
@@ -16,6 +18,9 @@ class Note {
   /// 扩展元数据（JSON 字符串），待办清单用它记录条目完成时间等
   String? meta;
 
+  /// 可选标记色（ARGB），null = 未指定（跟随主题）
+  Color? color;
+
   Note({
     required this.id,
     required this.title,
@@ -26,6 +31,7 @@ class Note {
     this.tags = const [],
     this.type = typeText,
     this.meta,
+    this.color,
   });
 
   bool get isTodo => type == typeTodo;
@@ -41,6 +47,7 @@ class Note {
       'tags': tags,
       'type': type,
       'meta': meta,
+      'color': color?.value,
     };
   }
 
@@ -55,6 +62,7 @@ class Note {
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       type: (json['type'] as String?) ?? typeText,
       meta: json['meta'] as String?,
+      color: json['color'] == null ? null : Color(json['color'] as int),
     );
   }
 
@@ -67,6 +75,7 @@ class Note {
     List<String>? tags,
     String? type,
     String? meta,
+    Color? color,
   }) {
     return Note(
       id: id,
@@ -78,6 +87,7 @@ class Note {
       tags: tags ?? this.tags,
       type: type ?? this.type,
       meta: meta ?? this.meta,
+      color: color ?? this.color,
     );
   }
 }

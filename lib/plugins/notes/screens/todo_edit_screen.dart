@@ -4,12 +4,13 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
+import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 待办编辑底部抽屉：标题 + 勾选清单条目（支持拖拽排序）
 class TodoEditSheet extends StatefulWidget {
   final Note? note;
-  final Function(String title, List<TodoItem> items, TodoMeta meta) onSave;
+  final Function(String title, List<TodoItem> items, TodoMeta meta, Color? color) onSave;
 
   const TodoEditSheet({super.key, this.note, required this.onSave});
 
@@ -17,7 +18,12 @@ class TodoEditSheet extends StatefulWidget {
   static Future<void> show({
     required BuildContext context,
     Note? note,
-    required Future<void> Function(String title, List<TodoItem> items, TodoMeta meta) onSave,
+    required Future<void> Function(
+      String title,
+      List<TodoItem> items,
+      TodoMeta meta,
+      Color? color,
+    ) onSave,
   }) {
     return SmoothBottomSheet.show(
       context: context,
@@ -37,7 +43,9 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
   late final TextEditingController _titleController;
   late List<TextEditingController> _itemControllers;
   late List<bool> _checkedStates;
+  late List<FocusNode> _itemFocusNodes;
   late TodoMeta _meta;
+  Color? _pickedColor;
 
   bool get _isEditing => widget.note != null;
 
@@ -49,7 +57,9 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     if (items.isEmpty) items.add(TodoItem(text: ''));
     _itemControllers = items.map((item) => TextEditingController(text: item.text)).toList();
     _checkedStates = items.map((item) => item.checked).toList();
+    _itemFocusNodes = List.generate(items.length, (_) => FocusNode());
     _meta = TodoMeta.parse(widget.note?.meta);
+    _pickedColor = widget.note?.color;
   }
 
   @override
@@ -58,6 +68,9 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     for (var controller in _itemControllers) {
       controller.dispose();
     }
+    for (var node in _itemFocusNodes) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -65,6 +78,20 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     setState(() {
       _itemControllers.add(TextEditingController());
       _checkedStates.add(false);
+      _itemFocusNodes.add(FocusNode());
+    });
+  }
+
+  /// 回车快速录入：在 [index] 条目后插入空行并聚焦（空条目回车不新建）
+  void _insertItemAfter(int index) {
+    if (_itemControllers[index].text.trim().isEmpty) return;
+    setState(() {
+      _itemControllers.insert(index + 1, TextEditingController());
+      _checkedStates.insert(index + 1, false);
+      _itemFocusNodes.insert(index + 1, FocusNode());
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _itemFocusNodes[index + 1].requestFocus();
     });
   }
 
@@ -72,6 +99,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     setState(() {
       _itemControllers.removeAt(index).dispose();
       _checkedStates.removeAt(index);
+      _itemFocusNodes.removeAt(index).dispose();
     });
     if (_itemControllers.isEmpty) _addItem();
   }
@@ -83,6 +111,8 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
       _itemControllers.insert(newIndex, controller);
       final checked = _checkedStates.removeAt(oldIndex);
       _checkedStates.insert(newIndex, checked);
+      final node = _itemFocusNodes.removeAt(oldIndex);
+      _itemFocusNodes.insert(newIndex, node);
     });
   }
 
@@ -109,7 +139,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     }
     // 清理已删除条目的完成时间记录
     _meta.retainTexts(items.map((item) => item.text).toSet());
-    await widget.onSave(_titleController.text, items, _meta);
+    await widget.onSave(_titleController.text, items, _meta, _pickedColor);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -148,6 +178,13 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
                 child: TextField(
                   controller: _titleController,
                   autofocus: !_isEditing,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) {
+                    // 标题回车流转到第一个条目
+                    if (_itemFocusNodes.isNotEmpty) {
+                      _itemFocusNodes.first.requestFocus();
+                    }
+                  },
                   style: DsTypography.title.copyWith(color: theme.text),
                   decoration: InputDecoration(
                     hintText: 'notes_todoTitleHint'.tr,
@@ -169,6 +206,13 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
                     child: ScaleTransition(scale: animation.drive(Tween(begin: 1.02, end: 1.0)), child: child),
                   ),
                   itemBuilder: (context, index) => _buildItemRow(context, index),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: NoteColorPickerRow(
+                  selected: _pickedColor,
+                  onChanged: (color) => setState(() => _pickedColor = color),
                 ),
               ),
               Padding(
@@ -214,6 +258,9 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
               children: [
                 TextField(
                   controller: _itemControllers[index],
+                  focusNode: _itemFocusNodes[index],
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => _insertItemAfter(index),
                   style: DsTypography.body.copyWith(
                     color: theme.textSub,
                     decoration: _checkedStates[index] ? TextDecoration.lineThrough : null,

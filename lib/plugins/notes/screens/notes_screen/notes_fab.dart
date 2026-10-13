@@ -46,12 +46,13 @@ mixin NotesFab on NotesMainViewState, FolderOperations {
                     });
                     NoteQuickCreateSheet.show(
                       context: context,
-                      onSave: (title, content, tags) async {
+                      onSave: (title, content, tags, color) async {
                         await plugin.controller.createNote(
                           title,
                           content,
                           currentFolderId,
                           tags: tags,
+                          color: color,
                         );
                         loadCurrentFolder();
                       },
@@ -68,13 +69,14 @@ mixin NotesFab on NotesMainViewState, FolderOperations {
                     });
                     TodoEditSheet.show(
                       context: context,
-                      onSave: (title, items, meta) async {
+                      onSave: (title, items, meta, color) async {
                         await plugin.controller.createNote(
                           title,
                           TodoItem.encodeList(items),
                           currentFolderId,
                           type: Note.typeTodo,
                           meta: meta.toJson(),
+                          color: color,
                         );
                         loadCurrentFolder();
                       },

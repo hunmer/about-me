@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'notes_screen_state.dart';
 
@@ -10,9 +11,13 @@ mixin FolderOperations on NotesMainViewState {
   Future<void> createNewFolder() async {
     final parentFolderName = currentFolder?.name ?? 'notes_root'.tr;
     final result = await _FolderNameSheet.show(context, parentFolderName);
-    if (result != null && result.isNotEmpty) {
+    if (result != null && result.$1.isNotEmpty) {
       // 使用 currentFolderId 作为父文件夹 ID
-      await plugin.controller.createFolder(result, currentFolderId);
+      await plugin.controller.createFolder(
+        result.$1,
+        currentFolderId,
+        color: result.$2,
+      );
       loadCurrentFolder();
     }
   }
@@ -122,14 +127,17 @@ mixin FolderOperations on NotesMainViewState {
   }
 }
 
-/// 新建文件夹命名底部抽屉，返回输入的名称（取消返回 null）
+/// 新建文件夹命名底部抽屉，返回 (名称, 颜色)（取消返回 null）
 class _FolderNameSheet extends StatefulWidget {
   final String parentFolderName;
 
   const _FolderNameSheet({required this.parentFolderName});
 
-  static Future<String?> show(BuildContext context, String parentFolderName) {
-    return SmoothBottomSheet.show<String>(
+  static Future<(String, Color?)?> show(
+    BuildContext context,
+    String parentFolderName,
+  ) {
+    return SmoothBottomSheet.show<(String, Color?)>(
       context: context,
       isScrollControlled: true,
       builder: (context) => Padding(
@@ -146,6 +154,7 @@ class _FolderNameSheet extends StatefulWidget {
 class _FolderNameSheetState extends State<_FolderNameSheet> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  Color? _pickedColor;
 
   @override
   void initState() {
@@ -165,7 +174,7 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
 
   void _confirm() {
     if (_controller.text.isNotEmpty) {
-      Navigator.pop(context, _controller.text);
+      Navigator.pop(context, (_controller.text, _pickedColor));
     }
   }
 
@@ -199,6 +208,11 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
                   focusNode: _focusNode,
                   hint: 'notes_folderNameHint'.tr,
                   onSubmitted: (value) => _confirm(),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                NoteColorPickerRow(
+                  selected: _pickedColor,
+                  onChanged: (color) => setState(() => _pickedColor = color),
                 ),
                 SizedBox(height: theme.spacing.lg),
                 Row(

@@ -3,12 +3,16 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
-import 'package:aboutme/core/utils/icon_utils.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String searchQuery;
+  final bool isGridView;
 
-  const SearchResultsScreen({super.key, required this.searchQuery});
+  const SearchResultsScreen({
+    super.key,
+    required this.searchQuery,
+    this.isGridView = true,
+  });
 
   @override
   State<SearchResultsScreen> createState() => _SearchResultsScreenState();
@@ -86,41 +90,45 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           // SuperCupertinoNavigationWrapper 搜索体内无 AppTheme，DS 组件先过桥
           child: Builder(
             builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return ListView.builder(
-                padding: const EdgeInsets.all(8),
-                itemCount: filteredGoals.length,
-                itemBuilder: (context, index) {
-                  final goal = filteredGoals[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: DSListItem(
-                      title: goal.name,
-                      subtitle:
-                          '${goal.group} • ${goal.currentValue.toStringAsFixed(0)}/${goal.targetValue} ${goal.unitType}',
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: theme.primary.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(child: _buildGoalIcon(theme, goal)),
-                      ),
-                      // 空心圆未完成态无 DS 对应（已知图标缺口），保留 Material 图标对
-                      trailing: Icon(
-                        goal.isCompleted
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: goal.isCompleted ? theme.success : theme.textSub,
-                        size: 24,
-                      ),
+              final controller = Provider.of<TrackerController>(context);
+              // 搜索结果跟随主界面视图模式：网格卡片 / 列表卡片（水平波纹）
+              if (widget.isGridView) {
+                return GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 190, // 与 GoalCard 固定高度一致
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: filteredGoals.length,
+                  itemBuilder: (context, index) {
+                    final goal = filteredGoals[index];
+                    return GoalCard(
+                      goal: goal,
+                      controller: controller,
                       onTap:
                           () => TrackerPlugin.instance.openGoalDetail(
                             context,
                             goal,
                           ),
-                    ),
+                    );
+                  },
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: filteredGoals.length,
+                itemBuilder: (context, index) {
+                  final goal = filteredGoals[index];
+                  return GoalListCard(
+                    goal: goal,
+                    controller: controller,
+                    onTap:
+                        () => TrackerPlugin.instance.openGoalDetail(
+                          context,
+                          goal,
+                        ),
                   );
                 },
               );
@@ -154,23 +162,5 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
       return false;
     }).toList();
-  }
-
-  Widget _buildGoalIcon(AppThemeData theme, Goal goal) {
-    // 尝试解析图标代码点，使用 IconData 显示（goal.icon 为持久化数据，保留 Material）
-    try {
-      final codePoint = int.tryParse(goal.icon);
-      if (codePoint != null) {
-        return Icon(
-          dynamicIconData(codePoint, fontFamily: 'MaterialIcons'),
-          size: 20,
-          color: theme.primary,
-        );
-      }
-    } catch (e) {
-      // 图标解析失败，使用默认图标
-    }
-    // 默认图标（与解析结果同为 Material 图标，保持一致）
-    return Icon(Icons.track_changes, size: 20, color: theme.textSub);
   }
 }

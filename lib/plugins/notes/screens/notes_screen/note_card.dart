@@ -102,6 +102,8 @@ class NoteCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         seed: seed,
         progress: progress,
+        // 笔记标记色作为排线淡彩（未指定时用主题默认）
+        hachureColor: note.color?.withValues(alpha: theme.isDark ? 0.30 : 0.35),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

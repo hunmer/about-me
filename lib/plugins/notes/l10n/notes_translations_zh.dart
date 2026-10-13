@@ -25,6 +25,7 @@ final Map<String, String> notesTranslationsZh = {
   'notes_todoDoneAt': '完成于 {time}',
   'notes_quickContentHint': '输入笔记内容...',
   'notes_tagHint': '输入标签，回车添加',
+  'notes_color': '颜色',
   'notes_newFolder': '新建文件夹',
   'notes_editNote': '编辑',
   'notes_moveNote': '移动到',

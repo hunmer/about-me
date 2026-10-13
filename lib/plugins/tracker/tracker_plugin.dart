@@ -122,7 +122,7 @@ class _TrackerMainViewState extends State<TrackerMainView> {
                 color: theme.surface,
                 iconColor: theme.text,
                 tooltip: '切换视图',
-                onPressed: () => setState(() => _isGridView = !_isGridView),
+                onPressed: _toggleGridView,
               );
             },
           ),
@@ -152,7 +152,10 @@ class _TrackerMainViewState extends State<TrackerMainView> {
       ],
       searchBody: ChangeNotifierProvider.value(
         value: TrackerPlugin.instance.controller,
-        child: SearchResultsScreen(searchQuery: _searchQuery),
+        child: SearchResultsScreen(
+          searchQuery: _searchQuery,
+          isGridView: _isGridView,
+        ),
       ),
       body: ChangeNotifierProvider.value(
         value: TrackerPlugin.instance.controller,

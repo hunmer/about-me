@@ -33,15 +33,14 @@ mixin NoteOperations on NotesMainViewState {
       await TodoEditSheet.show(
         context: context,
         note: note,
-        onSave: (title, items, meta) async {
-          await plugin.controller.updateNote(
-            note.copyWith(
-              title: title,
-              content: TodoItem.encodeList(items),
-              meta: meta.toJson(),
-              updatedAt: DateTime.now(),
-            ),
-          );
+        onSave: (title, items, meta, color) async {
+          // 直接更新原对象字段（copyWith 无法把已有颜色清回 null）
+          note.title = title;
+          note.content = TodoItem.encodeList(items);
+          note.meta = meta.toJson();
+          note.color = color;
+          note.updatedAt = DateTime.now();
+          await plugin.controller.updateNote(note);
         },
       );
       loadCurrentFolder();

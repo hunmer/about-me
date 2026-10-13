@@ -2,17 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签
+/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签 + 标记色
 class NoteQuickCreateSheet extends StatefulWidget {
-  final Future<void> Function(String title, String content, List<String> tags) onSave;
+  final Future<void> Function(
+    String title,
+    String content,
+    List<String> tags,
+    Color? color,
+  ) onSave;
 
   const NoteQuickCreateSheet({super.key, required this.onSave});
 
   static Future<void> show({
     required BuildContext context,
-    required Future<void> Function(String title, String content, List<String> tags) onSave,
+    required Future<void> Function(
+      String title,
+      String content,
+      List<String> tags,
+      Color? color,
+    ) onSave,
   }) {
     return SmoothBottomSheet.show(
       context: context,
@@ -34,6 +45,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
   final TextEditingController _tagInputController = TextEditingController();
   final FocusNode _contentFocusNode = FocusNode();
   List<String> _tags = [];
+  Color? _pickedColor;
 
   @override
   void dispose() {
@@ -59,6 +71,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
       _titleController.text,
       _contentController.text,
       List.of(_tags),
+      _pickedColor,
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -168,6 +181,13 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
                     ],
                   ),
                 ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                child: NoteColorPickerRow(
+                  selected: _pickedColor,
+                  onChanged: (color) => setState(() => _pickedColor = color),
+                ),
+              ),
               const SizedBox(height: 12),
             ],
           );

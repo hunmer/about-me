@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -220,6 +221,7 @@ class NotesController {
     String name,
     String? parentId, {
     String? customId,
+    Color? color,
   }) async {
     // 如果提供了自定义 ID,检查是否已存在
     if (customId != null) {
@@ -234,6 +236,8 @@ class NotesController {
       parentId: parentId,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      // 未选色时保持与 Folder 默认色一致
+      color: color ?? Colors.blue,
     );
     _folders[folder.id] = folder;
     await _saveFolders();
@@ -251,6 +255,7 @@ class NotesController {
     List<String> tags = const [],
     String type = Note.typeText,
     String? meta,
+    Color? color,
   }) async {
     // 如果提供了自定义 ID,检查是否已存在
     if (customId != null) {
@@ -270,6 +275,7 @@ class NotesController {
       tags: tags,
       type: type,
       meta: meta,
+      color: color,
     );
     _notes.putIfAbsent(folderId, () => []).add(note);
     _noteIds.add(note.id);
