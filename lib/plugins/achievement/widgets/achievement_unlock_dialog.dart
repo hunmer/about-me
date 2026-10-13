@@ -73,167 +73,166 @@ class _UnlockDialogBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox.expand(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // 全屏撒花动画，不阻挡交互
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Lottie.asset(
-                'assets/animations/Confetti.json',
-                fit: BoxFit.fill,
-                repeat: false,
-              ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // 撒花动画：底边对齐对话框底边、按原始比例播放，允许超出弹窗
+        Positioned(
+          left: -100,
+          right: -100,
+          bottom: 0,
+          child: IgnorePointer(
+            child: Lottie.asset(
+              'assets/animations/Confetti.json',
+              fit: BoxFit.contain,
+              repeat: false,
             ),
           ),
-          Dialog(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            child: ScaleInAnimation(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
+        ),
+        Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: ScaleInAnimation(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AchievementLevels.borderColor(
+                    args.level,
+                  ).withAlpha(120),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
                     color: AchievementLevels.borderColor(
                       args.level,
-                    ).withAlpha(120),
-                    width: 1.5,
+                    ).withAlpha(90),
+                    blurRadius: 32,
+                    spreadRadius: 2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AchievementLevels.borderColor(
-                        args.level,
-                      ).withAlpha(90),
-                      blurRadius: 32,
-                      spreadRadius: 2,
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 标题
+                  Text(
+                    'achievement_unlocked'.tr,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AchievementLevels.borderColor(args.level),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 标题
-                    Text(
-                      'achievement_unlocked'.tr,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AchievementLevels.borderColor(args.level),
+                  ),
+                  const SizedBox(height: 16),
+                  // 徽章
+                  AchievementBadge(
+                    iconAsset: args.iconAsset,
+                    level: args.level,
+                    size: 104,
+                  ),
+                  const SizedBox(height: 16),
+                  // 名称 + 等级
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
+                        color: theme.colorScheme.onSurface,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // 徽章
-                    AchievementBadge(
-                      iconAsset: args.iconAsset,
-                      level: args.level,
-                      size: 104,
-                    ),
-                    const SizedBox(height: 16),
-                    // 名称 + 等级
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        children: [
-                          TextSpan(text: args.name),
-                          const TextSpan(text: '  '),
-                          TextSpan(
-                            text: AchievementLevels.levelLabel(args.level),
-                            style: TextStyle(
-                              color: AchievementLevels.borderColor(args.level),
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // 本等级具体完成的事项
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withAlpha(100),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        args.condition,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withAlpha(200),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    // 获得日期
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.schedule, size: 14, color: theme.hintColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${'achievement_unlocked_at'.tr} ${_fmt(args.unlockedAt)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.hintColor,
+                        TextSpan(text: args.name),
+                        const TextSpan(text: '  '),
+                        TextSpan(
+                          text: AchievementLevels.levelLabel(args.level),
+                          style: TextStyle(
+                            color: AchievementLevels.borderColor(args.level),
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    // 积分奖励
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withAlpha(
-                          120,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.stars,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '+${args.points} ${'achievement_points'.tr}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  // 本等级具体完成的事项
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'achievement_tapToClose'.tr,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withAlpha(100),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      args.condition,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.hintColor.withAlpha(150),
-                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withAlpha(200),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 10),
+                  // 获得日期
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule, size: 14, color: theme.hintColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${'achievement_unlocked_at'.tr} ${_fmt(args.unlockedAt)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.hintColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // 积分奖励
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withAlpha(120),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.stars,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '+${args.points} ${'achievement_points'.tr}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'achievement_tapToClose'.tr,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.hintColor.withAlpha(150),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

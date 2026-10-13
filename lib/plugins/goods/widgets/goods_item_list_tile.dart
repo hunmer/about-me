@@ -196,12 +196,14 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
   }
 
   Widget _buildIcon() {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       width: 48,
       height: 48,
-      decoration: BoxDecoration(
-        color: widget.item.iconColor ?? Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: widget.item.iconColor ?? theme.surfaceAlt,
+        radius: BorderRadius.circular(8),
       ),
       child: Icon(widget.item.icon ?? Icons.inventory_2, color: Colors.white),
     );
@@ -224,9 +226,10 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
                     horizontal: 6,
                     vertical: 2,
                   ),
-                  decoration: BoxDecoration(
-                    color: theme.surfaceAlt,
-                    borderRadius: BorderRadius.circular(4),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surfaceAlt,
+                    radius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     tag,

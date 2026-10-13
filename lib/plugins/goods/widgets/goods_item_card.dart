@@ -268,18 +268,9 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
         ? widget.warehouseTitle!
         : (widget.item.tags.isNotEmpty ? widget.item.tags.first : '');
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      radius: BorderRadius.circular(20),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -303,17 +294,15 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
                       Positioned(
                         top: 6,
                         right: 6,
-                        child: Container(
+                        child: JellyBox(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            shape: BoxShape.circle,
-                          ),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          radius: theme.radii.circle,
                           alignment: Alignment.center,
                           child: Text(
                             '${widget.item.subItems.length}',
-                            style: const TextStyle(
+                            style: DsTypography.caption.copyWith(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -389,7 +378,7 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
 
   Widget _buildIcon() {
     return Container(
-      color: widget.item.iconColor ?? Colors.grey[200],
+      color: widget.item.iconColor ?? DSThemeBridge.resolve(context).surfaceAlt,
       width: double.infinity,
       height: double.infinity,
       child: Icon(

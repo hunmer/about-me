@@ -23,16 +23,9 @@ class WarehouseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return Container(
-      margin: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.stroke.withValues(alpha: 0.3),
-          width: 1.0,
-        ),
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      radius: BorderRadius.circular(16),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -108,15 +101,15 @@ class WarehouseCard extends StatelessWidget {
                                 horizontal: 12,
                                 vertical: 4,
                               ),
-                              decoration: BoxDecoration(
-                                color: theme.primary,
-                                borderRadius: BorderRadius.circular(12),
+                              decoration: dsSketchDecoration(
+                                theme: theme,
+                                fillColor: theme.primary,
+                                radius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '¥${_formatCurrency(_calculateTotalValue())}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.onPrimary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -150,18 +143,9 @@ class WarehouseCard extends StatelessWidget {
   }
 
   Widget _buildDefaultCover() {
+    // 手绘风格无渐变装饰：纯色实底（design.md §9.3）
     return Container(
-      decoration: BoxDecoration(
-        color: warehouse.iconColor.withAlpha(204), // 0.8 * 255 ≈ 204
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            warehouse.iconColor,
-            warehouse.iconColor.withAlpha(178), // 0.7 * 255 ≈ 178
-          ],
-        ),
-      ),
+      color: warehouse.iconColor.withAlpha(204), // 0.8 * 255 ≈ 204
       child: Center(
         child: Icon(
           warehouse.icon,

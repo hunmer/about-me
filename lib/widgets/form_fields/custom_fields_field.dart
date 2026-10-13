@@ -106,7 +106,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
             width: widget.inline ? widget.labelWidth : null,
             child: Text(
               widget.labelText!,
-              style: DsTypography.body.copyWith(color: theme.text),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ),
           const SizedBox(height: 8),
@@ -147,19 +147,25 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
             child: Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        _fields[i].key,
-                        style: DsTypography.body.copyWith(color: theme.text),
+                      Flexible(
+                        child: Text(
+                          _fields[i].key,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (_fields[i].value.isNotEmpty) ...[
-                        SizedBox(height: 2),
-                        Text(
-                          _fields[i].value,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _fields[i].value,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                            textAlign: TextAlign.end,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

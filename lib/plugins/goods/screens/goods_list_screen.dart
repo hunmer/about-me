@@ -291,60 +291,71 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     final maxController = TextEditingController(
       text: range['max']?.toString() ?? '',
     );
-    final theme = DSThemeBridge.resolve(context);
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'goods_priceRange'.tr,
-            style: DsTypography.heading.copyWith(color: theme.text),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: minController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'goods_minPrice'.tr,
-                    prefixText: '¥',
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    final newRange = Map<String, double?>.from(range);
-                    newRange['min'] = double.tryParse(value);
-                    onChanged(newRange);
-                  },
+    // 过滤面板内使用 DS 组件需经 DSThemeBridge 提供主题（design.md §8）
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'goods_priceRange'.tr,
+                  style: DsTypography.heading.copyWith(color: theme.text),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('-'),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: maxController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'goods_maxPrice'.tr,
-                    prefixText: '¥',
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    final newRange = Map<String, double?>.from(range);
-                    newRange['max'] = double.tryParse(value);
-                    onChanged(newRange);
-                  },
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSInput(
+                        controller: minController,
+                        label: 'goods_minPrice'.tr,
+                        keyboardType: TextInputType.number,
+                        prefix: Text(
+                          '¥',
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          final newRange = Map<String, double?>.from(range);
+                          newRange['min'] = double.tryParse(value);
+                          onChanged(newRange);
+                        },
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text('-'),
+                    ),
+                    Expanded(
+                      child: DSInput(
+                        controller: maxController,
+                        label: 'goods_maxPrice'.tr,
+                        keyboardType: TextInputType.number,
+                        prefix: Text(
+                          '¥',
+                          style: DsTypography.body.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          final newRange = Map<String, double?>.from(range);
+                          newRange['max'] = double.tryParse(value);
+                          onChanged(newRange);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -600,17 +611,14 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                   horizontal: 10,
                   vertical: 8,
                 ),
-                decoration: BoxDecoration(
-                  color: selected
+                // 手绘小控件：纯色实底 + 墨线描边（design.md §9.1）
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: selected
                       ? theme.primary.withValues(alpha: 0.08)
                       : theme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: selected
-                        ? theme.primary
-                        : theme.stroke.withValues(alpha: 0.3),
-                    width: selected ? 1.5 : 1.0,
-                  ),
+                  stroke: selected ? theme.primary : null,
+                  radius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,7 +667,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             children: [
               card(
-                icon: Icon(Icons.apps, size: 16, color: theme.primary),
+                icon: DsIcon(DsIconKind.grid, size: 16, color: theme.primary),
                 title: 'goods_allWarehouses'.tr,
                 subtitle: '$totalCount 件物品',
                 selected: _filterWarehouseId == null,
@@ -743,7 +751,14 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
           if (GoodsPlugin.instance.warehouses.isNotEmpty) _buildWarehouseStrip(),
           Expanded(
             child: allItems.isEmpty
-                ? Center(child: Text('goods_noItems'.tr))
+                ? Center(
+                  child: DSThemeBridge(
+                    child: DSEmptyState(
+                      emoji: '📦',
+                      title: 'goods_noItems'.tr,
+                    ),
+                  ),
+                )
                 : _isGridView
                 ? LayoutBuilder(
                     builder: (context, constraints) {

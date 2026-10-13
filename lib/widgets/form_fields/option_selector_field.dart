@@ -34,7 +34,7 @@ class OptionItem {
 /// 功能特性：
 /// - 支持单选功能
 /// - 支持多种布局方式（水平滚动或网格）
-/// - 手绘墨盒单元格（选中主题色实底，未选中淡底墨线框）
+/// - 手绘墨盒单元格（选中主题色实底，未选中透明底墨线框）
 /// - 适用于分类、状态等选择场景
 class OptionSelectorField extends StatelessWidget {
   /// 选项列表
@@ -101,7 +101,7 @@ class OptionSelectorField extends StatelessWidget {
     );
   }
 
-  /// 手绘墨盒选项单元格（选中主题色实底，未选中淡底墨线框）
+  /// 手绘墨盒选项单元格（选中主题色实底，未选中透明底墨线框）
   Widget _buildOptionCell(
     AppThemeData theme,
     OptionItem option, {
@@ -126,7 +126,7 @@ class OptionSelectorField extends StatelessWidget {
         decoration: dsSketchDecoration(
           theme: theme,
           radius: theme.radii.lg,
-          fillColor: isSelected ? accent : theme.surfaceAlt,
+          fillColor: isSelected ? accent : null,
           stroke: isSelected ? theme.ink : theme.textSub.withValues(alpha: 0.45),
           strokeWidth: 1.4,
         ),

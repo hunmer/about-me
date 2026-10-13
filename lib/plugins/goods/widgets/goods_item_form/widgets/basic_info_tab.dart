@@ -92,26 +92,16 @@ class BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 24),
 
         // 物品名称
-        FormFieldGroup(
-          children: [
-            TextInputField(
-              controller: controller.nameController,
-              labelText: 'goods_productName'.tr,
-              hintText: 'goods_enterProductName'.tr,
-              prefixIcon: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return DsIcon(DsIconKind.tag, size: 20, color: theme.textSub);
-                },
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'goods_pleaseEnterProductName'.tr;
-                }
-                return null;
-              },
-            ),
-          ],
+        TextInputField(
+          controller: controller.nameController,
+          labelText: 'goods_productName'.tr,
+          hintText: 'goods_enterProductName'.tr,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'goods_pleaseEnterProductName'.tr;
+            }
+            return null;
+          },
         ),
 
         const SizedBox(height: 16),
@@ -122,7 +112,6 @@ class BasicInfoTab extends StatelessWidget {
             _buildDateCard(
               context,
               'goods_purchaseDate'.tr,
-              Icons.calendar_today,
               controller.purchaseDate,
               (date) {
                 if (date != null) {
@@ -135,7 +124,6 @@ class BasicInfoTab extends StatelessWidget {
             _buildDateCard(
               context,
               'goods_expirationDate'.tr,
-              Icons.event_busy,
               controller.expirationDate,
               (date) {
                 controller.expirationDate = date;
@@ -277,7 +265,6 @@ class BasicInfoTab extends StatelessWidget {
   Widget _buildDateCard(
     BuildContext context,
     String label,
-    IconData icon,
     DateTime? date,
     Function(DateTime?) onDateSelected,
   ) {
@@ -285,7 +272,6 @@ class BasicInfoTab extends StatelessWidget {
       date: date,
       formattedDate: date != null ? DateFormat('yyyy-MM-dd').format(date) : '',
       placeholder: 'goods_selectDate'.tr,
-      icon: icon,
       inline: true,
       labelText: label,
       onTap: () => _showDatePicker(context, date, onDateSelected),

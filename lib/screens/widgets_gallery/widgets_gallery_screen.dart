@@ -1,3 +1,5 @@
+import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
+import 'package:aboutme/plugins/achievement/widgets/achievement_unlock_dialog.dart';
 import 'package:flutter/material.dart';
 
 /// 通用组件展示主界面
@@ -186,6 +188,24 @@ class WidgetsGalleryScreen extends StatelessWidget {
             title: '平滑底部弹窗',
             subtitle: 'SmoothBottomSheet',
             route: '/widgets_gallery/smooth_bottom_sheet',
+          ),
+          // 成就解锁弹窗（直接触发，含 Confetti 撒花动画）
+          ListTile(
+            leading: const Icon(Icons.emoji_events),
+            title: const Text('成就解锁弹窗'),
+            subtitle: const Text('AchievementUnlockDialog + Lottie Confetti'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => AchievementUnlockDialog.enqueue(
+              AchievementLevelUpEventArgs(
+                achievementId: 'A01',
+                name: '千言万语',
+                condition: '累计发送频道消息 100条',
+                iconAsset: 'assets/achievements/A01.webp',
+                level: 3,
+                unlockedAt: DateTime.now(),
+                points: 30,
+              ),
+            ),
           ),
 
           const Divider(),

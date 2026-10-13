@@ -22,9 +22,6 @@ class DatePickerField extends StatelessWidget {
   /// 占位符文本
   final String placeholder;
 
-  /// 左侧图标（持久化 IconData，由调用方配置）
-  final IconData icon;
-
   /// 标签文本（inline模式使用）
   final String? labelText;
 
@@ -40,7 +37,6 @@ class DatePickerField extends StatelessWidget {
     required this.onTap,
     required this.formattedDate,
     required this.placeholder,
-    this.icon = Icons.calendar_today_outlined,
     this.labelText,
     this.inline = false,
     this.labelWidth = 100,
@@ -97,7 +93,7 @@ class DatePickerField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // 统一手绘日历图标（[icon] 仅作持久化兼容，不参与渲染）
+            // 统一手绘日历图标
             DsIcon(DsIconKind.calendar, size: 20, color: theme.textSub),
             SizedBox(width: theme.spacing.sm),
             Expanded(
