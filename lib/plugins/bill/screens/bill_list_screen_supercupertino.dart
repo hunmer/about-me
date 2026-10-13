@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/bill/models/bill.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'bill_edit_screen.dart';
 import 'account_list_screen.dart';
 
@@ -404,21 +405,41 @@ class _BillListScreenSupercupertinoState
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
                 onPressed: () {
-                  NavigationHelper.openContainer<bool>(
-                    context,
-                    (BuildContext context) {
-                      return BillEditScreen(
-                        billPlugin: widget.billPlugin,
-                        accountId: widget.accountId,
-                        initialDate: _selectedDay ?? DateTime.now(),
-                        onSaved: () {
-                          _loadMonthBills();
-                        },
-                      );
-                    },
-                    closedColor: Colors.transparent,
-                    closedElevation: 0.0,
-                    closedShape: const RoundedRectangleBorder(),
+                  // 打开前在 DS 主题树内取底色（sheet 是新路由，取不到 DS 主题）
+                  final sheetTheme = DSThemeBridge.resolve(context);
+                  SmoothBottomSheet.show(
+                    context: context,
+                    backgroundColor: sheetTheme.surface,
+                    builder: (context) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 8),
+                          child: Text(
+                            'bill_addBill'.tr,
+                            style: DsTypography.title.copyWith(
+                              color: sheetTheme.text,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                        ),
+                        // 固定高度：BillEditScreen 内部 Expanded 布局需要
+                        // 有界高度约束
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.82,
+                          child: BillEditScreen(
+                            billPlugin: widget.billPlugin,
+                            accountId: widget.accountId,
+                            initialDate: _selectedDay ?? DateTime.now(),
+                            embeddedInSheet: true,
+                            onSaved: () {
+                              _loadMonthBills();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               );

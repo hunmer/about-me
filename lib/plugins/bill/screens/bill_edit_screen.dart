@@ -19,6 +19,10 @@ class BillEditScreen extends StatefulWidget {
   final VoidCallback? onCancel;
   final DateTime? initialDate;
 
+  /// 嵌入底部 SmoothBottomSheet 展示：无 AppBar、Scaffold 底色透明，
+  /// 底色与圆角由 sheet 容器提供（需固定高度避免无界约束）
+  final bool embeddedInSheet;
+
   // 预填充参数（用于快捷记账小组件）
   final String? initialCategory;
   final double? initialAmount;
@@ -32,6 +36,7 @@ class BillEditScreen extends StatefulWidget {
     this.onSaved,
     this.onCancel,
     this.initialDate,
+    this.embeddedInSheet = false,
     this.initialCategory,
     this.initialAmount,
     this.initialIsExpense,
@@ -232,39 +237,44 @@ class _BillEditScreenState extends State<BillEditScreen> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final backgroundColor = theme.surface;
-    final cardColor = theme.surfaceAlt;
     final primaryColor = theme.primary;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor.withValues(alpha: 0.8),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: Text(
-          widget.bill == null ? 'bill_addBill'.tr : 'bill_editBill'.tr,
-          style: DsTypography.title.copyWith(
-            color: theme.text,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        leading: DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.chevronLeft,
-                size: 40,
-                color: theme.surface,
-                iconColor: theme.text,
-                onPressed: widget.onCancel ?? () => Navigator.of(context).pop(),
-              );
-            },
-          ),
-        ),
-      ),
+      backgroundColor:
+          widget.embeddedInSheet ? Colors.transparent : backgroundColor,
+      appBar:
+          widget.embeddedInSheet
+              ? null
+              : AppBar(
+                backgroundColor: backgroundColor.withValues(alpha: 0.8),
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                centerTitle: true,
+                title: Text(
+                  widget.bill == null ? 'bill_addBill'.tr : 'bill_editBill'.tr,
+                  style: DsTypography.title.copyWith(
+                    color: theme.text,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                leading: DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 40,
+                        color: theme.surface,
+                        iconColor: theme.text,
+                        onPressed:
+                            widget.onCancel ??
+                            () => Navigator.of(context).pop(),
+                      );
+                    },
+                  ),
+                ),
+              ),
       body: Column(
         children: [
           Expanded(
@@ -294,11 +304,11 @@ class _BillEditScreenState extends State<BillEditScreen> {
                       const SizedBox(height: 16),
 
                       // 类型和金额卡片
-                      _buildTypeAndAmountCard(fields, cardColor, primaryColor),
+                      _buildTypeAndAmountCard(fields, primaryColor),
                       const SizedBox(height: 16),
 
                       // 分类选择卡片
-                      _buildCategoryCard(fields, cardColor, primaryColor),
+                      _buildCategoryCard(fields, primaryColor),
                       const SizedBox(height: 16),
 
                       // 日期和备注
@@ -306,7 +316,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
                       const SizedBox(height: 16),
 
                       // 订阅服务卡片
-                      _buildSubscriptionCard(fields, cardColor, primaryColor),
+                      _buildSubscriptionCard(fields, primaryColor),
                     ],
                   );
                 },
@@ -414,21 +424,13 @@ class _BillEditScreenState extends State<BillEditScreen> {
   }
 
   /// 构建类型和金额卡片
-  Widget _buildTypeAndAmountCard(
-    List<Widget> fields,
-    Color cardColor,
-    Color primaryColor,
-  ) {
+  Widget _buildTypeAndAmountCard(List<Widget> fields, Color primaryColor) {
     // 获取类型选择器和金额输入框的字段
     final typeField = fields[0];
     final amountField = fields[1];
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         children: [
           typeField,
@@ -443,18 +445,10 @@ class _BillEditScreenState extends State<BillEditScreen> {
   }
 
   /// 构建分类选择卡片
-  Widget _buildCategoryCard(
-    List<Widget> fields,
-    Color cardColor,
-    Color primaryColor,
-  ) {
+  Widget _buildCategoryCard(List<Widget> fields, Color primaryColor) {
     final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -492,10 +486,15 @@ class _BillEditScreenState extends State<BillEditScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormFieldGroup(showDividers: true, children: [dateField]),
+        FormFieldGroup(
+          showDividers: true,
+          showBackground: false,
+          children: [dateField],
+        ),
         const SizedBox(height: 16),
         FormFieldGroup(
           showDividers: false,
+          showBackground: false,
           children: [
             // 备注标题
             Padding(
@@ -516,11 +515,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
   }
 
   /// 构建订阅服务卡片
-  Widget _buildSubscriptionCard(
-    List<Widget> fields,
-    Color cardColor,
-    Color primaryColor,
-  ) {
+  Widget _buildSubscriptionCard(List<Widget> fields, Color primaryColor) {
     final theme = DSThemeBridge.resolve(context);
     final switchField = fields[5];
     final nameField = fields[6];
@@ -528,10 +523,6 @@ class _BillEditScreenState extends State<BillEditScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

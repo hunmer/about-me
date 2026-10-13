@@ -7,7 +7,11 @@ import 'package:aboutme/utils/image_utils.dart';
 /// 支持网络图片和本地图片的显示，自动处理相对路径转绝对路径。
 /// 特点：高度自适应，支持圆形裁剪，适用于列表项、图片卡片、头像等场景。
 /// 加载状态和错误状态有对应的占位显示。
-class AdaptiveImage extends StatelessWidget {
+///
+/// 路径解析 Future 在 State 中缓存（path 不变不重新解析），
+/// 避免父级高频 rebuild（如鼠标悬浮态）时 FutureBuilder 反复进入
+/// loading 态导致图片闪烁。
+class AdaptiveImage extends StatefulWidget {
   /// 图片路径（网络 URL 或本地相对路径）
   final String? imagePath;
 
@@ -54,43 +58,73 @@ class AdaptiveImage extends StatelessWidget {
   }
 
   @override
+  State<AdaptiveImage> createState() => _AdaptiveImageState();
+}
+
+/// 本地路径解析结果：绝对路径 + 文件存在性（异步检查，随 Future 缓存）
+typedef _ResolvedLocalImage = ({String absolutePath, bool exists});
+
+class _AdaptiveImageState extends State<AdaptiveImage> {
+  /// 缓存的本地路径解析 Future（避免每次 rebuild 重新解析与存在性 IO）
+  Future<_ResolvedLocalImage>? _resolveFuture;
+
+  /// 当前 Future 对应的 imagePath（变化时重新解析）
+  String? _resolvedFor;
+
+  Future<_ResolvedLocalImage>? _resolveFutureFor(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (AdaptiveImage.isNetworkImage(path) || path.startsWith('assets/')) {
+      return null;
+    }
+    if (_resolveFuture == null || _resolvedFor != path) {
+      _resolvedFor = path;
+      _resolveFuture = ImageUtils.getAbsolutePath(path).then(
+        (absolutePath) async {
+          // 异步检查文件存在性（解析期间文件被删除时不构造 Image.file）
+          final exists = absolutePath.isNotEmpty &&
+              await File(absolutePath).exists();
+          return (absolutePath: absolutePath, exists: exists);
+        },
+      );
+    }
+    return _resolveFuture;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final imagePath = widget.imagePath;
+
     // 空图片路径时显示默认图片或占位
-    if (imagePath == null || imagePath!.isEmpty) {
+    if (imagePath == null || imagePath.isEmpty) {
       return _buildDefaultOrError();
     }
 
-    final path = imagePath!;
-
     // 网络图片直接加载
-    if (isNetworkImage(path)) {
-      return _buildNetworkImage(path);
+    if (AdaptiveImage.isNetworkImage(imagePath)) {
+      return _buildNetworkImage(imagePath);
     }
 
     // 内置资源图片（assets/ 前缀）直接加载
-    if (path.startsWith('assets/')) {
+    if (imagePath.startsWith('assets/')) {
       return _buildImageWidget(
         Image.asset(
-          path,
-          width: width,
-          height: height,
-          fit: fit,
+          imagePath,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
           errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
         ),
       );
     }
 
-    // 本地图片需要转换路径
-    return FutureBuilder<String>(
-      future: ImageUtils.getAbsolutePath(path),
+    // 本地图片需要转换路径（含异步存在性检查，结果随 Future 缓存）
+    return FutureBuilder<_ResolvedLocalImage>(
+      future: _resolveFutureFor(imagePath),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasData) {
-            final absolutePath = snapshot.data!;
-            if (absolutePath.isEmpty) {
-              return _buildDefaultOrError();
-            }
-            return _buildLocalImage(absolutePath);
+          final resolved = snapshot.data;
+          if (resolved != null && resolved.exists) {
+            return _buildLocalImage(resolved.absolutePath);
           }
           return _buildDefaultOrError();
         }
@@ -104,9 +138,9 @@ class AdaptiveImage extends StatelessWidget {
     return _buildImageWidget(
       Image.network(
         path,
-        width: width,
-        height: height,
-        fit: fit,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return _buildLoadingIndicator();
@@ -116,19 +150,14 @@ class AdaptiveImage extends StatelessWidget {
     );
   }
 
-  /// 构建本地图片
+  /// 构建本地图片（存在性已在解析 Future 中异步判定，失败走 errorBuilder）
   Widget _buildLocalImage(String path) {
-    final file = File(path);
-    if (!file.existsSync()) {
-      return _buildDefaultOrError();
-    }
-
     return _buildImageWidget(
       Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: fit,
+        File(path),
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
         errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
       ),
     );
@@ -136,11 +165,11 @@ class AdaptiveImage extends StatelessWidget {
 
   /// 构建图片 Widget（应用形状和裁剪）
   Widget _buildImageWidget(Widget imageWidget) {
-    if (shape == BoxShape.circle) {
+    if (widget.shape == BoxShape.circle) {
       return ClipOval(child: imageWidget);
     }
     return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
+      borderRadius: BorderRadius.circular(widget.borderRadius),
       child: imageWidget,
     );
   }
@@ -148,16 +177,16 @@ class AdaptiveImage extends StatelessWidget {
   /// 加载指示器
   Widget _buildLoadingIndicator() {
     return SizedBox(
-      width: width ?? double.infinity,
-      height: height,
+      width: widget.width ?? double.infinity,
+      height: widget.height,
       child: Center(
         child: SizedBox(
           width: 24,
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: loadingColor != null
-                ? AlwaysStoppedAnimation<Color>(loadingColor!)
+            valueColor: widget.loadingColor != null
+                ? AlwaysStoppedAnimation<Color>(widget.loadingColor!)
                 : null,
           ),
         ),
@@ -167,15 +196,15 @@ class AdaptiveImage extends StatelessWidget {
 
   /// 错误状态图片
   Widget _buildErrorImage() {
-    return errorImage ??
+    return widget.errorImage ??
         Container(
-          width: width,
-          height: height,
+          width: widget.width,
+          height: widget.height,
           color: Colors.grey.shade200,
           child: Center(
             child: Icon(
               Icons.broken_image,
-              size: (width ?? height ?? 50).clamp(20.0, 50.0),
+              size: (widget.width ?? widget.height ?? 50).clamp(20.0, 50.0),
               color: Colors.grey.shade400,
             ),
           ),
@@ -184,8 +213,8 @@ class AdaptiveImage extends StatelessWidget {
 
   /// 默认图片或占位
   Widget _buildDefaultOrError() {
-    if (defaultImage != null) {
-      return defaultImage!;
+    if (widget.defaultImage != null) {
+      return widget.defaultImage!;
     }
     return _buildErrorImage();
   }

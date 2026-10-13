@@ -46,6 +46,7 @@ export 'components/page_indicator.dart';
 export 'components/popover.dart';
 export 'components/radio.dart';
 export 'components/rating.dart';
+export 'components/scribble_marks.dart';
 export 'components/segmented_control.dart';
 export 'components/select.dart';
 export 'components/skeleton.dart';

@@ -200,10 +200,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Text(
-                      item.title,
-                      textAlign: TextAlign.center,
-                      style: DsTypography.title.copyWith(color: theme.text),
+                    // 标题 + 倾斜手绘下划线
+                    Center(
+                      child: DsScribbleUnderline(
+                        child: Text(
+                          item.title,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                      ),
                     ),
                     if (item.author != null && item.author!.isNotEmpty) ...[
                       const SizedBox(height: 4),
@@ -234,11 +239,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        Expanded(
-                          child: _Section(
-                            title: '${'media_reviewSection'.tr} (${item.reviews.length})',
-                          ),
+                      Expanded(
+                        child: _Section(
+                          title: '${'media_reviewSection'.tr} (${item.reviews.length})',
+                          circled: true,
                         ),
+                      ),
                         DSIconButton(
                           icon: DsIconKind.plus,
                           size: 34,
@@ -314,19 +320,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title});
+  const _Section({required this.title, this.circled = false});
 
   final String title;
+
+  /// 是否用手绘椭圆圈选标题（点评区标记）
+  final bool circled;
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final text = Text(
+      title,
+      style: DsTypography.title.copyWith(fontSize: 16, color: theme.text),
+    );
     return Align(
       alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: DsTypography.title.copyWith(fontSize: 16, color: theme.text),
-      ),
+      child: circled ? DsScribbleCircle(child: text) : text,
     );
   }
 }

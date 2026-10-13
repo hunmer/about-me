@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
@@ -449,11 +450,36 @@ class _BillMainViewState extends State<BillMainView>
       // DSFab 内部取 AppTheme，需包桥
       child: DSFab(
         onPressed: () {
-          NavigationHelper.openContainerWithHero(
-            context,
-            (context) => BillEditScreen(
-              billPlugin: billPlugin,
-              accountId: billPlugin.selectedAccount?.id ?? '',
+          // 打开前在 DS 主题树内取底色（sheet 是新路由，取不到 DS 主题）
+          final theme = DSThemeBridge.resolve(context);
+          SmoothBottomSheet.show(
+            context: context,
+            backgroundColor: theme.surface,
+            builder: (context) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: Text(
+                    'bill_addBill'.tr,
+                    style: DsTypography.title.copyWith(
+                      color: theme.text,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+                // 固定高度：BillEditScreen 内部 Expanded 布局需要
+                // 有界高度约束
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.82,
+                  child: BillEditScreen(
+                    billPlugin: billPlugin,
+                    accountId: billPlugin.selectedAccount?.id ?? '',
+                    embeddedInSheet: true,
+                  ),
+                ),
+              ],
             ),
           );
         },
