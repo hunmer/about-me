@@ -26,7 +26,8 @@ const Map<String, String> live2dTranslationsZh = {
   // 主界面
   'live2d_searchPlaceholder': '搜索 Live2D 存档',
   'live2d_filterAllModels': '全部模型',
-  'live2d_noArchives': '还没有 Live2D 存档，点击右上角新建',
+  'live2d_noArchives': '还没有 Live2D 存档',
+  'live2d_noArchivesHint': '创建一个存档开始使用吧',
   'live2d_noMatchArchives': '没有匹配的存档',
   // 存档编辑表单
   'live2d_editArchiveTitle': '编辑存档',

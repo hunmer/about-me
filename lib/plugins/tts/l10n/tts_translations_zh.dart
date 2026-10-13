@@ -114,4 +114,32 @@ const Map<String, String> ttsTranslationsZh = {
   'tts_widgetDescription': '快速打开语音朗读',
   'tts_overviewName': 'TTS概览',
   'tts_overviewDescription': '显示TTS服务状态',
+
+  // 服务列表与编辑弹层
+  'tts_serviceActions': '服务操作',
+  'tts_noServicesHint': '点击右下角的按钮添加第一个服务',
+  'tts_pleaseEnterName': '请输入服务名称',
+  'tts_pleaseSelect': '请选择',
+  'tts_urlPlaceholderHint': '支持占位符: {text}, {voice}, {pitch}, {speed}, {volume}',
+  'tts_headersHint': '每行一个键值对，格式：Key: Value',
+  'tts_requestBodyHint': 'JSON 格式，支持占位符',
+  'tts_audioFieldPathHint': '用点号分隔的JSON路径',
+  'tts_apiKeyHint': '在 https://platform.minimaxi.com 获取',
+  'tts_voiceIdHint': '支持系统音色、复刻音色和文生音色',
+
+  // 语音性别
+  'tts_male': '男',
+  'tts_female': '女',
+  'tts_neutral': '中性',
+
+  // MiniMax 情绪
+  'tts_emotionHappy': '高兴',
+  'tts_emotionSad': '悲伤',
+  'tts_emotionAngry': '愤怒',
+  'tts_emotionFearful': '害怕',
+  'tts_emotionDisgusted': '厌恶',
+  'tts_emotionSurprised': '惊讶',
+  'tts_emotionCalm': '平静',
+  'tts_emotionFluent': '生动',
+  'tts_emotionWhisper': '低语',
 };

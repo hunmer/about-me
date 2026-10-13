@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -120,51 +123,75 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
           }),
       body: _buildBody(),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _createArchive,
+        // actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.plus,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'live2d_newArchive'.tr,
+                onPressed: _createArchive,
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
   Widget _buildBody() {
-    final archives = _filteredArchives;
-    if (plugin.archives.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.face_retouching_natural,
-                size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'live2d_noArchives'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(color: Colors.grey),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          final archives = _filteredArchives;
+          if (plugin.archives.isEmpty) {
+            return Center(
+              child: DSEmptyState(
+                emoji: '🐱',
+                title: 'live2d_noArchives'.tr,
+                message: 'live2d_noArchivesHint'.tr,
+                actionLabel: 'live2d_newArchive'.tr,
+                onAction: _createArchive,
+              ),
+            );
+          }
+          if (archives.isEmpty) {
+            return Center(
+              child: Text(
+                'live2d_noMatchArchives'.tr,
+                style: DsTypography.body.copyWith(color: theme.textSub),
+              ),
+            );
+          }
+          return GridView.builder(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
             ),
-          ],
-        ),
-      );
-    }
-    if (archives.isEmpty) {
-      return Center(child: Text('live2d_noMatchArchives'.tr));
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.82,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.82,
+            ),
+            itemCount: archives.length,
+            itemBuilder: (context, index) => WiredDraw(
+              child: _Live2DArchiveCard(
+                archive: archives[index],
+                agentName: agentNames[archives[index].agentId],
+                onTap: () => _openSettings(archives[index]),
+              ),
+            ),
+          );
+        },
       ),
-      itemCount: archives.length,
-      itemBuilder: (context, index) => _Live2DArchiveCard(
-            archive: archives[index],
-            agentName: agentNames[archives[index].agentId],
-            onTap: () => _openSettings(archives[index]),
-          ),
     );
   }
 }
@@ -182,87 +209,78 @@ class _Live2DArchiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    final theme = DSThemeBridge.resolve(context);
+    return DSCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           // Column 给子项的高度约束是无界的，StackFit.expand 无法在无界约束下
           // 展开，必须用 AspectRatio 先确定封面高度
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: AdaptiveImage(
-              key: ValueKey(archive.coverPath),
-              imagePath: archive.coverPath,
-              fit: BoxFit.cover,
-              borderRadius: 0,
-              defaultImage: _buildCoverPlaceholder(theme),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: AdaptiveImage(
+                key: ValueKey(archive.coverPath),
+                imagePath: archive.coverPath,
+                fit: BoxFit.cover,
+                borderRadius: 0,
+                defaultImage: _buildCoverPlaceholder(theme),
+              ),
             ),
           ),
           Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      archive.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    archive.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    archive.modelLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.caption.copyWith(
+                      color: theme.primary,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      archive.modelLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.smart_toy_outlined,
-                          size: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            agentName ?? 'live2d_noAgentSelected'.tr,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      DsIcon(DsIconKind.bot, size: 14, color: theme.textSub),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          agentName ?? 'live2d_noAgentSelected'.tr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCoverPlaceholder(ThemeData theme) => Container(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+  Widget _buildCoverPlaceholder(AppThemeData theme) => Container(
+        color: theme.hatch,
         alignment: Alignment.center,
-        child: Icon(
-          Icons.face_retouching_natural,
-          size: 40,
-          color: theme.colorScheme.primary.withValues(alpha: 0.6),
-        ),
+        child: DsIcon(DsIconKind.mood, size: 40, color: theme.primary),
       );
 }

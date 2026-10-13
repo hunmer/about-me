@@ -26,7 +26,8 @@ const Map<String, String> live2dTranslationsEn = {
   // Main screen
   'live2d_searchPlaceholder': 'Search Live2D profiles',
   'live2d_filterAllModels': 'All models',
-  'live2d_noArchives': 'No Live2D profiles yet, tap + to create one',
+  'live2d_noArchives': 'No Live2D profiles yet',
+  'live2d_noArchivesHint': 'Create one to get started',
   'live2d_noMatchArchives': 'No matching profiles',
   // Archive form
   'live2d_editArchiveTitle': 'Edit Profile',

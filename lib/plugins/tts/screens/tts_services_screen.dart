@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:aboutme/plugins/tts/tts_plugin.dart';
-import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
-import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
-import 'package:aboutme/plugins/tts/widgets/service_editor_dialog.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
+import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/widgets/service_editor_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// TTS服务列表界面
 class TTSServicesScreen extends StatefulWidget {
@@ -46,22 +47,21 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
   }
 
   Future<void> _deleteService(TTSServiceConfig service) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('tts_deleteService'.tr),
-        content: Text('tts_confirmDelete'.tr),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('tts_cancel'.tr),
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => DSDialog(
+            title: 'tts_deleteService'.tr,
+            message: 'tts_confirmDelete'.tr,
+            cancelText: 'tts_cancel'.tr,
+            confirmText: 'tts_deleteService'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('tts_deleteService'.tr),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -116,7 +116,7 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
 
   Future<void> _setDefaultService(TTSServiceConfig service) async {
     try {
-      // 获取所有服务,取消其他服务的默认状态
+      // 取消其他服务的默认状态
       for (var s in _services) {
         if (s.id != service.id && s.isDefault) {
           await _plugin.managerService.saveService(
@@ -125,7 +125,6 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
         }
       }
 
-      // 设置当前服务为默认
       await _plugin.managerService.saveService(
         service.copyWith(isDefault: true),
       );
@@ -141,12 +140,9 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
     }
   }
 
-  /// 创建新服务
-  Future<void> _createDefaultService() async {
-    final result = await showDialog<TTSServiceConfig>(
-      context: context,
-      builder: (context) => const ServiceEditorDialog(),
-    );
+  /// 创建新服务（smooth_sheets 底部弹层）
+  Future<void> _createService() async {
+    final result = await ServiceEditorSheet.show(context);
 
     if (result != null) {
       try {
@@ -164,12 +160,9 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
     }
   }
 
-  /// 编辑服务
+  /// 编辑服务（smooth_sheets 底部弹层）
   Future<void> _editService(TTSServiceConfig service) async {
-    final result = await showDialog<TTSServiceConfig>(
-      context: context,
-      builder: (context) => ServiceEditorDialog(service: service),
-    );
+    final result = await ServiceEditorSheet.show(context, service: service);
 
     if (result != null) {
       try {
@@ -187,227 +180,214 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SuperCupertinoNavigationWrapper(
-      title: Text(
-        'tts_servicesList'.tr,
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
-      ),
-      largeTitle: 'TTS 服务',
-
-      actions: [
-        IconButton(
-          icon: Icon(Icons.refresh, color: theme.iconTheme.color),
-          onPressed: _loadServices,
-          tooltip: 'tts_refresh'.tr,
-        ),
-      ],
-      body: Stack(
+  /// 服务操作菜单（底部 sheet）
+  ///
+  /// [themedContext] 需位于 DSThemeBridge 内，供 showDSBottomSheet 捕获主题
+  Future<void> _showServiceActions(
+    BuildContext themedContext,
+    TTSServiceConfig service,
+  ) {
+    return showDSBottomSheet(
+      context: themedContext,
+      title: 'tts_serviceActions'.tr,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _services.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.record_voice_over_outlined,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'tts_noServicesAvailable'.tr,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => _createDefaultService(),
-                        icon: const Icon(Icons.add),
-                        label: Text('tts_addService'.tr),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _services.length,
-                  itemBuilder: (context, index) {
-                    final service = _services[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        onTap: () => _editService(service),
-                        leading: Icon(
-                          service.type == TTSServiceType.system
-                              ? Icons.record_voice_over
-                              : Icons.cloud,
-                          color: service.isEnabled
-                              ? _plugin.color
-                              : Colors.grey,
-                        ),
-                        title: Row(
-                          children: [
-                            Expanded(child: Text(service.name)),
-                            if (service.isDefault)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'tts_defaultService'.tr,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                              service.type == TTSServiceType.system
-                                  ? 'tts_systemTts'.tr
-                                  : 'tts_httpService'.tr,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              service.isEnabled
-                                  ? 'tts_enabled'.tr
-                                  : 'tts_disabled'.tr,
-                              style: TextStyle(
-                                color: service.isEnabled
-                                    ? Colors.green
-                                    : Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'edit':
-                                _editService(service);
-                                break;
-                              case 'test':
-                                _testService(service);
-                                break;
-                              case 'toggle':
-                                _toggleService(service);
-                                break;
-                              case 'default':
-                                _setDefaultService(service);
-                                break;
-                              case 'delete':
-                                _deleteService(service);
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.edit, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('tts_editService'.tr),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 'test',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.play_arrow, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('tts_test'.tr),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'toggle',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    service.isEnabled
-                                        ? Icons.pause
-                                        : Icons.play_circle_outline,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    service.isEnabled
-                                        ? 'tts_disabled'.tr
-                                        : 'tts_enabled'.tr,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (!service.isDefault)
-                              PopupMenuItem(
-                                value: 'default',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.star_outline, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text('tts_setAsDefault'.tr),
-                                  ],
-                                ),
-                              ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.delete_outline,
-                                    size: 20,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'tts_deleteService'.tr,
-                                    style: const TextStyle(color: Colors.red),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-          // FAB 覆盖层
-          if (!_isLoading && _services.isNotEmpty)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: DSThemeBridge(
-                // DSFab 内部取 AppTheme，需包桥
-                child: DSFab(onPressed: () => _createDefaultService()),
-              ),
+          DSSheetAction(
+            icon: DsIconKind.edit,
+            label: 'tts_editService'.tr,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _editService(service);
+            },
+          ),
+          DSSheetAction(
+            icon: DsIconKind.play,
+            label: 'tts_test'.tr,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _testService(service);
+            },
+          ),
+          DSSheetAction(
+            icon: service.isEnabled ? DsIconKind.pause : DsIconKind.play,
+            label: service.isEnabled
+                ? 'tts_disableThisService'.tr
+                : 'tts_enableThisService'.tr,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _toggleService(service);
+            },
+          ),
+          if (!service.isDefault)
+            DSSheetAction(
+              icon: DsIconKind.star,
+              label: 'tts_setAsDefault'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _setDefaultService(service);
+              },
             ),
+          DSSheetAction(
+            icon: DsIconKind.trash,
+            label: 'tts_deleteService'.tr,
+            destructive: true,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _deleteService(service);
+            },
+          ),
         ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SuperCupertinoNavigationWrapper(
+      title: Text('tts_servicesList'.tr),
+      largeTitle: 'tts_servicesList'.tr,
+      enableLargeTitle: false,
+      actions: [
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.refresh,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'tts_refresh'.tr,
+                onPressed: _loadServices,
+              );
+            },
+          ),
+        ),
+      ],
+      body: _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoading) {
+      return DSThemeBridge(
+        child: Center(
+          child: DSLoadingDots(
+            size: 14,
+            label: 'tts_loading'.tr,
+          ),
+        ),
+      );
+    }
+
+    if (_services.isEmpty) {
+      return DSThemeBridge(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.paddingOf(context).bottom,
+            ),
+            child: DSEmptyState(
+              emoji: '🎙️',
+              title: 'tts_noServicesAvailable'.tr,
+              message: 'tts_noServicesHint'.tr,
+              actionLabel: 'tts_addService'.tr,
+              onAction: _createService,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        ListView.builder(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            // 底部给 FAB 留空间
+            bottom: MediaQuery.paddingOf(context).bottom + 96,
+          ),
+          itemCount: _services.length,
+          itemBuilder: (context, index) {
+            final service = _services[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              // 新列表项挂载即播墨线描画入场
+              child: WiredDraw(child: _buildServiceCard(service)),
+            );
+          },
+        ),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: DSThemeBridge(
+            // DSFab 内部取 AppTheme，需包桥
+            child: DSFab(onPressed: _createService),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceCard(TTSServiceConfig service) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          final accent = service.isEnabled ? theme.primary : theme.disabled;
+
+          return DSListItemCard(
+            title: service.name,
+            subtitle:
+                '${_typeLabel(service.type)} · '
+                '${service.isEnabled ? 'tts_enabled'.tr : 'tts_disabled'.tr}',
+            icon: _typeIcon(service.type),
+            iconColor: accent,
+            onTap: () => _editService(service),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (service.isDefault) ...[
+                  DSBadge(label: 'tts_defaultService'.tr, fontSize: 10),
+                  SizedBox(width: theme.spacing.sm),
+                ],
+                DSIconButton(
+                  icon: DsIconKind.more,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  onPressed: () => _showServiceActions(context, service),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _typeLabel(TTSServiceType type) {
+    switch (type) {
+      case TTSServiceType.system:
+        return 'tts_systemTts'.tr;
+      case TTSServiceType.http:
+        return 'tts_httpService'.tr;
+      case TTSServiceType.minimax:
+        return 'tts_minimaxService'.tr;
+    }
+  }
+
+  DsIconKind _typeIcon(TTSServiceType type) {
+    switch (type) {
+      case TTSServiceType.system:
+        return DsIconKind.mic;
+      case TTSServiceType.http:
+        return DsIconKind.cloud;
+      case TTSServiceType.minimax:
+        return DsIconKind.bot;
+    }
   }
 }

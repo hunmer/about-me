@@ -114,4 +114,32 @@ const Map<String, String> ttsTranslationsEn = {
   'tts_widgetDescription': 'Quick access to TTS',
   'tts_overviewName': 'TTS Overview',
   'tts_overviewDescription': 'Display TTS service status',
+
+  // Service list & editor sheet
+  'tts_serviceActions': 'Service Actions',
+  'tts_noServicesHint': 'Tap the button in the lower right to add your first service',
+  'tts_pleaseEnterName': 'Please enter a service name',
+  'tts_pleaseSelect': 'Select',
+  'tts_urlPlaceholderHint': 'Supports placeholders: {text}, {voice}, {pitch}, {speed}, {volume}',
+  'tts_headersHint': 'One Key: Value pair per line',
+  'tts_requestBodyHint': 'JSON format, supports placeholders',
+  'tts_audioFieldPathHint': 'Dot-separated JSON path',
+  'tts_apiKeyHint': 'Get it at https://platform.minimaxi.com',
+  'tts_voiceIdHint': 'Supports system, cloned and generated voices',
+
+  // Voice gender
+  'tts_male': 'Male',
+  'tts_female': 'Female',
+  'tts_neutral': 'Neutral',
+
+  // MiniMax emotions
+  'tts_emotionHappy': 'Happy',
+  'tts_emotionSad': 'Sad',
+  'tts_emotionAngry': 'Angry',
+  'tts_emotionFearful': 'Fearful',
+  'tts_emotionDisgusted': 'Disgusted',
+  'tts_emotionSurprised': 'Surprised',
+  'tts_emotionCalm': 'Calm',
+  'tts_emotionFluent': 'Fluent',
+  'tts_emotionWhisper': 'Whisper',
 };

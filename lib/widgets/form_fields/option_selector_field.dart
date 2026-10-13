@@ -224,7 +224,7 @@ class _InkSelectorTrackState extends State<_InkSelectorTrack>
 
   late final AnimationController _move = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 700),
+    duration: const Duration(milliseconds: 450),
   );
 
   /// 静止位置（动画终点）；null = 无选中项，不画滑块
@@ -301,6 +301,11 @@ class _InkSelectorTrackState extends State<_InkSelectorTrack>
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final accent = widget.primaryColor ?? theme.primary;
+
+    // 先填充各单元格 Key，content 会把它挂到单元格上供测量定位
+    for (final option in widget.options) {
+      _cellKeys.putIfAbsent(option.id, GlobalKey.new);
+    }
 
     return AnimatedBuilder(
       animation: _move,
@@ -388,7 +393,7 @@ class _InkOptionCell extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(end: isSelected ? 1.0 : 0.0),
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
       builder: (context, t, _) {
         final fg = Color.lerp(theme.textSub, theme.onPrimary, t)!;
