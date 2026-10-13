@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -35,6 +37,7 @@ class OptionItem {
 /// - 支持单选功能
 /// - 支持多种布局方式（水平滚动或网格）
 /// - 手绘墨盒单元格（选中主题色实底，未选中透明底墨线框）
+/// - 激活项带延迟拖尾的墨迹动画（旧项余韵退场 + 新项延迟弹性绽放）
 /// - 适用于分类、状态等选择场景
 class OptionSelectorField extends StatelessWidget {
   /// 选项列表
@@ -112,45 +115,18 @@ class OptionSelectorField extends StatelessWidget {
     double fontSize = 12,
     double gap = 8,
   }) {
-    final isSelected = selectedId == option.id;
-    final accent = primaryColor ?? theme.primary;
-    final fg = isSelected ? theme.onPrimary : theme.textSub;
-
-    return Pressable(
+    return _InkOptionCell(
+      theme: theme,
+      option: option,
+      isSelected: selectedId == option.id,
       onPressed: () => onSelectionChanged(option.id),
-      semanticLabel: option.label,
-      child: Container(
-        width: width,
-        height: height,
-        padding: padding,
-        decoration: dsSketchDecoration(
-          theme: theme,
-          radius: theme.radii.lg,
-          fillColor: isSelected ? accent : null,
-          stroke: isSelected ? theme.ink : theme.textSub.withValues(alpha: 0.45),
-          strokeWidth: 1.4,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (option.useTextAsIcon)
-              Text(option.label, style: TextStyle(fontSize: iconSize, color: fg))
-            else if (option.icon != null)
-              Icon(option.icon, size: iconSize, color: fg),
-            if (!option.useTextAsIcon) ...[
-              SizedBox(height: gap),
-              Text(
-                option.label,
-                style: DsTypography.caption.copyWith(
-                  fontSize: fontSize,
-                  color: isSelected ? theme.onPrimary : theme.text,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-      ),
+      width: width,
+      height: height,
+      padding: padding,
+      iconSize: iconSize,
+      fontSize: fontSize,
+      gap: gap,
+      primaryColor: primaryColor,
     );
   }
 
@@ -197,6 +173,145 @@ class OptionSelectorField extends StatelessWidget {
                 gap: 4,
               ),
           ],
+        );
+      },
+    );
+  }
+}
+
+/// 手绘墨盒单元格（带延迟拖尾的激活动画）
+///
+/// 切换选中时的错峰节奏：旧项墨色放慢退场（余韵留在原地），
+/// 新项延迟片刻再以弹性曲线绽放主题色实底并轻微回弹放大——
+/// 一退一进的时差形成「墨迹拖尾」感。
+class _InkOptionCell extends StatefulWidget {
+  const _InkOptionCell({
+    required this.theme,
+    required this.option,
+    required this.isSelected,
+    required this.onPressed,
+    this.width,
+    this.height,
+    this.padding,
+    this.iconSize = 32,
+    this.fontSize = 12,
+    this.gap = 8,
+    this.primaryColor,
+  });
+
+  final AppThemeData theme;
+  final OptionItem option;
+  final bool isSelected;
+  final VoidCallback onPressed;
+  final double? width;
+  final double? height;
+  final EdgeInsetsGeometry? padding;
+  final double iconSize;
+  final double fontSize;
+  final double gap;
+  final Color? primaryColor;
+
+  @override
+  State<_InkOptionCell> createState() => _InkOptionCellState();
+}
+
+class _InkOptionCellState extends State<_InkOptionCell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ink = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+    reverseDuration: const Duration(milliseconds: 480),
+  );
+  Timer? _delay;
+
+  @override
+  void initState() {
+    super.initState();
+    // 首帧已选中的项不播动画，直接呈实底
+    if (widget.isSelected) _ink.value = 1;
+  }
+
+  @override
+  void didUpdateWidget(covariant _InkOptionCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected == oldWidget.isSelected) return;
+    _delay?.cancel();
+    if (widget.isSelected) {
+      // 延迟绽放：等旧项开始退场再进场，形成拖尾错峰
+      _delay = Timer(const Duration(milliseconds: 150), () {
+        if (mounted) _ink.forward();
+      });
+    } else {
+      _ink.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _delay?.cancel();
+    _ink.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final option = widget.option;
+    final accent = widget.primaryColor ?? theme.primary;
+
+    return AnimatedBuilder(
+      animation: _ink,
+      builder: (context, _) {
+        final t = _ink.value;
+        final fillT = Curves.easeOutCubic.transform(t);
+        final fg = Color.lerp(theme.textSub, theme.onPrimary, fillT)!;
+        final stroke = Color.lerp(
+          theme.textSub.withValues(alpha: 0.45),
+          theme.ink,
+          fillT,
+        )!;
+        return Transform.scale(
+          // easeOutBack 回弹：进场时轻微放大再收回
+          scale: 1 + 0.05 * Curves.easeOutBack.transform(t),
+          child: Pressable(
+            onPressed: widget.onPressed,
+            semanticLabel: option.label,
+            child: Container(
+              width: widget.width,
+              height: widget.height,
+              padding: widget.padding,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: theme.radii.lg,
+                fillColor: fillT > 0 ? accent.withValues(alpha: fillT) : null,
+                stroke: stroke,
+                strokeWidth: 1.4,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (option.useTextAsIcon)
+                    Text(
+                      option.label,
+                      style: TextStyle(fontSize: widget.iconSize, color: fg),
+                    )
+                  else if (option.icon != null)
+                    Icon(option.icon, size: widget.iconSize, color: fg),
+                  if (!option.useTextAsIcon) ...[
+                    SizedBox(height: widget.gap),
+                    Text(
+                      option.label,
+                      style: DsTypography.caption.copyWith(
+                        fontSize: widget.fontSize,
+                        color: Color.lerp(theme.text, theme.onPrimary, fillT)!,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

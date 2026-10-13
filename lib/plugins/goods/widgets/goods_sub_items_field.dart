@@ -33,135 +33,119 @@ class GoodsSubItemsField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.backgroundAlt,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'goods_subItemList'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
             children: [
-              DsIcon(DsIconKind.layers, size: 20, color: theme.textSub),
-              const SizedBox(width: 6),
-              Text(
-                'goods_subItemList'.tr,
-                style: DsTypography.heading.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.text,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ...subItems.map(
-                  (subItem) => Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Container(
-                      width: 128,
-                      decoration: BoxDecoration(
-                        color: theme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      clipBehavior: Clip.hardEdge,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              SizedBox(
-                                height: 96,
-                                width: double.infinity,
-                                child: _buildSubItemImage(subItem),
-                              ),
-                              if (subItem.purchasePrice != null)
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+              ...subItems.map(
+                (subItem) => Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Container(
+                    width: 128,
+                    decoration: BoxDecoration(
+                      color: theme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          children: [
+                            SizedBox(
+                              height: 96,
+                              width: double.infinity,
+                              child: _buildSubItemImage(subItem),
+                            ),
+                            if (subItem.purchasePrice != null)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(
+                                      alpha: 0.6,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '¥${subItem.purchasePrice!.toStringAsFixed(0)}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '¥${subItem.purchasePrice!.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              subItem.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.text,
-                                fontWeight: FontWeight.bold,
                               ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            subItem.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                if (enabled)
-                  InkWell(
-                    onTap: () => _showAddSubItemDialog(context),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 128,
-                      height: 134,
-                      decoration: BoxDecoration(
-                        color: theme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.stroke,
-                          style: BorderStyle.solid,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DsIcon(
-                            DsIconKind.plus,
-                            size: 32,
-                            color: theme.textSub,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'goods_add'.tr,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                          ),
-                        ],
+              ),
+              if (enabled)
+                InkWell(
+                  onTap: () => _showAddSubItemDialog(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 128,
+                    height: 134,
+                    decoration: BoxDecoration(
+                      color: theme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.stroke,
+                        style: BorderStyle.solid,
                       ),
                     ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        DsIcon(
+                          DsIconKind.plus,
+                          size: 32,
+                          color: theme.textSub,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'goods_add'.tr,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

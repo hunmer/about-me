@@ -73,26 +73,26 @@ class _UnlockDialogBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // 撒花动画：底边对齐对话框底边、按原始比例播放，允许超出弹窗
-        Positioned(
-          left: -100,
-          right: -100,
-          bottom: 0,
-          child: IgnorePointer(
-            child: Lottie.asset(
-              'assets/animations/Confetti.json',
-              fit: BoxFit.contain,
-              repeat: false,
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 撒花动画：底边对齐对话框底边、按原始比例播放，允许超出弹窗
+          Positioned(
+            left: -100,
+            right: -100,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Lottie.asset(
+                'assets/animations/Confetti.json',
+                fit: BoxFit.contain,
+                repeat: false,
+              ),
             ),
           ),
-        ),
-        Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: ScaleInAnimation(
+          ScaleInAnimation(
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
               decoration: BoxDecoration(
@@ -231,8 +231,8 @@ class _UnlockDialogBody extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

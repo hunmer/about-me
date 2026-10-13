@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.da
 import 'package:intl/intl.dart';
 
 import 'package:get/get.dart';
+
 /// 物品详情页面
 class GoodsItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -127,214 +128,129 @@ class _GoodsItemDetailScreenState extends State<GoodsItemDetailScreen> {
         child: Builder(
           builder: (context) {
             final theme = DSThemeBridge.resolve(context);
-            // 图片初始展开占半屏，随滚动折叠为顶栏（沉浸式）
-            final expandedHeight = MediaQuery.sizeOf(context).height / 2;
-            return CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: expandedHeight,
-                  pinned: true,
-                  backgroundColor: theme.background,
-                  leading: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: DSThemeBridge(
-                      child: Builder(
-                        builder: (context) {
-                          final theme = DSThemeBridge.resolve(context);
-                          return DSIconButton(
-                            icon: DsIconKind.chevronLeft,
-                            size: 32,
-                            color: theme.surfaceAlt,
-                            iconColor: theme.textSub,
-                            onPressed: () => Navigator.maybePop(context),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  actions: [
-                    // DS 按钮自带 DSThemeBridge 提供 AppTheme
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: DSThemeBridge(
-                        child: Builder(
-                          builder: (context) {
-                            final theme = DSThemeBridge.resolve(context);
-                            return DSIconButton(
-                              icon: DsIconKind.edit,
-                              size: 32,
-                              color: theme.surfaceAlt,
-                              iconColor: theme.textSub,
-                              onPressed: _showEditDialog,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    title: Text(
-                      _item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        _buildImageSection(),
-                        // 底部渐变保证展开时标题可读
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: const Alignment(0, -0.6),
-                              colors: [
-                                theme.surface.withValues(alpha: 0.85),
-                                theme.surface.withValues(alpha: 0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+            // 图片区高度：原沉浸式半屏展开改为固定顶栏 + 常规图区
+            final imageHeight = MediaQuery.sizeOf(context).height * 0.38;
+            return Column(
+              children: [
+                DSLightHeader(
+                  title: _item.title,
+                  trailing: DSIconButton(
+                    icon: DsIconKind.edit,
+                    size: 38,
+                    color: theme.surface,
+                    iconColor: theme.text,
+                    onPressed: _showEditDialog,
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 使用记录卡片（详情页重点展示）
-                        DSCard(
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: imageHeight,
+                          width: double.infinity,
+                          child: _buildImageSection(),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        sliver: SliverToBoxAdapter(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Pressable(
-                                      onPressed: () => NavigationHelper.push(
-                                        context,
-                                        GoodsItemHistoryPage(
-                                          item: _item,
-                                          warehouseId: _warehouse.id,
-                                        ),
-                                      ),
-                                      builder: (context, states) => Row(
-                                        children: [
-                                          DsIcon(
-                                            DsIconKind.clock,
-                                            size: 20,
-                                            color: theme.primary,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '使用记录',
-                                            style: DsTypography.heading
-                                                .copyWith(color: theme.text),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            '${_item.usageRecords.length} 条',
-                                            style: DsTypography.body.copyWith(
-                                              color: theme.textSub,
+                              // 使用记录卡片（详情页重点展示）
+                              DSCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Pressable(
+                                            onPressed: () =>
+                                                NavigationHelper.push(
+                                                  context,
+                                                  GoodsItemHistoryPage(
+                                                    item: _item,
+                                                    warehouseId: _warehouse.id,
+                                                  ),
+                                                ),
+                                            builder: (context, states) => Row(
+                                              children: [
+                                                DsIcon(
+                                                  DsIconKind.clock,
+                                                  size: 20,
+                                                  color: theme.primary,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  '使用记录',
+                                                  style: DsTypography.heading
+                                                      .copyWith(
+                                                        color: theme.text,
+                                                      ),
+                                                ),
+                                                const Spacer(),
+                                                Text(
+                                                  '${_item.usageRecords.length} 条',
+                                                  style: DsTypography.body
+                                                      .copyWith(
+                                                        color: theme.textSub,
+                                                      ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                DsIcon(
+                                                  DsIconKind.chevronRight,
+                                                  size: 18,
+                                                  color: theme.textSub,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(width: 4),
-                                          DsIcon(
-                                            DsIconKind.chevronRight,
-                                            size: 18,
-                                            color: theme.textSub,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 快捷添加使用记录
-                                  DSThemeBridge(
-                                    child: Builder(
-                                      builder: (context) {
-                                        final theme = DSThemeBridge.resolve(
-                                          context,
-                                        );
-                                        return DSIconButton(
-                                          icon: DsIconKind.plus,
-                                          size: 32,
-                                          color: theme.surfaceAlt,
-                                          iconColor: theme.textSub,
-                                          onPressed: _addUsageRecord,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (_item.usageRecords.isEmpty)
-                                // 空状态引导：点击快捷添加
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  child: Pressable(
-                                    onPressed: _addUsageRecord,
-                                    builder: (context, states) => Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        DsIcon(
-                                          DsIconKind.plus,
-                                          size: 16,
-                                          color: theme.primary,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '暂无使用记录，点击添加',
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.textSub,
+                                        const SizedBox(width: 8),
+                                        // 快捷添加使用记录
+                                        DSThemeBridge(
+                                          child: Builder(
+                                            builder: (context) {
+                                              final theme =
+                                                  DSThemeBridge.resolve(
+                                                    context,
+                                                  );
+                                              return DSIconButton(
+                                                icon: DsIconKind.plus,
+                                                size: 32,
+                                                color: theme.surfaceAlt,
+                                                iconColor: theme.textSub,
+                                                onPressed: _addUsageRecord,
+                                              );
+                                            },
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                )
-                              else
-                                ..._item.usageRecords.map(
-                                  (record) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          margin: const EdgeInsets.only(top: 5),
-                                          decoration: BoxDecoration(
-                                            color: theme.primary,
-                                            shape: BoxShape.circle,
-                                          ),
+                                    const SizedBox(height: 12),
+                                    if (_item.usageRecords.isEmpty)
+                                      // 空状态引导：点击快捷添加
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
                                         ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                        child: Pressable(
+                                          onPressed: _addUsageRecord,
+                                          builder: (context, states) => Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              Text(
-                                                record.note ?? '无备注',
-                                                style: DsTypography.body
-                                                    .copyWith(
-                                                      color: theme.text,
-                                                    ),
+                                              DsIcon(
+                                                DsIconKind.plus,
+                                                size: 16,
+                                                color: theme.primary,
                                               ),
+                                              const SizedBox(width: 6),
                                               Text(
-                                                dateFormat.format(record.date),
-                                                style: DsTypography.caption
+                                                '暂无使用记录，点击添加',
+                                                style: DsTypography.body
                                                     .copyWith(
                                                       color: theme.textSub,
                                                     ),
@@ -342,182 +258,238 @@ class _GoodsItemDetailScreenState extends State<GoodsItemDetailScreen> {
                                             ],
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      )
+                                    else
+                                      ..._item.usageRecords.map(
+                                        (record) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 6,
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                margin: const EdgeInsets.only(
+                                                  top: 5,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: theme.primary,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      record.note ?? '无备注',
+                                                      style: DsTypography.body
+                                                          .copyWith(
+                                                            color: theme.text,
+                                                          ),
+                                                    ),
+                                                    Text(
+                                                      dateFormat.format(
+                                                        record.date,
+                                                      ),
+                                                      style: DsTypography
+                                                          .caption
+                                                          .copyWith(
+                                                            color:
+                                                                theme.textSub,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // 基本信息卡片
+                              DSCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 价格
+                                    if (_item.purchasePrice != null)
+                                      _buildInfoRow(
+                                        DsIconKind.piggy,
+                                        '价格',
+                                        '¥${_item.purchasePrice!.toStringAsFixed(2)}',
+                                      ),
+                                    // 购买日期
+                                    if (_item.purchaseDate != null)
+                                      _buildInfoRow(
+                                        DsIconKind.calendar,
+                                        '购买日期',
+                                        dateFormat.format(_item.purchaseDate!),
+                                      ),
+                                    // 数量
+                                    if (_item.quantity != null)
+                                      _buildInfoRow(
+                                        DsIconKind.hash,
+                                        '数量',
+                                        '${_item.quantity}',
+                                      ),
+                                    // 状态
+                                    if (_item.status != null)
+                                      _buildInfoRow(
+                                        DsIconKind.info,
+                                        '状态',
+                                        _item.status!,
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // 标签
+                              if (_item.tags.isNotEmpty)
+                                DSCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          DsIcon(
+                                            DsIconKind.tag,
+                                            size: 20,
+                                            color: theme.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '标签',
+                                            style: DsTypography.heading
+                                                .copyWith(color: theme.text),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: _item.tags.map((tag) {
+                                          return DSChip(label: tag);
+                                        }).toList(),
+                                      ),
+                                    ],
                                   ),
                                 ),
+
+                              const SizedBox(height: 16),
+
+                              // 备注
+                              if (_item.notes != null &&
+                                  _item.notes!.isNotEmpty)
+                                DSCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          DsIcon(
+                                            DsIconKind.clipboard,
+                                            size: 20,
+                                            color: theme.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '备注',
+                                            style: DsTypography.heading
+                                                .copyWith(color: theme.text),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        _item.notes!,
+                                        style: DsTypography.body.copyWith(
+                                          color: theme.text,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              const SizedBox(height: 16),
+
+                              // 自定义字段
+                              if (_item.customFields.isNotEmpty)
+                                DSCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          DsIcon(
+                                            DsIconKind.layers,
+                                            size: 20,
+                                            color: theme.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '自定义字段',
+                                            style: DsTypography.heading
+                                                .copyWith(color: theme.text),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ..._item.customFields.map(
+                                        (field) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 4,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                '${field.key}: ',
+                                                style: DsTypography.body
+                                                    .copyWith(
+                                                      color: theme.textSub,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  field.value,
+                                                  style: DsTypography.body
+                                                      .copyWith(
+                                                        color: theme.text,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              const SizedBox(height: 80), // 给 FAB 留空间
                             ],
                           ),
                         ),
-
-                        const SizedBox(height: 16),
-
-                        // 基本信息卡片
-                        DSCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 价格
-                              if (_item.purchasePrice != null)
-                                _buildInfoRow(
-                                  DsIconKind.piggy,
-                                  '价格',
-                                  '¥${_item.purchasePrice!.toStringAsFixed(2)}',
-                                ),
-                              // 购买日期
-                              if (_item.purchaseDate != null)
-                                _buildInfoRow(
-                                  DsIconKind.calendar,
-                                  '购买日期',
-                                  dateFormat.format(_item.purchaseDate!),
-                                ),
-                              // 数量
-                              if (_item.quantity != null)
-                                _buildInfoRow(
-                                  DsIconKind.hash,
-                                  '数量',
-                                  '${_item.quantity}',
-                                ),
-                              // 状态
-                              if (_item.status != null)
-                                _buildInfoRow(
-                                  DsIconKind.info,
-                                  '状态',
-                                  _item.status!,
-                                ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // 标签
-                        if (_item.tags.isNotEmpty)
-                          DSCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    DsIcon(
-                                      DsIconKind.tag,
-                                      size: 20,
-                                      color: theme.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '标签',
-                                      style: DsTypography.heading.copyWith(
-                                        color: theme.text,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _item.tags.map((tag) {
-                                    return DSChip(label: tag);
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        const SizedBox(height: 16),
-
-                        // 备注
-                        if (_item.notes != null && _item.notes!.isNotEmpty)
-                          DSCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    DsIcon(
-                                      DsIconKind.clipboard,
-                                      size: 20,
-                                      color: theme.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '备注',
-                                      style: DsTypography.heading.copyWith(
-                                        color: theme.text,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  _item.notes!,
-                                  style: DsTypography.body.copyWith(
-                                    color: theme.text,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        const SizedBox(height: 16),
-
-                        // 自定义字段
-                        if (_item.customFields.isNotEmpty)
-                          DSCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    DsIcon(
-                                      DsIconKind.layers,
-                                      size: 20,
-                                      color: theme.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '自定义字段',
-                                      style: DsTypography.heading.copyWith(
-                                        color: theme.text,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                ..._item.customFields.map(
-                                  (field) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          '${field.key}: ',
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.textSub,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            field.value,
-                                            style: DsTypography.body.copyWith(
-                                              color: theme.text,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        const SizedBox(height: 80), // 给 FAB 留空间
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
