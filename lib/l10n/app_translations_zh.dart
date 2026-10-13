@@ -228,4 +228,22 @@ const Map<String, String> appTranslationsZh = {
   'app_none': '无',
   'app_reminders': '提醒',
   'app_noReminders': '暂无提醒',
+
+  // Tags dialog
+  'app_tags_all': '全部',
+  'app_tags_group': '分组',
+  'app_tags_sort': '排序',
+  'app_tags_sortCreatedAt': '添加时间',
+  'app_tags_sortLastUsedAt': '使用时间',
+  'app_tags_sortName': '名称',
+  'app_tags_batchEdit': '批量编辑',
+  'app_tags_exitBatchEdit': '退出批量编辑',
+  'app_tags_addTag': '添加标签',
+  'app_tags_editTag': '编辑标签',
+  'app_tags_name': '标签名称',
+  'app_tags_nameHint': '请输入标签名称',
+  'app_tags_comment': '注释（可选）',
+  'app_tags_commentHint': '添加备注信息',
+  'app_tags_deleteTagConfirm': '确定要删除标签「@name」吗？',
+  'app_tags_deleteSelectedConfirm': '确定要删除选中的 @count 个标签吗？',
 };

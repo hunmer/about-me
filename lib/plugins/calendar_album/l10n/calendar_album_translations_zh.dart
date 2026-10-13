@@ -165,6 +165,13 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_view_photo': '查看',
     'calendar_album_edit_entry': '编辑条目',
 
+    // Gallery 查看器
+    'calendar_album_gallery_title': '图库',
+    'calendar_album_gallery_added_just_now': '刚刚添加',
+    'calendar_album_gallery_added_min_ago': '@count分钟前添加',
+    'calendar_album_gallery_added_hour_ago': '@count小时前添加',
+    'calendar_album_gallery_added_day_ago': '@count天前添加',
+
     // Home Widget Strings
     'calendar_album_widget_name': '日历相册',
     'calendar_album_widget_description': '快速打开日历相册',

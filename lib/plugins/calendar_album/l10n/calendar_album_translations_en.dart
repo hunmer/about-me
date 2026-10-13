@@ -169,6 +169,13 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_view_photo': 'View',
     'calendar_album_edit_entry': 'Edit Entry',
 
+    // Gallery viewer
+    'calendar_album_gallery_title': 'Gallery',
+    'calendar_album_gallery_added_just_now': 'Added just now',
+    'calendar_album_gallery_added_min_ago': 'Added @count min ago',
+    'calendar_album_gallery_added_hour_ago': 'Added @count hours ago',
+    'calendar_album_gallery_added_day_ago': 'Added @count days ago',
+
     // Home Widget Strings
     'calendar_album_widget_name': 'Calendar Album',
     'calendar_album_widget_description': 'Quick access to calendar album',

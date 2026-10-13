@@ -242,4 +242,22 @@ const Map<String, String> appTranslationsEn = {
   'app_none': 'None',
   'app_reminders': 'Reminders',
   'app_noReminders': 'No reminders',
+
+  // Tags dialog
+  'app_tags_all': 'All',
+  'app_tags_group': 'Group',
+  'app_tags_sort': 'Sort',
+  'app_tags_sortCreatedAt': 'Added time',
+  'app_tags_sortLastUsedAt': 'Last used',
+  'app_tags_sortName': 'Name',
+  'app_tags_batchEdit': 'Batch edit',
+  'app_tags_exitBatchEdit': 'Exit batch edit',
+  'app_tags_addTag': 'Add tag',
+  'app_tags_editTag': 'Edit tag',
+  'app_tags_name': 'Tag name',
+  'app_tags_nameHint': 'Enter a tag name',
+  'app_tags_comment': 'Comment (optional)',
+  'app_tags_commentHint': 'Add a note',
+  'app_tags_deleteTagConfirm': 'Delete tag "@name"?',
+  'app_tags_deleteSelectedConfirm': 'Delete @count selected tags?',
 };

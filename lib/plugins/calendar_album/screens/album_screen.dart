@@ -17,8 +17,7 @@ import 'dart:io';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 
 /// 照片与其所属日记条目的关联记录（过滤/排序/搜索均基于条目元数据）
 class _PhotoRecord {
@@ -51,6 +50,32 @@ class _AlbumScreenState extends State<AlbumScreen> {
     if (initialTags != null && initialTags.isNotEmpty) {
       _multiFilters = {'tags': List<String>.from(initialTags)};
     }
+  }
+
+  /// Gallery 顶部日期：yyyy/MM/dd
+  static String _formatGalleryDate(DateTime date) {
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '${date.year}/$m/$d';
+  }
+
+  /// Gallery 底部相对添加时间
+  String _formatAddedAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'calendar_album_gallery_added_just_now'.tr;
+    if (diff.inHours < 1) {
+      return 'calendar_album_gallery_added_min_ago'.trParams({
+        'count': diff.inMinutes.toString(),
+      });
+    }
+    if (diff.inDays < 1) {
+      return 'calendar_album_gallery_added_hour_ago'.trParams({
+        'count': diff.inHours.toString(),
+      });
+    }
+    return 'calendar_album_gallery_added_day_ago'.trParams({
+      'count': diff.inDays.toString(),
+    });
   }
 
   /// 上次路由上下文记录的照片数，避免每次 build 重复更新
@@ -414,9 +439,28 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     void openViewer() {
                       NavigationHelper.push(
                         context,
-                        _PhotoViewScreen(
-                          images: photos.map((r) => r.url).toList(),
+                        GalleryViewer(
+                          title: 'calendar_album_gallery_title'.tr,
+                          photos: photos
+                              .map(
+                                (r) => GalleryPhoto(
+                                  url: r.url,
+                                  dateText: _formatGalleryDate(
+                                    r.entry.createdAt,
+                                  ),
+                                  caption: r.entry.title.isNotEmpty
+                                      ? r.entry.title
+                                      : 'calendar_album_all_photos'.tr,
+                                  subText: _formatAddedAgo(r.entry.createdAt),
+                                ),
+                              )
+                              .toList(),
                           initialIndex: index,
+                          // 点击信息区跳转照片所属日记条目
+                          onInfoTap: (i) => NavigationHelper.push<void>(
+                            context,
+                            EntryDetailScreen(entry: photos[i].entry),
+                          ),
                         ),
                       );
                     }
@@ -605,101 +649,3 @@ class _PhotoCellState extends State<_PhotoCell>
   }
 }
 
-class _PhotoViewScreen extends StatefulWidget {
-  final List<String> images;
-  final int initialIndex;
-
-  const _PhotoViewScreen({required this.images, required this.initialIndex});
-
-  @override
-  State<_PhotoViewScreen> createState() => _PhotoViewScreenState();
-}
-
-class _PhotoViewScreenState extends State<_PhotoViewScreen> {
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: widget.initialIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.note),
-            onPressed: () {
-              final currentImage =
-                  widget.images[_pageController.page?.round() ??
-                      widget.initialIndex];
-              final entry = Provider.of<CalendarController>(
-                context,
-                listen: false,
-              ).getDiaryEntryForImage(currentImage);
-              if (entry != null) {
-                NavigationHelper.push(context, EntryDetailScreen(entry: entry),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        color: Colors.black,
-        child: PhotoViewGallery.builder(
-          itemCount: widget.images.length,
-          builder: (context, index) {
-            return PhotoViewGalleryPageOptions.customChild(
-              child: FutureBuilder<String>(
-                future: ImageUtils.getAbsolutePath(widget.images[index]),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                    final file = File(snapshot.data!);
-                    if (file.existsSync()) {
-                      return Image.file(file, fit: BoxFit.contain);
-                    }
-                  }
-                  return Image.asset(
-                    'assets/images/image_not_found.png',
-                    fit: BoxFit.contain,
-                  );
-                },
-              ),
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 2,
-              initialScale: PhotoViewComputedScale.contained,
-              heroAttributes: PhotoViewHeroAttributes(
-                tag: widget.images[index],
-              ),
-            );
-          },
-          scrollPhysics: const NeverScrollableScrollPhysics(),
-          pageController: _pageController,
-          loadingBuilder:
-              (context, event) => Center(
-                child: CircularProgressIndicator(
-                  value:
-                      event == null || event.expectedTotalBytes == null
-                          ? 0
-                          : event.cumulativeBytesLoaded /
-                              event.expectedTotalBytes!,
-                  color: Colors.white,
-                ),
-              ),
-        ),
-      ),
-    );
-  }
-}

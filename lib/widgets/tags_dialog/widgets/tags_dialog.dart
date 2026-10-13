@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
+
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/form_fields/circle_icon_picker_field.dart';
 import '../models/models.dart';
 import 'tags_list.dart';
-import 'bottom_sheet_menu.dart';
 import '../utils/json_storage.dart';
+
+/// 排序方式文案
+String _sortTypeLabel(TagsSortType type) => switch (type) {
+  TagsSortType.createdAt => 'app_tags_sortCreatedAt'.tr,
+  TagsSortType.lastUsedAt => 'app_tags_sortLastUsedAt'.tr,
+  TagsSortType.name => 'app_tags_sortName'.tr,
+};
 
 /// 标签管理对话框
 ///
@@ -106,10 +116,8 @@ class TagsDialog extends StatefulWidget {
     Future<bool> Function(TagItem tag)? onDeleteTag,
     Future<TagItem?> Function(TagItem oldTag, TagItem newTag)? onEditTag,
   }) {
-    return showModalBottomSheet<List<String>>(
+    return showDSBottomSheet<List<String>>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => TagsDialog(
         jsonFilePath: jsonFilePath,
         groups: groups,
@@ -302,14 +310,30 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 显示标签底部抽屉
   void _showTagBottomSheet(TagItem tag) {
-    showModalBottomSheet(
+    showDSBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BottomSheetMenu(
-        tag: tag,
-        onEdit: () => _editTag(tag),
-        onDelete: () => _deleteTag(tag),
-        config: widget.config,
+      title: tag.name,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DSSheetAction(
+            icon: DsIconKind.edit,
+            label: widget.config.editButtonText,
+            onTap: () {
+              Navigator.pop(context);
+              _editTag(tag);
+            },
+          ),
+          DSSheetAction(
+            icon: DsIconKind.trash,
+            label: widget.config.deleteButtonText,
+            destructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              _deleteTag(tag);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -349,21 +373,17 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 删除标签
   Future<void> _deleteTag(TagItem tag) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('确认删除'),
-        content: Text('确定要删除标签「${tag.name}」吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('删除', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => DSDialog(
+        title: 'app_confirmDelete'.tr,
+        message: 'app_tags_deleteTagConfirm'.trParams({'name': tag.name}),
+        cancelText: 'app_cancel'.tr,
+        confirmText: 'app_delete'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () => Navigator.pop(context, true),
+        onCancel: () => Navigator.pop(context, false),
       ),
     );
 
@@ -395,21 +415,19 @@ class _TagsDialogState extends State<TagsDialog> {
   Future<void> _batchDeleteSelected() async {
     if (_selectedTags.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('确认删除'),
-        content: Text('确定要删除选中的 ${_selectedTags.length} 个标签吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('删除', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => DSDialog(
+        title: 'app_confirmDelete'.tr,
+        message: 'app_tags_deleteSelectedConfirm'.trParams(
+          {'count': _selectedTags.length.toString()},
+        ),
+        cancelText: 'app_cancel'.tr,
+        confirmText: 'app_delete'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () => Navigator.pop(context, true),
+        onCancel: () => Navigator.pop(context, false),
       ),
     );
 
@@ -457,12 +475,9 @@ class _TagsDialogState extends State<TagsDialog> {
     final content = _buildContent();
 
     if (widget.displayMode == TagsDisplayMode.dialog) {
-      return Container(
+      // sheet 面板（DsSketchPanel）已提供纸底背景，这里只约束高度
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
         child: content,
       );
     }
@@ -506,14 +521,20 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 构建操作按钮
   List<Widget> _buildActions() {
+    final theme = DSThemeBridge.resolve(context);
     final actions = <Widget>[];
 
     // 批量编辑按钮
     if (widget.config.enableBatchEdit) {
       actions.add(
-        IconButton(
-          icon: Icon(_isBatchEditMode ? Icons.close : Icons.edit),
-          tooltip: _isBatchEditMode ? '退出批量编辑' : '批量编辑',
+        DSIconButton(
+          icon: _isBatchEditMode ? DsIconKind.close : DsIconKind.edit,
+          size: 34,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          tooltip: _isBatchEditMode
+              ? 'app_tags_exitBatchEdit'.tr
+              : 'app_tags_batchEdit'.tr,
           onPressed: _toggleBatchEditMode,
         ),
       );
@@ -522,12 +543,11 @@ class _TagsDialogState extends State<TagsDialog> {
     // 批量删除按钮（批量编辑模式下且选中了标签）
     if (_isBatchEditMode && _selectedTags.isNotEmpty) {
       actions.add(
-        TextButton(
+        DSButton(
+          label: '${'app_delete'.tr}(${_selectedTags.length})',
+          size: DSButtonSize.sm,
+          variant: DSButtonVariant.destructive,
           onPressed: _batchDeleteSelected,
-          child: Text(
-            '删除(${_selectedTags.length})',
-            style: TextStyle(color: Colors.red),
-          ),
         ),
       );
     }
@@ -535,10 +555,11 @@ class _TagsDialogState extends State<TagsDialog> {
     // 添加标签按钮（非批量编辑模式）
     if (!_isBatchEditMode && widget.config.enableEditing) {
       actions.add(
-        IconButton(
-          icon: Icon(Icons.add),
+        DSIconButton(
+          icon: DsIconKind.plus,
+          size: 34,
           tooltip: widget.config.addTagText,
-          onPressed: () => _showAddTagUI(),
+          onPressed: _showAddTagUI,
         ),
       );
     }
@@ -548,9 +569,10 @@ class _TagsDialogState extends State<TagsDialog> {
         widget.config.selectionMode != TagsSelectionMode.none &&
         _selectedTags.isNotEmpty) {
       actions.add(
-        TextButton(
+        DSButton(
+          label: '${widget.config.confirmButtonText}(${_selectedTags.length})',
+          size: DSButtonSize.sm,
           onPressed: _confirmSelection,
-          child: Text('${widget.config.confirmButtonText}(${_selectedTags.length})'),
         ),
       );
     }
@@ -560,28 +582,22 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 显示添加标签对话框
   void _showAddTagUI() {
-    // 获取所有分组
-    final groups = _groups.map((g) => g.name).toList();
-
-    showDialog(
-      context: context,
-      builder: (context) => _AddTagDialog(
-        groups: groups,
-        onConfirm: (groupName, tagName, comment) async {
-          await _addTag(groupName);
-        },
-      ),
-    );
+    // 分组可在编辑表单里选择，默认取第一个分组
+    final defaultGroup = _groups.isNotEmpty ? _groups.first.name : 'default';
+    _addTag(defaultGroup);
   }
 
   /// 内置添加标签对话框（返回 TagItem）
   Future<TagItem?> _showAddTagDialog(String group) async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => _TagEditDialog(
             group: group,
             groups: _groups.map((g) => g.name).toList(),
+            defaultIcon: widget.config.defaultIcon,
+            defaultColor: DSThemeBridge.resolve(context).primary,
           ),
     );
 
@@ -601,12 +617,15 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 内置编辑标签对话框（返回 TagItem）
   Future<TagItem?> _showEditTagDialog(TagItem oldTag) async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => _TagEditDialog(
             tag: oldTag,
             groups: _groups.map((g) => g.name).toList(),
+            defaultIcon: widget.config.defaultIcon,
+            defaultColor: DSThemeBridge.resolve(context).primary,
           ),
     );
 
@@ -632,22 +651,23 @@ class _TagsDialogState extends State<TagsDialog> {
       // 分组过滤
       FilterItem(
         id: 'group',
-        title: '分组',
+        title: 'app_tags_group'.tr,
         type: FilterType.tagsSingle,
         builder: (context, value, onChanged) {
           return Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
-              FilterChip(
-                label: Text('全部'),
+              DSChip(
+                label: 'app_tags_all'.tr,
                 selected: value == null || value == '',
                 onSelected: (selected) {
                   if (selected) onChanged('');
                 },
               ),
               ...groups.map((group) {
-                return FilterChip(
-                  label: Text(group),
+                return DSChip(
+                  label: group,
                   selected: value == group,
                   onSelected: (selected) {
                     if (selected) onChanged(group);
@@ -666,20 +686,16 @@ class _TagsDialogState extends State<TagsDialog> {
       // 排序方式
       FilterItem(
         id: 'sort',
-        title: '排序',
+        title: 'app_tags_sort'.tr,
         type: FilterType.tagsSingle,
         initialValue: TagsSortType.createdAt,
         builder: (context, value, onChanged) {
           return Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: TagsSortType.values.map((type) {
-              final label = switch (type) {
-                TagsSortType.createdAt => '添加时间',
-                TagsSortType.lastUsedAt => '使用时间',
-                TagsSortType.name => '名称',
-              };
-              return FilterChip(
-                label: Text(label),
+              return DSChip(
+                label: _sortTypeLabel(type),
                 selected: value == type,
                 onSelected: (selected) {
                   if (selected) onChanged(type);
@@ -690,108 +706,10 @@ class _TagsDialogState extends State<TagsDialog> {
         },
         getBadge: (value) {
           if (value == null) return null;
-          final type = value as TagsSortType;
-          return switch (type) {
-            TagsSortType.createdAt => '添加时间',
-            TagsSortType.lastUsedAt => '使用时间',
-            TagsSortType.name => '名称',
-          };
+          return _sortTypeLabel(value as TagsSortType);
         },
       ),
     ];
-  }
-}
-
-/// 添加标签对话框
-class _AddTagDialog extends StatefulWidget {
-  final List<String> groups;
-  final Function(String group, String name, String comment) onConfirm;
-
-  const _AddTagDialog({
-    required this.groups,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_AddTagDialog> createState() => _AddTagDialogState();
-}
-
-class _AddTagDialogState extends State<_AddTagDialog> {
-  final _nameController = TextEditingController();
-  final _commentController = TextEditingController();
-  String _selectedGroup = 'default';
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('添加标签'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: '标签名称',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedGroup,
-            decoration: InputDecoration(
-              labelText: '分组',
-              border: OutlineInputBorder(),
-            ),
-            items: widget.groups.map((group) {
-              return DropdownMenuItem(
-                value: group,
-                child: Text(group),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedGroup = value ?? 'default';
-              });
-            },
-          ),
-          SizedBox(height: 16),
-          TextField(
-            controller: _commentController,
-            decoration: InputDecoration(
-              labelText: '注释（可选）',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('取消'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_nameController.text.isNotEmpty) {
-              widget.onConfirm(
-                _selectedGroup,
-                _nameController.text,
-                _commentController.text,
-              );
-              Navigator.pop(context);
-            }
-          },
-          child: Text('确定'),
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _commentController.dispose();
-    super.dispose();
   }
 }
 
@@ -806,177 +724,174 @@ class _TagEditDialog extends StatefulWidget {
   /// 可选分组列表
   final List<String> groups;
 
-  const _TagEditDialog({this.tag, this.group, required this.groups});
+  /// 默认图标
+  final IconData defaultIcon;
+
+  /// 默认颜色
+  final Color defaultColor;
+
+  const _TagEditDialog({
+    this.tag,
+    this.group,
+    required this.groups,
+    required this.defaultIcon,
+    required this.defaultColor,
+  });
 
   @override
   State<_TagEditDialog> createState() => _TagEditDialogState();
 }
 
 class _TagEditDialogState extends State<_TagEditDialog> {
-  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
-  IconData _selectedIcon = Icons.label;
-  Color _selectedColor = Colors.blue;
+  final _nameController = TextEditingController();
+  final _commentController = TextEditingController();
+  late IconData _selectedIcon;
+  late Color _selectedColor;
+  late String _selectedGroup;
+  String? _nameError;
 
   @override
   void initState() {
     super.initState();
-    _selectedIcon = widget.tag?.icon ?? Icons.label;
-    _selectedColor = widget.tag?.color ?? Colors.blue;
+    _nameController.text = widget.tag?.name ?? '';
+    _commentController.text = widget.tag?.comment ?? '';
+    _selectedIcon = widget.tag?.icon ?? widget.defaultIcon;
+    _selectedColor = widget.tag?.color ?? widget.defaultColor;
+    _selectedGroup =
+        widget.tag?.group ??
+        widget.group ??
+        (widget.groups.isNotEmpty ? widget.groups.first : '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _commentController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.tag != null;
+    final theme = AppTheme.of(context);
+    // showDSDialog 外层已包 WiredDraw，面板墨线随描画动画入场
+    final progress = WiredDrawTransition.progressOf(context);
 
-    // 确保初始分组值有效
-    final initialGroup =
-        widget.tag?.group ??
-        widget.group ??
-        (widget.groups.isNotEmpty ? widget.groups.first : '');
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.xl),
+        progress: progress,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              isEditing ? 'app_tags_editTag'.tr : 'app_tags_addTag'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.lg),
 
-    return AlertDialog(
-      title: Text(isEditing ? '编辑标签' : '添加标签'),
-      content: SingleChildScrollView(
-        child: FormBuilder(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 图标和颜色选择
-              FormBuilderField<Map<String, dynamic>>(
-                name: 'iconColor',
-                initialValue: {'icon': _selectedIcon, 'color': _selectedColor},
-                builder:
-                    (fieldState) => Column(
-                      children: [
-                        SizedBox(height: 8),
-                        CircleIconPickerField(
-                          currentIcon: _selectedIcon,
-                          currentBackgroundColor: _selectedColor,
-                          onValueChanged: (value) {
-                            setState(() {
-                              _selectedIcon = value['icon'] as IconData;
-                              _selectedColor = value['color'] as Color;
-                              // 更新后立即同步完整的 iconColor 数据到表单
-                              fieldState.didChange({
-                                'icon': _selectedIcon,
-                                'color': _selectedColor,
-                              });
-                            });
-                          },
-                        ),
-                      ],
-                    ),
+            // 图标和颜色选择
+            CircleIconPickerField(
+              currentIcon: _selectedIcon,
+              currentBackgroundColor: _selectedColor,
+              onValueChanged: (value) {
+                setState(() {
+                  _selectedIcon = value['icon'] as IconData;
+                  _selectedColor = value['color'] as Color;
+                });
+              },
+            ),
+            SizedBox(height: theme.spacing.md),
+
+            // 标签名称
+            DSInput(
+              controller: _nameController,
+              label: 'app_tags_name'.tr,
+              hint: 'app_tags_nameHint'.tr,
+              errorText: _nameError,
+              onChanged: (_) {
+                if (_nameError != null) {
+                  setState(() => _nameError = null);
+                }
+              },
+            ),
+            SizedBox(height: theme.spacing.md),
+
+            // 分组选择
+            if (widget.groups.isNotEmpty) ...[
+              Text(
+                'app_tags_group'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
-              SizedBox(height: 16),
-              // 标签名称
-              FormBuilderTextField(
-                name: 'name',
-                initialValue: widget.tag?.name ?? '',
-                decoration: InputDecoration(
-                  labelText: '标签名称',
-                  hintText: '请输入标签名称',
-                  prefixIcon: Icon(Icons.label),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入标签名称';
+              SizedBox(height: theme.spacing.sm),
+              DSSelect<String>(
+                items: widget.groups
+                    .map((group) => DSSelectItem(label: group, value: group))
+                    .toList(),
+                value: _selectedGroup,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedGroup = value);
                   }
-                  return null;
                 },
               ),
-              SizedBox(height: 16),
-
-              // 分组选择
-              if (widget.groups.isNotEmpty)
-                FormBuilderDropdown<String>(
-                  name: 'group',
-                  initialValue: initialGroup,
-                  decoration: InputDecoration(
-                    labelText: '分组',
-                    hintText: '请选择分组',
-                    border: OutlineInputBorder(),
-                  ),
-                  items:
-                      widget.groups
-                          .map(
-                            (group) => DropdownMenuItem(
-                              value: group,
-                              child: Text(group),
-                            ),
-                          )
-                          .toList(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '请选择分组';
-                    }
-                    return null;
-                  },
-                ),
-              SizedBox(height: 16),
-              // 注释
-              FormBuilderTextField(
-                name: 'comment',
-                initialValue: widget.tag?.comment ?? '',
-                decoration: InputDecoration(
-                  labelText: '注释（可选）',
-                  hintText: '添加备注信息',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
+              SizedBox(height: theme.spacing.md),
             ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('取消')),
-        TextButton(onPressed: _confirmFromForm, child: Text('确定')),
-      ],
-    );
-  }
 
-  /// 从表单确认
-  void _confirmFromForm() {
-    if (_formKey.currentState?.saveAndValidate() ?? false) {
-      _handleSubmit(_formKey.currentState!.value);
-    }
-  }
+            // 注释
+            DSInput(
+              controller: _commentController,
+              label: 'app_tags_comment'.tr,
+              hint: 'app_tags_commentHint'.tr,
+              maxLines: 3,
+            ),
+            SizedBox(height: theme.spacing.lg),
 
-  /// 处理表单提交
-  void _handleSubmit(Map<String, dynamic> values) {
-    final name = values['name'] as String? ?? '';
-    final group = values['group'] as String? ?? '';
-    final iconColor = values['iconColor'] as Map<String, dynamic>? ?? {};
-    final icon = iconColor['icon'] as IconData? ?? _selectedIcon;
-    final color = iconColor['color'] as Color? ?? _selectedColor;
-    final comment = values['comment'] as String?;
-
-    if (name.isEmpty) {
-      showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: Text('提示'),
-              content: Text('请输入标签名称'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('确定'),
+            // 操作按钮
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'app_cancel'.tr,
+                    variant: DSButtonVariant.outline,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: 'app_ok'.tr,
+                    onPressed: _confirm,
+                  ),
                 ),
               ],
             ),
-      );
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 确认提交
+  void _confirm() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = 'app_tags_nameHint'.tr);
       return;
     }
 
+    final comment = _commentController.text.trim();
     Navigator.pop(context, {
       'name': name,
-      'group': group,
-      'icon': icon,
-      'color': color,
-      'comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
+      'group': _selectedGroup,
+      'icon': _selectedIcon,
+      'color': _selectedColor,
+      'comment': comment.isEmpty ? null : comment,
     });
   }
 }
