@@ -1,10 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
-import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/sample_data.dart';
 import 'dart:convert';
-import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart';
@@ -32,14 +30,6 @@ class CalendarController extends ChangeNotifier {
   CalendarController() {
     _loadEntries();
     _updateDisplayMonths(); // 初始化时设置默认月份范围
-  }
-
-  StorageManager get _storage {
-    final storage = PluginManager.instance.storageManager;
-    if (storage == null) {
-      throw Exception('StorageManager is not initialized in PluginManager');
-    }
-    return storage;
   }
 
   DateTime get selectedDate => _selectedDate;

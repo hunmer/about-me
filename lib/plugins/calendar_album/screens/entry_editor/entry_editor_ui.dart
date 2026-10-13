@@ -16,12 +16,16 @@ import 'entry_editor_tag_handler.dart';
 class EntryEditorUI extends StatefulWidget {
   final EntryEditorController controller;
   final bool isEditing;
+
+  /// 只读模式（纯查看，禁用编辑与保存）
+  final bool readOnly;
   final BuildContext parentContext;
 
   const EntryEditorUI({
     super.key,
     required this.controller,
     required this.isEditing,
+    this.readOnly = false,
     required this.parentContext,
   });
 
@@ -32,6 +36,7 @@ class EntryEditorUI extends StatefulWidget {
 class _EntryEditorUIState extends State<EntryEditorUI> {
   late EntryEditorController controller;
   late bool isEditing;
+  late bool readOnly;
 
   // PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
   final NavigationBarStaticComponentsKeys _navBarKeys =
@@ -42,6 +47,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
     super.initState();
     controller = widget.controller;
     isEditing = widget.isEditing;
+    readOnly = widget.readOnly;
   }
 
   @override
@@ -63,6 +69,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                     EntryEditorImageHandler(
                       imageUrls: controller.imageUrls,
                       thumbUrls: controller.thumbUrls,
+                      readOnly: readOnly,
                       onImageAdded: (url, thumbUrl) {
                         controller.imageUrls.add(url);
                         controller.thumbUrls.add(thumbUrl ?? '');
@@ -77,7 +84,10 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                     const SizedBox(height: 20),
                     _buildContentForm(),
                     const SizedBox(height: 20),
-                    EntryEditorTagHandler(controller: controller),
+                    EntryEditorTagHandler(
+                      controller: controller,
+                      readOnly: readOnly,
+                    ),
                     const SizedBox(height: 20),
                     _buildMetadataForm(),
                     const SizedBox(height: 40),
@@ -114,24 +124,29 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
         automaticallyImplyTitle: false,
         previousPageTitle: null,
         userMiddle: Text(
-          isEditing
+          readOnly
+              ? 'calendar_album_view_post'.tr
+              : isEditing
               ? 'calendar_album_edit_post'.tr
               : 'calendar_album_new_post'.tr,
           style: DsTypography.title.copyWith(color: theme.text),
         ),
-        userTrailing: DSIconButton(
-          icon: DsIconKind.check,
-          size: 36,
-          color: theme.primary,
-          iconColor: theme.onPrimary,
-          tooltip: 'calendar_album_save'.tr,
-          onPressed: () {
-            final result = controller.saveEntry(context);
-            if (result != null && mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
+        // 只读模式无保存按钮，用等宽占位保持标题居中
+        userTrailing: readOnly
+            ? const SizedBox(width: 36)
+            : DSIconButton(
+                icon: DsIconKind.check,
+                size: 36,
+                color: theme.primary,
+                iconColor: theme.onPrimary,
+                tooltip: 'calendar_album_save'.tr,
+                onPressed: () {
+                  final result = controller.saveEntry(context);
+                  if (result != null && mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
         userLargeTitle: null,
         largeTitleActions: null,
         appbarBottom: null,
@@ -195,6 +210,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                 Expanded(
                   child: TextField(
                     controller: controller.titleController,
+                    readOnly: readOnly,
                     decoration: InputDecoration(
                       hintText: 'calendar_album_title'.tr,
                       border: InputBorder.none,
@@ -215,6 +231,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: controller.contentController,
+              readOnly: readOnly,
               decoration: InputDecoration(
                 hintText: 'calendar_album_whats_on_mind'.tr,
                 border: InputBorder.none,
@@ -271,7 +288,9 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                 controller.locationController.text.isNotEmpty
                     ? controller.locationController.text
                     : 'calendar_album_add_location'.tr,
-            onTap: () => _handleLocationSelection(widget.parentContext),
+            onTap: readOnly
+                ? null
+                : () => _handleLocationSelection(widget.parentContext),
           ),
         ),
         const SizedBox(width: 12),
@@ -285,7 +304,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
                 controller.weather != null
                     ? 'calendar_album_weather_${controller.weather!.toLowerCase()}'.tr
                     : 'calendar_album_add_weather'.tr,
-            onTap: () => _showWeatherPicker(weatherOptions),
+            onTap: readOnly ? null : () => _showWeatherPicker(weatherOptions),
           ),
         ),
       ],
@@ -298,7 +317,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
     required Color iconColor,
     required String label,
     required String value,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     final theme = DSThemeBridge.resolve(context);
     return Pressable(

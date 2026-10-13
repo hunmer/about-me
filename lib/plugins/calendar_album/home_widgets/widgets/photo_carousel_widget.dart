@@ -9,7 +9,7 @@ import 'package:infinite_carousel/infinite_carousel.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import '../data.dart';
 
@@ -145,7 +145,7 @@ class PhotoCarouselWidgetState extends State<PhotoCarouselWidget>
     );
   }
 
-  /// 打开图片对应的日记详情
+  /// 打开图片对应的日记编辑器
   void _openPhotoDetail(PhotoItem photo) {
     NavigationHelper.push(
       context,
@@ -156,7 +156,7 @@ class PhotoCarouselWidgetState extends State<PhotoCarouselWidget>
           ),
           ChangeNotifierProvider.value(value: widget.plugin.tagController!),
         ],
-        child: EntryDetailScreen(entry: photo.entry),
+        child: EntryEditorScreen(entry: photo.entry, isEditing: true),
       ),
     );
   }

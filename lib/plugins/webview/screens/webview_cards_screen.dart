@@ -57,31 +57,30 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       builder: (context, value, onChanged) {
         return DSThemeBridge(
           child: Builder(
-            builder:
-                (context) => Row(
-                  children: [
-                    _buildTypeChip(
-                      label: 'webview_all_cards'.tr,
-                      value: null,
-                      selectedValue: value,
-                      onChanged: onChanged,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTypeChip(
-                      label: 'webview_online_urls'.tr,
-                      value: CardType.url.name,
-                      selectedValue: value,
-                      onChanged: onChanged,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTypeChip(
-                      label: 'webview_local_files'.tr,
-                      value: CardType.localFile.name,
-                      selectedValue: value,
-                      onChanged: onChanged,
-                    ),
-                  ],
+            builder: (context) => Row(
+              children: [
+                _buildTypeChip(
+                  label: 'webview_all_cards'.tr,
+                  value: null,
+                  selectedValue: value,
+                  onChanged: onChanged,
                 ),
+                const SizedBox(width: 8),
+                _buildTypeChip(
+                  label: 'webview_online_urls'.tr,
+                  value: CardType.url.name,
+                  selectedValue: value,
+                  onChanged: onChanged,
+                ),
+                const SizedBox(width: 8),
+                _buildTypeChip(
+                  label: 'webview_local_files'.tr,
+                  value: CardType.localFile.name,
+                  selectedValue: value,
+                  onChanged: onChanged,
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -106,24 +105,23 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       builder: (context, value, onChanged) {
         return DSThemeBridge(
           child: Builder(
-            builder:
-                (context) => Row(
-                  children: [
-                    _buildTypeChip(
-                      label: 'webview_sort_by_open_time'.tr,
-                      value: SortType.openTime.name,
-                      selectedValue: value,
-                      onChanged: onChanged,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTypeChip(
-                      label: 'webview_sort_by_add_time'.tr,
-                      value: SortType.addTime.name,
-                      selectedValue: value,
-                      onChanged: onChanged,
-                    ),
-                  ],
+            builder: (context) => Row(
+              children: [
+                _buildTypeChip(
+                  label: 'webview_sort_by_open_time'.tr,
+                  value: SortType.openTime.name,
+                  selectedValue: value,
+                  onChanged: onChanged,
                 ),
+                const SizedBox(width: 8),
+                _buildTypeChip(
+                  label: 'webview_sort_by_add_time'.tr,
+                  value: SortType.addTime.name,
+                  selectedValue: value,
+                  onChanged: onChanged,
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -191,18 +189,16 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
             // 更新卡片类型过滤
             if (filters.containsKey('cardType')) {
               final cardTypeStr = filters['cardType'] as String?;
-              _filterType =
-                  cardTypeStr != null
-                      ? CardType.values.firstWhere((e) => e.name == cardTypeStr)
-                      : null;
+              _filterType = cardTypeStr != null
+                  ? CardType.values.firstWhere((e) => e.name == cardTypeStr)
+                  : null;
             }
             // 更新排序类型
             if (filters.containsKey('sortType')) {
               final sortTypeStr = filters['sortType'] as String?;
-              _sortType =
-                  sortTypeStr != null
-                      ? SortType.values.firstWhere((e) => e.name == sortTypeStr)
-                      : SortType.openTime;
+              _sortType = sortTypeStr != null
+                  ? SortType.values.firstWhere((e) => e.name == sortTypeStr)
+                  : SortType.openTime;
             }
           });
         },
@@ -226,24 +222,6 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
             ),
           ),
         ],
-        largeTitleActions: [
-          // 第三方导航栏回调,DS 组件需包主题桥
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.plus,
-                  size: 40,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  tooltip: 'webview_add_card'.tr,
-                  onPressed: _showAddCardDialog,
-                );
-              },
-            ),
-          ),
-        ],
         body: _buildCardList(),
       ),
     );
@@ -258,25 +236,23 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
 
         // 应用搜索过滤
         if (_searchQuery.isNotEmpty) {
-          cards =
-              cards.where((c) {
-                final queryLower = _searchQuery.toLowerCase();
-                bool matches = false;
+          cards = cards.where((c) {
+            final queryLower = _searchQuery.toLowerCase();
+            bool matches = false;
 
-                // 根据搜索过滤器决定搜索范围
-                if (_searchFilters['url'] == true) {
-                  matches = matches || c.url.toLowerCase().contains(queryLower);
-                }
-                if (_searchFilters['title'] == true) {
-                  matches =
-                      matches ||
-                      c.title.toLowerCase().contains(queryLower) ||
-                      (c.description?.toLowerCase().contains(queryLower) ??
-                          false);
-                }
+            // 根据搜索过滤器决定搜索范围
+            if (_searchFilters['url'] == true) {
+              matches = matches || c.url.toLowerCase().contains(queryLower);
+            }
+            if (_searchFilters['title'] == true) {
+              matches =
+                  matches ||
+                  c.title.toLowerCase().contains(queryLower) ||
+                  (c.description?.toLowerCase().contains(queryLower) ?? false);
+            }
 
-                return matches;
-              }).toList();
+            return matches;
+          }).toList();
         }
 
         // 应用类型过滤
@@ -438,12 +414,11 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       // 不存在，创建新标签页并导航
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder:
-              (context) => WebViewBrowserScreen(
-                initialUrl: card.url,
-                initialTitle: card.title,
-                cardId: card.id,
-              ),
+          builder: (context) => WebViewBrowserScreen(
+            initialUrl: card.url,
+            initialTitle: card.title,
+            cardId: card.id,
+          ),
         ),
       );
     }
@@ -453,444 +428,82 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
     SmoothBottomSheet.show(
       context: context,
       backgroundColor: DSThemeBridge.resolve(context).surface,
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _SheetActionRow(
-                      // DS 暂无"新窗口打开"图标,保留 Material
-                      icon: Icon(
-                        Icons.open_in_new,
-                        size: 20,
-                        color: theme.primary,
-                      ),
-                      label: 'webview_new_tab'.tr,
-                      theme: theme,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openCard(card);
-                      },
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _SheetActionRow(
+                  // DS 暂无"新窗口打开"图标,保留 Material
+                  icon: Icon(Icons.open_in_new, size: 20, color: theme.primary),
+                  label: 'webview_new_tab'.tr,
+                  theme: theme,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openCard(card);
+                  },
+                ),
+                _SheetActionRow(
+                  icon: DsIcon(DsIconKind.pin, size: 20, color: theme.primary),
+                  label: card.isPinned ? 'webview_unpin'.tr : 'webview_pin'.tr,
+                  theme: theme,
+                  onTap: () {
+                    Navigator.pop(context);
+                    WebViewPlugin.instance.cardManager.togglePinned(card.id);
+                  },
+                ),
+                _SheetActionRow(
+                  icon: DsIcon(DsIconKind.copy, size: 20, color: theme.primary),
+                  label: 'webview_copy_url'.tr,
+                  theme: theme,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Clipboard.setData(ClipboardData(text: card.url));
+                    Toast.success('webview_url_copied'.tr);
+                  },
+                ),
+                // 同步复制（仅本地文件且有原始路径）
+                if (card.type == CardType.localFile && card.sourcePath != null)
+                  _SheetActionRow(
+                    icon: DsIcon(
+                      DsIconKind.refresh,
+                      size: 20,
+                      color: theme.primary,
                     ),
-                    _SheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.pin,
-                        size: 20,
-                        color: theme.primary,
-                      ),
-                      label:
-                          card.isPinned ? 'webview_unpin'.tr : 'webview_pin'.tr,
-                      theme: theme,
-                      onTap: () {
-                        Navigator.pop(context);
-                        WebViewPlugin.instance.cardManager.togglePinned(
-                          card.id,
-                        );
-                      },
-                    ),
-                    _SheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.copy,
-                        size: 20,
-                        color: theme.primary,
-                      ),
-                      label: 'webview_copy_url'.tr,
-                      theme: theme,
-                      onTap: () {
-                        Navigator.pop(context);
-                        Clipboard.setData(ClipboardData(text: card.url));
-                        Toast.success('webview_url_copied'.tr);
-                      },
-                    ),
-                    // 同步复制（仅本地文件且有原始路径）
-                    if (card.type == CardType.localFile &&
-                        card.sourcePath != null)
-                      _SheetActionRow(
-                        icon: DsIcon(
-                          DsIconKind.refresh,
-                          size: 20,
-                          color: theme.primary,
-                        ),
-                        label: '同步复制',
-                        subtitle: '从原始路径重新复制文件',
-                        theme: theme,
-                        onTap: () {
-                          Navigator.pop(context);
-                          _syncCopyCard(card);
-                        },
-                      ),
-                    _SheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.edit,
-                        size: 20,
-                        color: theme.primary,
-                      ),
-                      label: 'webview_edit_card'.tr,
-                      theme: theme,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showEditCardDialog(card);
-                      },
-                    ),
-                    _SheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.trash,
-                        size: 20,
-                        color: theme.danger,
-                      ),
-                      label: 'webview_delete_card'.tr,
-                      theme: theme,
-                      danger: true,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _confirmDeleteCard(card);
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-    );
-  }
-
-  /// 本地文件/目录选择按钮(DS 暂无文件夹图标,保留 Material IconButton)
-  Widget _buildFolderPickerSuffix(VoidCallback onPressed) {
-    return Builder(
-      builder: (context) {
-        final theme = DSThemeBridge.resolve(context);
-        return Material(
-          type: MaterialType.transparency,
-          child: IconButton(
-            icon: Icon(Icons.folder_open, color: theme.primary),
-            tooltip: 'webview_select_local_file'.tr,
-            onPressed: onPressed,
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAddCardDialog() {
-    final titleController = TextEditingController();
-    final urlController = TextEditingController();
-    final descController = TextEditingController();
-    final projectNameController = TextEditingController();
-    CardType selectedType = CardType.url;
-    bool isLocalFileMode = false;
-
-    showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => StatefulBuilder(
-            builder:
-                (dialogContext, setDialogState) => DSThemeBridge(
-                  child: Builder(
-                    builder: (context) {
-                      final theme = DSThemeBridge.resolve(context);
-                      return JellyBox(
-                        radius: theme.radii.xxl,
-                        padding: EdgeInsets.all(theme.spacing.xl),
-                        constraints: const BoxConstraints(maxWidth: 380),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'webview_add_card'.tr,
-                                textAlign: TextAlign.center,
-                                style: DsTypography.title.copyWith(
-                                  color: theme.text,
-                                ),
-                              ),
-                              SizedBox(height: theme.spacing.lg),
-                              DSInput(
-                                controller: titleController,
-                                label: 'webview_card_title'.tr,
-                              ),
-                              SizedBox(height: theme.spacing.md),
-
-                              // 项目名称输入（本地文件模式）
-                              if (isLocalFileMode) ...[
-                                DSInput(
-                                  controller: projectNameController,
-                                  label: '项目名称（英文/数字/下划线）',
-                                ),
-                                SizedBox(height: theme.spacing.xs),
-                                Text(
-                                  '文件将复制到 http_server/项目名称/ 目录',
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.textSub,
-                                  ),
-                                ),
-                                SizedBox(height: theme.spacing.md),
-                              ],
-
-                              DSInput(
-                                controller: urlController,
-                                label: 'webview_card_url'.tr,
-                                // 本地文件模式下 URL 自动生成,只读展示
-                                enabled: !isLocalFileMode,
-                                suffix: _buildFolderPickerSuffix(() async {
-                                  String? directoryPath;
-                                  List<String>? filesToCopy;
-
-                                  // macOS 使用目录选择，其他平台使用多文件选择
-                                  if (Theme.of(context).platform ==
-                                      TargetPlatform.macOS) {
-                                    // macOS: 使用目录选择
-                                    directoryPath = await FilePicker.platform
-                                        .getDirectoryPath(
-                                          dialogTitle: '选择项目目录（需包含 index.html）',
-                                        );
-                                  } else {
-                                    // Android/其他: 使用多文件选择
-                                    final result = await FilePicker.platform
-                                        .pickFiles(
-                                          dialogTitle:
-                                              '选择项目中的所有文件（包括 index.html）',
-                                          allowMultiple: true,
-                                          type: FileType.any,
-                                          withData: false,
-                                          withReadStream: false,
-                                        );
-
-                                    if (result == null ||
-                                        result.files.isEmpty) {
-                                      return;
-                                    }
-
-                                    // 找到包含 index.html 的目录
-                                    String? indexHtmlPath;
-                                    for (final file in result.files) {
-                                      if (file.path != null &&
-                                          file.name == 'index.html') {
-                                        indexHtmlPath = file.path;
-                                        break;
-                                      }
-                                    }
-
-                                    if (indexHtmlPath == null) {
-                                      Toast.error('错误：所选文件中未找到 index.html');
-                                      return;
-                                    }
-
-                                    // 获取目录路径和文件列表
-                                    directoryPath = path.dirname(indexHtmlPath);
-                                    filesToCopy =
-                                        result.files
-                                            .where((f) => f.path != null)
-                                            .map((f) => f.path!)
-                                            .toList();
-                                  }
-
-                                  if (directoryPath == null) {
-                                    return;
-                                  }
-
-                                  // 检查目录中是否存在 index.html
-                                  final indexHtmlFile = File(
-                                    path.join(directoryPath, 'index.html'),
-                                  );
-                                  if (!await indexHtmlFile.exists()) {
-                                    Toast.error('错误：所选目录中未找到 index.html');
-                                    return;
-                                  }
-
-                                  final directoryName = path.basename(
-                                    directoryPath,
-                                  );
-
-                                  // 将选中的文件列表保存到 WebViewPlugin 中以备后用
-                                  if (filesToCopy != null) {
-                                    WebViewPlugin.instance.pendingFilesToCopy =
-                                        filesToCopy;
-                                  } else {
-                                    // macOS: 扫描目录下所有文件
-                                    final dir = Directory(directoryPath);
-                                    WebViewPlugin.instance.pendingFilesToCopy =
-                                        (await dir
-                                            .list(recursive: true)
-                                            .where((entity) => entity is File)
-                                            .map((entity) => entity.path)
-                                            .toList());
-                                  }
-
-                                  setDialogState(() {
-                                    isLocalFileMode = true;
-                                    selectedType = CardType.localFile;
-                                  });
-
-                                  // 如果标题为空，使用目录名作为标题
-                                  if (titleController.text.isEmpty) {
-                                    titleController.text = directoryName;
-                                  }
-
-                                  // 如果项目名称为空，生成默认名称
-                                  if (projectNameController.text.isEmpty) {
-                                    final projectName = directoryName
-                                        .replaceAll(
-                                          RegExp(r'[^a-zA-Z0-9_-]'),
-                                          '_',
-                                        )
-                                        .replaceAll(RegExp(r'_+'), '_');
-                                    projectNameController.text = projectName;
-                                  }
-
-                                  // 存储目录路径
-                                  urlController.text = directoryPath;
-                                }),
-                              ),
-                              if (isLocalFileMode) ...[
-                                SizedBox(height: theme.spacing.xs),
-                                Text(
-                                  'URL 将自动生成为 ./项目名称/...',
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.textSub,
-                                  ),
-                                ),
-                              ],
-                              SizedBox(height: theme.spacing.md),
-                              DSInput(
-                                controller: descController,
-                                label: 'webview_card_description'.tr,
-                                maxLines: 2,
-                              ),
-                              SizedBox(height: theme.spacing.md),
-                              DSSegmentedControl(
-                                options: [
-                                  'webview_card_type_url'.tr,
-                                  'webview_card_type_local'.tr,
-                                ],
-                                selected: selectedType == CardType.url ? 0 : 1,
-                                onChanged: (value) {
-                                  setDialogState(() {
-                                    selectedType =
-                                        value == 0
-                                            ? CardType.url
-                                            : CardType.localFile;
-                                    isLocalFileMode =
-                                        selectedType == CardType.localFile;
-                                    if (!isLocalFileMode) {
-                                      projectNameController.clear();
-                                    }
-                                  });
-                                },
-                              ),
-                              SizedBox(height: theme.spacing.lg),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: DSButton(
-                                      label: 'app_cancel'.tr,
-                                      variant: DSButtonVariant.outline,
-                                      onPressed:
-                                          () =>
-                                              Navigator.of(dialogContext).pop(),
-                                    ),
-                                  ),
-                                  SizedBox(width: theme.spacing.md),
-                                  Expanded(
-                                    child: DSButton(
-                                      label: 'app_save'.tr,
-                                      onPressed: () async {
-                                        if (titleController.text.isEmpty) {
-                                          Toast.warning('请输入卡片标题');
-                                          return;
-                                        }
-
-                                        if (isLocalFileMode) {
-                                          // 本地文件模式：复制文件并生成 ./ 路径
-                                          if (projectNameController
-                                              .text
-                                              .isEmpty) {
-                                            Toast.warning('请输入项目名称');
-                                            return;
-                                          }
-
-                                          try {
-                                            final sourcePath =
-                                                urlController.text;
-                                            final projectName =
-                                                projectNameController.text;
-
-                                            // 复制文件到 HTTP 服务器目录
-                                            final relativePath =
-                                                await WebViewPlugin.instance
-                                                    .copyToHttpServer(
-                                                      sourcePath: sourcePath,
-                                                      projectName: projectName,
-                                                    );
-
-                                            // 添加卡片（使用 ./ 相对路径，同时保存原始路径）
-                                            await WebViewPlugin
-                                                .instance
-                                                .cardManager
-                                                .addCard(
-                                                  title: titleController.text,
-                                                  url: relativePath,
-                                                  type: selectedType,
-                                                  description:
-                                                      descController
-                                                              .text
-                                                              .isNotEmpty
-                                                          ? descController.text
-                                                          : null,
-                                                  sourcePath:
-                                                      sourcePath, // 保存原始路径用于同步
-                                                );
-
-                                            if (dialogContext.mounted) {
-                                              Navigator.of(dialogContext).pop();
-                                              Toast.success('本地项目已添加');
-                                            }
-                                          } catch (e) {
-                                            Toast.error('添加失败: $e');
-                                          }
-                                        } else {
-                                          // 在线 URL 模式
-                                          if (urlController.text.isEmpty) {
-                                            Toast.warning('请输入 URL');
-                                            return;
-                                          }
-
-                                          await WebViewPlugin
-                                              .instance
-                                              .cardManager
-                                              .addCard(
-                                                title: titleController.text,
-                                                url: urlController.text,
-                                                type: selectedType,
-                                                description:
-                                                    descController
-                                                            .text
-                                                            .isNotEmpty
-                                                        ? descController.text
-                                                        : null,
-                                              );
-
-                                          if (dialogContext.mounted) {
-                                            Navigator.of(dialogContext).pop();
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                    label: '同步复制',
+                    subtitle: '从原始路径重新复制文件',
+                    theme: theme,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _syncCopyCard(card);
                     },
                   ),
+                _SheetActionRow(
+                  icon: DsIcon(DsIconKind.edit, size: 20, color: theme.primary),
+                  label: 'webview_edit_card'.tr,
+                  theme: theme,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditCardDialog(card);
+                  },
                 ),
-          ),
+                _SheetActionRow(
+                  icon: DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
+                  label: 'webview_delete_card'.tr,
+                  theme: theme,
+                  danger: true,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteCard(card);
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -902,106 +515,103 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'webview_edit_card'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSInput(
+                      controller: titleController,
+                      label: 'webview_card_title'.tr,
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: urlController,
+                      label: 'webview_card_url'.tr,
+                      suffix: buildFolderPickerSuffix(() async {
+                        // 选择本地文件
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.any,
+                          allowMultiple: false,
+                        );
+
+                        if (result != null &&
+                            result.files.single.path != null) {
+                          final filePath = result.files.single.path!;
+                          // 将文件路径转换为正确的 file:// URL
+                          final fileUrl = _formatFileUrl(filePath);
+                          urlController.text = fileUrl;
+
+                          // 如果标题为空，使用文件名作为标题
+                          if (titleController.text.isEmpty) {
+                            final fileName = result.files.single.name;
+                            titleController.text = fileName;
+                          }
+                        }
+                      }),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: descController,
+                      label: 'webview_card_description'.tr,
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
                       children: [
-                        Text(
-                          'webview_edit_card'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
                         ),
-                        SizedBox(height: theme.spacing.lg),
-                        DSInput(
-                          controller: titleController,
-                          label: 'webview_card_title'.tr,
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(
-                          controller: urlController,
-                          label: 'webview_card_url'.tr,
-                          suffix: _buildFolderPickerSuffix(() async {
-                            // 选择本地文件
-                            final result = await FilePicker.platform.pickFiles(
-                              type: FileType.any,
-                              allowMultiple: false,
-                            );
-
-                            if (result != null &&
-                                result.files.single.path != null) {
-                              final filePath = result.files.single.path!;
-                              // 将文件路径转换为正确的 file:// URL
-                              final fileUrl = _formatFileUrl(filePath);
-                              urlController.text = fileUrl;
-
-                              // 如果标题为空，使用文件名作为标题
-                              if (titleController.text.isEmpty) {
-                                final fileName = result.files.single.name;
-                                titleController.text = fileName;
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_save'.tr,
+                            onPressed: () async {
+                              if (titleController.text.isNotEmpty &&
+                                  urlController.text.isNotEmpty) {
+                                final updatedCard = card.copyWith(
+                                  title: titleController.text,
+                                  url: urlController.text,
+                                  description: descController.text.isNotEmpty
+                                      ? descController.text
+                                      : null,
+                                );
+                                await WebViewPlugin.instance.cardManager
+                                    .updateCard(updatedCard);
+                                if (dialogContext.mounted) {
+                                  Navigator.of(dialogContext).pop();
+                                }
                               }
-                            }
-                          }),
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(
-                          controller: descController,
-                          label: 'webview_card_description'.tr,
-                          maxLines: 2,
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: 'app_cancel'.tr,
-                                variant: DSButtonVariant.outline,
-                                onPressed:
-                                    () => Navigator.of(dialogContext).pop(),
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.md),
-                            Expanded(
-                              child: DSButton(
-                                label: 'app_save'.tr,
-                                onPressed: () async {
-                                  if (titleController.text.isNotEmpty &&
-                                      urlController.text.isNotEmpty) {
-                                    final updatedCard = card.copyWith(
-                                      title: titleController.text,
-                                      url: urlController.text,
-                                      description:
-                                          descController.text.isNotEmpty
-                                              ? descController.text
-                                              : null,
-                                    );
-                                    await WebViewPlugin.instance.cardManager
-                                        .updateCard(updatedCard);
-                                    if (dialogContext.mounted) {
-                                      Navigator.of(dialogContext).pop();
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
+                            },
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1059,25 +669,21 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => DSDialog(
-                    title: 'webview_delete_card'.tr,
-                    message: 'webview_confirm_delete'.tr,
-                    confirmText: 'app_delete'.tr,
-                    cancelText: 'app_cancel'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () async {
-                      await WebViewPlugin.instance.cardManager.deleteCard(
-                        card.id,
-                      );
-                      Navigator.of(context).pop();
-                    },
-                  ),
-            ),
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => DSDialog(
+            title: 'webview_delete_card'.tr,
+            message: 'webview_confirm_delete'.tr,
+            confirmText: 'app_delete'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () async {
+              await WebViewPlugin.instance.cardManager.deleteCard(card.id);
+              Navigator.of(context).pop();
+            },
           ),
+        ),
+      ),
     );
   }
 }
@@ -1151,4 +757,314 @@ class _SheetActionRow extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 添加卡片对话框（宿主页底部导航圆钮调用） ====================
+
+/// 弹出添加卡片对话框（在线 URL / 本地项目目录复制）
+void showAddCardDialog(BuildContext context) {
+  final titleController = TextEditingController();
+  final urlController = TextEditingController();
+  final descController = TextEditingController();
+  final projectNameController = TextEditingController();
+  CardType selectedType = CardType.url;
+  bool isLocalFileMode = false;
+
+  showDSDialog(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'webview_add_card'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSInput(
+                      controller: titleController,
+                      label: 'webview_card_title'.tr,
+                    ),
+                    SizedBox(height: theme.spacing.md),
+
+                    // 项目名称输入（本地文件模式）
+                    if (isLocalFileMode) ...[
+                      DSInput(
+                        controller: projectNameController,
+                        label: '项目名称（英文/数字/下划线）',
+                      ),
+                      SizedBox(height: theme.spacing.xs),
+                      Text(
+                        '文件将复制到 http_server/项目名称/ 目录',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      SizedBox(height: theme.spacing.md),
+                    ],
+
+                    DSInput(
+                      controller: urlController,
+                      label: 'webview_card_url'.tr,
+                      // 本地文件模式下 URL 自动生成,只读展示
+                      enabled: !isLocalFileMode,
+                      suffix: buildFolderPickerSuffix(() async {
+                        String? directoryPath;
+                        List<String>? filesToCopy;
+
+                        // macOS 使用目录选择，其他平台使用多文件选择
+                        if (Theme.of(context).platform ==
+                            TargetPlatform.macOS) {
+                          // macOS: 使用目录选择
+                          directoryPath = await FilePicker.platform
+                              .getDirectoryPath(
+                                dialogTitle: '选择项目目录（需包含 index.html）',
+                              );
+                        } else {
+                          // Android/其他: 使用多文件选择
+                          final result = await FilePicker.platform.pickFiles(
+                            dialogTitle: '选择项目中的所有文件（包括 index.html）',
+                            allowMultiple: true,
+                            type: FileType.any,
+                            withData: false,
+                            withReadStream: false,
+                          );
+
+                          if (result == null || result.files.isEmpty) {
+                            return;
+                          }
+
+                          // 找到包含 index.html 的目录
+                          String? indexHtmlPath;
+                          for (final file in result.files) {
+                            if (file.path != null &&
+                                file.name == 'index.html') {
+                              indexHtmlPath = file.path;
+                              break;
+                            }
+                          }
+
+                          if (indexHtmlPath == null) {
+                            Toast.error('错误：所选文件中未找到 index.html');
+                            return;
+                          }
+
+                          // 获取目录路径和文件列表
+                          directoryPath = path.dirname(indexHtmlPath);
+                          filesToCopy = result.files
+                              .where((f) => f.path != null)
+                              .map((f) => f.path!)
+                              .toList();
+                        }
+
+                        if (directoryPath == null) {
+                          return;
+                        }
+
+                        // 检查目录中是否存在 index.html
+                        final indexHtmlFile = File(
+                          path.join(directoryPath, 'index.html'),
+                        );
+                        if (!await indexHtmlFile.exists()) {
+                          Toast.error('错误：所选目录中未找到 index.html');
+                          return;
+                        }
+
+                        final directoryName = path.basename(directoryPath);
+
+                        // 将选中的文件列表保存到 WebViewPlugin 中以备后用
+                        if (filesToCopy != null) {
+                          WebViewPlugin.instance.pendingFilesToCopy =
+                              filesToCopy;
+                        } else {
+                          // macOS: 扫描目录下所有文件
+                          final dir = Directory(directoryPath);
+                          WebViewPlugin.instance.pendingFilesToCopy = (await dir
+                              .list(recursive: true)
+                              .where((entity) => entity is File)
+                              .map((entity) => entity.path)
+                              .toList());
+                        }
+
+                        setDialogState(() {
+                          isLocalFileMode = true;
+                          selectedType = CardType.localFile;
+                        });
+
+                        // 如果标题为空，使用目录名作为标题
+                        if (titleController.text.isEmpty) {
+                          titleController.text = directoryName;
+                        }
+
+                        // 如果项目名称为空，生成默认名称
+                        if (projectNameController.text.isEmpty) {
+                          final projectName = directoryName
+                              .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_')
+                              .replaceAll(RegExp(r'_+'), '_');
+                          projectNameController.text = projectName;
+                        }
+
+                        // 存储目录路径
+                        urlController.text = directoryPath;
+                      }),
+                    ),
+                    if (isLocalFileMode) ...[
+                      SizedBox(height: theme.spacing.xs),
+                      Text(
+                        'URL 将自动生成为 ./项目名称/...',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: descController,
+                      label: 'webview_card_description'.tr,
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSSegmentedControl(
+                      options: [
+                        'webview_card_type_url'.tr,
+                        'webview_card_type_local'.tr,
+                      ],
+                      selected: selectedType == CardType.url ? 0 : 1,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedType = value == 0
+                              ? CardType.url
+                              : CardType.localFile;
+                          isLocalFileMode = selectedType == CardType.localFile;
+                          if (!isLocalFileMode) {
+                            projectNameController.clear();
+                          }
+                        });
+                      },
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'app_save'.tr,
+                            onPressed: () async {
+                              if (titleController.text.isEmpty) {
+                                Toast.warning('请输入卡片标题');
+                                return;
+                              }
+
+                              if (isLocalFileMode) {
+                                // 本地文件模式：复制文件并生成 ./ 路径
+                                if (projectNameController.text.isEmpty) {
+                                  Toast.warning('请输入项目名称');
+                                  return;
+                                }
+
+                                try {
+                                  final sourcePath = urlController.text;
+                                  final projectName =
+                                      projectNameController.text;
+
+                                  // 复制文件到 HTTP 服务器目录
+                                  final relativePath = await WebViewPlugin
+                                      .instance
+                                      .copyToHttpServer(
+                                        sourcePath: sourcePath,
+                                        projectName: projectName,
+                                      );
+
+                                  // 添加卡片（使用 ./ 相对路径，同时保存原始路径）
+                                  await WebViewPlugin.instance.cardManager
+                                      .addCard(
+                                        title: titleController.text,
+                                        url: relativePath,
+                                        type: selectedType,
+                                        description:
+                                            descController.text.isNotEmpty
+                                            ? descController.text
+                                            : null,
+                                        sourcePath: sourcePath, // 保存原始路径用于同步
+                                      );
+
+                                  if (dialogContext.mounted) {
+                                    Navigator.of(dialogContext).pop();
+                                    Toast.success('本地项目已添加');
+                                  }
+                                } catch (e) {
+                                  Toast.error('添加失败: $e');
+                                }
+                              } else {
+                                // 在线 URL 模式
+                                if (urlController.text.isEmpty) {
+                                  Toast.warning('请输入 URL');
+                                  return;
+                                }
+
+                                await WebViewPlugin.instance.cardManager
+                                    .addCard(
+                                      title: titleController.text,
+                                      url: urlController.text,
+                                      type: selectedType,
+                                      description:
+                                          descController.text.isNotEmpty
+                                          ? descController.text
+                                          : null,
+                                    );
+
+                                if (dialogContext.mounted) {
+                                  Navigator.of(dialogContext).pop();
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+/// 本地文件/目录选择按钮(DS 暂无文件夹图标,保留 Material IconButton)
+Widget buildFolderPickerSuffix(VoidCallback onPressed) {
+  return Builder(
+    builder: (context) {
+      final theme = DSThemeBridge.resolve(context);
+      return Material(
+        type: MaterialType.transparency,
+        child: IconButton(
+          icon: Icon(Icons.folder_open, color: theme.primary),
+          tooltip: 'webview_select_local_file'.tr,
+          onPressed: onPressed,
+        ),
+      );
+    },
+  );
 }

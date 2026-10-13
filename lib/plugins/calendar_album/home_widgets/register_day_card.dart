@@ -11,8 +11,8 @@ import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/album_day_card.dart';
 
 /// 获取指定日期的相册条目（存储按日分片，同步读取）
@@ -72,6 +72,25 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
     if (mounted) setState(() {});
   }
 
+  /// 打开日记编辑器（编辑器保存依赖 CalendarController Provider 祖先）
+  void _openEditor({CalendarEntry? entry, DateTime? initialDate, required bool isEditing}) {
+    final plugin = CalendarAlbumPlugin.instance;
+    NavigationHelper.push(
+      context,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: plugin.calendarController!),
+          ChangeNotifierProvider.value(value: plugin.tagController!),
+        ],
+        child: EntryEditorScreen(
+          entry: entry,
+          initialDate: initialDate,
+          isEditing: isEditing,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return EventListenerContainer(
@@ -89,11 +108,9 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
               date: date,
               entries: _entriesForDate(date),
               onEntryTap: (entry) =>
-                  NavigationHelper.push(context, EntryDetailScreen(entry: entry)),
-              onAddEntry: (date) => NavigationHelper.push(
-                context,
-                EntryEditorScreen(initialDate: date, isEditing: false),
-              ),
+                  _openEditor(entry: entry, isEditing: true),
+              onAddEntry: (date) =>
+                  _openEditor(initialDate: date, isEditing: false),
             );
           } catch (e) {
             return HomeWidget.buildErrorWidget(context, e.toString());

@@ -10,9 +10,13 @@ import 'entry_editor_controller.dart';
 class EntryEditorTagHandler extends StatefulWidget {
   final EntryEditorController controller;
 
+  /// 只读模式（隐藏添加按钮与标签删除叉）
+  final bool readOnly;
+
   const EntryEditorTagHandler({
     super.key,
     required this.controller,
+    this.readOnly = false,
   });
 
   @override
@@ -60,19 +64,21 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
               fontSize: 14,
             ),
           ),
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                widget.controller.selectedTags.remove(tag);
-              });
-            },
-            child: Icon(
-              Icons.close,
-              size: 14,
-              color: style.text.withOpacity(0.6),
+          if (!widget.readOnly) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  widget.controller.selectedTags.remove(tag);
+                });
+              },
+              child: Icon(
+                Icons.close,
+                size: 14,
+                color: style.text.withOpacity(0.6),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -175,7 +181,7 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
             ...widget.controller.selectedTags.asMap().entries.map((entry) {
               return _buildTagChip(entry.value, entry.key);
             }),
-            _buildAddTagButton(),
+            if (!widget.readOnly) _buildAddTagButton(),
           ],
         ),
       ],

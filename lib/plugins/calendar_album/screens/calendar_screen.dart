@@ -18,11 +18,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skribble/skribble.dart';
 
-import 'entry_detail_screen.dart';
 import 'entry_editor_screen.dart';
 
 final DateTime _calendarMinMonth = DateTime(2010, 1, 1);
-final DateTime _calendarMaxMonth = DateTime(2030, 12, 31);
 const int _calendarLoadBatchSize = 3;
 const String _photoViewPrefKey = 'calendar_album_use_photo_view';
 
@@ -254,25 +252,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 打开日记详情页
-  Future<void> _openEntryDetail(
-    CalendarController calendarController,
-    TagController tagController,
-    CalendarEntry entry,
-  ) async {
-    await NavigationHelper.push(
-      context,
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: calendarController),
-          ChangeNotifierProvider.value(value: tagController),
-        ],
-        child: EntryDetailScreen(entry: entry),
-      ),
-    );
-    if (mounted) setState(() {});
-  }
-
   /// 打开日记编辑器
   Future<void> _openEntryEditor({
     CalendarEntry? entry,
@@ -381,10 +360,10 @@ class _CalendarScreenState extends State<CalendarScreen>
           child: WiredDraw(
             child: DSCard(
               onTap:
-                  () => _openEntryDetail(
-                    calendarController,
-                    tagController,
-                    entry,
+                  () => _openEntryEditor(
+                    entry: entry,
+                    isEditing: true,
+                    calendarController: calendarController,
                   ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,7 +552,11 @@ class _CalendarScreenState extends State<CalendarScreen>
       entries: calendarController.getEntriesForDate(selectedDate),
       onTap: (entry) {
         Navigator.pop(context); // 关闭抽屉
-        _openEntryDetail(calendarController, tagController, entry);
+        _openEntryEditor(
+          entry: entry,
+          isEditing: true,
+          calendarController: calendarController,
+        );
       },
       onEdit: (entry) {
         Navigator.pop(context); // 关闭抽屉

@@ -1,5 +1,4 @@
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -74,10 +73,20 @@ class _AlbumScreenState extends State<AlbumScreen> {
             )
             .toList(),
         initialIndex: index,
-        // 点击信息区跳转照片所属日记条目
+        // 点击信息区跳转照片所属日记编辑器（补齐编辑器保存所需的 Provider 祖先）
         onInfoTap: (i) => NavigationHelper.push<void>(
           context,
-          EntryDetailScreen(entry: photos[i].entry),
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider.value(
+                value: Provider.of<CalendarController>(context, listen: false),
+              ),
+              ChangeNotifierProvider.value(
+                value: Provider.of<TagController>(context, listen: false),
+              ),
+            ],
+            child: EntryEditorScreen(entry: photos[i].entry, isEditing: true),
+          ),
         ),
       ),
     );

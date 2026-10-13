@@ -76,6 +76,7 @@ class CalendarAlbumTranslationsZh {
 
     // 日记编辑器
     'calendar_album_edit_post': '编辑帖子',
+    'calendar_album_view_post': '查看日记',
     'calendar_album_new_post': '新帖子',
     'calendar_album_save': '保存',
     'calendar_album_whats_on_mind': '你在想什么？',

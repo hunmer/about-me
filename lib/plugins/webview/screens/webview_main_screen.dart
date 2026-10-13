@@ -48,7 +48,7 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
             bottomNavigationBar: SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(theme.spacing.lg),
                 child: DSBottomNavigation(
                   currentIndex: _currentIndex,
                   onTap: (index) {
@@ -56,6 +56,15 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
                       _currentIndex = index;
                     });
                   },
+                  // 子栏右侧圆钮：添加卡片/本地项目（无子栏胶囊，
+                  // 恒传 never 保持仅 dock 的紧凑占位）
+                  trailingAction: DsIcon(
+                    DsIconKind.plus,
+                    size: 16,
+                    color: theme.primary,
+                  ),
+                  onTrailingTap: () => showAddCardDialog(context),
+                  subBarBehavior: RadialSubBarBehavior.never,
                   items: [
                     DSNavItem(
                       icon: DsIconKind.grid,

@@ -9,6 +9,9 @@ import 'dart:io';
 class EntryEditorImageHandler extends StatefulWidget {
   final List<String> imageUrls;
   final List<String> thumbUrls;
+
+  /// 只读模式（隐藏添加按钮与删除角标）
+  final bool readOnly;
   final Function(String url, String? thumbUrl) onImageAdded;
   final Function(int index) onImageRemoved;
 
@@ -16,6 +19,7 @@ class EntryEditorImageHandler extends StatefulWidget {
     super.key,
     required this.imageUrls,
     required this.thumbUrls,
+    this.readOnly = false,
     required this.onImageAdded,
     required this.onImageRemoved,
   });
@@ -97,23 +101,24 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
               child: _buildImageContent(url, thumbUrl),
             ),
           ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: () {
-                widget.onImageRemoved(index);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
+          if (!widget.readOnly)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () {
+                  widget.onImageRemoved(index);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -204,7 +209,7 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         children: [
-          _buildAddButton(),
+          if (!widget.readOnly) _buildAddButton(),
           ...List.generate(
             widget.imageUrls.length,
             (index) => _buildImageItem(

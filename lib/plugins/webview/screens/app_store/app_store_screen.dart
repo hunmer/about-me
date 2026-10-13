@@ -1,6 +1,6 @@
-import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/webview/screens/app_store/source_management_screen.dart';
 import 'package:aboutme/plugins/webview/screens/app_store/app_detail_sheet.dart';
 import 'package:flutter/material.dart';
@@ -74,24 +74,6 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
         // SuperAppBar 的 actions 经 Overlay 渲染,脱离页面主题桥,
         // DS 按钮需自带 DSThemeBridge 提供 AppTheme
         actions: [
-          // 源切换按钮(DS 暂无"源"图标,用 layers 近似)
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.layers,
-                  size: 36,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  tooltip:
-                      appStoreManager.currentSource?.name ??
-                      'webview_select_source'.tr,
-                  onPressed: () => _showSourcePicker(context),
-                );
-              },
-            ),
-          ),
           // 源管理按钮
           DSThemeBridge(
             child: Builder(
@@ -105,14 +87,11 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                   tooltip: 'webview_manage_sources'.tr,
                   onPressed: () {
                     final appStoreManager = context.read<AppStoreManager>();
-                    Navigator.push(
+                    NavigationHelper.push(
                       context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => ChangeNotifierProvider.value(
-                              value: appStoreManager,
-                              child: const SourceManagementScreen(),
-                            ),
+                      ChangeNotifierProvider.value(
+                        value: appStoreManager,
+                        child: const SourceManagementScreen(),
                       ),
                     );
                   },
@@ -490,116 +469,6 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
   Widget _buildEmptyView() {
     return const Center(
       child: DSEmptyState(emoji: '🧩', title: 'No apps found'),
-    );
-  }
-
-  /// 源选择对话框
-  void _showSourcePicker(BuildContext context) {
-    final manager = context.read<AppStoreManager>();
-    if (manager.sources.isEmpty) {
-      Toast.warning('webview_no_sources'.tr);
-      return;
-    }
-
-    showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'webview_select_source'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        ...manager.sources.map((source) {
-                          final selected =
-                              source.id == manager.currentSource?.id;
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: theme.spacing.sm),
-                            child: Pressable(
-                              onPressed: () {
-                                manager.switchSource(source.id);
-                                Navigator.of(dialogContext).pop();
-                              },
-                              builder: (context, states) {
-                                final pressed = states.contains(
-                                  WidgetState.pressed,
-                                );
-                                return JellyBox(
-                                  radius: theme.radii.lg,
-                                  raised: false,
-                                  color:
-                                      pressed
-                                          ? theme.primary.mixWhite(0.9)
-                                          : selected
-                                          ? theme.primary.mixWhite(0.92)
-                                          : theme.surfaceAlt,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: theme.spacing.md,
-                                    vertical: theme.spacing.sm + 2,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      DSRadio<String>(
-                                        value: source.id,
-                                        groupValue: manager.currentSource?.id,
-                                        onChanged: (_) {
-                                          manager.switchSource(source.id);
-                                          Navigator.of(dialogContext).pop();
-                                        },
-                                      ),
-                                      SizedBox(width: theme.spacing.md),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              source.name,
-                                              style: DsTypography.body.copyWith(
-                                                color: theme.text,
-                                              ),
-                                            ),
-                                            Text(
-                                              source.url,
-                                              style: DsTypography.caption
-                                                  .copyWith(
-                                                    color: theme.textSub,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
     );
   }
 

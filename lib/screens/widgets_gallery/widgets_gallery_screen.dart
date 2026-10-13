@@ -22,6 +22,15 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'DesignSystemGallery（零依赖组件库）',
             route: '/design_system',
           ),
+          // DEMO 复刻
+          _buildSectionHeader(context, 'DEMO 复刻'),
+          _buildListItem(
+            context,
+            icon: Icons.auto_awesome_motion,
+            title: 'AI-Picks for You 书籍推荐',
+            subtitle: 'Pins DEMO 复刻（瀑布流网格 + 详情页，手绘风）',
+            route: '/widgets_gallery/ai_picks_demo',
+          ),
           // Picker 类组件
           _buildSectionHeader(context, 'Picker 选择器类'),
           _buildListItem(

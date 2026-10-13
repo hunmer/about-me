@@ -9,11 +9,15 @@ class EntryEditorScreen extends StatefulWidget {
   final DateTime? initialDate;
   final bool isEditing;
 
+  /// 只读模式（纯查看，禁用编辑与保存）
+  final bool readOnly;
+
   const EntryEditorScreen({
     super.key,
     this.entry,
     this.initialDate,
     required this.isEditing,
+    this.readOnly = false,
   });
 
   @override
@@ -39,7 +43,11 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
   void _updateRouteContext() {
     final date = widget.entry?.createdAt ?? widget.initialDate ?? DateTime.now();
     final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    final mode = widget.isEditing ? '编辑' : '新建';
+    final mode = widget.readOnly
+        ? '查看'
+        : widget.isEditing
+        ? '编辑'
+        : '新建';
     final title = widget.entry?.title ?? '新日记';
 
     RouteHistoryManager.updateCurrentContext(
@@ -65,6 +73,7 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
     return EntryEditorUI(
       controller: _controller,
       isEditing: widget.isEditing,
+      readOnly: widget.readOnly,
       parentContext: context,
     );
   }

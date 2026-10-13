@@ -11,7 +11,7 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
@@ -291,7 +291,7 @@ Widget _buildPhotoPreview(BuildContext context, CalendarEntry? entry) {
   );
 }
 
-/// 打开日期相册（如果有日记则打开详情页，否则打开该日期的日记列表）
+/// 打开日期相册（如果有日记则打开编辑器，否则打开该日期的日记列表）
 Future<void> _openDateAlbum(
   BuildContext context,
   DateTime date,
@@ -299,7 +299,7 @@ Future<void> _openDateAlbum(
   CalendarAlbumPlugin plugin,
 ) async {
   if (entry != null) {
-    // 有日记，打开日记详情
+    // 有日记，打开日记编辑器
     NavigationHelper.push(
       context,
       MultiProvider(
@@ -307,7 +307,7 @@ Future<void> _openDateAlbum(
           ChangeNotifierProvider.value(value: plugin.calendarController!),
           ChangeNotifierProvider.value(value: plugin.tagController!),
         ],
-        child: EntryDetailScreen(entry: entry),
+        child: EntryEditorScreen(entry: entry, isEditing: true),
       ),
     );
   } else {

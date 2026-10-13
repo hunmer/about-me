@@ -77,6 +77,7 @@ class CalendarAlbumTranslationsEn {
 
     // Entry Editor
     'calendar_album_edit_post': 'Edit Post',
+    'calendar_album_view_post': 'View Post',
     'calendar_album_new_post': 'New Post',
     'calendar_album_save': 'Save',
     'calendar_album_whats_on_mind': "What's on your mind?",
