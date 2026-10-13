@@ -13,13 +13,15 @@ import 'package:aboutme/widgets/form_fields/types.dart';
 
 /// 任务表单 - 使用 FormBuilderWrapper 重构版本
 ///
-/// 支持创建新任务和编辑现有任务
+/// 支持创建新任务和编辑现有任务；[inSheet] 为 true 时渲染底部弹层适配版
+/// （无 Scaffold/AppBar，紧凑头部 + 自适应高度）
 class TaskForm extends StatefulWidget {
   final Task? task; // If null, create new task
   final TaskController taskController;
   final ReminderController reminderController;
   final TaskPriority? initialPriority; // 预设优先级（仅用于创建新任务）
   final DateTime? initialStartDate; // 预设开始日期（仅用于创建新任务）
+  final bool inSheet; // 是否在底部弹层中展示
 
   const TaskForm({
     super.key,
@@ -28,6 +30,7 @@ class TaskForm extends StatefulWidget {
     required this.reminderController,
     this.initialPriority,
     this.initialStartDate,
+    this.inSheet = false,
   });
 
   @override
@@ -53,7 +56,10 @@ class _TaskFormState extends State<TaskForm> {
   @override
   void initState() {
     super.initState();
-    _updateRouteContext();
+    // 弹层不是独立路由，不覆盖当前页面上下文
+    if (!widget.inSheet) {
+      _updateRouteContext();
+    }
   }
 
   @override
@@ -172,6 +178,60 @@ class _TaskFormState extends State<TaskForm> {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
 
+    if (widget.inSheet) {
+      // 底部弹层版：紧凑头部 + 自适应高度表单
+      return SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: Row(
+                children: [
+                  _buildHeaderButton(
+                    icon: DsIconKind.close,
+                    color: null,
+                    iconColor: null,
+                    tooltip: 'app_cancel'.tr,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        widget.task == null
+                            ? 'todo_newTask'.tr
+                            : 'todo_editTask'.tr,
+                        style: DsTypography.heading,
+                      ),
+                    ),
+                  ),
+                  if (widget.task != null)
+                    _buildHeaderButton(
+                      icon: DsIconKind.trash,
+                      color: null,
+                      iconColor: null,
+                      tooltip: 'app_delete'.tr,
+                      onPressed: _confirmDelete,
+                    ),
+                  _buildHeaderButton(
+                    icon: DsIconKind.check,
+                    color: null,
+                    iconColor: null,
+                    tooltip: 'app_save'.tr,
+                    onPressed: () => _formWrapperState?.submitForm(),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(child: _buildFormBody(locale)),
+            // 底部安全区，避免内容被系统手势条遮挡（键盘避让由 smooth_sheets 处理）
+            SafeArea(top: false, child: const SizedBox(height: 8)),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -181,12 +241,10 @@ class _TaskFormState extends State<TaskForm> {
           // AppBar leading 位于主题树之外，外包 DSThemeBridge（陷阱 2）
           child: Builder(
             builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
+              return _buildHeaderButton(
                 icon: DsIconKind.close,
-                size: 32,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
+                color: DSThemeBridge.resolve(context).surfaceAlt,
+                iconColor: DSThemeBridge.resolve(context).textSub,
                 onPressed: () => Navigator.pop(context),
               );
             },
@@ -198,9 +256,8 @@ class _TaskFormState extends State<TaskForm> {
               child: Builder(
                 builder: (context) {
                   final theme = DSThemeBridge.resolve(context);
-                  return DSIconButton(
+                  return _buildHeaderButton(
                     icon: DsIconKind.trash,
-                    size: 40,
                     color: theme.surfaceAlt,
                     iconColor: theme.danger,
                     tooltip: 'app_delete'.tr,
@@ -213,9 +270,8 @@ class _TaskFormState extends State<TaskForm> {
             child: Builder(
               builder: (context) {
                 final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
+                return _buildHeaderButton(
                   icon: DsIconKind.check,
-                  size: 40,
                   color: theme.primary,
                   iconColor: theme.onPrimary,
                   tooltip: 'app_save'.tr,
@@ -226,29 +282,71 @@ class _TaskFormState extends State<TaskForm> {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 32,
+      body: _buildFormBody(locale),
+    );
+  }
+
+  /// 头部图标按钮（AppBar 与弹层头部共用；color 为 null 时走 ghost 风格）
+  Widget _buildHeaderButton({
+    required DsIconKind icon,
+    required Color? color,
+    required Color? iconColor,
+    String? tooltip,
+    VoidCallback? onPressed,
+  }) {
+    if (color == null) {
+      // 弹层头部：无实底的轻量按钮，借用主题桥保证 DS 组件可用
+      return DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Pressable(
+              onPressed: onPressed,
+              semanticLabel: tooltip,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: DsIcon(icon, size: 20, color: theme.textSub),
               ),
-              child: FormBuilderWrapper(
-                key: _formKey,
-                onStateReady: (state) => _formWrapperState = state,
-                config: FormConfig(
-                  fieldSpacing: 16,
-                  showSubmitButton: false,
-                  showResetButton: false,
-                  fields: _buildFormFieldConfigs(locale),
-                  onSubmit: _handleSubmit,
-                ),
+            );
+          },
+        ),
+      );
+    }
+    return DSIconButton(
+      icon: icon,
+      size: 32,
+      color: color,
+      iconColor: iconColor,
+      tooltip: tooltip,
+      onPressed: onPressed,
+    );
+  }
+
+  /// 表单主体（滚动区域）
+  Widget _buildFormBody(String locale) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight:
+                  widget.inSheet ? 0 : constraints.maxHeight - 32,
+            ),
+            child: FormBuilderWrapper(
+              key: _formKey,
+              onStateReady: (state) => _formWrapperState = state,
+              config: FormConfig(
+                fieldSpacing: 16,
+                showSubmitButton: false,
+                showResetButton: false,
+                fields: _buildFormFieldConfigs(locale),
+                onSubmit: _handleSubmit,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

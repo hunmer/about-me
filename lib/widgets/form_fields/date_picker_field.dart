@@ -49,13 +49,18 @@ class DatePickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 描边对齐 DSInput 失焦态（主题语义色派生），不用默认浓墨线
+    final stroke = theme.textSub.withValues(alpha: 0.45);
 
-    // inline 模式：label 在左，日期在右
+    // inline 模式：label 在左，日期在右（与默认模式共用墨盒，仅布局不同）
     if (inline) {
       return Pressable(
         onPressed: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: JellyBox(
+          height: 50,
+          radius: theme.radii.lg,
+          strokeColor: stroke,
+          padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -68,7 +73,9 @@ class DatePickerField extends StatelessWidget {
               ),
               Text(
                 formattedDate.isEmpty ? placeholder : formattedDate,
-                style: DsTypography.body.copyWith(color: theme.textSub),
+                style: DsTypography.body.copyWith(
+                  color: formattedDate.isEmpty ? theme.textSub : theme.text,
+                ),
               ),
             ],
           ),
@@ -83,6 +90,7 @@ class DatePickerField extends StatelessWidget {
       child: JellyBox(
         height: 50,
         radius: theme.radii.lg,
+        strokeColor: stroke,
         padding: EdgeInsets.only(
           left: theme.spacing.md,
           right: theme.spacing.lg,

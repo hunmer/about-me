@@ -7,18 +7,20 @@ import '../types.dart';
 
 /// ========== 公共样式生成函数 ==========
 
-/// 创建统一的圆角容器装饰（DS 令牌驱动）
+/// 创建统一的圆角容器装饰（DS 令牌驱动，手绘墨线）
 /// 用于 Container、Row 等非输入组件
-BoxDecoration createRoundedContainerDecoration(
+Decoration createRoundedContainerDecoration(
   BuildContext context, {
   double radius = 12,
 }) {
   final theme = DSThemeBridge.resolve(context);
 
-  return BoxDecoration(
-    color: theme.surface,
-    borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: theme.stroke),
+  return dsSketchDecoration(
+    theme: theme,
+    fillColor: theme.surface,
+    radius: BorderRadius.circular(radius),
+    // 描边对齐 DSInput 失焦态（主题语义色派生）
+    stroke: theme.textSub.withValues(alpha: 0.45),
   );
 }
 
@@ -121,6 +123,7 @@ Widget buildSelectField(
       Widget trigger = JellyBox(
         height: 46,
         radius: theme.radii.lg,
+        strokeColor: theme.textSub.withValues(alpha: 0.45),
         padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
         child: Row(
           children: [

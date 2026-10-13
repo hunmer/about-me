@@ -9,7 +9,7 @@ import 'package:aboutme/plugins/todo/widgets/todo_day_card.dart';
 /// 周视图 - 展示从周一到周日的待办事项（手绘纸墨风）
 ///
 /// 周信息头与七张日卡均走手绘面板，挂载时经 [WiredDraw] 播墨线描画入场。
-class TodoWeekView extends StatelessWidget {
+class TodoWeekView extends StatefulWidget {
   final List<Task> tasks;
   final Function(Task) onTaskTap;
   final Function(Task, TaskStatus) onTaskStatusChanged;
@@ -24,11 +24,19 @@ class TodoWeekView extends StatelessWidget {
   });
 
   @override
+  State<TodoWeekView> createState() => _TodoWeekViewState();
+}
+
+class _TodoWeekViewState extends State<TodoWeekView> {
+  /// 相对本周的偏移周数，负数为过去周
+  int _weekOffset = 0;
+
+  @override
   Widget build(BuildContext context) {
-    // 获取本周的日期范围
-    final weekDates = _getCurrentWeekDates();
+    // 获取当前展示周的日期范围
+    final weekDates = _getWeekDates(_weekOffset);
     // 按日期分组任务
-    final tasksByDate = _groupTasksByDate(tasks, weekDates);
+    final tasksByDate = _groupTasksByDate(widget.tasks, weekDates);
     // 本周未完成任务总数
     final weekTaskCount = tasksByDate.values
         .fold(0, (sum, list) => sum + list.length);
@@ -44,11 +52,7 @@ class TodoWeekView extends StatelessWidget {
               child: Column(
                 children: [
                   // 顶部周信息
-                  _buildWeekHeader(
-                    context,
-                    weekDates: weekDates,
-                    taskCount: weekTaskCount,
-                  ),
+                  _buildWeekHeader(context, taskCount: weekTaskCount),
                   const SizedBox(height: 8),
                   // 七天的卡片布局
                   Expanded(
@@ -85,12 +89,9 @@ class TodoWeekView extends StatelessWidget {
   /// 构建周标题（大容器走手绘面板：纸底 + 淡排线 + 墨线框）
   Widget _buildWeekHeader(
     BuildContext context, {
-    required List<DateTime> weekDates,
     required int taskCount,
   }) {
     final theme = DSThemeBridge.resolve(context);
-    final start = _formatShortDate(weekDates.first);
-    final end = _formatShortDate(weekDates.last);
 
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -102,15 +103,13 @@ class TodoWeekView extends StatelessWidget {
           children: [
             DsIcon(DsIconKind.calendar, size: 18, color: theme.primary),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'todo_weekDateRange'.trParams({'start': start, 'end': end}),
-                style: DsTypography.label.copyWith(
-                  color: theme.text,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            _buildWeekSwitcher(context, theme: theme),
+            const SizedBox(width: 8),
+            // 回到今天：切走本周后显示，一键返回
+            if (_weekOffset != 0) ...[
+              _buildBackToTodayButton(theme),
+              const SizedBox(width: 8),
+            ],
             // 任务数徽章：小控件走纯色实底 + 墨线描边
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -131,6 +130,82 @@ class TodoWeekView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 周切换器：左右箭头 + 日期范围，点击切换上/下周
+  Widget _buildWeekSwitcher(
+    BuildContext context, {
+    required AppThemeData theme,
+  }) {
+    final start = _formatShortDate(_getWeekDates(_weekOffset).first);
+    final end = _formatShortDate(_getWeekDates(_weekOffset).last);
+
+    return Expanded(
+      child: Row(
+        children: [
+          _buildArrowButton(
+            theme,
+            icon: DsIconKind.chevronLeft,
+            onPressed: () => setState(() => _weekOffset--),
+          ),
+          Expanded(
+            child: Text(
+              'todo_weekDateRange'.trParams({'start': start, 'end': end}),
+              style: DsTypography.label.copyWith(
+                color: theme.text,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _buildArrowButton(
+            theme,
+            icon: DsIconKind.chevronRight,
+            onPressed: () => setState(() => _weekOffset++),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 「回到今天」按钮：小 chip 走纯色实底 + 墨线描边
+  Widget _buildBackToTodayButton(AppThemeData theme) {
+    return Pressable(
+      onPressed: () => setState(() => _weekOffset = 0),
+      semanticLabel: 'todo_backToToday'.tr,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.primary.withValues(alpha: 0.12),
+          stroke: theme.primary.withValues(alpha: 0.55),
+          strokeWidth: 1.2,
+          radius: theme.radii.pill,
+        ),
+        child: Text(
+          'todo_backToToday'.tr,
+          style: DsTypography.caption.copyWith(
+            fontSize: 10,
+            color: theme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 箭头按钮：轻量可点击图标，按压变淡提示
+  Widget _buildArrowButton(
+    AppThemeData theme, {
+    required DsIconKind icon,
+    required VoidCallback onPressed,
+  }) {
+    return Pressable(
+      onPressed: onPressed,
+      semanticLabel: icon == DsIconKind.chevronLeft ? '上一周' : '下一周',
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: DsIcon(icon, size: 16, color: theme.primary),
       ),
     );
   }
@@ -157,23 +232,23 @@ class TodoWeekView extends StatelessWidget {
     return TodoDayCard(
       date: date,
       tasks: activeTasks,
-      onTaskTap: onTaskTap,
-      onTaskStatusChanged: onTaskStatusChanged,
-      onAddTask: onAddTask,
+      onTaskTap: widget.onTaskTap,
+      onTaskStatusChanged: widget.onTaskStatusChanged,
+      onAddTask: widget.onAddTask,
     );
   }
 
-  /// 获取本周的日期列表（周一到周日）
-  List<DateTime> _getCurrentWeekDates() {
+  /// 获取指定周的日期列表（周一到周日），offset 为相对本周的偏移周数
+  List<DateTime> _getWeekDates(int offset) {
     final now = DateTime.now();
     // 找到本周一
     final monday = now.subtract(Duration(days: now.weekday - 1));
-    // 重置时间部分为 00:00:00
-    final normalizedMonday = DateTime(monday.year, monday.month, monday.day);
+    final target =
+        DateTime(monday.year, monday.month, monday.day + offset * 7);
 
     // 生成周一到周日的日期
     return List.generate(7, (index) {
-      return normalizedMonday.add(Duration(days: index));
+      return target.add(Duration(days: index));
     });
   }
 

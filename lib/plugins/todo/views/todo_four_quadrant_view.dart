@@ -78,7 +78,7 @@ class TodoFourQuadrantView extends StatelessWidget {
                           child: _buildQuadrant(
                             context,
                             titleKey: 'todo_q2',
-                            icon: DsIconKind.sprout,
+                            icon: DsIconKind.star,
                             color: theme.success,
                             tasks: q2,
                             priority: TaskPriority.q2,
@@ -243,21 +243,14 @@ class TodoFourQuadrantView extends StatelessWidget {
     );
   }
 
-  /// 象限图标：sprout（eco）glyph 天然上偏，按尺寸比例下移补偿
+  /// 象限图标
   Widget _buildQuadrantIcon(
     BuildContext context, {
     required DsIconKind icon,
     required double size,
     required Color color,
   }) {
-    final child = DsIcon(icon, size: size, color: color);
-    if (icon == DsIconKind.sprout) {
-      return Transform.translate(
-        offset: Offset(0, size * 0.1),
-        child: child,
-      );
-    }
-    return child;
+    return DsIcon(icon, size: size, color: color);
   }
 
   /// 数量徽章：小控件走纯色实底 + 墨线描边

@@ -161,19 +161,22 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
             iconColor: fabColor.computeLuminance() < 0.5
                 ? Colors.white
                 : Colors.black,
-            onPressed: () {
-              NavigationHelper.openContainerWithHero(
-                context,
-                (context) => TaskForm(
-                  taskController: _plugin.taskController,
-                  reminderController: _plugin.reminderController,
-                ),
-                transitionDuration: const Duration(milliseconds: 300),
-              );
-            },
+            onPressed: () => _openTaskFormSheet(context),
           ),
         );
       },
+    );
+  }
+
+  /// 以 smooth_sheets 底部弹层打开新建任务表单
+  void _openTaskFormSheet(BuildContext context) {
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (context) => TaskForm(
+        taskController: _plugin.taskController,
+        reminderController: _plugin.reminderController,
+        inSheet: true,
+      ),
     );
   }
 

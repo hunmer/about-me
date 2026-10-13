@@ -147,6 +147,7 @@ const Map<String, String> todoTranslationsEn = {
   // Week view
   'todo_weekDateRange': '@start - @end',
   'todo_weekTaskCount': '@count tasks',
+  'todo_backToToday': 'Today',
   'todo_monthDay': '@month/@day',
   'todo_dayNoTasks': 'No tasks',
   'todo_monday': 'Mon',

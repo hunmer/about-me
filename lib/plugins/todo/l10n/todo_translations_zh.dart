@@ -146,6 +146,7 @@ const Map<String, String> todoTranslationsZh = {
   // 周视图
   'todo_weekDateRange': '@start - @end',
   'todo_weekTaskCount': '@count 项',
+  'todo_backToToday': '回到今天',
   'todo_monthDay': '@month月@day日',
   'todo_dayNoTasks': '无待办',
   'todo_monday': '周一',

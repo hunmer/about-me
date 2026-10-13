@@ -56,6 +56,7 @@ class TimePickerField extends StatelessWidget {
       onPressed: enabled ? () => _selectTime(context) : null,
       child: JellyBox(
         radius: theme.radii.lg,
+        strokeColor: theme.textSub.withValues(alpha: 0.45),
         padding: EdgeInsets.all(theme.spacing.md),
         child: Column(
           children: [
