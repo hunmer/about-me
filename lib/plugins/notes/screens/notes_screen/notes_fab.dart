@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/plugins/notes/screens/note_edit_screen.dart';
+import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/todo_item.dart';
+import 'package:aboutme/plugins/notes/screens/todo_edit_screen.dart';
 import 'folder_operations.dart';
+import 'note_quick_create_sheet.dart';
 import 'notes_screen_state.dart';
 
 mixin NotesFab on NotesMainViewState, FolderOperations {
@@ -42,19 +44,40 @@ mixin NotesFab on NotesMainViewState, FolderOperations {
                     setState(() {
                       _fabExpanded = false;
                     });
-                    NavigationHelper.openContainerWithHero(
-                      context,
-                      (context) => NoteEditScreen(
-                        onSave: (title, content, tags) async {
-                          await plugin.controller.createNote(
-                            title,
-                            content,
-                            currentFolderId,
-                            tags: tags,
-                          );
-                          loadCurrentFolder();
-                        },
-                      ),
+                    NoteQuickCreateSheet.show(
+                      context: context,
+                      onSave: (title, content, tags) async {
+                        await plugin.controller.createNote(
+                          title,
+                          content,
+                          currentFolderId,
+                          tags: tags,
+                        );
+                        loadCurrentFolder();
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildFabChild(
+                  icon: DsIconKind.check,
+                  label: 'notes_newTodo'.tr,
+                  onPressed: () {
+                    setState(() {
+                      _fabExpanded = false;
+                    });
+                    TodoEditSheet.show(
+                      context: context,
+                      onSave: (title, items, meta) async {
+                        await plugin.controller.createNote(
+                          title,
+                          TodoItem.encodeList(items),
+                          currentFolderId,
+                          type: Note.typeTodo,
+                          meta: meta.toJson(),
+                        );
+                        loadCurrentFolder();
+                      },
                     );
                   },
                 ),

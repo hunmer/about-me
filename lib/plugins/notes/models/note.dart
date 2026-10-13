@@ -1,4 +1,7 @@
 class Note {
+  static const String typeText = 'text';
+  static const String typeTodo = 'todo';
+
   final String id;
   String title;
   String content;
@@ -6,6 +9,12 @@ class Note {
   final DateTime createdAt;
   DateTime updatedAt;
   List<String> tags;
+
+  /// 笔记类型：[typeText] 普通笔记（默认）、[typeTodo] 待办清单
+  String type;
+
+  /// 扩展元数据（JSON 字符串），待办清单用它记录条目完成时间等
+  String? meta;
 
   Note({
     required this.id,
@@ -15,7 +24,11 @@ class Note {
     required this.createdAt,
     required this.updatedAt,
     this.tags = const [],
+    this.type = typeText,
+    this.meta,
   });
+
+  bool get isTodo => type == typeTodo;
 
   Map<String, dynamic> toJson() {
     return {
@@ -26,6 +39,8 @@ class Note {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'tags': tags,
+      'type': type,
+      'meta': meta,
     };
   }
 
@@ -38,6 +53,8 @@ class Note {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      type: (json['type'] as String?) ?? typeText,
+      meta: json['meta'] as String?,
     );
   }
 
@@ -48,6 +65,8 @@ class Note {
     String? folderId,
     DateTime? updatedAt,
     List<String>? tags,
+    String? type,
+    String? meta,
   }) {
     return Note(
       id: id,
@@ -57,6 +76,8 @@ class Note {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       tags: tags ?? this.tags,
+      type: type ?? this.type,
+      meta: meta ?? this.meta,
     );
   }
 }

@@ -4,7 +4,9 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/screens/note_edit_screen.dart';
+import 'package:aboutme/plugins/notes/screens/todo_edit_screen.dart';
 import 'notes_screen_state.dart';
 
 mixin NoteOperations on NotesMainViewState {
@@ -26,6 +28,25 @@ mixin NoteOperations on NotesMainViewState {
   }
 
   Future<void> editNote(Note note) async {
+    // 待办类型使用专用编辑抽屉
+    if (note.isTodo) {
+      await TodoEditSheet.show(
+        context: context,
+        note: note,
+        onSave: (title, items, meta) async {
+          await plugin.controller.updateNote(
+            note.copyWith(
+              title: title,
+              content: TodoItem.encodeList(items),
+              meta: meta.toJson(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+        },
+      );
+      loadCurrentFolder();
+      return;
+    }
     await NavigationHelper.push(
       context,
       NoteEditScreen(
@@ -42,6 +63,30 @@ mixin NoteOperations on NotesMainViewState {
           );
           await plugin.controller.updateNote(updatedNote);
         },
+      ),
+    );
+    loadCurrentFolder();
+  }
+
+  /// 切换待办条目勾选状态并持久化（同步记录完成时间到 meta）
+  Future<void> toggleTodoItem(Note note, int index) async {
+    final items = TodoItem.parseList(note.content);
+    if (index < 0 || index >= items.length) return;
+    items[index].checked = !items[index].checked;
+
+    final meta = TodoMeta.parse(note.meta);
+    final text = items[index].text;
+    if (items[index].checked) {
+      meta.markDone(text, DateTime.now());
+    } else {
+      meta.doneAt.remove(text);
+    }
+
+    await plugin.controller.updateNote(
+      note.copyWith(
+        content: TodoItem.encodeList(items),
+        meta: meta.toJson(),
+        updatedAt: DateTime.now(),
       ),
     );
     loadCurrentFolder();

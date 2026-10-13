@@ -16,6 +16,15 @@ final Map<String, String> notesTranslationsEn = {
 
   // Folder and note operations
   'notes_newNote': 'New Note',
+  'notes_newTodo': 'New To-Do',
+  'notes_editTodo': 'Edit To-Do',
+  'notes_todoTitleHint': 'To-do title',
+  'notes_todoItemHint': 'Enter item text',
+  'notes_todoAddItem': 'Add item',
+  'notes_todoMoreItems': '{count} more items...',
+  'notes_todoDoneAt': 'Done at {time}',
+  'notes_quickContentHint': 'Enter note content...',
+  'notes_tagHint': 'Enter tag, press return to add',
   'notes_newFolder': 'New Folder',
   'notes_editNote': 'Edit',
   'notes_moveNote': 'Move to',

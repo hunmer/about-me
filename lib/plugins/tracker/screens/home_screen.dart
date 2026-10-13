@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool isGridView;
+
+  const HomeScreen({super.key, this.isGridView = true});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,7 +20,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final String _filterStatus = '全部';
   String _currentGroup = '全部';
-  final bool _isGridView = true;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return true;
         }).toList();
 
-    if (_isGridView) {
+    if (widget.isGridView) {
       return GridView.builder(
         padding: const EdgeInsets.all(8),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -120,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.all(8),
       itemCount: filteredGoals.length,
       itemBuilder: (context, index) {
         final goal = filteredGoals[index];
@@ -155,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller.deleteGoal(goal.id);
             Toast.success('${'tracker_goalDeleted'.tr} "${goal.name}"');
           },
-          child: GoalCard(
+          child: GoalListCard(
             goal: goal,
             controller: controller,
             onTap: () {

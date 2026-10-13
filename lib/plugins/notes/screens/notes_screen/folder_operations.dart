@@ -3,94 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'notes_screen_state.dart';
 
 mixin FolderOperations on NotesMainViewState {
   Future<void> createNewFolder() async {
-    final TextEditingController folderNameController = TextEditingController();
-    final FocusNode focusNode = FocusNode();
-
-    // 获取当前文件夹名称用于提示
     final parentFolderName = currentFolder?.name ?? 'notes_root'.tr;
-
-    // DSInput 无 autofocus 参数，用 FocusNode 在首帧后聚焦
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (focusNode.canRequestFocus) focusNode.requestFocus();
-    });
-
-    final result = await showDSDialog<String>(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'notes_newFolder'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.title.copyWith(color: theme.text),
-                      ),
-                      SizedBox(height: theme.spacing.sm),
-                      // 显示将在哪个文件夹下创建
-                      Text(
-                        '${'notes_createIn'.tr}: $parentFolderName',
-                        textAlign: TextAlign.center,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      DSInput(
-                        controller: folderNameController,
-                        focusNode: focusNode,
-                        hint: 'notes_folderNameHint'.tr,
-                        onSubmitted: (value) => Navigator.pop(context, value),
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DSButton(
-                              label: 'notes_cancel'.tr,
-                              variant: DSButtonVariant.outline,
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: DSButton(
-                              label: 'notes_confirm'.tr,
-                              onPressed: () {
-                                if (folderNameController.text.isNotEmpty) {
-                                  Navigator.pop(
-                                    context,
-                                    folderNameController.text,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-    );
-    focusNode.dispose();
-    folderNameController.dispose();
-
+    final result = await _FolderNameSheet.show(context, parentFolderName);
     if (result != null && result.isNotEmpty) {
       // 使用 currentFolderId 作为父文件夹 ID
       await plugin.controller.createFolder(result, currentFolderId);
@@ -200,5 +119,111 @@ mixin FolderOperations on NotesMainViewState {
       await plugin.controller.deleteFolder(folder.id);
       loadCurrentFolder();
     }
+  }
+}
+
+/// 新建文件夹命名底部抽屉，返回输入的名称（取消返回 null）
+class _FolderNameSheet extends StatefulWidget {
+  final String parentFolderName;
+
+  const _FolderNameSheet({required this.parentFolderName});
+
+  static Future<String?> show(BuildContext context, String parentFolderName) {
+    return SmoothBottomSheet.show<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: _FolderNameSheet(parentFolderName: parentFolderName),
+      ),
+    );
+  }
+
+  @override
+  State<_FolderNameSheet> createState() => _FolderNameSheetState();
+}
+
+class _FolderNameSheetState extends State<_FolderNameSheet> {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // DSInput 无 autofocus 参数，用 FocusNode 在首帧后聚焦
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_focusNode.canRequestFocus) _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    if (_controller.text.isNotEmpty) {
+      Navigator.pop(context, _controller.text);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'notes_newFolder'.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.sm),
+                // 显示将在哪个文件夹下创建
+                Text(
+                  '${'notes_createIn'.tr}: ${widget.parentFolderName}',
+                  textAlign: TextAlign.center,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                DSInput(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  hint: 'notes_folderNameHint'.tr,
+                  onSubmitted: (value) => _confirm(),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'notes_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'notes_confirm'.tr,
+                        onPressed: _confirm,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

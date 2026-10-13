@@ -62,16 +62,25 @@ class TrackerMainView extends StatefulWidget {
 
 class _TrackerMainViewState extends State<TrackerMainView> {
   String _searchQuery = '';
+  bool _isGridView = true;
 
   @override
   void initState() {
     super.initState();
+    // 恢复持久化的视图偏好（默认网格）
+    _isGridView = TrackerPlugin.instance.settings['is_grid_view'] != false;
     // 如果有 initialGoalId，在初始化后跳转到目标详情
     if (widget.initialGoalId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateToGoalDetail(widget.initialGoalId!);
       });
     }
+  }
+
+  void _toggleGridView() {
+    setState(() => _isGridView = !_isGridView);
+    // 持久化视图偏好
+    TrackerPlugin.instance.updateSettings({'is_grid_view': _isGridView});
   }
 
   void _navigateToGoalDetail(String goalId) {
@@ -106,6 +115,23 @@ class _TrackerMainViewState extends State<TrackerMainView> {
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
               return DSIconButton(
+                // 显示可切换到的目标视图图标
+                icon:
+                    _isGridView ? DsIconKind.list : DsIconKind.grid,
+                size: 38,
+                color: theme.surface,
+                iconColor: theme.text,
+                tooltip: '切换视图',
+                onPressed: () => setState(() => _isGridView = !_isGridView),
+              );
+            },
+          ),
+        ),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
                 icon: DsIconKind.plus,
                 size: 38,
                 color: theme.surface,
@@ -130,7 +156,7 @@ class _TrackerMainViewState extends State<TrackerMainView> {
       ),
       body: ChangeNotifierProvider.value(
         value: TrackerPlugin.instance.controller,
-        child: const HomeScreen(),
+        child: HomeScreen(isGridView: _isGridView),
       ),
     );
   }

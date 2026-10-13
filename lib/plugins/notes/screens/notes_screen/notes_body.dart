@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/folder_breadcrumbs.dart';
@@ -80,10 +81,17 @@ mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
                       crossAxisSpacing: 16,
                       childCount: notes.length,
                       itemBuilder: (context, index) {
-                        return NoteCard(
-                          note: notes[index],
-                          onTap: () => editNote(notes[index]),
-                          onDelete: () => deleteNote(notes[index]),
+                        final note = notes[index];
+                        // 列表项挂载时墨线描画入场
+                        return WiredDraw(
+                          child: NoteCard(
+                            note: note,
+                            onTap: () => editNote(note),
+                            onDelete: () => deleteNote(note),
+                            onToggle: note.isTodo
+                                ? (i) => toggleTodoItem(note, i)
+                                : null,
+                          ),
                         );
                       },
                     ),

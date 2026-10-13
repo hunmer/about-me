@@ -16,6 +16,15 @@ final Map<String, String> notesTranslationsZh = {
 
   // 文件夹和笔记操作
   'notes_newNote': '新建笔记',
+  'notes_newTodo': '新建待办',
+  'notes_editTodo': '编辑待办',
+  'notes_todoTitleHint': '待办标题',
+  'notes_todoItemHint': '输入条目内容',
+  'notes_todoAddItem': '添加条目',
+  'notes_todoMoreItems': '还有 {count} 项...',
+  'notes_todoDoneAt': '完成于 {time}',
+  'notes_quickContentHint': '输入笔记内容...',
+  'notes_tagHint': '输入标签，回车添加',
   'notes_newFolder': '新建文件夹',
   'notes_editNote': '编辑',
   'notes_moveNote': '移动到',
