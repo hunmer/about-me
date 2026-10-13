@@ -132,6 +132,6 @@ class CheckinTranslationsZh {
     'checkin_searchEmptyHint': '尝试使用其他关键词搜索',
 
   // const Text 硬编码迁移(zh)
-  'checkin_nfcCheckin': 'NFC Check-in',
+  'checkin_nfcCheckin': 'NFC 签到',
 };
 }

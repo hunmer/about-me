@@ -179,6 +179,6 @@ class BillTranslationsZh {
     'bill_notesHint': '添加备注、订单号或账户详情...',
   
   // const Text 硬编码迁移(zh)
-  'bill_statsReport': 'Statistics Report',
+  'bill_statsReport': '统计报表',
 };
 }

@@ -68,6 +68,6 @@ class DatabaseTranslationsZh {
     'database_overviewDescription': '显示数据库统计信息',
   
   // const Text 硬编码迁移(zh)
-  'database_sortMethod': 'Sort Method',
+  'database_sortMethod': '排序方式',
 };
 }

@@ -181,6 +181,6 @@ class HabitsTranslationsZh {
     'habits_confirmDeleteHabit': '确定要删除此习惯吗？',
   
   // const Text 硬编码迁移(zh)
-  'habits_nfcStartTimer': 'Start Timer via NFC',
+  'habits_nfcStartTimer': '通过 NFC 开始计时',
 };
 }

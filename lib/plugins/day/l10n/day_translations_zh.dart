@@ -86,6 +86,6 @@ final Map<String, String> dayTranslationsZh = {
   'day_andMore': '还有 @count 个',
 
   // const Text 硬编码迁移(zh)
-  'day_customRange': 'Custom Range',
-  'day_enterCustomDaysRange': 'Enter custom day range',
+  'day_customRange': '自定义范围',
+  'day_enterCustomDaysRange': '输入自定义天数范围',
 };

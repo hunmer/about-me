@@ -111,6 +111,6 @@ class TimerTranslationsZh {
     'timer_taskNameRequired': '请输入任务名称',
   
   // const Text 硬编码迁移(zh)
-  'timer_focusStats': 'Focus Stats',
+  'timer_focusStats': '专注统计',
 };
 }

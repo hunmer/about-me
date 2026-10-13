@@ -179,8 +179,8 @@ const Map<String, String> goodsTranslationsZh = {
   'goods_commonWidgetsDesc': '物品管理通用组件',
 
   // const Text 硬编码迁移(zh)
-  'goods_nfcAddUsage': 'Add Usage via NFC',
-  'goods_loading': 'Loading...',
+  'goods_nfcAddUsage': '通过 NFC 添加使用记录',
+  'goods_loading': '加载中...',
 
   // 物品列表页
   'goods_items': '物品',

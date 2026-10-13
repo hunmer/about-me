@@ -97,6 +97,6 @@ class TrackerTranslationsZh {
     'viewDetail': '查看详情',
   
   // const Text 硬编码迁移(zh)
-  'tracker_nfcAddProgress': 'Add Progress via NFC',
+  'tracker_nfcAddProgress': '通过 NFC 添加进度',
 };
 }

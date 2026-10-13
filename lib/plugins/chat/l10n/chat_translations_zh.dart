@@ -204,9 +204,9 @@ class ChatTranslationsZh {
     'chat_cardView': '切换为卡片视图',
   
   // const Text 硬编码迁移(zh)
-  'chat_deleteStickerPack': 'Delete Sticker Pack',
-  'chat_stickerManager': 'Sticker Manager',
-  'chat_deleteSticker': 'Delete Sticker',
-  'chat_confirmDeleteSticker': 'Delete this sticker?',
+  'chat_deleteStickerPack': '删除贴纸包',
+  'chat_stickerManager': '贴纸管理',
+  'chat_deleteSticker': '删除贴纸',
+  'chat_confirmDeleteSticker': '删除这个贴纸？',
 };
 }

@@ -112,6 +112,6 @@ const Map<String, String> coreTranslationsZh = {
   'core_noActionsAdded': '暂无动作，点击上方按钮添加',
 
   // const Text 硬编码迁移(zh)
-  'core_selectPluginOverlay': 'Select Plugin Overlay',
-  'core_selectPluginOverlayDesc': 'Select a plugin to open in the overlay: ',
+  'core_selectPluginOverlay': '选择插件悬浮窗',
+  'core_selectPluginOverlayDesc': '选择要在悬浮窗中打开的插件： ',
 };

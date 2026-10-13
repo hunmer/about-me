@@ -160,7 +160,7 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_searchPlaceholder': '搜索会话...',
 
   // const Text 硬编码迁移(zh)
-  'agent_chat_selectConfigMode': 'Select Config Mode',
-  'agent_chat_singleAgentMode': 'Single Agent Mode',
-  'agent_chat_agentChainMode': 'Agent Chain Mode',
+  'agent_chat_selectConfigMode': '选择配置模式',
+  'agent_chat_singleAgentMode': '单 Agent 模式',
+  'agent_chat_agentChainMode': 'Agent 链模式',
 };
