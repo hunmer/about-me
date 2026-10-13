@@ -322,8 +322,9 @@ class SortConfig {
 | `ContactCard` | `widgets/contact_card.dart` | 联系人卡片组件（支持列表/网格视图） |
 | `ContactForm` | `widgets/contact_form.dart` | 联系人创建/编辑表单 |
 | `InteractionForm` | `widgets/interaction_form.dart` | 交互记录表单 |
-| `FilterDialog` | `widgets/filter_dialog.dart` | 筛选对话框 |
 | `ContactSelector` | `widgets/contact_selector.dart` | 联系人选择器（用于选择参与者） |
+
+> 筛选已融合进导航栏多条件过滤栏（`multiFilterItems`），独立 FilterDialog 已移除
 
 ### ContactMainView 布局
 
@@ -447,20 +448,17 @@ Dialog (400px宽度)
     └── 保存
 ```
 
-### FilterDialog 对话框
+### 多条件过滤栏（融合 wrapper multiFilterItems）
 
-**文件**: `widgets/filter_dialog.dart`
+**文件**: `screens/contact_main_view.dart` 的 `_buildFilterItems()`
 
-**筛选维度**:
-- **姓名关键词**: 文本输入（模糊匹配）
-- **日期范围**: 起始日期 + 结束日期（DatePicker）
-- **未联系天数**: 滑块选择（0-365天，5天间隔）
-- **标签**: FilterChip 多选（OR逻辑）
+**筛选维度**（通过 `FilterItem` + `FilterBuilders` 构建，`_applyMultiFilters` 持久化为 `FilterConfig`）:
+- **姓名关键词**（`keyword`）: `FilterType.input` + `buildKeywordFilter`
+- **创建日期范围**（`createdRange`）: `FilterType.dateRange` + `buildDateRangeFilter`
+- **未联系天数**（`uncontacted`）: 单选 7/30/90 天（`buildSingleChoiceFilter`）
+- **标签**（`tag`）: `FilterType.tagsMultiple` 多选（OR 逻辑）
 
-**操作按钮**:
-- **重置**: 清除所有筛选条件
-- **取消**: 关闭对话框，不保存
-- **保存**: 应用筛选并关闭
+**数据链路**: 过滤栏回调 → `_persistFilterConfig` 写入 `FilterConfig` → `getFilteredAndSortedContacts()` 消费；页面加载时 `_loadInitialFilters` 回显已存配置
 
 ---
 

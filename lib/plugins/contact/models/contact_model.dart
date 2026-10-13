@@ -27,6 +27,9 @@ class Contact {
   final DateTime lastContactTime;
   final ContactGender? gender;
 
+  /// 收藏标记（列表行显示星标）
+  final bool isFavorite;
+
   Contact({
     required this.id,
     required this.name,
@@ -40,6 +43,7 @@ class Contact {
     this.address,
     this.notes,
     this.gender,
+    this.isFavorite = false,
     List<String>? tags,
     Map<String, String>? customFields,
     List<CustomActivityEvent>? customActivityEvents,
@@ -66,6 +70,7 @@ class Contact {
       'address': address,
       'notes': notes,
       'gender': gender?.name,
+      'isFavorite': isFavorite,
       'tags': tags,
       'customFields': customFields,
       'customActivityEvents': customActivityEvents.map((e) => e.toJson()).toList(),
@@ -93,6 +98,7 @@ class Contact {
               orElse: () => ContactGender.other,
             )
           : null,
+      isFavorite: json['isFavorite'] as bool? ?? false,
       tags: List<String>.from(json['tags'] as List),
       customFields: Map<String, String>.from(json['customFields'] as Map),
       customActivityEvents: (json['customActivityEvents'] as List? ?? [])
@@ -125,6 +131,7 @@ class Contact {
     String? address,
     String? notes,
     ContactGender? gender,
+    bool? isFavorite,
     List<String>? tags,
     Map<String, String>? customFields,
     List<CustomActivityEvent>? customActivityEvents,
@@ -143,6 +150,7 @@ class Contact {
       address: address ?? this.address,
       notes: notes ?? this.notes,
       gender: gender ?? this.gender,
+      isFavorite: isFavorite ?? this.isFavorite,
       tags: tags ?? List.from(this.tags),
       customFields: customFields ?? Map.from(this.customFields),
       customActivityEvents: customActivityEvents ?? List.from(this.customActivityEvents),

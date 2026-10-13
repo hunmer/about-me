@@ -325,7 +325,7 @@ class NoteCard extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(2),
                           child: DsIcon(
-                            DsIconKind.more,
+                            DsIconKind.dots,
                             size: 18,
                             color: contentSub,
                           ),

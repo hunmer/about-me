@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lpinyin/lpinyin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -13,9 +14,9 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/contact/contact_plugin.dart';
 import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
+import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_list_tile.dart';
-import 'package:aboutme/plugins/contact/widgets/filter_dialog.dart';
 
 class ContactMainView extends StatefulWidget {
   const ContactMainView({super.key});
@@ -45,6 +46,9 @@ class ContactMainViewState extends State<ContactMainView> {
   final Map<String, double> _letterOffsets = {};
   String? _activeIndexLetter;
 
+  /// 持久化过滤配置是否已加载（加载完成后重建过滤栏回显初值）
+  bool _filterConfigLoaded = false;
+
   static const double _headerHeight = 44;
   static const List<String> _indexLetters = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -64,6 +68,9 @@ class ContactMainViewState extends State<ContactMainView> {
 
     // 加载标签（用于多条件过滤）
     _loadAvailableTags();
+
+    // 加载持久化过滤配置（回显到多条件过滤栏）
+    _loadInitialFilters();
   }
 
   @override
@@ -82,31 +89,26 @@ class ContactMainViewState extends State<ContactMainView> {
     }
   }
 
-  Future<void> _showFilterDialog() async {
-    final currentFilter = await _controller.getFilterConfig();
-
-    final tags = await _controller.getAllTags();
-
+  /// 加载持久化过滤配置并回显到过滤栏
+  Future<void> _loadInitialFilters() async {
+    final config = await _controller.getFilterConfig();
     if (!mounted) return;
 
-    await showDialog<void>(
-      context: context,
-
-      builder:
-          (context) => FilterDialog(
-            initialFilter: currentFilter,
-
-            availableTags: tags,
-
-            onApply: (filter) async {
-              await _controller.saveFilterConfig(filter);
-
-              if (mounted) {
-                setState(() {});
-              }
-            },
+    setState(() {
+      _multiFilters = {
+        if (config.nameKeyword != null && config.nameKeyword!.isNotEmpty)
+          'keyword': config.nameKeyword,
+        if (config.startDate != null && config.endDate != null)
+          'createdRange': DateTimeRange(
+            start: config.startDate!,
+            end: config.endDate!,
           ),
-    );
+        if (config.uncontactedDays != null)
+          'uncontacted': config.uncontactedDays.toString(),
+        if (config.selectedTags.isNotEmpty) 'tag': config.selectedTags,
+      };
+      _filterConfigLoaded = true;
+    });
   }
 
   /// 搜索联系人（按姓名和备注搜索）
@@ -249,7 +251,8 @@ class ContactMainViewState extends State<ContactMainView> {
           contact: contact,
           seed: index,
           onTap: () => _addOrEditContact(contact),
-          onLongPress: () => _confirmDelete(contact),
+          onLongPress: () => _showItemActions(contact),
+          onToggleFavorite: () => _toggleFavorite(contact),
         );
       },
     );
@@ -297,40 +300,88 @@ class ContactMainViewState extends State<ContactMainView> {
     }
   }
 
-  /// 构建多条件过滤项
+  /// 构建多条件过滤项：关键词 / 创建日期范围 / 未联系天数 / 标签
   List<FilterItem> _buildFilterItems() {
-    if (_availableTags.isEmpty) {
-      return [];
-    }
-
-    final tagOptions = {
-      for (final tag in _availableTags) tag: tag,
+    final dayOptions = {
+      '7': '7 ${'contact_days'.tr}',
+      '30': '30 ${'contact_days'.tr}',
+      '90': '90 ${'contact_days'.tr}',
     };
 
     return [
       FilterItem(
-        id: 'tag',
-        title: 'contact_tags'.tr,
+        id: 'keyword',
+        title: 'contact_nameKeyword'.tr,
+        type: FilterType.input,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildKeywordFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+            placeholder: 'contact_nameKeyword'.tr,
+          );
+        },
+        getBadge: FilterBuilders.keywordBadge,
+        initialValue: _multiFilters['keyword'],
+      ),
+      FilterItem(
+        id: 'createdRange',
+        title: 'contact_dateRange'.tr,
+        type: FilterType.dateRange,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildDateRangeFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+          );
+        },
+        getBadge: FilterBuilders.dateRangeBadge,
+        initialValue: _multiFilters['createdRange'],
+      ),
+      FilterItem(
+        id: 'uncontacted',
+        title: 'contact_uncontactedDays'.tr,
         type: FilterType.tagsSingle,
         builder: (context, currentValue, onChanged) {
           return FilterBuilders.buildSingleChoiceFilter(
             context: context,
             currentValue: currentValue,
             onChanged: onChanged,
-            options: tagOptions,
+            options: dayOptions,
             allItemsKey: 'all',
-            allItemsLabel: 'contact_all'.tr,
+            allItemsLabel: 'contact_noLimit'.tr,
           );
         },
-        getBadge: (value) => FilterBuilders.singleChoiceBadge(value, tagOptions),
+        getBadge: (value) =>
+            FilterBuilders.singleChoiceBadge(value, dayOptions),
+        initialValue: _multiFilters['uncontacted'],
       ),
+      if (_availableTags.isNotEmpty)
+        FilterItem(
+          id: 'tag',
+          title: 'contact_tags'.tr,
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            return FilterBuilders.buildTagsFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              availableTags: _availableTags,
+            );
+          },
+          getBadge: FilterBuilders.tagsBadge,
+          initialValue:
+              (_multiFilters['tag'] as List<String>?)?.toList(),
+        ),
     ];
   }
 
-  /// 应用多条件过滤
+  /// 应用多条件过滤：先持久化为 FilterConfig，再刷新列表
   void _applyMultiFilters(Map<String, dynamic> filters) {
     // 使用 addPostFrameCallback 避免在 build 阶段调用 setState
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _persistFilterConfig(filters);
       if (mounted) {
         setState(() {
           _multiFilters = filters;
@@ -339,24 +390,44 @@ class ContactMainViewState extends State<ContactMainView> {
     });
   }
 
-  /// 根据多条件过滤获取联系人
-  Future<List<Contact>> _getFilteredContacts() async {
-    final contacts = await _controller.getFilteredAndSortedContacts();
-    final tag = _multiFilters['tag'] as String?;
-    if (tag == null) {
-      return contacts;
-    }
-    return contacts
-        .where((contact) => contact.tags.contains(tag))
-        .toList();
+  /// 把过滤栏的值映射为 FilterConfig 并持久化
+  Future<void> _persistFilterConfig(Map<String, dynamic> filters) async {
+    final keyword = filters['keyword'] as String?;
+    final range = filters['createdRange'] as DateTimeRange?;
+    final days = filters['uncontacted'] as String?;
+    final tags = (filters['tag'] as List<String>?) ?? const <String>[];
+
+    await _controller.saveFilterConfig(
+      FilterConfig(
+        nameKeyword: (keyword == null || keyword.isEmpty) ? null : keyword,
+        startDate: range?.start,
+        endDate: range?.end,
+        uncontactedDays:
+            (days == null || days.isEmpty) ? null : int.tryParse(days),
+        selectedTags: tags,
+      ),
+    );
   }
 
-  /// 取姓名首字母分组键，非 A-Z（中文等）归入 # 组
+  /// 获取过滤排序后的联系人（筛选统一由 controller 消费 FilterConfig）
+  Future<List<Contact>> _getFilteredContacts() {
+    return _controller.getFilteredAndSortedContacts();
+  }
+
+  /// 取姓名首字母分组键：英文直接取，中文转拼音首字母，其余归入 # 组
   String _letterOf(String name) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return '#';
-    final first = trimmed.substring(0, 1).toUpperCase();
-    return RegExp(r'[A-Z]').hasMatch(first) ? first : '#';
+
+    final first = trimmed.substring(0, 1);
+    if (RegExp(r'[a-zA-Z]').hasMatch(first)) return first.toUpperCase();
+
+    final pinyin = PinyinHelper.getFirstWordPinyin(first);
+    if (pinyin != null && pinyin.isNotEmpty) {
+      final letter = pinyin[0].toUpperCase();
+      if (RegExp(r'[A-Z]').hasMatch(letter)) return letter;
+    }
+    return '#';
   }
 
   /// 按首字母分组，组序 A-Z…#，组内保持过滤排序的顺序
@@ -411,7 +482,8 @@ class ContactMainViewState extends State<ContactMainView> {
                   contact: contact,
                   seed: index,
                   onTap: () => _addOrEditContact(contact),
-                  onLongPress: () => _confirmDelete(contact),
+                  onLongPress: () => _showItemActions(contact),
+                  onToggleFavorite: () => _toggleFavorite(contact),
                 );
               }
               remaining -= group.value.length;
@@ -505,12 +577,53 @@ class ContactMainViewState extends State<ContactMainView> {
     );
   }
 
-  /// 长按删除确认（保留原 ContactCard 的快速删除入口）
-  Future<void> _confirmDelete(Contact contact) async {
+  /// 切换收藏并持久化
+  Future<void> _toggleFavorite(Contact contact) async {
+    await _controller.updateContact(
+      contact.copyWith(isFavorite: !contact.isFavorite),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// 长按快捷操作：收藏切换 + 删除确认
+  Future<void> _showItemActions(Contact contact) async {
     final theme = DSThemeBridge.resolve(context);
+
+    await showDSBottomSheet(
+      context: context,
+      title: contact.name,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DSSheetAction(
+            icon: DsIconKind.star,
+            label: contact.isFavorite
+                ? 'contact_removeFromFavorites'.tr
+                : 'contact_addToFavorites'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _toggleFavorite(contact);
+            },
+          ),
+          DSSheetAction(
+            icon: DsIconKind.trash,
+            label: 'contact_deleteContact'.tr,
+            destructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              _confirmDelete(contact, theme: theme);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 删除确认（手绘对话框）
+  Future<void> _confirmDelete(Contact contact, {AppThemeData? theme}) async {
     final confirmed = await showDSDialog<bool>(
       context: context,
-      theme: theme,
+      theme: theme ?? DSThemeBridge.resolve(context),
       builder: (context) => DSDialog(
         title: 'contact_confirmDelete'.tr,
         message: 'contact_deleteConfirmMessage'.tr,
@@ -528,7 +641,10 @@ class ContactMainViewState extends State<ContactMainView> {
 
   @override
   Widget build(BuildContext context) {
-    return SuperCupertinoNavigationWrapper(
+    // key 随配置加载状态变化：持久化过滤配置加载完成后重建过滤栏，回显初值
+    return KeyedSubtree(
+      key: ValueKey(_filterConfigLoaded),
+      child: SuperCupertinoNavigationWrapper(
       title: Text('contact_contacts'.tr),
       largeTitle: 'contact_contactListTitle'.tr,
 
@@ -582,10 +698,6 @@ class ContactMainViewState extends State<ContactMainView> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.filter_list),
-          onPressed: _showFilterDialog,
-        ),
-        IconButton(
           key: _addButtonKey,
           icon: const Icon(Icons.add),
           onPressed: () {
@@ -605,6 +717,7 @@ class ContactMainViewState extends State<ContactMainView> {
         ),
       ],
       enableLargeTitle: true,
+      ),
     );
   }
 }

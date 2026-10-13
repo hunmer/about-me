@@ -13,6 +13,7 @@ class ContactListTile extends StatelessWidget {
     required this.contact,
     required this.onTap,
     this.onLongPress,
+    this.onToggleFavorite,
     this.seed = 1,
   });
 
@@ -21,6 +22,9 @@ class ContactListTile extends StatelessWidget {
 
   /// 长按（列表页快速删除等）
   final VoidCallback? onLongPress;
+
+  /// 点击收藏星标切换收藏；为 null 时星标只读
+  final VoidCallback? onToggleFavorite;
 
   /// 传列表索引让每行墨迹有变化
   final int seed;
@@ -40,6 +44,18 @@ class ContactListTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
+              if (contact.isFavorite) ...[
+                GestureDetector(
+                  onTap: onToggleFavorite,
+                  child: DsIcon(
+                    DsIconKind.star,
+                    size: 20,
+                    color: theme.primary,
+                    fill: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               _buildAvatar(theme),
               const SizedBox(width: 14),
               Expanded(
