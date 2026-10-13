@@ -21,6 +21,9 @@ class Note {
   /// 可选标记色（ARGB），null = 未指定（跟随主题）
   Color? color;
 
+  /// 卡片背景填充风格（DsSketchFill 下标），0 = 默认排线
+  int bgStyle;
+
   Note({
     required this.id,
     required this.title,
@@ -32,6 +35,7 @@ class Note {
     this.type = typeText,
     this.meta,
     this.color,
+    this.bgStyle = 0,
   });
 
   bool get isTodo => type == typeTodo;
@@ -48,6 +52,7 @@ class Note {
       'type': type,
       'meta': meta,
       'color': color?.value,
+      'bgStyle': bgStyle,
     };
   }
 
@@ -63,6 +68,7 @@ class Note {
       type: (json['type'] as String?) ?? typeText,
       meta: json['meta'] as String?,
       color: json['color'] == null ? null : Color(json['color'] as int),
+      bgStyle: json['bgStyle'] as int? ?? 0,
     );
   }
 
@@ -76,6 +82,7 @@ class Note {
     String? type,
     String? meta,
     Color? color,
+    int? bgStyle,
   }) {
     return Note(
       id: id,
@@ -88,6 +95,7 @@ class Note {
       type: type ?? this.type,
       meta: meta ?? this.meta,
       color: color ?? this.color,
+      bgStyle: bgStyle ?? this.bgStyle,
     );
   }
 }

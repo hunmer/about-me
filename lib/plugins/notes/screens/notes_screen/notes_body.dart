@@ -87,7 +87,7 @@ mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
                       childCount: notes.length,
-                      itemBuilder: (context, index) {
+                        itemBuilder: (context, index) {
                         final note = notes[index];
                         // 列表项挂载时墨线描画入场
                         return WiredDraw(
@@ -98,6 +98,8 @@ mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
                             onToggle: note.isTodo
                                 ? (i) => toggleTodoItem(note, i)
                                 : null,
+                            onEditStyle: (color, bgStyle) =>
+                                updateNoteStyle(note, color, bgStyle),
                           ),
                         );
                       },

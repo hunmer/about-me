@@ -5,13 +5,14 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签 + 标记色
+/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签 + 标记色/背景风格
 class NoteQuickCreateSheet extends StatefulWidget {
   final Future<void> Function(
     String title,
     String content,
     List<String> tags,
     Color? color,
+    int bgStyle,
   ) onSave;
 
   const NoteQuickCreateSheet({super.key, required this.onSave});
@@ -23,6 +24,7 @@ class NoteQuickCreateSheet extends StatefulWidget {
       String content,
       List<String> tags,
       Color? color,
+      int bgStyle,
     ) onSave,
   }) {
     return SmoothBottomSheet.show(
@@ -46,6 +48,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
   final FocusNode _contentFocusNode = FocusNode();
   List<String> _tags = [];
   Color? _pickedColor;
+  int _bgStyle = 0;
 
   @override
   void dispose() {
@@ -72,6 +75,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
       _contentController.text,
       List.of(_tags),
       _pickedColor,
+      _bgStyle,
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -185,7 +189,9 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
                 child: NoteColorPickerRow(
                   selected: _pickedColor,
+                  selectedStyle: _bgStyle,
                   onChanged: (color) => setState(() => _pickedColor = color),
+                  onStyleChanged: (style) => setState(() => _bgStyle = style),
                 ),
               ),
               const SizedBox(height: 12),

@@ -10,7 +10,13 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 /// 待办编辑底部抽屉：标题 + 勾选清单条目（支持拖拽排序）
 class TodoEditSheet extends StatefulWidget {
   final Note? note;
-  final Function(String title, List<TodoItem> items, TodoMeta meta, Color? color) onSave;
+  final Function(
+    String title,
+    List<TodoItem> items,
+    TodoMeta meta,
+    Color? color,
+    int bgStyle,
+  ) onSave;
 
   const TodoEditSheet({super.key, this.note, required this.onSave});
 
@@ -23,6 +29,7 @@ class TodoEditSheet extends StatefulWidget {
       List<TodoItem> items,
       TodoMeta meta,
       Color? color,
+      int bgStyle,
     ) onSave,
   }) {
     return SmoothBottomSheet.show(
@@ -46,6 +53,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
   late List<FocusNode> _itemFocusNodes;
   late TodoMeta _meta;
   Color? _pickedColor;
+  int _bgStyle = 0;
 
   bool get _isEditing => widget.note != null;
 
@@ -60,6 +68,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     _itemFocusNodes = List.generate(items.length, (_) => FocusNode());
     _meta = TodoMeta.parse(widget.note?.meta);
     _pickedColor = widget.note?.color;
+    _bgStyle = widget.note?.bgStyle ?? 0;
   }
 
   @override
@@ -139,7 +148,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     }
     // 清理已删除条目的完成时间记录
     _meta.retainTexts(items.map((item) => item.text).toSet());
-    await widget.onSave(_titleController.text, items, _meta, _pickedColor);
+    await widget.onSave(_titleController.text, items, _meta, _pickedColor, _bgStyle);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -212,7 +221,9 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: NoteColorPickerRow(
                   selected: _pickedColor,
+                  selectedStyle: _bgStyle,
                   onChanged: (color) => setState(() => _pickedColor = color),
+                  onStyleChanged: (style) => setState(() => _bgStyle = style),
                 ),
               ),
               Padding(

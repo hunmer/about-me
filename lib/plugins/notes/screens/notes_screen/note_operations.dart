@@ -33,12 +33,13 @@ mixin NoteOperations on NotesMainViewState {
       await TodoEditSheet.show(
         context: context,
         note: note,
-        onSave: (title, items, meta, color) async {
+        onSave: (title, items, meta, color, bgStyle) async {
           // 直接更新原对象字段（copyWith 无法把已有颜色清回 null）
           note.title = title;
           note.content = TodoItem.encodeList(items);
           note.meta = meta.toJson();
           note.color = color;
+          note.bgStyle = bgStyle;
           note.updatedAt = DateTime.now();
           await plugin.controller.updateNote(note);
         },
@@ -64,6 +65,15 @@ mixin NoteOperations on NotesMainViewState {
         },
       ),
     );
+    loadCurrentFolder();
+  }
+
+  /// 修改笔记标记色/背景风格并持久化（长按菜单「颜色」入口）
+  Future<void> updateNoteStyle(Note note, Color? color, int bgStyle) async {
+    note.color = color;
+    note.bgStyle = bgStyle;
+    note.updatedAt = DateTime.now();
+    await plugin.controller.updateNote(note);
     loadCurrentFolder();
   }
 

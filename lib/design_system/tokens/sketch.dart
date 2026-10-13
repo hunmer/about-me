@@ -78,12 +78,32 @@ int _wiredCacheKey(AppThemeData theme) =>
     DsInkStyle.index * 100 +
     (DsInkStyle.strokeWidth * 10).round();
 
+/// 手绘填充预设（卡片/面板背景风格切换）
+enum DsSketchFill {
+  /// 单向排线（默认手绘排线）
+  hachure,
+
+  /// 交叉排线（两遍垂直排线）
+  crossHatch,
+
+  /// 点画
+  dots,
+
+  /// 之字形连线
+  zigzag,
+
+  /// 纯色实底
+  solid,
+}
+
 /// 统一手绘装饰构造器
 ///
 /// 返回 [RoughBoxDecoration]（Decoration 子类，直接给 Container.decoration）。
 ///
-/// - [fillColor] 非空时按 [hachure] 决定填充：排线（大容器）或纯色实底（小控件）
+/// - [fillColor] 非空时按 [hachure]/[fillStyle] 决定填充：排线类或纯色实底
 /// - [stroke] 默认墨线；pill 圆角（999）会被 rough 引擎自动钳制成胶囊
+/// - [fillStyle] 显式填充预设，优先于 [hachure]；排线类风格下
+///   [fillColor] 为 null/透明时取 [hachureColor]
 /// - [seed] 保持稳定默认值即可；列表项可传唯一值增加墨迹变化
 RoughBoxDecoration dsSketchDecoration({
   required AppThemeData theme,
@@ -93,22 +113,66 @@ RoughBoxDecoration dsSketchDecoration({
   BorderRadius? radius,
   bool circle = false,
   bool hachure = false,
+  DsSketchFill? fillStyle,
   Color? hachureColor,
   double hachureGap = 8,
   int seed = 1,
   Animation<double>? progress,
 }) {
-  final Filler? filler = fillColor == null
-      ? null
-      : hachure
-          ? HachureFiller(
-              FillerConfig.build(
-                drawConfig: theme.wired.drawConfig,
-                hachureGap: hachureGap,
-                fillWeight: 1.4,
-              ),
-            )
-          : SolidFiller();
+  final DsSketchFill? style =
+      fillStyle ??
+      (fillColor == null
+          ? null
+          : (hachure ? DsSketchFill.hachure : DsSketchFill.solid));
+
+  final Filler? filler;
+  Color? resolvedFillColor;
+  switch (style) {
+    case null:
+      filler = null;
+    case DsSketchFill.solid:
+      filler = SolidFiller();
+      resolvedFillColor = fillColor;
+    case DsSketchFill.hachure || DsSketchFill.crossHatch ||
+          DsSketchFill.dots || DsSketchFill.zigzag:
+      // 点画的点径/密度需要更大参数才可见
+      final isDots = style == DsSketchFill.dots;
+      filler = switch (style) {
+        DsSketchFill.crossHatch => HatchFiller(
+          FillerConfig.build(
+            drawConfig: theme.wired.drawConfig,
+            hachureGap: hachureGap,
+            fillWeight: 1.4,
+          ),
+        ),
+        DsSketchFill.dots => DotFiller(
+          FillerConfig.build(
+            drawConfig: theme.wired.drawConfig,
+            hachureGap: 6,
+            fillWeight: 2.4,
+          ),
+        ),
+        DsSketchFill.zigzag => ZigZagFiller(
+          FillerConfig.build(
+            drawConfig: theme.wired.drawConfig,
+            hachureGap: hachureGap,
+            fillWeight: 1.4,
+          ),
+        ),
+        _ => HachureFiller(
+          FillerConfig.build(
+            drawConfig: theme.wired.drawConfig,
+            hachureGap: hachureGap,
+            fillWeight: 1.4,
+          ),
+        ),
+      };
+      resolvedFillColor =
+          (fillColor == null || fillColor == DsColors.transparent)
+          ? (hachureColor ?? theme.hatch)
+          : fillColor;
+  }
+
   return _DsRoughBoxDecoration(
     shape: circle
         ? RoughBoxShape.circle
@@ -120,11 +184,9 @@ RoughBoxDecoration dsSketchDecoration({
       width: strokeWidth,
       color: stroke ?? theme.ink,
     ),
-    fillStyle: fillColor == null
+    fillStyle: resolvedFillColor == null
         ? null
-        : RoughDrawingStyle(
-            color: hachure ? (hachureColor ?? theme.hatch) : fillColor,
-          ),
+        : RoughDrawingStyle(color: resolvedFillColor),
     filler: filler,
     drawConfig: theme.wired.drawConfig,
     seed: seed,
@@ -305,6 +367,7 @@ class DsSketchPanel extends StatelessWidget {
     this.hachureColor,
     this.alignment,
     this.hachure = true,
+    this.fillStyle,
     this.seed = 1,
     this.progress,
   });
@@ -324,6 +387,9 @@ class DsSketchPanel extends StatelessWidget {
 
   /// 关闭后不画排线（纯纸底 + 描边）
   final bool hachure;
+
+  /// 显式填充预设（排线/交叉/点/之字/实底）；null 时按 [hachure] 走默认排线
+  final DsSketchFill? fillStyle;
   final int seed;
 
   /// 环境描画动画（外层 WiredDraw 注入）；null = 已画完
@@ -351,8 +417,14 @@ class DsSketchPanel extends StatelessWidget {
           theme: theme,
           radius: radius,
           stroke: stroke,
-          fillColor: hachure ? DsColors.transparent : null,
-          hachure: hachure,
+          fillColor: fillStyle == DsSketchFill.solid
+              ? (hachureColor ?? theme.hatch)
+              : (hachure || fillStyle != null
+                    ? DsColors.transparent
+                    : null),
+          fillStyle: fillStyle ??
+              (hachure ? DsSketchFill.hachure : null) ??
+              (fillColor != null ? DsSketchFill.solid : null),
           hachureColor: hachureColor,
           hachureGap: 10,
           seed: seed,

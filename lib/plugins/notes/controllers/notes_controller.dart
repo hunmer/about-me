@@ -256,6 +256,7 @@ class NotesController {
     String type = Note.typeText,
     String? meta,
     Color? color,
+    int bgStyle = 0,
   }) async {
     // 如果提供了自定义 ID,检查是否已存在
     if (customId != null) {
@@ -276,6 +277,7 @@ class NotesController {
       type: type,
       meta: meta,
       color: color,
+      bgStyle: bgStyle,
     );
     _notes.putIfAbsent(folderId, () => []).add(note);
     _noteIds.add(note.id);
@@ -376,11 +378,12 @@ class NotesController {
     }
   }
 
-  // 重命名文件夹
-  Future<void> renameFolder(String folderId, String newName) async {
+  // 重命名文件夹（可同时更新标记色）
+  Future<void> renameFolder(String folderId, String newName, {Color? color}) async {
     final folder = _folders[folderId];
     if (folder != null) {
       folder.name = newName;
+      if (color != null) folder.color = color;
       folder.updatedAt = DateTime.now();
       await _saveFolders();
     }

@@ -23,81 +23,21 @@ mixin FolderOperations on NotesMainViewState {
   }
 
   Future<void> renameFolder(Folder folder) async {
-    final TextEditingController renameController = TextEditingController(
-      text: folder.name,
+    final result = await _FolderNameSheet.show(
+      context,
+      folder.name,
+      titleText: 'notes_renameFolder'.tr,
+      initialName: folder.name,
+      initialColor: folder.color,
     );
-    final FocusNode focusNode = FocusNode();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (focusNode.canRequestFocus) focusNode.requestFocus();
-    });
-
-    final result = await showDSDialog<String>(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'notes_renameFolder'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.title.copyWith(color: theme.text),
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      DSInput(
-                        controller: renameController,
-                        focusNode: focusNode,
-                        hint: '文件夹名称',
-                        onSubmitted: (value) => Navigator.pop(context, value),
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_cancel'.tr,
-                              variant: DSButtonVariant.outline,
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_ok'.tr,
-                              onPressed:
-                                  () => Navigator.pop(
-                                    context,
-                                    renameController.text,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-    );
-    focusNode.dispose();
-    renameController.dispose();
-
-    if (result != null && result.isNotEmpty) {
-      await plugin.controller.renameFolder(folder.id, result);
+    if (result != null && result.$1.isNotEmpty) {
+      await plugin.controller.renameFolder(
+        folder.id,
+        result.$1,
+        color: result.$2,
+      );
       loadCurrentFolder();
     }
-  }
 
   Future<void> deleteFolder(Folder folder) async {
     final confirmed = await showDSDialog<bool>(

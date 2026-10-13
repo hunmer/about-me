@@ -16,18 +16,27 @@ const List<Color?> kNoteColorChoices = <Color?>[
   Color(0xFF8C8C8C), // 炭灰
 ];
 
-/// 手绘风格颜色选择行：一排圆形色块，选中项墨线描边加粗 + 对勾
+/// 手绘风格颜色选择行：一排圆形色块，选中项墨线描边加粗 + 对勾；
+/// 传入 [onStyleChanged] 时追加背景填充风格选择行（排线/交叉/点/之字/实底）。
 class NoteColorPickerRow extends StatelessWidget {
   const NoteColorPickerRow({
     super.key,
     this.selected,
     required this.onChanged,
+    this.selectedStyle,
+    this.onStyleChanged,
   });
 
   /// 当前选中色（null = 默认）
   final Color? selected;
 
   final ValueChanged<Color?> onChanged;
+
+  /// 当前背景填充风格（DsSketchFill 下标）；null = 默认（排线）
+  final int? selectedStyle;
+
+  /// 背景风格选择回调；非 null 才显示风格行
+  final ValueChanged<int>? onStyleChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +68,54 @@ class NoteColorPickerRow extends StatelessWidget {
                     _buildSwatch(context, theme, choice),
                 ],
               ),
+              if (onStyleChanged != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DsIcon(DsIconKind.grid, size: 16, color: theme.textSub),
+                    const SizedBox(width: 8),
+                    Text(
+                      'notes_bgStyle'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    for (var i = 0; i < DsSketchFill.values.length; i++)
+                      _buildStyleSwatch(theme, DsSketchFill.values[i], i),
+                  ],
+                ),
+              ],
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 背景风格预览块：用主题排线色演示该填充效果，选中描边加粗
+  Widget _buildStyleSwatch(AppThemeData theme, DsSketchFill style, int index) {
+    final isSelected = index == (selectedStyle ?? 0);
+    return GestureDetector(
+      onTap: () => onStyleChanged!(index),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          fillStyle: style,
+          radius: BorderRadius.circular(7),
+          strokeWidth: isSelected ? 2.6 : 1.6,
+          seed: 100 + index,
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
+import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -20,6 +21,9 @@ class NoteCard extends StatelessWidget {
   /// 待办卡片勾选回调（index 对应条目位置），为 null 时仅展示
   final ValueChanged<int>? onToggle;
 
+  /// 长按菜单「颜色」入口回调（改标记色/背景风格后由外部持久化刷新）
+  final void Function(Color? color, int bgStyle)? onEditStyle;
+
   const NoteCard({
     super.key,
     required this.note,
@@ -27,6 +31,7 @@ class NoteCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onToggle,
+    this.onEditStyle,
   });
 
   /// 显示底部抽屉菜单
@@ -58,6 +63,15 @@ class NoteCard extends StatelessWidget {
                     }
                   },
                 ),
+                if (onEditStyle != null)
+                  DSSheetAction(
+                    icon: DsIconKind.palette,
+                    label: 'notes_color'.tr,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showStyleEditor(context);
+                    },
+                  ),
                 DSSheetAction(
                   icon: DsIconKind.trash,
                   label: 'app_delete'.tr,
@@ -70,6 +84,45 @@ class NoteCard extends StatelessWidget {
               ],
             ),
           ),
+    );
+  }
+
+  /// 标记色 / 背景风格编辑抽屉
+  void _showStyleEditor(BuildContext context) {
+    var pickedColor = note.color;
+    var pickedStyle = note.bgStyle;
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'notes_color'.tr,
+                style: DsTypography.title,
+              ),
+              const SizedBox(height: 12),
+              NoteColorPickerRow(
+                selected: pickedColor,
+                selectedStyle: pickedStyle,
+                onChanged: (color) => setSheetState(() => pickedColor = color),
+                onStyleChanged: (style) => setSheetState(() => pickedStyle = style),
+              ),
+              const SizedBox(height: 12),
+              DSButton(
+                label: 'app_save'.tr,
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  onEditStyle!(pickedColor, pickedStyle);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -102,8 +155,15 @@ class NoteCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         seed: seed,
         progress: progress,
-        // 笔记标记色作为排线淡彩（未指定时用主题默认）
-        hachureColor: note.color?.withValues(alpha: theme.isDark ? 0.30 : 0.35),
+        // 背景填充风格（排线/交叉/点/之字/实底）
+        fillStyle: DsSketchFill.values[
+            note.bgStyle.clamp(0, DsSketchFill.values.length - 1)],
+        // 笔记标记色作为填充淡彩（未指定时用主题默认）；透明度取明显可见档
+        hachureColor: note.color?.withValues(
+          alpha: theme.isDark
+              ? (note.bgStyle == DsSketchFill.solid.index ? 0.55 : 0.60)
+              : (note.bgStyle == DsSketchFill.solid.index ? 0.60 : 0.70),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
