@@ -1,5 +1,13 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# 若配置了 VCPKG_ROOT 环境变量且未显式指定 toolchain，则使用 vcpkg 提供原生依赖
+# （image_compress_plus_windows 依赖 libjpeg-turbo/libpng/libwebp/exiv2）
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      CACHE STRING "vcpkg toolchain")
+endif()
+
 project(aboutme LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change

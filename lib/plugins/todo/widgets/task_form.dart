@@ -67,9 +67,6 @@ class _TaskFormState extends State<TaskForm> {
     super.dispose();
   }
 
-  // 自定义颜色
-  static const Color _primaryColor = Color(0xFF607AFB);
-
   /// 更新路由上下文
   void _updateRouteContext() {
     final isEditing = widget.task != null;
@@ -382,7 +379,6 @@ class _TaskFormState extends State<TaskForm> {
         type: FormFieldType.tags,
         initialValue: widget.task?.tags.toList() ?? [],
         labelText: 'todo_tags'.tr,
-        extra: {'primaryColor': _primaryColor},
       ),
 
       // 子任务
@@ -394,7 +390,6 @@ class _TaskFormState extends State<TaskForm> {
         hintText: '${'todo_add'.tr} ${'todo_subtasks'.tr}',
         extra: {
           'initialItems': widget.task?.subtasks.toList() ?? [],
-          'primaryColor': _primaryColor,
           'getTitle': (Subtask s) => s.title,
           'getIsCompleted': (Subtask s) => s.isCompleted,
           'onToggle': (int index, Subtask item) {
@@ -455,7 +450,6 @@ class _TaskFormState extends State<TaskForm> {
         initialValue: widget.task?.reminders.toList() ?? [],
         labelText: 'todo_reminders'.tr,
         hintText: 'todo_none'.tr,
-        extra: {'primaryColor': _primaryColor},
       ),
     ];
   }

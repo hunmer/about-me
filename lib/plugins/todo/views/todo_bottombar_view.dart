@@ -43,12 +43,6 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   // 过滤条件状态（由 View 自己管理）
   Map<String, dynamic>? _currentFilter;
 
-  // 获取页面颜色
-  List<Color> get _colors => [
-    Colors.blue, // 第一个tab的颜色
-    Colors.green, // 第二个tab的颜色
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -151,20 +145,22 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
   /// 构建 FAB
   Widget _buildFab() {
-    return Builder(
-      builder: (context) {
-        final fabColor = _colors[_currentPage];
-        return DSThemeBridge(
-          // DSFab 内部取 AppTheme，需包桥
-          child: DSFab(
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: Builder(
+        builder: (context) {
+          // tab 语义色（令牌随明暗自适应）：待办主色 / 历史完成绿
+          final theme = DSThemeBridge.resolve(context);
+          final fabColor = _currentPage == 0 ? theme.primary : theme.success;
+          return DSFab(
             color: fabColor,
             iconColor: fabColor.computeLuminance() < 0.5
-                ? Colors.white
-                : Colors.black,
+                ? DsColors.white
+                : DsColors.black,
             onPressed: () => _openTaskFormSheet(context),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

@@ -53,13 +53,11 @@ class SuperSearchBar {
     this.animationDuration = const Duration(milliseconds: 250),
     this.placeholderTextStyle =
         const TextStyle(color: CupertinoColors.systemGrey),
-    // 取消按钮：手绘风主紫（跟随明暗：浅色主紫 / 深色提亮），
-    // 替代默认的 Cupertino 系统蓝
+    // 取消按钮：紫系语义色替代默认系统蓝（跟随明暗自适应）。
+    // app 侧 SuperCupertinoNavigationWrapper 会经 cancelTextStyle
+    // 覆盖为主题色，此默认仅供直接使用本包时兜底
     this.cancelTextStyle = const TextStyle(
-      color: CupertinoDynamicColor.withBrightness(
-        color: Color(0xFF885CF6),
-        darkColor: Color(0xFFA78BFA),
-      ),
+      color: CupertinoColors.systemPurple,
     ),
     // 手绘放大镜（CupertinoIcons 不在 skribble 手绘目录，用等价 Material 图标）
     this.prefixIcon = const WiredIcon(

@@ -1052,10 +1052,11 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
         return;
       }
       final first = entries.first;
-      // 首图优先取缩略图，其次原图 / Markdown 内嵌图
+      // 首图优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
       String? image;
-      if (first.thumbUrls.isNotEmpty) {
-        image = first.thumbUrls.first;
+      final thumbs = first.thumbUrls.where((t) => t.isNotEmpty);
+      if (thumbs.isNotEmpty) {
+        image = thumbs.first;
       } else if (first.imageUrls.isNotEmpty) {
         image = first.imageUrls.first;
       } else {
@@ -1099,20 +1100,14 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
-          child: FutureBuilder<String>(
-            future: ImageUtils.getAbsolutePath(imagePath),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                return Image.file(
-                  File(snapshot.data!),
-                  width: 52,
-                  height: 52,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _imageFallback(theme),
-                );
-              }
-              return _imageFallback(theme);
-            },
+          // Web/远端存储下 File 路径不可用，统一走 createImageProvider
+          // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
+          child: Image(
+            image: ImageUtils.createImageProvider(imagePath),
+            width: 52,
+            height: 52,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _imageFallback(theme),
           ),
         ),
       ),
@@ -1129,7 +1124,7 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
 
     // 按周分行；行内任一天有笔记时用高行高容纳名称与图片
     final rows = <List<DateTime?>>[];
-    var currentRow = List<DateTime?>.filled(leadingBlanks, null);
+    var currentRow = List<DateTime?>.filled(leadingBlanks, null, growable: true);
     for (var day = 1; day <= daysInMonth; day++) {
       currentRow.add(DateTime(month.year, month.month, day));
       if (currentRow.length == 7) {
