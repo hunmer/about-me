@@ -358,9 +358,9 @@ Scaffold
 
 **布局结构**（Warm Paper Sketch，参考纪念日编辑页 `EditMemorialDayPage`）:
 ```
-SuperCupertinoNavigationWrapper
-├── actions: DSIconButton 删除（危险色，仅编辑）+ DSButton 完成
-└── body: DSThemeBridge + SingleChildScrollView
+Scaffold（不使用 SuperCupertinoNavigationWrapper，轻量顶行）
+├── 顶行: DSIconButton 返回（纸底圆钮）+ 居中标题 + DSIconButton 删除（危险色，仅编辑）
+└── body: SingleChildScrollView
     ├── AvatarNameSection（头像 + 名/姓）
     ├── GenderSelectorField（性别）
     ├── TextInputField（电话，phone 键盘，手绘描线）
@@ -369,11 +369,10 @@ SuperCupertinoNavigationWrapper
     └── TextInputField（地址，手绘描线）
 ```
 
-**功能**:
-- 头像上传、标签动态添加/删除
-- 表单验证（姓名必填，showDSToast warning）
-- 事件记录与自定义字段不在本表单（在详情页编辑），保存时保留原值
-- 保存时保留表单外字段（organization/email/website/收藏/图标等）
+**自动保存**（无保存按钮）：
+- 字段变更防抖 500ms 后自动调 `onSave`，页面关闭时未落盘变更立即 flush
+- `onSave` 会被多次调用，调用方需幂等（按 id 存在即更新，见 `contact_main_view._addContact`）
+- 姓名为空的中间态静默跳过（不落库）；联系人 id 在表单内固定复用，避免新建多次提交产生重复
 
 ### ContactCard 组件
 

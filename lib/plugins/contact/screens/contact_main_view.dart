@@ -270,20 +270,29 @@ class ContactMainViewState extends State<ContactMainView> {
     }
   }
 
-  /// FAB 新建联系人（OpenContainer hero 展开）
+  /// FAB 新建联系人（整页表单走 push 路由：
+  /// OpenContainer 浮层会打乱 wrapper actions 的 Overlay 定位，导致导航栏错乱）
   void _addContact() {
-    NavigationHelper.openContainerWithHero(
+    NavigationHelper.push(
       context,
-      (context) => ContactForm(
+      ContactForm(
+        // 表单为防抖自动保存，onSave 会被多次调用：已落库则改为更新
         onSave: (savedContact) async {
-          await _controller.addContact(savedContact);
-          setState(() {});
-          _loadAvailableTags();
+          final existing = await _controller.getContact(savedContact.id);
+          if (existing == null) {
+            await _controller.addContact(savedContact);
+          } else {
+            await _controller.updateContact(savedContact);
+          }
+          if (mounted) {
+            setState(() {});
+            _loadAvailableTags();
+          }
         },
       ),
-      sourceKey: _addButtonKey,
-      heroTag: 'contact_add_button',
-    );
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   /// 列表 + 右下角 FAB（body 与 searchBody 共用）

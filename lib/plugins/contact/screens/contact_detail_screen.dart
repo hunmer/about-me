@@ -313,32 +313,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           child: IgnorePointer(child: _SketchStrokeOverlay(theme: theme, seed: 3)),
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 72),
+          // 底部留弧形空间；水平/顶部边距由 DSLightHeader 自带
+          padding: const EdgeInsets.only(bottom: 72),
           child: Column(
             children: [
               // 顶行：返回 / 姓名 / 编辑
-              Row(
-                children: [
-                  _HeaderCircleButton(
-                    theme: theme,
-                    icon: DsIconKind.chevronLeft,
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
-                  Expanded(
-                    child: Text(
-                      contact.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: DsTypography.title.copyWith(color: theme.text),
-                    ),
-                  ),
-                  _HeaderCircleButton(
-                    theme: theme,
-                    icon: DsIconKind.edit,
-                    onTap: () => _openEditor(contact),
-                  ),
-                ],
+              DSLightHeader(
+                title: contact.name,
+                trailing: DSIconButton(
+                  icon: DsIconKind.edit,
+                  size: 38,
+                  color: theme.surface,
+                  iconColor: theme.text,
+                  onPressed: () => _openEditor(contact),
+                ),
               ),
               const SizedBox(height: 20),
               _buildAvatar(theme, contact, accent),
@@ -719,44 +707,4 @@ class _DecorationPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DecorationPainter oldDelegate) =>
       !identical(oldDelegate.decoration, decoration);
-}
-
-/// header 顶行圆形按钮：纸色圆底 + 墨色图标
-class _HeaderCircleButton extends StatelessWidget {
-  const _HeaderCircleButton({
-    required this.theme,
-    required this.icon,
-    this.onTap,
-  });
-
-  final AppThemeData theme;
-  final DsIconKind icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onPressed: onTap,
-      builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
-        return Transform.scale(
-          scale: pressed ? 0.92 : 1.0,
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: dsSketchDecoration(
-              theme: theme,
-              fillColor: theme.surface,
-              circle: true,
-              strokeWidth: 1.4,
-              seed: 5,
-            ),
-            child: Center(
-              child: DsIcon(icon, size: 18, color: theme.text),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }

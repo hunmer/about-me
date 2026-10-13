@@ -41,6 +41,7 @@ export 'components/list_item.dart';
 export 'components/list_item_card.dart';
 export 'components/loading.dart';
 export 'components/navigation_bar.dart';
+export 'components/light_header.dart';
 export 'components/page_indicator.dart';
 export 'components/popover.dart';
 export 'components/radio.dart';
