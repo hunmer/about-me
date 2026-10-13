@@ -6,12 +6,14 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 
 import '../media_log_plugin.dart';
 import '../models/media_item.dart';
 import '../screens/media_detail_screen.dart';
 import '../widgets/media_item_card.dart';
 import '../widgets/media_item_form.dart';
+import '../widgets/media_item_list_tile.dart';
 
 /// 媒体记录列表页：瀑布流封面网格 + 多条件过滤 + 搜索 + 排序
 ///
@@ -27,6 +29,9 @@ class _MediaListScreenState extends State<MediaListScreen> {
   final Map<String, dynamic> _multiFilters = {};
   String _searchQuery = '';
   String _sortBy = 'default'; // default, title, rating, finished
+
+  /// 视图模式：true = 瀑布流网格（默认），false = 单列列表（支持滑动操作）
+  bool _isGridView = true;
 
   @override
   void initState() {
