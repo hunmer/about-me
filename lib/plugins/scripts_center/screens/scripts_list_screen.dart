@@ -11,7 +11,7 @@ import 'package:aboutme/plugins/scripts_center/screens/script_execution_log_scre
 import 'package:aboutme/plugins/scripts_center/widgets/script_card.dart';
 import 'package:aboutme/plugins/scripts_center/widgets/script_run_dialog.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'script_edit_screen.dart';
 import '../scripts_center_plugin.dart';
 
@@ -293,39 +293,36 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
     }
   }
 
-  /// 显示底部操作菜单
+  /// 显示底部操作菜单（手绘 sheet）
   void _showActionSheet(ScriptInfo script) {
-    SmoothBottomSheet.show(
+    showDSBottomSheet(
       context: context,
+      title: script.name,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            leading: Icon(
-              script.enabled ? Icons.block : Icons.check_circle_outline,
-              color: script.enabled ? Colors.red : Colors.green,
-            ),
-            title: Text(
-              script.enabled
-                  ? 'scripts_center_disableScript'.tr
-                  : 'scripts_center_enableScript'.tr,
-            ),
+          DSSheetAction(
+            icon: script.enabled ? DsIconKind.block : DsIconKind.check,
+            label: script.enabled
+                ? 'scripts_center_disableScript'.tr
+                : 'scripts_center_enableScript'.tr,
+            destructive: script.enabled,
             onTap: () {
               Navigator.pop(context);
               _toggleScript(script);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: Text('app_edit'.tr),
+          DSSheetAction(
+            icon: DsIconKind.edit,
+            label: 'app_edit'.tr,
             onTap: () {
               Navigator.pop(context);
               _showScriptDialog(script: script);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: Text('scripts_center_executionLogs'.tr),
+          DSSheetAction(
+            icon: DsIconKind.clock,
+            label: 'scripts_center_executionLogs'.tr,
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -340,22 +337,19 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.ios_share),
-            title: Text('scripts_center_exportScript'.tr),
-            subtitle: Text('scripts_center_exportScriptDesc'.tr),
+          DSSheetAction(
+            icon: DsIconKind.share,
+            label: 'scripts_center_exportScript'.tr,
             onTap: () {
               Navigator.pop(context);
               _exportScript(script);
             },
           ),
           if (!script.isBuiltIn)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: Text(
-                'app_delete'.tr,
-                style: const TextStyle(color: Colors.red),
-              ),
+            DSSheetAction(
+              icon: DsIconKind.trash,
+              label: 'app_delete'.tr,
+              destructive: true,
               onTap: () {
                 Navigator.pop(context);
                 _deleteScript(script);

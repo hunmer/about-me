@@ -100,19 +100,20 @@ class NoteColorPickerRow extends StatelessWidget {
     );
   }
 
-  /// 背景风格预览块：用主题排线色演示该填充效果，选中描边加粗
+  /// 背景风格预览块：用主题淡彩演示该填充效果，选中描边加粗
   Widget _buildStyleSwatch(AppThemeData theme, DsSketchFill style, int index) {
     final isSelected = index == (selectedStyle ?? 0);
     return GestureDetector(
       onTap: () => onStyleChanged!(index),
       child: Container(
-        width: 30,
-        height: 30,
+        width: 46,
+        height: 46,
         decoration: dsSketchDecoration(
           theme: theme,
-          fillColor: theme.surface,
+          // 实底给淡彩演示；其余传 null 让排线/点画走主题淡彩（传纸色会看不见）
+          fillColor: style == DsSketchFill.solid ? theme.hatch : null,
           fillStyle: style,
-          radius: BorderRadius.circular(7),
+          radius: BorderRadius.circular(10),
           strokeWidth: isSelected ? 2.6 : 1.6,
           seed: 100 + index,
         ),

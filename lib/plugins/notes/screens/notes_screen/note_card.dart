@@ -141,6 +141,21 @@ class NoteCard extends StatelessWidget {
     // 墨迹按笔记稳定变化（rebuild 不抖变）
     final seed = note.id.hashCode & 0x7fffffff;
 
+    // 背景填充风格（排线/交叉/点/之字/横线/实底）
+    final fillStyle = DsSketchFill.values[
+        note.bgStyle.clamp(0, DsSketchFill.values.length - 1)];
+    // 实底彩色背景下文字按合成亮度切换深墨/纸白，保证可读
+    final solidAlpha = theme.isDark ? 0.55 : 0.60;
+    final solidBg = (fillStyle == DsSketchFill.solid && note.color != null)
+        ? Color.lerp(theme.surface, note.color!, solidAlpha)
+        : null;
+    final contentText = solidBg == null
+        ? theme.text
+        : (solidBg.computeLuminance() > 0.5 ? DsColors.text : theme.paper);
+    final contentSub = solidBg == null
+        ? theme.textSub
+        : contentText.withValues(alpha: 0.75);
+
     // 待办进度统计
     final todoItems = note.isTodo ? TodoItem.parseList(note.content) : null;
     final doneCount = todoItems?.where((item) => item.checked).length ?? 0;
@@ -155,26 +170,25 @@ class NoteCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         seed: seed,
         progress: progress,
-        // 背景填充风格（排线/交叉/点/之字/实底）
-        fillStyle: DsSketchFill.values[
-            note.bgStyle.clamp(0, DsSketchFill.values.length - 1)],
+        // 背景填充风格（排线/交叉/点/之字/横线/实底）
+        fillStyle: fillStyle,
         // 笔记标记色作为填充淡彩（未指定时用主题默认）；透明度取明显可见档
         hachureColor: note.color?.withValues(
-          alpha: theme.isDark
-              ? (note.bgStyle == DsSketchFill.solid.index ? 0.55 : 0.60)
-              : (note.bgStyle == DsSketchFill.solid.index ? 0.60 : 0.70),
+          alpha: fillStyle == DsSketchFill.solid
+              ? solidAlpha
+              : (theme.isDark ? 0.60 : 0.70),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               note.title.isEmpty ? 'notes_untitled'.tr : note.title,
-              style: DsTypography.title.copyWith(color: theme.text),
+              style: DsTypography.title.copyWith(color: contentText),
             ),
             const SizedBox(height: 4),
             // 待办类型渲染勾选清单，普通笔记用 QuillViewer 只读渲染富文本
             if (note.isTodo)
-              ..._buildTodoItems(theme, seed, progress)
+              ..._buildTodoItems(theme, contentSub, seed, progress)
             else
               ConstrainedBox(
                 constraints: const BoxConstraints(
@@ -182,7 +196,7 @@ class NoteCard extends StatelessWidget {
                 ),
                 child: ClipRect(
                   child: DefaultTextStyle(
-                    style: DsTypography.body.copyWith(color: theme.textSub),
+                    style: DsTypography.body.copyWith(color: contentSub),
                     child: QuillViewer(
                       data: note.content,
                       selectable: false,
@@ -233,6 +247,7 @@ class NoteCard extends StatelessWidget {
   /// 待办清单渲染：最多显示 6 条，超出部分显示剩余数量
   List<Widget> _buildTodoItems(
     AppThemeData theme,
+    Color subColor,
     int seed,
     Animation<double>? progress,
   ) {
@@ -240,7 +255,7 @@ class NoteCard extends StatelessWidget {
     final visible = items.take(6).toList();
     return [
       for (var i = 0; i < visible.length; i++)
-        _buildTodoRow(theme, visible[i], seed, progress,
+        _buildTodoRow(theme, visible[i], subColor, seed, progress,
             onToggle: onToggle != null ? () => onToggle!(i) : null),
       if (items.length > visible.length)
         Padding(
@@ -248,7 +263,7 @@ class NoteCard extends StatelessWidget {
           child: Text(
             'notes_todoMoreItems'.trParams(
                 {'count': '${items.length - visible.length}'}),
-            style: DsTypography.caption.copyWith(color: theme.textSub),
+            style: DsTypography.caption.copyWith(color: subColor),
           ),
         ),
     ];
@@ -257,6 +272,7 @@ class NoteCard extends StatelessWidget {
   Widget _buildTodoRow(
     AppThemeData theme,
     TodoItem item,
+    Color subColor,
     int seed,
     Animation<double>? progress, {
     VoidCallback? onToggle,
@@ -298,7 +314,7 @@ class NoteCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: DsTypography.body.copyWith(
-                  color: theme.textSub,
+                  color: subColor,
                   decoration: item.checked ? TextDecoration.lineThrough : null,
                 ),
               ),

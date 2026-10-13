@@ -92,6 +92,9 @@ enum DsSketchFill {
   /// 之字形连线
   zigzag,
 
+  /// 笔记本水平横线（hachureAngle 0 的水平排线）
+  ruled,
+
   /// 纯色实底
   solid,
 }
@@ -134,7 +137,7 @@ RoughBoxDecoration dsSketchDecoration({
       filler = SolidFiller();
       resolvedFillColor = fillColor;
     case DsSketchFill.hachure || DsSketchFill.crossHatch ||
-          DsSketchFill.dots || DsSketchFill.zigzag:
+          DsSketchFill.dots || DsSketchFill.zigzag || DsSketchFill.ruled:
       // 点画的点径/密度需要更大参数才可见
       filler = switch (style) {
         DsSketchFill.crossHatch => HatchFiller(
@@ -156,6 +159,15 @@ RoughBoxDecoration dsSketchDecoration({
             drawConfig: theme.wired.drawConfig,
             hachureGap: hachureGap,
             fillWeight: 1.4,
+          ),
+        ),
+        DsSketchFill.ruled => HachureFiller(
+          FillerConfig.build(
+            drawConfig: theme.wired.drawConfig,
+            // 角度 0 = 水平线，行距模拟笔记本行高
+            hachureAngle: 0,
+            hachureGap: 12,
+            fillWeight: 1.2,
           ),
         ),
         _ => HachureFiller(
