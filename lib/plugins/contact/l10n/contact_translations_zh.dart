@@ -111,6 +111,8 @@ const Map<String, String> contactTranslationsZh = {
 
   'contact_contactListTitle': '联系人列表',
   'contact_searchPlaceholder': '搜索联系人姓名、电话、备注...',
+  'contact_searchNoResults': '没有找到匹配的联系人',
+  'contact_searchHintEmpty': '输入关键词搜索联系人',
   // Home Widget Strings
   'contact_widgetName': '联系人',
   'contact_widgetDescription': '快速打开联系人',

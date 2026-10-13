@@ -55,7 +55,7 @@ class ContactPlugin extends BasePlugin {
 
 ### 主界面入口
 
-**文件**: `contact_plugin.dart`
+**文件**: `screens/contact_main_view.dart`
 
 **路由**: 通过 `ContactPlugin.buildMainView()` 返回 `ContactMainView`
 
@@ -317,7 +317,8 @@ class SortConfig {
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
-| `ContactMainView` | `contact_plugin.dart` | 插件主视图容器 |
+| `ContactMainView` | `screens/contact_main_view.dart` | 插件主视图容器 |
+| `ContactListTile` | `widgets/contact_list_tile.dart` | 联系人列表行（手绘头像+姓名+组织，字母分组列表用） |
 | `ContactCard` | `widgets/contact_card.dart` | 联系人卡片组件（支持列表/网格视图） |
 | `ContactForm` | `widgets/contact_form.dart` | 联系人创建/编辑表单 |
 | `InteractionForm` | `widgets/interaction_form.dart` | 交互记录表单 |
@@ -638,7 +639,7 @@ Future<Contact> addContact(Contact contact) async {
 └─────────────────────────────┘
 ```
 
-**实现**: `contact_plugin.dart` 中的 `buildCardView()` 方法
+**实现**: `contact_plugin.dart` 中的 `buildCardView()` 方法，UI 位于 `widgets/contact_plugin_card.dart`
 
 **数据来源**:
 - 联系人总数: `_controller.getAllContacts().length`
@@ -909,7 +910,12 @@ if (daysSinceLastContact < filterConfig.uncontactedDays!) {
 
 ```
 contact/
-├── contact_plugin.dart                      # 插件主类 + 主视图
+├── contact_plugin.dart                      # 插件主类（生命周期、JS API 注册、watchOS 数据）
+├── contact_js_api.dart                      # JS API 实现（part of contact_plugin.dart）
+├── contact_data_selectors.dart              # 数据选择器（part of contact_plugin.dart）
+├── screens/
+│   ├── contact_main_view.dart               # 插件主视图（搜索、多条件过滤、列表）
+│   └── contact_records_screen.dart          # 交互记录界面
 ├── models/
 │   ├── contact_model.dart                   # 联系人模型
 │   ├── interaction_record_model.dart        # 交互记录模型
@@ -917,6 +923,7 @@ contact/
 ├── controllers/
 │   └── contact_controller.dart              # 联系人控制器（核心业务逻辑）
 ├── widgets/
+│   ├── contact_plugin_card.dart             # 首页卡片视图（统计信息）
 │   ├── contact_card.dart                    # 联系人卡片组件（双视图）
 │   ├── contact_form.dart                    # 联系人表单（创建/编辑）
 │   ├── interaction_form.dart                # 交互记录表单
