@@ -214,7 +214,10 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
         },
         contentBuilder: (context, fields) {
           // 自定义布局：保存按钮在 AppBar
-          return ListView(
+          // Expanded：FormBuilderWrapper 会把本回调结果放进 Column，
+          // 直接返回 ListView 会拿到无界高度约束而崩溃
+          return Expanded(
+            child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             children: [
               // 图标选择器（居中）
@@ -297,6 +300,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 ],
               ),
             ],
+            ),
           );
         },
         config: FormConfig(

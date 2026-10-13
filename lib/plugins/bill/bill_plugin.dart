@@ -500,8 +500,8 @@ class _BillMainViewState extends State<BillMainView>
       fab: _buildFab(),
       items: const [
         DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
-        // 周期性扣款，用 refresh 环形箭头近似（原账单列表右上角入口）
-        DSNavItem(icon: DsIconKind.refresh, label: '订阅'),
+        // 周期性订阅（日历+勾）
+        DSNavItem(icon: DsIconKind.calendarCheck, label: '订阅'),
         DSNavItem(icon: DsIconKind.columns, label: '统计分析'),
       ],
     );
