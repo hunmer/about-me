@@ -28,9 +28,44 @@ class GalleryPhoto {
   final String? subText;
 }
 
+/// url → ImageProvider 解析缓存（同 url 只解析一次）
+///
+/// 提前 [resolve] 后可用 [cached] 同步取用：Hero 飞行首帧即能渲染大图，
+/// 缩略图与已加载过的大图也无需再次等待异步解析
+class GalleryImageResolver {
+  GalleryImageResolver._();
+
+  static final Map<String, Future<ImageProvider?>> _futures = {};
+  static final Map<String, ImageProvider?> _resolved = {};
+
+  /// 同步读取已解析的 provider（未解析或解析失败返回 null）
+  static ImageProvider? cached(String url) => _resolved[url];
+
+  /// 解析 url（网络 URL / assets 路径 / 本地相对路径），结果写入缓存
+  static Future<ImageProvider?> resolve(String url) {
+    return _futures.putIfAbsent(url, () async {
+      ImageProvider? provider;
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        provider = NetworkImage(url);
+      } else if (url.startsWith('assets/')) {
+        provider = AssetImage(url);
+      } else {
+        final absolutePath = await ImageUtils.getAbsolutePath(url);
+        if (absolutePath.isNotEmpty) {
+          final file = File(absolutePath);
+          if (file.existsSync()) provider = FileImage(file);
+        }
+      }
+      _resolved[url] = provider;
+      return provider;
+    });
+  }
+}
+
 /// 全屏 Gallery 查看器（深色沉浸式）：
-/// 顶部标题 + 当前照片日期 + 关闭按钮，中部大图横滑（支持双指缩放），
-/// 底部信息行（可点击跳转来源）+ 缩略图联动条
+/// 顶部标题 + 当前照片日期 + 关闭按钮，中部大图横滑（双指缩放，单击切换沉浸模式），
+/// 底部信息行（可点击跳转来源）+ 缩略图联动条；
+/// 当前页大图挂 Hero（tag = url），与来源页同 tag 图片形成转场飞行
 class GalleryViewer extends StatefulWidget {
   const GalleryViewer({
     super.key,
@@ -56,21 +91,28 @@ class GalleryViewer extends StatefulWidget {
 class _GalleryViewerState extends State<GalleryViewer> {
   /// 沉浸式近黑底色（固定深色，不随主题切换）
   static const Color _bgColor = Color(0xFF0B0B0D);
-  static const double _thumbSize = 56;
+
+  /// 缩略图外框边长（含描边与内边距）；间距按此推导保持滚动居中计算一致
+  static const double _thumbOuter = 56;
+  static const double _thumbSpacing = 10;
+
+  /// 描边 2*2 + 内边距 2*2，图片实际为 48×48 正方形（保证圆形不变形）
+  static const double _thumbInset = 8;
 
   late final PageController _pageController = PageController(
     initialPage: widget.initialIndex,
   );
   final ScrollController _thumbController = ScrollController();
 
-  /// url → provider 解析缓存，避免来回滑动重复解析本地路径
-  final Map<String, Future<ImageProvider?>> _providerCache = {};
-
   late int _index = widget.initialIndex.clamp(0, widget.photos.length - 1);
+
+  /// 沉浸模式：单击大图隐藏/恢复顶部与底部区域
+  bool _chromeVisible = true;
 
   @override
   void initState() {
     super.initState();
+    assert(widget.photos.isNotEmpty);
     // 初始缩略图滚动到选中项（首帧布局完成后才有 viewport）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollThumbTo(_index);
@@ -89,6 +131,10 @@ class _GalleryViewerState extends State<GalleryViewer> {
     _scrollThumbTo(index);
   }
 
+  void _toggleChrome() {
+    setState(() => _chromeVisible = !_chromeVisible);
+  }
+
   void _selectThumb(int index) {
     _pageController.animateToPage(
       index,
@@ -101,27 +147,13 @@ class _GalleryViewerState extends State<GalleryViewer> {
   void _scrollThumbTo(int index) {
     if (!_thumbController.hasClients) return;
     final viewport = _thumbController.position.viewportDimension;
-    final itemExtent = _thumbSize + 10;
-    final target = index * itemExtent + _thumbSize / 2 - viewport / 2;
+    final itemExtent = _thumbOuter + _thumbSpacing;
+    final target = index * itemExtent + _thumbOuter / 2 - viewport / 2;
     _thumbController.animateTo(
       target.clamp(0.0, _thumbController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
-  }
-
-  Future<ImageProvider?> _resolveProvider(String url) {
-    return _providerCache.putIfAbsent(url, () async {
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        return NetworkImage(url);
-      }
-      if (url.startsWith('assets/')) return AssetImage(url);
-      final absolutePath = await ImageUtils.getAbsolutePath(url);
-      if (absolutePath.isEmpty) return null;
-      final file = File(absolutePath);
-      if (!file.existsSync()) return null;
-      return FileImage(file);
-    });
   }
 
   @override
@@ -137,7 +169,11 @@ class _GalleryViewerState extends State<GalleryViewer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(current),
+              _ChromeSection(
+                visible: _chromeVisible,
+                hiddenOffset: const Offset(0, -1),
+                child: _buildHeader(current),
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -151,10 +187,16 @@ class _GalleryViewerState extends State<GalleryViewer> {
                       pageController: _pageController,
                       onPageChanged: _onPageChanged,
                       builder: (context, index) {
+                        final image = _GalleryImage(url: photos[index].url);
                         return PhotoViewGalleryPageOptions.customChild(
-                          child: _GalleryImage(
-                            url: photos[index].url,
-                            resolveProvider: _resolveProvider,
+                          // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _toggleChrome,
+                            // 仅当前页挂 Hero：避免相邻页与来源页出现多重飞行
+                            child: index == _index
+                                ? Hero(tag: photos[index].url, child: image)
+                                : image,
                           ),
                           minScale: PhotoViewComputedScale.contained,
                           maxScale: PhotoViewComputedScale.covered * 2,
@@ -165,9 +207,19 @@ class _GalleryViewerState extends State<GalleryViewer> {
                   ),
                 ),
               ),
-              _buildInfoBar(current),
-              _buildThumbnails(photos),
-              _buildHomeIndicator(),
+              _ChromeSection(
+                visible: _chromeVisible,
+                hiddenOffset: const Offset(0, 1),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildInfoBar(current),
+                    _buildThumbnails(photos),
+                    _buildHomeIndicator(),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -305,42 +357,56 @@ class _GalleryViewerState extends State<GalleryViewer> {
     );
   }
 
-  /// 缩略图联动条：选中项白描边高亮
+  /// 缩略图联动条：选中项白描边高亮。
+  /// 尺寸链固定为 56 外框 → 描边+内边距 8 → 48×48 正方形，避免被裁成椭圆
   Widget _buildThumbnails(List<GalleryPhoto> photos) {
     return SizedBox(
-      height: _thumbSize + 8,
+      height: _thumbOuter,
       child: ListView.separated(
         controller: _thumbController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: photos.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 10),
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: _thumbSpacing),
         itemBuilder: (context, index) {
           final selected = index == _index;
           return GestureDetector(
             onTap: () => _selectThumb(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(_thumbSize / 2),
-                border: Border.all(
-                  color: selected
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0),
-                  width: 2,
-                ),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: ClipOval(
-                child: _GalleryThumbImage(
-                  url: photos[index].url,
-                  resolveProvider: _resolveProvider,
-                ),
+            child: SizedBox.square(
+              dimension: _thumbOuter,
+              child: _thumbRing(
+                selected,
+                _GalleryThumbImage(url: photos[index].url),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// 选中白描边环：与图片之间留 2px 缝隙，未选中保留透明占位避免跳动
+  Widget _thumbRing(bool selected, Widget image) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? Colors.white : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: ClipOval(
+        child: SizedBox.square(
+          dimension: _thumbOuter - _thumbInset,
+          child: ColoredBox(
+            color: Colors.white.withValues(alpha: 0.06),
+            child: image,
+          ),
+        ),
       ),
     );
   }
@@ -362,35 +428,56 @@ class _GalleryViewerState extends State<GalleryViewer> {
   }
 }
 
-/// 大图渲染：解析 url 为 ImageProvider 后交给 PhotoView 缩放容器
-class _GalleryImage extends StatelessWidget {
-  const _GalleryImage({
-    required this.url,
-    required this.resolveProvider,
+/// 顶栏/底部区域的沉浸显隐动画：淡入淡出 + 向屏幕外滑动
+class _ChromeSection extends StatelessWidget {
+  const _ChromeSection({
+    required this.visible,
+    required this.hiddenOffset,
+    required this.child,
   });
 
-  final String url;
-  final Future<ImageProvider?> Function(String url) resolveProvider;
+  final bool visible;
+
+  /// 隐藏时的滑出方向（顶栏向上 / 底部向下）
+  final Offset hiddenOffset;
+
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    const duration = Duration(milliseconds: 220);
+    return AnimatedSlide(
+      duration: duration,
+      curve: Curves.easeOut,
+      offset: visible ? Offset.zero : hiddenOffset,
+      child: AnimatedOpacity(
+        duration: duration,
+        curve: Curves.easeOut,
+        opacity: visible ? 1 : 0,
+        child: IgnorePointer(ignoring: !visible, child: child),
+      ),
+    );
+  }
+}
+
+/// 大图渲染：优先同步读取解析缓存（Hero 首帧出图），未命中时异步解析
+class _GalleryImage extends StatelessWidget {
+  const _GalleryImage({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = GalleryImageResolver.cached(url);
+    if (provider != null) return _buildImage(provider);
+
     return FutureBuilder<ImageProvider?>(
-      future: resolveProvider(url),
+      future: GalleryImageResolver.resolve(url),
       builder: (context, snapshot) {
-        final provider = snapshot.data;
-        if (provider != null) {
-          return PhotoView(
-            imageProvider: provider,
-            minScale: PhotoViewComputedScale.contained,
-            maxScale: PhotoViewComputedScale.covered * 2,
-            initialScale: PhotoViewComputedScale.contained,
-            backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-            errorBuilder: (context, error, stackTrace) =>
-                const _GalleryFallback(),
-          );
-        }
-        if (snapshot.hasError ||
-            (snapshot.hasData && snapshot.data == null)) {
+        final resolved = snapshot.data;
+        if (resolved != null) return _buildImage(resolved);
+        if (snapshot.hasError || snapshot.connectionState == ConnectionState.done) {
+          // 解析完成但无可用 provider（文件缺失等）
           return const _GalleryFallback();
         }
         return const Center(
@@ -406,39 +493,46 @@ class _GalleryImage extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildImage(ImageProvider provider) {
+    return Image(
+      image: provider,
+      fit: BoxFit.contain,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) => const _GalleryFallback(),
+    );
+  }
 }
 
 /// 缩略图渲染：同一 provider 解析缓存，方形裁圆
 class _GalleryThumbImage extends StatelessWidget {
-  const _GalleryThumbImage({
-    required this.url,
-    required this.resolveProvider,
-  });
+  const _GalleryThumbImage({required this.url});
 
   final String url;
-  final Future<ImageProvider?> Function(String url) resolveProvider;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: _GalleryViewerState._thumbSize,
-      height: _GalleryViewerState._thumbSize,
-      color: Colors.white.withValues(alpha: 0.06),
-      child: FutureBuilder<ImageProvider?>(
-        future: resolveProvider(url),
-        builder: (context, snapshot) {
-          final provider = snapshot.data;
-          if (provider == null) {
-            return const SizedBox.shrink();
-          }
-          return Image(
-            image: provider,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                const _GalleryFallback(compact: true),
-          );
-        },
-      ),
+    final provider = GalleryImageResolver.cached(url);
+    if (provider != null) return _buildImage(provider);
+
+    return FutureBuilder<ImageProvider?>(
+      future: GalleryImageResolver.resolve(url),
+      builder: (context, snapshot) {
+        final resolved = snapshot.data;
+        if (resolved != null) return _buildImage(resolved);
+        // 未就绪时露出底色占位
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildImage(ImageProvider provider) {
+    return Image(
+      image: provider,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) =>
+          const _GalleryFallback(compact: true),
     );
   }
 }

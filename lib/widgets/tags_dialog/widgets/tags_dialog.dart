@@ -18,6 +18,16 @@ String _sortTypeLabel(TagsSortType type) => switch (type) {
   TagsSortType.name => 'app_tags_sortName'.tr,
 };
 
+/// 自定义标签项渲染器
+///
+/// 返回的 widget 替换标签格子默认内容（点击/长按/批量编辑交互壳由列表保留），
+/// [isSelected] 为当前选中态，由渲染器自行呈现。
+typedef TagsItemBuilder = Widget Function(
+  BuildContext context,
+  TagItem tag,
+  bool isSelected,
+);
+
 /// 标签管理对话框
 ///
 /// 支持的功能：
@@ -60,6 +70,9 @@ class TagsDialog extends StatefulWidget {
   /// 编辑标签回调
   final Future<TagItem?> Function(TagItem oldTag, TagItem newTag)? onEditTag;
 
+  /// 自定义标签项渲染（null 时用默认胶囊）
+  final TagsItemBuilder? tagItemBuilder;
+
   const TagsDialog({
     super.key,
     this.jsonFilePath,
@@ -72,6 +85,7 @@ class TagsDialog extends StatefulWidget {
     this.onAddTag,
     this.onDeleteTag,
     this.onEditTag,
+    this.tagItemBuilder,
   });
 
   /// 兼容旧版 TagGroup 的工厂构造函数
@@ -86,6 +100,7 @@ class TagsDialog extends StatefulWidget {
     Future<TagItem?> Function(String group, {TagItem? tag})? onAddTag,
     Future<bool> Function(TagItem tag)? onDeleteTag,
     Future<TagItem?> Function(TagItem oldTag, TagItem newTag)? onEditTag,
+    TagsItemBuilder? tagItemBuilder,
   }) {
     return TagsDialog(
       key: key,
@@ -98,6 +113,7 @@ class TagsDialog extends StatefulWidget {
       onAddTag: onAddTag,
       onDeleteTag: onDeleteTag,
       onEditTag: onEditTag,
+      tagItemBuilder: tagItemBuilder,
     );
   }
 
@@ -115,6 +131,7 @@ class TagsDialog extends StatefulWidget {
     Future<TagItem?> Function(String group, {TagItem? tag})? onAddTag,
     Future<bool> Function(TagItem tag)? onDeleteTag,
     Future<TagItem?> Function(TagItem oldTag, TagItem newTag)? onEditTag,
+    TagsItemBuilder? tagItemBuilder,
   }) {
     return showDSBottomSheet<List<String>>(
       context: context,
@@ -127,6 +144,7 @@ class TagsDialog extends StatefulWidget {
         onAddTag: onAddTag,
         onDeleteTag: onDeleteTag,
         onEditTag: onEditTag,
+        tagItemBuilder: tagItemBuilder,
       ),
     );
   }
@@ -217,6 +235,10 @@ class _TagsDialogState extends State<TagsDialog> {
     if (selectedGroup != null && selectedGroup.isNotEmpty) {
       result = result.where((tag) => tag.group == selectedGroup).toList();
     }
+
+    // 跨分组同名标签去重（如"最近使用"与原分组并存），保留首个出现的
+    final seen = <String>{};
+    result = result.where((tag) => seen.add(tag.name)).toList();
 
     // 排序
     final sortType = _filterState.getValue('sort') as TagsSortType? ??
@@ -508,6 +530,7 @@ class _TagsDialogState extends State<TagsDialog> {
         isBatchEditMode: _isBatchEditMode,
         config: widget.config,
         selectionMode: widget.config.selectionMode,
+        tagItemBuilder: widget.tagItemBuilder,
         onSelectTag: _selectTag,
         onLongPress: widget.config.enableLongPressMenu
             ? _showTagBottomSheet

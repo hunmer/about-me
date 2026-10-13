@@ -1,5 +1,6 @@
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:aboutme/constants/app_icons.dart';
@@ -196,7 +197,28 @@ class TagController extends ChangeNotifier {
     onTagsChanged?.call();
   }
 
-  Future<List<String>?> showTagManagerDialog(BuildContext context) async {
+  /// 收集标签下的图片（imageUrls + markdown 内联图，去重，新条目在前）
+  List<String> getTagImages(String tag) {
+    final plugin = PluginManager.instance.getPlugin('calendar_album');
+    final calendar =
+        (plugin as dynamic).calendarController as CalendarController?;
+    if (calendar == null) return const [];
+
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final entry in calendar.getEntriesByTag(tag)) {
+      for (final url in [...entry.imageUrls, ...entry.extractImagesFromMarkdown()]) {
+        if (url.isEmpty || !seen.add(url)) continue;
+        urls.add(url);
+      }
+    }
+    return urls;
+  }
+
+  Future<List<String>?> showTagManagerDialog(
+    BuildContext context, {
+    TagsItemBuilder? tagItemBuilder,
+  }) async {
     // 转换为新组件可接受的格式
     final legacyGroups = tagGroups.map((g) => g.toJson()).toList();
 
@@ -204,6 +226,7 @@ class TagController extends ChangeNotifier {
       context,
       groups: legacyGroups,
       selectedTags: List.from(selectedTags),
+      tagItemBuilder: tagItemBuilder,
       config: const TagsDialogConfig(
         title: '标签管理',
         selectionMode: TagsSelectionMode.multiple,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../models/models.dart';
+import 'tags_dialog.dart';
 
 /// 标签列表组件
 class TagsList extends StatelessWidget {
@@ -34,6 +35,9 @@ class TagsList extends StatelessWidget {
   /// 添加标签回调
   final Function(String group)? onAddTag;
 
+  /// 自定义标签项渲染（null 时用默认胶囊）
+  final TagsItemBuilder? tagItemBuilder;
+
   const TagsList({
     super.key,
     required this.tags,
@@ -46,6 +50,7 @@ class TagsList extends StatelessWidget {
     this.onDeleteTap,
     this.onEditTap,
     this.onAddTag,
+    this.tagItemBuilder,
   });
 
   @override
@@ -71,6 +76,7 @@ class TagsList extends StatelessWidget {
             isBatchEditMode: isBatchEditMode,
             config: config,
             selectionMode: selectionMode,
+            contentBuilder: tagItemBuilder,
             onTap: () => onSelectTag(tag.name),
             onLongPress: onLongPress != null ? () => onLongPress!(tag) : null,
             onDelete: onDeleteTap != null ? () => onDeleteTap!(tag) : null,
@@ -113,6 +119,7 @@ class _TagPill extends StatelessWidget {
   final bool isBatchEditMode;
   final TagsDialogConfig config;
   final TagsSelectionMode selectionMode;
+  final TagsItemBuilder? contentBuilder;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onDelete;
@@ -125,6 +132,7 @@ class _TagPill extends StatelessWidget {
     required this.isBatchEditMode,
     required this.config,
     required this.selectionMode,
+    this.contentBuilder,
     required this.onTap,
     this.onLongPress,
     this.onDelete,
@@ -140,6 +148,7 @@ class _TagPill extends StatelessWidget {
       isBatchEditMode: isBatchEditMode,
       config: config,
       selectionMode: selectionMode,
+      contentBuilder: contentBuilder,
       onTap: onTap,
       onLongPress: onLongPress,
       onDelete: onDelete,
@@ -156,7 +165,14 @@ class _TagPill extends StatelessWidget {
                 onTap: inherited.isBatchEditMode ? null : inherited.onTap,
                 onLongPress: inherited.isBatchEditMode ? null : inherited.onLongPress,
                 borderRadius: BorderRadius.circular(16),
-                child: _buildPillContent(context, inherited),
+                child:
+                    inherited.contentBuilder != null
+                        ? inherited.contentBuilder!(
+                          context,
+                          inherited.tag,
+                          inherited.isSelected,
+                        )
+                        : _buildPillContent(context, inherited),
               ),
 
               // 编辑和删除按钮行（批量编辑模式时显示）
@@ -293,6 +309,7 @@ class _TagPillInherited extends InheritedWidget {
   final bool isBatchEditMode;
   final TagsDialogConfig config;
   final TagsSelectionMode selectionMode;
+  final TagsItemBuilder? contentBuilder;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onDelete;
@@ -304,6 +321,7 @@ class _TagPillInherited extends InheritedWidget {
     required this.isBatchEditMode,
     required this.config,
     required this.selectionMode,
+    this.contentBuilder,
     required this.onTap,
     this.onLongPress,
     this.onDelete,

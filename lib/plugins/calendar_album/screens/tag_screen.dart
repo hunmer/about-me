@@ -10,7 +10,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:aboutme/plugins/calendar_album/widgets/tag_folder_card.dart';
+import 'package:aboutme/widgets/tag_folder_card.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/folder_icon_sheet.dart';
 import 'album_screen.dart';
 
@@ -42,19 +42,6 @@ class _TagScreenState extends State<TagScreen> {
       }),
       params: {'tagCount': tagCount.toString()},
     );
-  }
-
-  /// 收集标签下的图片（imageUrls + markdown 内联图，去重，新条目在前）
-  List<String> _tagImages(CalendarController controller, String tag) {
-    final urls = <String>[];
-    final seen = <String>{};
-    for (final entry in controller.getEntriesByTag(tag)) {
-      for (final url in [...entry.imageUrls, ...entry.extractImagesFromMarkdown()]) {
-        if (url.isEmpty || !seen.add(url)) continue;
-        urls.add(url);
-      }
-    }
-    return urls;
   }
 
   /// 打开标签对应的相册（应用标签过滤）
@@ -150,7 +137,7 @@ class _TagScreenState extends State<TagScreen> {
           }
 
           // 每个文件夹的图片列表 + 按图片数排序
-          final folderImages = {for (final tag in tags) tag: _tagImages(calendarController, tag)};
+          final folderImages = {for (final tag in tags) tag: tagController.getTagImages(tag)};
           tags.sort(
             (a, b) =>
                 folderImages[b]!.length != folderImages[a]!.length

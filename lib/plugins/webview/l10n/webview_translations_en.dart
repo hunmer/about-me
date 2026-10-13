@@ -108,6 +108,8 @@ const Map<String, String> webviewTranslationsEn = {
 
   // App Store translations
   'webview_app_store': 'App Store',
+  'webview_tab_installed': 'Installed',
+  'webview_tab_store': 'Store',
   'webview_select_source': 'Select Source',
   'webview_manage_sources': 'Manage Sources',
   'webview_add_source': 'Add Source',

@@ -52,6 +52,37 @@ class _AlbumScreenState extends State<AlbumScreen> {
     }
   }
 
+  /// 打开 Gallery 查看器：先解析被点击照片的 provider（本地路径为毫秒级），
+  /// 确保 Hero 飞行首帧即显示大图而非加载圈
+  Future<void> _openGallery(List<_PhotoRecord> photos, int index) async {
+    await GalleryImageResolver.resolve(photos[index].url);
+    if (!mounted) return;
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'calendar_album_gallery_title'.tr,
+        photos: photos
+            .map(
+              (r) => GalleryPhoto(
+                url: r.url,
+                dateText: _formatGalleryDate(r.entry.createdAt),
+                caption: r.entry.title.isNotEmpty
+                    ? r.entry.title
+                    : 'calendar_album_all_photos'.tr,
+                subText: _formatAddedAgo(r.entry.createdAt),
+              ),
+            )
+            .toList(),
+        initialIndex: index,
+        // 点击信息区跳转照片所属日记条目
+        onInfoTap: (i) => NavigationHelper.push<void>(
+          context,
+          EntryDetailScreen(entry: photos[i].entry),
+        ),
+      ),
+    );
+  }
+
   /// Gallery 顶部日期：yyyy/MM/dd
   static String _formatGalleryDate(DateTime date) {
     final m = date.month.toString().padLeft(2, '0');
@@ -436,34 +467,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
                     final record = photos[index];
-                    void openViewer() {
-                      NavigationHelper.push(
-                        context,
-                        GalleryViewer(
-                          title: 'calendar_album_gallery_title'.tr,
-                          photos: photos
-                              .map(
-                                (r) => GalleryPhoto(
-                                  url: r.url,
-                                  dateText: _formatGalleryDate(
-                                    r.entry.createdAt,
-                                  ),
-                                  caption: r.entry.title.isNotEmpty
-                                      ? r.entry.title
-                                      : 'calendar_album_all_photos'.tr,
-                                  subText: _formatAddedAgo(r.entry.createdAt),
-                                ),
-                              )
-                              .toList(),
-                          initialIndex: index,
-                          // 点击信息区跳转照片所属日记条目
-                          onInfoTap: (i) => NavigationHelper.push<void>(
-                            context,
-                            EntryDetailScreen(entry: photos[i].entry),
-                          ),
-                        ),
-                      );
-                    }
+                    void openViewer() => _openGallery(photos, index);
 
                     void editEntry() {
                       NavigationHelper.push<void>(

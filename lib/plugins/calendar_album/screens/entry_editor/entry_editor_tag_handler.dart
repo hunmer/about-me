@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/widgets/tag_folder_card.dart';
+import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 import 'entry_editor_controller.dart';
 class EntryEditorTagHandler extends StatefulWidget {
   final EntryEditorController controller;
@@ -74,10 +78,47 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
     );
   }
 
+  /// 标签选择对话框内的文件夹卡片渲染：TagFolderCard + 选中态角标
+  Widget _buildFolderTagItem(BuildContext context, TagItem tag, bool isSelected) {
+    final theme = DSThemeBridge.resolve(context);
+    final images = tagController.getTagImages(tag.name);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // TagFolderCard 内部依赖有界高度（Expanded），用AspectRatio 撑出格子尺寸
+        AspectRatio(
+          aspectRatio: 0.8,
+          child: TagFolderCard(
+            tag: tag.name,
+            imageUrls: images,
+            count: images.length,
+            sticker: tagController.getTagSticker(tag.name),
+          ),
+        ),
+        if (isSelected)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: JellyBox(
+              width: 22,
+              height: 22,
+              radius: theme.radii.circle,
+              color: theme.primary,
+              child: DsIcon(DsIconKind.check, size: 14, color: theme.onPrimary),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildAddTagButton() {
     return GestureDetector(
       onTap: () async {
-        final result = await tagController.showTagManagerDialog(context);
+        final result = await tagController.showTagManagerDialog(
+          context,
+          tagItemBuilder: _buildFolderTagItem,
+        );
         if (result != null && mounted) {
           setState(() {
             widget.controller.selectedTags = List.from(result);

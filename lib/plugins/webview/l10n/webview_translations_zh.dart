@@ -108,6 +108,8 @@ const Map<String, String> webviewTranslationsZh = {
 
   // 小应用商场相关翻译
   'webview_app_store': '小应用商场',
+  'webview_tab_installed': '已安装',
+  'webview_tab_store': '商店',
   'webview_select_source': '选择源',
   'webview_manage_sources': '管理源',
   'webview_add_source': '添加源',

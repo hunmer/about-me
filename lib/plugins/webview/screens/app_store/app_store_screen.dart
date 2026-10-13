@@ -41,6 +41,9 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
       child: SuperCupertinoNavigationWrapper(
         title: Text('webview_app_store'.tr),
         largeTitle: 'webview_app_store'.tr,
+        // 内嵌于 WebViewMainScreen 宿主页（同一路由嵌套第二个 wrapper，
+        // 必须关闭 hero 过渡，避免与卡片页签导航栏的 hero tag 冲突）
+        transitionBetweenRoutes: false,
         enableLargeTitle: true,
         enableSearchBar: true,
         searchPlaceholder: 'search'.tr,
@@ -132,9 +135,16 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                           : _buildAppList(appStoreManager),
                 ),
 
-                // 安装进度条
+                // 安装进度条（宿主页 extendBody：避让弧形底部导航）
                 if (downloadManager.isInstalling)
-                  _buildInstallProgress(downloadManager.currentTask!),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom,
+                    ),
+                    child: _buildInstallProgress(
+                      downloadManager.currentTask!,
+                    ),
+                  ),
               ],
             );
           },
@@ -239,7 +249,10 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
     }
 
     return MasonryGridView.count(
-      padding: const EdgeInsets.all(8),
+      // 宿主页 extendBody：底部留出弧形导航高度
+      padding: const EdgeInsets.all(8).copyWith(
+        bottom: MediaQuery.paddingOf(context).bottom + 8,
+      ),
       crossAxisCount: 2,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
