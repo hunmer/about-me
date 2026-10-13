@@ -12,6 +12,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:provider/provider.dart';
 import 'package:skribble/skribble.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:io';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
@@ -397,19 +398,16 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     ),
                   ),
                 )
-              : GridView.builder(
+              : MasonryGridView.count(
                   padding: EdgeInsets.fromLTRB(
                     16,
                     16,
                     16,
                     16 + MediaQuery.paddingOf(context).bottom,
                   ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 1,
-                  ),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 14,
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
                     final record = photos[index];
@@ -481,14 +479,19 @@ class _PhotoCell extends StatefulWidget {
   @override
   State<_PhotoCell> createState() => _PhotoCellState();
 
-  /// 无框纯图渲染（ArcContextMenu.preview 复用），contain 完整显示
+  /// 无框纯图渲染（ArcContextMenu.preview 复用）。
+  /// 在瀑布流的无限高约束下由 Image 按固有比例撑高度，contain 无留白；
+  /// 占位兜底 1:1，避免图片未解码时格子高度塌陷
   static Widget buildPlainImage(BuildContext context, String imageUrl) {
     final theme = DSThemeBridge.resolve(context);
 
-    Widget placeholder() => Container(
-      color: theme.backgroundAlt,
-      alignment: Alignment.center,
-      child: DsIcon(DsIconKind.image, size: 28, color: theme.textSub),
+    Widget placeholder() => AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        color: theme.backgroundAlt,
+        alignment: Alignment.center,
+        child: DsIcon(DsIconKind.image, size: 28, color: theme.textSub),
+      ),
     );
 
     if (imageUrl.isEmpty) return placeholder();
@@ -590,15 +593,9 @@ class _PhotoCellState extends State<_PhotoCell>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(9),
-              child: ColoredBox(
-                // contain 留白区域的底色，与纸边区分
-                color: theme.backgroundAlt,
-                child: SizedBox.expand(
-                  child: Hero(
-                    tag: widget.imageUrl,
-                    child: _PhotoCell.buildPlainImage(context, widget.imageUrl),
-                  ),
-                ),
+              child: Hero(
+                tag: widget.imageUrl,
+                child: _PhotoCell.buildPlainImage(context, widget.imageUrl),
               ),
             ),
           ),
