@@ -225,6 +225,24 @@ class NoteCard extends StatelessWidget {
                   ),
                 ),
               ),
+            // 右上角打孔：填充页面背景色模拟挖穿 + 手绘墨线孔缘，贴纸质感
+            Positioned(
+              right: 10,
+              top: 10,
+              child: IgnorePointer(
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.background,
+                    circle: true,
+                    strokeWidth: 1.6,
+                    seed: seed,
+                  ),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(

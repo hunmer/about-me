@@ -356,40 +356,24 @@ Scaffold
 
 **文件**: `widgets/contact_form.dart`
 
-**核心组件**: 全屏 Scaffold 表单，使用 TabBar 分为两个标签页
-
-**布局结构**:
+**布局结构**（Warm Paper Sketch，参考纪念日编辑页 `EditMemorialDayPage`）:
 ```
-DefaultTabController (2个标签页)
-├── TabBar
-│   ├── 基本信息
-│   └── 记录
-└── TabBarView
-    ├── 基本信息表单
-    │   ├── 头像上传 (ImagePickerDialog)
-    │   ├── 图标选择器 (CircleIconPicker)
-    │   ├── 姓名 (必填)
-    │   ├── 电话
-    │   ├── 地址
-    │   ├── 备注
-    │   ├── 标签管理 (Chip + 添加对话框)
-    │   └── 自定义字段 (键值对列表)
-    └── 交互记录列表
-        ├── ListView.builder (历史记录)
-        └── FloatingActionButton (添加记录)
+SuperCupertinoNavigationWrapper
+├── actions: DSIconButton 删除（危险色，仅编辑）+ DSButton 完成
+└── body: DSThemeBridge + SingleChildScrollView
+    ├── AvatarNameSection（头像 + 名/姓）
+    ├── GenderSelectorField（性别）
+    ├── TextInputField（电话，phone 键盘，手绘描线）
+    ├── TextAreaField（备注 3-5 行，手绘描线）
+    ├── TagsField（标签动态添加/删除）
+    └── TextInputField（地址，手绘描线）
 ```
 
 **功能**:
-- 支持头像上传和裁剪（1:1比例）
-- 图标和颜色自定义
-- 标签动态添加/删除
-- 自定义字段动态添加/删除
-- 交互记录内嵌管理
-- 表单验证（姓名必填）
-
-**验证规则**:
-- 姓名不能为空
-- 保存时验证表单完整性
+- 头像上传、标签动态添加/删除
+- 表单验证（姓名必填，showDSToast warning）
+- 事件记录与自定义字段不在本表单（在详情页编辑），保存时保留原值
+- 保存时保留表单外字段（organization/email/website/收藏/图标等）
 
 ### ContactCard 组件
 

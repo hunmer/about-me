@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/design_system/design_system.dart';
+
+import 'sketch_field_shell.dart';
+
 /// 单行文本输入组件（支持表单验证）
 ///
 /// 功能特性：
@@ -7,6 +11,7 @@ import 'package:flutter/material.dart';
 /// - 统一的样式和主题适配
 /// - 可配置的装饰器属性
 /// - 支持 inline 模式（label在左，输入在右）
+/// - 存在 DS 主题祖先（DSThemeBridge）时自动切换手绘描线风格
 class TextInputField extends StatelessWidget {
   /// 输入控制器
   final TextEditingController controller;
@@ -145,6 +150,39 @@ class TextInputField extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      );
+    }
+
+    // 手绘模式：有 DS 主题祖先时用墨线描边外壳（label 上置）
+    final dsTheme = AppTheme.maybeOf(context);
+    if (!inline && dsTheme != null) {
+      return SketchFieldShell(
+        theme: dsTheme,
+        label: labelText,
+        child: TextFormField(
+          controller: controller,
+          validator: validator,
+          enabled: enabled,
+          maxLines: maxLines,
+          minLines: minLines,
+          keyboardType: keyboardType,
+          autofocus: autofocus,
+          obscureText: obscureText,
+          style: DsTypography.body.copyWith(color: dsTheme.text),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: hintText,
+            helperText: helperText,
+            helperStyle: helperStyle,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
+            hintStyle: DsTypography.body.copyWith(
+              color: dsTheme.textSub.withValues(alpha: 0.6),
+            ),
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
       );
     }

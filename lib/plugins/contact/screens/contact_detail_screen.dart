@@ -88,28 +88,47 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   // ==================== 事件 / 字段编辑 ====================
 
-  /// 骑缝加号：弹 sheet 选择新增类型
-  void _showAddSheet(Contact contact) {
-    showDSBottomSheet(
-      context: context,
-      title: contact.name,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
+  /// 区块标题行：标题文本 + 右侧小加号按钮（直接新增）
+  Widget _buildSectionHeader(
+    AppThemeData theme,
+    String title, {
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Row(
         children: [
-          DSSheetAction(
-            icon: DsIconKind.calendarCheck,
-            label: 'contact_addCustomEvent'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _showEventDialog(contact);
-            },
+          Expanded(
+            child: Text(
+              title,
+              style: DsTypography.heading.copyWith(color: theme.text),
+            ),
           ),
-          DSSheetAction(
-            icon: DsIconKind.tag,
-            label: 'contact_addCustomField'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _showFieldDialog(contact);
+          Pressable(
+            onPressed: onPressed,
+            builder: (context, states) {
+              final pressed = states.contains(WidgetState.pressed);
+              return Transform.scale(
+                scale: pressed ? 0.9 : 1.0,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surface,
+                    circle: true,
+                    strokeWidth: 1.4,
+                    seed: 21,
+                  ),
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.plus,
+                      size: 15,
+                      color: theme.text,
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -357,41 +376,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             child: CustomPaint(painter: _ArcHeaderPainter(theme.background)),
           ),
         ),
-        // 骑缝加号：弹新增事件/字段 sheet
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 9,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Pressable(
-              onPressed: () => _showAddSheet(contact),
-              builder: (context, states) {
-                final pressed = states.contains(WidgetState.pressed);
-                return Transform.scale(
-                  scale: pressed ? 0.94 : 1.0,
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: dsSketchDecoration(
-                      theme: theme,
-                      fillColor: theme.ink,
-                      circle: true,
-                      seed: 11,
-                    ),
-                    child: Center(
-                      child: DsIcon(
-                        DsIconKind.plus,
-                        size: 26,
-                        color: theme.surface,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -517,12 +501,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            '${'contact_customActivityEvents'.tr} (${events.length})',
-            style: DsTypography.heading.copyWith(color: theme.text),
-          ),
+        _buildSectionHeader(
+          theme,
+          '${'contact_customActivityEvents'.tr} (${events.length})',
+          onPressed: () => _showEventDialog(contact),
         ),
         if (events.isEmpty)
           Text(
@@ -606,12 +588,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            '${'contact_customFields'.tr} (${fields.length})',
-            style: DsTypography.heading.copyWith(color: theme.text),
-          ),
+        _buildSectionHeader(
+          theme,
+          '${'contact_customFields'.tr} (${fields.length})',
+          onPressed: () => _showFieldDialog(contact),
         ),
         if (fields.isEmpty)
           Text(

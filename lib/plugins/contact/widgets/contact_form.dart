@@ -1,20 +1,18 @@
-import 'package:aboutme/widgets/form_fields/config.dart';
-import 'package:aboutme/widgets/form_fields/types.dart';
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:aboutme/plugins/contact/models/contact_model.dart';
-import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 
-/// 联系人基础信息编辑表单 - 使用 FormBuilderWrapper
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+
+import 'package:aboutme/plugins/contact/models/contact_model.dart';
+
+/// 联系人基础信息编辑表单（Warm Paper Sketch，布局参考纪念日编辑页）
 ///
-/// 功能特性：
-/// - 头像和姓名编辑
-/// - 性别选择
-/// - 电话、地址、备注等基本信息
-/// - 标签管理
-///
-/// 事件记录与自定义字段已移至详情页（ContactDetailScreen）编辑
+/// 字段：头像+姓名 / 性别 / 电话 / 备注 / 标签 / 地址。
+/// 事件记录与自定义字段在详情页编辑，保存时保留原值。
 class ContactForm extends StatefulWidget {
   final Contact? contact;
   final Function(Contact) onSave;
@@ -32,221 +30,224 @@ class ContactForm extends StatefulWidget {
 }
 
 class ContactFormState extends State<ContactForm> {
-  // 使用 GlobalKey 访问 FormBuilderWrapperState 的 submitForm 方法
-  final GlobalKey<FormBuilderWrapperState> _wrapperKey = GlobalKey<FormBuilderWrapperState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _addressController = TextEditingController();
 
-  // 从联系人名字中提取名字和姓氏
-  ({String firstName, String lastName}) _parseName(String name) {
-    if (name.isEmpty) return (firstName: '', lastName: '');
-    final names = name.split(' ');
-    return (
-      firstName: names.first,
-      lastName: names.length > 1 ? names.sublist(1).join(' ') : '',
-    );
+  String? _avatarUrl;
+  ContactGender? _gender;
+  List<String> _tags = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final contact = widget.contact;
+    if (contact == null) return;
+
+    final names = contact.name.split(' ');
+    _firstNameController.text = names.first;
+    _lastNameController.text =
+        names.length > 1 ? names.sublist(1).join(' ') : '';
+    _phoneController.text = contact.phone;
+    _notesController.text = contact.notes ?? '';
+    _addressController.text = contact.address ?? '';
+    _avatarUrl = contact.avatar;
+    _gender = contact.gender;
+    _tags = List.from(contact.tags);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isEditing = widget.contact != null;
-
-    // 解析初始值
-    final nameParts = widget.contact != null
-        ? _parseName(widget.contact!.name)
-        : (firstName: '', lastName: '');
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          isEditing ? 'contact_editContact'.tr : 'contact_addContact'.tr,
-        ),
-        actions: [
-          if (isEditing) ...[
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _showDeleteConfirmation(context),
-            ),
-          ],
-          TextButton(
-            onPressed: _handleSave,
-            child: Text(
-              'contact_done'.tr,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: FormBuilderWrapper(
-            key: _wrapperKey,
-            config: FormConfig(
-              showSubmitButton: false,
-              showResetButton: false,
-              fieldSpacing: 24,
-              fields: [
-                // 头像和姓名区域
-                FormFieldConfig(
-                  name: 'avatarNameSection',
-                  type: FormFieldType.avatarNameSection,
-                  initialValue: {
-                    'avatarUrl': widget.contact?.avatar,
-                    'firstName': nameParts.firstName,
-                    'lastName': nameParts.lastName,
-                  },
-                ),
-
-                // 性别选择
-                FormFieldConfig(
-                  name: 'gender',
-                  type: FormFieldType.genderSelector,
-                  initialValue: widget.contact?.gender,
-                ),
-
-                // 电话
-                FormFieldConfig(
-                  name: 'phone',
-                  type: FormFieldType.text,
-                  labelText: 'Phone',
-                  hintText: 'Enter phone number',
-                  initialValue: widget.contact?.phone ?? '',
-                  prefixIcon: Icons.add_circle,
-                ),
-
-                // 备注
-                FormFieldConfig(
-                  name: 'notes',
-                  type: FormFieldType.textArea,
-                  labelText: 'Annotation / Introduction',
-                  hintText: 'Add a note about this contact...',
-                  initialValue: widget.contact?.notes ?? '',
-                  extra: {'minLines': 3, 'maxLines': 5},
-                ),
-
-                // 标签
-                FormFieldConfig(
-                  name: 'tags',
-                  type: FormFieldType.tags,
-                  labelText: 'Tags',
-                  hintText: 'Add tags (e.g., Work, Family)',
-                  initialTags: widget.contact?.tags ?? [],
-                ),
-
-                // 地址
-                FormFieldConfig(
-                  name: 'address',
-                  type: FormFieldType.text,
-                  labelText: 'Address',
-                  hintText: 'Enter address',
-                  initialValue: widget.contact?.address ?? '',
-                  prefixIcon: Icons.add_circle,
-                ),
-              ],
-              onSubmit: (values) => _saveContact(context, values),
-            ),
-          ),
-        ),
-      ),
-    );
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    _notesController.dispose();
+    _addressController.dispose();
+    super.dispose();
   }
 
-  // 处理保存
-  void _handleSave() {
-    _wrapperKey.currentState?.submitForm();
-  }
+  void _save() {
+    final name =
+        '${_firstNameController.text} ${_lastNameController.text}'.trim();
+    if (name.isEmpty) {
+      showDSToast(
+        context,
+        message: 'contact_nameRequiredError'.tr,
+        type: DSToastType.warning,
+      );
+      return;
+    }
 
-  // 保存联系人
-  void _saveContact(BuildContext context, Map<String, dynamic> values) {
-    // 从 avatarNameSection 中提取数据
-    final avatarNameSection = values['avatarNameSection'] as Map<String, dynamic>? ?? {};
-    final firstName = avatarNameSection['firstName'] as String? ?? '';
-    final lastName = avatarNameSection['lastName'] as String? ?? '';
-    final avatarUrl = avatarNameSection['avatarUrl'] as String?;
-
-    // 组合姓名
-    final name = '$firstName $lastName'.trim();
-
-    // 处理标签
-    final tags = values['tags'] as List<String>? ?? [];
-
-    final existingContact = widget.contact;
+    final existing = widget.contact;
     final newContact = Contact(
-      id: existingContact?.id ?? const Uuid().v4(),
+      id: existing?.id ?? const Uuid().v4(),
       name: name,
-      avatar: avatarUrl,
-      phone: values['phone'] as String? ?? '',
-      address: values['address'] as String?,
-      notes: values['notes'] as String?,
-      tags: tags,
-      gender: values['gender'] as ContactGender?,
+      avatar: _avatarUrl,
+      phone: _phoneController.text.trim(),
+      address: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+      tags: _tags,
+      gender: _gender,
       // 事件记录与自定义字段在详情页编辑，保存时保留原值
-      customFields: existingContact?.customFields ?? const {},
-      customActivityEvents: existingContact?.customActivityEvents ?? const [],
-      createdTime: existingContact?.createdTime ?? DateTime.now(),
-      lastContactTime: existingContact?.lastContactTime ?? DateTime.now(),
-      isFavorite: existingContact?.isFavorite ?? false,
+      customFields: existing?.customFields ?? const {},
+      customActivityEvents: existing?.customActivityEvents ?? const [],
+      createdTime: existing?.createdTime ?? DateTime.now(),
+      lastContactTime: existing?.lastContactTime ?? DateTime.now(),
+      isFavorite: existing?.isFavorite ?? false,
       // 保留表单外字段与图标设置
-      organization: existingContact?.organization,
-      email: existingContact?.email,
-      website: existingContact?.website,
-      icon: existingContact?.icon ?? Icons.person,
-      iconColor: existingContact?.iconColor ?? Colors.blue,
+      organization: existing?.organization,
+      email: existing?.email,
+      website: existing?.website,
+      icon: existing?.icon ?? Icons.person,
+      iconColor: existing?.iconColor ?? Colors.blue,
     );
 
     widget.onSave(newContact);
 
     // 延迟等待 onSave 回调完成
     Future.delayed(const Duration(milliseconds: 50), () {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      if (mounted) Navigator.of(context).pop();
     });
   }
 
-  // 显示删除确认对话框
-  void _showDeleteConfirmation(BuildContext context) {
-    final targetContact = widget.contact;
-    if (targetContact == null) return;
-
-    showDialog(
+  /// 删除确认（手绘对话框，危险色确认钮）
+  void _showDeleteConfirm() {
+    showDSDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          title: Text('contact_confirmDelete'.tr),
-          content: Text('确定要删除联系人 "${targetContact.name}" 吗？\n此操作不可撤销。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('app_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                // 调用 onDelete 回调
-                widget.onDelete?.call();
-                // 延迟等待删除完成后导航返回
-                await Future.delayed(const Duration(milliseconds: 100));
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSDialog(
+        title: 'contact_confirmDelete'.tr,
+        message: 'contact_deleteConfirmMessage'.tr,
+        confirmText: 'app_delete'.tr,
+        cancelText: 'contact_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () {
+          Navigator.of(dialogContext).pop();
+          widget.onDelete?.call();
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) Navigator.of(context).pop();
+          });
+        },
+        onCancel: () => Navigator.of(dialogContext).pop(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.contact != null;
+
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        isEditing ? 'contact_editContact'.tr : 'contact_addContact'.tr,
+      ),
+      previousPageTitle: 'contact_contacts'.tr,
+      // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
+      actions: [
+        // 删除联系人（仅编辑模式）
+        if (isEditing)
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 36,
+                  color: theme.surface,
+                  iconColor: theme.danger,
+                  tooltip: 'contact_deleteContact'.tr,
+                  onPressed: _showDeleteConfirm,
+                );
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              child: Text('app_delete'.tr),
             ),
-          ],
-        );
-      },
+          ),
+        const SizedBox(width: 8),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) => DSButton(
+              label: 'contact_done'.tr,
+              size: DSButtonSize.sm,
+              onPressed: _save,
+            ),
+          ),
+        ),
+      ],
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.paddingOf(context).bottom + 24,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AvatarNameSection(
+                    avatarUrl: _avatarUrl,
+                    firstName: _firstNameController.text,
+                    lastName: _lastNameController.text,
+                    onAvatarChanged: (url) => setState(() => _avatarUrl = url),
+                    onFirstNameChanged: (v) =>
+                        setState(() => _firstNameController.text = v),
+                    onLastNameChanged: (v) =>
+                        setState(() => _lastNameController.text = v),
+                  ),
+                  const SizedBox(height: 24),
+
+                  GenderSelectorField(
+                    selectedGender: _gender,
+                    onGenderChanged: (gender) =>
+                        setState(() => _gender = gender),
+                  ),
+                  const SizedBox(height: 24),
+
+                  TextInputField(
+                    controller: _phoneController,
+                    labelText: 'contact_phoneLabel'.tr,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 24),
+
+                  TextAreaField(
+                    controller: _notesController,
+                    labelText: 'contact_notesLabel'.tr,
+                    hintText: 'contact_notesHint'.tr,
+                    minLines: 3,
+                    maxLines: 5,
+                  ),
+                  const SizedBox(height: 24),
+
+                  TagsField(
+                    tags: _tags,
+                    onAddTag: (tag) => setState(
+                      () => _tags = [..._tags, tag],
+                    ),
+                    onRemoveTag: (tag) => setState(
+                      () => _tags = _tags.where((t) => t != tag).toList(),
+                    ),
+                    addButtonText: 'contact_addTag'.tr,
+                  ),
+                  const SizedBox(height: 24),
+
+                  TextInputField(
+                    controller: _addressController,
+                    labelText: 'contact_addressLabel'.tr,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

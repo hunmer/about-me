@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/design_system/design_system.dart';
+
+import 'sketch_field_shell.dart';
+
 /// 多行文本输入组件
 ///
 /// 功能特性：
@@ -8,6 +12,7 @@ import 'package:flutter/material.dart';
 /// - 可自定义最小和最大行数
 /// - 支持表单验证
 /// - 支持 inline 模式（label在上方，适用于 FormFieldGroup）
+/// - 存在 DS 主题祖先（DSThemeBridge）时自动切换手绘描线风格
 class TextAreaField extends StatelessWidget {
   /// 输入控制器
   final TextEditingController controller;
@@ -98,6 +103,35 @@ class TextAreaField extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      );
+    }
+
+    // 手绘模式：有 DS 主题祖先时用墨线描边外壳（label 上置）
+    final dsTheme = AppTheme.maybeOf(context);
+    if (!inline && dsTheme != null) {
+      return SketchFieldShell(
+        theme: dsTheme,
+        label: labelText,
+        child: TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          minLines: minLines,
+          enabled: enabled,
+          validator: validator,
+          autofocus: autofocus,
+          style: DsTypography.body.copyWith(color: dsTheme.text),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: hintText,
+            helperText: helperText,
+            helperStyle: helperStyle,
+            hintStyle: DsTypography.body.copyWith(
+              color: dsTheme.textSub.withValues(alpha: 0.6),
+            ),
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
       );
     }

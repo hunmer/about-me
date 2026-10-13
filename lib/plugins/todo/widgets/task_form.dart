@@ -190,6 +190,7 @@ class _TaskFormState extends State<TaskForm> {
                     icon: DsIconKind.close,
                     color: null,
                     iconColor: null,
+                    iconSize: 16,
                     tooltip: 'app_cancel'.tr,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -290,22 +291,23 @@ class _TaskFormState extends State<TaskForm> {
     required Color? iconColor,
     String? tooltip,
     VoidCallback? onPressed,
+    double iconSize = 20,
   }) {
     if (color == null) {
       // 弹层头部：无实底的轻量按钮，借用主题桥保证 DS 组件可用
       return DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            final theme = DSThemeBridge.resolve(context);
-            return Pressable(
-              onPressed: onPressed,
-              semanticLabel: tooltip,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: DsIcon(icon, size: 20, color: theme.textSub),
-              ),
-            );
-          },
+              child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Pressable(
+                onPressed: onPressed,
+                semanticLabel: tooltip,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: DsIcon(icon, size: iconSize, color: theme.textSub),
+                ),
+              );
+            },
         ),
       );
     }
