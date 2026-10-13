@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 
 import '../media_log_plugin.dart';
 import '../models/media_item.dart';
@@ -266,14 +267,41 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         message: 'media_noReviewsMessage'.tr,
                       )
                     else
-                      for (var i = 0; i < item.reviews.length; i++) ...[
-                        MediaReviewCard(
-                          review: item.reviews[i],
-                          seed: i + 3,
-                          onTap: () => _showReviewActions(item, item.reviews[i]),
-                        ),
-                        if (i < item.reviews.length - 1) const SizedBox(height: 12),
-                      ],
+                      for (var i = 0; i < item.reviews.length; i++)
+                        // 循环内取局部引用，避免闭包捕获索引越界
+                        Builder(builder: (context) {
+                          final review = item.reviews[i];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: i < item.reviews.length - 1 ? 12 : 0,
+                            ),
+                            // 右滑编辑 / 左滑删除（嵌套二次确认），点卡片仍有操作 sheet
+                            child: SwipeActionWrapper(
+                              key: ValueKey(review.id),
+                              deleteConfirmContent:
+                                  'media_deleteConfirmMessage'.tr,
+                              leadingActions: [
+                                SwipeActionPresets.edit(
+                                  label: 'media_edit'.tr,
+                                  onTap: () => _editReview(item, review),
+                                ),
+                              ],
+                              trailingActions: [
+                                SwipeActionPresets.delete(
+                                  label: 'media_delete'.tr,
+                                  onTap: () => MediaLogPlugin.instance
+                                      .deleteReview(item.id, review.id),
+                                ),
+                              ],
+                              child: MediaReviewCard(
+                                review: review,
+                                seed: i + 3,
+                                onTap: () =>
+                                    _showReviewActions(item, review),
+                              ),
+                            ),
+                          );
+                        }),
                   ],
                 ),
               ),
