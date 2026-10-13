@@ -48,7 +48,7 @@ class DatePickerField extends StatelessWidget {
     // 描边对齐 DSInput 失焦态（主题语义色派生），不用默认浓墨线
     final stroke = theme.textSub.withValues(alpha: 0.45);
 
-    // inline 模式：label 在左，日期在右（与默认模式共用墨盒，仅布局不同）
+    // inline 模式：label 在左，日期值紧随其后左对齐（与默认模式共用墨盒，仅布局不同）
     if (inline) {
       return Pressable(
         onPressed: onTap,
@@ -58,7 +58,6 @@ class DatePickerField extends StatelessWidget {
           strokeColor: stroke,
           padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               SizedBox(
                 width: labelWidth,
@@ -67,10 +66,14 @@ class DatePickerField extends StatelessWidget {
                   style: DsTypography.body.copyWith(color: theme.text),
                 ),
               ),
-              Text(
-                formattedDate.isEmpty ? placeholder : formattedDate,
-                style: DsTypography.body.copyWith(
-                  color: formattedDate.isEmpty ? theme.textSub : theme.text,
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: Text(
+                  formattedDate.isEmpty ? placeholder : formattedDate,
+                  style: DsTypography.body.copyWith(
+                    color: formattedDate.isEmpty ? theme.textSub : theme.text,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

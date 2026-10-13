@@ -285,6 +285,8 @@ class _BillListScreenSupercupertinoState
                       stats!.income,
                       _incomeColor,
                       DsIconKind.chevronDown,
+                      // 绿底对比度低，文字用墨色
+                      textColor: theme.ink,
                     )
                     : const SizedBox.shrink(),
           ),
@@ -305,23 +307,41 @@ class _BillListScreenSupercupertinoState
     );
   }
 
-  Widget _buildStatBadge(double amount, Color color, DsIconKind icon) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DsIcon(icon, size: 8, color: color),
-          const SizedBox(width: 1),
-          Text(
-            amount.toInt().toString(),
-            style: TextStyle(
-              fontSize: 8,
-              color: color,
-              fontWeight: FontWeight.w600,
+  /// 日历单元格收支 badge：占满单元格宽度的高亮胶囊底
+  /// [textColor] 不传时用 [color]（如绿色底传墨色文字提高对比）
+  Widget _buildStatBadge(
+    double amount,
+    Color color,
+    DsIconKind icon, {
+    Color? textColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 10,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withValues(alpha: 0.55), width: 1),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DsIcon(icon, size: 8, color: color),
+            const SizedBox(width: 2),
+            Text(
+              amount.toInt().toString(),
+              style: TextStyle(
+                fontSize: 8,
+                color: textColor ?? color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

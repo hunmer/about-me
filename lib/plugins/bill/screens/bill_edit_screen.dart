@@ -187,7 +187,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
           totalAmount: amount,
           days: days,
           category: _tag ?? '订阅',
-          startDate: _selectedDate,
+          startDate: values['date'] as DateTime? ?? _selectedDate,
           note: values['note'] as String?,
           icon: _selectedIcon,
           iconColor: _selectedColor,
@@ -211,7 +211,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
           amount: isExpense ? -amount : amount,
           accountId: widget.accountId,
           category: _tag ?? '未分类',
-          date: _selectedDate,
+          date: values['date'] as DateTime? ?? _selectedDate,
           tag: _tag,
           note: values['note'] as String? ?? '',
           icon: _selectedIcon,
@@ -370,11 +370,12 @@ class _BillEditScreenState extends State<BillEditScreen> {
         hintText: 'bill_titleHint'.tr,
       ),
 
-      // 日期选择器
+      // 日期选择器（仅编辑已有账单时显示，新建默认当天）
       FormFieldConfig(
         name: 'date',
         type: FormFieldType.date,
         initialValue: _selectedDate,
+        labelText: 'bill_date'.tr,
         extra: {
           'format': Get.locale?.languageCode == 'zh' ? 'yyyy年MM月dd日' : 'yyyy/MM/dd',
           'inline': true,
@@ -477,7 +478,7 @@ class _BillEditScreenState extends State<BillEditScreen> {
     );
   }
 
-  /// 构建日期和备注区域
+  /// 构建日期和备注区域（新建时不显示日期字段，默认当天）
   Widget _buildDateAndNoteSection(List<Widget> fields) {
     final dateField = fields[3];
     final noteField = fields[4];
@@ -486,24 +487,30 @@ class _BillEditScreenState extends State<BillEditScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormFieldGroup(
-          showDividers: true,
-          showBackground: false,
-          children: [dateField],
-        ),
-        const SizedBox(height: 16),
+        // 仅编辑已有账单时展示日期，新建隐藏（取默认值当天/选中日）
+        if (widget.bill != null) ...[
+          FormFieldGroup(
+            showDividers: true,
+            showBackground: false,
+            children: [dateField],
+          ),
+          const SizedBox(height: 16),
+        ],
         FormFieldGroup(
           showDividers: false,
           showBackground: false,
           children: [
-            // 备注标题
+            // 备注标题（占满宽度，抵消 FormFieldGroup Column 默认居中）
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Text(
-                'bill_note'.tr,
-                style: DsTypography.body.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: theme.textSub,
+              child: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  'bill_note'.tr,
+                  style: DsTypography.body.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: theme.textSub,
+                  ),
                 ),
               ),
             ),

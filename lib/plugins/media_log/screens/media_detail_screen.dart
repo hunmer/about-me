@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -200,13 +201,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    // 标题 + 倾斜手绘下划线
-                    Center(
-                      child: DsScribbleUnderline(
-                        child: Text(
-                          item.title,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
+                    // 标题 + 倾斜手绘下划线（WiredDraw：进入页面时墨线描画入场）
+                    WiredDraw(
+                      child: Center(
+                        child: DsScribbleUnderline(
+                          child: Text(
+                            item.title,
+                            textAlign: TextAlign.center,
+                            style: DsTypography.title.copyWith(color: theme.text),
+                          ),
                         ),
                       ),
                     ),
@@ -336,7 +339,10 @@ class _Section extends StatelessWidget {
     );
     return Align(
       alignment: Alignment.centerLeft,
-      child: circled ? DsScribbleCircle(child: text) : text,
+      // 圈选标记随页面挂载描画入场（静态场景无 WiredDraw 时立即全画）
+      child: circled
+          ? WiredDraw(child: DsScribbleCircle(child: text))
+          : text,
     );
   }
 }
