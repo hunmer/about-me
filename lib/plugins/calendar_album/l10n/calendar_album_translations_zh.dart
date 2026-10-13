@@ -130,6 +130,14 @@ class CalendarAlbumTranslationsZh {
 
     // 搜索功能
     'calendar_album_search_diary_placeholder': '搜索日记标题、内容或标签',
+    'calendar_album_search_photos_placeholder': '搜索照片相关日记',
+    'calendar_album_no_matching_photos': '没有符合条件的照片',
+
+    // 相册过滤与排序
+    'calendar_album_date_range': '日期范围',
+    'calendar_album_sort_newest': '最新在前',
+    'calendar_album_sort_oldest': '最早在前',
+    'calendar_album_route_title_album': '相册 - 共@count张照片',
     'calendar_album_enter_keyword_to_search': '输入关键词搜索日记',
     'calendar_album_no_matching_diaries': '没有找到匹配的日记',
     'calendar_album_try_other_keywords': '试试其他关键词',

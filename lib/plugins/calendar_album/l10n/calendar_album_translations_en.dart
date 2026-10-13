@@ -133,6 +133,14 @@ class CalendarAlbumTranslationsEn {
     // Search Function
     'calendar_album_search_diary_placeholder':
         'Search diary titles, content or tags',
+    'calendar_album_search_photos_placeholder': 'Search photos by diary',
+    'calendar_album_no_matching_photos': 'No matching photos',
+
+    // Album Filter & Sort
+    'calendar_album_date_range': 'Date Range',
+    'calendar_album_sort_newest': 'Newest first',
+    'calendar_album_sort_oldest': 'Oldest first',
+    'calendar_album_route_title_album': 'Album - @count photos',
     'calendar_album_enter_keyword_to_search': 'Enter keywords to search diaries',
     'calendar_album_no_matching_diaries': 'No matching diaries found',
     'calendar_album_try_other_keywords': 'Try other keywords',
