@@ -117,7 +117,7 @@ class BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 16),
 
         // 购买日期和到期日期
-        FormFieldGroup(
+        Column(
           children: [
             _buildDateCard(
               context,
@@ -131,6 +131,7 @@ class BasicInfoTab extends StatelessWidget {
                 }
               },
             ),
+            const SizedBox(height: 12),
             _buildDateCard(
               context,
               'goods_expirationDate'.tr,
@@ -155,34 +156,14 @@ class BasicInfoTab extends StatelessWidget {
                 labelText: 'goods_price'.tr,
                 hintText: '¥ 0.00',
                 keyboardType: TextInputType.number,
-                prefixIcon: Builder(
-                  builder: (context) {
-                    final theme = DSThemeBridge.resolve(context);
-                    return DsIcon(
-                      DsIconKind.piggy,
-                      size: 20,
-                      color: theme.textSub,
-                    );
-                  },
-                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: TextInputField(
                 controller: controller.stockController,
                 labelText: 'goods_quantity'.tr,
                 keyboardType: TextInputType.number,
-                prefixIcon: Builder(
-                  builder: (context) {
-                    final theme = DSThemeBridge.resolve(context);
-                    return DsIcon(
-                      DsIconKind.hash,
-                      size: 20,
-                      color: theme.textSub,
-                    );
-                  },
-                ),
               ),
             ),
           ],

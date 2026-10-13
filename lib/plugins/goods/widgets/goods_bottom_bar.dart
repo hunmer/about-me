@@ -5,12 +5,12 @@ import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Goods 插件的底部栏组件
 /// 提供仓库视图和物品视图的切换功能
@@ -51,11 +51,13 @@ class _GoodsBottomBarState extends State<GoodsBottomBar>
     super.dispose();
   }
 
-  /// 创建新仓库
+  /// 创建新仓库（smooth_sheets 底部弹层）
   Future<void> _createWarehouse() async {
-    await NavigationHelper.push(
-      context,
-      WarehouseForm(
+    await SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: DSThemeBridge.resolve(context).background,
+      builder: (context) => WarehouseForm(
+        inSheet: true,
         onSave: (warehouse) async {
           try {
             await widget.plugin.saveWarehouse(warehouse);

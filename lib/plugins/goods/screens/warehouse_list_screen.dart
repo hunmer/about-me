@@ -6,6 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'warehouse_detail_screen.dart';
 import 'package:aboutme/plugins/goods/widgets/warehouse_card.dart';
 import 'package:aboutme/plugins/goods/widgets/warehouse_form.dart';
@@ -118,12 +119,14 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
     );
   }
 
-  /// 显示编辑仓库表单
+  /// 显示编辑仓库表单（smooth_sheets 底部弹层）
   void _showEditWarehouse(BuildContext context, dynamic warehouse) {
-    NavigationHelper.push(
-      context,
-      WarehouseForm(
+    SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: DSThemeBridge.resolve(context).background,
+      builder: (context) => WarehouseForm(
         warehouse: warehouse,
+        inSheet: true,
         onSave: (updatedWarehouse) async {
           await GoodsPlugin.instance.saveWarehouse(updatedWarehouse);
           if (context.mounted) {
@@ -133,7 +136,6 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
         onDelete: () async {
           await GoodsPlugin.instance.deleteWarehouse(warehouse.id);
           if (context.mounted) {
-            Navigator.pop(context); // 关闭表单
             setState(() {});
           }
         },

@@ -95,6 +95,37 @@ PersistentNavigationBar(
 
 约束：直接放进 Column 等宽松父级时必须依赖其内部 `SizedBox(height: 56)`，勿在外层再去掉高度约束。
 
+## 2.1 DSLightHeader — 轻量手绘顶栏
+
+定义：`lib/design_system/components/light_header.dart`
+
+不需要 wrapper 完整能力（大标题/搜索/过滤栏）的简单子页面——表单页、详情页等自定义布局页——用 `DSLightHeader` 自绘顶行（返回圆钮 + 居中标题 + 尾部动作），不要手写重复的 Row，也不要退回 Material AppBar：
+
+```dart
+Column(
+  children: [
+    DSLightHeader(
+      title: 'contact_editContact'.tr,
+      trailing: DSIconButton(   // 尾部动作（可选）：38px 圆形按钮位
+        icon: DsIconKind.trash,
+        size: 38,
+        color: theme.surface,
+        iconColor: theme.danger,
+        onPressed: _showDeleteConfirm,
+      ),
+    ),
+    Expanded(child: /* 页面内容 */),
+  ],
+)
+```
+
+要点：
+
+- 返回圆钮默认 `Navigator.maybePop`，可用 `onBack` 覆盖；iOS 侧滑返回由 `NavigationHelper.push` 的路由提供，与顶栏无关
+- `trailing` 为 null 时保留与返回钮等宽（38）的占位，标题恒居中；尾部动作区固定 38 宽，只放圆形按钮
+- 需要 AppTheme 祖先：页面外层包 `DSThemeBridge`，颜色走 `theme.surface/text`，勿在组件内硬编码
+- 顶栏自带 `horizontal:16, vertical:10` 内边距，外层勿再叠加水平 padding（参考实现：`lib/plugins/contact/widgets/contact_form.dart`、`lib/plugins/contact/screens/contact_detail_screen.dart`）
+
 ## 3. DSBottomNavigation — 弧形圆盘底部导航
 
 实现：`lib/design_system/components/navigation_bar.dart`，底层包 `packages/radial_disc_bottom_bar`

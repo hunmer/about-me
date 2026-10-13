@@ -101,32 +101,8 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                         icon: DsIconKind.edit,
                         label: 'goods_editWarehouseTitle'.tr,
                         onTap: () {
-                          Navigator.pop(context);
-                          // 实现仓库编辑功能
-                          NavigationHelper.push(
-                            context,
-                            WarehouseForm(
-                              warehouse: _warehouse,
-                              onSave: (warehouse) async {
-                                await GoodsPlugin.instance.saveWarehouse(
-                                  warehouse,
-                                );
-                                if (context.mounted) {
-                                  await _refreshWarehouse();
-                                }
-                              },
-                              onDelete: () async {
-                                await GoodsPlugin.instance.deleteWarehouse(
-                                  _warehouse.id,
-                                );
-                                if (context.mounted) {
-                                  // 连退两页：关闭表单页和详情页
-                                  Navigator.pop(context); // 关闭表单
-                                  Navigator.pop(context); // 关闭详情
-                                }
-                              },
-                            ),
-                          );
+                          Navigator.pop(context); // 关闭选项面板
+                          _showEditWarehouseSheet();
                         },
                       ),
                       _buildSheetAction(
@@ -220,6 +196,34 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
             ),
           ),
     );
+  }
+
+  /// 以 smooth_sheets 底部弹层打开仓库编辑表单
+  ///
+  /// 表单删除仓库后自行关闭弹层，此处待弹层关闭后再退出详情页
+  Future<void> _showEditWarehouseSheet() async {
+    var deleted = false;
+    await SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: DSThemeBridge.resolve(context).background,
+      builder: (context) => WarehouseForm(
+        warehouse: _warehouse,
+        inSheet: true,
+        onSave: (warehouse) async {
+          await GoodsPlugin.instance.saveWarehouse(warehouse);
+          if (mounted) {
+            await _refreshWarehouse();
+          }
+        },
+        onDelete: () async {
+          await GoodsPlugin.instance.deleteWarehouse(_warehouse.id);
+          deleted = true;
+        },
+      ),
+    );
+    if (deleted && mounted) {
+      Navigator.pop(context); // 仓库已删除，返回上一页
+    }
   }
 
   /// 底部操作行（自绘，随 DS 令牌着色）

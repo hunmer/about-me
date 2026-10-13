@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+
 /// 选项数据模型
 class OptionItem {
   /// 选项ID
@@ -31,7 +34,7 @@ class OptionItem {
 /// 功能特性：
 /// - 支持单选功能
 /// - 支持多种布局方式（水平滚动或网格）
-/// - 统一的样式和主题适配
+/// - 手绘墨盒单元格（选中主题色实底，未选中淡底墨线框）
 /// - 适用于分类、状态等选择场景
 class OptionSelectorField extends StatelessWidget {
   /// 选项列表
@@ -58,7 +61,7 @@ class OptionSelectorField extends StatelessWidget {
   /// 网格列数（网格模式下使用）
   final int gridColumns;
 
-  /// 主题色（未传时取 Material 主色）
+  /// 主题色（未传时取 DS 主题主色）
   final Color? primaryColor;
 
   const OptionSelectorField({
@@ -76,115 +79,105 @@ class OptionSelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (labelText != null) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                labelText!,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (labelText != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              labelText!,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
-          ],
-          if (useHorizontalScroll)
-            _buildHorizontalScroll(theme)
-          else
-            _buildGridLayout(theme),
+          ),
         ],
+        if (useHorizontalScroll)
+          _buildHorizontalScroll(theme)
+        else
+          _buildGridLayout(theme),
+      ],
+    );
+  }
+
+  /// 手绘墨盒选项单元格（选中主题色实底，未选中淡底墨线框）
+  Widget _buildOptionCell(
+    AppThemeData theme,
+    OptionItem option, {
+    double? width,
+    double? height,
+    EdgeInsetsGeometry? padding,
+    double iconSize = 32,
+    double fontSize = 12,
+    double gap = 8,
+  }) {
+    final isSelected = selectedId == option.id;
+    final accent = primaryColor ?? theme.primary;
+    final fg = isSelected ? theme.onPrimary : theme.textSub;
+
+    return Pressable(
+      onPressed: () => onSelectionChanged(option.id),
+      semanticLabel: option.label,
+      child: Container(
+        width: width,
+        height: height,
+        padding: padding,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: theme.radii.lg,
+          fillColor: isSelected ? accent : theme.surfaceAlt,
+          stroke: isSelected ? theme.ink : theme.textSub.withValues(alpha: 0.45),
+          strokeWidth: 1.4,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (option.useTextAsIcon)
+              Text(option.label, style: TextStyle(fontSize: iconSize, color: fg))
+            else if (option.icon != null)
+              Icon(option.icon, size: iconSize, color: fg),
+            if (!option.useTextAsIcon) ...[
+              SizedBox(height: gap),
+              Text(
+                option.label,
+                style: DsTypography.caption.copyWith(
+                  fontSize: fontSize,
+                  color: isSelected ? theme.onPrimary : theme.text,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHorizontalScroll(ThemeData theme) {
+  Widget _buildHorizontalScroll(AppThemeData theme) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
       child: Row(
-        children:
-            options.map((option) {
-              final isSelected = selectedId == option.id;
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: InkWell(
-                  onTap: () => onSelectionChanged(option.id),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: optionWidth,
-                    height: optionHeight,
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? (primaryColor ?? theme.colorScheme.primary)
-                              : theme.colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? (primaryColor ?? theme.colorScheme.primary)
-                                : theme.colorScheme.outline.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (option.useTextAsIcon)
-                          Text(
-                            option.label,
-                            style: TextStyle(
-                              fontSize: 32,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onSurface,
-                            ),
-                          )
-                        else if (option.icon != null)
-                          Icon(
-                            option.icon,
-                            size: 32,
-                            color:
-                                isSelected
-                                    ? theme.colorScheme.onPrimary
-                                    : theme.colorScheme.onSurface,
-                          ),
-                        if (!option.useTextAsIcon) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            option.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onSurface,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+        children: [
+          for (final option in options)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _buildOptionCell(
+                theme,
+                option,
+                width: optionWidth,
+                height: optionHeight,
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildGridLayout(ThemeData theme) {
+  Widget _buildGridLayout(AppThemeData theme) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final itemWidth =
@@ -192,70 +185,18 @@ class OptionSelectorField extends StatelessWidget {
         return Wrap(
           spacing: 8,
           runSpacing: 8,
-          children:
-              options.map((option) {
-                final isSelected = selectedId == option.id;
-                return InkWell(
-                  onTap: () => onSelectionChanged(option.id),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: itemWidth,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? (primaryColor ?? theme.colorScheme.primary)
-                              : theme.colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? (primaryColor ?? theme.colorScheme.primary)
-                                : theme.colorScheme.outline.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        if (option.useTextAsIcon)
-                          Text(
-                            option.label,
-                            style: TextStyle(
-                              fontSize: 28,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onSurface,
-                            ),
-                          )
-                        else if (option.icon != null)
-                          Icon(
-                            option.icon,
-                            size: 24,
-                            color:
-                                isSelected
-                                    ? theme.colorScheme.onPrimary
-                                    : theme.colorScheme.onSurface,
-                          ),
-                        if (!option.useTextAsIcon) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            option.label,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onSurface,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+          children: [
+            for (final option in options)
+              _buildOptionCell(
+                theme,
+                option,
+                width: itemWidth,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                iconSize: 24,
+                fontSize: 10,
+                gap: 4,
+              ),
+          ],
         );
       },
     );
