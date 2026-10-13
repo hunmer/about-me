@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -139,7 +140,7 @@ Widget buildSelectField(
                           ? theme.text
                           : theme.textSub.withValues(alpha: 0.8),
                 ),
-                child: selected?.child ?? Text(config.hintText ?? '请选择'),
+                child: selected?.child ?? Text(config.hintText ?? 'app_pleaseSelect'.tr),
               ),
             ),
             DsIcon(DsIconKind.chevronDown, size: 18, color: theme.primary),

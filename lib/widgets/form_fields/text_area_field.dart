@@ -24,9 +24,6 @@ class TextAreaField extends StatelessWidget {
   /// 最大行数（null表示无限制）
   final int? maxLines;
 
-  /// 主题色
-  final Color primaryColor;
-
   /// 验证器
   final String? Function(String?)? validator;
 
@@ -52,7 +49,6 @@ class TextAreaField extends StatelessWidget {
     this.labelText,
     this.minLines = 4,
     this.maxLines,
-    this.primaryColor = const Color(0xFF607AFB),
     this.validator,
     this.enabled = true,
     this.helperText,

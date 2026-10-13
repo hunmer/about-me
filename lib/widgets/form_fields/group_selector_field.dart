@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/widgets/group_selector_dialog.dart';
 
 /// 分组选择器字段组件
@@ -38,12 +39,12 @@ class GroupSelectorField extends StatelessWidget {
     this.onGroupDeleted,
     this.enabled = true,
     this.labelText,
-    this.hintText = '选择分组',
+    this.hintText,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +57,7 @@ class GroupSelectorField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.grey[500] : Colors.grey[600],
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -65,9 +66,9 @@ class GroupSelectorField extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[50],
+              color: theme.colorScheme.surfaceContainerLow,
               border: Border.all(
-                color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                color: theme.colorScheme.outline.withValues(alpha: 0.4),
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -75,15 +76,13 @@ class GroupSelectorField extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    selectedGroup ?? hintText!,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                    selectedGroup ?? (hintText ?? 'app_selectGroup'.tr),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: isDark ? Colors.white70 : Colors.black54,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ],
             ),

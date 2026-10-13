@@ -13,11 +13,11 @@ import file_selector_macos
 import firebase_core
 import firebase_messaging
 import flutter_app_group_directory
-import flutter_image_compress_macos
 import flutter_inappwebview_macos
 import flutter_js
 import flutter_secure_storage_macos
 import flutter_tts
+import image_compress_plus_macos
 import irondash_engine_context
 import live2d_flutter
 import location
@@ -41,11 +41,11 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FLTFirebaseMessagingPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseMessagingPlugin"))
   FlutterAppGroupDirectoryPlugin.register(with: registry.registrar(forPlugin: "FlutterAppGroupDirectoryPlugin"))
-  FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
   InAppWebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "InAppWebViewFlutterPlugin"))
   FlutterJsPlugin.register(with: registry.registrar(forPlugin: "FlutterJsPlugin"))
   FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
   FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
+  FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
   IrondashEngineContextPlugin.register(with: registry.registrar(forPlugin: "IrondashEngineContextPlugin"))
   FlutterLive2dPlugin.register(with: registry.registrar(forPlugin: "FlutterLive2dPlugin"))
   LocationPlugin.register(with: registry.registrar(forPlugin: "LocationPlugin"))

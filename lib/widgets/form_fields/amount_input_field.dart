@@ -104,15 +104,15 @@ class _AmountInputFieldState extends State<AmountInputField> {
     super.dispose();
   }
 
-  Color _getAmountColor(bool isDark) {
+  Color _getAmountColor(BuildContext context) {
     if (widget.amountColor != null) return widget.amountColor!;
-    return isDark ? Colors.white : Colors.black87;
+    return Theme.of(context).colorScheme.onSurface;
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor = _getAmountColor(isDark);
+    final theme = Theme.of(context);
+    final activeColor = _getAmountColor(context);
 
     return FormField<String>(
       key: _fieldKey,
@@ -147,9 +147,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '0.00',
-                      hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[700] : Colors.grey[300],
-                      ),
+                      hintStyle: TextStyle(color: theme.hintColor),
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                       errorText: fieldState.errorText,

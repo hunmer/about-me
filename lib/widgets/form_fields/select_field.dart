@@ -35,9 +35,6 @@ class SelectField<T> extends StatelessWidget {
   /// 辅助文本样式
   final TextStyle? helperStyle;
 
-  /// 主题色
-  final Color primaryColor;
-
   /// 左侧图标
   final IconData? icon;
 
@@ -58,7 +55,6 @@ class SelectField<T> extends StatelessWidget {
     this.enabled = true,
     this.helperText,
     this.helperStyle,
-    this.primaryColor = const Color(0xFF607AFB),
     this.icon,
     this.inline = false,
     this.labelWidth = 100,
@@ -67,7 +63,6 @@ class SelectField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // inline 模式：label 在左，下拉框在右
     if (inline) {
@@ -108,7 +103,7 @@ class SelectField<T> extends StatelessWidget {
                   fontSize: 17,
                   color: theme.colorScheme.onSurface,
                 ),
-                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                dropdownColor: theme.colorScheme.surfaceContainerLow,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: hintText,

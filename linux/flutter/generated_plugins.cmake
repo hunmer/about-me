@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_js
   flutter_secure_storage_linux
+  image_compress_plus_linux
   irondash_engine_context
   record_linux
   screen_retriever_linux

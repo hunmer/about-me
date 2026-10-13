@@ -21,8 +21,8 @@ class CategorySelectorField extends StatelessWidget {
   /// 类别选择变化的回调
   final ValueChanged<String> onCategoryChanged;
 
-  /// 主题色（选中状态的背景色）
-  final Color primaryColor;
+  /// 主题色（选中状态的背景色，未传时取主题主色）
+  final Color? primaryColor;
 
   /// 组件高度
   final double height;
@@ -39,7 +39,7 @@ class CategorySelectorField extends StatelessWidget {
     required this.selectedCategory,
     required this.categoryIcons,
     required this.onCategoryChanged,
-    this.primaryColor = const Color(0xFF607AFB),
+    this.primaryColor,
     this.height = 100,
     this.iconSize = 28,
     this.iconContainerSize = 56,
@@ -73,13 +73,13 @@ class CategorySelectorField extends StatelessWidget {
                   height: iconContainerSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected ? primaryColor : null,
+                    color: isSelected ? (primaryColor ?? theme.primary) : null,
                     border: Border.all(color: theme.stroke, width: 1.4),
                     boxShadow: isSelected ? theme.shadows.soft : null,
                   ),
                   child: Icon(
                     icon,
-                    color: isSelected ? DsColors.white : theme.textSub,
+                    color: isSelected ? theme.onPrimary : theme.textSub,
                     size: iconSize,
                   ),
                 ),

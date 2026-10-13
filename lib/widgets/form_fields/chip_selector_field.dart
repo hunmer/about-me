@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Chip 选项数据模型
@@ -35,10 +37,10 @@ class ChipSelectorField extends StatelessWidget {
   final List<ChipOption> options;
 
   /// 占位提示
-  final String hintText;
+  final String? hintText;
 
   /// 选择器标题
-  final String selectorTitle;
+  final String? selectorTitle;
 
   /// 是否启用
   final bool enabled;
@@ -60,8 +62,8 @@ class ChipSelectorField extends StatelessWidget {
     required this.options,
     required this.onValueChanged,
     this.selectedId,
-    this.hintText = '选择',
-    this.selectorTitle = '选择',
+    this.hintText,
+    this.selectorTitle,
     this.enabled = true,
     this.selectedBackgroundColor,
     this.selectedForegroundColor,
@@ -70,10 +72,12 @@ class ChipSelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final selectedOption = options.firstWhere(
       (opt) => opt.id == selectedId,
       orElse: () => const ChipOption(id: '', label: ''),
     );
+    final accent = selectedOption.color ?? theme.primary;
 
     return GestureDetector(
       onTap: enabled ? () => _showSelector(context) : null,
@@ -81,36 +85,30 @@ class ChipSelectorField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color:
-              selectedOption.color?.withOpacity(0.1) ??
-              (selectedId != null ? Colors.orange.shade50 : null),
+              selectedOption.color?.withValues(alpha: 0.1) ??
+              (selectedId != null ? theme.primary.withValues(alpha: 0.1) : null),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 20,
-                color: selectedOption.color ?? Colors.orange.shade600,
-              ),
+              Icon(icon, size: 20, color: accent),
               const SizedBox(width: 8),
             ],
             Text(
-              selectedId != null ? selectedOption.label : hintText,
+              selectedId != null
+                  ? selectedOption.label
+                  : (hintText ?? 'app_select'.tr),
               style: TextStyle(
-                color: selectedOption.color ?? Colors.orange.shade600,
+                color: accent,
                 fontWeight: FontWeight.w500,
                 fontSize: 15,
               ),
             ),
             if (enabled) ...[
               const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_drop_down,
-                size: 20,
-                color: (selectedOption.color ?? Colors.orange.shade600),
-              ),
+              Icon(Icons.arrow_drop_down, size: 20, color: accent),
             ],
           ],
         ),
@@ -119,6 +117,7 @@ class ChipSelectorField extends StatelessWidget {
   }
 
   void _showSelector(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     SmoothBottomSheet.show(
       context: context,
       builder:
@@ -128,7 +127,7 @@ class ChipSelectorField extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  selectorTitle,
+                  selectorTitle ?? 'app_select'.tr,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -146,7 +145,7 @@ class ChipSelectorField extends StatelessWidget {
                           backgroundColor:
                               isSelected
                                   ? (selectedBackgroundColor ??
-                                      Colors.orange.shade100)
+                                      theme.primary.withValues(alpha: 0.18))
                                   : null,
                           onPressed: () {
                             onValueChanged(opt.id);

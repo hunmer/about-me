@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_compress_plus/image_compress_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -221,7 +221,7 @@ class FloatingWidgetController {
       // 按钮更小，使用 120x120 像素
       const int maxSize = 120;
 
-      final compressedBytes = await FlutterImageCompress.compressWithList(
+      final compressedBytes = await ImageCompressPlus.compressWithList(
         Uint8List.fromList(imageBytes),
         minWidth: maxSize,
         minHeight: maxSize,
@@ -534,7 +534,7 @@ class FloatingWidgetController {
       // 悬浮球最大尺寸 (80dp * 3x = 240px)
       const int maxSize = 240;
 
-      final compressedBytes = await FlutterImageCompress.compressWithList(
+      final compressedBytes = await ImageCompressPlus.compressWithList(
         imageBytes,
         minWidth: maxSize,
         minHeight: maxSize,

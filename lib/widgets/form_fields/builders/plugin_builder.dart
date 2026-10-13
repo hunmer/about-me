@@ -84,8 +84,8 @@ Widget buildExpenseTypeSelectorField(
 ) {
   final extra = config.extra ?? {};
   final expenseColor =
-      extra['expenseColor'] as Color? ?? const Color(0xFFE74C3C);
-  final incomeColor = extra['incomeColor'] as Color? ?? const Color(0xFF2ECC71);
+      extra['expenseColor'] as Color?;
+  final incomeColor = extra['incomeColor'] as Color?;
 
   return WrappedFormField(
     key: fieldKey,
@@ -126,14 +126,14 @@ Widget buildAmountInputField(FormFieldConfig config, GlobalKey fieldKey) {
               config.required
                   ? (value) {
                     if (value == null || value.isEmpty) {
-                      return config.validationMessage ?? '请输入金额';
+                      return config.validationMessage ?? 'app_pleaseEnterAmount'.tr;
                     }
                     final amount = double.tryParse(value);
                     if (amount == null) {
-                      return '请输入有效的金额';
+                      return 'app_enterValidAmount'.tr;
                     }
                     if (amount <= 0) {
-                      return config.validationMessage ?? '金额必须大于0';
+                      return config.validationMessage ?? 'app_amountGreaterThanZero'.tr;
                     }
                     return null;
                   }
@@ -287,7 +287,7 @@ Widget buildCustomEventsField(FormFieldConfig config, GlobalKey fieldKey) {
       return CustomEventsField(
         events: events,
         labelText: config.labelText,
-        addButtonText: config.hintText ?? '添加事件',
+        addButtonText: config.hintText ?? 'app_addEvent'.tr,
         enabled: config.enabled,
         onEventsChanged: (newEvents) {
           fieldState.didChange(newEvents);
@@ -358,8 +358,8 @@ Widget buildChipSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
       }).toList() ??
       <ChipOption>[];
 
-  final hintText = extra['hintText'] as String? ?? config.hintText ?? '选择';
-  final selectorTitle = extra['selectorTitle'] as String? ?? '选择';
+  final hintText = extra['hintText'] as String? ?? config.hintText ?? 'app_select'.tr;
+  final selectorTitle = extra['selectorTitle'] as String? ?? 'app_select'.tr;
   final selectedBackgroundColor = extra['selectedBackgroundColor'] as Color?;
   final selectedForegroundColor = extra['selectedForegroundColor'] as Color?;
   final icon = extra['icon'] as IconData?;
@@ -400,9 +400,9 @@ Widget buildSubscriptionCycleField(FormFieldConfig config, GlobalKey fieldKey) {
       return SubscriptionCycleField(
         currentDays: currentDays,
         enabled: config.enabled,
-        monthlyLabel: extra['monthlyLabel'] as String? ?? '月度',
-        quarterlyLabel: extra['quarterlyLabel'] as String? ?? '季度',
-        yearlyLabel: extra['yearlyLabel'] as String? ?? '年度',
+        monthlyLabel: extra['monthlyLabel'] as String? ?? 'app_monthly'.tr,
+        quarterlyLabel: extra['quarterlyLabel'] as String? ?? 'app_quarterly'.tr,
+        yearlyLabel: extra['yearlyLabel'] as String? ?? 'app_yearly'.tr,
         onDaysChanged: (days) {
           fieldState.didChange(days);
           config.onChanged?.call(days);

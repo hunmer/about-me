@@ -35,9 +35,6 @@ class ListAddField<T> extends StatelessWidget {
   /// 添加按钮的文本
   final String addButtonText;
 
-  /// 主题色（保留以兼容配置；DS 件一律取主题令牌）
-  final Color primaryColor;
-
   const ListAddField({
     super.key,
     required this.items,
@@ -48,7 +45,6 @@ class ListAddField<T> extends StatelessWidget {
     required this.getTitle,
     required this.getIsCompleted,
     required this.addButtonText,
-    this.primaryColor = const Color(0xFF607AFB),
   });
 
   @override

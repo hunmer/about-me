@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
@@ -53,7 +54,7 @@ class _IconAvatarRowFieldState extends State<IconAvatarRowField> {
   void initState() {
     super.initState();
     _selectedIcon = widget.initialIcon ?? Icons.smart_toy;
-    _selectedIconColor = widget.initialIconColor ?? Colors.blue;
+    _selectedIconColor = widget.initialIconColor ?? DsColors.primary;
     _avatarUrl = widget.initialAvatarUrl;
   }
 
@@ -70,7 +71,7 @@ class _IconAvatarRowFieldState extends State<IconAvatarRowField> {
   void reset() {
     setState(() {
       _selectedIcon = widget.initialIcon ?? Icons.smart_toy;
-      _selectedIconColor = widget.initialIconColor ?? Colors.blue;
+      _selectedIconColor = widget.initialIconColor ?? DsColors.primary;
       _avatarUrl = widget.initialAvatarUrl;
     });
   }

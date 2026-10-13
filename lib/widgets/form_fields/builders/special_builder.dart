@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
@@ -35,9 +36,7 @@ Widget buildTagsField(
 
       return TagsField(
         tags: tags,
-        addButtonText: config.hintText ?? '添加标签',
-        primaryColor:
-            (extra['primaryColor'] as Color?) ?? const Color(0xFF607AFB),
+        addButtonText: config.hintText ?? 'app_addTag'.tr,
         quickSelectTags: quickSelectTags,
         onQuickSelectTag: (tag) {
           if (!tags.contains(tag)) {
@@ -85,7 +84,7 @@ Widget buildIconTitleField(FormFieldConfig config, GlobalKey fieldKey) {
       return _IconTitleFieldWrapper(
         initialTitle: currentTitle,
         initialIcon: currentIcon ?? config.prefixIcon ?? Icons.assignment,
-        hintText: config.hintText ?? '输入标题',
+        hintText: config.hintText ?? 'app_enterTitle'.tr,
         onValueChanged: setValue,
       );
     },
@@ -204,7 +203,7 @@ Widget buildOptionSelectorField(FormFieldConfig config, GlobalKey fieldKey) {
             optionWidth: config.optionWidth ?? 80,
             optionHeight: config.optionHeight ?? 80,
             gridColumns: config.gridColumns ?? 4,
-            primaryColor: config.primaryColor ?? const Color(0xFF607AFB),
+            primaryColor: config.primaryColor,
             onSelectionChanged: config.enabled ? setValue : (id) {},
           ),
         ],
@@ -224,8 +223,8 @@ Widget buildCustomFieldsField(FormFieldConfig config, GlobalKey fieldKey) {
     builder:
         (context, value, setValue) => CustomFieldsField(
           fields: (value as List<dynamic>?)?.cast<CustomField>() ?? [],
-          labelText: config.labelText ?? '自定义字段',
-          addButtonText: config.hintText ?? '添加字段',
+          labelText: config.labelText ?? 'app_customFields'.tr,
+          addButtonText: config.hintText ?? 'app_addField'.tr,
           onFieldsChanged: (fields) => setValue(fields),
         ),
   );
@@ -285,7 +284,7 @@ Widget buildListAddField(FormFieldConfig config, GlobalKey fieldKey) {
       return ListAddField<dynamic>(
         items: items,
         controller: controller,
-        addButtonText: config.hintText ?? '添加',
+        addButtonText: config.hintText ?? 'app_add'.tr,
         onAdd: () {
           if (controller.text.isNotEmpty) {
             // 如果提供了 onCreate 回调，使用它创建对象；否则直接添加字符串

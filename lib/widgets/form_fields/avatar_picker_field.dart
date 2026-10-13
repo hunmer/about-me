@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import '../picker/avatar_picker.dart';
@@ -46,7 +47,7 @@ class AvatarPickerField extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '头像',
+              'app_avatar'.tr,
               style: DsTypography.body.copyWith(color: theme.text),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'builders/index.dart' show createRoundedContainerDecoration;
 
 /// 日期范围选择器字段组件
@@ -49,11 +50,11 @@ class DateRangeField extends StatelessWidget {
   /// 构建显示文本
   String _buildDisplayText() {
     if (endDate != null) {
-      return '${_formatDate(startDate!)} 至 ${_formatDate(endDate!)}';
+      return '${_formatDate(startDate!)} ${'app_to'.tr} ${_formatDate(endDate!)}';
     } else if (startDate != null) {
       return _formatDate(startDate!);
     }
-    return placeholder ?? '选择日期范围';
+    return placeholder ?? 'app_selectDateRange'.tr;
   }
 
   @override

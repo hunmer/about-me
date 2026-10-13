@@ -701,54 +701,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.21.3+1"
-  flutter_image_compress:
-    dependency: "direct main"
-    description:
-      name: flutter_image_compress
-      sha256: "98a48c05a7add6869c6838270e862124a4d571f9dd5d0cf209ed03a71b20ea84"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.1"
-  flutter_image_compress_common:
-    dependency: transitive
-    description:
-      name: flutter_image_compress_common
-      sha256: "76869e4d5f3d65f3431e7edff0b2d8ad1eea68b49c6a37772fdb1ae6016da9ed"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
-  flutter_image_compress_macos:
-    dependency: transitive
-    description:
-      name: flutter_image_compress_macos
-      sha256: "0d2a842d2e544828fb32bda16dcfccb3149107df568898a4936d78232e486847"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
-  flutter_image_compress_ohos:
-    dependency: transitive
-    description:
-      name: flutter_image_compress_ohos
-      sha256: "1491bb7bcfdf59e3b127c263c116cfbf8ed3afade6e7fa691d9622e838ed7e48"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3+1"
-  flutter_image_compress_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_image_compress_platform_interface
-      sha256: bbefb7967bda565004fdabdb3300dcbfb40c7ef8402675d23206e5bddc358178
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
-  flutter_image_compress_web:
-    dependency: transitive
-    description:
-      name: flutter_image_compress_web
-      sha256: "91cc58e091a1e09c7683d216d579e2b964119a8527fc43b64dfdb00f1acc94ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.5+1"
   flutter_inappwebview:
     dependency: "direct main"
     description:
@@ -1196,6 +1148,78 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.12.0"
+  image_compress_plus:
+    dependency: "direct main"
+    description:
+      name: image_compress_plus
+      sha256: "991c5a152a6fd786a6b96932984b985a31f1030206d0c749c3656cfeecaa73cb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
+  image_compress_plus_android:
+    dependency: transitive
+    description:
+      name: image_compress_plus_android
+      sha256: "369d8ccf1b5fdd670ce3245d3ef034d35e0f1905f5e0d2eea5c18f5c40b16690"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  image_compress_plus_ios:
+    dependency: transitive
+    description:
+      name: image_compress_plus_ios
+      sha256: "342070cc6a2bc0b23b158b64590b2462ed2bdd590b295136d03ef3ca59270a95"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
+  image_compress_plus_linux:
+    dependency: transitive
+    description:
+      name: image_compress_plus_linux
+      sha256: "0c9d208936e15d6a3b8551561e4294e4593d6c7efe24185bbc10ce7c7a37c068"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  image_compress_plus_macos:
+    dependency: transitive
+    description:
+      name: image_compress_plus_macos
+      sha256: "3c85f3c3a0126950a693e228e0cfa2a0e637a43a87e0854e3440cd82cd0d8c24"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  image_compress_plus_ohos:
+    dependency: transitive
+    description:
+      name: image_compress_plus_ohos
+      sha256: "8695daf70fc7bd3186935cf70162952b4a2f2f5d7e95789624a48277e16a06d5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
+  image_compress_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: image_compress_plus_platform_interface
+      sha256: "82a0238ea0a4581cb6488dfd797c82169562a8983a00fdf65164747194d41fe8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
+  image_compress_plus_web:
+    dependency: transitive
+    description:
+      name: image_compress_plus_web
+      sha256: d0ec4021c3cf191113f2d28065ab4957e72361167533df2722885896edbe29ca
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
+  image_compress_plus_windows:
+    dependency: transitive
+    description:
+      name: image_compress_plus_windows
+      sha256: "06838f66db74ad8047f2d37e9a5630c08848bb14799bfed5fb252f55948c72f8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   image_picker:
     dependency: "direct main"
     description:

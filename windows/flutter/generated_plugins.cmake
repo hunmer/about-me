@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_js
   flutter_secure_storage_windows
   flutter_tts
+  image_compress_plus_windows
   irondash_engine_context
   live2d_flutter
   permission_handler_windows

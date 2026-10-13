@@ -14,6 +14,7 @@
 #include <flutter_js/flutter_js_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <flutter_tts/flutter_tts_plugin.h>
+#include <image_compress_plus_windows/image_compress_plus_windows_plugin.h>
 #include <irondash_engine_context/irondash_engine_context_plugin_c_api.h>
 #include <live2d_flutter/flutter_live2d_plugin_c_api.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
@@ -42,6 +43,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   FlutterTtsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterTtsPlugin"));
+  ImageCompressPlusWindowsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("ImageCompressPlusWindowsPlugin"));
   IrondashEngineContextPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("IrondashEngineContextPluginCApi"));
   FlutterLive2dPluginCApiRegisterWithRegistrar(

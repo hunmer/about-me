@@ -38,7 +38,7 @@ Widget buildDateField(
                     ? DateFormat(extra['format'] as String).format(value)
                     : DateFormat('yyyy-MM-dd').format(value))
                 : '',
-        placeholder: config.hintText ?? '选择日期',
+        placeholder: config.hintText ?? 'app_selectDate'.tr,
         labelText: config.labelText,
         inline: (extra['inline'] as bool?) ?? false,
         onTap:
@@ -74,7 +74,7 @@ Widget buildTimeField(FormFieldConfig config, GlobalKey fieldKey) {
     onChanged: config.onChanged,
     builder:
         (context, value, setValue) => TimePickerField(
-          label: config.labelText ?? '选择时间',
+          label: config.labelText ?? 'app_selectTime'.tr,
           time: value ?? TimeOfDay.now(),
           onTimeChanged: setValue,
         ),
@@ -179,7 +179,7 @@ Widget buildAvatarPickerField(FormFieldConfig config, GlobalKey fieldKey) {
 Widget buildCircleIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
   final extra = config.extra ?? {};
   final initialBackgroundColor =
-      extra['initialBackgroundColor'] as Color? ?? Colors.blue;
+      extra['initialBackgroundColor'] as Color? ?? DsColors.primary;
   final showLabel = extra['showLabel'] as bool? ?? false;
   final labelText = extra['labelText'] as String? ?? config.labelText;
 
@@ -203,7 +203,7 @@ Widget buildCircleIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
 
       return CircleIconPickerField(
         currentIcon: data['icon'] as IconData? ?? Icons.star,
-        currentBackgroundColor: data['color'] as Color? ?? Colors.blue,
+        currentBackgroundColor: data['color'] as Color? ?? DsColors.primary,
         enabled: config.enabled,
         showLabel: showLabel,
         labelText: labelText,

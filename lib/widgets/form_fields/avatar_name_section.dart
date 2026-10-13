@@ -106,9 +106,9 @@ class AvatarNameSection extends StatelessWidget {
                 color: theme.primaryColor,
                 border: Border.all(color: theme.cardColor, width: 2),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.photo_camera,
-                color: Colors.white,
+                color: theme.colorScheme.onPrimary,
                 size: 16,
               ),
             ),

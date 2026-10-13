@@ -82,8 +82,8 @@ class _FieldTypeSelectorFieldState
       child: ListTile(
         leading:
             widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, color: Colors.deepPurple)
-                : const Icon(Icons.dashboard, color: Colors.deepPurple),
+                ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
+                : Icon(Icons.dashboard, color: Theme.of(context).colorScheme.primary),
         title: Text(widget.dialogTitle ?? '选择字段类型'),
         subtitle: Text(_selectedText),
         trailing: const Icon(Icons.chevron_right),
@@ -542,7 +542,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             onPressed: _toggleSelectAll,
             icon: Icon(_hasSelection ? Icons.deselect : Icons.select_all),
             label: Text(_hasSelection ? '反选' : '全选'),
-            style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
           ),
         if (widget.multiSelect && !widget.showConfigTab)
           const SizedBox(width: 8),
@@ -571,7 +571,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
         if (widget.multiSelect && !widget.showConfigTab) {
           // 多选模式（配置模式下禁用多选）
           return CheckboxListTile(
-            secondary: Icon(icon, color: Colors.deepPurple),
+            secondary: Icon(icon, color: Theme.of(context).colorScheme.primary),
             title: Text(type),
             value: isSelected,
             onChanged: (value) {
@@ -587,7 +587,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
         } else {
           // 单选模式
           return RadioListTile<String>(
-            secondary: Icon(icon, color: Colors.deepPurple),
+            secondary: Icon(icon, color: Theme.of(context).colorScheme.primary),
             title: Text(type),
             value: type,
             groupValue: _selectedType,

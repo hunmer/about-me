@@ -143,10 +143,10 @@ class FormConfig {
   final void Function(Map<String, dynamic> errors)? onValidationFailed;
 
   /// 提交按钮文本
-  final String submitButtonText;
+  final String? submitButtonText;
 
   /// 重置按钮文本
-  final String resetButtonText;
+  final String? resetButtonText;
 
   /// 是否显示提交按钮
   final bool showSubmitButton;
@@ -181,8 +181,8 @@ class FormConfig {
     required this.onSubmit,
     this.onReset,
     this.onValidationFailed,
-    this.submitButtonText = '提交',
-    this.resetButtonText = '重置',
+    this.submitButtonText,
+    this.resetButtonText,
     this.showSubmitButton = true,
     this.showResetButton = false,
     this.submitButtonWidget,

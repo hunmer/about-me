@@ -58,8 +58,8 @@ class OptionSelectorField extends StatelessWidget {
   /// 网格列数（网格模式下使用）
   final int gridColumns;
 
-  /// 主题色
-  final Color primaryColor;
+  /// 主题色（未传时取 Material 主色）
+  final Color? primaryColor;
 
   const OptionSelectorField({
     super.key,
@@ -71,7 +71,7 @@ class OptionSelectorField extends StatelessWidget {
     this.optionWidth = 96,
     this.optionHeight = 96,
     this.gridColumns = 4,
-    this.primaryColor = const Color(0xFF607AFB),
+    this.primaryColor,
   });
 
   @override
@@ -126,13 +126,13 @@ class OptionSelectorField extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? primaryColor
+                              ? (primaryColor ?? theme.colorScheme.primary)
                               : theme.colorScheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color:
                             isSelected
-                                ? primaryColor
+                                ? (primaryColor ?? theme.colorScheme.primary)
                                 : theme.colorScheme.outline.withOpacity(0.2),
                       ),
                     ),
@@ -146,7 +146,7 @@ class OptionSelectorField extends StatelessWidget {
                               fontSize: 32,
                               color:
                                   isSelected
-                                      ? Colors.white
+                                      ? theme.colorScheme.onPrimary
                                       : theme.colorScheme.onSurface,
                             ),
                           )
@@ -156,7 +156,7 @@ class OptionSelectorField extends StatelessWidget {
                             size: 32,
                             color:
                                 isSelected
-                                    ? Colors.white
+                                    ? theme.colorScheme.onPrimary
                                     : theme.colorScheme.onSurface,
                           ),
                         if (!option.useTextAsIcon) ...[
@@ -168,7 +168,7 @@ class OptionSelectorField extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                               color:
                                   isSelected
-                                      ? Colors.white
+                                      ? theme.colorScheme.onPrimary
                                       : theme.colorScheme.onSurface,
                             ),
                             textAlign: TextAlign.center,
@@ -204,13 +204,13 @@ class OptionSelectorField extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? primaryColor
+                              ? (primaryColor ?? theme.colorScheme.primary)
                               : theme.colorScheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color:
                             isSelected
-                                ? primaryColor
+                                ? (primaryColor ?? theme.colorScheme.primary)
                                 : theme.colorScheme.outline.withOpacity(0.2),
                       ),
                     ),
@@ -223,7 +223,7 @@ class OptionSelectorField extends StatelessWidget {
                               fontSize: 28,
                               color:
                                   isSelected
-                                      ? Colors.white
+                                      ? theme.colorScheme.onPrimary
                                       : theme.colorScheme.onSurface,
                             ),
                           )
@@ -233,7 +233,7 @@ class OptionSelectorField extends StatelessWidget {
                             size: 24,
                             color:
                                 isSelected
-                                    ? Colors.white
+                                    ? theme.colorScheme.onPrimary
                                     : theme.colorScheme.onSurface,
                           ),
                         if (!option.useTextAsIcon) ...[
@@ -245,7 +245,7 @@ class OptionSelectorField extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                               color:
                                   isSelected
-                                      ? Colors.white
+                                      ? theme.colorScheme.onPrimary
                                       : theme.colorScheme.onSurface,
                             ),
                             textAlign: TextAlign.center,

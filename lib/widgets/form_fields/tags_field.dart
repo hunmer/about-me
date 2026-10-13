@@ -23,14 +23,11 @@ class TagsField extends StatefulWidget {
   /// 添加按钮的文本
   final String addButtonText;
 
-  /// 主题色（保留以兼容配置；DS 件一律取主题令牌）
-  final Color primaryColor;
-
-  /// 快捷选择标签列表（点击可快速添加到已选标签）
+  /// 快捷选择标签列表（点击可快速添加到输入框）
   final List<String>? quickSelectTags;
 
-  /// 快捷选择标签的回调
-  final Function(String tag)? onQuickSelectTag;
+  /// 快捷选择标签的回调（点击可快速添加到输入框）
+  final ValueChanged<String>? onQuickSelectTag;
 
   const TagsField({
     super.key,
@@ -38,7 +35,6 @@ class TagsField extends StatefulWidget {
     required this.onAddTag,
     required this.onRemoveTag,
     required this.addButtonText,
-    this.primaryColor = const Color(0xFF607AFB),
     this.quickSelectTags,
     this.onQuickSelectTag,
   });

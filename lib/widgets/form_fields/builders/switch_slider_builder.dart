@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
 import '../switch_field.dart';
@@ -80,7 +82,7 @@ Widget buildColorField(FormFieldConfig config, GlobalKey fieldKey) {
   Color toColor(dynamic value) {
     if (value is Color) return value;
     if (value is int) return Color(value);
-    return Colors.blue;
+    return DsColors.primary;
   }
 
   // 安全获取 double 值（兼容 int 类型）
@@ -99,7 +101,7 @@ Widget buildColorField(FormFieldConfig config, GlobalKey fieldKey) {
     onChanged: config.onChanged,
     builder:
         (context, value, setValue) => ColorSelectorField(
-          labelText: config.labelText ?? '选择颜色',
+          labelText: config.labelText ?? 'app_selectColor'.tr,
           selectedColor: toColor(value),
           onColorChanged: config.enabled ? setValue : (_) {},
           inline: (extra['inline'] as bool?) ?? false,

@@ -138,6 +138,8 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_try_other_keywords': 'Try other keywords',
     'calendar_album_tag': 'Tag',
     'calendar_album_back_to_current_month': 'Back to current month',
+    'calendar_album_switch_photo_view': 'Photo view',
+    'calendar_album_switch_calendar_view': 'Calendar view',
     'calendar_album_select_month': 'Select month and year',
     'calendar_album_confirm': 'Confirm',
     'calendar_album_diary_for_date': ' diary',

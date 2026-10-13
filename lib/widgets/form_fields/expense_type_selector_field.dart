@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 /// 收支类型选择器组件
 ///
@@ -10,25 +12,26 @@ class ExpenseTypeSelectorField extends StatelessWidget {
   /// 类型变化回调
   final ValueChanged<bool> onTypeChanged;
 
-  /// 支出颜色
-  final Color expenseColor;
+  /// 支出颜色（未传时取主题 danger）
+  final Color? expenseColor;
 
-  /// 收入颜色
-  final Color incomeColor;
+  /// 收入颜色（未传时取主题 success）
+  final Color? incomeColor;
 
   const ExpenseTypeSelectorField({
     super.key,
     required this.isExpense,
     required this.onTypeChanged,
-    this.expenseColor = const Color(0xFFE74C3C),
-    this.incomeColor = const Color(0xFF2ECC71),
+    this.expenseColor,
+    this.incomeColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unselectedColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
-    final selectedBgColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final theme = Theme.of(context);
+    final dsTheme = DSThemeBridge.resolve(context);
+    final unselectedColor = theme.colorScheme.surfaceContainerLow;
+    final selectedBgColor = theme.colorScheme.surface;
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -41,9 +44,9 @@ class ExpenseTypeSelectorField extends StatelessWidget {
           Expanded(
             child: _buildTypeButton(
               context: context,
-              label: '支出',
+              label: 'app_expense'.tr,
               isSelected: isExpense,
-              activeColor: expenseColor,
+              activeColor: expenseColor ?? dsTheme.danger,
               bgOnSelected: selectedBgColor,
               onTap: () => onTypeChanged(true),
             ),
@@ -51,9 +54,9 @@ class ExpenseTypeSelectorField extends StatelessWidget {
           Expanded(
             child: _buildTypeButton(
               context: context,
-              label: '收入',
+              label: 'app_income'.tr,
               isSelected: !isExpense,
-              activeColor: incomeColor,
+              activeColor: incomeColor ?? dsTheme.success,
               bgOnSelected: selectedBgColor,
               onTap: () => onTypeChanged(false),
             ),
@@ -71,6 +74,7 @@ class ExpenseTypeSelectorField extends StatelessWidget {
     required Color bgOnSelected,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -82,7 +86,7 @@ class ExpenseTypeSelectorField extends StatelessWidget {
               isSelected
                   ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.05),
                       blurRadius: 2,
                       offset: const Offset(0, 1),
                     ),
@@ -94,7 +98,7 @@ class ExpenseTypeSelectorField extends StatelessWidget {
           label,
           style: TextStyle(
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? activeColor : Colors.grey,
+            color: isSelected ? activeColor : theme.colorScheme.onSurfaceVariant,
             fontSize: 16,
           ),
         ),

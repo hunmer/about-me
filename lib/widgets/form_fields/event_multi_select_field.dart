@@ -433,8 +433,8 @@ class _EventMultiSelectFieldState
       child: ListTile(
         leading:
             widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, color: Colors.deepPurple)
-                : const Icon(Icons.event, color: Colors.deepPurple),
+                ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
+                : Icon(Icons.event, color: Theme.of(context).colorScheme.primary),
         title: const Text('监听的事件'),
         subtitle: Text(_selectedEventsText),
         trailing: const Icon(Icons.chevron_right),
@@ -536,7 +536,7 @@ class EventSelectorDialogState extends State<EventSelectorDialog> {
                       child: Text(
                         entry.key,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.deepPurple,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -571,7 +571,7 @@ class EventSelectorDialogState extends State<EventSelectorDialog> {
           onPressed: _toggleSelectAll,
           icon: Icon(_hasSelection ? Icons.deselect : Icons.select_all),
           label: Text(_hasSelection ? '反选' : '全选'),
-          style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
+          style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(width: 8), // 使用 SizedBox 替代 Spacer
         // 右侧取消/确定按钮

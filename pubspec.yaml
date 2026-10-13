@@ -96,7 +96,7 @@ dependencies:
   video_player_win: ^3.2.1
   adaptive_theme: 3.7.2
   flutter_js: ^0.8.1
-  flutter_image_compress: ^2.3.0
+  image_compress_plus: ^4.0.0  # flutter_image_compress 社区分支，额外支持 Windows/Linux
   extended_tabs: ^5.0.0
   json_dynamic_widget: ^12.0.0
   flutter_markdown: ^0.7.4  # For agent_chat plugin Markdown rendering

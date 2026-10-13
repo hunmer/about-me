@@ -44,6 +44,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     'tag': true,
   };
   List<CalendarEntry> _searchResults = [];
+  // 是否使用照片视图（每天显示当日首篇笔记名称+图片）
+  bool _usePhotoView = false;
 
   @override
   void initState() {
@@ -205,6 +207,27 @@ class _CalendarScreenState extends State<CalendarScreen>
                     // 更新路由上下文
                     _updateRouteContext(DateTime.now());
                   },
+                );
+              },
+            ),
+          ),
+          // 切换 日历视图 / 照片视图
+          DSThemeBridge(
+            child: Builder(
+              builder: (buildContext) {
+                final theme = DSThemeBridge.resolve(buildContext);
+                return DSIconButton(
+                  icon:
+                      _usePhotoView ? DsIconKind.calendar : DsIconKind.image,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: (_usePhotoView
+                          ? 'calendar_album_switch_calendar_view'
+                          : 'calendar_album_switch_photo_view')
+                      .tr,
+                  onPressed:
+                      () => setState(() => _usePhotoView = !_usePhotoView),
                 );
               },
             ),
@@ -450,18 +473,33 @@ class _CalendarScreenState extends State<CalendarScreen>
     CalendarController calendarController,
     DateTime selectedDate,
   ) {
+    void onDateSelected(DateTime selectedDay) {
+      calendarController.selectDate(selectedDay);
+      setState(() => _focusedDay = selectedDay);
+      // 更新路由上下文
+      _updateRouteContext(selectedDay);
+      // 选中日期后自动弹出抽屉
+      _showEntryDrawer(context, calendarController, selectedDay);
+    }
+
+    void onHeaderTapped(DateTime focusedMonth) {
+      _showDatePicker(context, calendarController);
+    }
+
+    if (_usePhotoView) {
+      return _PhotoCalendarView(
+        calendarController: calendarController,
+        selectedDate: selectedDate,
+        onDateSelected: onDateSelected,
+        onHeaderTapped: onHeaderTapped,
+      );
+    }
+
     return _VerticalCalendarView(
       calendarController: calendarController,
       selectedDate: selectedDate,
       focusedDay: _focusedDay,
-      onDateSelected: (selectedDay) {
-        calendarController.selectDate(selectedDay);
-        setState(() => _focusedDay = selectedDay);
-        // 更新路由上下文
-        _updateRouteContext(selectedDay);
-        // 选中日期后自动弹出抽屉
-        _showEntryDrawer(context, calendarController, selectedDay);
-      },
+      onDateSelected: onDateSelected,
       onDateLongPressed: (pressedDay) {
         // 长按可以选择日期并打开编辑器
         calendarController.selectDate(pressedDay);
@@ -470,9 +508,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         _updateRouteContext(pressedDay);
         _openEntryEditor(initialDate: pressedDay, isEditing: false);
       },
-      onHeaderTapped: (focusedMonth) {
-        _showDatePicker(context, calendarController);
-      },
+      onHeaderTapped: onHeaderTapped,
     );
   }
 
@@ -858,6 +894,433 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                   child: Center(
                     child: DSLoadingDots(color: theme.textSub),
                   ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 照片视图中某天的展示信息（当日首篇笔记）
+class _PhotoDayInfo {
+  final String title;
+  final String? imagePath;
+
+  const _PhotoDayInfo({required this.title, this.imagePath});
+}
+
+/// 照片视图：每天格子显示当日首篇笔记的名称（彩色小标签）+ 首图
+/// （白色圆角边框、轻微倾斜的拍立得样式），参考 couple calendar 风格
+class _PhotoCalendarView extends StatefulWidget {
+  final CalendarController calendarController;
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onDateSelected;
+  final ValueChanged<DateTime> onHeaderTapped;
+
+  const _PhotoCalendarView({
+    required this.calendarController,
+    required this.selectedDate,
+    required this.onDateSelected,
+    required this.onHeaderTapped,
+  });
+
+  @override
+  State<_PhotoCalendarView> createState() => _PhotoCalendarViewState();
+}
+
+class _PhotoCalendarViewState extends State<_PhotoCalendarView>
+    with AutomaticKeepAliveClientMixin {
+  late ScrollController _scrollController;
+  final List<DateTime> _months = [];
+  final Map<String, Map<DateTime, _PhotoDayInfo>> _cachedDayData = {};
+  bool _isLoading = false;
+
+  // 标题小标签的柔和色板（参考图中的彩色事件标签）
+  static const _chipColors = [
+    Color(0xFFFFD54F),
+    Color(0xFF4FC3F7),
+    Color(0xFFFF8A80),
+    Color(0xFFAED581),
+    Color(0xFFCE93D8),
+    Color(0xFFFFB74D),
+    Color(0xFF80CBC4),
+  ];
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMonths();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_handleScroll);
+    // 监听 CalendarController 的变化，数据更新时清除缓存
+    widget.calendarController.addListener(_onCalendarDataChanged);
+  }
+
+  void _onCalendarDataChanged() {
+    if (mounted) {
+      setState(() {
+        _cachedDayData.clear();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    widget.calendarController.removeListener(_onCalendarDataChanged);
+    super.dispose();
+  }
+
+  /// 初始化月份列表（从当前月份开始，从大到小显示）
+  void _initializeMonths() {
+    _months.clear();
+    final now = DateTime.now();
+    for (int i = 0; i < 3; i++) {
+      _months.add(DateTime(now.year, now.month - i, 1));
+    }
+  }
+
+  /// 加载更多月份（向下滚动时加载更早的月份）
+  bool _loadMorePreviousMonths() {
+    if (_months.isEmpty || _isLoading) return false;
+
+    setState(() => _isLoading = true);
+
+    final addedMonths = <DateTime>[];
+    final earliestMonth = _months.last;
+    var currentMonth = DateTime(earliestMonth.year, earliestMonth.month - 1, 1);
+
+    for (int i = 0; i < _calendarLoadBatchSize; i++) {
+      if (currentMonth.isBefore(_calendarMinMonth)) break;
+      _months.add(currentMonth);
+      addedMonths.add(currentMonth);
+      currentMonth = DateTime(currentMonth.year, currentMonth.month - 1, 1);
+    }
+
+    setState(() => _isLoading = false);
+
+    for (final added in addedMonths) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _getMonthDayData(added);
+      });
+    }
+
+    return addedMonths.isNotEmpty;
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients || _isLoading) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients || _isLoading) return;
+
+      const threshold = 200.0;
+      final position = _scrollController.position;
+
+      if (position.maxScrollExtent > 0 &&
+          (position.maxScrollExtent - position.pixels) <= threshold) {
+        _loadMorePreviousMonths();
+      }
+    });
+  }
+
+  String _getMonthKey(DateTime month) {
+    return 'photo_${month.year}_${month.month}';
+  }
+
+  /// 获取指定月份每天的首篇笔记信息（带缓存）
+  Map<DateTime, _PhotoDayInfo> _getMonthDayData(DateTime month) {
+    final monthKey = _getMonthKey(month);
+    if (_cachedDayData.containsKey(monthKey)) {
+      return _cachedDayData[monthKey]!;
+    }
+
+    final Map<DateTime, _PhotoDayInfo> dayData = {};
+    final currentMonth = DateTime(month.year, month.month, 1);
+    final nextMonth = DateTime(month.year, month.month + 1, 1);
+
+    widget.calendarController.entries.forEach((date, entries) {
+      if (entries.isEmpty ||
+          date.isBefore(currentMonth) ||
+          !date.isBefore(nextMonth)) {
+        return;
+      }
+      final first = entries.first;
+      // 首图优先取缩略图，其次原图 / Markdown 内嵌图
+      String? image;
+      if (first.thumbUrls.isNotEmpty) {
+        image = first.thumbUrls.first;
+      } else if (first.imageUrls.isNotEmpty) {
+        image = first.imageUrls.first;
+      } else {
+        final markdownImages = first.extractImagesFromMarkdown();
+        if (markdownImages.isNotEmpty) {
+          image = markdownImages.first;
+        }
+      }
+      dayData[date] = _PhotoDayInfo(title: first.title, imagePath: image);
+    });
+
+    _cachedDayData[monthKey] = dayData;
+    return dayData;
+  }
+
+  Color _chipColor(String title) =>
+      _chipColors[title.hashCode.abs() % _chipColors.length];
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  Widget _imageFallback(AppThemeData theme) => Container(
+    width: 52,
+    height: 52,
+    color: theme.surfaceAlt,
+    child: DsIcon(DsIconKind.image, size: 20, color: theme.textSub),
+  );
+
+  /// 首图缩略图：白底圆角边框 + 按日期交错的小角度倾斜（拍立得效果）
+  Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) {
+    final angle = ((day.day % 3) - 1) * 0.06;
+    return Transform.rotate(
+      angle: angle,
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.stroke.withValues(alpha: 0.6)),
+          boxShadow: DsShadows.soft,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: FutureBuilder<String>(
+            future: ImageUtils.getAbsolutePath(imagePath),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                return Image.file(
+                  File(snapshot.data!),
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _imageFallback(theme),
+                );
+              }
+              return _imageFallback(theme);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthGrid(DateTime month) {
+    final theme = DSThemeBridge.resolve(context);
+    final dayData = _getMonthDayData(month);
+    final firstDay = DateTime(month.year, month.month, 1);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    // 周日开头，与 SyncfusionCalendarWidget（firstDayOfWeek=7）一致
+    final leadingBlanks = firstDay.weekday % 7;
+
+    // 按周分行；行内任一天有笔记时用高行高容纳名称与图片
+    final rows = <List<DateTime?>>[];
+    var currentRow = List<DateTime?>.filled(leadingBlanks, null);
+    for (var day = 1; day <= daysInMonth; day++) {
+      currentRow.add(DateTime(month.year, month.month, day));
+      if (currentRow.length == 7) {
+        rows.add(currentRow);
+        currentRow = <DateTime?>[];
+      }
+    }
+    if (currentRow.isNotEmpty) {
+      currentRow.addAll(List<DateTime?>.filled(7 - currentRow.length, null));
+      rows.add(currentRow);
+    }
+
+    double rowHeight(List<DateTime?> row) {
+      final hasContent = row.any((d) => d != null && dayData.containsKey(d));
+      return hasContent ? 132.0 : 36.0;
+    }
+
+    Widget buildDayCell(DateTime day, _PhotoDayInfo? info, double height) {
+      final isToday = _isSameDay(day, DateTime.now());
+      final isSelected = _isSameDay(day, widget.selectedDate);
+
+      return SizedBox(
+        height: height,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => widget.onDateSelected(day),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
+            child: Column(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration:
+                      isToday
+                          ? BoxDecoration(
+                            color: theme.text,
+                            shape: BoxShape.circle,
+                          )
+                          : isSelected
+                          ? BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.primary,
+                              width: 1.5,
+                            ),
+                          )
+                          : null,
+                  child: Text(
+                    '${day.day}',
+                    style: DsTypography.caption.copyWith(
+                      color: isToday ? theme.surface : theme.text,
+                    ),
+                  ),
+                ),
+                if (info != null) ...[
+                  const SizedBox(height: 2),
+                  // 当日首篇笔记名称
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _chipColor(info.title),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      info.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: DsTypography.caption.copyWith(
+                        fontSize: 9,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  if (info.imagePath != null)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: _buildTiltedImage(info.imagePath!, day, theme),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与垂直视图一致）
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xl,
+        padding: const EdgeInsets.all(8),
+        seed: month.year * 12 + month.month,
+        child: Column(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => widget.onHeaderTapped(month),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  DateFormat('yyyy年MM月').format(month),
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            Row(
+              children:
+                  ['日', '一', '二', '三', '四', '五', '六']
+                      .map(
+                        (label) => Expanded(
+                          child: Center(
+                            child: Text(
+                              label,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+            ),
+            const SizedBox(height: 4),
+            for (final row in rows)
+              Row(
+                children: [
+                  for (final day in row)
+                    Expanded(
+                      child:
+                          day == null
+                              ? SizedBox(height: rowHeight(row))
+                              : buildDayCell(
+                                day,
+                                dayData[day],
+                                rowHeight(row),
+                              ),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final theme = DSThemeBridge.resolve(context);
+
+    return Column(
+      children: [
+        Expanded(
+          child: Stack(
+            children: [
+              ListView.builder(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  0, 16, 0, 16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                itemCount: _months.length,
+                itemBuilder: (context, index) {
+                  final month = _months[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: KeyedSubtree(
+                      key: ValueKey('photo_${_getMonthKey(month)}'),
+                      child: _buildMonthGrid(month),
+                    ),
+                  );
+                },
+              ),
+              if (_isLoading)
+                Positioned(
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: DSLoadingDots(color: theme.textSub)),
                 ),
             ],
           ),

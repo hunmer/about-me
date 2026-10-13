@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'form_field_wrapper.dart';
@@ -433,14 +434,14 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: DSButton(
-                label: widget.config.resetButtonText,
+                label: widget.config.resetButtonText ?? 'app_reset'.tr,
                 variant: DSButtonVariant.outline,
                 onPressed: _resetForm,
               ),
             ),
           if (widget.config.showSubmitButton)
             DSButton(
-              label: widget.config.submitButtonText,
+              label: widget.config.submitButtonText ?? 'app_submit'.tr,
               variant: DSButtonVariant.primary,
               onPressed: () async {
                 final fbState = _actualFormKey.currentState;

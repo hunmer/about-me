@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
 
 /// 计时器图标网格选择器字段组件
@@ -17,7 +18,7 @@ class TimerIconGridField extends StatelessWidget {
   /// 是否启用
   final bool enabled;
 
-  /// 主色调
+  /// 主色调（未传时取 Material 主色）
   final Color? primaryColor;
 
   const TimerIconGridField({
@@ -38,30 +39,31 @@ class TimerIconGridField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themePrimaryColor = primaryColor ?? const Color(0xFF607AFB);
+    final theme = Theme.of(context);
+    final themePrimaryColor = primaryColor ?? theme.colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 标签
         Text(
-          '图标',
+          'app_icon'.tr,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.grey[500] : Colors.grey[600],
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
 
         // 图标网格
-        _buildIconGrid(context, themePrimaryColor, isDark),
+        _buildIconGrid(context, themePrimaryColor),
       ],
     );
   }
 
-  Widget _buildIconGrid(BuildContext context, Color primaryColor, bool isDark) {
+  Widget _buildIconGrid(BuildContext context, Color primaryColor) {
+    final theme = Theme.of(context);
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -90,19 +92,17 @@ class TimerIconGridField extends StatelessWidget {
                   color:
                       isSelected
                           ? primaryColor
-                          : (isDark ? Colors.grey[800] : Colors.grey[100]),
+                          : theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(8),
                   border:
-                      isSelected
-                          ? Border.all(color: primaryColor, width: 2)
-                          : null,
+                      isSelected ? Border.all(color: primaryColor, width: 2) : null,
                 ),
                 child: Icon(
                   icon,
                   color:
                       isSelected
-                          ? Colors.white
-                          : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
                   size: 24,
                 ),
               ),

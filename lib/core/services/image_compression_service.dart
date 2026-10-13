@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_compress_plus/image_compress_plus.dart';
 import 'package:path/path.dart' as path;
 
 /// 图片压缩任务
@@ -94,13 +94,9 @@ class ImageCompressionService {
     required int quality,
   }) async {
     try {
-      // Web 和 Windows 平台暂不支持压缩，直接返回源文件路径
+      // Web 平台需在 index.html 引入 pica 才可用，暂不支持压缩，直接返回源文件路径
       if (kIsWeb) {
         debugPrint('Web 平台暂不支持图片压缩');
-        return sourcePath;
-      }
-      if (Platform.isWindows) {
-        debugPrint('Windows 平台暂不支持图片压缩');
         return sourcePath;
       }
 
@@ -136,10 +132,21 @@ class ImageCompressionService {
           break;
       }
 
+      // heic 仅移动端支持，桌面端（Windows/Linux/macOS）降级为 jpeg，
+      // 同时目标路径扩展名改为 .jpg 保持与实际编码一致
+      String outputPath = targetPath;
+      if (format == CompressFormat.heic &&
+          (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+        format = CompressFormat.jpeg;
+        if (path.extension(targetPath).toLowerCase() == '.heic') {
+          outputPath = '${targetPath.substring(0, targetPath.length - 5)}.jpg';
+        }
+      }
+
       // 执行压缩
-      final result = await FlutterImageCompress.compressAndGetFile(
+      final result = await ImageCompressPlus.compressAndGetFile(
         sourcePath,
-        targetPath,
+        outputPath,
         quality: quality,
         format: format,
         // 保持原始方向

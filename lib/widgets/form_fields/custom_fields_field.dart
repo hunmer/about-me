@@ -25,31 +25,31 @@ class CustomFieldsField extends StatefulWidget {
   final bool inline;
 
   /// 添加按钮文本
-  final String addButtonText;
+  final String? addButtonText;
 
   /// 添加字段对话框标题
-  final String addDialogTitle;
+  final String? addDialogTitle;
 
   /// 编辑字段对话框标题
-  final String editDialogTitle;
+  final String? editDialogTitle;
 
   /// 字段名标签
-  final String fieldNameLabel;
+  final String? fieldNameLabel;
 
   /// 字段名提示
-  final String fieldNameHint;
+  final String? fieldNameHint;
 
   /// 字段值标签
-  final String fieldValueLabel;
+  final String? fieldValueLabel;
 
   /// 字段值提示
-  final String fieldValueHint;
+  final String? fieldValueHint;
 
   /// 删除确认对话框标题
-  final String deleteConfirmTitle;
+  final String? deleteConfirmTitle;
 
   /// 删除确认内容
-  final String deleteConfirmContent;
+  final String? deleteConfirmContent;
 
   /// inline模式下label的宽度
   final double labelWidth;
@@ -60,15 +60,15 @@ class CustomFieldsField extends StatefulWidget {
     required this.onFieldsChanged,
     this.labelText,
     this.inline = false,
-    this.addButtonText = '添加字段',
-    this.addDialogTitle = '添加自定义字段',
-    this.editDialogTitle = '编辑自定义字段',
-    this.fieldNameLabel = '字段名',
-    this.fieldNameHint = '请输入字段名',
-    this.fieldValueLabel = '字段值',
-    this.fieldValueHint = '请输入字段值',
-    this.deleteConfirmTitle = '确认删除',
-    this.deleteConfirmContent = '确定要删除这个字段吗？',
+    this.addButtonText,
+    this.addDialogTitle,
+    this.editDialogTitle,
+    this.fieldNameLabel,
+    this.fieldNameHint,
+    this.fieldValueLabel,
+    this.fieldValueHint,
+    this.deleteConfirmTitle,
+    this.deleteConfirmContent,
     this.labelWidth = 100,
   });
 
@@ -120,7 +120,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    '暂无自定义字段',
+                    'app_noCustomFields'.tr,
                     style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 )
@@ -232,7 +232,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
     final theme = DSThemeBridge.resolve(context);
     return Pressable(
       onPressed: _addField,
-      semanticLabel: widget.addButtonText,
+      semanticLabel: widget.addButtonText ?? 'app_addField'.tr,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -241,7 +241,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
             DsIcon(DsIconKind.plus, size: 18, color: theme.primary),
             const SizedBox(width: 8),
             Text(
-              widget.addButtonText,
+              widget.addButtonText ?? 'app_addField'.tr,
               style: DsTypography.caption.copyWith(color: theme.primary),
             ),
           ],
@@ -268,26 +268,26 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
             children: [
               DSInput(
                 controller: keyController,
-                label: widget.fieldNameLabel,
-                hint: widget.fieldNameHint,
+                label: widget.fieldNameLabel ?? 'app_fieldName'.tr,
+                hint: widget.fieldNameHint ?? 'app_fieldNameHint'.tr,
               ),
               SizedBox(height: theme.spacing.md),
               DSInput(
                 controller: valueController,
-                label: widget.fieldValueLabel,
-                hint: widget.fieldValueHint,
+                label: widget.fieldValueLabel ?? 'app_fieldValue'.tr,
+                hint: widget.fieldValueHint ?? 'app_fieldValueHint'.tr,
                 maxLines: 2,
               ),
             ],
           ),
-          cancelText: 'goods_cancel'.tr,
-          confirmText: 'goods_confirm'.tr,
+          cancelText: 'app_cancel'.tr,
+          confirmText: 'app_ok'.tr,
           onConfirm: () {
             if (keyController.text.isNotEmpty &&
                 valueController.text.isNotEmpty) {
               Navigator.of(dialogContext).pop(true);
             } else {
-              toastService.showToast('goods_fieldNameAndValueCannotBeEmpty'.tr);
+              toastService.showToast('app_fieldNameAndValueRequired'.tr);
             }
           },
         );
@@ -300,7 +300,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
     final valueController = TextEditingController();
 
     final bool? confirmed = await _showFieldDialog(
-      title: widget.addDialogTitle,
+      title: widget.addDialogTitle ?? 'app_addCustomField'.tr,
       keyController: keyController,
       valueController: valueController,
     );
@@ -323,7 +323,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
     final valueController = TextEditingController(text: field.value);
 
     final bool? confirmed = await _showFieldDialog(
-      title: widget.editDialogTitle,
+      title: widget.editDialogTitle ?? 'app_editCustomField'.tr,
       keyController: keyController,
       valueController: valueController,
     );
@@ -347,12 +347,14 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
       theme: DSThemeBridge.resolve(context),
       builder:
           (dialogContext) => DSDialog(
-            title: widget.deleteConfirmTitle,
-            message: widget.deleteConfirmContent,
-            cancelText: 'goods_cancel'.tr,
-            confirmText: 'goods_delete'.tr,
-            confirmVariant: DSButtonVariant.destructive,
-          ),
+                title: widget.deleteConfirmTitle ?? 'app_confirmDelete'.tr,
+                message:
+                    widget.deleteConfirmContent ??
+                    'app_confirmDeleteField'.tr,
+                cancelText: 'app_cancel'.tr,
+                confirmText: 'app_delete'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+              ),
     ).then((confirmed) {
       if (confirmed == true) {
         setState(() {

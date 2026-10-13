@@ -114,8 +114,8 @@ class _PluginDataSelectorFieldState
       child: ListTile(
         leading:
             widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, color: Colors.deepPurple)
-                : const Icon(Icons.smart_toy, color: Colors.deepPurple),
+                ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
+                : Icon(Icons.smart_toy, color: Theme.of(context).colorScheme.primary),
         title: Text(_selectedTitle ?? _selectedId ?? '未选择'),
         subtitle: _selectedId != null ? null : const Text('点击选择数据'),
         trailing: const Icon(Icons.chevron_right),
