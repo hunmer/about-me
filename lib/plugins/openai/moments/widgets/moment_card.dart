@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
+import 'package:get/get.dart';
 /// 朋友圈动态卡片（Instagram 风格：头像 + 名字 + 时间 + 文案 + 图片区 + 互动）
 class MomentCard extends StatelessWidget {
   final MomentPost post;
@@ -203,19 +204,19 @@ class MomentCard extends StatelessWidget {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('删除动态'),
-            content: const Text('确定删除这条朋友圈动态吗？'),
+            title: Text('openai_deleteMoment'.tr),
+            content: Text('openai_confirmDeleteMoment'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   onDelete?.call();
                 },
-                child: const Text('删除'),
+                child: Text('app_delete'.tr),
               ),
             ],
           ),

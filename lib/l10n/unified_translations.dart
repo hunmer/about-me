@@ -61,6 +61,8 @@ import '../plugins/nfc/l10n/nfc_translations_zh.dart';
 import '../plugins/nfc/l10n/nfc_translations_en.dart';
 import '../plugins/webview/l10n/webview_translations_zh.dart';
 import '../plugins/webview/l10n/webview_translations_en.dart';
+import '../plugins/reminder/l10n/reminder_translations_zh.dart';
+import '../plugins/reminder/l10n/reminder_translations_en.dart';
 
 // 屏幕层 (5个)
 import '../screens/settings_screen/l10n/settings_screen_translations_zh.dart';
@@ -183,6 +185,9 @@ class UnifiedTranslations extends Translations {
 
     zhDict.addAll(webviewTranslationsZh);
     enDict.addAll(webviewTranslationsEn);
+
+    zhDict.addAll(reminderTranslationsZh);
+    enDict.addAll(reminderTranslationsEn);
 
     // === 屏幕层 (6个) ===
     zhDict.addAll(settingsScreenTranslationsZh);

@@ -207,5 +207,11 @@ class ChatTranslationsEn {
     'chat_refresh': 'Refresh',
     'chat_listView': 'Switch to list view',
     'chat_cardView': 'Switch to card view',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'chat_deleteStickerPack': 'Delete Sticker Pack',
+  'chat_stickerManager': 'Sticker Manager',
+  'chat_deleteSticker': 'Delete Sticker',
+  'chat_confirmDeleteSticker': 'Delete this sticker?',
+};
 }

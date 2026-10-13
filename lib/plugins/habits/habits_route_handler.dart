@@ -8,6 +8,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:get/get.dart';
 /// 习惯插件路由处理器
 class HabitsRouteHandler extends PluginRouteHandler {
   @override
@@ -190,7 +191,7 @@ class _StartTimerScreenState extends State<_StartTimerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NFC 启动计时器'),
+        title: Text('habits_nfcStartTimer'.tr),
         backgroundColor: Colors.amber,
         foregroundColor: Colors.white,
       ),

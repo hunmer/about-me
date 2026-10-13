@@ -7,6 +7,7 @@ import 'package:aboutme/core/storage/storage_websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:get/get.dart';
 class StorageBackendSettingsDialog extends StatefulWidget {
   const StorageBackendSettingsDialog({super.key});
 
@@ -85,18 +86,17 @@ class _StorageBackendSettingsDialogState
         context: context,
         builder:
             (context) => AlertDialog(
-              title: const Text('切换数据存储后端'),
-              content: const Text(
-                '切换不会迁移或删除现有数据。请先完成数据导出，并确认当前没有未完成的写入。保存后需要重新启动应用。',
+              title: Text('settings_screen_switchStorageBackend'.tr),
+              content: Text('settings_screen_switchStorageBackendDesc'.tr,
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('取消'),
+                  child: Text('app_cancel'.tr),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('继续'),
+                  child: Text('app_stillContinue'.tr),
                 ),
               ],
             ),
@@ -171,7 +171,7 @@ class _StorageBackendSettingsDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('数据存储后端'),
+      title: Text('settings_screen_storageBackend'.tr),
       content: SizedBox(
         width: 480,
         child:
@@ -267,24 +267,24 @@ class _StorageBackendSettingsDialogState
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         if (_type == StorageBackendType.http)
           OutlinedButton.icon(
             onPressed: _loading ? null : _test,
             icon: const Icon(Icons.wifi_tethering),
-            label: const Text('测试连接'),
+            label: Text('settings_screen_testConnection'.tr),
           ),
         if (_type == StorageBackendType.http)
           OutlinedButton.icon(
             onPressed: _loading ? null : _migrate,
             icon: const Icon(Icons.upload),
-            label: const Text('迁移本地数据'),
+            label: Text('settings_screen_migrateLocalData'.tr),
           ),
         FilledButton.icon(
           onPressed: _loading ? null : _save,
           icon: const Icon(Icons.save),
-          label: const Text('保存'),
+          label: Text('app_save'.tr),
         ),
       ],
     );

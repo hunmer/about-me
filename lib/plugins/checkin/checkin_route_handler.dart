@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/checkin/screens/checkin_item_selector_screen.dar
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
+import 'package:get/get.dart';
 /// 打卡插件路由处理器
 class CheckinRouteHandler extends PluginRouteHandler {
   @override
@@ -196,7 +197,7 @@ class _AutoCheckinScreenState extends State<_AutoCheckinScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NFC 签到'),
+        title: Text('checkin_nfcCheckin'.tr),
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
       ),

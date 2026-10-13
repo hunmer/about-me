@@ -4,6 +4,7 @@ import 'package:aboutme/plugins/activity/widgets/activity_timeline.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/schedule_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
+import 'package:get/get.dart';
 /// AI 日程表：展示活人感 agent 今日的 24 小时真实生活安排，
 /// 时间线复用 activity 插件的 ActivityTimeline。
 /// 今日首次聊天时自动生成，也可在此手动生成/重新生成。
@@ -76,18 +77,18 @@ class _AgentScheduleScreenState extends State<AgentScheduleScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('重新生成今日日程？'),
+        title: Text('openai_regenerateTodaySchedule'.tr),
         content: Text(
           '将丢弃「${widget.agentName}」今天的安排，按人物设定重新生成一份。',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('重新生成'),
+            child: Text('openai_regenerate'.tr),
           ),
         ],
       ),
@@ -136,7 +137,7 @@ class _AgentScheduleScreenState extends State<AgentScheduleScreen> {
                         FilledButton.icon(
                           onPressed: () => _generate(force: true),
                           icon: const Icon(Icons.auto_awesome, size: 18),
-                          label: const Text('生成今日日程'),
+                          label: Text('openai_generateTodaySchedule'.tr),
                         ),
                     ],
                   ),

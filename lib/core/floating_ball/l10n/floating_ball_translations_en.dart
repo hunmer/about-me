@@ -28,4 +28,7 @@ const Map<String, String> floatingBallTranslationsEn = {
   'floating_ball_clear': 'Clear',
   'floating_ball_selectIcon': 'Select Icon',
   'floating_ball_save': 'Save',
+
+  // const Text 硬编码迁移(en)
+  'floating_ball_buttonIcon': 'Button Icon',
 };

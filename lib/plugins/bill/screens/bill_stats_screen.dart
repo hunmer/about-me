@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
 
+import 'package:get/get.dart';
 class BillStatsScreen extends StatefulWidget {
   final BillPlugin billPlugin;
   final String accountId;
@@ -281,8 +282,7 @@ class _BillStatsScreenState extends State<BillStatsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '统计报表',
+                Text('bill_statsReport'.tr,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Row(

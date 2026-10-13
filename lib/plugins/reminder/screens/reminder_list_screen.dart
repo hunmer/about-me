@@ -9,6 +9,7 @@ import 'reminder_form_screen.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+import 'package:get/get.dart';
 /// 提醒列表界面
 class ReminderListScreen extends StatefulWidget {
   const ReminderListScreen({super.key});
@@ -45,7 +46,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
         child: DSFab(onPressed: _addReminder),
       ),
       body: SuperCupertinoNavigationWrapper(
-        title: const Text('定时提醒'),
+        title: Text('reminder_scheduledReminders'.tr),
         largeTitle: '定时提醒',
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _addReminder),
@@ -95,12 +96,12 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除提醒'),
+        title: Text('reminder_deleteReminder'.tr),
         content: Text('确定要删除提醒"${reminder.title}"吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -108,7 +109,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('删除'),
+            child: Text('app_delete'.tr),
           ),
         ],
       ),

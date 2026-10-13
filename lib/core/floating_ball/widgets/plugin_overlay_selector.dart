@@ -32,14 +32,12 @@ class PluginOverlaySelector extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                '选择插件小窗口',
+              Text('core_selectPluginOverlay'.tr,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              const Text(
-                '选择要在小窗口中打开的插件：',
+              Text('core_selectPluginOverlayDesc'.tr,
                 style: TextStyle(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),

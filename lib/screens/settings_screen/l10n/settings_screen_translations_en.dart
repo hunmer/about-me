@@ -127,4 +127,21 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settingsScreen_selectLanguage': 'Select Language',
   'settingsScreen_chinese': '中文',
   'settingsScreen_english': 'English',
+
+  // const Text 硬编码迁移(en)
+  'settings_screen_changeUsername': 'Change Username',
+  'settings_screen_appSettings': 'App Settings',
+  'settings_screen_interfaceSettings': 'Interface Settings',
+  'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
+  'settings_screen_confirmClear': 'Confirm Clear',
+  'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',
+  'settings_screen_aiCorrectionConfigured': 'AI correction assistant configured',
+  'settings_screen_editAiCorrectionAgent': 'Edit AI Correction Agent',
+  'settings_screen_configureAiCorrectionAgent': 'Configure AI Correction Agent',
+  'settings_screen_verifyConfiguration': 'Verify Configuration',
+  'settings_screen_switchStorageBackend': 'Switch Storage Backend',
+  'settings_screen_switchStorageBackendDesc': 'Switching neither migrates nor deletes existing data. Export your data first and make sure no writes are in progress. Restart required after saving.',
+  'settings_screen_storageBackend': 'Storage Backend',
+  'settings_screen_testConnection': 'Test Connection',
+  'settings_screen_migrateLocalData': 'Migrate Local Data',
 };

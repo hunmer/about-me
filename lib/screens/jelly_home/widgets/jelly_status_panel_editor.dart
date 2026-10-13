@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'jelly_status_panel_config.dart';
 import 'jelly_configurable_image.dart';
 
+import 'package:get/get.dart';
 Future<JellyStatusPanelConfig?> showJellyStatusPanelEditor({
   required BuildContext context,
   required String asset,
@@ -119,7 +120,7 @@ class _JellyStatusPanelEditorState extends State<_JellyStatusPanelEditor> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('配置顶部信息面板'),
+      title: Text('screens_configureTopPanel'.tr),
       content: SizedBox(
         width: 820,
         child: SingleChildScrollView(
@@ -147,12 +148,12 @@ class _JellyStatusPanelEditorState extends State<_JellyStatusPanelEditor> {
                 runSpacing: 8,
                 children: [
                   ChoiceChip(
-                    label: const Text('头像位置'),
+                    label: Text('screens_avatarPosition'.tr),
                     selected: _kind == _RegionKind.avatar,
                     onSelected: (_) => _select(_RegionKind.avatar),
                   ),
                   ChoiceChip(
-                    label: const Text('经验条位置'),
+                    label: Text('screens_expBarPosition'.tr),
                     selected: _kind == _RegionKind.experience,
                     onSelected: (_) => _select(_RegionKind.experience),
                   ),
@@ -214,11 +215,11 @@ class _JellyStatusPanelEditorState extends State<_JellyStatusPanelEditor> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, _config),
-          child: const Text('保存'),
+          child: Text('app_save'.tr),
         ),
       ],
     );
@@ -248,14 +249,14 @@ class _JellyStatusPanelEditorState extends State<_JellyStatusPanelEditor> {
                 ? () => _select(_RegionKind.itemIcon, type)
                 : null,
             icon: const Icon(Icons.image_outlined, size: 16),
-            label: const Text('图标位置'),
+            label: Text('screens_iconPosition'.tr),
           ),
           OutlinedButton.icon(
             onPressed: enabled
                 ? () => _select(_RegionKind.itemValue, type)
                 : null,
             icon: const Icon(Icons.numbers, size: 16),
-            label: const Text('数值位置'),
+            label: Text('screens_valuePosition'.tr),
           ),
         ],
       ),

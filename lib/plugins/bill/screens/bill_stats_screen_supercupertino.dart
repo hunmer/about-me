@@ -337,8 +337,7 @@ class _BillStatsScreenSupercupertinoState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '统计报表',
+                Text('bill_statsReport'.tr,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Row(

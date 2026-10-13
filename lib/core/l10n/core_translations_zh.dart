@@ -110,4 +110,8 @@ const Map<String, String> coreTranslationsZh = {
   'core_priorityDescription': '数字越大优先级越高',
   'core_actionList': '动作列表',
   'core_noActionsAdded': '暂无动作，点击上方按钮添加',
+
+  // const Text 硬编码迁移(zh)
+  'core_selectPluginOverlay': 'Select Plugin Overlay',
+  'core_selectPluginOverlayDesc': 'Select a plugin to open in the overlay: ',
 };

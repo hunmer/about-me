@@ -7,6 +7,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builde
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
 class AgentResourceStoreScreen extends StatefulWidget {
   const AgentResourceStoreScreen({
     super.key,
@@ -122,7 +123,7 @@ class _AgentResourceStoreScreenState extends State<AgentResourceStoreScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('关闭'),
+                child: Text('app_close'.tr),
               ),
               if (!installed)
                 FilledButton(
@@ -130,7 +131,7 @@ class _AgentResourceStoreScreenState extends State<AgentResourceStoreScreen> {
                     Navigator.pop(dialogContext);
                     _install(item);
                   },
-                  child: const Text('安装'),
+                  child: Text('openai_install'.tr),
                 ),
             ],
           ),
@@ -224,7 +225,7 @@ class _AgentResourceStoreScreenState extends State<AgentResourceStoreScreen> {
                                           strokeWidth: 2,
                                         ),
                                       )
-                                      : const Text('安装'),
+                                      : Text('openai_install'.tr),
                             ),
                   );
                 },

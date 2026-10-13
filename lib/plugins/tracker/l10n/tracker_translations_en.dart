@@ -97,5 +97,8 @@ class TrackerTranslationsEn {
     'tracker_quickAccess': 'Quick Access',
     'tracker_quickAccessDesc': 'Tap to go to goal detail',
     'viewDetail': 'View Detail',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'tracker_nfcAddProgress': 'Add Progress via NFC',
+};
 }

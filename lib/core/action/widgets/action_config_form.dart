@@ -650,7 +650,7 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
               final color = await showDialog<Color>(
                 context: context,
                 builder: (context) => AlertDialog(
-                        title: const Text('选择颜色'),
+                        title: Text('app_selectColor'.tr),
                   content: SizedBox(
                     width: double.maxFinite,
                     child: Wrap(
@@ -680,7 +680,7 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                            child: const Text('取消'),
+                            child: Text('app_cancel'.tr),
                     ),
                   ],
                 ),

@@ -11,6 +11,7 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+import 'package:get/get.dart';
 /// Agent 朋友圈：Instagram 风格动态流
 class MomentsScreen extends StatefulWidget {
   const MomentsScreen({super.key});
@@ -61,7 +62,7 @@ class _MomentsScreenState extends State<MomentsScreen> {
     final text = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('评论'),
+        title: Text('openai_comment'.tr),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -72,11 +73,11 @@ class _MomentsScreenState extends State<MomentsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('发送'),
+            child: Text('openai_send'.tr),
           ),
         ],
       ),
@@ -130,7 +131,7 @@ class _MomentsScreenState extends State<MomentsScreen> {
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('AI 生成配图'),
+                title: Text('openai_aiGeneratedImage'.tr),
                 value: generateImage,
                 onChanged: (v) => setDialog(() => generateImage = v),
               ),
@@ -146,11 +147,11 @@ class _MomentsScreenState extends State<MomentsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('取消'),
+              child: Text('app_cancel'.tr),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('发布'),
+              child: Text('openai_publish'.tr),
             ),
           ],
         ),
@@ -185,7 +186,7 @@ class _MomentsScreenState extends State<MomentsScreen> {
   Widget build(BuildContext context) {
     final posts = _moments.posts;
     return Scaffold(
-      appBar: AppBar(title: const Text('朋友圈')),
+      appBar: AppBar(title: Text('openai_moments'.tr)),
       floatingActionButton: DSThemeBridge(
         // DSFab 内部取 AppTheme，需包桥
         child: DSFab(icon: DsIconKind.edit, onPressed: _composePost),

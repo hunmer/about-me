@@ -15,6 +15,7 @@ import 'package:aboutme/screens/home_screen/widgets/selector_widget_types.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.dart';
 
+import 'package:get/get.dart';
 /// 公共小组件选择页面
 ///
 /// 用于让用户选择插件数据，然后选择一个公共小组件样式
@@ -306,7 +307,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('选择公共组件样式'),
+        title: Text('screens_selectCommonWidgetStyle'.tr),
         leading: DSThemeBridge(
           child: Builder(
             builder: (context) {

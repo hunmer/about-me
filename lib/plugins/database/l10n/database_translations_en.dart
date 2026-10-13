@@ -67,5 +67,8 @@ class DatabaseTranslationsEn {
     'database_widgetDescription': 'Quick access to Database',
     'database_overviewName': 'Database Overview',
     'database_overviewDescription': 'Display database statistics',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'database_sortMethod': 'Sort Method',
+};
 }

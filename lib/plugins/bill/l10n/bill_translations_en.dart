@@ -181,5 +181,8 @@ class BillTranslationsEn {
     'bill_switchToListView': 'Switch to List View',
     'bill_switchToGridView': 'Switch to Grid View',
     'bill_notesHint': 'Add comments, order numbers, or account details...',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'bill_statsReport': 'Statistics Report',
+};
 }

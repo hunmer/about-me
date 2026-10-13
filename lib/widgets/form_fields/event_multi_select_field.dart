@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 
+import 'package:get/get.dart';
 /// 所有可用事件的默认列表
 const List<EventOption> kDefaultAvailableEvents = [
   // 成就等级奖励（按等级位次，全部成就共用）
@@ -435,7 +436,7 @@ class _EventMultiSelectFieldState
             widget.prefixIcon != null
                 ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
                 : Icon(Icons.event, color: Theme.of(context).colorScheme.primary),
-        title: const Text('监听的事件'),
+        title: Text('widget_listenedEvents'.tr),
         subtitle: Text(_selectedEventsText),
         trailing: const Icon(Icons.chevron_right),
         onTap: widget.enabled ? _showEventSelector : null,
@@ -577,13 +578,13 @@ class EventSelectorDialogState extends State<EventSelectorDialog> {
         // 右侧取消/确定按钮
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         FilledButton(
           onPressed: () {
             Navigator.pop(context, _selectedEvents.toList());
           },
-          child: const Text('确定'),
+          child: Text('app_ok'.tr),
         ),
       ],
     );

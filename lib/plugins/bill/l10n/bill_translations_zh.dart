@@ -177,5 +177,8 @@ class BillTranslationsZh {
     'bill_switchToListView': '切换到列表视图',
     'bill_switchToGridView': '切换到网格视图',
     'bill_notesHint': '添加备注、订单号或账户详情...',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'bill_statsReport': 'Statistics Report',
+};
 }

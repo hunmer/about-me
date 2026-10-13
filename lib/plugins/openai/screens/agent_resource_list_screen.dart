@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:get/get.dart';
 enum AgentResourceType { skills, mcpServers }
 
 class AgentResourceListScreen extends StatefulWidget {
@@ -116,11 +117,11 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('添加'),
+                child: Text('app_add'.tr),
               ),
             ],
           ),
@@ -160,7 +161,7 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('从 URL 导入 Skill'),
+            title: Text('openai_importSkillFromUrl'.tr),
             content: TextField(
               controller: controller,
               autofocus: true,
@@ -172,11 +173,11 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('导入'),
+                child: Text('app_import'.tr),
               ),
             ],
           ),
@@ -216,7 +217,7 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('编辑资源'),
+            title: Text('openai_editResource'.tr),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -234,7 +235,7 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               FilledButton(
                 onPressed:
@@ -251,7 +252,7 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
                                 .toList(),
                       ),
                     ),
-                child: const Text('保存'),
+                child: Text('app_save'.tr),
               ),
             ],
           ),
@@ -274,19 +275,19 @@ class _AgentResourceListScreenState extends State<AgentResourceListScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.add),
-                  title: const Text('手动添加'),
+                  title: Text('openai_addManually'.tr),
                   onTap: () => Navigator.pop(context, 'manual'),
                 ),
                 if (_isSkills)
                   ListTile(
                     leading: const Icon(Icons.file_open),
-                    title: const Text('从本地导入 Skill'),
+                    title: Text('openai_importSkillFromLocal'.tr),
                     onTap: () => Navigator.pop(context, 'local'),
                   ),
                 if (_isSkills)
                   ListTile(
                     leading: const Icon(Icons.link),
-                    title: const Text('从 URL 导入 Skill'),
+                    title: Text('openai_importSkillFromUrl'.tr),
                     onTap: () => Navigator.pop(context, 'url'),
                   ),
               ],

@@ -117,7 +117,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('选择配置文件'),
+        title: Text('scripts_center_selectConfigFile'.tr),
         children: [
           for (final p in profiles.profiles)
             SimpleDialogOption(
@@ -310,7 +310,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.history),
-            title: const Text('执行记录'),
+            title: Text('scripts_center_executionLogs'.tr),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -327,8 +327,8 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.ios_share),
-            title: const Text('导出脚本'),
-            subtitle: const Text('导出代码、元数据与全部配置文件'),
+            title: Text('scripts_center_exportScript'.tr),
+            subtitle: Text('scripts_center_exportScriptDesc'.tr),
             onTap: () {
               Navigator.pop(context);
               _exportScript(script);

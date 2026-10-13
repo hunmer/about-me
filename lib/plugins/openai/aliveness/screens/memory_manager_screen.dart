@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 
+import 'package:get/get.dart';
 /// 记忆碎片管理页：查看/手动标记重要/删除碎片，管理开环事件。
 /// 对应 PRD「人工可标记重要记忆」与记忆可观测性。
 class MemoryManagerScreen extends StatefulWidget {
@@ -98,7 +99,7 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
-          title: const Text('添加待跟进事件'),
+          title: Text('openai_addFollowUpEvent'.tr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -113,7 +114,7 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text('跟进时间：'),
+                  Text('openai_followUpTimeColon'.tr),
                   const SizedBox(width: 8),
                   DropdownButton<int>(
                     value: days,
@@ -131,11 +132,11 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('取消'),
+              child: Text('app_cancel'.tr),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('添加'),
+              child: Text('app_add'.tr),
             ),
           ],
         ),
@@ -160,11 +161,11 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('确定'),
+          child: Text('app_ok'.tr),
         ),
       ],
     ),
@@ -193,7 +194,7 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen>
           ? FloatingActionButton.extended(
               onPressed: _addLoop,
               icon: const Icon(Icons.add),
-              label: const Text('添加事件'),
+              label: Text('app_addEvent'.tr),
             )
           : null,
       body: _loading

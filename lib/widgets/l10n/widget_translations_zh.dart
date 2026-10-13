@@ -153,4 +153,9 @@ const Map<String, String> zhCN = {
   'tagManager_deleteTagsTooltip': '删除标签',
   'tagManager_addTagTooltip': '添加标签',
   'tagManager_createGroupTooltip': '创建分组',
+
+  // const Text 硬编码迁移(zh)
+  'widget_listenedEvents': 'Listened Events',
+  'widget_tapToSelectData': 'Tap to select data',
+  'widget_routeViewer': 'Route Viewer',
 };

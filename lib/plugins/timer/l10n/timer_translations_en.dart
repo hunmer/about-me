@@ -109,5 +109,8 @@ class TimerTranslationsEn {
     'timer_editTask': 'Edit Timer',
     'timer_taskNameHint': 'e.g. Morning Focus',
     'timer_taskNameRequired': 'Please enter a task name',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'timer_focusStats': 'Focus Stats',
+};
 }

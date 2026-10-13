@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../../models/agent_chain_node.dart';
 
+import 'package:get/get.dart';
 /// Agent 模式选择对话框
 ///
 /// 提供单 Agent 模式和 Agent 链模式的选择，
@@ -49,7 +50,7 @@ class AgentModeSelectionDialog extends StatelessWidget {
     final isCurrentlyChainMode = isChainMode && agentChain.isNotEmpty;
 
     return SimpleDialog(
-      title: const Text('选择配置模式'),
+      title: Text('agent_chat_selectConfigMode'.tr),
       children: [
         SimpleDialogOption(
           onPressed: () => Navigator.pop(context, 'single'),
@@ -58,7 +59,7 @@ class AgentModeSelectionDialog extends StatelessWidget {
               isCurrentlySingleMode ? Icons.check_circle : Icons.smart_toy,
               color: isCurrentlySingleMode ? Colors.green : null,
             ),
-            title: const Text('单 Agent 模式'),
+            title: Text('agent_chat_singleAgentMode'.tr),
             subtitle: Text(
               isCurrentlySingleMode
                   ? '${_getCurrentAgentDisplayText()} | 选择一个 Agent 进行对话'
@@ -73,7 +74,7 @@ class AgentModeSelectionDialog extends StatelessWidget {
               isCurrentlyChainMode ? Icons.check_circle : Icons.link,
               color: isCurrentlyChainMode ? Colors.green : null,
             ),
-            title: const Text('Agent 链模式'),
+            title: Text('agent_chat_agentChainMode'.tr),
             subtitle: Text(
               isCurrentlyChainMode
                   ? '${_getCurrentAgentDisplayText()} | 配置多个 Agent 顺序执行'

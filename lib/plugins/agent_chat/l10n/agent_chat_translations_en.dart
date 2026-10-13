@@ -158,4 +158,9 @@ const Map<String, String> agentChatTranslationsEn = {
 
   // Interface search
   'agent_chat_searchPlaceholder': 'Search conversations...',
+
+  // const Text 硬编码迁移(en)
+  'agent_chat_selectConfigMode': 'Select Config Mode',
+  'agent_chat_singleAgentMode': 'Single Agent Mode',
+  'agent_chat_agentChainMode': 'Agent Chain Mode',
 };

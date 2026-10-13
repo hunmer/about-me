@@ -1421,7 +1421,7 @@ class HomeScreenView extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.check_box_outline_blank),
-                  title: const Text('批量编辑'),
+                  title: Text('screens_batchEdit'.tr),
                   onTap: () {
                     Navigator.pop(context);
                     controller.toggleBatchMode();

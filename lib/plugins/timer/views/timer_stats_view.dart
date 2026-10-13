@@ -144,7 +144,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     final theme = Theme.of(context);
     return SuperCupertinoNavigationWrapper(
       // 收缩态标题；大标题与日期胶囊由导航栏承担（原页面内 header 移除）
-      title: const Text('专注统计'),
+      title: Text('timer_focusStats'.tr),
       largeTitle: '专注统计',
       enableSearchBar: false,
       largeTitleActions: [_buildWeekPill(theme)],

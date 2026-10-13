@@ -17,6 +17,7 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:material_emoji_picker/material_emoji_picker.dart';
 import '../types.dart';
 
+import 'package:get/get.dart';
 /// 内置表情资源目录（assets/emojis 下的图片作为表情包）
 const String kBuiltInEmojiAssetDir = 'assets/emojis';
 
@@ -68,7 +69,7 @@ Future<void> handleEmojiSelection({
                           ),
                         ),
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: const Text('贴图管理'),
+                    label: Text('chat_stickerManager'.tr),
                   ),
                 ),
                 Expanded(

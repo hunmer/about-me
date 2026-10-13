@@ -185,4 +185,8 @@ const Map<String, String> goodsTranslationsEn = {
   // Common Widgets
   'goods_commonWidgetsName': 'Goods Components',
   'goods_commonWidgetsDesc': 'Goods management common widgets',
+
+  // const Text 硬编码迁移(en)
+  'goods_nfcAddUsage': 'Add Usage via NFC',
+  'goods_loading': 'Loading...',
 };

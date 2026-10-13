@@ -935,7 +935,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
                     TextButton.icon(
                       onPressed: _clearLocalScriptPath,
                       icon: const Icon(Icons.clear, size: 16),
-                      label: const Text('清除'),
+                      label: Text('scripts_center_clear'.tr),
                       style: TextButton.styleFrom(
                         foregroundColor: theme.danger,
                       ),
@@ -943,7 +943,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
                   TextButton.icon(
                     onPressed: _pickLocalScriptFile,
                     icon: const Icon(Icons.folder_open, size: 16),
-                    label: const Text('选择文件'),
+                    label: Text('scripts_center_selectFile'.tr),
                   ),
                 ],
               ),
@@ -1360,8 +1360,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 事件选择
-                        const Text(
-                          '选择事件 *',
+                        Text('scripts_center_selectEventRequired'.tr,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -1661,7 +1660,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
                 Navigator.of(context).pop(name);
               }
             },
-            child: const Text('确定'),
+            child: Text('app_ok'.tr),
           ),
         ],
       ),
@@ -1713,7 +1712,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除配置文件'),
+        title: Text('scripts_center_deleteConfigFile'.tr),
         content: Text('确定删除配置文件「${current.name}」？其配置值将丢失。'),
         actions: [
           TextButton(
@@ -1723,7 +1722,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text('app_delete'.tr),
           ),
         ],
       ),

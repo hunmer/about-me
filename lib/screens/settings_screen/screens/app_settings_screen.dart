@@ -226,7 +226,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('应用设置')),
+      appBar: AppBar(title: Text('settings_screen_appSettings'.tr)),
       body: DSThemeBridge(
         child: ListView(
         // 底部叠加系统安全区高度，避免最后几项被遮挡

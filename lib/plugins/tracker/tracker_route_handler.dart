@@ -7,6 +7,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:get/get.dart';
 /// 目标追踪插件路由处理器
 class TrackerRouteHandler extends PluginRouteHandler {
   @override
@@ -226,7 +227,7 @@ class _AddProgressScreenState extends State<_AddProgressScreen> {
     final theme = DSThemeBridge.resolve(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NFC 添加进度'),
+        title: Text('tracker_nfcAddProgress'.tr),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),

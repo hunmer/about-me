@@ -179,5 +179,8 @@ class HabitsTranslationsZh {
     'habits_habitActions': '习惯操作',
     'habits_confirmDelete': '确认删除',
     'habits_confirmDeleteHabit': '确定要删除此习惯吗？',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'habits_nfcStartTimer': 'Start Timer via NFC',
+};
 }

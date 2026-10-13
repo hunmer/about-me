@@ -110,4 +110,8 @@ const Map<String, String> coreTranslationsEn = {
   'core_priorityDescription': 'Higher numbers have higher priority',
   'core_actionList': 'Action List',
   'core_noActionsAdded': 'No actions added, click the button above to add',
+
+  // const Text 硬编码迁移(en)
+  'core_selectPluginOverlay': 'Select Plugin Overlay',
+  'core_selectPluginOverlayDesc': 'Select a plugin to open in the overlay: ',
 };

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skribble/skribble.dart';
 
 import 'entry_detail_screen.dart';
@@ -23,6 +24,7 @@ import 'entry_editor_screen.dart';
 final DateTime _calendarMinMonth = DateTime(2010, 1, 1);
 final DateTime _calendarMaxMonth = DateTime(2030, 12, 31);
 const int _calendarLoadBatchSize = 3;
+const String _photoViewPrefKey = 'calendar_album_use_photo_view';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -50,6 +52,14 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   void initState() {
     super.initState();
+    // 恢复持久化的视图模式
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) {
+        setState(() {
+          _usePhotoView = prefs.getBool(_photoViewPrefKey) ?? false;
+        });
+      }
+    });
     // 使用 addPostFrameCallback 确保在第一帧渲染后初始化
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -226,8 +236,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ? 'calendar_album_switch_calendar_view'
                           : 'calendar_album_switch_photo_view')
                       .tr,
-                  onPressed:
-                      () => setState(() => _usePhotoView = !_usePhotoView),
+                  onPressed: () {
+                    setState(() => _usePhotoView = !_usePhotoView);
+                    // 视图模式持久化，重启后保持
+                    SharedPreferences.getInstance().then(
+                      (prefs) =>
+                          prefs.setBool(_photoViewPrefKey, _usePhotoView),
+                    );
+                  },
                 );
               },
             ),
@@ -948,6 +964,9 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
     Color(0xFF80CBC4),
   ];
 
+  /// 每行统一行高（有图片的行高；无图片的行留白保持同高）
+  static const double _photoRowHeight = 132;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -1079,15 +1098,17 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   Widget _imageFallback(AppThemeData theme) => Container(
-    width: 52,
-    height: 52,
+    width: 44,
+    height: 44,
     color: theme.surfaceAlt,
-    child: DsIcon(DsIconKind.image, size: 20, color: theme.textSub),
+    child: DsIcon(DsIconKind.image, size: 18, color: theme.textSub),
   );
 
-  /// 首图缩略图：白底圆角边框 + 按日期交错的小角度倾斜（拍立得效果）
+  /// 首图缩略图：白底圆角边框 + 左右随机小角度倾斜（拍立得效果）。
+  /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
   Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) {
-    final angle = ((day.day % 3) - 1) * 0.06;
+    const tilts = [-0.10, -0.05, 0.05, 0.10];
+    final angle = tilts[(day.day * 31 + day.month * 7) % tilts.length];
     return Transform.rotate(
       angle: angle,
       child: Container(
@@ -1104,8 +1125,8 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
           // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
           child: Image(
             image: ImageUtils.createImageProvider(imagePath),
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _imageFallback(theme),
           ),
@@ -1122,7 +1143,7 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
     // 周日开头，与 SyncfusionCalendarWidget（firstDayOfWeek=7）一致
     final leadingBlanks = firstDay.weekday % 7;
 
-    // 按周分行；行内任一天有笔记时用高行高容纳名称与图片
+    // 按周分行；所有行统一行高，无图片的格子留白不缩行
     final rows = <List<DateTime?>>[];
     var currentRow = List<DateTime?>.filled(leadingBlanks, null, growable: true);
     for (var day = 1; day <= daysInMonth; day++) {
@@ -1137,17 +1158,12 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
       rows.add(currentRow);
     }
 
-    double rowHeight(List<DateTime?> row) {
-      final hasContent = row.any((d) => d != null && dayData.containsKey(d));
-      return hasContent ? 132.0 : 36.0;
-    }
-
-    Widget buildDayCell(DateTime day, _PhotoDayInfo? info, double height) {
+    Widget buildDayCell(DateTime day, _PhotoDayInfo? info) {
       final isToday = _isSameDay(day, DateTime.now());
       final isSelected = _isSameDay(day, widget.selectedDate);
 
       return SizedBox(
-        height: height,
+        height: _photoRowHeight,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => widget.onDateSelected(day),
@@ -1233,10 +1249,13 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
               onTap: () => widget.onHeaderTapped(month),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Text(
-                  DateFormat('yyyy年MM月').format(month),
-                  style: DsTypography.heading.copyWith(color: theme.text),
-                  textAlign: TextAlign.center,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    DateFormat('yyyy年MM月').format(month),
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
@@ -1265,12 +1284,8 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                     Expanded(
                       child:
                           day == null
-                              ? SizedBox(height: rowHeight(row))
-                              : buildDayCell(
-                                day,
-                                dayData[day],
-                                rowHeight(row),
-                              ),
+                              ? const SizedBox(height: _photoRowHeight)
+                              : buildDayCell(day, dayData[day]),
                     ),
                 ],
               ),

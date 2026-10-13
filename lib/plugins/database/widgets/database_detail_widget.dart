@@ -132,7 +132,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('排序方式', style: TextStyle(fontWeight: FontWeight.w500)),
+        Text('database_sortMethod'.tr, style: TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         SegmentedButton<RecordSortOption>(
           segments: const [

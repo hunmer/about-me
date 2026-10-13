@@ -844,8 +844,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                       margin: EdgeInsets.zero,
                       child: ListTile(
                         leading: const Icon(Icons.photo_library_outlined),
-                        title: const Text('资产图库'),
-                        subtitle: const Text('三视图、房间照片等形象参考图，生图时保持一致'),
+                        title: Text('openai_assetGallery'.tr),
+                        subtitle: Text('openai_assetGalleryDesc'.tr),
                         trailing: const Icon(Icons.chevron_right),
                         onTap:
                             widget.agent == null

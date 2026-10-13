@@ -7,6 +7,7 @@ import 'views/list_selection_view.dart';
 import 'views/grid_selection_view.dart';
 import 'views/calendar_selection_view.dart';
 
+import 'package:get/get.dart';
 /// 数据选择器 Sheet
 ///
 /// 使用 smooth_sheets 实现多级导航的数据选择器
@@ -356,7 +357,7 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadCurrentStepData,
-              child: const Text('重试'),
+              child: Text('app_retry'.tr),
             ),
           ],
         ),

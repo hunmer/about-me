@@ -9,6 +9,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_execution_logger.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
 
+import 'package:get/get.dart';
 /// 脚本执行记录页面
 ///
 /// 展示所有脚本的历史执行记录（手动/事件/互调/自动运行），
@@ -87,17 +88,17 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清空执行记录'),
-        content: const Text('确定删除全部执行记录？此操作不可恢复。'),
+        title: Text('scripts_center_clearExecutionLogs'.tr),
+        content: Text('scripts_center_confirmClearLogs'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('清空'),
+            child: Text('scripts_center_clearAll'.tr),
           ),
         ],
       ),
@@ -113,7 +114,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('终止脚本'),
+        title: Text('scripts_center_terminateScript'.tr),
         content: Text(
           '确定终止「$scriptName」？\n\n'
           '将中断脚本所有挂起的操作，执行记录中会标记为"脚本已被用户终止"。\n'
@@ -122,12 +123,12 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('终止'),
+            child: Text('scripts_center_terminate'.tr),
           ),
         ],
       ),
@@ -180,8 +181,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
 
               if (entry.error != null) ...[
                 const SizedBox(height: 12),
-                const Text(
-                  '错误信息',
+                Text('scripts_center_errorMessage'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
@@ -200,8 +200,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
               ],
               if (entry.resultSummary != null) ...[
                 const SizedBox(height: 12),
-                const Text(
-                  '返回结果',
+                Text('scripts_center_returnValue'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
@@ -230,7 +229,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
+            child: Text('app_close'.tr),
           ),
         ],
       ),
@@ -279,7 +278,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
           appBar: AppBar(
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
-            title: const Text('图片预览', style: TextStyle(fontSize: 16)),
+            title: Text('scripts_center_imagePreview'.tr, style: TextStyle(fontSize: 16)),
           ),
           body: Center(
             child: InteractiveViewer(
@@ -287,8 +286,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
               child: Image.file(
                 File(imgPath),
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Text(
-                  '图片加载失败（文件可能已被移动或删除）',
+                errorBuilder: (_, __, ___) => Text('scripts_center_imageLoadFailed'.tr,
                   style: TextStyle(color: Colors.white70),
                 ),
               ),
@@ -405,7 +403,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
           child: Row(
             children: [
               FilterChip(
-                label: const Text('仅失败'),
+                label: Text('scripts_center_failedOnly'.tr),
                 selected: _onlyFailed,
                 onSelected: (v) => setState(() => _onlyFailed = v),
               ),
@@ -416,7 +414,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                     child: DropdownButton<String?>(
                       value: _filterScriptId,
                       isExpanded: true,
-                      hint: const Text('全部脚本'),
+                      hint: Text('scripts_center_allScripts'.tr),
                       items: [
                         const DropdownMenuItem<String?>(
                           value: null,

@@ -430,12 +430,12 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('取消'),
+                        child: Text('app_cancel'.tr),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: _onConfirm,
-                        child: const Text('确认'),
+                        child: Text('app_confirm'.tr),
                       ),
                     ],
                   ),

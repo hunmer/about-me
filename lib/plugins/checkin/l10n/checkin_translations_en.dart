@@ -130,5 +130,8 @@ class CheckinTranslationsEn {
     'checkin_timeYesterday': 'Yesterday',
     'checkin_searchEmptyTitle': 'No matching check-in items',
     'checkin_searchEmptyHint': 'Try searching with other keywords',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'checkin_nfcCheckin': 'NFC Check-in',
+};
 }

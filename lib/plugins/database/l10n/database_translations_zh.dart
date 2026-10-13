@@ -66,5 +66,8 @@ class DatabaseTranslationsZh {
     'database_widgetDescription': '快速打开数据库',
     'database_overviewName': '数据库概览',
     'database_overviewDescription': '显示数据库统计信息',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'database_sortMethod': 'Sort Method',
+};
 }

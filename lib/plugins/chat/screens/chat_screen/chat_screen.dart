@@ -759,7 +759,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   DsIcon(DsIconKind.list, size: 18, color: ds.textSub),
                   const SizedBox(width: 12),
-                  const Text('多选模式'),
+                  Text('chat_multiSelectMode'.tr),
                 ],
               ),
             ),
@@ -769,7 +769,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   DsIcon(DsIconKind.trash, size: 18, color: ds.danger),
                   const SizedBox(width: 12),
-                  const Text('清空消息'),
+                  Text('chat_clearMessages'.tr),
                 ],
               ),
             ),

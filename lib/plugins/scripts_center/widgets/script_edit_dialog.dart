@@ -420,8 +420,7 @@ class _ScriptEditDialogState extends State<ScriptEditDialog> {
                                           color: Colors.orange.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
-                                        child: const Text(
-                                          '必填',
+                                        child: Text('scripts_center_required'.tr,
                                           style: TextStyle(
                                             color: Colors.orange,
                                             fontSize: 10,
@@ -601,8 +600,7 @@ class _ScriptEditDialogState extends State<ScriptEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '选择图标',
+        Text('app_selectIcon'.tr,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,

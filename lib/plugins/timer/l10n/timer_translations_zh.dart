@@ -109,5 +109,8 @@ class TimerTranslationsZh {
     'timer_editTask': '编辑计时器',
     'timer_taskNameHint': '例如: 晨间专注',
     'timer_taskNameRequired': '请输入任务名称',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'timer_focusStats': 'Focus Stats',
+};
 }

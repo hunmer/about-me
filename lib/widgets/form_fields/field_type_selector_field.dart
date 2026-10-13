@@ -11,6 +11,7 @@ import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/plugins/database/controllers/field_controller.dart';
 import 'package:aboutme/plugins/database/models/field_model.dart';
 
+import 'package:get/get.dart';
 /// 字段类型选择器字段
 ///
 /// 功能特性：
@@ -549,11 +550,11 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
         // 右侧取消/确定按钮
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         FilledButton(
           onPressed: _hasSelection ? _handleConfirm : null,
-          child: const Text('确定'),
+          child: Text('app_ok'.tr),
         ),
       ],
     );

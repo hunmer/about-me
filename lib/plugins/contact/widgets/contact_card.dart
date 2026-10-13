@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/common/contact_card.dart';
 
+import 'package:get/get.dart';
 /// 联系人卡片组件（使用公共小组件）
 ///
 /// 基于声明式构建，使用 ContactCardWidget 作为渲染层
@@ -113,12 +114,12 @@ class _ContactCardState extends State<ContactCard> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          title: const Text('确认删除'),
+          title: Text('contact_confirmDelete'.tr),
           content: Text('确定要删除联系人 "${widget.contact.name}" 吗？\n此操作不可撤销。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text('app_cancel'.tr),
             ),
             TextButton(
               onPressed: () async {
@@ -129,7 +130,7 @@ class _ContactCardState extends State<ContactCard> {
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('删除'),
+              child: Text('app_delete'.tr),
             ),
           ],
         );

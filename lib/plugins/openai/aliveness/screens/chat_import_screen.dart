@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/chat_import_service.da
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 
+import 'package:get/get.dart';
 /// 分析聊天记录（活人感·记忆初始化 / TA 人格克隆）：
 /// 导入 txt/zip 聊天记录分段分析，两种模式：
 /// 1. 新建 AI：提取 TA（聊天对象）的人格生成人设创建新 AI（配置克隆自当前 AI），
@@ -131,7 +132,7 @@ class _ChatImportScreenState extends State<ChatImportScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('分析聊天记录')),
+      appBar: AppBar(title: Text('openai_analyzeChatHistory'.tr)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -198,7 +199,7 @@ class _ChatImportScreenState extends State<ChatImportScreen> {
               : FilledButton.icon(
                   onPressed: _files.isEmpty ? null : _start,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('开始分析'),
+                  label: Text('openai_startAnalysis'.tr),
                 ),
         ),
       ),
@@ -214,7 +215,7 @@ class _ChatImportScreenState extends State<ChatImportScreen> {
             value: _ImportMode.createAgent,
             groupValue: _mode,
             onChanged: _analyzing ? null : (v) => setState(() => _mode = v!),
-            title: const Text('还原 TA，新建 AI'),
+            title: Text('openai_restoreCreateNewAI'.tr),
             subtitle: Text(
               '提取 TA（聊天对象）的说话风格与人格生成新 AI（模型配置复制自「${widget.agentName}」），'
               '同时把「我」的信息记入它的记忆',
@@ -224,7 +225,7 @@ class _ChatImportScreenState extends State<ChatImportScreen> {
             value: _ImportMode.memoryOnly,
             groupValue: _mode,
             onChanged: _analyzing ? null : (v) => setState(() => _mode = v!),
-            title: const Text('补充当前 AI 的记忆'),
+            title: Text('openai_supplementCurrentAIMemory'.tr),
             subtitle: Text(
               '只提取「我」的信息碎片，写入「${widget.agentName}」的记忆库',
             ),
@@ -321,11 +322,11 @@ class _ChatImportScreenState extends State<ChatImportScreen> {
               ),
             ),
             icon: const Icon(Icons.psychology_alt, size: 18),
-            label: const Text('查看记忆'),
+            label: Text('openai_viewMemory'.tr),
           ),
         if ((result.addedFragments) > 0 && !result.cancelled)
           ActionChip(
-            label: const Text('继续导入更多记录'),
+            label: Text('openai_continueImportMore'.tr),
             onPressed: _analyzing ? null : _pickFiles,
           ),
       ],

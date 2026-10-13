@@ -255,12 +255,12 @@ class ContactFormState extends State<ContactForm> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          title: const Text('确认删除'),
+          title: Text('contact_confirmDelete'.tr),
           content: Text('确定要删除联系人 "${targetContact.name}" 吗？\n此操作不可撤销。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text('app_cancel'.tr),
             ),
             TextButton(
               onPressed: () async {
@@ -276,7 +276,7 @@ class ContactFormState extends State<ContactForm> {
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('删除'),
+              child: Text('app_delete'.tr),
             ),
           ],
         );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'jelly_speech_bubble.dart';
 import 'jelly_configurable_image.dart';
 
+import 'package:get/get.dart';
 Future<BubbleTextRegions?> showBubbleRegionEditor({
   required BuildContext context,
   required String asset,
@@ -54,13 +55,13 @@ class _BubbleRegionEditorState extends State<_BubbleRegionEditor> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('标注气泡区域'),
+      title: Text('screens_markBubbleRegion'.tr),
       content: SizedBox(
         width: 720,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('选择区域后，在图片上拖拽绘制矩形。红色为模型名称，蓝色为正文。'),
+            Text('screens_markBubbleRegionDesc'.tr),
             const SizedBox(height: 12),
             AspectRatio(
               aspectRatio: 16 / 9,
@@ -104,12 +105,12 @@ class _BubbleRegionEditorState extends State<_BubbleRegionEditor> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('app_cancel'.tr),
         ),
         FilledButton(
           onPressed: () =>
               Navigator.pop(context, BubbleTextRegions(_name, _message)),
-          child: const Text('保存'),
+          child: Text('app_save'.tr),
         ),
       ],
     );

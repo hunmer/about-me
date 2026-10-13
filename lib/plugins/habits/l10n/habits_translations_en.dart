@@ -185,5 +185,8 @@ class HabitsTranslationsEn {
     'habits_habitActions': 'Habit Actions',
     'habits_confirmDelete': 'Confirm Delete',
     'habits_confirmDeleteHabit': 'Are you sure you want to delete this habit?',
-  };
+  
+  // const Text 硬编码迁移(en)
+  'habits_nfcStartTimer': 'Start Timer via NFC',
+};
 }

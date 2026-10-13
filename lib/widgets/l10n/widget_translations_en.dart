@@ -162,4 +162,9 @@ const Map<String, String> enUS = {
   'tagManager_deleteTagsTooltip': 'Delete Tags',
   'tagManager_addTagTooltip': 'Add Tag',
   'tagManager_createGroupTooltip': 'Create Group',
+
+  // const Text 硬编码迁移(en)
+  'widget_listenedEvents': 'Listened Events',
+  'widget_tapToSelectData': 'Tap to select data',
+  'widget_routeViewer': 'Route Viewer',
 };

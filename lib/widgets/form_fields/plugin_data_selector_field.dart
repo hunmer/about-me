@@ -5,6 +5,7 @@ import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_config.dart';
 import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 
+import 'package:get/get.dart';
 /// 插件数据选择器字段
 ///
 /// 功能特性：
@@ -117,7 +118,7 @@ class _PluginDataSelectorFieldState
                 ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
                 : Icon(Icons.smart_toy, color: Theme.of(context).colorScheme.primary),
         title: Text(_selectedTitle ?? _selectedId ?? '未选择'),
-        subtitle: _selectedId != null ? null : const Text('点击选择数据'),
+        subtitle: _selectedId != null ? null : Text('widget_tapToSelectData'.tr),
         trailing: const Icon(Icons.chevron_right),
         onTap: widget.enabled ? _showSelector : null,
       ),

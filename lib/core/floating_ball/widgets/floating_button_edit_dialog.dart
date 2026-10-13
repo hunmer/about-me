@@ -317,8 +317,7 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '按钮图标',
+                        Text('floating_ball_buttonIcon'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                           ),

@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/goods/screens/goods_item_history_page.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
 import 'package:intl/intl.dart';
 
+import 'package:get/get.dart';
 /// 物品详情页面
 class GoodsItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -114,7 +115,7 @@ class _GoodsItemDetailScreenState extends State<GoodsItemDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('加载中...')),
+        appBar: AppBar(title: Text('goods_loading'.tr)),
         body: const DSThemeBridge(child: Center(child: DSLoadingDots())),
       );
     }

@@ -19,6 +19,11 @@ class NotesMainViewState extends State<NotesMainView> {
   bool isSearching = false;
   @protected
   final TextEditingController searchController = TextEditingController();
+  // 多条件过滤状态（标签/日期），供搜索、过滤与路由上下文共享
+  @protected
+  String? selectedTag;
+  @protected
+  DateTime? selectedDate;
 
   late NotesPlugin plugin;
 

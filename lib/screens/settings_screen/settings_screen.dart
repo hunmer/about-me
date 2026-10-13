@@ -63,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('修改用户名'),
+            title: Text('settings_screen_changeUsername'.tr),
             content: TextField(
               controller: nameController,
               autofocus: true,

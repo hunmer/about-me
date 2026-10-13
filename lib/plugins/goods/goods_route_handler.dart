@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/goods/screens/warehouse_detail_screen.dart';
 import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
+import 'package:get/get.dart';
 /// 物品插件路由处理器
 class GoodsRouteHandler extends PluginRouteHandler {
   @override
@@ -290,7 +291,7 @@ class _AddUsageRecordScreenState extends State<_AddUsageRecordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NFC 添加使用记录'),
+        title: Text('goods_nfcAddUsage'.tr),
         backgroundColor: Colors.orange,
         foregroundColor: Colors.white,
       ),

@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 
+import 'package:get/get.dart';
 /// Agent 编辑页的「活人感增强」配置分组：总开关 + 核心参数。
 /// 通过 onChanged 回调同步给外部 state，随 agent 一起保存。
 class AlivenessSettingsSection extends StatefulWidget {
@@ -67,8 +68,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
         children: [
           SwitchListTile(
             secondary: const Icon(Icons.auto_awesome_outlined),
-            title: const Text('活人感增强'),
-            subtitle: const Text('开启后该 AI 会缓冲思考、分条回复、有节奏地聊天'),
+            title: Text('openai_alivenessEnhance'.tr),
+            subtitle: Text('openai_alivenessEnhanceDesc'.tr),
             value: config.enabled,
             onChanged: (v) => widget.onChanged(config.copyWith(enabled: v)),
           ),
@@ -91,7 +92,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('Jev 拟人度评分与自动修订'),
+                    title: Text('openai_jevScoreAutoRevise'.tr),
                     subtitle: Text(
                       '低于 ${config.humanScoreThreshold}/3 时让模型重新生成一次',
                     ),
@@ -174,8 +175,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('语音主动发送'),
-                    subtitle: const Text('情绪浓时以语音形式追加回复（需配置支持合成的 TTS 服务）'),
+                    title: Text('openai_voiceProactiveSend'.tr),
+                    subtitle: Text('openai_voiceProactiveSendDesc'.tr),
                     value: config.voiceEnabled,
                     onChanged: (v) =>
                         widget.onChanged(config.copyWith(voiceEnabled: v)),
@@ -186,8 +187,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('主动消息'),
-                    subtitle: const Text('久未联系或待跟进事件到期时，AI 会主动来找你'),
+                    title: Text('openai_proactiveMessages'.tr),
+                    subtitle: Text('openai_proactiveMessagesDesc'.tr),
                     value: config.proactiveEnabled,
                     onChanged: (v) =>
                         widget.onChanged(config.copyWith(proactiveEnabled: v)),
@@ -224,7 +225,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                       TextButton.icon(
                         onPressed: () => showJevSettingsDialog(context),
                         icon: const Icon(Icons.tune, size: 16),
-                        label: const Text('决策模型'),
+                        label: Text('openai_decisionModel'.tr),
                       ),
                       TextButton.icon(
                         onPressed: widget.agentId == null
@@ -237,7 +238,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                                 ),
                               ),
                         icon: const Icon(Icons.wb_sunny_outlined, size: 16),
-                        label: const Text('AI日程'),
+                        label: Text('openai_aiSchedule'.tr),
                       ),
                       TextButton.icon(
                         onPressed: widget.agentId == null
@@ -250,7 +251,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                                 ),
                               ),
                         icon: const Icon(Icons.upload_file, size: 16),
-                        label: const Text('分析聊天记录'),
+                        label: Text('openai_analyzeChatHistory'.tr),
                       ),
                       TextButton.icon(
                         onPressed: widget.agentId == null
@@ -263,7 +264,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                                 ),
                               ),
                         icon: const Icon(Icons.psychology_alt, size: 16),
-                        label: const Text('记忆管理'),
+                        label: Text('openai_memoryManagement'.tr),
                       ),
                       TextButton.icon(
                         onPressed: widget.agentId == null
@@ -276,7 +277,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                                 ),
                               ),
                         icon: const Icon(Icons.receipt_long, size: 16),
-                        label: const Text('决策日志'),
+                        label: Text('openai_decisionLog'.tr),
                       ),
                     ],
                   ),
@@ -309,8 +310,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
               isExpanded: true,
               value: validSelection ? selected : null,
               hint: _ttsServices.isEmpty
-                  ? const Text('未找到 TTS 服务')
-                  : const Text('跟随全局设置'),
+                  ? Text('openai_ttsServiceNotFound'.tr)
+                  : Text('openai_followGlobalSettings'.tr),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,

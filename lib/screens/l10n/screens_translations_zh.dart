@@ -382,4 +382,18 @@ final Map<String, String> screensTranslationsZh = {
   'screens_jellyLive2dConfigHttpError': '模型配置返回 HTTP @code',
   'screens_jellyLive2dConfigNotJson': '模型配置不是 JSON 对象',
   'screens_jellyLive2dUncategorized': '未分类',
+
+  // const Text 硬编码迁移(zh)
+  'screens_batchEdit': 'Batch Edit',
+  'screens_selectCommonWidgetStyle': 'Select Common Widget Style',
+  'screens_live2dInitFailed': 'Live2D chat failed to initialize',
+  'screens_markBubbleRegion': 'Mark Bubble Regions',
+  'screens_markBubbleRegionDesc': 'After selecting a region, drag on the image to draw rectangles. Red for model name, blue for body text.',
+  'screens_configureTopPanel': 'Configure Top Info Panel',
+  'screens_avatarPosition': 'Avatar Position',
+  'screens_expBarPosition': 'Exp Bar Position',
+  'screens_iconPosition': 'Icon Position',
+  'screens_valuePosition': 'Value Position',
+  'screens_logSystem': 'Log System',
+  'screens_confirmDeleteLogs': 'Delete all log files? This cannot be undone.',
 };

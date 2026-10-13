@@ -1,6 +1,7 @@
 import 'package:agentlib/agent_slots.dart';
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
 /// 弹出资源选择器，返回用户勾选的资源。
 Future<List<AgentResourceItem>?> showAgentResourceSelector({
   required BuildContext context,
@@ -71,7 +72,7 @@ class _AgentResourceSelectorState extends State<_AgentResourceSelector> {
                         .toList(),
                   );
                 },
-                child: const Text('完成'),
+                child: Text('app_done'.tr),
               ),
             ),
             Padding(

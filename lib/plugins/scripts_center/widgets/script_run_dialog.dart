@@ -445,13 +445,13 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
                       }
                     },
                     icon: const Icon(Icons.folder_open, size: 16),
-                    label: const Text('选择文件'),
+                    label: Text('scripts_center_selectFile'.tr),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () => _addImageUrl(input, paths),
                     icon: const Icon(Icons.link, size: 16),
-                    label: const Text('添加链接'),
+                    label: Text('scripts_center_addLink'.tr),
                   ),
                 ],
               ),
@@ -476,7 +476,7 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
     final urls = await showDialog<List<String>>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('添加图片链接'),
+        title: Text('scripts_center_addImageLink'.tr),
         content: TextField(
           controller: controller,
           maxLines: 4,
@@ -499,7 +499,7 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
                   .toList();
               Navigator.pop(context, list);
             },
-            child: const Text('添加'),
+            child: Text('app_add'.tr),
           ),
         ],
       ),

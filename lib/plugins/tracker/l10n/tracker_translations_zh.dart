@@ -95,5 +95,8 @@ class TrackerTranslationsZh {
     'tracker_quickAccess': '快速访问',
     'tracker_quickAccessDesc': '点击跳转到指定目标详情',
     'viewDetail': '查看详情',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'tracker_nfcAddProgress': 'Add Progress via NFC',
+};
 }

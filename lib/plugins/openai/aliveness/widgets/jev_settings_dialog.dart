@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/keepalive_service.dart';
 
+import 'package:get/get.dart';
 /// 活人感决策层（Jev）与运行配置对话框。
 /// 入口：插件设置页 + agent 编辑页活人感分组（两处复用）。
 Future<void> showJevSettingsDialog(BuildContext context) async {
@@ -27,7 +28,7 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (dialogContext, setDialogState) => AlertDialog(
-        title: const Text('活人感决策模型（Jev）'),
+        title: Text('openai_jevDecisionModel'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -65,8 +66,8 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
               const Divider(height: 24),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('前台保活（Android）'),
-                subtitle: const Text('常驻通知保持主动消息调度，离开 app 后仍可想念你'),
+                title: Text('openai_foregroundKeepAlive'.tr),
+                subtitle: Text('openai_foregroundKeepAliveDesc'.tr),
                 value: keepAlive,
                 onChanged: (v) => setDialogState(() => keepAlive = v),
               ),
@@ -76,7 +77,7 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             onPressed: () async {
@@ -105,7 +106,7 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
                 Navigator.of(dialogContext).pop();
               }
             },
-            child: const Text('保存'),
+            child: Text('app_save'.tr),
           ),
         ],
       ),

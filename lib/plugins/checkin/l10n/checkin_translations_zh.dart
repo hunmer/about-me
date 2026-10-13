@@ -130,5 +130,8 @@ class CheckinTranslationsZh {
     'checkin_timeYesterday': '昨天',
     'checkin_searchEmptyTitle': '未找到相关打卡项目',
     'checkin_searchEmptyHint': '尝试使用其他关键词搜索',
+
+  // const Text 硬编码迁移(zh)
+  'checkin_nfcCheckin': 'NFC Check-in',
 };
 }

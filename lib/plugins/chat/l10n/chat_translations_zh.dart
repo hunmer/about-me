@@ -202,5 +202,11 @@ class ChatTranslationsZh {
     'chat_refresh': '刷新',
     'chat_listView': '切换为列表视图',
     'chat_cardView': '切换为卡片视图',
-  };
+  
+  // const Text 硬编码迁移(zh)
+  'chat_deleteStickerPack': 'Delete Sticker Pack',
+  'chat_stickerManager': 'Sticker Manager',
+  'chat_deleteSticker': 'Delete Sticker',
+  'chat_confirmDeleteSticker': 'Delete this sticker?',
+};
 }

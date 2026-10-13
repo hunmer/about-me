@@ -223,16 +223,16 @@ class _SpeechRecognitionSettingsDialogState
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('确认清除'),
-            content: const Text('确定要清除AI纠错Agent设置吗？'),
+            title: Text('settings_screen_confirmClear'.tr),
+            content: Text('settings_screen_confirmClearAiCorrection'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('确定'),
+                child: Text('app_ok'.tr),
               ),
             ],
           ),
@@ -258,7 +258,7 @@ class _SpeechRecognitionSettingsDialogState
         children: [
           const Icon(Icons.mic),
           const SizedBox(width: 8),
-          const Text('语音识别设置'),
+          Text('settings_screen_speechRecognitionSettings'.tr),
         ],
       ),
       content: SingleChildScrollView(
@@ -415,7 +415,7 @@ class _SpeechRecognitionSettingsDialogState
                                 ),
                               ),
                               title: Text(_correctionAgent!.name),
-                              subtitle: const Text('已配置AI纠错助手'),
+                              subtitle: Text('settings_screen_aiCorrectionConfigured'.tr),
                               trailing: IconButton(
                                 icon: const Icon(Icons.delete_outline),
                                 onPressed: _clearCorrectionAgent,
@@ -432,7 +432,7 @@ class _SpeechRecognitionSettingsDialogState
                                   Expanded(
                                     child: FilledButton.icon(
                                       icon: const Icon(Icons.edit),
-                                      label: const Text('编辑AI纠错Agent'),
+                                      label: Text('settings_screen_editAiCorrectionAgent'.tr),
                                       onPressed: _configureCorrectionAgent,
                                     ),
                                   ),
@@ -460,7 +460,7 @@ class _SpeechRecognitionSettingsDialogState
                               const SizedBox(height: 12),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.add),
-                                label: const Text('配置AI纠错Agent'),
+                                label: Text('settings_screen_configureAiCorrectionAgent'.tr),
                                 onPressed: _configureCorrectionAgent,
                               ),
                             ],
@@ -478,7 +478,7 @@ class _SpeechRecognitionSettingsDialogState
         ),
         OutlinedButton(
           onPressed: _isLoading ? null : _testConnection,
-          child: const Text('验证配置'),
+          child: Text('settings_screen_verifyConfiguration'.tr),
         ),
         FilledButton(
           onPressed: _isLoading || !_hasChanges ? null : _saveSettings,

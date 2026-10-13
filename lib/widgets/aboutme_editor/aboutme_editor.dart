@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:intl/intl.dart';
 
+import 'package:get/get.dart';
 class AboutmeEditor extends StatefulWidget {
   final String? initialTitle;
   final String? initialContent; // JSON Delta or Plain Text
@@ -319,8 +320,7 @@ class _AboutmeEditorState extends State<AboutmeEditor> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    '保存',
+                  child: Text('app_save'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

@@ -150,7 +150,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('界面设置')),
+      appBar: AppBar(title: Text('settings_screen_interfaceSettings'.tr)),
       body: DSThemeBridge(
         child: ListView(
           padding: EdgeInsets.fromLTRB(

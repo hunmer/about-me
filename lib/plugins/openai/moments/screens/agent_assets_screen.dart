@@ -13,6 +13,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 
+import 'package:get/get.dart';
 /// Agent 资产图管理：占位生成 / 上传命名 / 图生图
 class AgentAssetsScreen extends StatefulWidget {
   final String agentId;
@@ -182,8 +183,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.upload_file),
-              title: const Text('上传照片'),
-              subtitle: const Text('从相册/本地选择，可命名'),
+              title: Text('openai_uploadPhoto'.tr),
+              subtitle: Text('openai_uploadPhotoDesc'.tr),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickAndUpload();
@@ -191,8 +192,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.auto_awesome),
-              title: const Text('新建占位'),
-              subtitle: const Text('定义名称与生成提示词，稍后用 AI 生成'),
+              title: Text('openai_createPlaceholder'.tr),
+              subtitle: Text('openai_createPlaceholderDesc'.tr),
               onTap: () {
                 Navigator.pop(ctx);
                 _showCreatePlaceholderDialog();
@@ -260,7 +261,7 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             if (asset.hasImage)
               ListTile(
                 leading: const Icon(Icons.fullscreen),
-                title: const Text('查看大图'),
+                title: Text('openai_viewFullImage'.tr),
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(
@@ -275,8 +276,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             if (!asset.hasImage)
               ListTile(
                 leading: const Icon(Icons.auto_awesome),
-                title: const Text('生成图片'),
-                subtitle: const Text('按提示词生成，自动附加 TA 的人设'),
+                title: Text('openai_generateImage'.tr),
+                subtitle: Text('openai_generateImageDesc'.tr),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showGenerateDialog(asset);
@@ -285,8 +286,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             else ...[
               ListTile(
                 leading: const Icon(Icons.transform),
-                title: const Text('以此图生成（图生图）'),
-                subtitle: const Text('以这张图为参考生成新图'),
+                title: Text('openai_img2img'.tr),
+                subtitle: Text('openai_img2imgDesc'.tr),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showImg2ImgDialog(asset);
@@ -294,8 +295,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.refresh),
-                title: const Text('重新生成'),
-                subtitle: const Text('覆盖当前图片'),
+                title: Text('openai_regenerate'.tr),
+                subtitle: Text('openai_overwriteCurrentImage'.tr),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showGenerateDialog(asset, overwrite: true);
@@ -312,7 +313,7 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('删除', style: TextStyle(color: Colors.red)),
+              title: Text('app_delete'.tr, style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(ctx);
                 _assetsService.deleteAsset(
@@ -453,11 +454,11 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('确定'),
+            child: Text('app_ok'.tr),
           ),
         ],
       ),

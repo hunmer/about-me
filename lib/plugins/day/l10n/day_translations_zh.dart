@@ -84,4 +84,8 @@ final Map<String, String> dayTranslationsZh = {
   'day_past30Days': '过去30天',
   'day_noMemorialDaysInRange': '该日期范围内暂无纪念日',
   'day_andMore': '还有 @count 个',
+
+  // const Text 硬编码迁移(zh)
+  'day_customRange': 'Custom Range',
+  'day_enterCustomDaysRange': 'Enter custom day range',
 };

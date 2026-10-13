@@ -521,7 +521,7 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
           ),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('导入JS文件'),
+            title: Text('scripts_center_importJsFile'.tr),
             onTap: () {
               Navigator.pop(context);
               _showImportScriptDialog(context);

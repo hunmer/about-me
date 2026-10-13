@@ -158,4 +158,9 @@ const Map<String, String> agentChatTranslationsZh = {
 
   // 界面搜索
   'agent_chat_searchPlaceholder': '搜索会话...',
+
+  // const Text 硬编码迁移(zh)
+  'agent_chat_selectConfigMode': 'Select Config Mode',
+  'agent_chat_singleAgentMode': 'Single Agent Mode',
+  'agent_chat_agentChainMode': 'Agent Chain Mode',
 };

@@ -98,6 +98,17 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
+# image_compress_plus_windows 依赖的 JPEG/PNG 由 FindJPEG/FindPNG 模块模式链接，
+# $<TARGET_RUNTIME_DLLS> 无法感知其运行时 DLL（WebP/Exiv2 为 CONFIG 模式可感知），需手动捆绑
+if(DEFINED ENV{VCPKG_ROOT})
+  set(VCPKG_RUNTIME_DLLS
+    "$ENV{VCPKG_ROOT}/installed/x64-windows/bin/jpeg62.dll"
+    "$ENV{VCPKG_ROOT}/installed/x64-windows/bin/libpng16.dll")
+  install(FILES ${VCPKG_RUNTIME_DLLS}
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

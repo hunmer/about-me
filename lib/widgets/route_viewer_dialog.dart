@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
+import 'package:get/get.dart';
 /// 路由信息数据模型
 class RouteInfo {
   final String path;
@@ -145,7 +146,7 @@ class _RouteViewerDialogState extends State<RouteViewerDialog> {
     final filteredRoutes = _filterRoutes(_searchQuery);
 
     return SuperCupertinoNavigationWrapper(
-      title: const Text('路由查看器'),
+      title: Text('widget_routeViewer'.tr),
       largeTitle: '路由查看器',
       enableLargeTitle: true,
       enableSearchBar: true,

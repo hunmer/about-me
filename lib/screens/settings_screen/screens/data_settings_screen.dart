@@ -57,7 +57,7 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('数据管理')),
+      appBar: AppBar(title: Text('data_management_dataManagementTitle'.tr)),
       body: DSThemeBridge(
         child: ListView(
           padding: EdgeInsets.fromLTRB(

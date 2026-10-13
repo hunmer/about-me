@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/chat/models/sticker_collection.dart';
 import 'package:aboutme/plugins/chat/services/sticker_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
+import 'package:get/get.dart';
 /// 贴图管理界面：合集列表（创建/重命名/删除/添加贴图）
 class StickerManagerScreen extends StatefulWidget {
   const StickerManagerScreen({super.key});
@@ -88,21 +89,21 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('删除贴图合集'),
+            title: Text('chat_deleteStickerPack'.tr),
             content: Text(
               '确定删除「${collection.name}」吗？将同时删除 ${collection.stickerCount} 张贴图文件，此操作不可恢复。',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.error,
                 ),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('删除'),
+                child: Text('app_delete'.tr),
               ),
             ],
           ),
@@ -139,11 +140,11 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('确定'),
+                child: Text('app_ok'.tr),
               ),
             ],
           ),
@@ -155,7 +156,7 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('贴图管理'),
+        title: Text('chat_stickerManager'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -344,16 +345,16 @@ class _StickerCollectionDetailScreenState
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('删除贴图'),
-            content: const Text('确定删除这张贴图吗？'),
+            title: Text('chat_deleteSticker'.tr),
+            content: Text('chat_confirmDeleteSticker'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
+                child: Text('app_cancel'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('删除'),
+                child: Text('app_delete'.tr),
               ),
             ],
           ),

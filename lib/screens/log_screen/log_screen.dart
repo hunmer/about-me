@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/core/services/log_service.dart';
 
+import 'package:get/get.dart';
 /// 日志查看界面
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -107,16 +108,16 @@ class _LogScreenState extends State<LogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: const Text('确定要删除所有日志文件吗？此操作不可恢复。'),
+        title: Text('contact_confirmDelete'.tr),
+        content: Text('screens_confirmDeleteLogs'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text('app_cancel'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+            child: Text('app_delete'.tr, style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -155,7 +156,7 @@ class _LogScreenState extends State<LogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('日志系统'),
+        title: Text('screens_logSystem'.tr),
         actions: [
           if (_logFiles.isNotEmpty)
             IconButton(

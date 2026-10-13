@@ -27,6 +27,7 @@ import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
 
+import 'package:get/get.dart' hide Value;
 /// 果冻小屋主页（应用默认启动页）
 ///
 /// 底部导航在四个页签间切换内容（不切换路由）：
@@ -512,7 +513,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       future: _controllerFuture,
       builder: (context, snapshot) {
         final controller = snapshot.data;
-        if (snapshot.hasError) return const Text('Live2D 聊天初始化失败');
+        if (snapshot.hasError) return Text('screens_live2dInitFailed'.tr);
         if (controller == null) return const SizedBox.shrink();
         // 液态玻璃磨砂背景：Impeller 下实时折射背景，
         // Skia/无 LiquidGlassView 时自动降级为磨砂（模糊 + 着色 + 描边）
