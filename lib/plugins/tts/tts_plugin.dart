@@ -140,8 +140,11 @@ class TTSPlugin extends BasePlugin {
                 final enabledCount = services.where((s) => s.isEnabled).length;
 
                 return Text(
-                  '已配置 ${services.length} 个服务，启用 $enabledCount 个',
-                  style: TextStyle(color: Colors.grey[600]),
+                  'tts_serviceStatusSummary'.trParams({
+                    'total': '${services.length}',
+                    'enabled': '$enabledCount',
+                  }),
+                  style: TextStyle(color: Theme.of(context).hintColor),
                 );
               },
             ),

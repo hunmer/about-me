@@ -247,7 +247,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   final bool isEnabled = snapshot.data ?? true;
                   return SettingsTile(
                     icon: Icons.touch_app,
-                    iconColor: const Color(0xFFEC4899),
+                    iconColor: DsAccentColors.pink,
                     title: 'settings_screen_floatingBallTitle'.tr,
                     subtitle: isEnabled
                         ? 'settings_screen_floatingBallEnabled'.tr
@@ -265,7 +265,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               if (UniversalPlatform.isAndroid)
                 SettingsTile(
                   icon: Icons.radio_button_checked,
-                  iconColor: const Color(0xFFF97316),
+                  iconColor: DsAccentColors.orange,
                   title: 'screens_floatingBallSettings'.tr,
                   subtitle: 'screens_manageSystemFloatingBall'.tr,
                   onTap: () {
@@ -274,7 +274,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
               SettingsTile(
                 icon: Icons.alarm,
-                iconColor: const Color(0xFFEF4444),
+                iconColor: DsAccentColors.red,
                 title: '定时提醒',
                 subtitle: '管理定时提醒任务',
                 onTap: () {
@@ -287,14 +287,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.extension,
-                iconColor: const Color(0xFF6366F1),
+                iconColor: DsAccentColors.indigo,
                 title: 'settings_screen_pluginManagementTitle'.tr,
                 subtitle: 'settings_screen_pluginManagementSubtitle'.tr,
                 onTap: _showPluginManagementSheet,
               ),
               SettingsTile(
                 icon: Icons.play_circle,
-                iconColor: const Color(0xFF10B981),
+                iconColor: DsAccentColors.emerald,
                 title: 'settings_screen_autoOpenLastPluginTitle'.tr,
                 subtitle: 'settings_screen_autoOpenLastPluginSubtitle'.tr,
                 showChevron: false,
@@ -308,7 +308,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.location_on,
-                iconColor: const Color(0xFFF59E0B),
+                iconColor: DsAccentColors.amber,
                 title: 'screens_locationApiKey'.tr,
                 subtitle: _controller.locationApiKey.isEmpty
                     ? 'screens_locationApiKeyNotSet'.tr
@@ -319,7 +319,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.mic,
-                iconColor: const Color(0xFF14B8A6),
+                iconColor: DsAccentColors.teal,
                 title: '语音识别设置',
                 subtitle: _isSpeechRecognitionConfigured
                     ? '已配置腾讯云语音识别'
@@ -340,7 +340,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             children: [
               SettingsTile(
                 icon: Icons.content_paste,
-                iconColor: const Color(0xFF3B82F6),
+                iconColor: DsAccentColors.blue,
                 title: '自动读取剪切板',
                 subtitle: '启用后将自动识别剪切板中的数据',
                 showChevron: false,
@@ -354,7 +354,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.content_paste_go,
-                iconColor: const Color(0xFF06B6D4),
+                iconColor: DsAccentColors.cyan,
                 title: '读取并识别剪切板',
                 subtitle: '手动读取剪切板中的数据并识别处理',
                 onTap: () async {
@@ -372,7 +372,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               if (showPermissionEntry)
                 SettingsTile(
                   icon: Icons.privacy_tip,
-                  iconColor: const Color(0xFF8B5CF6),
+                  iconColor: DsAccentColors.violet,
                   title: 'app_permissionsTitle'.tr,
                   subtitle: 'app_permissionsManageDescription'.tr,
                   onTap: () async {
@@ -394,7 +394,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             children: [
               SettingsTile(
                 icon: Icons.system_update,
-                iconColor: const Color(0xFF10B981),
+                iconColor: DsAccentColors.emerald,
                 title: 'settings_screen_autoCheckUpdateTitle'.tr,
                 subtitle: 'settings_screen_autoCheckUpdateSubtitle'.tr,
                 showChevron: false,
@@ -408,7 +408,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.update,
-                iconColor: const Color(0xFF3B82F6),
+                iconColor: DsAccentColors.blue,
                 title: 'settings_screen_checkUpdateTitle'.tr,
                 subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
                 onTap: _controller.checkForUpdates,
@@ -423,7 +423,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             children: [
               SettingsTile(
                 icon: Icons.notifications_active,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: 'Toast 测试',
                 subtitle: '测试 Toast 显示、动画和自定义 Widget',
                 onTap: () {
@@ -432,7 +432,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.record_voice_over,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: '后台播报测试',
                 subtitle: '测试 TTS 后台定时播报功能',
                 onTap: () {
@@ -444,7 +444,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.account_tree,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: '数据选择器测试',
                 subtitle: '测试插件数据选择器系统',
                 onTap: () {
@@ -453,7 +453,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.route,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: '路由查看器',
                 subtitle: '查看所有可用路由',
                 onTap: () {
@@ -462,7 +462,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.swipe,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: 'SwipeAction 测试',
                 subtitle: '测试滑动操作组件',
                 onTap: () {
@@ -471,7 +471,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.widgets,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: 'screens_jsonDynamicWidgetTest'.tr,
                 subtitle: 'screens_testAndPreviewDynamicUI'.tr,
                 onTap: () {
@@ -480,7 +480,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.notifications,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: 'screens_notificationTest'.tr,
                 onTap: () {
                   Navigator.pushNamed(context, '/notification_test');
@@ -488,7 +488,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.link,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: 'screens_intentTest'.tr,
                 subtitle: 'screens_testDynamicIntentAndDeepLink'.tr,
                 onTap: () {
@@ -498,7 +498,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               if (UniversalPlatform.isIOS)
                 SettingsTile(
                   icon: Icons.notifications_active,
-                  iconColor: const Color(0xFF64748B),
+                  iconColor: DsAccentColors.slate,
                   title: 'Live Activities 测试',
                   subtitle: '测试实时活动通知',
                   onTap: () {
@@ -507,7 +507,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
               SettingsTile(
                 icon: Icons.category,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: '通用组件示例',
                 subtitle: '查看 widgets 目录下的通用组件示例',
                 onTap: () {
@@ -516,7 +516,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.description,
-                iconColor: const Color(0xFF64748B),
+                iconColor: DsAccentColors.slate,
                 title: '日志系统',
                 subtitle: '查看和管理应用日志',
                 onTap: () {
@@ -533,7 +533,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             children: [
               SettingsTile(
                 icon: Icons.info,
-                iconColor: const Color(0xFF0EA5E9),
+                iconColor: DsAccentColors.sky,
                 title: 'app_aboutTitle'.tr,
                 onTap: () {
                   NavigationHelper.push(

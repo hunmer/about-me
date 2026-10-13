@@ -8,7 +8,10 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_ink_style_controller.dart';
+import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import '../widgets/settings_group.dart';
 import '../widgets/settings_tile.dart';
 
 /// 全局主题背景设置页面
@@ -659,6 +662,102 @@ class _ThemeBackgroundSettingsScreenState
     Colors.black,
   ];
 
+  /// 墨线档位文案（下标与 DsInkStyle.labels 对应）
+  static const List<String> _inkStyleKeys = [
+    'screens_inkStyleGentle',
+    'screens_inkStylePlayful',
+    'screens_inkStyleExpressive',
+  ];
+
+  /// 完整主题选择：色板 × 墨线档位成套切换，点击即全局生效
+  Widget _buildThemePicker() {
+    final theme = DSThemeBridge.resolve(context);
+
+    return ListenableBuilder(
+      // 主题 = 配色 + 墨线，两个控制器合并监听选中态
+      listenable: Listenable.merge([
+        DsThemeColorController(),
+        DsInkStyleController(),
+      ]),
+      builder: (context, _) {
+        final paletteId = DsThemeColorController().paletteId;
+        final inkIndex = DsInkStyle.index;
+        return Wrap(
+          spacing: theme.spacing.lg,
+          runSpacing: theme.spacing.md,
+          children:
+              DsThemePresets.all.map((preset) {
+                final selected =
+                    preset.palette.id == paletteId &&
+                    preset.inkIndex == inkIndex &&
+                    preset.strokeWidth == DsInkStyle.strokeWidth;
+                return GestureDetector(
+                  onTap: () {
+                    DsThemeColorController().setPalette(preset.palette.id);
+                    DsInkStyleController()
+                        .setStyle(preset.inkIndex, preset.strokeWidth);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 双层圆点：外圈主色、内芯背景色，直观预览主题观感
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: preset.palette.primary,
+                          border: Border.all(
+                            color: selected
+                                ? preset.palette.text
+                                : DsColors.transparent,
+                            width: 2.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: preset.palette.background,
+                            ),
+                            child: selected
+                                ? Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: preset.palette.primary,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'screens_themePreset_${preset.id}'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: selected ? theme.text : theme.textSub,
+                          fontWeight: selected ? FontWeight.w600 : null,
+                        ),
+                      ),
+                      // 墨线档位标注：同配色不同墨线的主题以此区分
+                      Text(
+                        _inkStyleKeys[preset.inkIndex].tr,
+                        style: DsTypography.caption.copyWith(
+                          fontSize: 10,
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -672,10 +771,18 @@ class _ThemeBackgroundSettingsScreenState
                 : ListView(
                   padding: EdgeInsets.all(theme.spacing.lg),
                   children: [
+                    // 主题风格：配色 × 墨线成套选择，点击全局即时生效
+                    SettingsGroup(
+                      title: 'screens_themeStyle'.tr,
+                      children: [_buildThemePicker()],
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
                     // 全局背景设置卡片
                     SettingsTile(
                       icon: Icons.image,
-                      iconColor: const Color(0xFF10B981),
+                      iconColor: DsAccentColors.emerald,
                       title: 'screens_globalBackgroundImage'.tr,
                       subtitle:
                           _backgroundPath != null
@@ -689,7 +796,7 @@ class _ThemeBackgroundSettingsScreenState
                     // 纯色背景设置卡片
                     SettingsTile(
                       icon: Icons.palette,
-                      iconColor: const Color(0xFF8B5CF6),
+                      iconColor: DsAccentColors.violet,
                       title: 'screens_solidBackgroundColor'.tr,
                       subtitle:
                           _backgroundColor != null

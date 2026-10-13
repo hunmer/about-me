@@ -53,6 +53,24 @@ abstract final class DsColors {
   static const Color transparent = Color(0x00000000);
 }
 
+/// 粉彩强调色板（Tailwind-500 系）：设置条目等处的分类图标色
+///
+/// 固定粉彩色，不随主题切换；消费方以低透明度派生底色（见 SettingsTile）
+abstract final class DsAccentColors {
+  static const Color pink = Color(0xFFEC4899);
+  static const Color red = Color(0xFFEF4444);
+  static const Color orange = Color(0xFFF97316);
+  static const Color amber = Color(0xFFF59E0B);
+  static const Color sky = Color(0xFF0EA5E9);
+  static const Color blue = Color(0xFF3B82F6);
+  static const Color cyan = Color(0xFF06B6D4);
+  static const Color teal = Color(0xFF14B8A6);
+  static const Color emerald = Color(0xFF10B981);
+  static const Color indigo = Color(0xFF6366F1);
+  static const Color violet = Color(0xFF8B5CF6);
+  static const Color slate = Color(0xFF64748B);
+}
+
 /// 颜色派生扩展：果冻质感的明暗渐变都从这里来
 extension DsColorX on Color {
   /// 向白色混合 [t]（0~1），用于顶部高光

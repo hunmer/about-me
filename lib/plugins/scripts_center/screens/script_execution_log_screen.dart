@@ -105,7 +105,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     );
     if (confirmed == true) {
       await widget.logger.clear();
-      if (mounted) Toast.success('执行记录已清空');
+      if (mounted) Toast.success('scripts_center_logsCleared'.tr);
     }
   }
 
@@ -116,9 +116,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
       builder: (context) => AlertDialog(
         title: Text('scripts_center_terminateScript'.tr),
         content: Text(
-          '确定终止「$scriptName」？\n\n'
-          '将中断脚本所有挂起的操作，执行记录中会标记为"脚本已被用户终止"。\n'
-          '注意：如有多个脚本同时在运行，会一并终止。',
+          'scripts_center_terminateConfirm'.trParams({'name': scriptName}),
         ),
         actions: [
           TextButton(
@@ -135,7 +133,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     );
     if (confirmed == true) {
       widget.executor?.terminateRunning();
-      if (mounted) Toast.success('已请求终止，等待脚本退出...');
+      if (mounted) Toast.success('scripts_center_terminateRequested'.tr);
     }
   }
 
@@ -149,20 +147,27 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _detailRow('状态', entry.success ? '成功' : '失败'),
-              _detailRow('触发方式', entry.trigger),
               _detailRow(
-                '耗时',
-                '${entry.durationMs}ms'
-                    '${entry.durationMs >= 1000 ? '（${(entry.durationMs / 1000).toStringAsFixed(1)}秒）' : ''}',
+                'scripts_center_status'.tr,
+                entry.success
+                    ? 'scripts_center_statusSuccess'.tr
+                    : 'scripts_center_statusFailed'.tr,
               ),
-              _detailRow('时间', _formatTime(entry.time)),
+              _detailRow('scripts_center_triggerMethod'.tr, entry.trigger),
+              _detailRow(
+                'scripts_center_duration'.tr,
+                '${entry.durationMs}ms'
+                    '${entry.durationMs >= 1000 ? 'scripts_center_secondsFormat'.trParams({'seconds': (entry.durationMs / 1000).toStringAsFixed(1)}) : ''}',
+              ),
+              _detailRow('scripts_center_time'.tr, _formatTime(entry.time)),
 
               // 生成的图片（本地路径，点击全屏查看）
               if (entry.images.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  '生成图片（${entry.images.length}）',
+                  'scripts_center_generatedImages'.trParams({
+                    'count': '${entry.images.length}',
+                  }),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -253,13 +258,14 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
             width: 100,
             height: 100,
             color: Colors.grey.withValues(alpha: 0.15),
-            child: const Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.broken_image_outlined,
+                const Icon(Icons.broken_image_outlined,
                     size: 28, color: Colors.grey),
-                SizedBox(height: 4),
-                Text('加载失败', style: TextStyle(fontSize: 10)),
+                const SizedBox(height: 4),
+                Text('scripts_center_loadFailed'.tr,
+                    style: const TextStyle(fontSize: 10)),
               ],
             ),
           ),
@@ -324,7 +330,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     final datePart = time.year == now.year &&
             time.month == now.month &&
             time.day == now.day
-        ? '今天'
+        ? 'scripts_center_today'.tr
         : '${time.year}-${two(time.month)}-${two(time.day)}';
     return '$datePart ${two(time.hour)}:${two(time.minute)}:${two(time.second)}';
   }
@@ -358,7 +364,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                                 size: 36,
                                 color: theme.surfaceAlt,
                                 iconColor: theme.textSub,
-                                tooltip: '返回',
+                                tooltip: 'core_back'.tr,
                                 onPressed:
                                     () => Navigator.of(context).maybePop(),
                               ),
@@ -367,7 +373,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                     automaticallyImplyTitle: false,
                     previousPageTitle: null,
                     userMiddle: Text(
-                      '执行记录',
+                      'scripts_center_executionLogs'.tr,
                       style: DsTypography.title.copyWith(color: theme.text),
                     ),
                     userTrailing: DSIconButton(
@@ -375,7 +381,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                       size: 36,
                       color: theme.surfaceAlt,
                       iconColor: theme.danger,
-                      tooltip: '清空记录',
+                      tooltip: 'scripts_center_clearExecutionLogs'.tr,
                       onPressed: _confirmClear,
                     ),
                     userLargeTitle: null,
@@ -416,9 +422,9 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                       isExpanded: true,
                       hint: Text('scripts_center_allScripts'.tr),
                       items: [
-                        const DropdownMenuItem<String?>(
+                        DropdownMenuItem<String?>(
                           value: null,
-                          child: Text('全部脚本'),
+                          child: Text('scripts_center_allScripts'.tr),
                         ),
                         ..._scriptOptions.map(
                           (id) => DropdownMenuItem<String?>(
@@ -471,7 +477,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Text(
-                            '${r.trigger} · 已运行 ${_formatElapsed(DateTime.now().difference(r.startTime))}',
+                            '${r.trigger} · ${'scripts_center_runningElapsed'.trParams({'elapsed': _formatElapsed(DateTime.now().difference(r.startTime))})}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.blue,
@@ -481,7 +487,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                               ? IconButton(
                                   icon: const Icon(Icons.stop_circle_outlined),
                                   color: Colors.red,
-                                  tooltip: '终止执行',
+                                  tooltip: 'scripts_center_terminate'.tr,
                                   onPressed: () => _confirmTerminate(r.scriptName),
                                 )
                               : null,
@@ -501,7 +507,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                                   size: 56, color: Colors.grey[400]),
                               const SizedBox(height: 12),
                               Text(
-                                '暂无执行记录',
+                                'scripts_center_noExecutionLogs'.tr,
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],
@@ -525,7 +531,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
                         ),
                         subtitle: Text(
                           '${_formatTime(e.time)} · ${e.trigger} · ${e.durationMs}ms'
-                          '${e.images.isNotEmpty ? ' · ${e.images.length}图' : ''}',
+                          '${e.images.isNotEmpty ? ' · ${'scripts_center_imagesShort'.trParams({'count': '${e.images.length}'})}' : ''}',
                           style: const TextStyle(fontSize: 12),
                         ),
                         trailing: e.success

@@ -142,4 +142,5 @@ const Map<String, String> ttsTranslationsZh = {
   'tts_emotionCalm': '平静',
   'tts_emotionFluent': '生动',
   'tts_emotionWhisper': '低语',
+  'tts_serviceStatusSummary': '已配置 @total 个服务，启用 @enabled 个',
 };

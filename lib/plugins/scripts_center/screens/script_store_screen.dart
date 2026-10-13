@@ -13,10 +13,18 @@ import 'package:aboutme/core/services/toast_service.dart';
 
 /// 脚本商场主界面
 class ScriptStoreScreen extends StatefulWidget {
-  const ScriptStoreScreen({super.key, this.embedded = false});
+  const ScriptStoreScreen({
+    super.key,
+    this.embedded = false,
+    this.searchQuery,
+  });
 
-  /// 内嵌模式：作为 tab 内容嵌入主视图时不显示返回按钮
+  /// 内嵌模式：作为 tab 内容嵌入主视图，外层已有导航栏，
+  /// 本页不再包 SuperCupertinoNavigationWrapper（避免双导航栏）
   final bool embedded;
+
+  /// 外层导航栏搜索词（嵌入模式由外部 wrapper 搜索栏驱动）
+  final String? searchQuery;
 
   @override
   State<ScriptStoreScreen> createState() => _ScriptStoreScreenState();
@@ -28,6 +36,16 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
 
   /// 多条件过滤状态
   final MultiFilterState _multiFilterState = MultiFilterState();
+
+  @override
+  void didUpdateWidget(covariant ScriptStoreScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchQuery != oldWidget.searchQuery) {
+      setState(() {
+        _searchKeyword = widget.searchQuery ?? '';
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -128,6 +146,73 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
 
     final filteredScripts = _getFilteredScripts(scriptStoreManager);
 
+    // 主体内容（嵌入与非嵌入共用）
+    final body = Column(
+      children: [
+        // 嵌入模式：外层已有导航栏，这里内联多条件过滤栏，
+        // 原导航栏 actions（源选择/源管理）挂在过滤栏尾部
+        if (widget.embedded)
+          MultiFilterBar(
+            filterItems: _buildFilterItems(scriptStoreManager),
+            filterState: _multiFilterState,
+            height: 50,
+            onFilterChanged: (filters) {
+              setState(() {});
+            },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.source),
+                  tooltip:
+                      scriptStoreManager.currentSource?.name ??
+                      'scripts_center_select_source'.tr,
+                  onPressed: () => _showSourcePicker(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'scripts_center_manage_sources'.tr,
+                  onPressed: () => _showSourceManagement(context),
+                ),
+              ],
+            ),
+          ),
+
+        // 脚本列表
+        Expanded(
+          child:
+              scriptStoreManager.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : scriptStoreManager.error != null
+                  ? _buildErrorView(scriptStoreManager)
+                  : filteredScripts.isEmpty
+                  ? _buildEmptyView()
+                  : ListView.builder(
+                      // 底部留出悬浮导航栏高度（内嵌 tab 时经 extendBody 注入）
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        16 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                      itemCount: filteredScripts.length,
+                      itemBuilder: (context, index) {
+                        return _buildScriptCard(filteredScripts[index]);
+                      },
+                    ),
+        ),
+
+        // 安装进度条
+        if (downloadManager.isInstalling)
+          _buildInstallProgress(downloadManager.currentTask!),
+      ],
+    );
+
+    // 嵌入模式：外层 wrapper 已提供导航栏/搜索栏，直接返回内容
+    if (widget.embedded) {
+      return body;
+    }
+
     return SuperCupertinoNavigationWrapper(
       title: Text('scripts_center_scriptStore'.tr),
       largeTitle: 'scripts_center_scriptStore'.tr,
@@ -164,38 +249,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
         ),
       ],
 
-      // 主体内容
-      body: Column(
-        children: [
-          // 脚本列表
-          Expanded(
-            child:
-                scriptStoreManager.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : scriptStoreManager.error != null
-                    ? _buildErrorView(scriptStoreManager)
-                    : filteredScripts.isEmpty
-                    ? _buildEmptyView()
-                    : ListView.builder(
-                      // 底部留出悬浮导航栏高度（内嵌 tab 时经 extendBody 注入）
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        16,
-                        16,
-                        16 + MediaQuery.paddingOf(context).bottom,
-                      ),
-                      itemCount: filteredScripts.length,
-                      itemBuilder: (context, index) {
-                        return _buildScriptCard(filteredScripts[index]);
-                      },
-                    ),
-          ),
-
-          // 安装进度条
-          if (downloadManager.isInstalling)
-            _buildInstallProgress(downloadManager.currentTask!),
-        ],
-      ),
+      body: body,
     );
   }
 

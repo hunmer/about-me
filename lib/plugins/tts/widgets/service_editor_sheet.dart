@@ -273,7 +273,16 @@ class _ServiceEditorSheetState extends State<ServiceEditorSheet> {
           final theme = DSThemeBridge.resolve(context);
           final isEditing = widget.service != null;
 
+          // 双档吸附：半屏档（视口65%）+ 满屏档；表单不足半屏时
+          // SheetOffset(1)（内容全显）像素更小，自动成为最低档
           return Sheet(
+            initialOffset: const SheetOffset.proportionalToViewport(0.65),
+            snapGrid: const SheetSnapGrid(
+              snaps: [
+                SheetOffset.proportionalToViewport(0.65),
+                SheetOffset(1),
+              ],
+            ),
             child: DsSketchPanel(
               theme: theme,
               width: double.infinity,

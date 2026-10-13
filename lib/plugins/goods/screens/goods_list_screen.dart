@@ -88,7 +88,9 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
       if (warehouse != null) {
         RouteHistoryManager.updateCurrentContext(
           pageId: "/goods/items_filtered",
-          title: '物品 - 仓库: ${warehouse.title}',
+          title: 'goods_routeTitleWarehouse'.trParams({
+            'warehouse': warehouse.title,
+          }),
           params: {
             'warehouseId': _filterWarehouseId!,
             'warehouseName': warehouse.title,
@@ -101,7 +103,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     // 没有筛选或找不到仓库，显示所有物品
     RouteHistoryManager.updateCurrentContext(
       pageId: "/goods/items_all",
-      title: '物品 - 所有物品',
+      title: 'goods_routeTitleAll'.tr,
       params: {},
     );
   }
@@ -669,7 +671,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
               card(
                 icon: DsIcon(DsIconKind.grid, size: 16, color: theme.primary),
                 title: 'goods_allWarehouses'.tr,
-                subtitle: '$totalCount 件物品',
+                subtitle: 'goods_itemCount'.trParams({'count': '$totalCount'}),
                 selected: _filterWarehouseId == null,
                 onTap: () => _selectWarehouse(null),
               ),
@@ -683,7 +685,9 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                       color: warehouse.iconColor,
                     ),
                     title: warehouse.title,
-                    subtitle: '${warehouse.items.length} 件物品',
+                    subtitle: 'goods_itemCount'.trParams({
+                      'count': '${warehouse.items.length}',
+                    }),
                     selected: _filterWarehouseId == warehouse.id,
                     onTap: () => _selectWarehouse(warehouse.id),
                   ),
@@ -701,7 +705,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
 
     return SuperCupertinoNavigationWrapper(
       title: Text('${'goods_allItems'.tr} (${allItems.length})'),
-      largeTitle: '物品',
+      largeTitle: 'goods_items'.tr,
       enableLargeTitle: true,
       enableSearchBar: true,
       searchPlaceholder: 'goods_searchGoods'.tr,

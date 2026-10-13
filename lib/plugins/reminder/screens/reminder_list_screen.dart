@@ -47,7 +47,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
       ),
       body: SuperCupertinoNavigationWrapper(
         title: Text('reminder_scheduledReminders'.tr),
-        largeTitle: '定时提醒',
+        largeTitle: 'reminder_scheduledReminders'.tr,
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _addReminder),
         ],
@@ -97,7 +97,9 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('reminder_deleteReminder'.tr),
-        content: Text('确定要删除提醒"${reminder.title}"吗？'),
+        content: Text(
+          'reminder_deleteConfirm'.trParams({'title': reminder.title}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

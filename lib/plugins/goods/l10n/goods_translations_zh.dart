@@ -181,4 +181,10 @@ const Map<String, String> goodsTranslationsZh = {
   // const Text 硬编码迁移(zh)
   'goods_nfcAddUsage': 'Add Usage via NFC',
   'goods_loading': 'Loading...',
+
+  // 物品列表页
+  'goods_items': '物品',
+  'goods_itemCount': '@count 件物品',
+  'goods_routeTitleWarehouse': '物品 - 仓库: @warehouse',
+  'goods_routeTitleAll': '物品 - 所有物品',
 };

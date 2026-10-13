@@ -76,179 +76,185 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 拖拽指示器
-            Container(
-              width: 40,
-              height: 4,
+    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与 ServiceEditorSheet 同款）
+    return DsSketchPanel(
+      theme: theme,
+      width: double.infinity,
+      radius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 拖拽把手：纯色小条 + 淡墨描边（与 showDSBottomSheet 同款）
+          Center(
+            child: Container(
               margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 44,
+              height: 5,
               decoration: BoxDecoration(
-                color: theme.textSub.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+                color: theme.surfaceAlt,
+                borderRadius: theme.radii.pill,
+                border: Border.all(
+                  color: theme.ink.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
               ),
             ),
-            // 标题
+          ),
+          // 标题
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: Row(
+              children: [
+                DsIcon(DsIconKind.volumeUp, size: 20, color: theme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'widget_voiceBroadcastSettings'.tr,
+                  style: DsTypography.title.copyWith(
+                    color: theme.text,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isLoading)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: DSLoadingDots(size: 12, color: theme.textSub),
+              ),
+            )
+          else ...[
+            // 内容区可滚动，服务多时不溢出
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 启用开关
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'widget_enableAutoRead'.tr,
+                                  style: DsTypography.body.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'widget_autoReadAIMessage'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          DSSwitch(
+                            value: _enabled,
+                            onChanged: (value) {
+                              setState(() {
+                                _enabled = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 服务选择
+                    if (_enabled && _services.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                        child: Text(
+                          'widget_selectTTSService'.tr,
+                          style: DsTypography.body.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      for (final service in _services)
+                        _buildServiceRow(context, service),
+                    ],
+
+                    // 无可用服务提示
+                    if (_enabled && _services.isEmpty)
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          radius: BorderRadius.circular(12),
+                          fillColor: theme.hatch,
+                        ),
+                        child: Row(
+                          children: [
+                            DsIcon(
+                              DsIconKind.info,
+                              size: 20,
+                              color: theme.danger,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'widget_noTTSServiceAvailable'.tr,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // 操作按钮
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  DsIcon(DsIconKind.volumeUp, size: 20, color: theme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'widget_voiceBroadcastSettings'.tr,
-                    style: DsTypography.title.copyWith(
-                      color: theme.text,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: DSButton(
+                      label: 'widget_cancel'.tr,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DSButton(
+                      label: 'widget_confirm'.tr,
+                      onPressed: () {
+                        final result = TTSSettingsResult(
+                          enabled: _enabled,
+                          serviceId: _selectedServiceId,
+                        );
+                        Navigator.of(context).pop(result);
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-            if (_isLoading)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: DSLoadingDots(size: 12, color: theme.textSub),
-                ),
-              )
-            else ...[
-              // 内容区可滚动，服务多时不溢出
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 启用开关
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'widget_enableAutoRead'.tr,
-                                    style: DsTypography.body.copyWith(
-                                      color: theme.text,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'widget_autoReadAIMessage'.tr,
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.textSub,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            DSSwitch(
-                              value: _enabled,
-                              onChanged: (value) {
-                                setState(() {
-                                  _enabled = value;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 服务选择
-                      if (_enabled && _services.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-                          child: Text(
-                            'widget_selectTTSService'.tr,
-                            style: DsTypography.body.copyWith(
-                              color: theme.text,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        for (final service in _services)
-                          _buildServiceRow(context, service),
-                      ],
-
-                      // 无可用服务提示
-                      if (_enabled && _services.isEmpty)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          decoration: dsSketchDecoration(
-                            theme: theme,
-                            radius: BorderRadius.circular(12),
-                            fillColor: theme.hatch,
-                          ),
-                          child: Row(
-                            children: [
-                              DsIcon(
-                                DsIconKind.info,
-                                size: 20,
-                                color: theme.danger,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'widget_noTTSServiceAvailable'.tr,
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.text,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              // 操作按钮
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DSButton(
-                        label: 'widget_cancel'.tr,
-                        variant: DSButtonVariant.outline,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DSButton(
-                        label: 'widget_confirm'.tr,
-                        onPressed: () {
-                          final result = TTSSettingsResult(
-                            enabled: _enabled,
-                            serviceId: _selectedServiceId,
-                          );
-                          Navigator.of(context).pop(result);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
-        ),
+          // 底部安全区
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
+        ],
       ),
     );
   }

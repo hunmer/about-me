@@ -86,38 +86,43 @@ class _ProductListState extends State<ProductList> {
     // 构建商品列表Widget
     Widget buildProductGrid(List<Product> products) {
       return products.isEmpty
-          ? Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DsIcon(DsIconKind.cart, size: 64, color: theme.textSub),
-                    const SizedBox(height: 16),
-                    Text(
-                      _searchQuery.isEmpty && _multiFilters.isEmpty
+          ? Center(
+            child: DSThemeBridge(
+              child: DSEmptyState(
+                emoji: '🛒',
+                title:
+                    _searchQuery.isEmpty && _multiFilters.isEmpty
                         ? 'store_noProducts'.tr
-                        : '未找到匹配的商品',
-                      style: DsTypography.body.copyWith(color: theme.textSub),
-                    ),
-                  ],
-                ),
-              );
-            },
+                        : 'store_noMatchingProducts'.tr,
+              ),
+            ),
           )
           : MasonryGridView.count(
             padding: EdgeInsets.fromLTRB(
-              8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
+              16,
+              16,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
             ),
             crossAxisCount: 2,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
-              return GestureDetector(
-                onTap: () {
+              // 点击卡片=兑换确认，长按菜单=兑换/编辑（卡片内部处理）
+              return ProductCard(
+                key: ValueKey(product.id),
+                product: product,
+                onExchange: () async {
+                  if (await widget.controller.exchangeProduct(product)) {
+                    if (mounted) setState(() {});
+                    Toast.success('store_redeemSuccess'.tr);
+                  } else {
+                    Toast.error('store_redeemFailed'.tr);
+                  }
+                },
+                onLongPress: () {
                   NavigationHelper.push(
                     context,
                     AddProductPage(
@@ -128,29 +133,6 @@ class _ProductListState extends State<ProductList> {
                     if (mounted) setState(() {});
                   });
                 },
-                child: ProductCard(
-                  key: ValueKey(product.id),
-                  product: product,
-                  onLongPress: () {
-                    NavigationHelper.push(
-                      context,
-                      AddProductPage(
-                        controller: widget.controller,
-                        product: product,
-                      ),
-                    ).then((_) {
-                      if (mounted) setState(() {});
-                    });
-                  },
-                  onExchange: () async {
-                    if (await widget.controller.exchangeProduct(product)) {
-                      if (mounted) setState(() {});
-                      Toast.success('store_redeemSuccess'.tr);
-                    } else {
-                      Toast.error('store_redeemFailed'.tr);
-                    }
-                  },
-                ),
               );
             },
           );
@@ -262,7 +244,7 @@ class _ProductListState extends State<ProductList> {
     ];
   }
 
-  /// 构建价格区间过滤器（积分）
+  /// 构建价格区间过滤器（积分），过滤面板内 DS 组件需经 DSThemeBridge 提供主题
   Widget _buildPriceRangeFilter({
     required BuildContext context,
     required dynamic currentValue,
@@ -276,58 +258,58 @@ class _ProductListState extends State<ProductList> {
     final maxController = TextEditingController(
       text: range['max']?.toString() ?? '',
     );
-    final theme = DSThemeBridge.resolve(context);
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'store_priceRange'.tr,
-            style: DsTypography.heading.copyWith(color: theme.text),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: minController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'store_minPrice'.tr,
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    final newRange = Map<String, double?>.from(range);
-                    newRange['min'] = double.tryParse(value);
-                    onChanged(newRange);
-                  },
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'store_priceRange'.tr,
+                  style: DsTypography.heading.copyWith(color: theme.text),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('-'),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: maxController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'store_maxPrice'.tr,
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    final newRange = Map<String, double?>.from(range);
-                    newRange['max'] = double.tryParse(value);
-                    onChanged(newRange);
-                  },
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSInput(
+                        controller: minController,
+                        label: 'store_minPrice'.tr,
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final newRange = Map<String, double?>.from(range);
+                          newRange['min'] = double.tryParse(value);
+                          onChanged(newRange);
+                        },
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text('-'),
+                    ),
+                    Expanded(
+                      child: DSInput(
+                        controller: maxController,
+                        label: 'store_maxPrice'.tr,
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final newRange = Map<String, double?>.from(range);
+                          newRange['max'] = double.tryParse(value);
+                          onChanged(newRange);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -399,7 +381,9 @@ class _ProductListState extends State<ProductList> {
                 children: [
                   for (final (index, label) in _sortLabels.indexed)
                     DSSheetAction(
-                      icon: DsIconKind.sort,
+                      icon: _sortIndex == index
+                          ? DsIconKind.check
+                          : DsIconKind.sort,
                       label: label.tr,
                       onTap: () {
                         close();

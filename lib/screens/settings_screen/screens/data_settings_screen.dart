@@ -72,7 +72,7 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
               children: [
                 SettingsTile(
                   icon: Icons.upload,
-                  iconColor: const Color(0xFFF97316),
+                  iconColor: DsAccentColors.orange,
                   title: 'settings_screen_exportDataTitle'.tr,
                   subtitle: 'settings_screen_exportDataSubtitle'.tr,
                   onTap: () {
@@ -83,7 +83,7 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
                 ),
                 SettingsTile(
                   icon: Icons.storage,
-                  iconColor: const Color(0xFF3B82F6),
+                  iconColor: DsAccentColors.blue,
                   title: 'settings_screen_dataManagementTitle'.tr,
                   subtitle: 'settings_screen_dataManagementSubtitle'.tr,
                   onTap: () {
@@ -96,7 +96,7 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
                 ),
                 SettingsTile(
                   icon: Icons.download,
-                  iconColor: const Color(0xFF10B981),
+                  iconColor: DsAccentColors.emerald,
                   title: 'settings_screen_importDataTitle'.tr,
                   subtitle: 'settings_screen_importDataSubtitle'.tr,
                   onTap: _controller.importData,
@@ -109,14 +109,14 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
               children: [
                 SettingsTile(
                   icon: Icons.backup,
-                  iconColor: const Color(0xFF8B5CF6),
+                  iconColor: DsAccentColors.violet,
                   title: 'settings_screen_fullBackupTitle'.tr,
                   subtitle: 'settings_screen_fullBackupSubtitle'.tr,
                   onTap: _controller.exportAllData,
                 ),
                 SettingsTile(
                   icon: Icons.restore,
-                  iconColor: const Color(0xFFF59E0B),
+                  iconColor: DsAccentColors.amber,
                   title: 'settings_screen_fullRestoreTitle'.tr,
                   subtitle: 'settings_screen_fullRestoreSubtitle'.tr,
                   trailing: const Icon(Icons.warning, color: Colors.orange),
@@ -130,7 +130,7 @@ class _DataSettingsScreenState extends State<DataSettingsScreen> {
               children: [
                 SettingsTile(
                   icon: Icons.cloud,
-                  iconColor: const Color(0xFF14B8A6),
+                  iconColor: DsAccentColors.teal,
                   title: '数据存储后端',
                   subtitle: globalStorage.isRemote ? 'HTTP 服务器' : '本地文件',
                   onTap: () async {

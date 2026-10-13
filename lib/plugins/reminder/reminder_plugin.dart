@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
@@ -58,7 +59,7 @@ class ReminderPlugin extends BasePlugin {
 
   @override
   String? getPluginName(context) {
-    return '定时提醒';
+    return 'reminder_scheduledReminders'.tr;
   }
 
   @override
@@ -84,7 +85,7 @@ class ReminderPlugin extends BasePlugin {
               ),
               const SizedBox(width: 12),
               Text(
-                '定时提醒',
+                'reminder_scheduledReminders'.tr,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -98,7 +99,7 @@ class ReminderPlugin extends BasePlugin {
               Column(
                 children: [
                   Text(
-                    '启用提醒',
+                    'reminder_enabledReminders'.tr,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   Text(

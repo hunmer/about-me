@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/notification_controller.dart';
 import 'package:aboutme_notifications/aboutme_notifications.dart';
 import '../models/reminder.dart';
@@ -109,10 +110,10 @@ class ReminderNotificationService {
           body: reminder.content,
           bigPicture: absolutePath,
           layout: AboutmeNotificationLayout.bigPicture,
-          actionButtons: const [
+          actionButtons: [
             AboutmeNotificationButton(
               key: 'dismiss',
-              label: '关闭',
+              label: 'app_close'.tr,
               actionType: AboutmeButtonActionType.dismissAction,
             ),
           ],
@@ -123,10 +124,10 @@ class ReminderNotificationService {
           id: notificationId,
           title: reminder.title,
           body: reminder.content,
-          actionButtons: const [
+          actionButtons: [
             AboutmeNotificationButton(
               key: 'dismiss',
-              label: '关闭',
+              label: 'app_close'.tr,
               actionType: AboutmeButtonActionType.dismissAction,
             ),
           ],

@@ -143,4 +143,24 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_required': 'Required',
   'scripts_center_addLink': 'Add Link',
   'scripts_center_addImageLink': 'Add Image Link',
+
+  // 执行记录页面
+  'scripts_center_logsCleared': 'Execution logs cleared',
+  'scripts_center_terminateConfirm':
+      'Terminate "@name"?\n\nThis will interrupt all pending operations of the script. The execution log will be marked as "Script terminated by user".\nNote: If multiple scripts are running at the same time, they will all be terminated.',
+  'scripts_center_terminateRequested':
+      'Termination requested, waiting for script to exit...',
+  'scripts_center_status': 'Status',
+  'scripts_center_statusSuccess': 'Success',
+  'scripts_center_statusFailed': 'Failed',
+  'scripts_center_triggerMethod': 'Trigger',
+  'scripts_center_duration': 'Duration',
+  'scripts_center_secondsFormat': ' (@seconds s)',
+  'scripts_center_time': 'Time',
+  'scripts_center_generatedImages': 'Generated Images (@count)',
+  'scripts_center_today': 'Today',
+  'scripts_center_runningElapsed': 'Running @elapsed',
+  'scripts_center_noExecutionLogs': 'No execution logs',
+  'scripts_center_imagesShort': '@count img',
+  'scripts_center_loadFailed': 'Load failed',
 };

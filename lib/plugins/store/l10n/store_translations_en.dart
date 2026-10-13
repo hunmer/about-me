@@ -203,4 +203,21 @@ const Map<String, String> storeTranslationsEn = {
   'store_sort': 'Sort',
   'store_newestFirst': 'Newest first',
   'store_oldestFirst': 'Oldest first',
+
+  // Card & empty states (minimal sketch redesign)
+  'store_use': 'Use',
+  'store_redeem': 'Redeem',
+  'store_editProduct': 'Edit product',
+  'store_expiringSoon': 'Expiring soon',
+  'store_daysLeft': '@days days left',
+  'store_remainingTimes': '@count uses left',
+  'store_validUntilDate': 'Valid until @date',
+  'store_pricePoints': '@price pts',
+  'store_redeemConfirmMessage': 'Redeem @name? It costs @price points.',
+  'store_emptyItemsHint': 'Redeem items in the product list',
+  'store_noItemsForFilter': 'No items match the filters',
+  'store_searchItemsHint': 'Type keywords to search items',
+  'store_noSearchResults': 'No matching items',
+  'store_tryOtherKeywords': 'Try different keywords',
+  'store_noMatchingProducts': 'No matching products',
 };

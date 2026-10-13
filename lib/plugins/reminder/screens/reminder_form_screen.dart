@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
@@ -26,8 +27,11 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
     final isEditing = widget.existingReminder != null;
 
     return SuperCupertinoNavigationWrapper(
-      title: Text(isEditing ? '编辑提醒' : '新建提醒'),
-      largeTitle: isEditing ? '编辑提醒' : '新建提醒',
+      title: Text(
+        isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
+      ),
+      largeTitle:
+          isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: FormBuilderWrapper(
@@ -37,20 +41,20 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               FormFieldConfig(
                 name: 'title',
                 type: FormFieldType.text,
-                labelText: '提醒标题',
+                labelText: 'reminder_titleLabel'.tr,
                 required: true,
                 initialValue: widget.existingReminder?.title,
-                validationMessage: '请输入提醒标题',
+                validationMessage: 'reminder_titleRequired'.tr,
               ),
 
               // 内容
               FormFieldConfig(
                 name: 'content',
                 type: FormFieldType.textArea,
-                labelText: '提醒内容',
+                labelText: 'reminder_contentLabel'.tr,
                 required: true,
                 initialValue: widget.existingReminder?.content,
-                validationMessage: '请输入提醒内容',
+                validationMessage: 'reminder_contentRequired'.tr,
                 extra: {'maxLines': 3},
               ),
 
@@ -58,7 +62,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               FormFieldConfig(
                 name: 'image',
                 type: FormFieldType.imagePicker,
-                labelText: '提醒图片（可选）',
+                labelText: 'reminder_imageLabel'.tr,
                 required: false,
                 initialValue:
                     widget.existingReminder?.imageUrl != null
@@ -71,7 +75,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               FormFieldConfig(
                 name: 'schedule',
                 type: FormFieldType.reminderDate,
-                labelText: '提醒时间',
+                labelText: 'reminder_timeLabel'.tr,
                 required: true,
                 initialValue:
                     widget.existingReminder != null
@@ -93,14 +97,23 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               FormFieldConfig(
                 name: 'pushMethod',
                 type: FormFieldType.select,
-                labelText: '推送方式',
+                labelText: 'reminder_pushMethodLabel'.tr,
                 required: true,
                 initialValue:
                     widget.existingReminder?.pushMethod.index.toString() ?? '0',
-                items: const [
-                  DropdownMenuItem(value: '0', child: Text('本地通知')),
-                  DropdownMenuItem(value: '1', child: Text('FCM 推送（暂未实现）')),
-                  DropdownMenuItem(value: '2', child: Text('两者都使用')),
+                items: [
+                  DropdownMenuItem(
+                    value: '0',
+                    child: Text('reminder_pushLocal'.tr),
+                  ),
+                  DropdownMenuItem(
+                    value: '1',
+                    child: Text('reminder_pushFcm'.tr),
+                  ),
+                  DropdownMenuItem(
+                    value: '2',
+                    child: Text('reminder_pushBoth'.tr),
+                  ),
                 ],
               ),
 
@@ -108,20 +121,21 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               FormFieldConfig(
                 name: 'priority',
                 type: FormFieldType.select,
-                labelText: '优先级',
+                labelText: 'reminder_priorityLabel'.tr,
                 required: false,
                 initialValue:
                     widget.existingReminder?.priority.toString() ?? '0',
-                items: const [
-                  DropdownMenuItem(value: '0', child: Text('普通')),
-                  DropdownMenuItem(value: '1', child: Text('重要')),
-                  DropdownMenuItem(value: '2', child: Text('紧急')),
-                  DropdownMenuItem(value: '3', child: Text('非常紧急')),
+                items: [
+                  for (var i = 0; i < 4; i++)
+                    DropdownMenuItem(
+                      value: '$i',
+                      child: Text('reminder_priority$i'.tr),
+                    ),
                 ],
               ),
             ],
             onSubmit: _handleSubmit,
-            submitButtonText: isEditing ? '保存' : '创建',
+            submitButtonText: isEditing ? 'app_save'.tr : 'app_create'.tr,
           ),
         ),
       ),
@@ -181,9 +195,9 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
     } catch (e) {
       debugPrint('[ReminderFormScreen] 保存失败: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('reminder_saveFailed'.trParams({'error': '$e'}))),
+        );
       }
     } finally {
       if (mounted) {

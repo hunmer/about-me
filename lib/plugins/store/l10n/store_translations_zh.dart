@@ -193,4 +193,21 @@ const Map<String, String> storeTranslationsZh = {
   'store_sort': '排序',
   'store_newestFirst': '从新到旧',
   'store_oldestFirst': '从旧到新',
+
+  // 卡片与空状态（goods 手绘简约风重构）
+  'store_use': '使用',
+  'store_redeem': '兑换',
+  'store_editProduct': '编辑商品',
+  'store_expiringSoon': '即将过期',
+  'store_daysLeft': '剩余 @days 天',
+  'store_remainingTimes': '剩余 @count 次',
+  'store_validUntilDate': '有效期至 @date',
+  'store_pricePoints': '@price积分',
+  'store_redeemConfirmMessage': '确定要兑换 @name 吗? 需要消耗 @price 积分',
+  'store_emptyItemsHint': '前往商品列表兑换物品',
+  'store_noItemsForFilter': '该筛选条件下暂无物品',
+  'store_searchItemsHint': '输入关键词搜索物品',
+  'store_noSearchResults': '未找到相关物品',
+  'store_tryOtherKeywords': '尝试使用其他关键词',
+  'store_noMatchingProducts': '未找到匹配的商品',
 };

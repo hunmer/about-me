@@ -189,4 +189,10 @@ const Map<String, String> goodsTranslationsEn = {
   // const Text 硬编码迁移(en)
   'goods_nfcAddUsage': 'Add Usage via NFC',
   'goods_loading': 'Loading...',
+
+  // 物品列表页
+  'goods_items': 'Items',
+  'goods_itemCount': '@count items',
+  'goods_routeTitleWarehouse': 'Items - Warehouse: @warehouse',
+  'goods_routeTitleAll': 'Items - All',
 };

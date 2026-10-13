@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// 提醒频率类型
 enum ReminderFrequency {
@@ -175,22 +176,26 @@ class Reminder {
         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     switch (frequency) {
       case ReminderFrequency.none:
-        return '无';
+        return 'reminder_freqNone'.tr;
       case ReminderFrequency.daily:
-        return '每天 $timeStr';
+        return 'reminder_freqDaily'.trParams({'time': timeStr});
       case ReminderFrequency.weekly:
         if (selectedDays.length == 7) {
-          return '每天 $timeStr';
+          return 'reminder_freqDaily'.trParams({'time': timeStr});
         }
-        final weekDays = ['一', '二', '三', '四', '五', '六', '日'];
-        final days = selectedDays.map((d) => weekDays[d - 1]).join('、');
-        return '周$days $timeStr';
+        final separator = 'reminder_weekdaySeparator'.tr;
+        final days = selectedDays
+            .map((d) => 'reminder_weekday$d'.tr)
+            .join(separator);
+        return 'reminder_freqWeekly'.trParams({'days': days, 'time': timeStr});
       case ReminderFrequency.monthly:
         if (selectedDays.length == 31) {
-          return '每天 $timeStr';
+          return 'reminder_freqDaily'.trParams({'time': timeStr});
         }
-        final days = selectedDays.map((d) => '$d').join('、');
-        return '每月$days日 $timeStr';
+        final days = selectedDays
+            .map((d) => '$d')
+            .join('reminder_weekdaySeparator'.tr);
+        return 'reminder_freqMonthly'.trParams({'days': days, 'time': timeStr});
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/design_system/components/switch.dart';
 import '../../models/reminder.dart';
 
@@ -142,13 +143,15 @@ class ReminderCard extends StatelessWidget {
     final difference = nextTrigger.difference(now);
 
     if (difference.inMinutes < 1) {
-      return '即将触发';
+      return 'reminder_soon'.tr;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟后';
+      return 'reminder_minutesLater'.trParams({
+        'minutes': '${difference.inMinutes}',
+      });
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时后';
+      return 'reminder_hoursLater'.trParams({'hours': '${difference.inHours}'});
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}天后';
+      return 'reminder_daysLater'.trParams({'days': '${difference.inDays}'});
     } else {
       return '${nextTrigger.month}/${nextTrigger.day}';
     }

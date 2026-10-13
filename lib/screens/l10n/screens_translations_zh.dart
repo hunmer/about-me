@@ -67,6 +67,20 @@ final Map<String, String> screensTranslationsZh = {
   'screens_restoreDefaultBackground': '恢复默认背景',
   'screens_themeBackgroundDescription': '背景图与纯色背景应用于应用内所有界面；两者同时设置时背景图在上、纯色填充未覆盖区域，均未设置时使用系统默认背景。主页单独设置的背景图仍优先显示。',
 
+  // theme style picker (theme_background_settings_screen)
+  'screens_themeStyle': '主题风格',
+  'screens_themePreset_sketchbook': '手绘本铺',
+  'screens_themePreset_berry': '莓果紫',
+  'screens_themePreset_ocean': '海空蓝',
+  'screens_themePreset_matcha': '抹茶绿',
+  'screens_themePreset_peach': '蜜桃橙',
+  'screens_themePreset_cuddly': '软萌手帐',
+  'screens_themePreset_butter': '黄油涂鸦',
+  'screens_themePreset_berry_night': '莓果夜话',
+  'screens_inkStyleGentle': '柔和',
+  'screens_inkStylePlayful': '俏皮',
+  'screens_inkStyleExpressive': '狂放',
+
   // create_folder_dialog
   'screens_selectIcon': '选择图标',
   'screens_selectColor': '选择颜色',

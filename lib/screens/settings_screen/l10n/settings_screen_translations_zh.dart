@@ -129,9 +129,9 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settingsScreen_english': 'English',
 
   // const Text 硬编码迁移(zh)
-  'settings_screen_changeUsername': 'Change Username',
-  'settings_screen_appSettings': 'App Settings',
-  'settings_screen_interfaceSettings': 'Interface Settings',
+  'settings_screen_changeUsername': '修改用户名',
+  'settings_screen_appSettings': '应用设置',
+  'settings_screen_interfaceSettings': '界面设置',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',
@@ -144,4 +144,10 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_storageBackend': 'Storage Backend',
   'settings_screen_testConnection': 'Test Connection',
   'settings_screen_migrateLocalData': 'Migrate Local Data',
+
+  // 设置主页(settings_screen.dart)
+  'settings_screen_generalSection': '通用',
+  'settings_screen_dataSettings': '数据管理',
+  'settings_screen_appSection': '应用',
+  'settings_screen_enterUsernameHint': '输入用户名',
 };

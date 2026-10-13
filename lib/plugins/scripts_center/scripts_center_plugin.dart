@@ -485,7 +485,11 @@ class ScriptsCenterMainView extends StatefulWidget {
 
 class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
   late ScriptsCenterPlugin _plugin;
+  /// 脚本列表页搜索词（外层导航栏搜索框驱动）
   String _searchQuery = '';
+
+  /// 脚本商场页搜索词（外层导航栏搜索框驱动）
+  String _storeSearchQuery = '';
 
   /// 底部导航当前页签：0 脚本 / 1 执行记录 / 2 脚本商场
   int _currentIndex = 0;
@@ -500,7 +504,12 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
 
   void _setSearchQuery(String query) {
     setState(() {
-      _searchQuery = query;
+      // 搜索词按页签分发：脚本列表 / 脚本商场各自持有
+      if (_currentIndex == 2) {
+        _storeSearchQuery = query;
+      } else {
+        _searchQuery = query;
+      }
     });
   }
 
@@ -543,8 +552,8 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
       title: Text(tabTitles[_currentIndex]),
       largeTitle: tabTitles[_currentIndex],
       enableLargeTitle: true,
-      // 搜索栏只作用于脚本列表页签
-      enableSearchBar: _currentIndex == 0,
+      // 搜索栏作用于脚本列表页签与脚本商场页签
+      enableSearchBar: _currentIndex == 0 || _currentIndex == 2,
       searchPlaceholder: 'scripts_center_search'.tr,
       onSearchChanged: _setSearchQuery,
       onSearchSubmitted: _setSearchQuery,
@@ -578,7 +587,10 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
                 ),
                 ChangeNotifierProvider.value(value: _plugin.scriptManager),
               ],
-              child: const ScriptStoreScreen(embedded: true),
+              child: ScriptStoreScreen(
+                embedded: true,
+                searchQuery: _storeSearchQuery,
+              ),
             ),
           ],
         ),

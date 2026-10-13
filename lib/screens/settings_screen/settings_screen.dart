@@ -58,35 +58,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final TextEditingController nameController = TextEditingController(
       text: _controller.userName,
     );
+    final FocusNode focusNode = FocusNode();
+    // DSInput 无 autofocus 参数，弹窗挂载后手动聚焦弹出键盘
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => focusNode.requestFocus(),
+    );
 
-    final result = await showDialog<String>(
+    final result = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('settings_screen_changeUsername'.tr),
-            content: TextField(
+          (context) => DSDialog(
+            title: 'settings_screen_changeUsername'.tr,
+            content: DSInput(
               controller: nameController,
-              autofocus: true,
-              decoration: const InputDecoration(hintText: '输入用户名'),
+              focusNode: focusNode,
+              hint: 'settings_screen_enterUsernameHint'.tr,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('screens_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(nameController.text),
-                child: Text('app_save'.tr),
-              ),
-            ],
+            confirmText: 'app_save'.tr,
+            cancelText: 'screens_cancel'.tr,
           ),
     );
 
-    if (result != null && result.trim().isNotEmpty) {
-      await _controller.setUserName(result.trim());
+    if (result == true && nameController.text.trim().isNotEmpty) {
+      await _controller.setUserName(nameController.text.trim());
     }
 
     nameController.dispose();
+    focusNode.dispose();
   }
 
   // 主页菜单入口
@@ -146,18 +145,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Container(
                           width: 28,
                           height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: ds.surface,
-                            border: Border.all(
-                              color: ds.textSub.withValues(alpha: 0.4),
-                              width: 1.5,
-                            ),
+                          // 手绘墨线描边圆徽标（禁手写 Border.all）
+                          decoration: dsSketchDecoration(
+                            theme: ds,
+                            circle: true,
+                            fillColor: ds.surface,
+                            stroke: ds.textSub.withValues(alpha: 0.4),
                           ),
-                          child: Icon(
-                            Icons.edit_outlined,
-                            size: 14,
-                            color: ds.text,
+                          child: Center(
+                            child: DsIcon(
+                              DsIconKind.edit,
+                              size: 14,
+                              color: ds.text,
+                            ),
                           ),
                         ),
                       ),
@@ -182,21 +182,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 28),
               SettingsGroup(
-                title: '通用',
+                title: 'settings_screen_generalSection'.tr,
                 children: [
                   _buildNavTile(
                     context,
                     icon: Icons.palette_outlined,
-                    iconColor: const Color(0xFFEC4899),
-                    title: '界面设置',
+                    iconColor: DsAccentColors.pink,
+                    title: 'settings_screen_interfaceSettings'.tr,
                     screen: const InterfaceSettingsScreen(),
                     routeName: '/settings/interface',
                   ),
                   _buildNavTile(
                     context,
                     icon: Icons.storage_outlined,
-                    iconColor: const Color(0xFF3B82F6),
-                    title: '数据管理',
+                    iconColor: DsAccentColors.blue,
+                    title: 'settings_screen_dataSettings'.tr,
                     screen: const DataSettingsScreen(),
                     routeName: '/settings/data',
                   ),
@@ -204,13 +204,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 20),
               SettingsGroup(
-                title: '应用',
+                title: 'settings_screen_appSection'.tr,
                 children: [
                   _buildNavTile(
                     context,
                     icon: Icons.tune,
-                    iconColor: const Color(0xFF8B5CF6),
-                    title: '应用设置',
+                    iconColor: DsAccentColors.violet,
+                    title: 'settings_screen_appSettings'.tr,
                     screen: const AppSettingsScreen(),
                     routeName: '/settings/app',
                   ),

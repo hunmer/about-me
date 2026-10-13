@@ -144,4 +144,10 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_storageBackend': 'Storage Backend',
   'settings_screen_testConnection': 'Test Connection',
   'settings_screen_migrateLocalData': 'Migrate Local Data',
+
+  // settings home (settings_screen.dart)
+  'settings_screen_generalSection': 'General',
+  'settings_screen_dataSettings': 'Data Management',
+  'settings_screen_appSection': 'App',
+  'settings_screen_enterUsernameHint': 'Enter username',
 };
