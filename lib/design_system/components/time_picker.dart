@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import '../tokens/sketch.dart';
 import '../tokens/typography.dart';
 import 'button.dart';
 import 'dialog.dart';

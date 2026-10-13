@@ -74,6 +74,7 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   // 输入参数
   'scripts_center_addInputParameter': '添加输入参数',
   'scripts_center_enableScript': '启用脚本',
+  'scripts_center_disableScript': '禁用脚本',
   'scripts_center_requiredParameter': '必填参数',
   'scripts_center_userMustFillThisParameter': '用户必须填写此参数',
   'scripts_center_thisParameterIsOptional': '此参数可选',

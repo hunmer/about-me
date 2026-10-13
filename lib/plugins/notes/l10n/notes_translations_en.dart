@@ -26,6 +26,7 @@ final Map<String, String> notesTranslationsEn = {
   'notes_quickContentHint': 'Enter note content...',
   'notes_tagHint': 'Enter tag, press return to add',
   'notes_color': 'Color',
+  'notes_bgStyle': 'Background style',
   'notes_newFolder': 'New Folder',
   'notes_editNote': 'Edit',
   'notes_moveNote': 'Move to',

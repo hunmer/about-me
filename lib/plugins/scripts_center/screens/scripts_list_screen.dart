@@ -301,6 +301,21 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
+            leading: Icon(
+              script.enabled ? Icons.block : Icons.check_circle_outline,
+              color: script.enabled ? Colors.red : Colors.green,
+            ),
+            title: Text(
+              script.enabled
+                  ? 'scripts_center_disableScript'.tr
+                  : 'scripts_center_enableScript'.tr,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _toggleScript(script);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.edit),
             title: Text('app_edit'.tr),
             onTap: () {
@@ -407,7 +422,6 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
                   script: script,
                   onTap: () => _showScriptDialog(script: script),
                   onLongPress: () => _showActionSheet(script),
-                  onToggle: (enabled) => _toggleScript(script),
                   onRun: () => _runScript(script),
                 );
               },

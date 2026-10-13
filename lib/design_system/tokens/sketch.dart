@@ -136,7 +136,6 @@ RoughBoxDecoration dsSketchDecoration({
     case DsSketchFill.hachure || DsSketchFill.crossHatch ||
           DsSketchFill.dots || DsSketchFill.zigzag:
       // 点画的点径/密度需要更大参数才可见
-      final isDots = style == DsSketchFill.dots;
       filler = switch (style) {
         DsSketchFill.crossHatch => HatchFiller(
           FillerConfig.build(

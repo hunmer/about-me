@@ -74,6 +74,7 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   // Input parameters
   'scripts_center_addInputParameter': 'Add Input Parameter',
   'scripts_center_enableScript': 'Enable Script',
+  'scripts_center_disableScript': 'Disable Script',
   'scripts_center_requiredParameter': 'Required Parameter',
   'scripts_center_userMustFillThisParameter': 'User must fill this parameter',
   'scripts_center_thisParameterIsOptional': 'This parameter is optional',

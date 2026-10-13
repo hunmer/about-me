@@ -38,6 +38,7 @@ mixin FolderOperations on NotesMainViewState {
       );
       loadCurrentFolder();
     }
+  }
 
   Future<void> deleteFolder(Folder folder) async {
     final confirmed = await showDSDialog<bool>(
@@ -67,22 +68,38 @@ mixin FolderOperations on NotesMainViewState {
   }
 }
 
-/// 新建文件夹命名底部抽屉，返回 (名称, 颜色)（取消返回 null）
+/// 文件夹命名底部抽屉（新建/重命名共用），返回 (名称, 颜色)（取消返回 null）
 class _FolderNameSheet extends StatefulWidget {
   final String parentFolderName;
+  final String? titleText;
+  final String? initialName;
+  final Color? initialColor;
 
-  const _FolderNameSheet({required this.parentFolderName});
+  const _FolderNameSheet({
+    required this.parentFolderName,
+    this.titleText,
+    this.initialName,
+    this.initialColor,
+  });
 
   static Future<(String, Color?)?> show(
     BuildContext context,
-    String parentFolderName,
-  ) {
+    String parentFolderName, {
+    String? titleText,
+    String? initialName,
+    Color? initialColor,
+  }) {
     return SmoothBottomSheet.show<(String, Color?)>(
       context: context,
       isScrollControlled: true,
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-        child: _FolderNameSheet(parentFolderName: parentFolderName),
+        child: _FolderNameSheet(
+          parentFolderName: parentFolderName,
+          titleText: titleText,
+          initialName: initialName,
+          initialColor: initialColor,
+        ),
       ),
     );
   }
@@ -92,13 +109,17 @@ class _FolderNameSheet extends StatefulWidget {
 }
 
 class _FolderNameSheetState extends State<_FolderNameSheet> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   Color? _pickedColor;
+
+  bool get _isRename => widget.titleText != null;
 
   @override
   void initState() {
     super.initState();
+    _controller = TextEditingController(text: widget.initialName ?? '');
+    _pickedColor = widget.initialColor;
     // DSInput 无 autofocus 参数，用 FocusNode 在首帧后聚焦
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_focusNode.canRequestFocus) _focusNode.requestFocus();
@@ -131,17 +152,19 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'notes_newFolder'.tr,
+                  widget.titleText ?? 'notes_newFolder'.tr,
                   textAlign: TextAlign.center,
                   style: DsTypography.title.copyWith(color: theme.text),
                 ),
-                SizedBox(height: theme.spacing.sm),
-                // 显示将在哪个文件夹下创建
-                Text(
-                  '${'notes_createIn'.tr}: ${widget.parentFolderName}',
-                  textAlign: TextAlign.center,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                ),
+                if (!_isRename) ...[
+                  SizedBox(height: theme.spacing.sm),
+                  // 显示将在哪个文件夹下创建
+                  Text(
+                    '${'notes_createIn'.tr}: ${widget.parentFolderName}',
+                    textAlign: TextAlign.center,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                ],
                 SizedBox(height: theme.spacing.lg),
                 DSInput(
                   controller: _controller,
