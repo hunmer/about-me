@@ -4,19 +4,17 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
-import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
-import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 
-/// 联系人表单 - 使用 FormBuilderWrapper 重构版本
+/// 联系人基础信息编辑表单 - 使用 FormBuilderWrapper
 ///
 /// 功能特性：
 /// - 头像和姓名编辑
 /// - 性别选择
 /// - 电话、地址、备注等基本信息
 /// - 标签管理
-/// - 自定义字段
-/// - 自定义活动事件
+///
+/// 事件记录与自定义字段已移至详情页（ContactDetailScreen）编辑
 class ContactForm extends StatefulWidget {
   final Contact? contact;
   final Function(Contact) onSave;
@@ -45,14 +43,6 @@ class ContactFormState extends State<ContactForm> {
       firstName: names.first,
       lastName: names.length > 1 ? names.sublist(1).join(' ') : '',
     );
-  }
-
-  // 将 Map<String, String> 转换为 List<CustomField>
-  List<CustomField> _convertToCustomFields(Map<String, String>? customFields) {
-    if (customFields == null) return [];
-    return customFields.entries
-        .map((e) => CustomField(key: e.key, value: e.value))
-        .toList();
   }
 
   @override
@@ -159,24 +149,6 @@ class ContactFormState extends State<ContactForm> {
                   initialValue: widget.contact?.address ?? '',
                   prefixIcon: Icons.add_circle,
                 ),
-
-                // 自定义活动事件
-                FormFieldConfig(
-                  name: 'customActivityEvents',
-                  type: FormFieldType.customEvents,
-                  labelText: 'contact_customActivityEvents'.tr,
-                  hintText: 'contact_addCustomEvent'.tr,
-                  initialValue: widget.contact?.customActivityEvents ?? [],
-                ),
-
-                // 自定义字段
-                FormFieldConfig(
-                  name: 'customFields',
-                  type: FormFieldType.customFields,
-                  labelText: 'contact_customFields'.tr,
-                  hintText: 'contact_addCustomField'.tr,
-                  initialValue: _convertToCustomFields(widget.contact?.customFields),
-                ),
               ],
               onSubmit: (values) => _saveContact(context, values),
             ),
@@ -205,18 +177,6 @@ class ContactFormState extends State<ContactForm> {
     // 处理标签
     final tags = values['tags'] as List<String>? ?? [];
 
-    // 处理自定义字段
-    final customFieldList = values['customFields'] as List<dynamic>? ?? [];
-    final customFields = {
-      for (var field in customFieldList)
-        if (field is CustomField && field.key.isNotEmpty)
-          field.key: field.value,
-    };
-
-    // 处理自定义活动事件
-    final customEvents = values['customActivityEvents'] as List<dynamic>? ?? [];
-    final customActivityEvents = customEvents.cast<CustomActivityEvent>();
-
     final existingContact = widget.contact;
     final newContact = Contact(
       id: existingContact?.id ?? const Uuid().v4(),
@@ -227,10 +187,16 @@ class ContactFormState extends State<ContactForm> {
       notes: values['notes'] as String?,
       tags: tags,
       gender: values['gender'] as ContactGender?,
-      customFields: customFields,
-      customActivityEvents: customActivityEvents,
+      // 事件记录与自定义字段在详情页编辑，保存时保留原值
+      customFields: existingContact?.customFields ?? const {},
+      customActivityEvents: existingContact?.customActivityEvents ?? const [],
       createdTime: existingContact?.createdTime ?? DateTime.now(),
-      // 保留原有图标设置
+      lastContactTime: existingContact?.lastContactTime ?? DateTime.now(),
+      isFavorite: existingContact?.isFavorite ?? false,
+      // 保留表单外字段与图标设置
+      organization: existingContact?.organization,
+      email: existingContact?.email,
+      website: existingContact?.website,
       icon: existingContact?.icon ?? Icons.person,
       iconColor: existingContact?.iconColor ?? Colors.blue,
     );

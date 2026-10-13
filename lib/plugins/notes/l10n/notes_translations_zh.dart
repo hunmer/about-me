@@ -28,6 +28,7 @@ final Map<String, String> notesTranslationsZh = {
   'notes_color': '颜色',
   'notes_bgStyle': '背景风格',
   'notes_icon': '图标',
+  'notes_styleSettings': '样式设置',
   'notes_newFolder': '新建文件夹',
   'notes_editNote': '编辑',
   'notes_moveNote': '移动到',

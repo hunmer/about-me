@@ -107,6 +107,10 @@ const Map<String, String> contactTranslationsZh = {
   'contact_customFields': '自定义字段',
   'contact_customActivityEvents': '自定义活动事件',
   'contact_addCustomEvent': '添加自定义事件',
+  'contact_eventTitleHint': '事件标题',
+  'contact_fieldNameLabel': '字段名称',
+  'contact_fieldValueLabel': '字段内容',
+  'contact_noNotes': '暂无内容',
   'contact_pickColor': '选择颜色',
 
   'contact_contactListTitle': '联系人列表',

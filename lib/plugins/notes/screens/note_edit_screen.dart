@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
+import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/rich_editor_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 笔记编辑屏：通用富文本编辑屏 + 笔记特有逻辑
 /// （notes_refresh 同步刷新、路由上下文）
@@ -83,11 +87,64 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     );
   }
 
+  /// 样式设置抽屉（背景风格 / 颜色 / 图标），仅编辑已有笔记时提供
+  void _showStyleSheet() {
+    final note = _currentNote;
+    if (note == null) return;
+    final style = NoteStyleSelection(
+      color: note.color,
+      bgStyle: note.bgStyle,
+      icon: note.icon,
+    );
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'notes_styleSettings'.tr,
+                style: DsTypography.title,
+              ),
+              const SizedBox(height: 12),
+              NoteColorPickerRow(
+                selected: style.color,
+                selectedStyle: style.bgStyle,
+                selectedIcon: style.icon,
+                onChanged: (color) =>
+                    setSheetState(() => style.color = color),
+                onStyleChanged: (value) =>
+                    setSheetState(() => style.bgStyle = value),
+                onIconChanged: (icon) =>
+                    setSheetState(() => style.icon = icon),
+              ),
+              const SizedBox(height: 12),
+              DSButton(
+                label: 'app_save'.tr,
+                onPressed: () async {
+                  Navigator.pop(sheetContext);
+                  note.color = style.color;
+                  note.bgStyle = style.bgStyle;
+                  note.icon = style.icon;
+                  await NotesPlugin.instance.controller.updateNote(note);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final note = _currentNote;
     return RichEditorScreen(
       reloadToken: _contentVersion,
+      onOpenStyleSettings: _currentNote != null ? _showStyleSheet : null,
       initialTitle: note?.title ?? '',
       initialContent: note?.content ?? '',
       initialTags: note?.tags ?? const [],

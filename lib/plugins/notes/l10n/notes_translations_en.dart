@@ -28,6 +28,7 @@ final Map<String, String> notesTranslationsEn = {
   'notes_color': 'Color',
   'notes_bgStyle': 'Background style',
   'notes_icon': 'Icon',
+  'notes_styleSettings': 'Style settings',
   'notes_newFolder': 'New Folder',
   'notes_editNote': 'Edit',
   'notes_moveNote': 'Move to',

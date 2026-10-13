@@ -69,6 +69,10 @@ class RichEditorScreen extends StatefulWidget {
   /// 删除回调；为 null 时 dock 不显示删除按钮
   final Future<void> Function()? onDelete;
 
+  /// 样式设置入口（如背景/颜色/图标抽屉）；非 null 时
+  /// 阅读态与编辑态右上角显示设置按钮，点击时由该回调弹出
+  final VoidCallback? onOpenStyleSettings;
+
   /// 外部数据版本号：变化时组件重置为最新的 initial 数据
   /// （编辑态下会重建编辑控制器，用于外部同步刷新）
   final int reloadToken;
@@ -87,6 +91,7 @@ class RichEditorScreen extends StatefulWidget {
     this.titleLeading,
     required this.onSave,
     this.onDelete,
+    this.onOpenStyleSettings,
     this.reloadToken = 0,
     this.texts,
   });
@@ -329,14 +334,22 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 顶部导航行：圆形返回按钮
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _CircleIconButton(
-                    theme: theme,
-                    icon: Icons.chevron_left,
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
+                // 顶部导航行：圆形返回按钮（左）+ 样式设置按钮（右）
+                Row(
+                  children: [
+                    _CircleIconButton(
+                      theme: theme,
+                      icon: Icons.chevron_left,
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                    const Spacer(),
+                    if (widget.onOpenStyleSettings != null)
+                      _CircleIconButton(
+                        theme: theme,
+                        icon: Icons.tune,
+                        onTap: () => widget.onOpenStyleSettings!(),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
@@ -477,6 +490,14 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                 onTap: _cancelEditing,
               ),
               const Spacer(),
+              if (widget.onOpenStyleSettings != null) ...[
+                _CircleIconButton(
+                  theme: theme,
+                  icon: Icons.tune,
+                  onTap: () => widget.onOpenStyleSettings!(),
+                ),
+                const SizedBox(width: 10),
+              ],
               // 保存按钮（主色胶囊）
               Material(
                 color: theme.primary,

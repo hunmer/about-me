@@ -317,10 +317,11 @@ class SortConfig {
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
-| `ContactMainView` | `screens/contact_main_view.dart` | 插件主视图容器 |
+| `ContactMainView` | `screens/contact_main_view.dart` | 插件主视图容器（字母分组 + 索引条 + FAB 新建） |
+| `ContactDetailScreen` | `screens/contact_detail_screen.dart` | 联系人详情页（弧形 header 头像/标签/基本信息 + 事件记录/自定义字段编辑） |
 | `ContactListTile` | `widgets/contact_list_tile.dart` | 联系人列表行（手绘头像+姓名+组织，字母分组列表用） |
 | `ContactCard` | `widgets/contact_card.dart` | 联系人卡片组件（支持列表/网格视图） |
-| `ContactForm` | `widgets/contact_form.dart` | 联系人创建/编辑表单 |
+| `ContactForm` | `widgets/contact_form.dart` | 联系人基础信息编辑表单（事件/自定义字段已移至详情页） |
 | `InteractionForm` | `widgets/interaction_form.dart` | 交互记录表单 |
 | `ContactSelector` | `widgets/contact_selector.dart` | 联系人选择器（用于选择参与者） |
 
@@ -912,7 +913,8 @@ contact/
 ├── contact_js_api.dart                      # JS API 实现（part of contact_plugin.dart）
 ├── contact_data_selectors.dart              # 数据选择器（part of contact_plugin.dart）
 ├── screens/
-│   ├── contact_main_view.dart               # 插件主视图（搜索、多条件过滤、列表）
+│   ├── contact_main_view.dart               # 插件主视图（搜索、多条件过滤、字母分组列表）
+│   ├── contact_detail_screen.dart           # 联系人详情页（头像/标签/基本信息 + 事件/字段编辑）
 │   └── contact_records_screen.dart          # 交互记录界面
 ├── models/
 │   ├── contact_model.dart                   # 联系人模型

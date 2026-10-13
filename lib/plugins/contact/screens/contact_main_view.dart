@@ -9,12 +9,12 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:aboutme/core/services/toast_service.dart';
 
 import 'package:aboutme/plugins/contact/contact_plugin.dart';
 import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
+import 'package:aboutme/plugins/contact/screens/contact_detail_screen.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_list_tile.dart';
 
@@ -250,7 +250,7 @@ class ContactMainViewState extends State<ContactMainView> {
           key: ValueKey(contact.id),
           contact: contact,
           seed: index,
-          onTap: () => _addOrEditContact(contact),
+          onTap: () => _openDetail(contact),
           onLongPress: () => _showItemActions(contact),
           onToggleFavorite: () => _toggleFavorite(contact),
         );
@@ -258,34 +258,48 @@ class ContactMainViewState extends State<ContactMainView> {
     );
   }
 
-  Future<void> _addOrEditContact([Contact? contact]) async {
+  /// 进入联系人详情页，返回后刷新列表（详情页内可编辑/删除）
+  Future<void> _openDetail(Contact contact) async {
     await NavigationHelper.push(
       context,
-      ContactForm(
-        contact: contact,
+      ContactDetailScreen(contact: contact, controller: _controller),
+    );
+    if (mounted) {
+      setState(() {});
+      _loadAvailableTags();
+    }
+  }
+
+  /// FAB 新建联系人（OpenContainer hero 展开）
+  void _addContact() {
+    NavigationHelper.openContainerWithHero(
+      context,
+      (context) => ContactForm(
         onSave: (savedContact) async {
-          try {
-            if (contact == null) {
-              await _controller.addContact(savedContact);
-            } else {
-              await _controller.updateContact(savedContact);
-            }
-            if (mounted) {
-              setState(() {});
-              _loadAvailableTags();
-            }
-          } catch (e) {
-            ToastService.instance.showToast('contact_saveFailedMessage'.tr);
-          }
-        },
-        onDelete: () async {
-          // 删除联系人，导航由 ContactForm 处理
-          if (contact != null) {
-            await _controller.deleteContact(contact.id);
-            _loadAvailableTags();
-          }
+          await _controller.addContact(savedContact);
+          setState(() {});
+          _loadAvailableTags();
         },
       ),
+      sourceKey: _addButtonKey,
+      heroTag: 'contact_add_button',
+    );
+  }
+
+  /// 列表 + 右下角 FAB（body 与 searchBody 共用）
+  Widget _buildFabStack(Widget child) {
+    return Stack(
+      children: [
+        Positioned.fill(child: child),
+        Positioned(
+          right: 16,
+          bottom: MediaQuery.paddingOf(context).bottom + 16,
+          child: DSFab(
+            key: _addButtonKey,
+            onPressed: _addContact,
+          ),
+        ),
+      ],
     );
   }
 
@@ -481,7 +495,7 @@ class ContactMainViewState extends State<ContactMainView> {
                   key: ValueKey(contact.id),
                   contact: contact,
                   seed: index,
-                  onTap: () => _addOrEditContact(contact),
+                  onTap: () => _openDetail(contact),
                   onLongPress: () => _showItemActions(contact),
                   onToggleFavorite: () => _toggleFavorite(contact),
                 );
@@ -654,12 +668,12 @@ class ContactMainViewState extends State<ContactMainView> {
       onSearchChanged: (query) {
         _searchContacts(query);
       },
-      searchBody: _buildSearchResults(),
+      searchBody: _buildFabStack(_buildSearchResults()),
       // ========== 多条件过滤配置 ==========
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _applyMultiFilters,
-      body: FutureBuilder<List<Contact>>(
+      body: _buildFabStack(FutureBuilder<List<Contact>>(
         future: _getFilteredContacts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -695,27 +709,7 @@ class ContactMainViewState extends State<ContactMainView> {
 
           return _buildGroupedContactList(contacts);
         },
-      ),
-      actions: [
-        IconButton(
-          key: _addButtonKey,
-          icon: const Icon(Icons.add),
-          onPressed: () {
-            NavigationHelper.openContainerWithHero(
-              context,
-              (context) => ContactForm(
-                onSave: (savedContact) async {
-                  await _controller.addContact(savedContact);
-                  setState(() {});
-                  _loadAvailableTags();
-                },
-              ),
-              sourceKey: _addButtonKey,
-              heroTag: 'contact_add_button',
-            );
-          },
-        ),
-      ],
+      )),
       enableLargeTitle: true,
       ),
     );

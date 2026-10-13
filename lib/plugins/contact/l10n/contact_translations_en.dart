@@ -107,6 +107,10 @@ const Map<String, String> contactTranslationsEn = {
   'contact_customFields': 'Custom Fields',
   'contact_customActivityEvents': 'Custom Activity Events',
   'contact_addCustomEvent': 'Add custom event',
+  'contact_eventTitleHint': 'Event title',
+  'contact_fieldNameLabel': 'Field name',
+  'contact_fieldValueLabel': 'Field value',
+  'contact_noNotes': 'Nothing yet',
   'contact_pickColor': 'Pick a color',
 
   'contact_contactListTitle': 'Contact List',
