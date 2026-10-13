@@ -38,6 +38,8 @@ const Map<String, String> mediaLogTranslationsZh = {
   // 列表 / 过滤 / 排序
   'media_searchPlaceholder': '搜索标题、作者、标签',
   'media_noItems': '暂无记录',
+  'media_viewAsList': '切换为列表视图',
+  'media_viewAsGrid': '切换为网格视图',
   'media_allKinds': '全部类型',
   'media_ratingAll': '全部评分',
   'media_rating3Plus': '3 分及以上',

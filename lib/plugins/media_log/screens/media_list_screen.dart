@@ -383,6 +383,26 @@ class _MediaListScreenState extends State<MediaListScreen> {
       title: Text('${'media_name'.tr} (${items.length})'),
       largeTitle: 'media_name'.tr,
       enableLargeTitle: true,
+      // 视图切换（actions 经 Overlay 渲染，DS 组件需 DSThemeBridge 包裹）
+      actions: [
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: _isGridView
+                    ? 'media_viewAsList'.tr
+                    : 'media_viewAsGrid'.tr,
+                onPressed: () => setState(() => _isGridView = !_isGridView),
+              );
+            },
+          ),
+        ),
+      ],
       // ===== 搜索 =====
       enableSearchBar: true,
       searchPlaceholder: 'media_searchPlaceholder'.tr,
@@ -401,7 +421,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
                 title: 'media_noItems'.tr,
               ),
             )
-          else
+          else if (_isGridView)
             MasonryGridView.count(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -428,6 +448,49 @@ class _MediaListScreenState extends State<MediaListScreen> {
                       MediaDetailScreen(itemId: item.id),
                     ),
                     onLongPress: () => _showItemActions(item),
+                  ),
+                );
+              },
+            )
+          else
+            // 单列列表：右滑编辑 / 左滑删除（与点评卡交互一致）
+            ListView.builder(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < items.length - 1 ? 12 : 0,
+                  ),
+                  child: SwipeActionWrapper(
+                    key: ValueKey(item.id),
+                    deleteConfirmContent: 'media_deleteConfirmMessage'.tr,
+                    leadingActions: [
+                      SwipeActionPresets.edit(
+                        label: 'media_edit'.tr,
+                        onTap: () => _openItemForm(initial: item),
+                      ),
+                    ],
+                    trailingActions: [
+                      SwipeActionPresets.delete(
+                        label: 'media_delete'.tr,
+                        onTap: () => _confirmDelete(item),
+                      ),
+                    ],
+                    child: MediaItemListTile(
+                      item: item,
+                      seed: index + 1,
+                      onTap: () => NavigationHelper.push(
+                        context,
+                        MediaDetailScreen(itemId: item.id),
+                      ),
+                    ),
                   ),
                 );
               },

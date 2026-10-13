@@ -38,6 +38,8 @@ const Map<String, String> mediaLogTranslationsEn = {
   // List / filters / sorting
   'media_searchPlaceholder': 'Search title, author, tags',
   'media_noItems': 'No records yet',
+  'media_viewAsList': 'Switch to list view',
+  'media_viewAsGrid': 'Switch to grid view',
   'media_allKinds': 'All types',
   'media_ratingAll': 'Any rating',
   'media_rating3Plus': '3+ stars',
