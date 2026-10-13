@@ -264,7 +264,8 @@ class _BillListScreenSupercupertinoState
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        // 日期靠上，收支 badge 组贴单元格底部
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             '${day.day}',
@@ -275,32 +276,37 @@ class _BillListScreenSupercupertinoState
               color: isSelected ? _primaryColor : theme.text,
             ),
           ),
-          const SizedBox(height: 2),
-          // 始终显示收入位置（有数据显示badge，无数据显示空占位）
-          SizedBox(
-            height: 10,
-            child:
-                isIncomePositive
-                    ? _buildStatBadge(
-                      stats!.income,
-                      _incomeColor,
-                      DsIconKind.chevronDown,
-                      // 绿底对比度低，文字用墨色
-                      textColor: theme.ink,
-                    )
-                    : const SizedBox.shrink(),
-          ),
-          // 始终显示支出位置（有数据显示badge，无数据显示空占位）
-          SizedBox(
-            height: 10,
-            child:
-                isExpensePositive
-                    ? _buildStatBadge(
-                      stats!.expense,
-                      _expenseColor,
-                      DsIconKind.chevronUp,
-                    )
-                    : const SizedBox.shrink(),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 始终显示收入位置（有数据显示badge，无数据显示空占位）
+              SizedBox(
+                height: 14,
+                child:
+                    isIncomePositive
+                        ? _buildStatBadge(
+                          stats!.income,
+                          _incomeColor,
+                          DsIconKind.chevronDown,
+                          // 绿底对比度低，文字用墨色
+                          textColor: theme.ink,
+                        )
+                        : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 3),
+              // 始终显示支出位置（有数据显示badge，无数据显示空占位）
+              SizedBox(
+                height: 14,
+                child:
+                    isExpensePositive
+                        ? _buildStatBadge(
+                          stats!.expense,
+                          _expenseColor,
+                          DsIconKind.chevronUp,
+                        )
+                        : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
       ),
@@ -317,12 +323,12 @@ class _BillListScreenSupercupertinoState
   }) {
     return Container(
       width: double.infinity,
-      height: 10,
+      height: 14,
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withValues(alpha: 0.55), width: 1),
       ),
       child: FittedBox(
@@ -330,12 +336,12 @@ class _BillListScreenSupercupertinoState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DsIcon(icon, size: 8, color: color),
+            DsIcon(icon, size: 10, color: color),
             const SizedBox(width: 2),
             Text(
               amount.toInt().toString(),
               style: TextStyle(
-                fontSize: 8,
+                fontSize: 10,
                 color: textColor ?? color,
                 fontWeight: FontWeight.w700,
               ),
