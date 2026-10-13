@@ -151,6 +151,16 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_new_diary': '新建日记',
     'calendar_album_title_cannot_be_empty': '标题不能为空',
 
+    // 标签文件夹
+    'calendar_album_open_folder': '打开',
+    'calendar_album_edit_folder_icon': '编辑文件夹图标',
+    'calendar_album_remove_folder_icon': '移除图标',
+    'calendar_album_folder_icon_current': '当前图标',
+    'calendar_album_tags_empty_hint': '在日记中添加标签后，这里会生成对应的文件夹',
+    'calendar_album_route_title_tags': '标签管理 - 共@count个标签',
+    'calendar_album_view_photo': '查看',
+    'calendar_album_edit_entry': '编辑条目',
+
     // Home Widget Strings
     'calendar_album_widget_name': '日历相册',
     'calendar_album_widget_description': '快速打开日历相册',

@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
-import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
-import 'entry_editor_screen.dart';
-import 'entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/widgets/tag_folder_card.dart';
+import 'package:aboutme/plugins/calendar_album/widgets/folder_icon_sheet.dart';
+import 'album_screen.dart';
 
 class TagScreen extends StatefulWidget {
   const TagScreen({super.key});
@@ -16,201 +21,188 @@ class TagScreen extends StatefulWidget {
   State<TagScreen> createState() => _TagScreenState();
 }
 
-class _TagItem {
-  final String tag;
-  bool active;
-
-  // ignore: unused_element_parameter
-  _TagItem(this.tag, {this.active = false});
-}
-
 class _TagScreenState extends State<TagScreen> {
-  final List<_TagItem> _selectedTags = [];
+  /// 上次路由上下文记录的标签数，避免每次 build 重复更新
+  int? _lastContextCount;
 
   @override
   void initState() {
     super.initState();
-    // 初始化时设置路由上下文
-    _updateRouteContext();
+    _updateRouteContext(0);
   }
 
-  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前选中的标签
-  void _updateRouteContext() {
-    final activeTags = _selectedTags.where((item) => item.active).map((item) => item.tag).toList();
-    final tagsStr = activeTags.isEmpty ? '未选择' : activeTags.join('、');
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前标签数
+  void _updateRouteContext(int tagCount) {
+    if (_lastContextCount == tagCount) return;
+    _lastContextCount = tagCount;
     RouteHistoryManager.updateCurrentContext(
       pageId: '/calendar_album_tags',
-      title: '标签管理 - $tagsStr',
-      params: {
-        'tags': activeTags.join(','),
-        'tagCount': activeTags.length.toString(),
-      },
+      title: 'calendar_album_route_title_tags'.trParams({
+        'count': tagCount.toString(),
+      }),
+      params: {'tagCount': tagCount.toString()},
     );
+  }
+
+  /// 收集标签下的图片（imageUrls + markdown 内联图，去重，新条目在前）
+  List<String> _tagImages(CalendarController controller, String tag) {
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final entry in controller.getEntriesByTag(tag)) {
+      for (final url in [...entry.imageUrls, ...entry.extractImagesFromMarkdown()]) {
+        if (url.isEmpty || !seen.add(url)) continue;
+        urls.add(url);
+      }
+    }
+    return urls;
+  }
+
+  /// 打开标签对应的相册（应用标签过滤）
+  void _openFolder(
+    String tag,
+    CalendarController calendarController,
+    TagController tagController,
+  ) {
+    NavigationHelper.push<void>(
+      context,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<CalendarController>.value(
+            value: calendarController,
+          ),
+          ChangeNotifierProvider<TagController>.value(value: tagController),
+        ],
+        child: AlbumScreen(initialTags: [tag]),
+      ),
+    );
+  }
+
+  /// 编辑文件夹图标：smoothsheet ModalSheet 底部抽屉 + 图标选择器
+  void _showFolderIconSheet(String tag, TagController tagController) {
+    final theme = DSThemeBridge.resolve(context);
+    SmoothBottomSheet.showWithTitle(
+      context: context,
+      title: 'calendar_album_edit_folder_icon'.tr,
+      backgroundColor: theme.surface,
+      child: SizedBox(
+        height: 430,
+        child: DSThemeBridge(
+          child: FolderIconSheet(tag: tag, tagController: tagController),
+        ),
+      ),
+    );
+  }
+
+  /// 打开标签管理对话框
+  Future<void> _manageTags(TagController tagController) async {
+    await tagController.showTagManagerDialog(context);
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final tagController = context.watch<TagController>();
+    final theme = DSThemeBridge.resolve(context);
 
-    final tagController = Provider.of<TagController>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('calendar_album_tag_management'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.label),
-            onPressed: () async {
-              final selectedTags = await tagController.showTagManagerDialog(
-                context,
-              );
-              if (selectedTags != null) {
-                setState(() {
-                  _selectedTags.clear();
-                  _selectedTags.addAll(
-                    selectedTags.map((tag) => _TagItem(tag)),
-                  );
-                });
-                // 更新路由上下文
-                _updateRouteContext();
-              }
-            },
-            tooltip: 'calendar_album_tag_management'.tr,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Tag list
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child:
-                _selectedTags.isEmpty
-                    ? Center(child: Text('calendar_album_no_tags'.tr))
-                    : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _selectedTags.length,
-                      itemBuilder: (context, index) {
-                        final tagItem = _selectedTags[index];
-                        final color =
-                            Colors.primaries[tagItem.tag.hashCode %
-                                Colors.primaries.length];
+    return SuperCupertinoNavigationWrapper(
+      // tab 内嵌页：关闭路由 hero 转场，避免 Hero tag 冲突
+      transitionBetweenRoutes: false,
+      title: Text('calendar_album_tag_management'.tr),
+      largeTitle: 'calendar_album_tag_management'.tr,
+      actions: [
+        DSIconButton(
+          icon: DsIconKind.tag,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          tooltip: 'calendar_album_tag_management'.tr,
+          onPressed: () => _manageTags(tagController),
+        ),
+      ],
+      body: Consumer<CalendarController>(
+        builder: (context, calendarController, child) {
+          // 标签来源：条目实际使用的标签 ∪ 标签管理器中定义的标签
+          final tags =
+              <String>{
+                ...calendarController.getAllTags(),
+                ...tagController.tags,
+              }.toList();
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: FilterChip(
-                            label: Text(
-                              tagItem.tag,
-                              style: TextStyle(
-                                color: tagItem.active ? Colors.white : null,
-                              ),
-                            ),
-                            selected: tagItem.active,
-                            onSelected: (selected) {
-                              setState(() {
-                                tagItem.active = selected;
-                              });
-                              // 更新路由上下文
-                              _updateRouteContext();
-                            },
-                            backgroundColor: color.withAlpha(
-                              (0.2 * 255).toInt(),
-                            ),
-                            selectedColor: color.withAlpha((0.6 * 255).toInt()),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () {
-                              setState(() {
-                                _selectedTags.removeAt(index);
-                              });
-                              // 更新路由上下文
-                              _updateRouteContext();
-                            },
-                          ),
-                        );
-                      },
-                    ),
-          ),
-          const Divider(),
-          // Entries with selected tag
-          Expanded(
-            child: Consumer<CalendarController>(
-              builder: (context, calendarController, child) {
-                return _selectedTags.isEmpty
-                    ? Center(child: Text('calendar_album_select_tag'.tr))
-                    : EntryList(
-                      entries: calendarController.getEntriesByTags(
-                        _selectedTags
-                            .where((item) => item.active)
-                            .map((item) => item.tag)
-                            .toList(),
-                      ),
-                      onTap: (entry) {
-                        NavigationHelper.push<void>(
-                          context,
-                          MultiProvider(
-                            providers: [
-                              ChangeNotifierProvider<CalendarController>.value(
-                                value: calendarController,
-                              ),
-                              ChangeNotifierProvider<TagController>.value(
-                                value: tagController,
-                              ),
-                            ],
-                            child: EntryDetailScreen(entry: entry),
-                          ),
-                        );
-                      },
-                      onEdit: (entry) {
-                        NavigationHelper.push<void>(
-                          context,
-                          MultiProvider(
-                            providers: [
-                              ChangeNotifierProvider<CalendarController>.value(
-                                value: calendarController,
-                              ),
-                              ChangeNotifierProvider<TagController>.value(
-                                value: tagController,
-                              ),
-                            ],
-                            child: EntryEditorScreen(
-                              entry: entry,
-                              isEditing: true,
-                            ),
-                          ),
-                        );
-                      },
-                      onDelete: (entry) {
+          if (tags.isEmpty) {
+            _updateRouteContext(0);
+            return Center(
+              child: DSThemeBridge(
+                child: DSEmptyState(
+                  emoji: '🗂️',
+                  title: 'calendar_album_no_tags'.tr,
+                  message: 'calendar_album_tags_empty_hint'.tr,
+                ),
+              ),
+            );
+          }
 
-                        showDialog<void>(
-                          context: context,
-                                builder:
-                                    (context) => AlertDialog(
-                                      title: Text('calendar_album_delete_entry'.tr),
-                                      content: Text(
-                                        '${'app_delete'.tr} "${entry.title}"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(context).pop(),
-                                          child: Text('app_cancel'.tr),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            calendarController.deleteEntry(entry);
-                                            Navigator.of(context).pop();
-                                            setState(() {}); // 强制刷新界面
-                                          },
-                                          child: Text('app_delete'.tr),
-                                        ),
-                                      ],
-                                    ),
-                        );
-                      },
-                    );
-              },
+          // 每个文件夹的图片列表 + 按图片数排序
+          final folderImages = {for (final tag in tags) tag: _tagImages(calendarController, tag)};
+          tags.sort(
+            (a, b) =>
+                folderImages[b]!.length != folderImages[a]!.length
+                    ? folderImages[b]!.length.compareTo(folderImages[a]!.length)
+                    : a.compareTo(b),
+          );
+
+          _updateRouteContext(tags.length);
+
+          return GridView.builder(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
             ),
-          ),
-        ],
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 18,
+              mainAxisSpacing: 20,
+              childAspectRatio: 0.82,
+            ),
+            itemCount: tags.length,
+            itemBuilder: (context, index) {
+              final tag = tags[index];
+              final images = folderImages[tag]!;
+              final folder = TagFolderCard(
+                tag: tag,
+                imageUrls: images,
+                count: images.length,
+                stickerIcon: tagController.getTagIcon(tag),
+              );
+
+              return ArcContextMenu(
+                onTap:
+                    () => _openFolder(tag, calendarController, tagController),
+                items: [
+                  ArcMenuItem(
+                    icon: DsIconKind.edit,
+                    label: 'calendar_album_edit'.tr,
+                    onTap: () => _showFolderIconSheet(tag, tagController),
+                  ),
+                  ArcMenuItem(
+                    icon: DsIconKind.image,
+                    label: 'calendar_album_open_folder'.tr,
+                    onTap:
+                        () =>
+                            _openFolder(tag, calendarController, tagController),
+                  ),
+                  ArcMenuItem(
+                    icon: DsIconKind.tag,
+                    label: 'calendar_album_tag_management'.tr,
+                    onTap: () => _manageTags(tagController),
+                  ),
+                ],
+                child: folder,
+              );
+            },
+          );
+        },
       ),
     );
   }

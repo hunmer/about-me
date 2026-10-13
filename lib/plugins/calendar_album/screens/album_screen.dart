@@ -1,16 +1,19 @@
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/screens/entry_detail_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -24,7 +27,10 @@ class _PhotoRecord {
 }
 
 class AlbumScreen extends StatefulWidget {
-  const AlbumScreen({super.key});
+  const AlbumScreen({super.key, this.initialTags});
+
+  /// 初始标签过滤（如从标签文件夹进入）
+  final List<String>? initialTags;
 
   @override
   State<AlbumScreen> createState() => _AlbumScreenState();
@@ -35,6 +41,15 @@ class _AlbumScreenState extends State<AlbumScreen> {
   Map<String, dynamic> _multiFilters = {};
   String _searchQuery = '';
   String _sortBy = 'newest'; // newest, oldest
+
+  @override
+  void initState() {
+    super.initState();
+    final initialTags = widget.initialTags;
+    if (initialTags != null && initialTags.isNotEmpty) {
+      _multiFilters = {'tags': List<String>.from(initialTags)};
+    }
+  }
 
   /// 上次路由上下文记录的照片数，避免每次 build 重复更新
   int? _lastContextCount;
@@ -95,6 +110,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
           id: 'tags',
           title: 'calendar_album_tag'.tr,
           type: FilterType.tagsMultiple,
+          initialValue: widget.initialTags,
           builder: (context, currentValue, onChanged) {
             return FilterBuilders.buildTagsFilter(
               context: context,
@@ -405,17 +421,55 @@ class _AlbumScreenState extends State<AlbumScreen> {
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
                     final record = photos[index];
-                    return GestureDetector(
-                      onTap: () {
-                        NavigationHelper.push(
-                          context,
-                          _PhotoViewScreen(
-                            images: photos.map((r) => r.url).toList(),
-                            initialIndex: index,
+                    void openViewer() {
+                      NavigationHelper.push(
+                        context,
+                        _PhotoViewScreen(
+                          images: photos.map((r) => r.url).toList(),
+                          initialIndex: index,
+                        ),
+                      );
+                    }
+
+                    void editEntry() {
+                      NavigationHelper.push<void>(
+                        context,
+                        MultiProvider(
+                          providers: [
+                            ChangeNotifierProvider<CalendarController>.value(
+                              value: calendarController,
+                            ),
+                            ChangeNotifierProvider<TagController>.value(
+                              value: context.read<TagController>(),
+                            ),
+                          ],
+                          child: EntryEditorScreen(
+                            entry: record.entry,
+                            isEditing: true,
                           ),
-                        );
-                      },
-                      child: Hero(tag: record.url, child: _buildImage(record.url)),
+                        ),
+                      );
+                    }
+
+                    return ArcContextMenu(
+                      onTap: openViewer,
+                      preview: _buildImage(record.url),
+                      items: [
+                        ArcMenuItem(
+                          icon: DsIconKind.image,
+                          label: 'calendar_album_view_photo'.tr,
+                          onTap: openViewer,
+                        ),
+                        ArcMenuItem(
+                          icon: DsIconKind.edit,
+                          label: 'calendar_album_edit_entry'.tr,
+                          onTap: editEntry,
+                        ),
+                      ],
+                      child: Hero(
+                        tag: record.url,
+                        child: _buildImage(record.url),
+                      ),
                     );
                   },
                 ),

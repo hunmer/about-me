@@ -2,6 +2,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
@@ -49,8 +50,12 @@ class TagController extends ChangeNotifier {
   List<String> selectedTags = [];
   List<String> recentTags = [];
 
+  /// 标签 → 文件夹贴纸图标名（AppIcons.predefinedIcons 的键）
+  Map<String, String> tagIcons = {};
+
   final String _tagGroupsFile = 'data/calendar_tag_groups.json';
   final String _recentTagsFile = 'data/calendar_recent_tags.json';
+  final String _tagIconsFile = 'data/calendar_tag_icons.json';
 
   TagController({this.onTagsChanged}) {
     initialize();
@@ -94,6 +99,11 @@ class TagController extends ChangeNotifier {
       recentTags = recentData.cast<String>().toList();
       _updateRecentTagGroup();
 
+      // 尝试加载标签文件夹图标
+      final iconsJson = await storageManager.readFile(_tagIconsFile, '{}');
+      final Map<String, dynamic> iconsData = json.decode(iconsJson);
+      tagIcons = iconsData.map((key, value) => MapEntry(key, value.toString()));
+
       notifyListeners();
       onTagsChanged?.call();
     } catch (e, stack) {
@@ -123,6 +133,33 @@ class TagController extends ChangeNotifier {
     } catch (e) {
       debugPrint('保存最近标签失败: $e');
     }
+  }
+
+  Future<void> _saveTagIcons() async {
+    try {
+      await storageManager.writeFile(_tagIconsFile, json.encode(tagIcons));
+    } catch (e) {
+      debugPrint('保存标签图标失败: $e');
+    }
+  }
+
+  /// 设置/移除标签文件夹贴纸图标（iconName 为 AppIcons.predefinedIcons 的键）
+  Future<void> setTagIcon(String tag, String? iconName) async {
+    if (iconName == null) {
+      tagIcons.remove(tag);
+    } else {
+      tagIcons[tag] = iconName;
+    }
+    await _saveTagIcons();
+    notifyListeners();
+    onTagsChanged?.call();
+  }
+
+  /// 获取标签文件夹贴纸图标（未设置返回 null）
+  IconData? getTagIcon(String tag) {
+    final name = tagIcons[tag];
+    if (name == null) return null;
+    return AppIcons.predefinedIcons[name];
   }
 
   void _updateRecentTagGroup() {
@@ -223,8 +260,10 @@ class TagController extends ChangeNotifier {
       group.tags.remove(tag);
     }
     recentTags.remove(tag);
+    tagIcons.remove(tag);
     await _saveTagGroups();
     await _saveRecentTags();
+    await _saveTagIcons();
     notifyListeners();
 
     // 广播删除事件

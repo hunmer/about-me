@@ -154,6 +154,17 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_new_diary': 'New Diary',
     'calendar_album_title_cannot_be_empty': 'Title cannot be empty',
 
+    // Tag folders
+    'calendar_album_open_folder': 'Open',
+    'calendar_album_edit_folder_icon': 'Edit Folder Icon',
+    'calendar_album_remove_folder_icon': 'Remove Icon',
+    'calendar_album_folder_icon_current': 'Current icon',
+    'calendar_album_tags_empty_hint':
+        'Folders appear here once you add tags to entries',
+    'calendar_album_route_title_tags': 'Tags - @count total',
+    'calendar_album_view_photo': 'View',
+    'calendar_album_edit_entry': 'Edit Entry',
+
     // Home Widget Strings
     'calendar_album_widget_name': 'Calendar Album',
     'calendar_album_widget_description': 'Quick access to calendar album',
