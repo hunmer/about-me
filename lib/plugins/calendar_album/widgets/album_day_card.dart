@@ -165,7 +165,9 @@ class AlbumDayCard extends StatelessWidget {
 
   /// 条目图片（优先缩略图，其次原图，与相册页一致）
   List<String> _imagesFor(CalendarEntry entry) {
-    if (entry.thumbUrls.isNotEmpty) return entry.thumbUrls;
+    // 空字符串缩略图为占位（平台不支持压缩时），需过滤后回退原图
+    final thumbs = entry.thumbUrls.where((t) => t.isNotEmpty).toList();
+    if (thumbs.isNotEmpty) return thumbs;
     if (entry.imageUrls.isNotEmpty) return entry.imageUrls;
     return entry.extractImagesFromMarkdown();
   }

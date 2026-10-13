@@ -83,6 +83,7 @@ class SwitchField extends StatelessWidget {
     // 默认模式：果冻卡片样式
     return JellyBox(
       radius: theme.radii.lg,
+      strokeColor: theme.textSub.withValues(alpha: 0.45),
       padding: EdgeInsets.symmetric(
         horizontal: theme.spacing.md,
         vertical: theme.spacing.sm,

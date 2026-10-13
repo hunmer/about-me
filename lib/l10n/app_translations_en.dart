@@ -63,6 +63,7 @@ const Map<String, String> appTranslationsEn = {
   'app_tags': 'Tags',
   'app_selectGroup': 'Select group',
   'app_selectLocation': 'Select location',
+  'app_selectIcon': 'Select icon',
 
   // Backup and export
   'app_selectBackupMethod': 'Please select backup method',

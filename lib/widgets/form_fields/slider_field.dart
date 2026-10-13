@@ -72,6 +72,7 @@ class SliderField extends StatelessWidget {
 
     return JellyBox(
       radius: theme.radii.lg,
+      strokeColor: theme.textSub.withValues(alpha: 0.45),
       width: double.infinity,
       padding: EdgeInsets.all(theme.spacing.md),
       child: Column(

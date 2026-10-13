@@ -116,6 +116,7 @@ class ColorSelectorField extends StatelessWidget {
         ],
         JellyBox(
           radius: theme.radii.lg,
+          strokeColor: theme.textSub.withValues(alpha: 0.45),
           padding: EdgeInsets.all(theme.spacing.md),
           child: swatches(),
         ),

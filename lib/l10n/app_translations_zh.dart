@@ -63,6 +63,7 @@ const Map<String, String> appTranslationsZh = {
   'app_tags': '标签',
   'app_selectGroup': '选择分组',
   'app_selectLocation': '选择位置',
+  'app_selectIcon': '选择图标',
 
   // Backup and export
   'app_selectBackupMethod': '请选择备份方式',

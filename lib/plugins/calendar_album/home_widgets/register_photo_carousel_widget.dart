@@ -102,9 +102,10 @@ List<PhotoItem> _getRecentPhotos(
     final entries = controller.getEntriesForDate(normalizedDate);
 
     for (final entry in entries) {
-      // 优先使用缩略图，其次原图
-      if (entry.thumbUrls.isNotEmpty) {
-        for (final imageUrl in entry.thumbUrls) {
+      // 优先使用缩略图，其次原图（空字符串占位视为无缩略图）
+      final thumbs = entry.thumbUrls.where((t) => t.isNotEmpty).toList();
+      if (thumbs.isNotEmpty) {
+        for (final imageUrl in thumbs) {
           photos.add(
             PhotoItem(imageUrl: imageUrl, entry: entry, date: normalizedDate),
           );

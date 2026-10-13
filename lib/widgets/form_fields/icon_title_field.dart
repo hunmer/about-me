@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -46,7 +47,7 @@ class IconTitleField extends StatelessWidget {
         // 图标选择器（果冻方块）
         Pressable(
           onPressed: onIconTap,
-          semanticLabel: '选择图标',
+          semanticLabel: 'app_selectIcon'.tr,
           child: JellyBox(
             width: 56,
             height: 56,

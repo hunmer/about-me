@@ -185,11 +185,13 @@ Widget _buildPhotoPreview(BuildContext context, CalendarEntry? entry) {
     );
   }
 
-  // 获取第一张图片（优先使用缩略图）
+  // 获取第一张图片（优先使用缩略图；空字符串占位视为无缩略图）
+  final firstThumb = entry.thumbUrls
+      .where((t) => t.isNotEmpty)
+      .firstOrNull;
   final imageUrl =
-      entry.thumbUrls.isNotEmpty
-          ? entry.thumbUrls.first
-          : (entry.imageUrls.isNotEmpty ? entry.imageUrls.first : null);
+      firstThumb ??
+      (entry.imageUrls.isNotEmpty ? entry.imageUrls.first : null);
 
   if (imageUrl == null) {
     return Container(

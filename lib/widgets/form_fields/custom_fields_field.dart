@@ -113,6 +113,7 @@ class _CustomFieldsFieldState extends State<CustomFieldsField> {
         ],
         JellyBox(
           radius: theme.radii.lg,
+          strokeColor: theme.textSub.withValues(alpha: 0.45),
           child: Column(
             children: [
               if (_fields.isEmpty)

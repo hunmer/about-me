@@ -77,6 +77,7 @@ class _RemindersFieldState extends State<RemindersField> {
             child: JellyBox(
               height: 50,
               radius: theme.radii.lg,
+              strokeColor: theme.textSub.withValues(alpha: 0.45),
               padding: EdgeInsets.only(
                 left: theme.spacing.md,
                 right: theme.spacing.lg,

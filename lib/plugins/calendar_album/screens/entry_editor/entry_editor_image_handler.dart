@@ -39,8 +39,9 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
   }
 
   Widget _buildImageContent(String url, String? thumbUrl) {
-    // 优先使用缩略图进行预览
-    final displayUrl = thumbUrl ?? url;
+    // 优先使用缩略图进行预览（空字符串占位视为无缩略图，回退原图）
+    final displayUrl =
+        (thumbUrl != null && thumbUrl.isNotEmpty) ? thumbUrl : url;
 
     if (displayUrl.startsWith('http://') || displayUrl.startsWith('https://')) {
       return Image.network(

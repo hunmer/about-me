@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import '../picker/location_picker.dart';
@@ -43,6 +44,7 @@ class LocationPickerField extends StatelessWidget {
     Widget trigger = JellyBox(
       height: 50,
       radius: theme.radii.lg,
+      strokeColor: theme.textSub.withValues(alpha: 0.45),
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
       child: Row(
         children: [
@@ -50,7 +52,7 @@ class LocationPickerField extends StatelessWidget {
           SizedBox(width: theme.spacing.md),
           Expanded(
             child: Text(
-              currentLocation ?? labelText ?? hintText ?? '选择位置',
+              currentLocation ?? labelText ?? hintText ?? 'app_selectLocation'.tr,
               style: DsTypography.body.copyWith(
                 color: currentLocation != null ? theme.text : theme.textSub,
               ),

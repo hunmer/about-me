@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -56,6 +57,7 @@ class ListAddField<T> extends StatelessWidget {
 
     return JellyBox(
       radius: theme.radii.lg,
+      strokeColor: theme.textSub.withValues(alpha: 0.45),
       child: Column(
         children: [
           // 列表项
@@ -135,7 +137,7 @@ class ListAddField<T> extends StatelessWidget {
           ),
           Pressable(
             onPressed: () => onRemove(index),
-            semanticLabel: '删除',
+            semanticLabel: 'app_delete'.tr,
             child: Padding(
               padding: const EdgeInsets.all(4),
               child: DsIcon(DsIconKind.close, size: 15, color: theme.textSub),
