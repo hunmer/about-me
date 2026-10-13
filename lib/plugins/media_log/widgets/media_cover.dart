@@ -1,24 +1,26 @@
 import 'package:flutter/widgets.dart';
 
-import 'demo_books.dart';
+import '../models/media_item.dart';
 
-/// 程序化书籍封面（替代真实封面图，墨线风格与全局一致）
-class BookCover extends StatelessWidget {
-  const BookCover({super.key, required this.style});
+/// 程序化媒体封面（替代真实封面图，墨线风格与全局一致）
+///
+/// 迁移自 ai_picks_demo/book_cover.dart。
+class MediaCover extends StatelessWidget {
+  const MediaCover({super.key, required this.style});
 
   final CoverStyle style;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _BookCoverPainter(style),
+      painter: _MediaCoverPainter(style),
       size: Size.infinite,
     );
   }
 }
 
-class _BookCoverPainter extends CustomPainter {
-  _BookCoverPainter(this.style);
+class _MediaCoverPainter extends CustomPainter {
+  _MediaCoverPainter(this.style);
 
   final CoverStyle style;
 
@@ -321,7 +323,7 @@ class _BookCoverPainter extends CustomPainter {
     _text(canvas, 'Selected\nPoems', Offset(12, s.height * 0.4), fontSize: 15, color: const Color(0xFF4A3A12));
   }
 
-  /// Pinball 1973：黄底红圆（备用封面）
+  /// Pinball 1973：黄底红圆
   void _pinball(Canvas canvas, Size s) {
     canvas.drawRect(_r(s), Paint()..color = const Color(0xFFF2C94C));
     canvas.drawCircle(Offset(s.width * 0.5, s.height * 0.5), s.width * 0.3, Paint()..color = const Color(0xFFC4453C));
@@ -329,5 +331,5 @@ class _BookCoverPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BookCoverPainter oldDelegate) => oldDelegate.style != style;
+  bool shouldRepaint(_MediaCoverPainter oldDelegate) => oldDelegate.style != style;
 }

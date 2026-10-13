@@ -27,7 +27,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/half_circle_gauge_widget
 import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/ai_picks_demo/ai_picks_demo_screen.dart';
+
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
@@ -610,11 +610,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/task_list_stat_card',
           handler: (settings) => RouteHelpers.createRoute(const TaskListStatCardExample(), settings: settings),
           description: '任务统计列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/ai_picks_demo',
-          handler: (settings) => RouteHelpers.createRoute(const AiPicksDemoScreen(), settings: settings),
-          description: 'AI-Picks for You 书籍推荐 DEMO 复刻',
         ),
       ];
 }
