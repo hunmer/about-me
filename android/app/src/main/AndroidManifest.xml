@@ -31,7 +31,7 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <application
-        android:label="蓝色星球"
+        android:label="关于我"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true"
