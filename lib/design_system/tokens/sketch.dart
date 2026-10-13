@@ -164,8 +164,9 @@ RoughBoxDecoration dsSketchDecoration({
         DsSketchFill.ruled => HachureFiller(
           FillerConfig.build(
             drawConfig: theme.wired.drawConfig,
-            // 角度 0 = 水平线，行距模拟笔记本行高
-            hachureAngle: 0,
+            // buildFillLines 以 hachureAngle+90 旋转后画水平扫描线再转回，
+            // 故 -90 才是水平线；行距模拟笔记本行高
+            hachureAngle: -90,
             hachureGap: 12,
             fillWeight: 1.2,
           ),

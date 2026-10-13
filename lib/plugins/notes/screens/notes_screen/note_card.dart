@@ -187,55 +187,95 @@ class NoteCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             // 待办类型渲染勾选清单，普通笔记用 QuillViewer 只读渲染富文本
+            // 内容底部渐隐（参考便签墙的淡出效果，暗示还有更多内容）
             if (note.isTodo)
               ..._buildTodoItems(theme, contentSub, seed, progress)
             else
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxHeight: 200, // 限制最大高度，模拟 maxLines: 8
-                ),
-                child: ClipRect(
-                  child: DefaultTextStyle(
-                    style: DsTypography.body.copyWith(color: contentSub),
-                    child: QuillViewer(
-                      data: note.content,
-                      selectable: false,
+              ShaderMask(
+                shaderCallback:
+                    (rect) => const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.white, Colors.white, Colors.transparent],
+                      stops: [0.0, 0.75, 1.0],
+                    ).createShader(rect),
+                blendMode: BlendMode.dstIn,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 200, // 限制最大高度，模拟 maxLines: 8
+                  ),
+                  child: ClipRect(
+                    child: DefaultTextStyle(
+                      style: DsTypography.body.copyWith(color: contentSub),
+                      child: QuillViewer(
+                        data: note.content,
+                        selectable: false,
+                      ),
                     ),
                   ),
                 ),
               ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
+            // 待办进度 / 标签徽章
+            if (todoItems != null || note.tags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    if (todoItems != null)
+                      _buildChip(
+                        theme: theme,
+                        icon:
+                            allDone
+                                ? DsIconKind.check
+                                : DsIconKind.calendarCheck,
+                        label: '$doneCount/${todoItems.length}',
+                        seed: seed,
+                        progress: progress,
+                        highlighted: allDone,
+                      ),
+                    ...note.tags.take(3).map(
+                      (tag) => _buildChip(
+                        theme: theme,
+                        icon: DsIconKind.tag,
+                        label: tag,
+                        seed: seed,
+                        progress: progress,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // 底部行：左侧日期（便签墙样式），右侧 ··· 呼出菜单
+            Row(
               children: [
-                if (todoItems != null)
-                  _buildChip(
-                    theme: theme,
-                    icon: allDone ? DsIconKind.check : DsIconKind.calendarCheck,
-                    label: '$doneCount/${todoItems.length}',
-                    seed: seed,
-                    progress: progress,
-                    highlighted: allDone,
-                  ),
-                if (note.tags.isNotEmpty)
-                  ...note.tags.take(3).map(
-                    (tag) => _buildChip(
-                      theme: theme,
-                      icon: DsIconKind.tag,
-                      label: tag,
-                      seed: seed,
-                      progress: progress,
+                Expanded(
+                  child: Text(
+                    DateFormat(
+                      'EEE, d MMM yy',
+                    ).format(note.updatedAt).toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.caption.copyWith(
+                      color: contentSub,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                if (note.tags.isEmpty && todoItems == null)
-                  _buildChip(
-                    theme: theme,
-                    icon: DsIconKind.calendar,
-                    label: DateFormat('MMM d').format(note.updatedAt),
-                    seed: seed,
-                    progress: progress,
+                ),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _showBottomSheet(context),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: DsIcon(
+                      DsIconKind.more,
+                      size: 18,
+                      color: contentSub,
+                    ),
                   ),
+                ),
               ],
             ),
           ],

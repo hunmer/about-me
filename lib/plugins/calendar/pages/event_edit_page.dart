@@ -5,7 +5,10 @@ import 'package:aboutme/plugins/calendar/models/event.dart';
 import 'package:aboutme/plugins/calendar/utils/calendar_notification_utils.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 class EventEditPage extends StatefulWidget {
   final CalendarEvent? event;
@@ -143,18 +146,11 @@ class _EventEditPageState extends State<EventEditPage> {
   Widget build(BuildContext context) {
     final event = widget.event;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(event == null ? '新建事件' : '编辑事件'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              _formKey.currentState?.submitForm();
-            },
-          ),
-        ],
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        event == null ? 'calendar_addEvent'.tr : 'calendar_editEvent'.tr,
       ),
+      enableLargeTitle: false,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: FormBuilderWrapper(
@@ -184,7 +180,7 @@ class _EventEditPageState extends State<EventEditPage> {
                 name: 'title',
                 type: FormFieldType.text,
                 labelText: 'calendar_eventTitle'.tr,
-                hintText: '请输入事件标题',
+                hintText: 'calendar_eventTitleHint'.tr,
                 initialValue: event?.title ?? '',
                 required: true,
                 validationMessage: 'calendar_enterEventTitle'.tr,
@@ -195,7 +191,7 @@ class _EventEditPageState extends State<EventEditPage> {
                 name: 'description',
                 type: FormFieldType.textArea,
                 labelText: 'calendar_eventDescription'.tr,
-                hintText: '请输入事件描述',
+                hintText: 'calendar_eventDescriptionHint'.tr,
                 initialValue: event?.description ?? '',
                 extra: {
                   'minLines': 3,
@@ -229,15 +225,36 @@ class _EventEditPageState extends State<EventEditPage> {
                 type: FormFieldType.select,
                 labelText: 'calendar_reminderSettings'.tr,
                 initialValue: event?.reminderMinutes,
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('不提醒')),
-                  DropdownMenuItem(value: 5, child: Text('提前5分钟')),
-                  DropdownMenuItem(value: 15, child: Text('提前15分钟')),
-                  DropdownMenuItem(value: 30, child: Text('提前30分钟')),
-                  DropdownMenuItem(value: 60, child: Text('提前1小时')),
-                  DropdownMenuItem(value: 120, child: Text('提前2小时')),
-                  DropdownMenuItem(value: 1440, child: Text('提前1天')),
-                  DropdownMenuItem(value: 2880, child: Text('提前2天')),
+                items: [
+                  DropdownMenuItem(value: null, child: Text('calendar_noReminder'.tr)),
+                  DropdownMenuItem(
+                    value: 5,
+                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '5'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 15,
+                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '15'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 30,
+                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '30'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 60,
+                    child: Text('calendar_reminderAheadHours'.trParams({'hours': '1'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 120,
+                    child: Text('calendar_reminderAheadHours'.trParams({'hours': '2'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 1440,
+                    child: Text('calendar_reminderAheadDays'.trParams({'days': '1'})),
+                  ),
+                  DropdownMenuItem(
+                    value: 2880,
+                    child: Text('calendar_reminderAheadDays'.trParams({'days': '2'})),
+                  ),
                 ],
               ),
             ],
@@ -302,6 +319,27 @@ class _EventEditPageState extends State<EventEditPage> {
           },
         ),
       ),
+      // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
+      actions: [
+        // 保存按钮
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              final theme = DSThemeBridge.resolve(buildContext);
+              return DSIconButton(
+                icon: DsIconKind.check,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'calendar_save'.tr,
+                onPressed: () {
+                  _formKey.currentState?.submitForm();
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

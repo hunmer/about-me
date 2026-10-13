@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar/models/event.dart';
 import 'package:aboutme/plugins/calendar/widgets/event_detail_card.dart';
-import 'package:intl/intl.dart';
-import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 
+/// 活动列表（日历插件"活动"tab 内容）
+///
+/// 手绘纸墨风：墨线卡片 + 挂载描画入场；已完成活动不再单独成页，
+/// 通过多条件过滤栏的状态过滤（全部/未完成/已完成）在列表内切换。
+/// 右滑完成（仅未完成）、左滑删除。
 class EventListPage extends StatefulWidget {
   final List<CalendarEvent> events;
+  final List<CalendarEvent> completedEvents;
   final Function(CalendarEvent) onEventUpdated;
   final Function(CalendarEvent) onEventCompleted;
   final Function(CalendarEvent) onEventDeleted;
@@ -14,6 +26,7 @@ class EventListPage extends StatefulWidget {
   const EventListPage({
     super.key,
     required this.events,
+    required this.completedEvents,
     required this.onEventUpdated,
     required this.onEventCompleted,
     required this.onEventDeleted,
@@ -24,15 +37,76 @@ class EventListPage extends StatefulWidget {
 }
 
 class _EventListPageState extends State<EventListPage> {
+  late List<CalendarEvent> _events;
+
+  /// 状态过滤：null = 全部，'active' = 未完成，'completed' = 已完成
+  String? _statusFilter;
+
+  /// 状态过滤选项（id -> 文案）
+  Map<String, String> get _statusOptions => {
+    'active': 'calendar_filterActive'.tr,
+    'completed': 'calendar_filterCompleted'.tr,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    // 合并未完成与已完成活动，按开始时间排序
+    _syncEvents();
+
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateRouteContext();
+    });
+  }
+
+  @override
+  void didUpdateWidget(EventListPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 控制器数据变化时（父级 ListenableBuilder 重建）同步列表
+    if (oldWidget.events != widget.events ||
+        oldWidget.completedEvents != widget.completedEvents) {
+      _syncEvents();
+    }
+  }
+
+  void _syncEvents() {
+    _events = [...widget.events, ...widget.completedEvents]
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  }
+
+  /// 状态过滤后的活动列表
+  List<CalendarEvent> get _filteredEvents {
+    if (_statusFilter == null) return _events;
+    return _events.where((event) {
+      return _statusFilter == 'completed'
+          ? event.completedTime != null
+          : event.completedTime == null;
+    }).toList();
+  }
+
+  /// 更新路由上下文,使"询问当前上下文"功能能获取到当前页面状态
+  void _updateRouteContext() {
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/calendar_event_list',
+      title: '所有日历事件',
+      params: {
+        'totalCount': _events.length.toString(),
+        'listType': '所有事件',
+        if (_statusFilter != null) 'statusFilter': _statusFilter!,
+      },
+    );
+  }
+
   String _getReminderText(int minutes) {
     if (minutes >= 1440) {
-      final days = minutes ~/ 1440;
-      return '提前$days天';
+      return 'calendar_reminderAheadDays'.trParams({'days': '${minutes ~/ 1440}'});
     } else if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      return '提前$hours小时';
+      return 'calendar_reminderAheadHours'.trParams({'hours': '${minutes ~/ 60}'});
     } else {
-      return '提前$minutes分钟';
+      return 'calendar_reminderAheadMinutes'.trParams({
+        'minutes': '$minutes',
+      });
     }
   }
 
@@ -54,36 +128,11 @@ class _EventListPageState extends State<EventListPage> {
     return timeText;
   }
 
-  late List<CalendarEvent> _events;
-
-  @override
-  void initState() {
-    super.initState();
-    // 创建事件列表的副本，按时间排序
-    _events = List.from(widget.events)
-      ..sort((a, b) => a.startTime.compareTo(b.startTime));
-
-    // 初始化时设置路由上下文
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateRouteContext();
-    });
-  }
-
-  /// 更新路由上下文,使"询问当前上下文"功能能获取到当前页面状态
-  void _updateRouteContext() {
-    RouteHistoryManager.updateCurrentContext(
-      pageId: '/calendar_event_list',
-      title: '所有日历事件',
-      params: {
-        'totalCount': _events.length.toString(),
-        'listType': '所有事件',
-      },
-    );
-  }
-
   void _showEventDetails(CalendarEvent event) {
-    showDialog(
+    // 手绘弹窗挂在根导航，调用点可能不在 AppTheme 树内，显式传主题
+    showDSDialog(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => EventDetailCard(
             event: event,
@@ -95,153 +144,242 @@ class _EventListPageState extends State<EventListPage> {
             onComplete: () {
               Navigator.pop(context);
               widget.onEventCompleted(event);
-              // 从列表中移除已完成的事件
-              setState(() {
-                _events.remove(event);
-              });
             },
             onDelete: () {
               Navigator.pop(context);
               widget.onEventDeleted(event);
-              // 从列表中移除已删除的事件
-              setState(() {
-                _events.remove(event);
-              });
             },
           ),
     );
   }
 
+  /// 构建状态过滤项（单选：全部/未完成/已完成）
+  List<FilterItem> _buildFilterItems() {
+    return [
+      FilterItem(
+        id: 'status',
+        title: 'calendar_filterStatus'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, value, onChanged) {
+          // 过滤栏经根 Overlay 展示，DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: FilterBuilders.buildSingleChoiceFilter(
+              context: context,
+              currentValue: value,
+              onChanged: onChanged,
+              options: _statusOptions,
+              allItemsKey: 'all',
+              allItemsLabel: 'calendar_filterAll'.tr,
+            ),
+          );
+        },
+        getBadge: (value) => FilterBuilders.singleChoiceBadge(
+          value,
+          _statusOptions,
+        ),
+      ),
+    ];
+  }
+
+  /// MultiFilterBar 过滤变更：提取状态过滤选中项
+  void _onMultiFilterChanged(Map<String, dynamic> filters) {
+    setState(() {
+      final status = filters['status'];
+      _statusFilter =
+          status is String && status != 'all' ? status : null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('calendar_allEvents'.tr)),
+    final theme = DSThemeBridge.resolve(context);
+    final filtered = _filteredEvents;
+
+    return SuperCupertinoNavigationWrapper(
+      title: Text('calendar_allEvents'.tr),
+      largeTitle: 'calendar_allEvents'.tr,
+      enableLargeTitle: true,
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _onMultiFilterChanged,
       body:
-          _events.isEmpty
-              ? Center(child: Text('calendar_noEvents'.tr))
+          filtered.isEmpty
+              ? Center(
+                child: DSEmptyState(
+                  emoji: '🗓️',
+                  title: 'calendar_noEvents'.tr,
+                ),
+              )
               : ListView.builder(
-                itemCount: _events.length,
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                itemCount: filtered.length,
                 itemBuilder: (context, index) {
-                  final event = _events[index];
-                  return Dismissible(
-                    key: Key(event.id),
-                    background: Container(
-                      color: Colors.green,
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.only(left: 20),
-                      child: const Icon(
-                        Icons.check_circle,
-                        color: Colors.white,
-                      ),
-                    ),
-                    secondaryBackground: Container(
-                      color: Colors.red,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    confirmDismiss: (direction) async {
-                      if (direction == DismissDirection.startToEnd) {
-                        // 右滑完成
-                        widget.onEventCompleted(event);
-                        return true;
-                      } else if (direction == DismissDirection.endToStart) {
-                        // 左滑删除
-                        widget.onEventDeleted(event);
-                        return true;
-                      }
-                      return false;
-                    },
-                    onDismissed: (direction) {
-                      setState(() {
-                        _events.removeAt(index);
-                      });
-                    },
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 8,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
+                  final event = filtered[index];
+                  return _buildEventItem(event, theme);
+                },
+              ),
+    );
+  }
+
+  /// 单个活动卡片：右滑完成（仅未完成）、左滑删除
+  Widget _buildEventItem(CalendarEvent event, AppThemeData theme) {
+    final isCompleted = event.completedTime != null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      // 挂载即描画入场
+      child: WiredDraw(
+        child: Dismissible(
+          key: Key(event.id),
+          background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            decoration: BoxDecoration(
+              color: theme.primary.withValues(alpha: 0.85),
+              borderRadius: theme.radii.xl,
+            ),
+            child: DsIcon(DsIconKind.check, color: theme.onPrimary),
+          ),
+          secondaryBackground: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            decoration: BoxDecoration(
+              color: theme.danger.withValues(alpha: 0.85),
+              borderRadius: theme.radii.xl,
+            ),
+            child: DsIcon(DsIconKind.trash, color: theme.onPrimary),
+          ),
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.startToEnd) {
+              // 已完成的活动不可再完成
+              if (isCompleted) return false;
+              // 右滑完成
+              widget.onEventCompleted(event);
+              return true;
+            } else if (direction == DismissDirection.endToStart) {
+              // 左滑删除
+              widget.onEventDeleted(event);
+              return true;
+            }
+            return false;
+          },
+          onDismissed: (direction) {
+            setState(() {
+              _events.remove(event);
+            });
+          },
+          child: DSCard(
+            onTap: () => _showEventDetails(event),
+            child: Opacity(
+              // 已完成活动整体降不透明度区分
+              opacity: isCompleted ? 0.6 : 1.0,
+              child: Row(
+                children: [
+                  _buildIconBadge(event, theme),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: DsTypography.title.copyWith(
+                            color: theme.text,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            Icon(event.icon, color: event.color, size: 36),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    event.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.access_time, size: 14),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          _formatEventTime(event),
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (event.description.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      event.description,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                  if (event.reminderMinutes != null) ...[
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.notifications,
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          _getReminderText(
-                                            event.reminderMinutes!,
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
+                            DsIcon(
+                              DsIconKind.clock,
+                              size: 14,
+                              color: theme.textSub,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right),
-                              onPressed: () => _showEventDetails(event),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                _formatEventTime(event),
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                        if (event.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            event.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                        if (event.reminderMinutes != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              DsIcon(
+                                DsIconKind.bell,
+                                size: 14,
+                                color: theme.textSub,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getReminderText(event.reminderMinutes!),
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(width: 4),
+                  DsIcon(
+                    isCompleted ? DsIconKind.check : DsIconKind.chevronRight,
+                    size: 20,
+                    color: isCompleted ? theme.primary : theme.textSub,
+                  ),
+                ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 活动图标徽章：墨线圆底 + 手绘图标本体（活动自带动态 IconData，走 WiredIcon）
+  Widget _buildIconBadge(CalendarEvent event, AppThemeData theme) {
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      // 小控件分档：纯色实底 + 墨线抖动描边
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: event.color.withValues(alpha: 0.2),
+        radius: BorderRadius.circular(999),
+        strokeWidth: 1.2,
+        seed: event.id.hashCode,
+      ),
+      child: WiredIcon(
+        icon: event.icon,
+        size: 22,
+        color: event.color,
+        drawConfig: theme.wired.drawConfig,
+      ),
     );
   }
 }

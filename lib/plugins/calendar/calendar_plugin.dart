@@ -1,20 +1,23 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/utils/platform_utils.dart';
+import 'package:skribble/skribble.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart' as syncfusion;
 import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/core/widgets/keep_alive_wrapper.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import './controllers/calendar_controller.dart' as app;
 import './models/event.dart';
 import './pages/event_edit_page.dart';
-import './pages/completed_events_page.dart';
 import './pages/event_list_page.dart';
 import './widgets/event_detail_card.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -331,23 +334,26 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
       },
     );
 
-    showDialog(
+    // 手绘弹窗挂在根导航，调用点可能不在 AppTheme 树内，显式传主题
+    showDSDialog(
       context: context,
-      builder: (context) => EventDetailCard(
-        event: event,
-        onEdit: () {
-          Navigator.pop(context);
-          showEventEditPage(context, event);
-        },
-        onComplete: () {
-          Navigator.pop(context);
-          controller.completeEvent(event);
-        },
-        onDelete: () {
-          Navigator.pop(context);
-          controller.deleteEvent(event);
-        },
-      ),
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => EventDetailCard(
+            event: event,
+            onEdit: () {
+              Navigator.pop(context);
+              showEventEditPage(context, event);
+            },
+            onComplete: () {
+              Navigator.pop(context);
+              controller.completeEvent(event);
+            },
+            onDelete: () {
+              Navigator.pop(context);
+              controller.deleteEvent(event);
+            },
+          ),
     );
   }
 
@@ -367,31 +373,6 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
           controller.refresh();
         },
       ),
-    );
-  }
-
-  void showAllEvents(BuildContext context) {
-    NavigationHelper.push(
-      context,
-      EventListPage(
-        events: controller.events,
-        onEventUpdated: (event) {
-          showEventEditPage(context, event);
-        },
-        onEventCompleted: (event) {
-          controller.completeEvent(event);
-        },
-        onEventDeleted: (event) {
-          controller.deleteEvent(event);
-        },
-      ),
-    );
-  }
-
-  void showCompletedEvents(BuildContext context) {
-    NavigationHelper.push(
-      context,
-      CompletedEventsPage(completedEvents: controller.completedEvents),
     );
   }
 
@@ -630,15 +611,30 @@ class CalendarMainView extends StatefulWidget {
   State<CalendarMainView> createState() => _CalendarMainViewState();
 }
 
-class _CalendarMainViewState extends State<CalendarMainView> {
+class _CalendarMainViewState extends State<CalendarMainView>
+    with SingleTickerProviderStateMixin {
   late CalendarPlugin plugin;
+  late TabController _tabController;
+  late int _currentPage;
+  final GlobalKey _bottomBarKey = GlobalKey();
+  final GlobalKey _fabKey = GlobalKey();
   String _searchQuery = '';
-  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
     plugin = PluginManager.instance.getPlugin('calendar') as CalendarPlugin;
+
+    _currentPage = 0;
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.animation?.addListener(() {
+      final value = _tabController.animation!.value.round();
+      if (value != _currentPage && mounted) {
+        setState(() {
+          _currentPage = value;
+        });
+      }
+    });
 
     // ✅ 每次进入日历界面时自动刷新系统事件
     _refreshSystemEvents();
@@ -647,6 +643,12 @@ class _CalendarMainViewState extends State<CalendarMainView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateRouteContext();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   /// 更新路由上下文,使"询问当前上下文"功能能获取到当前日历视图状态
@@ -713,24 +715,12 @@ class _CalendarMainViewState extends State<CalendarMainView> {
     );
   }
 
-  /// 刷新系统日历事件
+  /// 刷新系统日历事件（进入页面时自动执行）
   Future<void> _refreshSystemEvents() async {
-    if (_isRefreshing) return;
-
-    setState(() {
-      _isRefreshing = true;
-    });
-
     try {
       await plugin.controller.loadSystemEvents();
     } catch (e) {
       debugPrint('CalendarMainView: 刷新系统事件失败: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
     }
   }
 
@@ -747,18 +737,20 @@ class _CalendarMainViewState extends State<CalendarMainView> {
     }).toList();
   }
 
-  /// 构建搜索结果列表
+  /// 构建搜索结果列表（手绘风：墨线卡片 + 挂载描画入场）
   Widget _buildSearchResults(List<CalendarEvent> events) {
+    final theme = DSThemeBridge.resolve(context);
+
     if (events.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            DsIcon(DsIconKind.search, size: 64, color: theme.textSub),
             const SizedBox(height: 16),
             Text(
-              '未找到匹配的事件',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              'calendar_noMatchingEvents'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
         ),
@@ -766,50 +758,93 @@ class _CalendarMainViewState extends State<CalendarMainView> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: event.color.withOpacity(0.2),
-              child: Icon(event.icon, color: event.color),
-            ),
-            title: Text(
-              event.title,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  _formatDateTime(event.startTime),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                if (event.description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    event.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          // 挂载即描画入场
+          child: WiredDraw(
+            child: DSCard(
+              onTap: () {
+                // 清除搜索并显示事件详情
+                setState(() {
+                  _searchQuery = '';
+                });
+                plugin.showEventDetails(context, event);
+              },
+              child: Row(
+                children: [
+                  _buildEventIconBadge(event, theme),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: DsTypography.title.copyWith(
+                            color: theme.text,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDateTime(event.startTime),
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                        ),
+                        if (event.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            event.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
+                  DsIcon(DsIconKind.chevronRight, size: 20, color: theme.textSub),
                 ],
-              ],
+              ),
             ),
-            onTap: () {
-              // 清除搜索并显示事件详情
-              setState(() {
-                _searchQuery = '';
-              });
-              plugin.showEventDetails(context, event);
-            },
           ),
         );
       },
+    );
+  }
+
+  /// 活动图标徽章：墨线圆底 + 手绘图标本体（活动自带动态 IconData，走 WiredIcon）
+  Widget _buildEventIconBadge(CalendarEvent event, AppThemeData theme) {
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      // 小控件分档：纯色实底 + 墨线抖动描边
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: event.color.withValues(alpha: 0.2),
+        radius: BorderRadius.circular(999),
+        strokeWidth: 1.2,
+        seed: event.id.hashCode,
+      ),
+      child: WiredIcon(
+        icon: event.icon,
+        size: 22,
+        color: event.color,
+        drawConfig: theme.wired.drawConfig,
+      ),
     );
   }
 
@@ -838,175 +873,142 @@ class _CalendarMainViewState extends State<CalendarMainView> {
     return '$dateStr $timeStr';
   }
 
+  /// 构建 FAB（新建活动，停靠底部栏子栏右圆钮位置）
+  Widget _buildFab() {
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        key: _fabKey,
+        onPressed: () {
+          NavigationHelper.openContainer<bool>(
+            context,
+            (context) => EventEditPage(
+              initialDate: plugin.controller.selectedDate,
+              onSave: (event) {
+                plugin.controller.addEvent(event);
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 日历 tab：大标题 + 搜索 + syncfusion 日历
+  Widget _buildCalendarTab(BuildContext context) {
+    return SuperCupertinoNavigationWrapper(
+      title: Text('calendar_calendar'.tr),
+      largeTitle: 'calendar_calendar'.tr,
+      enableLargeTitle: true,
+      enableSearchBar: true,
+      searchPlaceholder: 'calendar_searchPlaceholder'.tr,
+      searchBody: _buildSearchResults(_searchEvents(_searchQuery)),
+      onSearchChanged: (query) {
+        setState(() {
+          _searchQuery = query;
+        });
+      },
+      body: Column(
+        children: [
+          Expanded(
+            child: AboutmeSfCalendar(
+              view:
+                  plugin.sfController.view ?? syncfusion.CalendarView.month,
+              controller: plugin.sfController,
+              allowedViews: plugin.allowedViews,
+              allowViewNavigation: true,
+              dataSource: _AppointmentDataSource(
+                plugin.getUserAppointments(),
+              ),
+              initialDisplayDate: plugin.controller.focusedMonth,
+              onViewChanged: (details) =>
+                  plugin.onViewChanged(details, _updateRouteContext),
+              onTap: (details) =>
+                  plugin.handleCalendarTap(context, details),
+              monthViewSettings: const syncfusion.MonthViewSettings(
+                showAgenda: true,
+                agendaViewHeight: 200,
+                appointmentDisplayMode:
+                    syncfusion.MonthAppointmentDisplayMode.appointment,
+              ),
+              timeSlotViewSettings:
+                  const syncfusion.TimeSlotViewSettings(
+                    startHour: 6,
+                    endHour: 23,
+                    timeInterval: Duration(minutes: 30),
+                  ),
+              todayHighlightColor: Theme.of(context).primaryColor,
+              selectionDecoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
+      actions: [
+        // 跳转到今天按钮
+        DSThemeBridge(
+          child: Builder(
+            builder: (buildContext) {
+              final theme = DSThemeBridge.resolve(buildContext);
+              return DSIconButton(
+                icon: DsIconKind.calendar,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'calendar_backToToday'.tr,
+                onPressed: () {
+                  plugin.sfController.displayDate = DateTime.now();
+                  // 更新路由上下文
+                  _updateRouteContext();
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return ListenableBuilder(
       listenable: plugin.controller,
       builder: (context, child) {
-        // 获取搜索结果
-        final searchResults = _searchEvents(_searchQuery);
-
-        return SuperCupertinoNavigationWrapper(
-          title: Text(
-            'calendar_calendar'.tr,
-            style: TextStyle(color: theme.textTheme.titleLarge?.color),
-          ),
-          largeTitle: 'calendar_calendar'.tr,
-          body: Stack(
+        return CustomBottomBar(
+          currentIndex: _currentPage,
+          tabController: _tabController,
+          bottomBarKey: _bottomBarKey,
+          body: (context, controller) => TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
-              Column(
-                children: [
-                  Expanded(
-                    child: AboutmeSfCalendar(
-                      view:
-                          plugin.sfController.view ??
-                          syncfusion.CalendarView.month,
-                      controller: plugin.sfController,
-                      allowedViews: plugin.allowedViews,
-                      allowViewNavigation: true,
-                      dataSource: _AppointmentDataSource(
-                        plugin.getUserAppointments(),
-                      ),
-                      initialDisplayDate: plugin.controller.focusedMonth,
-                      onViewChanged: (details) =>
-                          plugin.onViewChanged(details, _updateRouteContext),
-                      onTap: (details) =>
-                          plugin.handleCalendarTap(context, details),
-                      monthViewSettings: const syncfusion.MonthViewSettings(
-                        showAgenda: true,
-                        agendaViewHeight: 200,
-                        appointmentDisplayMode:
-                            syncfusion.MonthAppointmentDisplayMode.appointment,
-                      ),
-                      timeSlotViewSettings:
-                          const syncfusion.TimeSlotViewSettings(
-                            startHour: 6,
-                            endHour: 23,
-                            timeInterval: Duration(minutes: 30),
-                          ),
-                      todayHighlightColor: Theme.of(context).primaryColor,
-                      selectionDecoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // FAB
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: DSThemeBridge(
-                  // DSFab 内部取 AppTheme，需包桥
-                  child: DSFab(
-                    onPressed: () {
-                      NavigationHelper.openContainer<bool>(
-                        context,
-                        (context) => EventEditPage(
-                          initialDate: plugin.controller.selectedDate,
-                          onSave: (event) {
-                            plugin.controller.addEvent(event);
-                          },
-                        ),
-                      );
-                    },
-                  ),
+              // Tab0: 日历视图
+              KeepAliveWrapper(child: _buildCalendarTab(context)),
+              // Tab1: 活动列表（过滤器可切换全部/未完成/已完成）
+              KeepAliveWrapper(
+                child: EventListPage(
+                  events: plugin.controller.events,
+                  completedEvents: plugin.controller.completedEvents,
+                  onEventUpdated: (event) =>
+                      plugin.showEventEditPage(context, event),
+                  onEventCompleted: (event) =>
+                      plugin.controller.completeEvent(event),
+                  onEventDeleted: (event) =>
+                      plugin.controller.deleteEvent(event),
                 ),
               ),
             ],
           ),
-          enableLargeTitle: true,
-          enableSearchBar: true,
-          searchPlaceholder: 'calendar_searchPlaceholder'.tr,
-          searchBody: _buildSearchResults(searchResults),
-          onSearchChanged: (query) {
-            setState(() {
-              _searchQuery = query;
-            });
-          },
-          // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
-          actions: [
-            // 刷新系统事件按钮
-            DSThemeBridge(
-              child: Builder(
-                builder: (buildContext) {
-                  final theme = DSThemeBridge.resolve(buildContext);
-                  if (_isRefreshing) {
-                    return SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: Center(
-                        child: DSLoadingDots(size: 10, color: theme.textSub),
-                      ),
-                    );
-                  }
-                  return DSIconButton(
-                    icon: DsIconKind.refresh,
-                    size: 36,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    tooltip: '刷新日历事件',
-                    onPressed: _refreshSystemEvents,
-                  );
-                },
-              ),
-            ),
-            // 跳转到今天按钮
-            DSThemeBridge(
-              child: Builder(
-                builder: (buildContext) {
-                  final theme = DSThemeBridge.resolve(buildContext);
-                  return DSIconButton(
-                    icon: DsIconKind.calendar,
-                    size: 36,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    tooltip: 'calendar_backToToday'.tr,
-                    onPressed: () {
-                      plugin.sfController.displayDate = DateTime.now();
-                      // 更新路由上下文
-                      _updateRouteContext();
-                    },
-                  );
-                },
-              ),
-            ),
-            // 查看所有事件按钮
-            DSThemeBridge(
-              child: Builder(
-                builder: (buildContext) {
-                  final theme = DSThemeBridge.resolve(buildContext);
-                  return DSIconButton(
-                    icon: DsIconKind.list,
-                    size: 36,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    tooltip: 'calendar_allEvents'.tr,
-                    onPressed: () => plugin.showAllEvents(context),
-                  );
-                },
-              ),
-            ),
-            // 查看已完成事件按钮
-            DSThemeBridge(
-              child: Builder(
-                builder: (buildContext) {
-                  final theme = DSThemeBridge.resolve(buildContext);
-                  return DSIconButton(
-                    icon: DsIconKind.check,
-                    size: 36,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    tooltip: 'calendar_completedEvents'.tr,
-                    onPressed: () => plugin.showCompletedEvents(context),
-                  );
-                },
-              ),
-            ),
+          fab: _buildFab(),
+          items: [
+            DSNavItem(icon: DsIconKind.calendar, label: 'calendar_calendar'.tr),
+            DSNavItem(icon: DsIconKind.list, label: 'calendar_activities'.tr),
           ],
         );
       },

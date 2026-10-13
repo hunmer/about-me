@@ -115,9 +115,10 @@ class CalendarController extends ChangeNotifier {
     }
   }
 
-  // 删除事件
+  // 删除事件（未完成与已完成列表都会清理）
   void deleteEvent(CalendarEvent event) async {
     _events.removeWhere((e) => e.id == event.id);
+    _completedEvents.removeWhere((e) => e.id == event.id);
     await _saveEvents();
     notifyListeners();
 

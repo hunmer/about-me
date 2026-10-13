@@ -5,12 +5,15 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/folder_breadcrumbs.dart';
+import 'folder_card.dart';
+import 'folder_operations.dart';
 import 'note_card.dart';
 import 'note_operations.dart';
 import 'notes_fab.dart';
 import 'notes_screen_state.dart';
 
-mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
+mixin NotesBody
+    on NotesMainViewState, NoteOperations, NotesFab, FolderOperations {
   /// 构建面包屑导航项
   List<FolderBreadcrumbItem> _buildBreadcrumbItems() {
     final path = plugin.controller.getFolderPath(currentFolderId);
@@ -45,61 +48,45 @@ mixin NotesBody on NotesMainViewState, NoteOperations, NotesFab {
                   ),
                 ),
 
-                // Subfolders Horizontal List (子文件夹列表)
-                if (subFolders.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      height: 50,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: subFolders.length,
-                        separatorBuilder:
-                            (context, index) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final folder = subFolders[index];
-                          return Center(
-                            child: DSChip(
-                              label: folder.name,
-                              leading: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: folder.color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              onSelected: (_) => navigateToFolder(folder),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                // Notes Grid
-                if (notes.isNotEmpty)
+                // Folders & Notes Grid（子文件夹卡片插在网格最前，笔记随后）
+                if (subFolders.isNotEmpty || notes.isNotEmpty)
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverMasonryGrid.count(
                       crossAxisCount: 2,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childCount: notes.length,
-                        itemBuilder: (context, index) {
-                        final note = notes[index];
+                      childCount: subFolders.length + notes.length,
+                      itemBuilder: (context, index) {
                         // 列表项挂载时墨线描画入场
+                        if (index < subFolders.length) {
+                          final folder = subFolders[index];
+                          return WiredDraw(
+                            child: FolderCard(
+                              folder: folder,
+                              noteCount:
+                                  plugin.controller
+                                      .getFolderNotes(folder.id)
+                                      .length,
+                              onTap: () => navigateToFolder(folder),
+                              onEdit: () => renameFolder(folder),
+                              onDelete: () => deleteFolder(folder),
+                            ),
+                          );
+                        }
+                        final note = notes[index - subFolders.length];
                         return WiredDraw(
                           child: NoteCard(
                             note: note,
                             onTap: () => editNote(note),
                             onDelete: () => deleteNote(note),
-                            onToggle: note.isTodo
-                                ? (i) => toggleTodoItem(note, i)
-                                : null,
-                            onEditStyle: (color, bgStyle) =>
-                                updateNoteStyle(note, color, bgStyle),
+                            onToggle:
+                                note.isTodo
+                                    ? (i) => toggleTodoItem(note, i)
+                                    : null,
+                            onEditStyle:
+                                (color, bgStyle) =>
+                                    updateNoteStyle(note, color, bgStyle),
                           ),
                         );
                       },
