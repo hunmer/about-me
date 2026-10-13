@@ -257,6 +257,7 @@ class NotesController {
     String? meta,
     Color? color,
     int bgStyle = 0,
+    String? icon,
   }) async {
     // 如果提供了自定义 ID,检查是否已存在
     if (customId != null) {
@@ -278,6 +279,7 @@ class NotesController {
       meta: meta,
       color: color,
       bgStyle: bgStyle,
+      icon: icon,
     );
     _notes.putIfAbsent(folderId, () => []).add(note);
     _noteIds.add(note.id);

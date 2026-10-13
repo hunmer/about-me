@@ -85,8 +85,7 @@ mixin NotesBody
                                     ? (i) => toggleTodoItem(note, i)
                                     : null,
                             onEditStyle:
-                                (color, bgStyle) =>
-                                    updateNoteStyle(note, color, bgStyle),
+                                (style) => updateNoteStyle(note, style),
                           ),
                         );
                       },

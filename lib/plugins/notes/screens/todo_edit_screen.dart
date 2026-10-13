@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -14,8 +15,7 @@ class TodoEditSheet extends StatefulWidget {
     String title,
     List<TodoItem> items,
     TodoMeta meta,
-    Color? color,
-    int bgStyle,
+    NoteStyleSelection style,
   ) onSave;
 
   const TodoEditSheet({super.key, this.note, required this.onSave});
@@ -28,8 +28,7 @@ class TodoEditSheet extends StatefulWidget {
       String title,
       List<TodoItem> items,
       TodoMeta meta,
-      Color? color,
-      int bgStyle,
+      NoteStyleSelection style,
     ) onSave,
   }) {
     return SmoothBottomSheet.show(
@@ -52,8 +51,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
   late List<bool> _checkedStates;
   late List<FocusNode> _itemFocusNodes;
   late TodoMeta _meta;
-  Color? _pickedColor;
-  int _bgStyle = 0;
+  late NoteStyleSelection _style;
 
   bool get _isEditing => widget.note != null;
 
@@ -67,8 +65,11 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     _checkedStates = items.map((item) => item.checked).toList();
     _itemFocusNodes = List.generate(items.length, (_) => FocusNode());
     _meta = TodoMeta.parse(widget.note?.meta);
-    _pickedColor = widget.note?.color;
-    _bgStyle = widget.note?.bgStyle ?? 0;
+    _style = NoteStyleSelection(
+      color: widget.note?.color,
+      bgStyle: widget.note?.bgStyle ?? 0,
+      icon: widget.note?.icon,
+    );
   }
 
   @override
@@ -148,7 +149,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     }
     // 清理已删除条目的完成时间记录
     _meta.retainTexts(items.map((item) => item.text).toSet());
-    await widget.onSave(_titleController.text, items, _meta, _pickedColor, _bgStyle);
+    await widget.onSave(_titleController.text, items, _meta, _style);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -220,10 +221,12 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: NoteColorPickerRow(
-                  selected: _pickedColor,
-                  selectedStyle: _bgStyle,
-                  onChanged: (color) => setState(() => _pickedColor = color),
-                  onStyleChanged: (style) => setState(() => _bgStyle = style),
+                  selected: _style.color,
+                  selectedStyle: _style.bgStyle,
+                  selectedIcon: _style.icon,
+                  onChanged: (color) => setState(() => _style.color = color),
+                  onStyleChanged: (style) => setState(() => _style.bgStyle = style),
+                  onIconChanged: (icon) => setState(() => _style.icon = icon),
                 ),
               ),
               Padding(

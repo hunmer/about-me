@@ -4,6 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/screens/note_edit_screen.dart';
 import 'package:aboutme/plugins/notes/screens/todo_edit_screen.dart';
@@ -33,13 +34,14 @@ mixin NoteOperations on NotesMainViewState {
       await TodoEditSheet.show(
         context: context,
         note: note,
-        onSave: (title, items, meta, color, bgStyle) async {
+        onSave: (title, items, meta, style) async {
           // 直接更新原对象字段（copyWith 无法把已有颜色清回 null）
           note.title = title;
           note.content = TodoItem.encodeList(items);
           note.meta = meta.toJson();
-          note.color = color;
-          note.bgStyle = bgStyle;
+          note.color = style.color;
+          note.bgStyle = style.bgStyle;
+          note.icon = style.icon;
           note.updatedAt = DateTime.now();
           await plugin.controller.updateNote(note);
         },
@@ -68,10 +70,11 @@ mixin NoteOperations on NotesMainViewState {
     loadCurrentFolder();
   }
 
-  /// 修改笔记标记色/背景风格并持久化（长按菜单「颜色」入口）
-  Future<void> updateNoteStyle(Note note, Color? color, int bgStyle) async {
-    note.color = color;
-    note.bgStyle = bgStyle;
+  /// 修改笔记样式（标记色/背景风格/水印图标）并持久化（长按菜单入口）
+  Future<void> updateNoteStyle(Note note, NoteStyleSelection style) async {
+    note.color = style.color;
+    note.bgStyle = style.bgStyle;
+    note.icon = style.icon;
     note.updatedAt = DateTime.now();
     await plugin.controller.updateNote(note);
     loadCurrentFolder();

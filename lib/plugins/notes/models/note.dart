@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 class Note {
   static const String typeText = 'text';
@@ -24,6 +25,9 @@ class Note {
   /// 卡片背景填充风格（DsSketchFill 下标），0 = 默认排线
   int bgStyle;
 
+  /// 右上角水印图标（DsIconKind 枚举名），null = 无
+  String? icon;
+
   Note({
     required this.id,
     required this.title,
@@ -36,9 +40,20 @@ class Note {
     this.meta,
     this.color,
     this.bgStyle = 0,
+    this.icon,
   });
 
   bool get isTodo => type == typeTodo;
+
+  /// 水印图标枚举（未知名称返回 null）
+  DsIconKind? get iconKind {
+    final name = icon;
+    if (name == null) return null;
+    for (final kind in DsIconKind.values) {
+      if (kind.name == name) return kind;
+    }
+    return null;
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -53,6 +68,7 @@ class Note {
       'meta': meta,
       'color': color?.value,
       'bgStyle': bgStyle,
+      'icon': icon,
     };
   }
 
@@ -69,6 +85,7 @@ class Note {
       meta: json['meta'] as String?,
       color: json['color'] == null ? null : Color(json['color'] as int),
       bgStyle: json['bgStyle'] as int? ?? 0,
+      icon: json['icon'] as String?,
     );
   }
 
@@ -83,6 +100,7 @@ class Note {
     String? meta,
     Color? color,
     int? bgStyle,
+    String? icon,
   }) {
     return Note(
       id: id,
@@ -96,6 +114,7 @@ class Note {
       meta: meta ?? this.meta,
       color: color ?? this.color,
       bgStyle: bgStyle ?? this.bgStyle,
+      icon: icon ?? this.icon,
     );
   }
 }

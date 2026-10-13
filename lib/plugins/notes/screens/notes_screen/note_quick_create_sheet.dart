@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签 + 标记色/背景风格
+/// 新建笔记底部抽屉：标题 + 纯文本内容 + 标签 + 样式（颜色/背景/图标）
 class NoteQuickCreateSheet extends StatefulWidget {
   final Future<void> Function(
     String title,
     String content,
     List<String> tags,
-    Color? color,
-    int bgStyle,
+    NoteStyleSelection style,
   ) onSave;
 
   const NoteQuickCreateSheet({super.key, required this.onSave});
@@ -23,8 +23,7 @@ class NoteQuickCreateSheet extends StatefulWidget {
       String title,
       String content,
       List<String> tags,
-      Color? color,
-      int bgStyle,
+      NoteStyleSelection style,
     ) onSave,
   }) {
     return SmoothBottomSheet.show(
@@ -47,8 +46,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
   final TextEditingController _tagInputController = TextEditingController();
   final FocusNode _contentFocusNode = FocusNode();
   List<String> _tags = [];
-  Color? _pickedColor;
-  int _bgStyle = 0;
+  final NoteStyleSelection _style = NoteStyleSelection();
 
   @override
   void dispose() {
@@ -74,8 +72,7 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
       _titleController.text,
       _contentController.text,
       List.of(_tags),
-      _pickedColor,
-      _bgStyle,
+      _style,
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -188,10 +185,12 @@ class _NoteQuickCreateSheetState extends State<NoteQuickCreateSheet> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
                 child: NoteColorPickerRow(
-                  selected: _pickedColor,
-                  selectedStyle: _bgStyle,
-                  onChanged: (color) => setState(() => _pickedColor = color),
-                  onStyleChanged: (style) => setState(() => _bgStyle = style),
+                  selected: _style.color,
+                  selectedStyle: _style.bgStyle,
+                  selectedIcon: _style.icon,
+                  onChanged: (color) => setState(() => _style.color = color),
+                  onStyleChanged: (style) => setState(() => _style.bgStyle = style),
+                  onIconChanged: (icon) => setState(() => _style.icon = icon),
                 ),
               ),
               const SizedBox(height: 12),

@@ -6,6 +6,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
+import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
 import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
@@ -21,8 +22,8 @@ class NoteCard extends StatelessWidget {
   /// 待办卡片勾选回调（index 对应条目位置），为 null 时仅展示
   final ValueChanged<int>? onToggle;
 
-  /// 长按菜单「颜色」入口回调（改标记色/背景风格后由外部持久化刷新）
-  final void Function(Color? color, int bgStyle)? onEditStyle;
+  /// 长按菜单「颜色」入口回调（改样式后由外部持久化刷新）
+  final ValueChanged<NoteStyleSelection>? onEditStyle;
 
   const NoteCard({
     super.key,
@@ -38,59 +39,61 @@ class NoteCard extends StatelessWidget {
   void _showBottomSheet(BuildContext context) {
     SmoothBottomSheet.show(
       context: context,
-      builder:
-          (context) => DSThemeBridge(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DSSheetAction(
-                  icon: DsIconKind.copy,
-                  label: 'app_copy'.tr,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _copyNoteContent();
-                  },
-                ),
-                DSSheetAction(
-                  icon: DsIconKind.edit,
-                  label: 'app_edit'.tr,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (onEdit != null) {
-                      onEdit!();
-                    } else {
-                      onTap();
-                    }
-                  },
-                ),
-                if (onEditStyle != null)
-                  DSSheetAction(
-                    icon: DsIconKind.palette,
-                    label: 'notes_color'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showStyleEditor(context);
-                    },
-                  ),
-                DSSheetAction(
-                  icon: DsIconKind.trash,
-                  label: 'app_delete'.tr,
-                  destructive: true,
-                  onTap: () {
-                    Navigator.pop(context);
-                    onDelete?.call();
-                  },
-                ),
-              ],
+      builder: (context) => DSThemeBridge(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DSSheetAction(
+              icon: DsIconKind.copy,
+              label: 'app_copy'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _copyNoteContent();
+              },
             ),
-          ),
+            DSSheetAction(
+              icon: DsIconKind.edit,
+              label: 'app_edit'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                if (onEdit != null) {
+                  onEdit!();
+                } else {
+                  onTap();
+                }
+              },
+            ),
+            if (onEditStyle != null)
+              DSSheetAction(
+                icon: DsIconKind.palette,
+                label: 'notes_color'.tr,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showStyleEditor(context);
+                },
+              ),
+            DSSheetAction(
+              icon: DsIconKind.trash,
+              label: 'app_delete'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                onDelete?.call();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  /// 标记色 / 背景风格编辑抽屉
+  /// 样式编辑抽屉（标记色 / 背景风格 / 水印图标）
   void _showStyleEditor(BuildContext context) {
-    var pickedColor = note.color;
-    var pickedStyle = note.bgStyle;
+    final style = NoteStyleSelection(
+      color: note.color,
+      bgStyle: note.bgStyle,
+      icon: note.icon,
+    );
     SmoothBottomSheet.show(
       context: context,
       builder: (sheetContext) => StatefulBuilder(
@@ -100,23 +103,23 @@ class NoteCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'notes_color'.tr,
-                style: DsTypography.title,
-              ),
+              Text('notes_color'.tr, style: DsTypography.title),
               const SizedBox(height: 12),
               NoteColorPickerRow(
-                selected: pickedColor,
-                selectedStyle: pickedStyle,
-                onChanged: (color) => setSheetState(() => pickedColor = color),
-                onStyleChanged: (style) => setSheetState(() => pickedStyle = style),
+                selected: style.color,
+                selectedStyle: style.bgStyle,
+                selectedIcon: style.icon,
+                onChanged: (color) => setSheetState(() => style.color = color),
+                onStyleChanged: (value) =>
+                    setSheetState(() => style.bgStyle = value),
+                onIconChanged: (icon) => setSheetState(() => style.icon = icon),
               ),
               const SizedBox(height: 12),
               DSButton(
                 label: 'app_save'.tr,
                 onPressed: () {
                   Navigator.pop(sheetContext);
-                  onEditStyle!(pickedColor, pickedStyle);
+                  onEditStyle!(style);
                 },
               ),
             ],
@@ -142,8 +145,8 @@ class NoteCard extends StatelessWidget {
     final seed = note.id.hashCode & 0x7fffffff;
 
     // 背景填充风格（排线/交叉/点/之字/横线/实底）
-    final fillStyle = DsSketchFill.values[
-        note.bgStyle.clamp(0, DsSketchFill.values.length - 1)];
+    final fillStyle = DsSketchFill
+        .values[note.bgStyle.clamp(0, DsSketchFill.values.length - 1)];
     // 实底彩色背景下文字按合成亮度切换深墨/纸白，保证可读
     final solidAlpha = theme.isDark ? 0.55 : 0.60;
     final solidBg = (fillStyle == DsSketchFill.solid && note.color != null)
@@ -159,124 +162,179 @@ class NoteCard extends StatelessWidget {
     // 待办进度统计
     final todoItems = note.isTodo ? TodoItem.parseList(note.content) : null;
     final doneCount = todoItems?.where((item) => item.checked).length ?? 0;
-    final allDone = todoItems != null && todoItems.isNotEmpty && doneCount == todoItems.length;
+    final allDone =
+        todoItems != null &&
+        todoItems.isNotEmpty &&
+        doneCount == todoItems.length;
+
+    final watermarkIcon = note.iconKind;
+
+    // 参考 DSListItemCard：ClipRRect + Stack（底色 / 填充墨线 / 右上角水印 / 内容），
+    // 水印位于内容层之下，溢出被裁剪
+    final radius = BorderRadius.circular(14);
 
     return GestureDetector(
       onTap: onTap,
       onLongPress: () => _showBottomSheet(context),
-      child: DsSketchPanel(
-        theme: theme,
-        radius: BorderRadius.circular(14),
-        padding: const EdgeInsets.all(12),
-        seed: seed,
-        progress: progress,
-        // 背景填充风格（排线/交叉/点/之字/横线/实底）
-        fillStyle: fillStyle,
-        // 笔记标记色作为填充淡彩（未指定时用主题默认）；透明度取明显可见档
-        hachureColor: note.color?.withValues(
-          alpha: fillStyle == DsSketchFill.solid
-              ? solidAlpha
-              : (theme.isDark ? 0.60 : 0.70),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
           children: [
-            Text(
-              note.title.isEmpty ? 'notes_untitled'.tr : note.title,
-              style: DsTypography.title.copyWith(color: contentText),
+            // 纸底
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: theme.surface),
+              ),
             ),
-            const SizedBox(height: 4),
-            // 待办类型渲染勾选清单，普通笔记用 QuillViewer 只读渲染富文本
-            // 内容底部渐隐（参考便签墙的淡出效果，暗示还有更多内容）
-            if (note.isTodo)
-              ..._buildTodoItems(theme, contentSub, seed, progress)
-            else
-              ShaderMask(
-                shaderCallback:
-                    (rect) => const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.white, Colors.white, Colors.transparent],
-                      stops: [0.0, 0.75, 1.0],
-                    ).createShader(rect),
-                blendMode: BlendMode.dstIn,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 200, // 限制最大高度，模拟 maxLines: 8
+            // 背景填充 + 墨线框（排线/交叉/点/之字/横线/实底）
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: radius,
+                  fillStyle: fillStyle,
+                  fillColor: fillStyle == DsSketchFill.solid
+                      ? (note.color?.withValues(alpha: solidAlpha) ??
+                            theme.hatch)
+                      : DsColors.transparent,
+                  hachureColor: note.color?.withValues(
+                    alpha: theme.isDark ? 0.60 : 0.70,
                   ),
-                  child: ClipRect(
-                    child: DefaultTextStyle(
-                      style: DsTypography.body.copyWith(color: contentSub),
-                      child: QuillViewer(
-                        data: note.content,
-                        selectable: false,
+                  seed: seed,
+                  progress: progress,
+                ),
+              ),
+            ),
+            // 右上角图标水印：放大贴角，标记色优先
+            if (watermarkIcon != null)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: SizedBox(
+                  width: 96,
+                  height: 96,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: Opacity(
+                      opacity: 0.15,
+                      child: DsIcon(
+                        watermarkIcon,
+                        color: note.color ?? theme.primary,
                       ),
                     ),
                   ),
                 ),
               ),
-            const SizedBox(height: 12),
-            // 待办进度 / 标签徽章
-            if (todoItems != null || note.tags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    if (todoItems != null)
-                      _buildChip(
-                        theme: theme,
-                        icon:
-                            allDone
-                                ? DsIconKind.check
-                                : DsIconKind.calendarCheck,
-                        label: '$doneCount/${todoItems.length}',
-                        seed: seed,
-                        progress: progress,
-                        highlighted: allDone,
-                      ),
-                    ...note.tags.take(3).map(
-                      (tag) => _buildChip(
-                        theme: theme,
-                        icon: DsIconKind.tag,
-                        label: tag,
-                        seed: seed,
-                        progress: progress,
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    note.title.isEmpty ? 'notes_untitled'.tr : note.title,
+                    style: DsTypography.title.copyWith(color: contentText),
+                  ),
+                  const SizedBox(height: 4),
+                  // 待办类型渲染勾选清单，普通笔记用 QuillViewer 只读渲染富文本
+                  // 内容底部渐隐（参考便签墙的淡出效果，暗示还有更多内容）
+                  if (note.isTodo)
+                    ..._buildTodoItems(theme, contentSub, seed, progress)
+                  else
+                    ShaderMask(
+                      shaderCallback: (rect) => const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white,
+                          Colors.white,
+                          Colors.transparent,
+                        ],
+                        stops: [0.0, 0.75, 1.0],
+                      ).createShader(rect),
+                      blendMode: BlendMode.dstIn,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxHeight: 200, // 限制最大高度，模拟 maxLines: 8
+                        ),
+                        child: ClipRect(
+                          child: DefaultTextStyle(
+                            style: DsTypography.body.copyWith(
+                              color: contentSub,
+                            ),
+                            child: QuillViewer(
+                              data: note.content,
+                              selectable: false,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                  // 待办进度 / 标签徽章
+                  if (todoItems != null || note.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          if (todoItems != null)
+                            _buildChip(
+                              theme: theme,
+                              icon: allDone
+                                  ? DsIconKind.check
+                                  : DsIconKind.calendarCheck,
+                              label: '$doneCount/${todoItems.length}',
+                              seed: seed,
+                              progress: progress,
+                              highlighted: allDone,
+                            ),
+                          ...note.tags
+                              .take(3)
+                              .map(
+                                (tag) => _buildChip(
+                                  theme: theme,
+                                  icon: DsIconKind.tag,
+                                  label: tag,
+                                  seed: seed,
+                                  progress: progress,
+                                ),
+                              ),
+                        ],
+                      ),
+                    ),
+                  // 底部行：左侧日期（便签墙样式），右侧 ··· 呼出菜单
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          DateFormat(
+                            'EEE, d MMM yy',
+                          ).format(note.updatedAt).toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.caption.copyWith(
+                            color: contentSub,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _showBottomSheet(context),
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: DsIcon(
+                            DsIconKind.more,
+                            size: 18,
+                            color: contentSub,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            // 底部行：左侧日期（便签墙样式），右侧 ··· 呼出菜单
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    DateFormat(
-                      'EEE, d MMM yy',
-                    ).format(note.updatedAt).toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTypography.caption.copyWith(
-                      color: contentSub,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _showBottomSheet(context),
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: DsIcon(
-                      DsIconKind.more,
-                      size: 18,
-                      color: contentSub,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -295,14 +353,21 @@ class NoteCard extends StatelessWidget {
     final visible = items.take(6).toList();
     return [
       for (var i = 0; i < visible.length; i++)
-        _buildTodoRow(theme, visible[i], subColor, seed, progress,
-            onToggle: onToggle != null ? () => onToggle!(i) : null),
+        _buildTodoRow(
+          theme,
+          visible[i],
+          subColor,
+          seed,
+          progress,
+          onToggle: onToggle != null ? () => onToggle!(i) : null,
+        ),
       if (items.length > visible.length)
         Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(
-            'notes_todoMoreItems'.trParams(
-                {'count': '${items.length - visible.length}'}),
+            'notes_todoMoreItems'.trParams({
+              'count': '${items.length - visible.length}',
+            }),
             style: DsTypography.caption.copyWith(color: subColor),
           ),
         ),

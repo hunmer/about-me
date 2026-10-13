@@ -16,8 +16,35 @@ const List<Color?> kNoteColorChoices = <Color?>[
   Color(0xFF8C8C8C), // 炭灰
 ];
 
+/// 可选水印图标（内容数据）：首位 null = 无图标
+final List<DsIconKind?> kNoteIconChoices = <DsIconKind?>[
+  null,
+  DsIconKind.book,
+  DsIconKind.star,
+  DsIconKind.heart,
+  DsIconKind.tag,
+  DsIconKind.clock,
+  DsIconKind.calendar,
+  DsIconKind.mood,
+  DsIconKind.sprout,
+  DsIconKind.gift,
+  DsIconKind.pin,
+  DsIconKind.home,
+  DsIconKind.chat,
+  DsIconKind.bell,
+  DsIconKind.image,
+  DsIconKind.video,
+  DsIconKind.mic,
+  DsIconKind.bot,
+  DsIconKind.piggy,
+  DsIconKind.drop,
+  DsIconKind.moon,
+  DsIconKind.sun,
+];
+
 /// 手绘风格颜色选择行：一排圆形色块，选中项墨线描边加粗 + 对勾；
-/// 传入 [onStyleChanged] 时追加背景填充风格选择行（排线/交叉/点/之字/实底）。
+/// 传入 [onStyleChanged] 时追加背景填充风格选择行（排线/交叉/点/之字/横线/实底）；
+/// 传入 [onIconChanged] 时追加水印图标选择行。
 class NoteColorPickerRow extends StatelessWidget {
   const NoteColorPickerRow({
     super.key,
@@ -25,6 +52,8 @@ class NoteColorPickerRow extends StatelessWidget {
     required this.onChanged,
     this.selectedStyle,
     this.onStyleChanged,
+    this.selectedIcon,
+    this.onIconChanged,
   });
 
   /// 当前选中色（null = 默认）
@@ -37,6 +66,12 @@ class NoteColorPickerRow extends StatelessWidget {
 
   /// 背景风格选择回调；非 null 才显示风格行
   final ValueChanged<int>? onStyleChanged;
+
+  /// 当前水印图标（DsIconKind 枚举名）；null = 无
+  final String? selectedIcon;
+
+  /// 图标选择回调；非 null 才显示图标行
+  final ValueChanged<String?>? onIconChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -93,9 +128,62 @@ class NoteColorPickerRow extends StatelessWidget {
                   ],
                 ),
               ],
+              if (onIconChanged != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DsIcon(DsIconKind.mood, size: 16, color: theme.textSub),
+                    const SizedBox(width: 8),
+                    Text(
+                      'notes_icon'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final choice in kNoteIconChoices)
+                      _buildIconChoice(theme, choice),
+                  ],
+                ),
+              ],
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 图标选择块：无图标项用 close；选中项主题色实底圆 + 反色图标
+  Widget _buildIconChoice(AppThemeData theme, DsIconKind? choice) {
+    final isSelected =
+        (choice?.name ?? '') == (selectedIcon ?? '') &&
+        (choice != null || selectedIcon == null);
+    return GestureDetector(
+      onTap: () => onIconChanged!(choice?.name),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: isSelected ? theme.primary : null,
+          circle: true,
+          strokeWidth: isSelected ? 2.4 : 1.5,
+          seed: 200 + (choice?.index ?? 0),
+        ),
+        child: Center(
+          child: DsIcon(
+            choice ?? DsIconKind.close,
+            size: 18,
+            color: isSelected ? theme.onPrimary : theme.textSub,
+          ),
+        ),
       ),
     );
   }
