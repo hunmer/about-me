@@ -105,9 +105,6 @@ class ImagePickerDialog extends StatefulWidget {
 
 class _ImagePickerDialogState extends State<ImagePickerDialog> {
   final ImagePicker _picker = ImagePicker();
-  late TextEditingController _urlController;
-  bool _isValidUrl = false;
-  bool _showUrlInput = false;
 
   /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
   final NavigationBarStaticComponentsKeys _navBarKeys =
@@ -162,24 +159,13 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   @override
   void initState() {
     super.initState();
-    _urlController = TextEditingController(text: widget.initialUrl);
-    _validateUrl(_urlController.text);
     _loadImages();
   }
 
   @override
   void dispose() {
-    _urlController.dispose();
     _filterState.dispose();
     super.dispose();
-  }
-
-  void _validateUrl(String url) {
-    setState(() {
-      _isValidUrl =
-          url.isNotEmpty &&
-          (url.startsWith('http://') || url.startsWith('https://'));
-    });
   }
 
   bool _isImageExtension(String key) =>
@@ -237,6 +223,14 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   String? _pluginDirOf(String key) {
     final index = key.indexOf('/');
     return index > 0 ? key.substring(0, index) : null;
+  }
+
+  /// 插件目录的显示标题：优先取插件翻译键 `<id>_name`
+  /// （media_log 的键为 media_name），无翻译时回退目录名
+  String _pluginTitleOf(String dir) {
+    final key = dir == 'media_log' ? 'media_name' : '${dir}_name';
+    final translated = key.tr;
+    return translated == key ? dir : translated;
   }
 
   /// 可选的插件（顶层目录）列表
@@ -420,7 +414,6 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(context, theme),
-            if (_showUrlInput) _buildUrlInput(theme),
             if (_allInfos.isNotEmpty)
               MultiFilterBar(
                 filterItems: _buildFilterItems(),
@@ -445,19 +438,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       components: NavigationBarStaticComponents(
         keys: _navBarKeys,
         route: null,
-        // NavigationToolbar 对 leading 施加紧高度约束会把按钮拉变形，
-        // 用 Align 转成宽松约束保持正圆
-        userLeading: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DSIconButton(
-            icon: DsIconKind.chevronLeft,
-            size: 36,
-            color: theme.surfaceAlt,
-            iconColor: theme.textSub,
-            tooltip: 'app_cancel'.tr,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-        ),
+        // 无返回钮：底部弹窗通过下滑手势或点击遮罩关闭
+        userLeading: null,
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
@@ -485,7 +467,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               color: theme.surfaceAlt,
               iconColor: theme.textSub,
               tooltip: 'image_picker_onlineUrl'.tr,
-              onPressed: () => setState(() => _showUrlInput = !_showUrlInput),
+              onPressed: () => _showUrlSheet(),
             ),
           ],
         ),
@@ -499,23 +481,52 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
   }
 
+  /// 弹出在线 URL 输入的二级底部弹窗，确认后连同主弹窗一起返回结果
+  Future<void> _showUrlSheet() async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      ModalSheetRoute<Map<String, dynamic>>(
+        swipeDismissible: true,
+        builder:
+            (context) => _UrlInputSheet(initialUrl: widget.initialUrl),
+      ),
+    );
+    if (result != null && mounted) {
+      Navigator.of(context).pop(result);
+    }
+  }
+
   /// 多条件过滤项：插件 / 日期 / 大小
   List<FilterItem> _buildFilterItems() {
     final dirs = _pluginDirs;
 
     return [
-      // 1. 插件（顶层目录）多选过滤
+      // 1. 插件（顶层目录）多选过滤，标签显示插件标题
       if (dirs.isNotEmpty)
         FilterItem(
           id: 'plugin',
           title: 'image_picker_filter_plugin'.tr,
           type: FilterType.tagsMultiple,
           builder: (context, currentValue, onChanged) {
-            return FilterBuilders.buildTagsFilter(
-              context: context,
-              currentValue: currentValue,
-              onChanged: onChanged,
-              availableTags: dirs,
+            final selected = (currentValue as List<String>?) ?? [];
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final dir in dirs)
+                  DSChip(
+                    label: _pluginTitleOf(dir),
+                    selected: selected.contains(dir),
+                    onSelected: (isSelected) {
+                      final newDirs = List<String>.from(selected);
+                      if (isSelected) {
+                        newDirs.add(dir);
+                      } else {
+                        newDirs.remove(dir);
+                      }
+                      onChanged(newDirs);
+                    },
+                  ),
+              ],
             );
           },
           getBadge: FilterBuilders.tagsBadge,
@@ -561,51 +572,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     ];
   }
 
-  /// 在线 URL 输入区（由 Header 右侧链接按钮展开）
-  Widget _buildUrlInput(AppThemeData theme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DSInput(
-            controller: _urlController,
-            label: 'image_picker_onlineUrl'.tr,
-            hint: 'https://...',
-            onChanged: _validateUrl,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DSButton(
-                  label: 'app_cancel'.tr,
-                  variant: DSButtonVariant.outline,
-                  size: DSButtonSize.sm,
-                  onPressed: () => setState(() => _showUrlInput = false),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DSButton(
-                  label: 'app_confirm'.tr,
-                  size: DSButtonSize.sm,
-                  onPressed:
-                      _isValidUrl
-                          ? () => Navigator.of(context).pop({
-                            'url': _urlController.text,
-                            'bytes': null,
-                          })
-                          : null,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: theme.spacing.md),
-        ],
-      ),
-    );
-  }
+  /// 在线 URL 输入由 [_showUrlSheet] 弹出的二级底部弹窗承载
 
   Widget _buildGrid(AppThemeData theme) {
     if (_loading) {
@@ -1062,5 +1029,121 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
 
     return completer.future;
+  }
+}
+
+/// 在线 URL 输入的二级底部弹窗
+///
+/// 确认时 pop `{'url', 'bytes': null}`，取消/下滑 pop null；
+/// 主弹窗收到结果后再以相同结果 pop 交给调用方。
+class _UrlInputSheet extends StatefulWidget {
+  final String? initialUrl;
+
+  const _UrlInputSheet({this.initialUrl});
+
+  @override
+  State<_UrlInputSheet> createState() => _UrlInputSheetState();
+}
+
+class _UrlInputSheetState extends State<_UrlInputSheet> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+  bool _isValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialUrl);
+    _focusNode = FocusNode();
+    _validate(_controller.text);
+    // 打开即聚焦弹键盘
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _validate(String url) {
+    final valid =
+        url.isNotEmpty &&
+        (url.startsWith('http://') || url.startsWith('https://'));
+    if (valid != _isValid) {
+      setState(() => _isValid = valid);
+    }
+  }
+
+  void _confirm() {
+    if (!_isValid) return;
+    Navigator.of(context).pop(<String, dynamic>{
+      'url': _controller.text,
+      'bytes': null,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+
+    return Sheet(
+      decoration: MaterialSheetDecoration(
+        size: SheetSize.fit,
+        color: theme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: theme.spacing.lg),
+            Text(
+              'image_picker_onlineUrl'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.md),
+            DSInput(
+              controller: _controller,
+              label: 'image_picker_onlineUrl'.tr,
+              hint: 'https://...',
+              focusNode: _focusNode,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _confirm(),
+              onChanged: _validate,
+            ),
+            SizedBox(height: theme.spacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'app_cancel'.tr,
+                    variant: DSButtonVariant.outline,
+                    size: DSButtonSize.sm,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DSButton(
+                    label: 'app_confirm'.tr,
+                    size: DSButtonSize.sm,
+                    onPressed: _isValid ? _confirm : null,
+                  ),
+                ),
+              ],
+            ),
+            SafeArea(top: false, child: SizedBox(height: theme.spacing.md)),
+          ],
+        ),
+      ),
+    );
   }
 }
