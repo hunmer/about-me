@@ -9,6 +9,7 @@ import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/health_sc
 import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
 /// 排序顺序枚举
@@ -546,7 +547,7 @@ class _PointsHistoryState extends State<PointsHistory> {
                 _buildStatsSection(context, theme),
                 // 积分历史列表
                 Expanded(
-                  child: ListView.builder(
+                  child: HandDrawnListView(
                     controller: _scrollController,
                     padding: EdgeInsets.fromLTRB(
                       8, 8, 8, 8 + MediaQuery.paddingOf(context).bottom,
@@ -556,6 +557,12 @@ class _PointsHistoryState extends State<PointsHistory> {
                         (_currentPage * _pageSize < _filteredLogs.length
                             ? 1
                             : 0),
+                    tiltKeyOf: (index) =>
+                        index < _displayedLogs.length
+                            ? _displayedLogs[index].id
+                            : 'points_history_loading',
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
                       if (index == _displayedLogs.length) {
@@ -568,10 +575,8 @@ class _PointsHistoryState extends State<PointsHistory> {
                       }
 
                       final log = _displayedLogs[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        child: DSCard(
-                          padding: const EdgeInsets.symmetric(
+                      return DSCard(
+                        padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
                           ),
@@ -638,8 +643,7 @@ class _PointsHistoryState extends State<PointsHistory> {
                               ),
                             ],
                           ),
-                        ),
-                      );
+                        );
                     },
                   ),
                 ),

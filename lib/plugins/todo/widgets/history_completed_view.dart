@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/todo/views/todo_item_detail.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 import 'package:aboutme/plugins/todo/controllers/task_controller.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class HistoryCompletedView extends StatefulWidget {
   final List<Task> completedTasks;
@@ -51,12 +52,15 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
             );
           }
 
-          return ListView.builder(
+          return HandDrawnListView(
             padding: EdgeInsets.only(
               top: 8,
               bottom: 8 + MediaQuery.paddingOf(context).bottom,
             ),
             itemCount: widget.completedTasks.length,
+            // 原卡间距 12px(卡片自带 vertical margin)，补足至 16px 避免贴条压盖上一卡
+            separatorBuilder: (context, index) => const SizedBox(height: 4),
+            tiltKeyOf: (index) => widget.completedTasks[index].id,
             itemBuilder: (context, index) {
               final task = widget.completedTasks[index];
               return _buildTaskCard(context, task);

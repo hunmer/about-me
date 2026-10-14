@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class UserItems extends StatefulWidget {
@@ -231,8 +232,10 @@ class _UserItemsState extends State<UserItems> {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       itemCount: groupedItems.length,
-      itemBuilder: (context, index) =>
-          _buildGroupCard(context, groupedItems[index]),
+      itemBuilder: (context, index) => HandDrawnStickyItem(
+        tiltKey: groupedItems[index].item.id,
+        child: _buildGroupCard(context, groupedItems[index]),
+      ),
     );
   }
 

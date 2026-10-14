@@ -8,6 +8,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
 import 'package:aboutme/plugins/store/widgets/product_card.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class ArchivedProductsPage extends StatefulWidget {
   final StoreController controller;
@@ -32,9 +33,11 @@ class _ArchivedProductsPageState extends State<ArchivedProductsPage> {
                   style: DsTypography.body.copyWith(color: theme.textSub),
                 ),
               )
-              : ListView.builder(
+              : HandDrawnListView(
                 padding: const EdgeInsets.all(16),
                 itemCount: widget.controller.archivedProducts.length,
+                tiltKeyOf: (index) =>
+                    widget.controller.archivedProducts[index].id,
                 itemBuilder: (context, index) {
                   final product = widget.controller.archivedProducts[index];
                   // 挂载即播墨线描画入场（design.md §10）

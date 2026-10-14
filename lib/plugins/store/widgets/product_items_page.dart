@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/store/widgets/user_item_detail_page.dart';
 import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 /// 商品物品列表页面 - 显示特定商品的所有已兑换物品
@@ -303,12 +304,14 @@ class _ProductItemsPageState extends State<ProductItemsPage> {
       padding: const EdgeInsets.all(8),
       crossAxisCount: 2,
       crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
+      mainAxisSpacing: 16,
       itemCount: groupedItems.length,
       itemBuilder: (context, index) {
         final group = groupedItems[index];
-        return GestureDetector(
-          onTap: () {
+        return HandDrawnStickyItem(
+          tiltKey: group.item.id,
+          child: GestureDetector(
+            onTap: () {
             final sameTypeItems =
                 items
                     .where((item) => item.productId == group.item.productId)
@@ -365,6 +368,7 @@ class _ProductItemsPageState extends State<ProductItemsPage> {
                 Toast.warning('store_productNotFound'.tr);
               }
             },
+          ),
           ),
         );
       },

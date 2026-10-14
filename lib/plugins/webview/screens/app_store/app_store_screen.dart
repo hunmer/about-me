@@ -10,6 +10,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../models/app_store_models.dart';
 import '../../services/app_store_manager.dart';
 import '../../services/download_manager.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
@@ -229,15 +230,21 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
 
     return MasonryGridView.count(
       // 宿主页 extendBody：底部留出弧形导航高度
+      // 顶部 16：容纳便签贴条出血，避免首行贴条被视口裁剪
       padding: const EdgeInsets.all(8).copyWith(
+        top: 16,
         bottom: MediaQuery.paddingOf(context).bottom + 8,
       ),
       crossAxisCount: 2,
-      mainAxisSpacing: 8,
+      // ≥16：避免贴条出血被上一行遮挡
+      mainAxisSpacing: 16,
       crossAxisSpacing: 8,
       itemCount: filteredApps.length,
       itemBuilder: (context, index) {
-        return _buildAppCard(filteredApps[index]);
+        return HandDrawnStickyItem(
+          tiltKey: filteredApps[index].id,
+          child: _buildAppCard(filteredApps[index]),
+        );
       },
     );
   }

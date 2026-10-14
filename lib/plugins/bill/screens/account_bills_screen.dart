@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
 import 'package:aboutme/plugins/bill/models/statistic_range.dart';
 import 'package:aboutme/plugins/bill/widgets/bill_statistics_card.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class AccountBillsScreen extends StatefulWidget {
   final BillPlugin billPlugin;
@@ -209,8 +210,10 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
     final sortedBills = List<Bill>.from(bills)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    return ListView.builder(
+    return HandDrawnListView(
       itemCount: sortedBills.length,
+      tiltKeyOf: (index) => sortedBills[index].id,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final bill = sortedBills[index];
         return _buildBillItem(bill);

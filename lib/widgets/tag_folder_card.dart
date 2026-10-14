@@ -200,33 +200,49 @@ class _FolderSticker extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEmoji = sticker.startsWith('emoji:');
     final isImage = sticker.startsWith('img:');
+    // 基于贴纸内容的伪随机角度（约 ±6°），同一贴纸角度稳定
+    final angle = (sticker.hashCode % 21 - 10) * 0.01;
+    final emoji = sticker.substring('emoji:'.length);
 
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: theme.paper,
-        shape: BoxShape.circle,
-        border: Border.all(color: theme.ink.withValues(alpha: 0.12)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Center(
-        child:
-            isEmoji
-                ? Text(
-                  sticker.substring('emoji:'.length),
-                  style: const TextStyle(fontSize: 16),
-                )
-                : isImage
-                ? _FolderThumb(
-                  url: sticker.substring('img:'.length),
-                  theme: theme,
-                )
-                : Icon(
-                  AppIcons.predefinedIcons[sticker] ?? Icons.label_outline,
-                  size: 16,
-                  color: theme.primaryText,
-                ),
+    return Transform.rotate(
+      angle: angle,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: theme.paper,
+          shape: BoxShape.circle,
+          border: Border.all(color: theme.paper, width: 2.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Center(
+          child:
+              isEmoji
+                  ? Stack(
+                    children: [
+                      // 底层描边 + 上层原字，形成贴纸白边
+                      Text(
+                        emoji,
+                        style: TextStyle(
+                          fontSize: 26,
+                          foreground:
+                              Paint()
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = 2.5
+                                ..color = theme.paper,
+                        ),
+                      ),
+                      Text(emoji, style: const TextStyle(fontSize: 26)),
+                    ],
+                  )
+                  : isImage
+                  ? _FolderThumb(url: sticker.substring('img:'.length), theme: theme)
+                  : Icon(
+                    AppIcons.predefinedIcons[sticker] ?? Icons.label_outline,
+                    size: 26,
+                    color: theme.primaryText,
+                  ),
+        ),
       ),
     );
   }

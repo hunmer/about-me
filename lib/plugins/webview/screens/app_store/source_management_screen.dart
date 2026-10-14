@@ -1,6 +1,7 @@
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
@@ -44,9 +45,15 @@ class SourceManagementScreen extends StatelessWidget {
                               title: 'webview_no_sources'.tr,
                             ),
                           )
-                        : ListView.builder(
+                        : HandDrawnListView(
                             padding: const EdgeInsets.all(8),
                             itemCount: appStoreManager.sources.length,
+                            tiltKeyOf: (index) =>
+                                appStoreManager.sources[index].id,
+                            // 原项间仅 8px，不足以容纳贴条出血，调到 16
+                            separatorBuilder:
+                                (context, index) =>
+                                    const SizedBox(height: 16),
                             itemBuilder: (context, index) {
                               final source = appStoreManager.sources[index];
                               // 供 DSPopover 回调使用的屏幕 context(其 contentBuilder
@@ -55,7 +62,6 @@ class SourceManagementScreen extends StatelessWidget {
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
-                                  vertical: 4,
                                 ),
                                 child: DSCard(
                                   padding: EdgeInsets.symmetric(

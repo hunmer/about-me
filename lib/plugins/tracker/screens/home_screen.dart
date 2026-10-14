@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isGridView;
@@ -97,32 +98,37 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount: 2,
           mainAxisExtent: 190, // 与 GoalCard 固定高度一致
           crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+          mainAxisSpacing: 16, // ≥16，避免手绘贴条顶部出血被上一行遮挡
         ),
         itemCount: filteredGoals.length,
         itemBuilder: (context, index) {
           final goal = filteredGoals[index];
-          return GoalCard(
-            goal: goal,
-            controller: controller,
-            onTap: () {
-              NavigationHelper.openContainerWithHero(
-                context,
-                (context) => ChangeNotifierProvider.value(
-                  value: controller,
-                  child: GoalDetailScreen(goal: goal),
-                ),
-                closedColor: theme.surface,
-              );
-            },
+          return HandDrawnStickyItem(
+            tiltKey: goal.id,
+            child: GoalCard(
+              goal: goal,
+              controller: controller,
+              onTap: () {
+                NavigationHelper.openContainerWithHero(
+                  context,
+                  (context) => ChangeNotifierProvider.value(
+                    value: controller,
+                    child: GoalDetailScreen(goal: goal),
+                  ),
+                  closedColor: theme.surface,
+                );
+              },
+            ),
           );
         },
       );
     }
 
-    return ListView.builder(
+    return HandDrawnListView(
       padding: const EdgeInsets.all(8),
       itemCount: filteredGoals.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      tiltKeyOf: (index) => filteredGoals[index].id,
       itemBuilder: (context, index) {
         final goal = filteredGoals[index];
         return Dismissible(

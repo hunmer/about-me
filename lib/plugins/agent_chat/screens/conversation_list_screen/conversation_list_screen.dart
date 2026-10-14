@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_m
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 
 /// 会话列表屏幕
@@ -416,10 +417,13 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     return _conversationListTransition(
       isEmpty: conversations.isEmpty,
       emptyWidget: _buildEmptyListState(key: const ValueKey('empty')),
-      listWidget: ListView.builder(
+      listWidget: HandDrawnListView(
         key: ValueKey('conversation_list_${conversations.length}'),
         padding: EdgeInsets.zero,
         itemCount: conversations.length,
+        tiltKeyOf: (index) => conversations[index].id,
+        // 原项间仅 8px，不足以容纳贴条出血，调到 16
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final conversation = conversations[index];
           // 挂载即播墨线描画入场（design.md §10）
@@ -474,7 +478,8 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   Widget _buildConversationCard(Conversation conversation) {
     final theme = DSThemeBridge.resolve(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      // 垂直间距交给 separatorBuilder(贴条出血需 ≥16)
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: SwipeActionWrapper(
         key: ValueKey(conversation.id),
         leadingActions: [

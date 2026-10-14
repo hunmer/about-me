@@ -8,6 +8,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'account_edit_screen.dart';
@@ -120,9 +121,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
       );
     }
 
-    return ListView.separated(
+    return HandDrawnListView(
       padding: const EdgeInsets.all(16),
       itemCount: widget.billPlugin.accounts.length,
+      tiltKeyOf: (index) => widget.billPlugin.accounts[index].id,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final account = widget.billPlugin.accounts[index];

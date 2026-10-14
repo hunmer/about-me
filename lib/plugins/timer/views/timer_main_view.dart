@@ -17,6 +17,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/widgets/common/timer_card_widget.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class TimerMainView extends StatefulWidget {
   const TimerMainView({super.key});
@@ -260,11 +261,12 @@ class _TimerMainViewState extends State<TimerMainView> {
   }
 
   Widget _buildTaskList() {
-    return ListView.separated(
+    return HandDrawnListView(
       // 底部留白避开悬浮导航栏
       padding: const EdgeInsets.all(16).copyWith(bottom: 130),
       itemCount: _filteredByGroup.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
+      tiltKeyOf: (index) => _filteredByGroup[index].id,
       itemBuilder: (context, index) {
         final task = _filteredByGroup[index];
         // 根据计时器数量决定是否使用网格布局
@@ -383,10 +385,11 @@ class _TimerMainViewState extends State<TimerMainView> {
       );
     }
 
-    return ListView.separated(
+    return HandDrawnListView(
       padding: const EdgeInsets.all(16),
       itemCount: _searchResults.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
+      tiltKeyOf: (index) => _searchResults[index].id,
       itemBuilder: (context, index) {
         final task = _searchResults[index];
         // 根据计时器数量决定是否使用网格布局

@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/todo/widgets/task_form.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/plugins/todo/views/todo_four_quadrant_view.dart';
 import 'package:aboutme/plugins/todo/views/todo_week_view.dart';
 import 'package:aboutme/plugins/todo/widgets/history_completed_view.dart';
@@ -654,8 +655,8 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                 );
               }
 
-              // 使用简单的列表视图显示搜索结果
-              return ListView.separated(
+              // 使用手绘便签列表显示搜索结果
+              return HandDrawnListView(
                 padding: EdgeInsets.fromLTRB(
                   16,
                   16,
@@ -665,6 +666,7 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                 itemCount: searchTasks.length,
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 16),
+                tiltKeyOf: (index) => searchTasks[index].id,
                 itemBuilder: (context, index) {
                   final task = searchTasks[index];
                   return _buildSimpleTaskCard(task);

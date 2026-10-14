@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/plugins/store/models/points_log.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// 独立的积分历史页面（包含 Scaffold）
 class PointsHistoryPage extends StatelessWidget {
@@ -131,7 +132,7 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
-          return ListView.builder(
+          return HandDrawnListView(
             controller: _scrollController,
             padding: const EdgeInsets.all(8),
             itemCount:
@@ -139,6 +140,11 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
                 (_currentPage * _pageSize < widget.controller.pointsLogs.length
                     ? 1
                     : 0),
+            tiltKeyOf: (index) =>
+                index < _displayedLogs.length
+                    ? _displayedLogs[index].id
+                    : 'points_history_loading',
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               // 如果是最后一个项目且还有更多数据可加载，显示加载指示器
               if (index == _displayedLogs.length) {
@@ -152,9 +158,7 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
 
               final log = _displayedLogs[index];
               final isEarn = log.type == '获得';
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: DSListItem(
+              return DSListItem(
                   leading: DsIcon(
                     isEarn ? DsIconKind.plus : DsIconKind.minus,
                     size: 22,
@@ -166,7 +170,6 @@ class _PointsHistoryContentState extends State<PointsHistoryContent> {
                   subtitle: log.reason,
                   trailingText:
                       '${log.timestamp.hour}:${log.timestamp.minute.toString().padLeft(2, '0')}',
-                ),
               );
             },
           );

@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'components/activity_grid_view.dart';
 import 'components/activity_timeline_schedule_view.dart';
 import 'controllers/activity_controller.dart';
@@ -345,7 +346,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
       );
     }
 
-    return ListView.builder(
+    return HandDrawnListView(
       padding: EdgeInsets.fromLTRB(
         16,
         16,
@@ -353,6 +354,10 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
         16 + MediaQuery.paddingOf(context).bottom,
       ),
       itemCount: _searchResults.length,
+      // 原行间距仅 8px(卡片自带 bottom padding)，补足至 16px 避免贴条压盖上一行
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      tiltKeyOf: (index) =>
+          (_searchResults[index]['data'] as ActivityRecord).id,
       itemBuilder: (context, index) {
         final result = _searchResults[index];
         final activity = result['data'];

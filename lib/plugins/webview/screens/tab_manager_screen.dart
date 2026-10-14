@@ -1,6 +1,7 @@
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -63,7 +64,8 @@ class TabManagerScreen extends StatelessWidget {
                       crossAxisCount: _getCrossAxisCount(context),
                       childAspectRatio: 0.75,
                       crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      // ≥16：避免便签贴条出血被上一行遮挡
+                      mainAxisSpacing: 16,
                     ),
                     itemCount:
                         tabManager.tabs.length + 1, // +1 for new tab button
@@ -74,14 +76,17 @@ class TabManagerScreen extends StatelessWidget {
                       }
 
                       final tab = tabManager.tabs[index];
-                      return _TabPreviewCard(
-                        tab: tab,
-                        isActive: tab.id == tabManager.activeTabId,
-                        onTap: () {
-                          tabManager.switchToTab(tab.id);
-                          Navigator.pop(context);
-                        },
-                        onClose: () => _closeTab(context, tab.id),
+                      return HandDrawnStickyItem(
+                        tiltKey: tab.id,
+                        child: _TabPreviewCard(
+                          tab: tab,
+                          isActive: tab.id == tabManager.activeTabId,
+                          onTap: () {
+                            tabManager.switchToTab(tab.id);
+                            Navigator.pop(context);
+                          },
+                          onClose: () => _closeTab(context, tab.id),
+                        ),
                       );
                     },
                   );

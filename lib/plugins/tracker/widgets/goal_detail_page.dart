@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'record_dialog.dart';
 import 'goal_edit_page.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class GoalDetailPage extends StatelessWidget {
   final Goal goal;
@@ -82,8 +83,11 @@ class GoalDetailPage extends StatelessWidget {
           ),
           const Divider(height: 1),
           Expanded(
-            child: ListView.builder(
+            child: HandDrawnListView(
               itemCount: records.length,
+              separatorBuilder:
+                  (context, index) => const flutter.SizedBox(height: 16),
+              tiltKeyOf: (index) => records[index].id,
               itemBuilder: (context, index) {
                 final record = records[index];
                 return flutter.ListTile(

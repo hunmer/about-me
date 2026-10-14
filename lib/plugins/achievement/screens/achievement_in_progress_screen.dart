@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
 import 'package:aboutme/plugins/achievement/screens/achievement_detail_screen.dart';
 import 'package:aboutme/plugins/achievement/widgets/achievement_badge.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// Tab：正在解锁的成就（还有等级未解锁），按「距下一级进度」降序排列
 class AchievementInProgressScreen extends StatelessWidget {
@@ -39,9 +40,12 @@ class AchievementInProgressScreen extends StatelessWidget {
         title: 'achievement_emptyInProgress'.tr,
       );
     }
-    return ListView.builder(
+    return HandDrawnListView(
       padding: const EdgeInsets.only(top: 4, bottom: 16),
       itemCount: items.length,
+      // 原行间距仅 10px(tile 自带 bottom padding)，补足至 16px 避免贴条压盖上一行
+      separatorBuilder: (context, index) => const SizedBox(height: 6),
+      tiltKeyOf: (index) => items[index].id,
       itemBuilder: (context, index) => _InProgressTile(
         def: items[index],
         controller: controller,

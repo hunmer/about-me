@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/widgets/service_editor_sheet.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// TTS服务列表界面
@@ -302,7 +303,7 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
 
     return Stack(
       children: [
-        ListView.builder(
+        HandDrawnListView(
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
@@ -311,13 +312,13 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
             bottom: MediaQuery.paddingOf(context).bottom + 96,
           ),
           itemCount: _services.length,
+          tiltKeyOf: (index) => _services[index].id,
+          // 原项间仅 12px，不足以容纳贴条出血，调到 16
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final service = _services[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              // 新列表项挂载即播墨线描画入场
-              child: WiredDraw(child: _buildServiceCard(service)),
-            );
+            // 新列表项挂载即播墨线描画入场
+            return WiredDraw(child: _buildServiceCard(service));
           },
         ),
         Positioned(

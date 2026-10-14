@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
 import 'package:aboutme/plugins/achievement/screens/achievement_detail_screen.dart';
 import 'package:aboutme/plugins/achievement/widgets/achievement_badge.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// Tab：已解锁的成就（至少解锁一级），按最近达成时间倒序，双列徽章墙
 class AchievementUnlockedScreen extends StatelessWidget {
@@ -45,9 +46,12 @@ class AchievementUnlockedScreen extends StatelessWidget {
         mainAxisExtent: 104,
       ),
       itemCount: items.length,
-      itemBuilder: (context, index) => _UnlockedCard(
-        def: items[index],
-        controller: controller,
+      itemBuilder: (context, index) => HandDrawnStickyItem(
+        tiltKey: items[index].id,
+        child: _UnlockedCard(
+          def: items[index],
+          controller: controller,
+        ),
       ),
     );
   }

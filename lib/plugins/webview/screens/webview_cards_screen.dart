@@ -17,6 +17,7 @@ import 'components/webview_card_item.dart';
 import 'webview_browser_screen.dart';
 import 'proxy_settings_screen.dart';
 import '../../../core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
@@ -292,18 +293,24 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                // 顶部 16：容纳便签贴条出血，避免首行贴条被视口裁剪
+                padding: const EdgeInsets.only(top: 16),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: _getCrossAxisCount(context),
                   childAspectRatio: 1.2,
                   crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  // ≥16：避免贴条出血被上一行遮挡
+                  mainAxisSpacing: 16,
                 ),
                 itemCount: pinnedCards.length,
                 itemBuilder: (context, index) {
-                  return WebViewCardItem(
-                    card: pinnedCards[index],
-                    onTap: () => _openCard(pinnedCards[index]),
-                    onLongPress: () => _showCardOptions(pinnedCards[index]),
+                  return HandDrawnStickyItem(
+                    tiltKey: pinnedCards[index].id,
+                    child: WebViewCardItem(
+                      card: pinnedCards[index],
+                      onTap: () => _openCard(pinnedCards[index]),
+                      onLongPress: () => _showCardOptions(pinnedCards[index]),
+                    ),
                   );
                 },
               ),
@@ -323,18 +330,24 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                // 顶部 16：容纳便签贴条出血，避免首行贴条被视口裁剪
+                padding: const EdgeInsets.only(top: 16),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: _getCrossAxisCount(context),
                   childAspectRatio: 1.2,
                   crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  // ≥16：避免贴条出血被上一行遮挡
+                  mainAxisSpacing: 16,
                 ),
                 itemCount: unpinnedCards.length,
                 itemBuilder: (context, index) {
-                  return WebViewCardItem(
-                    card: unpinnedCards[index],
-                    onTap: () => _openCard(unpinnedCards[index]),
-                    onLongPress: () => _showCardOptions(unpinnedCards[index]),
+                  return HandDrawnStickyItem(
+                    tiltKey: unpinnedCards[index].id,
+                    child: WebViewCardItem(
+                      card: unpinnedCards[index],
+                      onTap: () => _openCard(unpinnedCards[index]),
+                      onLongPress: () => _showCardOptions(unpinnedCards[index]),
+                    ),
                   );
                 },
               ),

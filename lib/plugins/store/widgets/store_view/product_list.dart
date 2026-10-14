@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class ProductList extends StatefulWidget {
@@ -113,9 +114,12 @@ class _ProductListState extends State<ProductList> {
               final product = products[index];
               // 点击卡片=兑换确认，长按菜单=兑换/编辑（卡片内部处理）
               // 挂载即播墨线描画入场（design.md §10）；key 上移保持条目状态
-              return WiredDraw(
-                key: ValueKey(product.id),
-                child: ProductCard(
+              // 手绘便签贴条容器在 WiredDraw 外层
+              return HandDrawnStickyItem(
+                tiltKey: product.id,
+                child: WiredDraw(
+                  key: ValueKey(product.id),
+                  child: ProductCard(
                   product: product,
                   onExchange: () async {
                     if (await widget.controller.exchangeProduct(product)) {
@@ -136,6 +140,7 @@ class _ProductListState extends State<ProductList> {
                       if (mounted) setState(() {});
                     });
                   },
+                ),
                 ),
               );
             },

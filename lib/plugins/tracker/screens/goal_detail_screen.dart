@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 class GoalDetailScreen extends StatelessWidget {
   final Goal? goal;
@@ -150,56 +151,56 @@ class GoalDetailScreen extends StatelessWidget {
                                 ),
                               );
                             }
-                            return ListView.builder(
+                            return HandDrawnListView(
                               itemCount: records.length,
+                              separatorBuilder:
+                                  (context, index) => const SizedBox(
+                                    height: 16,
+                                  ),
+                              tiltKeyOf: (index) => records[index].id,
                               itemBuilder: (context, index) {
                                 final record = records[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: DSListItem(
-                                    title: 'tracker_recordValueDisplay'
-                                        .trParams({
-                                          'value': record.value.toString(),
-                                        }),
-                                    subtitle:
-                                        record.recordedAt
-                                            .toLocal()
-                                            .toString()
-                                            .split('.')
-                                            .first,
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if ((record.note ?? '').isNotEmpty)
-                                          ConstrainedBox(
-                                            constraints: const BoxConstraints(
-                                              maxWidth: 80,
-                                            ),
-                                            child: Text(
-                                              record.note ?? '',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: DsTypography.caption
-                                                  .copyWith(
-                                                    color: theme.textSub,
-                                                  ),
+                                return DSListItem(
+                                  title: 'tracker_recordValueDisplay'.trParams({
+                                    'value': record.value.toString(),
+                                  }),
+                                  subtitle:
+                                      record.recordedAt
+                                          .toLocal()
+                                          .toString()
+                                          .split('.')
+                                          .first,
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if ((record.note ?? '').isNotEmpty)
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            maxWidth: 80,
+                                          ),
+                                          child: Text(
+                                            record.note ?? '',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: DsTypography.caption.copyWith(
+                                              color: theme.textSub,
                                             ),
                                           ),
-                                        SizedBox(width: theme.spacing.xs),
-                                        DSIconButton(
-                                          icon: DsIconKind.trash,
-                                          size: 32,
-                                          color: theme.surfaceAlt,
-                                          iconColor: theme.textSub,
-                                          onPressed:
-                                              () => _confirmDeleteRecord(
-                                                context,
-                                                controller,
-                                                record,
-                                              ),
                                         ),
-                                      ],
-                                    ),
+                                      SizedBox(width: theme.spacing.xs),
+                                      DSIconButton(
+                                        icon: DsIconKind.trash,
+                                        size: 32,
+                                        color: theme.surfaceAlt,
+                                        iconColor: theme.textSub,
+                                        onPressed:
+                                            () => _confirmDeleteRecord(
+                                              context,
+                                              controller,
+                                              record,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
