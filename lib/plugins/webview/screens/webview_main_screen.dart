@@ -35,7 +35,7 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
           return Scaffold(
             // 内容延伸到导航栏下方，页签列表经 MediaQuery.padding.bottom 避让
             extendBody: true,
-            backgroundColor: theme.surface,
+            backgroundColor: dsTransparentWhenGlobalBackground(theme.surface),
             body: IndexedStack(
               index: _currentIndex,
               children: const [

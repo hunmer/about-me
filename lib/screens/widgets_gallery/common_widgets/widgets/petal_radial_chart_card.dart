@@ -256,12 +256,14 @@ class _PetalRadialChartPainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final rOuter = size.width / 2;
-    final rInner = rOuter * 0.08;
+    // 花瓣汇聚于中心，不留中心孔
+    final rInner = 0.0;
     final n = items.length;
     final sweep = 2 * math.pi / n;
     // 第一个扇形的边界位于正上方
     final startAngle = -math.pi / 2 - sweep / 2;
-    final textScale = math.min(1.0, 10 / n);
+    // 花瓣之间的角间隙
+    final gapAngle = math.min(sweep * 0.12, 2 * math.pi * 0.02);
 
     // 底瓣（满幅 track）
     final trackPaint =
@@ -273,8 +275,8 @@ class _PetalRadialChartPainter extends CustomPainter {
         center: center,
         rOuter: rOuter,
         rInner: rInner,
-        a1: startAngle + i * sweep,
-        a2: startAngle + (i + 1) * sweep,
+        a1: startAngle + i * sweep + gapAngle / 2,
+        a2: startAngle + (i + 1) * sweep - gapAngle / 2,
       );
       canvas.drawPath(path, trackPaint);
     }
@@ -293,8 +295,8 @@ class _PetalRadialChartPainter extends CustomPainter {
         center: center,
         rOuter: rFill,
         rInner: rInner,
-        a1: startAngle + i * sweep,
-        a2: startAngle + (i + 1) * sweep,
+        a1: startAngle + i * sweep + gapAngle / 2,
+        a2: startAngle + (i + 1) * sweep - gapAngle / 2,
       );
       canvas.drawPath(
         path,
@@ -304,73 +306,107 @@ class _PetalRadialChartPainter extends CustomPainter {
       );
     }
 
-    // 数值与标签
+    // 数值与标签（数值在上、标签在下的竖排文字块，按扇形弦宽自适应缩放）
     if (!showText) return;
 
-    final numberRadius = rInner + (rOuter - rInner) * 0.78;
-    final labelRadius = rInner + (rOuter - rInner) * 0.60;
+    final halfAngle = (sweep - gapAngle) / 2;
+    final blockRadius = rInner + (rOuter - rInner) * 0.72;
+    final textScale = math.min(1.0, 10 / n);
+
+    final numberFontSize = rOuter * 0.13;
+    final labelFontSize = rOuter * 0.085;
     final numberStyle = TextStyle(
-      color: isDark ? Colors.white : const Color(0xFF333333),
-      fontSize: rOuter * 0.17 * textScale,
+      fontSize: numberFontSize,
       fontWeight: FontWeight.w800,
-      height: 1.0,
+      height: 1.1,
     );
     final labelStyle = TextStyle(
-      color: isDark ? const Color(0xFFBFBFBF) : const Color(0xFF777777),
-      fontSize: rOuter * 0.105 * textScale,
+      fontSize: labelFontSize,
       fontWeight: FontWeight.w500,
-      height: 1.0,
+      height: 1.15,
     );
-    // 填充花瓣为浅色，其上文字统一用深色
-    const onFillColor = Color(0xFF1C1C1C);
+
+    // 以原始字号测量两行文字块的高度，文字块最内侧半径处的弦宽为收缩基准
+    final measureTp = TextPainter(
+      text: TextSpan(children: [
+        const TextSpan(text: '0'),
+        const TextSpan(text: '\nA', style: TextStyle(height: 1.15)),
+      ], style: numberStyle),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout();
+    final innerRadius = (blockRadius - measureTp.height / 2).clamp(
+      rInner + 4,
+      double.infinity,
+    );
+    final chord =
+        math.max(8.0, 2 * innerRadius * math.sin(halfAngle) * 0.88);
 
     for (int i = 0; i < n; i++) {
       final item = items[i];
       final bisector = startAngle + (i + 0.5) * sweep;
       final fraction = (item.value / maxValue).clamp(0.0, 1.0).toDouble();
       final rFill = rInner + (rOuter - rInner) * fraction;
+      final onFill = blockRadius <= rFill;
 
       final number = item.value.toStringAsFixed(fractionDigits);
-      _drawRadialText(
-        canvas,
-        center,
-        bisector,
-        numberRadius,
-        number,
-        numberRadius > rFill ? numberStyle : numberStyle.copyWith(color: onFillColor),
+      // 按两行中较宽的一行收缩字号，保证不超出扇形
+      final scale =
+          math.min(
+            _fitScale(number, numberStyle, chord),
+            _fitScale(item.label, labelStyle, chord),
+          ) *
+          textScale;
+
+      final trackNumberColor =
+          isDark ? Colors.white : const Color(0xFF333333);
+      final trackLabelColor = isDark
+          ? const Color(0xFFBFBFBF)
+          : const Color(0xFF777777);
+      // 填充花瓣为浅色，其上文字统一用深色
+      const onFillColor = Color(0xFF1C1C1C);
+
+      final tp = TextPainter(
+        text: TextSpan(children: [
+          TextSpan(
+            text: number,
+            style: numberStyle.copyWith(
+              fontSize: numberFontSize * scale,
+              color: onFill ? onFillColor : trackNumberColor,
+            ),
+          ),
+          TextSpan(
+            text: '\n${item.label}',
+            style: labelStyle.copyWith(
+              fontSize: labelFontSize * scale,
+              color: onFill
+                  ? onFillColor.withOpacity(0.8)
+                  : trackLabelColor,
+            ),
+          ),
+        ]),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout();
+
+      final pos = center + Offset(
+        blockRadius * math.cos(bisector),
+        blockRadius * math.sin(bisector),
       );
-      _drawRadialText(
-        canvas,
-        center,
-        bisector,
-        labelRadius,
-        item.label,
-        labelRadius > rFill ? labelStyle : labelStyle.copyWith(color: onFillColor),
-      );
+      tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
     }
   }
 
-  void _drawRadialText(
-    Canvas canvas,
-    Offset center,
-    double angle,
-    double radius,
-    String text,
-    TextStyle style,
-  ) {
+  /// 计算文字在不超过 [maxWidth] 时的字号缩放系数
+  double _fitScale(String text, TextStyle style, double maxWidth) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
     )..layout();
-    final pos = center + Offset(
-      radius * math.cos(angle),
-      radius * math.sin(angle),
-    );
-    tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
+    return math.min(1.0, maxWidth / tp.width);
   }
 
-  /// 圆角扇形（花瓣）路径：外缘弧 + 内缘弧，四角圆角
+  /// 圆角扇形（花瓣）路径：外缘弧 + 四角圆角；rInner 为 0 时花瓣汇聚于中心尖点
   Path _petalPath({
     required Offset center,
     required double rOuter,
@@ -379,13 +415,43 @@ class _PetalRadialChartPainter extends CustomPainter {
     required double a2,
   }) {
     final sweep = a2 - a1;
-    final outerRc = math.min(12.0, sweep * rOuter * 0.18);
-    final innerRc = math.min(outerRc * 0.9, rInner * 1.2);
+    final radialLength = rOuter - rInner;
+    // 圆角随花瓣尺寸等比缩放，保证端部圆润
+    final outerRc = math.min(15.0, math.max(3.0, radialLength * 0.32));
     final outerCornerSweep = outerRc / rOuter;
-    final innerCornerSweep = rInner > 0 ? innerRc / rInner : 0.0;
 
     Offset polar(double r, double a) =>
         center + Offset(r * math.cos(a), r * math.sin(a));
+
+    // 汇聚于中心尖点的花瓣
+    if (rInner <= 0) {
+      return Path()
+        ..moveTo(center.dx, center.dy)
+        ..lineTo(polar(rOuter - outerRc, a1).dx, polar(rOuter - outerRc, a1).dy)
+        ..quadraticBezierTo(
+          polar(rOuter, a1).dx,
+          polar(rOuter, a1).dy,
+          polar(rOuter, a1 + outerCornerSweep).dx,
+          polar(rOuter, a1 + outerCornerSweep).dy,
+        )
+        ..arcTo(
+          Rect.fromCircle(center: center, radius: rOuter),
+          a1 + outerCornerSweep,
+          sweep - 2 * outerCornerSweep,
+          false,
+        )
+        ..quadraticBezierTo(
+          polar(rOuter, a2).dx,
+          polar(rOuter, a2).dy,
+          polar(rOuter - outerRc, a2).dx,
+          polar(rOuter - outerRc, a2).dy,
+        )
+        ..lineTo(center.dx, center.dy)
+        ..close();
+    }
+
+    final innerRc = math.min(2.0, math.max(1.0, radialLength * 0.1));
+    final innerCornerSweep = innerRc / rInner;
 
     final path = Path()
       // 左径向边底部（内左角圆角之后）

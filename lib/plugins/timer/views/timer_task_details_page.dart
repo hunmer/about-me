@@ -669,7 +669,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     final cardColor = _currentTask.color;
 
     return Scaffold(
-      backgroundColor: theme.paper,
+      backgroundColor: dsTransparentWhenGlobalBackground(theme.paper),
       body: SafeArea(
         child: Stack(
           children: [

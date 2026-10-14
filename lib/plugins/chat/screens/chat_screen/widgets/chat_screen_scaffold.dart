@@ -65,17 +65,23 @@ class ChatScreenScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 有背景图时透明，让 Stack 底层图片透出
+      // 有背景图时透明，让 Stack 底层图片透出；
+      // 设置全局自定义背景（背景图/纯色/网格）时同样透明以透出全局背景
       backgroundColor: backgroundPath != null
           ? const Color(0x00000000)
-          : DSThemeBridge.resolve(context).surface,
+          : dsTransparentWhenGlobalBackground(
+              DSThemeBridge.resolve(context).surface,
+            ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           // 默认白色背景 - 当没有背景图片时显示
+          // （全局背景生效时透明，透出根部全局背景层）
           if (backgroundPath == null && !isLoadingBackground)
             Container(
-              color: DSThemeBridge.resolve(context).surface,
+              color: dsTransparentWhenGlobalBackground(
+                DSThemeBridge.resolve(context).surface,
+              ),
               width: double.infinity,
               height: double.infinity,
             ),

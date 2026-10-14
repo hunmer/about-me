@@ -178,7 +178,7 @@ class ContactFormState extends State<ContactForm> {
           final theme = DSThemeBridge.resolve(context);
 
           return Scaffold(
-            backgroundColor: theme.background,
+            backgroundColor: dsScaffoldBackground(theme),
             body: SafeArea(
               bottom: false,
               child: Column(

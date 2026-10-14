@@ -143,7 +143,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
     final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      backgroundColor: theme.surface,
+      backgroundColor: dsTransparentWhenGlobalBackground(theme.surface),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

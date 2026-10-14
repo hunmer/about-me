@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:skribble/skribble.dart' show RoughBoxDecoration;
 
 import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -14,6 +14,11 @@ import 'package:aboutme/design_system/design_system.dart';
 /// 界面（Scaffold 背景已被置为透明）都会透出该背景。
 /// 层级：底色（纯色或默认）在底、网格纹理在其上、背景图（叠加
 /// BackdropFilter 模糊）再上，内容绘制在最上层保持清晰。
+///
+/// 网格纹理预渲染成位图：rough 手绘几何只在参数变化时计算一次，
+/// 逐帧渲染成本与普通背景图相同。全分辨率位图经异步 [ui.Picture.toImage]
+/// 生成，等待期用低分辨率占位图或旧图拉伸过渡；拖拽调整窗口大小时
+/// 防抖重渲染。
 class AppBackground extends StatefulWidget {
   final Widget child;
 
@@ -23,15 +28,61 @@ class AppBackground extends StatefulWidget {
   State<AppBackground> createState() => _AppBackgroundState();
 }
 
+/// 一次网格位图渲染的完整输入（同时也是缓存匹配键）
+class _GridRenderArgs {
+  _GridRenderArgs({
+    required this.theme,
+    required this.gridIndex,
+    required this.size,
+    required this.dpr,
+    required this.gap,
+  }) : hatch = theme.hatch;
+
+  final AppThemeData theme;
+  final int gridIndex;
+  final Size size;
+  final double dpr;
+  final double gap;
+
+  /// 以下为派生比较键（theme 实例每次派生可能不同，按值比较）
+  final Color hatch;
+  int get inkLevel => DsInkStyle.index;
+
+  bool matchesCache(
+    ui.Image? image,
+    int? cachedIndex,
+    int cachedInkLevel,
+    Color? cachedHatch,
+    Size? cachedSize,
+    double cachedDpr,
+    double cachedGap,
+  ) {
+    return image != null &&
+        cachedIndex == gridIndex &&
+        cachedInkLevel == inkLevel &&
+        cachedHatch == hatch &&
+        cachedSize == size &&
+        cachedDpr == dpr &&
+        cachedGap == gap;
+  }
+}
+
 class _AppBackgroundState extends State<AppBackground> {
   final AppBackgroundController _controller = AppBackgroundController();
 
-  // 网格层装饰缓存：decoration 实例保持稳定可避免每次 rebuild 都重新
-  // 生成全屏 rough 几何（数百条手绘线的同步计算，明显卡顿）
-  RoughBoxDecoration? _gridDeco;
-  int? _gridDecoIndex;
-  int _gridDecoInkLevel = -1;
-  Color? _gridDecoHatch;
+  // 网格纹理位图缓存（连同生成参数；参数变化时重渲染）
+  ui.Image? _gridImage;
+  int? _gridImageIndex;
+  int _gridImageInkLevel = -1;
+  Color? _gridImageHatch;
+  Size? _gridImageSize;
+  double _gridImageDpr = 1;
+  double _gridImageGap = 18;
+  Timer? _gridRenderDebounce;
+
+  // 在途异步渲染（世代号递增使过期结果作废，避免覆盖新参数）
+  _GridRenderArgs? _pendingRender;
+  int _gridRenderGeneration = 0;
 
   @override
   void initState() {
@@ -49,7 +100,8 @@ class _AppBackgroundState extends State<AppBackground> {
 
   @override
   void dispose() {
-    _controller.removeListener(_onChanged);
+    _gridRenderDebounce?.cancel();
+    _gridImage?.dispose();
     super.dispose();
   }
 
@@ -58,6 +110,11 @@ class _AppBackgroundState extends State<AppBackground> {
     final path = _controller.backgroundPath;
     final color = _controller.backgroundColor;
     final gridIndex = _controller.backgroundGridIndex;
+
+    if (gridIndex == null) {
+      // 网格已清除：释放位图（无渲染副作用，可在 build 中进行）
+      _disposeGridImage();
+    }
 
     if (path == null && color == null && gridIndex == null) {
       return widget.child;
@@ -81,14 +138,18 @@ class _AppBackgroundState extends State<AppBackground> {
                 ? Color.alphaBlend(color, scaffoldBg)
                 : scaffoldBg,
           ),
-        // 网格背景层：手绘填充纹理铺满全屏（主题淡彩，跟随色板/深浅色）。
-        // RepaintBoundary 独立合成层：内容滚动/动画的重绘不会连带重画
-        // 全屏手绘纹理，纹理仅在风格或主题变化时重绘一次
+        // 网格背景层：预渲染位图铺满全屏（主题淡彩，跟随色板/深浅色）
         if (gridIndex != null)
-          RepaintBoundary(
-            child: DecoratedBox(
-              decoration: _gridDecoFor(dsTheme, gridIndex),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              _ensureGridImage(
+                dsTheme,
+                gridIndex,
+                constraints.biggest,
+                MediaQuery.devicePixelRatioOf(context),
+              );
+              return RawImage(image: _gridImage, fit: BoxFit.fill);
+            },
           ),
         if (path != null)
           Image.file(
@@ -99,7 +160,7 @@ class _AppBackgroundState extends State<AppBackground> {
           ),
         if (path != null && blur > 0)
           BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
             child: const ColoredBox(color: Color(0x00000000)),
           ),
         widget.child,
@@ -107,29 +168,142 @@ class _AppBackgroundState extends State<AppBackground> {
     );
   }
 
-  /// 取网格层装饰（按风格/墨线档位/淡彩色缓存）
-  RoughBoxDecoration _gridDecoFor(AppThemeData theme, int gridIndex) {
-    if (_gridDeco != null &&
-        _gridDecoIndex == gridIndex &&
-        _gridDecoInkLevel == DsInkStyle.index &&
-        _gridDecoHatch == theme.hatch) {
-      return _gridDeco!;
+  /// 释放网格位图与待渲染任务
+  void _disposeGridImage() {
+    _gridRenderDebounce?.cancel();
+    _gridRenderDebounce = null;
+    _gridImage?.dispose();
+    _gridImage = null;
+    _gridImageIndex = null;
+    _gridImageSize = null;
+    _pendingRender = null;
+  }
+
+  bool _gridImageMatches(_GridRenderArgs args) => args.matchesCache(
+        _gridImage,
+        _gridImageIndex,
+        _gridImageInkLevel,
+        _gridImageHatch,
+        _gridImageSize,
+        _gridImageDpr,
+        _gridImageGap,
+      );
+
+  /// 确保网格位图与当前风格/主题/间距/尺寸匹配：
+  /// - 位图已匹配 → 直接复用（日常路径，零成本）
+  /// - 相同目标的渲染已在途 → 等它完成
+  /// - 已有旧图且仅尺寸变化（拖拽窗口）→ 防抖等稳定后重渲染，
+  ///   期间 RawImage 拉伸旧图过渡
+  /// - 其余（首次/风格/主题/间距变化）→ 先上占位再异步渲染
+  void _ensureGridImage(
+    AppThemeData theme,
+    int gridIndex,
+    Size size,
+    double dpr,
+  ) {
+    if (size.isEmpty || !size.isFinite) return;
+    final args = _GridRenderArgs(
+      theme: theme,
+      gridIndex: gridIndex,
+      size: size,
+      dpr: dpr,
+      gap: _controller.backgroundGridGap,
+    );
+    if (_gridImageMatches(args)) return;
+
+    final pending = _pendingRender;
+    if (pending != null &&
+        pending.gridIndex == args.gridIndex &&
+        pending.hatch == args.hatch &&
+        pending.inkLevel == args.inkLevel &&
+        pending.size == args.size &&
+        pending.dpr == args.dpr &&
+        pending.gap == args.gap) {
+      return;
     }
 
-    _gridDecoIndex = gridIndex;
-    _gridDecoInkLevel = DsInkStyle.index;
-    _gridDecoHatch = theme.hatch;
-    _gridDeco = dsSketchDecoration(
-      theme: theme,
-      fillStyle: DsSketchFill.values[gridIndex],
+    if (_gridImage != null && _gridImageSize != size) {
+      _gridRenderDebounce?.cancel();
+      _gridRenderDebounce = Timer(const Duration(milliseconds: 200), () {
+        _gridRenderDebounce = null;
+        if (!mounted || _gridImageMatches(args)) return;
+        _startGridRender(args);
+      });
+      return;
+    }
+
+    _startGridRender(args);
+  }
+
+  /// 发起一次网格位图渲染：几何只录制一次（逻辑坐标），同一 picture
+  /// 先同步光栅化出 1/4 尺寸占位图立即上屏（避免异步等待期闪空白），
+  /// 再异步光栅化全分辨率版本完成后替换
+  Future<void> _startGridRender(_GridRenderArgs args) async {
+    if (_gridImageMatches(args)) return;
+    _gridRenderDebounce?.cancel();
+    _gridRenderDebounce = null;
+
+    final generation = ++_gridRenderGeneration;
+    _pendingRender = args;
+
+    final picture = _recordGridPicture(args);
+    if (_gridImage == null) {
+      final placeholder = picture.toImageSync(
+        (args.size.width / 4).ceil().clamp(1, 1 << 20),
+        (args.size.height / 4).ceil().clamp(1, 1 << 20),
+      );
+      _applyGridImage(placeholder, args);
+    }
+
+    final image = await picture.toImage(
+      (args.size.width * args.dpr).ceil().clamp(1, 1 << 20),
+      (args.size.height * args.dpr).ceil().clamp(1, 1 << 20),
+    );
+    picture.dispose();
+    _pendingRender = null;
+    if (generation != _gridRenderGeneration || !mounted) {
+      // 已被更新的渲染请求取代，或组件已销毁
+      image.dispose();
+      return;
+    }
+    setState(() {
+      _applyGridImage(image, args);
+    });
+  }
+
+  void _applyGridImage(ui.Image image, _GridRenderArgs args) {
+    final old = _gridImage;
+    _gridImage = image;
+    _gridImageIndex = args.gridIndex;
+    _gridImageInkLevel = args.inkLevel;
+    _gridImageHatch = args.hatch;
+    _gridImageSize = args.size;
+    _gridImageDpr = args.dpr;
+    _gridImageGap = args.gap;
+    old?.dispose();
+  }
+
+  /// 全屏 rough 手绘纹理画进 picture（逻辑坐标，一次性几何计算；
+  /// 光栅化分辨率由 toImage/toImageSync 的目标尺寸决定）
+  ui.Picture _recordGridPicture(_GridRenderArgs args) {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    dsSketchDecoration(
+      theme: args.theme,
+      fillStyle: DsSketchFill.values[args.gridIndex],
       // 实底给主题淡彩；其余传 null 让排线/点画走主题淡彩
-      fillColor: gridIndex == DsSketchFill.solid.index ? theme.hatch : null,
+      fillColor: args.gridIndex == DsSketchFill.solid.index
+          ? args.theme.hatch
+          : null,
       // 整屏纹理不要边框描边
       stroke: DsColors.transparent,
-      // 全屏纹理用比小控件更大的间距：线条更少更透气，绘制也更省
-      hachureGap: 18,
+      hachureGap: args.gap,
       seed: 7,
-    );
-    return _gridDeco!;
+    ).createBoxPainter().paint(
+          canvas,
+          Offset.zero,
+          ImageConfiguration(size: args.size),
+        );
+    return recorder.endRecording();
   }
 }

@@ -419,7 +419,6 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
-      backgroundColor: theme.background,
       title: Text('agent_chat_toolManagement'.tr),
       largeTitle: 'agent_chat_toolManagement'.tr,
       enableLargeTitle: true,

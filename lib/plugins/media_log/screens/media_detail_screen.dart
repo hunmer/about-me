@@ -150,7 +150,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     final theme = AppTheme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       body: SafeArea(
         child: Column(
           children: [

@@ -311,7 +311,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     final theme = DSThemeBridge.resolve(context);
     return DSThemeBridge(
       child: Scaffold(
-        backgroundColor: theme.background,
+        backgroundColor: dsScaffoldBackground(theme),
         body: SafeArea(
           child: _isEditing ? _buildEditingView(theme) : _buildReadingView(theme),
         ),

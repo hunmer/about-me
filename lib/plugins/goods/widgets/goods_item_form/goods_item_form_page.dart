@@ -155,16 +155,16 @@ class _GoodsItemFormPageState extends State<GoodsItemFormPage> {
     final theme = DSThemeBridge.resolve(context);
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: theme.background,
+        backgroundColor: dsScaffoldBackground(theme),
         body: const DSThemeBridge(child: Center(child: DSLoadingDots())),
       );
     }
 
     if (_item == null) {
       return Scaffold(
-        backgroundColor: theme.background,
+        backgroundColor: dsScaffoldBackground(theme),
         appBar: AppBar(
-          backgroundColor: theme.background,
+          backgroundColor: dsScaffoldBackground(theme),
           foregroundColor: theme.text,
           elevation: 0,
           title: Text('goods_itemNotFound'.tr),
@@ -179,7 +179,7 @@ class _GoodsItemFormPageState extends State<GoodsItemFormPage> {
     }
 
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       body: GoodsItemForm(
         initialData: _item,
         onSubmit: _handleSubmit,

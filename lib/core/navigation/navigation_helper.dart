@@ -4,6 +4,7 @@ import 'package:full_swipe_back_gesture/full_swipe_back_gesture.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/screens/route.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
 
 import 'open_container_route.dart';
 export 'open_container_route.dart';
@@ -65,13 +66,10 @@ class NavigationHelper {
         ),
       );
     } else {
+      // 零时长路由（MaterialPageRoute 的 300ms 转场会让透明背景页面
+      // 透出下层旧页面，造成切换叠影），见 RouteHelpers.createRoute
       return Navigator.of(context).push<T>(
-        MaterialPageRoute(
-          builder: (context) => page,
-          maintainState: maintainState,
-          fullscreenDialog: fullscreenDialog,
-          settings: settings,
-        ),
+        RouteHelpers.createRoute<T>(page, settings: settings),
       );
     }
   }
@@ -124,11 +122,9 @@ class NavigationHelper {
         result: result,
       );
     } else {
+      // 零时长路由，理由同 push
       return Navigator.of(context).pushReplacement<T, TO>(
-        MaterialPageRoute(
-          builder: (context) => newPage,
-          maintainState: maintainState,
-        ),
+        RouteHelpers.createRoute<T>(newPage),
         result: result,
       );
     }
@@ -400,7 +396,7 @@ class NavigationHelper {
   /// 创建路由（公开方法）
   ///
   /// [page] 页面Widget
-  /// [fullscreenDialog] 是否全屏对话框
+  /// [fullscreenDialog] 是否全屏对话框（仅 iOS 生效）
   /// [maintainState] 是否保持状态
   static Route<T> createRoute<T extends Object?>(
     Widget page, {
@@ -414,11 +410,8 @@ class NavigationHelper {
         maintainState: maintainState,
       );
     } else {
-      return MaterialPageRoute<T>(
-        builder: (context) => page,
-        fullscreenDialog: fullscreenDialog,
-        maintainState: maintainState,
-      );
+      // 零时长路由，理由同 push
+      return RouteHelpers.createRoute<T>(page);
     }
   }
 

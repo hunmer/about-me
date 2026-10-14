@@ -41,6 +41,10 @@ class AppBackgroundController extends ChangeNotifier {
   int? _backgroundGridIndex;
   int? get backgroundGridIndex => _backgroundGridIndex;
 
+  /// 网格背景纹理间距（逻辑像素）
+  double _backgroundGridGap = 18;
+  double get backgroundGridGap => _backgroundGridGap;
+
   /// 是否设置了背景图
   bool get hasBackground => _backgroundPath != null;
 
@@ -62,6 +66,8 @@ class AppBackgroundController extends ChangeNotifier {
         _backgroundBlur = (config['backgroundBlur'] as num?)?.toDouble() ?? 0.0;
         _backgroundColorValue = (config['backgroundColor'] as num?)?.toInt();
         _backgroundGridIndex = (config['backgroundGrid'] as num?)?.toInt();
+        _backgroundGridGap =
+            (config['backgroundGridGap'] as num?)?.toDouble() ?? 18;
       }
     } catch (e) {
       debugPrint('加载全局主题背景配置失败: $e');
@@ -106,14 +112,13 @@ class AppBackgroundController extends ChangeNotifier {
   }
 
   /// 保存网格背景设置（index 为 DsSketchFill 下标，null 表示清除）
-  Future<void> saveBackgroundGrid(int? index) async {
+  Future<void> saveBackgroundGrid(int? index, double gap) async {
     // 越界容错：枚举增减后旧配置仍能安全回落为未启用
     _backgroundGridIndex =
-        (index != null &&
-            index >= 0 &&
-            index < _gridStyleCount)
+        (index != null && index >= 0 && index < _gridStyleCount)
         ? index
         : null;
+    _backgroundGridGap = gap.clamp(6, 48);
 
     try {
       await _writeConfig();
@@ -135,6 +140,7 @@ class AppBackgroundController extends ChangeNotifier {
       'backgroundBlur': _backgroundBlur,
       'backgroundColor': _backgroundColorValue,
       'backgroundGrid': _backgroundGridIndex,
+      'backgroundGridGap': _backgroundGridGap,
     });
   }
 

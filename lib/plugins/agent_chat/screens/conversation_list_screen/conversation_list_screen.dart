@@ -301,12 +301,10 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
     final hasAnyConversations =
         _controller.conversationService.conversations.isNotEmpty;
 
     return SuperCupertinoNavigationWrapper(
-      backgroundColor: theme.background,
       title: Text('agent_chat_aiChat'.tr),
       largeTitle: 'agent_chat_aiChat'.tr,
       enableLargeTitle: true,

@@ -45,6 +45,9 @@ class _ThemeBackgroundSettingsScreenState
   // 全局网格背景（DsSketchFill 下标；null = 未启用）
   int? _gridIndex;
 
+  // 网格纹理间距（逻辑像素）
+  double _gridGap = 18;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +66,7 @@ class _ThemeBackgroundSettingsScreenState
           _backgroundBlur = _controller.backgroundBlur;
           _backgroundColor = _controller.backgroundColor;
           _gridIndex = _controller.backgroundGridIndex;
+          _gridGap = _controller.backgroundGridGap;
           _isLoading = false;
         });
       }
@@ -139,12 +143,13 @@ class _ThemeBackgroundSettingsScreenState
   }
 
   /// 保存网格背景设置（null 表示清除，恢复默认背景）
-  Future<void> _applyGrid(int? index) async {
+  Future<void> _applyGrid(int? index, double gap) async {
     setState(() {
       _gridIndex = index;
+      _gridGap = gap;
     });
     try {
-      await _controller.saveBackgroundGrid(index);
+      await _controller.saveBackgroundGrid(index, gap);
       if (mounted) {
         toastService.showToast(index != null ? '主题设置已保存' : '已恢复默认背景');
       }
@@ -155,56 +160,123 @@ class _ThemeBackgroundSettingsScreenState
     }
   }
 
+  /// 网格间距可选范围
+  static const double _gridGapMin = 6;
+  static const double _gridGapMax = 48;
+
   /// 显示网格背景选择对话框（复用笔记的手绘填充风格选择组件）
   void _showGridDialog() {
+    int? tempIndex = _gridIndex;
+    double tempGap = _gridGap;
+
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'screens_gridBackgroundSettings'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                        SizedBox(height: theme.spacing.lg),
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => DSThemeBridge(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = DSThemeBridge.resolve(context);
+                      return JellyBox(
+                        radius: theme.radii.xxl,
+                        padding: EdgeInsets.all(theme.spacing.xl),
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'screens_gridBackgroundSettings'.tr,
+                                textAlign: TextAlign.center,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.lg),
 
-                        // 网格风格选择（含「无」选项，点击即应用并关闭）
-                        DsSketchFillPickerRow(
-                          selected: _gridIndex,
-                          allowNone: true,
-                          labelKey: 'screens_gridBackgroundStyle',
-                          onChanged: (index) {
-                            _applyGrid(index);
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        SizedBox(height: theme.spacing.lg),
+                              // 网格风格选择（含「无」选项，确定后生效）
+                              DsSketchFillPickerRow(
+                                selected: tempIndex,
+                                allowNone: true,
+                                labelKey: 'screens_gridBackgroundStyle',
+                                onChanged:
+                                    (index) => setDialogState(() {
+                                      tempIndex = index;
+                                    }),
+                              ),
+                              SizedBox(height: theme.spacing.xl),
 
-                        DSButton(
-                          label: 'screens_cancel'.tr,
-                          variant: DSButtonVariant.ghost,
-                          expand: true,
-                          onPressed: () => Navigator.of(context).pop(),
+                              // 网格间距
+                              Text(
+                                'screens_gridGap'.tr,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
+                                ),
+                              ),
+                              SizedBox(height: theme.spacing.sm),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSSlider(
+                                      value:
+                                          (tempGap - _gridGapMin) /
+                                          (_gridGapMax - _gridGapMin),
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          tempGap =
+                                              _gridGapMin +
+                                              value *
+                                                  (_gridGapMax - _gridGapMin);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: Text(
+                                      tempGap.round().toString(),
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: theme.spacing.lg),
+
+                              // 操作按钮
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_cancel'.tr,
+                                      variant: DSButtonVariant.outline,
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ),
+                                  SizedBox(width: theme.spacing.md),
+                                  Expanded(
+                                    child: DSButton(
+                                      label: 'screens_save'.tr,
+                                      onPressed: () {
+                                        _applyGrid(tempIndex, tempGap);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ),
           ),
     );
   }

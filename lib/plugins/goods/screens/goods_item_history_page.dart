@@ -68,7 +68,7 @@ class _GoodsItemHistoryPageState extends State<GoodsItemHistoryPage> {
     final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       appBar: AppBar(
         title: Text('goods_usageHistory'.tr),
         centerTitle: true,

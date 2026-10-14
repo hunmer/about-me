@@ -20,7 +20,7 @@ class SourceManagementScreen extends StatelessWidget {
           final theme = DSThemeBridge.resolve(context);
           final appStoreManager = context.watch<AppStoreManager>();
           return Scaffold(
-            backgroundColor: theme.background,
+            backgroundColor: dsScaffoldBackground(theme),
             body: SafeArea(
               bottom: false,
               child: Column(

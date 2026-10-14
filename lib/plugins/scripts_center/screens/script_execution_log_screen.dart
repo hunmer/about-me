@@ -343,7 +343,7 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
           final theme = DSThemeBridge.resolve(context);
 
           return Scaffold(
-            backgroundColor: theme.background,
+            backgroundColor: dsScaffoldBackground(theme),
             body: Column(
               children: [
                 // Super Cupertino 风格的固定 header；

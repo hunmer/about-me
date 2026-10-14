@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart' show dsScaffoldBackground;
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/route.dart';
 
@@ -83,7 +84,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _index >= _pageCount - 1;
 
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

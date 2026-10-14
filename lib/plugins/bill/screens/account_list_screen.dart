@@ -56,7 +56,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       appBar: AppBar(
         backgroundColor: theme.surface,
         elevation: 0,

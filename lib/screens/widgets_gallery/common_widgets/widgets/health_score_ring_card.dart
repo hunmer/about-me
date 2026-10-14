@@ -342,7 +342,7 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
       );
 
       if (i > 0) {
-        items.add(SizedBox(height: widget.size.getItemSpacing() * 2.5));
+        items.add(SizedBox(height: widget.size.getItemSpacing() * 3.5));
       }
 
       items.add(
@@ -399,7 +399,7 @@ class _RingChart extends StatelessWidget {
         final side = math.min(constraints.maxWidth, constraints.maxHeight);
         final ringRadius = side / 2;
         final strokeWidth = ringRadius * 0.26;
-        final iconCircleRadius = strokeWidth * 0.62;
+        final iconCircleRadius = strokeWidth * 0.52;
         final segments = _computeSegments(items);
 
         return SizedBox(
@@ -616,7 +616,9 @@ class _StatItemRow extends StatelessWidget {
     final barHeight = math.max(4.0, size.getLegendIndicatorHeight() * 0.7);
     final iconSize = size.getThumbnailImageSize();
 
-    return Row(
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2 * size.scale),
+      child: Row(
       children: [
         // 图标圆
         Container(
@@ -708,6 +710,7 @@ class _StatItemRow extends StatelessWidget {
           ],
         ),
       ],
+      ),
     );
   }
 }

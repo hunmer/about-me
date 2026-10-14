@@ -144,7 +144,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
     final theme = DSThemeBridge.resolve(context);
 
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       body: Column(
         children: [
           // Super Cupertino 风格的固定 header（super_cupertino_navigation_bar

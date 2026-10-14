@@ -206,7 +206,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
               builder: (context) {
                 final theme = DSThemeBridge.resolve(context);
                 return Scaffold(
-                  backgroundColor: theme.background,
+                  backgroundColor: dsScaffoldBackground(theme),
                   body: SafeArea(
                     bottom: false,
                     child: Column(

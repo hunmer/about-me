@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
+
+/// 全局自定义背景（背景图/纯色/网格）生效时返回透明以透出根部全局
+/// 背景层，否则返回 [fallback]
+Color dsTransparentWhenGlobalBackground(Color fallback) =>
+    AppBackgroundController().hasCustomBackground
+        ? DsColors.transparent
+        : fallback;
+
+/// 页面 Scaffold 背景色：设置了全局自定义背景（背景图/纯色/网格）时
+/// 返回透明以透出根部全局背景层，否则用 DS 主题背景色。
+/// 仅用于页面级 Scaffold/AppBar；弹窗、底部弹层等浮层不要使用
+/// （浮层透明会与底下内容穿叠）
+Color dsScaffoldBackground(AppThemeData theme) =>
+    dsTransparentWhenGlobalBackground(theme.background);
 
 /// Material → 设计系统主题桥
 ///

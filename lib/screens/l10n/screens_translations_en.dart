@@ -71,6 +71,7 @@ final Map<String, String> screensTranslationsEn = {
   'screens_gridBackgroundNotSet': 'Not set (follows light/dark default)',
   'screens_gridBackgroundSettings': 'Grid Background Settings',
   'screens_gridBackgroundStyle': 'Background Style',
+  'screens_gridGap': 'Grid Spacing',
   'screens_restoreDefaultBackground': 'Restore Default Background',
   'screens_themeBackgroundDescription': 'The background image and solid color apply to all screens. When both are set, the image sits on top with the color filling uncovered areas; otherwise the system default is used. The grid background sits above the base color and below the image. A background set separately on the home screen still takes priority.',
 

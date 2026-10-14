@@ -70,7 +70,6 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
     final theme = DSThemeBridge.resolve(context);
 
     return SuperCupertinoNavigationWrapper(
-      backgroundColor: theme.background,
       title: Text('agent_chat_toolTemplate'.tr),
       largeTitle: 'agent_chat_toolTemplate'.tr,
       enableLargeTitle: true,

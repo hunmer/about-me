@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:collection/collection.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:super_cupertino_navigation_bar/super_cupertino_navigation_bar.dart';
 import 'super_cupertino_navigation_wrapper/filter_models.dart';
 import 'super_cupertino_navigation_wrapper/multi_filter_bar.dart';
@@ -427,10 +428,16 @@ class _SuperCupertinoNavigationWrapperState
   /// 检查是否为移动端
   bool get _isMobile => UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
 
-  /// 解析界面背景色：未显式传入时统一取 DS 主题背景色（浅色为粉调，
-  /// 深色为 night），所有走本组件的页面与 conversation_list 保持一致
-  Color _resolveBackgroundColor() =>
-      widget.backgroundColor ?? AppTheme.of(context).background;
+  /// 解析界面背景色：显式传入时用之；未传入时若设置了全局自定义背景
+  /// （背景图/纯色/网格）则透明以透出全局背景，否则取 DS 主题背景色
+  /// （浅色为粉调，深色为 night）
+  Color _resolveBackgroundColor() {
+    if (widget.backgroundColor != null) return widget.backgroundColor!;
+    if (AppBackgroundController().hasCustomBackground) {
+      return DsColors.transparent;
+    }
+    return AppTheme.of(context).background;
+  }
 
   @override
   Widget build(BuildContext context) {

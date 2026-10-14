@@ -54,7 +54,7 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: theme.paper,
+      backgroundColor: dsTransparentWhenGlobalBackground(theme.paper),
       body: SafeArea(
         bottom: false,
         child: Column(

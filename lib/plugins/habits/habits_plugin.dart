@@ -40,7 +40,7 @@ class _HabitsMainViewState extends State<HabitsMainView> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return Scaffold(
-      backgroundColor: theme.background,
+      backgroundColor: dsScaffoldBackground(theme),
       body: HabitsBottomBar(
         plugin: HabitsPlugin.instance,
         habitId: widget.habitId,

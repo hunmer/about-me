@@ -5,42 +5,34 @@ import 'package:universal_platform/universal_platform.dart';
 
 /// 路由辅助工具类
 class RouteHelpers {
-  /// 创建路由（使用平台转场动画）
+  /// 创建路由
   ///
-  /// iOS: CupertinoPageRoute（支持原生左滑返回）
-  /// Android: MaterialPageRoute（淡入淡出动画）
+  /// iOS: CupertinoPageRoute（支持原生左滑返回，转场可见）
+  /// 其他平台: 零时长路由。不能用 MaterialPageRoute——其 300ms 转场
+  /// 控制器不随 NoAnimationPageTransitionsBuilder 缩短，动画完成前
+  /// 下层路由保持绘制，透明背景页面会透出旧页面造成叠影
   ///
-  /// [useAnimation] 是否使用转场动画，默认 true
-  static Route createRoute(
+  /// [useAnimation] 仅 iOS 生效（false 时 iOS 也用零时长路由）
+  static Route<T> createRoute<T extends Object?>(
     Widget page, {
     RouteSettings? settings,
     bool useAnimation = true,
   }) {
-    if (useAnimation) {
-      // 直接创建带平台动画的路由，并传入 settings
-      if (UniversalPlatform.isIOS) {
-        return CupertinoPageRoute(
-          settings: settings,
-          builder: (context) => page,
-        );
-      } else {
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (context) => page,
-        );
-      }
-    } else {
-      // 无动画路由（用于小组件跳转等场景）
-      return PageRouteBuilder(
+    if (useAnimation && UniversalPlatform.isIOS) {
+      return CupertinoPageRoute<T>(
         settings: settings,
-        pageBuilder: (context, animation, secondaryAnimation) => page,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return child;
-        },
-        transitionDuration: const Duration(milliseconds: 0),
-        reverseTransitionDuration: const Duration(milliseconds: 0),
+        builder: (context) => page,
       );
     }
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return child;
+      },
+      transitionDuration: const Duration(milliseconds: 0),
+      reverseTransitionDuration: const Duration(milliseconds: 0),
+    );
   }
 
   /// 创建无动画路由（便捷方法）
