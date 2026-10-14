@@ -223,7 +223,6 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_apiKeyHint': '粘贴服务商的 API Key',
   'openai_apiKeyRequired': '请输入 API Key',
   'openai_presetRequired': '请选择服务商',
-  'openai_autoFilled': '自动填充',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt 预设管理',

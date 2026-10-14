@@ -526,10 +526,12 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    // 描边对齐 DSInput/DSSelect（textSub 淡墨线 + 1.6 线宽）
                     JellyBox(
                       radius: theme.radii.xl,
                       padding: const EdgeInsets.all(16),
-                      strokeColor: theme.ink,
+                      strokeColor: theme.textSub.withValues(alpha: 0.45),
+                      borderWidth: 1.6,
                       child: Column(
                         children: [
                           Row(
@@ -671,42 +673,6 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                         }
                       },
                     ),
-                    // 预览由预设自动填充的配置
-                    if (_selectedPreset != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: JellyBox(
-                          radius: theme.radii.xl,
-                          padding: const EdgeInsets.all(16),
-                          strokeColor: theme.ink,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'openai_autoFilled'.tr,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _selectedPreset!.baseUrl,
-                                style: DsTypography.body.copyWith(
-                                  color: theme.text,
-                                ),
-                              ),
-                              Text(
-                                ApiFormat.fromString(
-                                  _selectedPreset!.apiFormat,
-                                ).label,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                   ],
                 ],
               ),

@@ -223,7 +223,6 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_apiKeyHint': 'Paste your API key',
   'openai_apiKeyRequired': 'Please enter the API key',
   'openai_presetRequired': 'Please select a provider',
-  'openai_autoFilled': 'Auto-filled',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt Preset Management',

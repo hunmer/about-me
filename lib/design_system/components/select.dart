@@ -136,6 +136,11 @@ class _DSSelectState<T> extends State<DSSelect<T>> {
               height: 46,
               radius: theme.radii.lg,
               raised: !_open && !pressed,
+              // 描边对齐 DSInput：静止淡墨线、展开（等同聚焦）主题色
+              strokeColor: _open
+                  ? theme.primary
+                  : theme.textSub.withValues(alpha: 0.45),
+              borderWidth: 1.6,
               padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
               child: Row(
                 children: [

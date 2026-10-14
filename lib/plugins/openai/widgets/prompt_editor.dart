@@ -88,7 +88,7 @@ class _PromptEditorState extends State<PromptEditor> {
   Widget _buildDeleteButton(VoidCallback onPressed, AppThemeData theme) {
     return Pressable(
       onPressed: onPressed,
-      semanticLabel: '删除消息',
+      semanticLabel: 'openai_delete'.tr,
       builder: (context, states) => Padding(
         padding: const EdgeInsets.all(8),
         child: DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
@@ -145,7 +145,7 @@ class _PromptEditorState extends State<PromptEditor> {
                     children: [
                       const Spacer(),
                       DSButton(
-                        label: '添加',
+                        label: 'openai_addPrompt'.tr,
                         icon: DsIconKind.plus,
                         size: DSButtonSize.sm,
                         onPressed: widget.onAddMessage ?? _addPrompt,

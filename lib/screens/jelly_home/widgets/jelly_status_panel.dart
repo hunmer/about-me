@@ -71,10 +71,9 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
                     fit: StackFit.expand,
                     children: [
                       _CroppedStatusPanelImage(style: _settings.selectedStyle),
-                      _positioned(
+                      _avatarPositioned(
                         _mapRegion(_settings.config.avatarRegion),
                         constraints.biggest,
-                        ClipOval(child: _buildAvatar()),
                       ),
                       _positioned(
                         _mapRegion(_settings.config.experienceRegion),
@@ -157,6 +156,22 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
         rect.bottom * size.height,
       ),
       child: Center(child: child),
+    );
+  }
+
+  /// 头像按区域短边取正方形再裁圆：Center 下约束是松的，
+  /// 不固定尺寸时图片按原始宽高 sizing，非正方形封面会裁成椭圆
+  Widget _avatarPositioned(Rect region, Size size) {
+    final edge = Size(
+      region.width * size.width,
+      region.height * size.height,
+    ).shortestSide;
+    return _positioned(
+      region,
+      size,
+      ClipOval(
+        child: SizedBox.square(dimension: edge, child: _buildAvatar()),
+      ),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import '../plugins/openai/models/prompt_preset.dart';
@@ -61,9 +62,7 @@ class PresetEditForm extends StatelessWidget {
 
     // 验证至少有一个 prompt
     if (prompts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('openai_pleaseEnterSystemPrompt'.tr)),
-      );
+      toastService.showToast('openai_pleaseEnterSystemPrompt'.tr);
       return;
     }
 
