@@ -311,25 +311,28 @@ class _MessageInputState extends State<MessageInput> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    DSIconButton(
-                      icon: DsIconKind.plus,
-                      color: theme.surfaceAlt,
-                      iconColor: theme.textSub,
-                      onPressed: () {
-                        SmoothBottomSheet.show(
-                          context: context,
-                          builder: (context) => MessageInputActionsDrawer(
-                            actions:
-                                MessageInputActionsBuilder.getDefaultActions(
-                                  context,
-                                  onFileSelected: _handleFileSelected,
-                                  onSendMessage: widget.onSendMessage,
-                                  textController: widget.controller,
-                                ),
-                            onFileSelected: _handleFileSelected,
-                          ),
-                        );
-                      },
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4.0, right: 8.0),
+                      child: DSIconButton(
+                        icon: DsIconKind.plus,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () {
+                          SmoothBottomSheet.show(
+                            context: context,
+                            builder: (context) => MessageInputActionsDrawer(
+                              actions:
+                                  MessageInputActionsBuilder.getDefaultActions(
+                                    context,
+                                    onFileSelected: _handleFileSelected,
+                                    onSendMessage: widget.onSendMessage,
+                                    textController: widget.controller,
+                                  ),
+                              onFileSelected: _handleFileSelected,
+                            ),
+                          );
+                        },
+                      ),
                     ),
 
                     // 文本输入框（表情/语音内嵌为右侧后缀）
@@ -370,7 +373,11 @@ class _MessageInputState extends State<MessageInput> {
 
                     // 发送按钮
                     Padding(
-                      padding: const EdgeInsets.only(right: 8.0, bottom: 4.0),
+                      padding: const EdgeInsets.only(
+                        left: 8.0,
+                        right: 8.0,
+                        bottom: 4.0,
+                      ),
                       child: SendButton(onPressed: _handleSendMessage),
                     ),
                   ],

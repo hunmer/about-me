@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
+import 'package:get/get.dart';
 
 /// SwipeAction 配置选项
 class SwipeActionOption {
@@ -57,11 +58,11 @@ class SwipeActionWrapper extends StatelessWidget {
   /// 设置为 true 时，完全滑动会自动执行第一个操作
   final bool performFirstActionWithFullSwipe;
 
-  /// 删除确认对话框标题
-  final String deleteConfirmTitle;
+  /// 删除确认对话框标题（null 时用翻译键 app_confirmDelete）
+  final String? deleteConfirmTitle;
 
-  /// 删除确认对话框内容
-  final String deleteConfirmContent;
+  /// 删除确认对话框内容（null 时用翻译键 app_confirm）
+  final String? deleteConfirmContent;
 
   /// 编辑模式 - 禁用滑动操作
   final bool isEditMode;
@@ -75,8 +76,8 @@ class SwipeActionWrapper extends StatelessWidget {
     this.leadingActions,
     this.trailingActions,
     this.performFirstActionWithFullSwipe = false,
-    this.deleteConfirmTitle = '确认删除',
-    this.deleteConfirmContent = '确定？',
+    this.deleteConfirmTitle,
+    this.deleteConfirmContent,
     this.isEditMode = false,
     this.backgroundColor,
   });
@@ -112,11 +113,11 @@ class SwipeActionWrapper extends StatelessWidget {
       ),
       color: option.backgroundColor,
       performsFirstActionWithFullSwipe: isFirst && performFirstActionWithFullSwipe,
-      nestedAction: option.isDestructive
-          ? SwipeNestedAction(
-              title: deleteConfirmContent,
-            )
-          : null,
+        nestedAction: option.isDestructive
+            ? SwipeNestedAction(
+                title: deleteConfirmContent ?? 'app_confirm'.tr,
+              )
+            : null,
       onTap: (handler) async {
         option.onTap();
         await handler(false);
@@ -161,7 +162,7 @@ class SwipeActionWrapper extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              deleteConfirmContent,
+              deleteConfirmContent ?? 'app_confirm'.tr,
               style: TextStyle(
                 color: option.textColor,
                 fontSize: 16,
@@ -200,16 +201,16 @@ class SwipeActionWrapper extends StatelessWidget {
   }
 }
 
-/// 预定义的常用操作
+/// 预定义的常用操作（默认文案走 app_ 翻译键）
 class SwipeActionPresets {
   /// 删除操作（红色背景）
   static SwipeActionOption delete({
     required VoidCallback onTap,
-    String label = '删除',
+    String? label,
     bool showConfirm = true,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_delete'.tr,
       icon: Icons.delete,
       backgroundColor: Colors.red,
       textColor: Colors.white,
@@ -221,10 +222,10 @@ class SwipeActionPresets {
   /// 编辑操作（蓝色背景）
   static SwipeActionOption edit({
     required VoidCallback onTap,
-    String label = '编辑',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_edit'.tr,
       icon: Icons.edit,
       backgroundColor: Colors.blue,
       textColor: Colors.white,
@@ -235,10 +236,10 @@ class SwipeActionPresets {
   /// 分享操作（绿色背景）
   static SwipeActionOption share({
     required VoidCallback onTap,
-    String label = '分享',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_share'.tr,
       icon: Icons.share,
       backgroundColor: Colors.green,
       textColor: Colors.white,
@@ -249,10 +250,10 @@ class SwipeActionPresets {
   /// 归档操作（橙色背景）
   static SwipeActionOption archive({
     required VoidCallback onTap,
-    String label = '归档',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_archive'.tr,
       icon: Icons.archive,
       backgroundColor: Colors.orange,
       textColor: Colors.white,
@@ -263,10 +264,10 @@ class SwipeActionPresets {
   /// 置顶操作（紫色背景）
   static SwipeActionOption pin({
     required VoidCallback onTap,
-    String label = '置顶',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_pin'.tr,
       icon: Icons.push_pin,
       backgroundColor: Colors.purple,
       textColor: Colors.white,
@@ -277,10 +278,10 @@ class SwipeActionPresets {
   /// 标记为已读（灰色背景）
   static SwipeActionOption markAsRead({
     required VoidCallback onTap,
-    String label = '已读',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_markAsRead'.tr,
       icon: Icons.done,
       backgroundColor: Colors.grey,
       textColor: Colors.white,
@@ -291,10 +292,10 @@ class SwipeActionPresets {
   /// 更多操作（深灰色背景）
   static SwipeActionOption more({
     required VoidCallback onTap,
-    String label = '更多',
+    String? label,
   }) {
     return SwipeActionOption(
-      label: label,
+      label: label ?? 'app_more'.tr,
       icon: Icons.more_horiz,
       backgroundColor: Colors.grey.shade700,
       textColor: Colors.white,

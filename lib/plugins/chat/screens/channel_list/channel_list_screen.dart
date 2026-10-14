@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -10,7 +11,6 @@ import 'widgets/channel_tile.dart';
 import 'widgets/empty_channel_view.dart';
 import 'widgets/channel_group_selector.dart';
 import 'widgets/channel_dialogs/channel_dialog.dart';
-import 'widgets/channel_dialogs/delete_channel_dialog.dart';
 
 class ChannelListScreen extends StatefulWidget {
   final List<Channel> channels;
@@ -105,20 +105,24 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
                     onReorder: _controller.reorderChannels,
                     itemBuilder: (context, index) {
                       final channel = _controller.filteredChannels[index];
-                      return Padding(
+                      // 挂载即播墨线描画入场（design.md §10）；key 上移供拖拽排序
+                      return WiredDraw(
                         key: ValueKey(channel.id),
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: ChannelTile(
-                          channel: channel,
-                          onBeforeOpen: () {
-                            // 在打开聊天页面之前设置当前频道
-                            widget.chatPlugin.channelService.setCurrentChannel(
-                              channel,
-                            );
-                          },
-                          onEdit: (channel) => _showEditChannelDialog(channel),
-                          onDelete: (channel) =>
-                              _showDeleteChannelDialog(channel),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: ChannelTile(
+                            channel: channel,
+                            onBeforeOpen: () {
+                              // 在打开聊天页面之前设置当前频道
+                              widget.chatPlugin.channelService
+                                  .setCurrentChannel(channel);
+                            },
+                            onEdit: (channel) =>
+                                _showEditChannelDialog(channel),
+                            // 滑动删除已带嵌套二次确认，直接执行删除
+                            onDelete: (channel) =>
+                                _controller.deleteChannel(channel.id),
+                          ),
                         ),
                       );
                     },
@@ -140,17 +144,6 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
         isEditMode: true,
         channel: channel,
         onUpdateChannel: _controller.updateChannel,
-      ),
-    );
-  }
-
-  void _showDeleteChannelDialog(Channel channel) {
-    showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder: (context) => DeleteChannelDialog(
-        channel: channel,
-        onDeleteChannel: _controller.deleteChannel,
       ),
     );
   }

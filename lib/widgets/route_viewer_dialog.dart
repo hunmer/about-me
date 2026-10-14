@@ -54,8 +54,6 @@ class _RouteViewerDialogState extends State<RouteViewerDialog> {
     '核心功能': [
       const RouteInfo(path: '/', name: '首页', icon: Icons.home),
       const RouteInfo(path: '/settings', name: '设置', icon: Icons.settings),
-      const RouteInfo(path: '/data_selector_test', name: '数据选择器测试', icon: Icons.assignment),
-      const RouteInfo(path: '/swipe_action_test', name: '滑动操作测试', icon: Icons.swipe),
       const RouteInfo(path: '/widgets_gallery', name: '组件库', icon: Icons.widgets),
       const RouteInfo(
         path: '/design_system',

@@ -68,7 +68,7 @@
 | `jelly_home/` | 果冻小屋主页（**应用默认启动页**，四页签 + Live2D 伙伴 companion_controller） |
 | `home_screen/` · `settings_screen/` · `about_screen/` · `log_screen/` | 主要页面 |
 | `widgets_gallery/` · `pages/` | 组件展示廊、通用页面 |
-| `*_test` / `test_screens`（intent_test、notification_test、form_fields_test、data_selector_test、json_dynamic_test、toast_test） | 测试/演示页面 |
+| `*_test`（intent_test、form_fields_test、json_dynamic_test、toast_test） | 测试/演示页面 |
 | `floating_widget_screen/` · `l10n/` | 悬浮组件界面、翻译 |
 | 文档 | [screens/CLAUDE.md](../screens/CLAUDE.md)、[home_screen](../screens/home_screen/CLAUDE.md)、[settings_screen](../screens/settings_screen/CLAUDE.md)（旧版格式） |
 

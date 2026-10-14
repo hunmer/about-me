@@ -64,8 +64,13 @@ final Map<String, String> screensTranslationsZh = {
   'screens_solidBackgroundSet': '已设置纯色背景',
   'screens_solidBackgroundNotSet': '未设置（跟随深浅色默认）',
   'screens_solidBackgroundColorSettings': '纯色背景设置',
+  'screens_gridBackground': '网格背景',
+  'screens_gridBackgroundSet': '已设置网格背景',
+  'screens_gridBackgroundNotSet': '未设置（跟随深浅色默认）',
+  'screens_gridBackgroundSettings': '网格背景设置',
+  'screens_gridBackgroundStyle': '背景风格',
   'screens_restoreDefaultBackground': '恢复默认背景',
-  'screens_themeBackgroundDescription': '背景图与纯色背景应用于应用内所有界面；两者同时设置时背景图在上、纯色填充未覆盖区域，均未设置时使用系统默认背景。主页单独设置的背景图仍优先显示。',
+  'screens_themeBackgroundDescription': '背景图与纯色背景应用于应用内所有界面；两者同时设置时背景图在上、纯色填充未覆盖区域，均未设置时使用系统默认背景。网格背景垫在底色之上、背景图之下。主页单独设置的背景图仍优先显示。',
 
   // theme style picker (theme_background_settings_screen)
   'screens_themeStyle': '主题风格',

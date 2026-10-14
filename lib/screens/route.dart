@@ -64,10 +64,7 @@ import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
 import 'package:aboutme/plugins/activity/screens/activity_daily_config_screen.dart';
 import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart';
-import 'package:aboutme/screens/notification_test/notification_test_page.dart';
-import 'package:aboutme/screens/data_selector_test/data_selector_test_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/live_activities_test_screen.dart';
-import 'package:aboutme/screens/settings_screen/screens/background_announcement_test_screen.dart';
 
 class AppRoutes extends NavigatorObserver {
   // 单例路由管理器
@@ -140,9 +137,6 @@ class AppRoutes extends NavigatorObserver {
   static const String checkin = '/checkin';
   static const String settings = '/settings';
   static const String jsonDynamicTest = '/json_dynamic_test';
-  static const String notificationTest = '/notification_test';
-  static const String backgroundAnnouncementTest =
-      '/background_announcement_test';
   static const String superCupertinoTest = '/super_cupertino_test';
   static const String overlayTest = '/overlay_test';
   static const String widgetsGallery = '/widgets_gallery';
@@ -304,10 +298,6 @@ class AppRoutes extends NavigatorObserver {
     activityDailyConfig: (context) =>
         const ActivityDailyConfigScreen(widgetId: 0),
     jsonDynamicTest: (context) => const JsonDynamicTestScreen(),
-    notificationTest: (context) => const NotificationTestPage(),
-    backgroundAnnouncementTest: (context) =>
-        const BackgroundAnnouncementTestScreen(),
-    'data_selector_test': (context) => const DataSelectorTestScreen(),
     'live_activities_test': (context) => const LiveActivitiesTestScreen(),
   };
 

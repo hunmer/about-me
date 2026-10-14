@@ -80,11 +80,13 @@ class TrackerTranslationsEn {
     'tracker_iconDescription': 'Quick access to Goal Tracker',
     'tracker_overview': 'Goal Tracker Overview',
     'tracker_overviewName': 'Goal Tracker Overview',
-    'tracker_overviewDescription': 'Display today and monthly completion statistics',
+    'tracker_overviewDescription':
+        'Display today and monthly completion statistics',
     'tracker_loadFailed': 'Load Failed',
 
     // Widget configuration
-    'tracker_configureGoalProgressBarWidget': 'Configure Goal Progress Bar Widget',
+    'tracker_configureGoalProgressBarWidget':
+        'Configure Goal Progress Bar Widget',
     'tracker_configureGoalTrackingWidget': 'Configure Goal Tracking Widget',
     'tracker_backgroundColor': 'Background Color',
     'tracker_accentColor': 'Accent Color',
@@ -97,8 +99,18 @@ class TrackerTranslationsEn {
     'tracker_quickAccess': 'Quick Access',
     'tracker_quickAccessDesc': 'Tap to go to goal detail',
     'viewDetail': 'View Detail',
-  
-  // const Text 硬编码迁移(en)
-  'tracker_nfcAddProgress': 'Add Progress via NFC',
-};
+
+    // const Text 硬编码迁移(en)
+    'tracker_nfcAddProgress': 'Add Progress via NFC',
+
+    // goal_card 卡片与快捷操作面板
+    'tracker_quickAction': 'Quick action',
+    'tracker_remainingDays': '@days days left',
+    'tracker_expired': 'Expired',
+    'tracker_customProgressHint': 'Custom progress (@unit)',
+    'tracker_enterValueError': 'Please enter a value',
+    'tracker_invalidNumberError': 'Please enter a valid number',
+    'tracker_cancelComplete': 'Mark incomplete',
+    'tracker_completeNow': 'Complete',
+  };
 }

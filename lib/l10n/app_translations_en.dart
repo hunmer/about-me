@@ -39,6 +39,11 @@ const Map<String, String> appTranslationsEn = {
   'app_create': 'Create',
   'app_confirm': 'Confirm',
   'app_import': 'Import',
+  'app_share': 'Share',
+  'app_archive': 'Archive',
+  'app_pin': 'Pin',
+  'app_markAsRead': 'Mark as read',
+  'app_more': 'More',
 
   // Delete confirmation
   'app_confirmDelete': 'Confirm Delete?',

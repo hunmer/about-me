@@ -39,6 +39,11 @@ const Map<String, String> appTranslationsZh = {
   'app_create': '新建',
   'app_confirm': '确认',
   'app_import': '导入',
+  'app_share': '分享',
+  'app_archive': '归档',
+  'app_pin': '置顶',
+  'app_markAsRead': '已读',
+  'app_more': '更多',
 
   // Delete confirmation
   'app_confirmDelete': '确认删除?',

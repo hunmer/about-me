@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/models/record.dart';
@@ -28,178 +29,215 @@ class GoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DSThemeBridge(
       // 卡片可能渲染在第三方导航容器内，DS 组件先过桥
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          final progress = controller.calculateProgress(goal).clamp(0.0, 1.0);
-          final isCompleted = controller.calculateProgress(goal) >= 1.0;
-          final remainingDays =
-              goal.dateSettings.endDate?.difference(DateTime.now()).inDays;
+      child: WiredDraw(
+        // 挂载即播墨线描画入场（design.md §10）
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            final drawProgress = WiredDrawTransition.progressOf(context);
+            final seed = goal.id.hashCode & 0x7fffffff;
+            final progress = controller.calculateProgress(goal).clamp(0.0, 1.0);
+            final isCompleted = controller.calculateProgress(goal) >= 1.0;
+            final remainingDays = goal.dateSettings.endDate
+                ?.difference(DateTime.now())
+                .inDays;
 
-          // 参考稿风格：由目标色派生 粉彩底色/深色文字/饱和波浪
-          final base =
-              goal.progressColor != null
-                  ? Color(goal.progressColor!)
-                  : theme.primary;
-          final pastel = base.mixWhite(0.86);
-          final deep = base.mixBlack(0.55);
-          final mid = base.mixBlack(0.28);
-          final hasImage = goal.imagePath != null && goal.imagePath!.isNotEmpty;
+            // 参考稿风格：由目标色派生 粉彩底色/深色文字/饱和波浪
+            final base = goal.progressColor != null
+                ? Color(goal.progressColor!)
+                : theme.primary;
+            final pastel = base.mixWhite(0.86);
+            final deep = base.mixBlack(0.55);
+            final mid = base.mixBlack(0.28);
+            final hasImage =
+                goal.imagePath != null && goal.imagePath!.isNotEmpty;
 
-          return SizedBox(
-            height: 190,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: pastel,
-                  borderRadius: theme.radii.xxl,
-                  // 细白描边提升粉彩卡的轮廓质感
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    width: 1,
-                  ),
-                  boxShadow: theme.shadows.card,
-                ),
+            return SizedBox(
+              height: 190,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Stack(
                   children: [
-                    if (hasImage) ...[
-                      Positioned.fill(
-                        child: AdaptiveImage(
-                          imagePath: goal.imagePath,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      // 彩色罩：让图片融入粉彩卡片并保证深色文字可读
-                      Positioned.fill(
-                        child: ColoredBox(
-                          color: pastel.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
-                    // 液体波浪进度填充
+                    // 右下硬偏移墨影（零模糊实底影，参考稿 shadow-[3.5px_3.5px_0px_ink]）
                     Positioned.fill(
-                      child: _WaveFill(progress: progress, color: base),
+                      left: 3.5,
+                      top: 3.5,
+                      child: DecoratedBox(
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          fillColor: theme.ink,
+                          stroke: theme.ink,
+                          strokeWidth: 1.2,
+                          radius: theme.radii.xxl,
+                          seed: seed + 13,
+                          progress: drawProgress,
+                        ),
+                      ),
                     ),
-                    Positioned.fill(
-                      child: Pressable(
-                        onPressed: onTap,
-                        builder:
-                            (context, states) => Opacity(
-                              opacity:
-                                  states.contains(WidgetState.pressed)
-                                      ? 0.92
-                                      : 1.0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        _buildIconBadge(base),
-                                        const Spacer(),
-                                        _circleAction(
-                                          icon:
-                                              isCompleted
-                                                  ? Icons.check_rounded
-                                                  : Icons.add_rounded,
-                                          semanticLabel: '快捷操作',
-                                          onTap: () => _showActionSheet(context),
-                                          color:
-                                              isCompleted
-                                                  ? Colors.white
-                                                  : base,
-                                          fillColor:
-                                              isCompleted
-                                                  ? base.mixBlack(0.45)
-                                                  : Colors.white,
-                                        ),
-                                      ],
-                                    ),
-                                    const Spacer(),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
-                                      children: [
-                                        Text(
-                                          '${_fmt(goal.currentValue)}${goal.unitType}',
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            height: 1,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: -0.5,
-                                            color: deep,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          isCompleted
-                                              ? 'tracker_completed'.tr
-                                              : '/${_fmt(goal.targetValue)}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            height: 1,
-                                            fontWeight: FontWeight.w700,
-                                            color: mid,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      goal.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        height: 1.2,
-                                        fontWeight: FontWeight.w700,
-                                        color: deep,
+                    // 卡体：粉彩实底 + 墨线框（内容层）
+                    Container(
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: pastel,
+                        radius: theme.radii.xxl,
+                        seed: seed,
+                        progress: drawProgress,
+                      ),
+                      child: Stack(
+                        children: [
+                          // 图片与波浪在自身层做圆角裁剪，墨线抖动描边不被裁
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: theme.radii.xxl,
+                              child: Stack(
+                                children: [
+                                  if (hasImage) ...[
+                                    Positioned.fill(
+                                      child: AdaptiveImage(
+                                        imagePath: goal.imagePath,
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text.rich(
-                                      TextSpan(
-                                        text: goal.group,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          height: 1.3,
-                                          fontWeight: FontWeight.w500,
-                                          color: mid,
-                                        ),
-                                        children: [
-                                          if (remainingDays != null)
-                                            TextSpan(
-                                              text:
-                                                  ' · ${remainingDays > 0 ? '剩余$remainingDays天' : '已过期'}',
-                                              style: TextStyle(
-                                                color:
-                                                    remainingDays <= 0
-                                                        ? theme.danger
-                                                        : mid,
-                                              ),
-                                            ),
-                                        ],
+                                    // 彩色罩：让图片融入粉彩卡片并保证深色文字可读
+                                    Positioned.fill(
+                                      child: ColoredBox(
+                                        color: pastel.withValues(alpha: 0.55),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
+                                  // 液体波浪进度填充
+                                  _WaveFill(
+                                    progress: progress,
+                                    color: base,
+                                    drawProgress: drawProgress,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Pressable(
+                              onPressed: onTap,
+                              builder: (context, states) => Opacity(
+                                opacity: states.contains(WidgetState.pressed)
+                                    ? 0.92
+                                    : 1.0,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          _buildIconBadge(
+                                            theme,
+                                            drawProgress,
+                                            base,
+                                          ),
+                                          const Spacer(),
+                                          _circleAction(
+                                            theme: theme,
+                                            drawProgress: drawProgress,
+                                            icon: isCompleted
+                                                ? Icons.check_rounded
+                                                : Icons.add_rounded,
+                                            semanticLabel:
+                                                'tracker_quickAction'.tr,
+                                            onTap: () =>
+                                                _showActionSheet(context),
+                                            color: isCompleted
+                                                ? Colors.white
+                                                : base,
+                                            fillColor: isCompleted
+                                                ? base.mixBlack(0.45)
+                                                : theme.paper,
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          Text(
+                                            '${_fmt(goal.currentValue)}${goal.unitType}',
+                                            style: TextStyle(
+                                              fontSize: 28,
+                                              height: 1,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: -0.5,
+                                              color: deep,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            isCompleted
+                                                ? 'tracker_completed'.tr
+                                                : '/${_fmt(goal.targetValue)}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              height: 1,
+                                              fontWeight: FontWeight.w700,
+                                              color: mid,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        goal.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.2,
+                                          fontWeight: FontWeight.w700,
+                                          color: deep,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text.rich(
+                                        TextSpan(
+                                          text: goal.group,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            height: 1.3,
+                                            fontWeight: FontWeight.w500,
+                                            color: mid,
+                                          ),
+                                          children: [
+                                            if (remainingDays != null)
+                                              TextSpan(
+                                                text:
+                                                    ' · ${remainingDays > 0 ? 'tracker_remainingDays'.trParams({'days': remainingDays.toString()}) : 'tracker_expired'.tr}',
+                                                style: TextStyle(
+                                                  color: remainingDays <= 0
+                                                      ? theme.danger
+                                                      : mid,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -207,21 +245,21 @@ class GoalCard extends StatelessWidget {
   String _fmt(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
-  /// 左上角 48px 白色圆形图标徽章
-  Widget _buildIconBadge(Color tint) {
+  /// 左上角 48px 纸色圆形图标徽章（手绘墨圈）
+  Widget _buildIconBadge(
+    AppThemeData theme,
+    Animation<double>? drawProgress,
+    Color tint,
+  ) {
     return Container(
       width: 48,
       height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.paper,
+        circle: true,
+        strokeWidth: 1.5,
+        progress: drawProgress,
       ),
       child: Center(
         // goal.icon 为持久化 codePoint 字符串，保留 Material IconData
@@ -234,8 +272,10 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  /// 右上角 36px 圆形操作按钮
+  /// 右上角 36px 圆形操作按钮（手绘墨圈）
   Widget _circleAction({
+    required AppThemeData theme,
+    Animation<double>? drawProgress,
     required IconData icon,
     required String semanticLabel,
     required VoidCallback onTap,
@@ -245,27 +285,22 @@ class GoalCard extends StatelessWidget {
     return Pressable(
       onPressed: onTap,
       semanticLabel: semanticLabel,
-      builder:
-          (context, states) => AnimatedScale(
-            scale: states.contains(WidgetState.pressed) ? 0.88 : 1,
-            duration: const Duration(milliseconds: 120),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: fillColor ?? Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(icon, size: 20, color: color),
-            ),
+      builder: (context, states) => AnimatedScale(
+        scale: states.contains(WidgetState.pressed) ? 0.88 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: fillColor ?? theme.paper,
+            circle: true,
+            strokeWidth: 1.4,
+            progress: drawProgress,
           ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+      ),
     );
   }
 
@@ -284,23 +319,23 @@ void showGoalActionSheet(
   showDSBottomSheet(
     context: context,
     title: goal.name,
-    builder:
-        (sheetContext) => _GoalActionSheet(
-          goal: goal,
-          controller: controller,
-          onTimer: () => showDSDialog(
-            context: context,
-            theme: DSThemeBridge.resolve(context),
-            builder: (dialogContext) => TimerDialog(goal: goal, controller: controller),
-          ),
-          onToggleComplete: () {
-            final done = controller.calculateProgress(goal) >= 1.0;
-            controller.updateGoal(
-              goal.id,
-              goal.copyWith(currentValue: done ? 0 : goal.targetValue),
-            );
-          },
-        ),
+    builder: (sheetContext) => _GoalActionSheet(
+      goal: goal,
+      controller: controller,
+      onTimer: () => showDSDialog(
+        context: context,
+        theme: DSThemeBridge.resolve(context),
+        builder: (dialogContext) =>
+            TimerDialog(goal: goal, controller: controller),
+      ),
+      onToggleComplete: () {
+        final done = controller.calculateProgress(goal) >= 1.0;
+        controller.updateGoal(
+          goal.id,
+          goal.copyWith(currentValue: done ? 0 : goal.targetValue),
+        );
+      },
+    ),
   );
 }
 
@@ -322,171 +357,201 @@ class GoalListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DSThemeBridge(
       // 卡片可能渲染在第三方导航容器内，DS 组件先过桥
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          final progress = controller.calculateProgress(goal).clamp(0.0, 1.0);
-          final isCompleted = progress >= 1.0;
-          final remainingDays =
-              goal.dateSettings.endDate?.difference(DateTime.now()).inDays;
+      child: WiredDraw(
+        // 挂载即播墨线描画入场（design.md §10）
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            final drawProgress = WiredDrawTransition.progressOf(context);
+            final seed = goal.id.hashCode & 0x7fffffff;
+            final progress = controller.calculateProgress(goal).clamp(0.0, 1.0);
+            final isCompleted = progress >= 1.0;
+            final remainingDays = goal.dateSettings.endDate
+                ?.difference(DateTime.now())
+                .inDays;
 
-          // 与 GoalCard 一致：由目标色派生 粉彩底色/深色文字/饱和波浪
-          final base =
-              goal.progressColor != null
-                  ? Color(goal.progressColor!)
-                  : theme.primary;
-          final pastel = base.mixWhite(0.86);
-          final deep = base.mixBlack(0.55);
-          final mid = base.mixBlack(0.28);
+            // 与 GoalCard 一致：由目标色派生 粉彩底色/深色文字/饱和波浪
+            final base = goal.progressColor != null
+                ? Color(goal.progressColor!)
+                : theme.primary;
+            final pastel = base.mixWhite(0.86);
+            final deep = base.mixBlack(0.55);
+            final mid = base.mixBlack(0.28);
 
-          return SizedBox(
-            height: 84,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: pastel,
-                  borderRadius: theme.radii.xl,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    width: 1,
-                  ),
-                  boxShadow: theme.shadows.card,
-                ),
+            return SizedBox(
+              height: 84,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 child: Stack(
                   children: [
-                    // 液体波浪进度填充（水平风格，自左向右）
+                    // 右下硬偏移墨影（紧凑列表卡取小一档偏移）
                     Positioned.fill(
-                      child: _WaveFill(
-                        progress: progress,
-                        color: base,
-                        horizontal: true,
+                      left: 2.5,
+                      top: 2.5,
+                      child: DecoratedBox(
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          fillColor: theme.ink,
+                          stroke: theme.ink,
+                          strokeWidth: 1.2,
+                          radius: theme.radii.xl,
+                          seed: seed + 13,
+                          progress: drawProgress,
+                        ),
                       ),
                     ),
-                    Positioned.fill(
-                      child: Pressable(
-                        onPressed: onTap,
-                        builder:
-                            (context, states) => Opacity(
-                              opacity:
-                                  states.contains(WidgetState.pressed)
-                                      ? 0.92
-                                      : 1.0,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                child: Row(
-                                  children: [
-                                    _buildIconBadge(base),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            goal.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              height: 1.2,
-                                              fontWeight: FontWeight.w700,
-                                              color: deep,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 3),
-                                          Text.rich(
-                                            TextSpan(
-                                              text: goal.group,
+                    // 卡体：粉彩实底 + 墨线框（内容层）
+                    Container(
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: pastel,
+                        radius: theme.radii.xl,
+                        seed: seed,
+                        progress: drawProgress,
+                      ),
+                      child: Stack(
+                        children: [
+                          // 波浪圆角裁剪在自身层完成，墨线描边不被裁
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: theme.radii.xl,
+                              // 液体波浪进度填充（水平风格，自左向右）
+                              child: _WaveFill(
+                                progress: progress,
+                                color: base,
+                                horizontal: true,
+                                drawProgress: drawProgress,
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Pressable(
+                              onPressed: onTap,
+                              builder: (context, states) => Opacity(
+                                opacity: states.contains(WidgetState.pressed)
+                                    ? 0.92
+                                    : 1.0,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      _buildIconBadge(
+                                        theme,
+                                        drawProgress,
+                                        base,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              goal.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                fontSize: 12,
-                                                height: 1.3,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 15,
+                                                height: 1.2,
+                                                fontWeight: FontWeight.w700,
+                                                color: deep,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text.rich(
+                                              TextSpan(
+                                                text: goal.group,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  height: 1.3,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: mid,
+                                                ),
+                                                children: [
+                                                  if (remainingDays != null)
+                                                    TextSpan(
+                                                      text:
+                                                          ' · ${remainingDays > 0 ? 'tracker_remainingDays'.trParams({'days': remainingDays.toString()}) : 'tracker_expired'.tr}',
+                                                      style: TextStyle(
+                                                        color:
+                                                            remainingDays <= 0
+                                                            ? theme.danger
+                                                            : mid,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text.rich(
+                                        TextSpan(
+                                          text: _fmt(goal.currentValue),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            height: 1,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.3,
+                                            color: deep,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: isCompleted
+                                                  ? ' ${'tracker_completed'.tr}'
+                                                  : '/${_fmt(goal.targetValue)}${goal.unitType}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                height: 1,
+                                                fontWeight: FontWeight.w700,
                                                 color: mid,
                                               ),
-                                              children: [
-                                                if (remainingDays != null)
-                                                  TextSpan(
-                                                    text:
-                                                        ' · ${remainingDays > 0 ? '剩余$remainingDays天' : '已过期'}',
-                                                    style: TextStyle(
-                                                      color:
-                                                          remainingDays <= 0
-                                                              ? theme.danger
-                                                              : mid,
-                                                    ),
-                                                  ),
-                                              ],
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text.rich(
-                                      TextSpan(
-                                        text: _fmt(goal.currentValue),
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          height: 1,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.3,
-                                          color: deep,
+                                          ],
                                         ),
-                                        children: [
-                                          TextSpan(
-                                            text:
-                                                isCompleted
-                                                    ? ' ${'tracker_completed'.tr}'
-                                                    : '/${_fmt(goal.targetValue)}${goal.unitType}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              height: 1,
-                                              fontWeight: FontWeight.w700,
-                                              color: mid,
-                                            ),
-                                          ),
-                                        ],
                                       ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _circleAction(
-                                      icon:
-                                          isCompleted
-                                              ? Icons.check_rounded
-                                              : Icons.add_rounded,
-                                      semanticLabel: '快捷操作',
-                                      onTap: () => showGoalActionSheet(
-                                        context,
-                                        goal: goal,
-                                        controller: controller,
+                                      const SizedBox(width: 10),
+                                      _circleAction(
+                                        theme: theme,
+                                        drawProgress: drawProgress,
+                                        icon: isCompleted
+                                            ? Icons.check_rounded
+                                            : Icons.add_rounded,
+                                        semanticLabel: 'tracker_quickAction'.tr,
+                                        onTap: () => showGoalActionSheet(
+                                          context,
+                                          goal: goal,
+                                          controller: controller,
+                                        ),
+                                        color: isCompleted
+                                            ? Colors.white
+                                            : base,
+                                        fillColor: isCompleted
+                                            ? base.mixBlack(0.45)
+                                            : theme.paper,
                                       ),
-                                      color:
-                                          isCompleted ? Colors.white : base,
-                                      fillColor:
-                                          isCompleted
-                                              ? base.mixBlack(0.45)
-                                              : Colors.white,
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -494,14 +559,21 @@ class GoalListCard extends StatelessWidget {
   String _fmt(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
-  /// 左侧 40px 白色圆形图标徽章
-  Widget _buildIconBadge(Color tint) {
+  /// 左侧 40px 纸色圆形图标徽章（手绘墨圈）
+  Widget _buildIconBadge(
+    AppThemeData theme,
+    Animation<double>? drawProgress,
+    Color tint,
+  ) {
     return Container(
       width: 40,
       height: 40,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.paper,
+        circle: true,
+        strokeWidth: 1.4,
+        progress: drawProgress,
       ),
       child: Center(
         // goal.icon 为持久化 codePoint 字符串，保留 Material IconData
@@ -514,8 +586,10 @@ class GoalListCard extends StatelessWidget {
     );
   }
 
-  /// 右侧 32px 圆形操作按钮
+  /// 右侧 32px 圆形操作按钮（手绘墨圈）
   Widget _circleAction({
+    required AppThemeData theme,
+    Animation<double>? drawProgress,
     required IconData icon,
     required String semanticLabel,
     required VoidCallback onTap,
@@ -525,37 +599,42 @@ class GoalListCard extends StatelessWidget {
     return Pressable(
       onPressed: onTap,
       semanticLabel: semanticLabel,
-      builder:
-          (context, states) => AnimatedScale(
-            scale: states.contains(WidgetState.pressed) ? 0.88 : 1,
-            duration: const Duration(milliseconds: 120),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: fillColor ?? Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 18, color: color),
-            ),
+      builder: (context, states) => AnimatedScale(
+        scale: states.contains(WidgetState.pressed) ? 0.88 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: fillColor ?? theme.paper,
+            circle: true,
+            strokeWidth: 1.4,
+            progress: drawProgress,
           ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+      ),
     );
   }
 }
 
 /// 卡片液体波浪填充：双层正弦波 + 渐变波体，
 /// 绘制方式参考 wave_progress_indicator 的 WavePainter。
-/// vertical 自下而上填充，horizontal（列表视图）自左向右填充
+/// vertical 自下而上填充，horizontal（列表视图）自左向右填充；
+/// [drawProgress] 接外层 WiredDraw 描画进度，波浪在 30%–100% 阶段浮现
 class _WaveFill extends StatefulWidget {
   const _WaveFill({
     required this.progress,
     required this.color,
     this.horizontal = false,
+    this.drawProgress,
   });
 
   final double progress;
   final Color color;
   final bool horizontal;
+  final Animation<double>? drawProgress;
 
   @override
   State<_WaveFill> createState() => _WaveFillState();
@@ -576,17 +655,20 @@ class _WaveFillState extends State<_WaveFill>
 
   @override
   Widget build(BuildContext context) {
+    final draw = widget.drawProgress;
     return AnimatedBuilder(
-      animation: _controller,
-      builder:
-          (context, _) => CustomPaint(
-            painter: _WavePainter(
-              progress: widget.progress,
-              animationValue: _controller.value,
-              color: widget.color,
-              horizontal: widget.horizontal,
-            ),
-          ),
+      animation: draw == null
+          ? _controller
+          : Listenable.merge([_controller, draw]),
+      builder: (context, _) => CustomPaint(
+        painter: _WavePainter(
+          progress: widget.progress,
+          animationValue: _controller.value,
+          drawValue: draw?.value ?? 1,
+          color: widget.color,
+          horizontal: widget.horizontal,
+        ),
+      ),
     );
   }
 }
@@ -595,18 +677,25 @@ class _WavePainter extends CustomPainter {
   _WavePainter({
     required this.progress,
     required this.animationValue,
+    required this.drawValue,
     required this.color,
     this.horizontal = false,
   });
 
   final double progress;
   final double animationValue;
+
+  /// 外层 WiredDraw 描画进度；1 = 无动画环境，立即全画
+  final double drawValue;
   final Color color;
   final bool horizontal;
 
+  /// 墨线描边先描（0–65%），波体随后浮现（30%–100%），见 design.md §10
+  double get fillPhase => ((drawValue - 0.3) / 0.7).clamp(0.0, 1.0);
+
   @override
   void paint(Canvas canvas, Size size) {
-    if (progress <= 0) return;
+    if (progress <= 0 || fillPhase <= 0) return;
     if (horizontal) {
       _paintHorizontal(canvas, size);
     } else {
@@ -624,7 +713,7 @@ class _WavePainter extends CustomPainter {
       phase: -animationValue * 2 * pi,
       horizontal: false,
       paint: Paint()
-        ..color = color.mixWhite(0.25).withValues(alpha: 0.45),
+        ..color = color.mixWhite(0.25).withValues(alpha: 0.45 * fillPhase),
     );
     // 前层波 + 波体：自下而上渐弱
     _drawWave(
@@ -634,20 +723,16 @@ class _WavePainter extends CustomPainter {
       amp: 7,
       phase: animationValue * 2 * pi,
       horizontal: false,
-      paint:
-          Paint()
-            ..shader =
-                LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    color.withValues(alpha: 0.60),
-                    color.withValues(alpha: 0.38),
-                    color.withValues(alpha: 0.24),
-                  ],
-                ).createShader(
-                  Rect.fromLTWH(0, 0, size.width, size.height),
-                ),
+      paint: Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            color.withValues(alpha: 0.60 * fillPhase),
+            color.withValues(alpha: 0.38 * fillPhase),
+            color.withValues(alpha: 0.24 * fillPhase),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
     );
   }
 
@@ -661,7 +746,7 @@ class _WavePainter extends CustomPainter {
       phase: -animationValue * 2 * pi,
       horizontal: true,
       paint: Paint()
-        ..color = color.mixWhite(0.25).withValues(alpha: 0.45),
+        ..color = color.mixWhite(0.25).withValues(alpha: 0.45 * fillPhase),
     );
     // 前层波 + 波体：自左向右渐弱
     _drawWave(
@@ -671,20 +756,16 @@ class _WavePainter extends CustomPainter {
       amp: 5,
       phase: animationValue * 2 * pi,
       horizontal: true,
-      paint:
-          Paint()
-            ..shader =
-                LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    color.withValues(alpha: 0.60),
-                    color.withValues(alpha: 0.38),
-                    color.withValues(alpha: 0.24),
-                  ],
-                ).createShader(
-                  Rect.fromLTWH(0, 0, size.width, size.height),
-                ),
+      paint: Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            color.withValues(alpha: 0.60 * fillPhase),
+            color.withValues(alpha: 0.38 * fillPhase),
+            color.withValues(alpha: 0.24 * fillPhase),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
     );
   }
 
@@ -697,7 +778,9 @@ class _WavePainter extends CustomPainter {
     required bool horizontal,
     required Paint paint,
   }) {
-    final path = horizontal ? _buildHorizontalPath(size, level, amp, phase) : _buildVerticalPath(size, level, amp, phase);
+    final path = horizontal
+        ? _buildHorizontalPath(size, level, amp, phase)
+        : _buildVerticalPath(size, level, amp, phase);
     canvas.drawPath(path, paint);
   }
 
@@ -735,6 +818,7 @@ class _WavePainter extends CustomPainter {
   bool shouldRepaint(covariant _WavePainter old) =>
       old.animationValue != animationValue ||
       old.progress != progress ||
+      old.drawValue != drawValue ||
       old.color != color ||
       old.horizontal != horizontal;
 }
@@ -787,12 +871,12 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
   void _addCustom() {
     final text = _inputController.text;
     if (text.isEmpty) {
-      setState(() => _errorText = '请输入记录值');
+      setState(() => _errorText = 'tracker_enterValueError'.tr);
       return;
     }
     final value = double.tryParse(text);
     if (value == null) {
-      setState(() => _errorText = '请输入有效的数字');
+      setState(() => _errorText = 'tracker_invalidNumberError'.tr);
       return;
     }
     _add(value);
@@ -847,7 +931,9 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
                       child: DSInput(
                         controller: _inputController,
                         errorText: _errorText,
-                        hint: '自定义进度 (${goal.unitType})',
+                        hint: 'tracker_customProgressHint'.trParams({
+                          'unit': goal.unitType,
+                        }),
                         keyboardType: TextInputType.number,
                         onSubmitted: (_) => _addCustom(),
                       ),
@@ -861,7 +947,7 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
               // 其余操作
               DSSheetAction(
                 icon: DsIconKind.clock,
-                label: '计时',
+                label: 'tracker_timer'.tr,
                 onTap: () {
                   Navigator.pop(context);
                   widget.onTimer();
@@ -869,7 +955,9 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
               ),
               DSSheetAction(
                 icon: DsIconKind.check,
-                label: _isCompleted ? '取消完成' : '一键完成',
+                label: _isCompleted
+                    ? 'tracker_cancelComplete'.tr
+                    : 'tracker_completeNow'.tr,
                 onTap: () {
                   Navigator.pop(context);
                   widget.onToggleComplete();

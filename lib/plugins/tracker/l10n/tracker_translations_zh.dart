@@ -95,8 +95,18 @@ class TrackerTranslationsZh {
     'tracker_quickAccess': '快速访问',
     'tracker_quickAccessDesc': '点击跳转到指定目标详情',
     'viewDetail': '查看详情',
-  
-  // const Text 硬编码迁移(zh)
-  'tracker_nfcAddProgress': '通过 NFC 添加进度',
-};
+
+    // const Text 硬编码迁移(zh)
+    'tracker_nfcAddProgress': '通过 NFC 添加进度',
+
+    // goal_card 卡片与快捷操作面板
+    'tracker_quickAction': '快捷操作',
+    'tracker_remainingDays': '剩余@days天',
+    'tracker_expired': '已过期',
+    'tracker_customProgressHint': '自定义进度 (@unit)',
+    'tracker_enterValueError': '请输入记录值',
+    'tracker_invalidNumberError': '请输入有效的数字',
+    'tracker_cancelComplete': '取消完成',
+    'tracker_completeNow': '一键完成',
+  };
 }

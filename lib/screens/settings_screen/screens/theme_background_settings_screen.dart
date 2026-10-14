@@ -42,6 +42,9 @@ class _ThemeBackgroundSettingsScreenState
   // 全局纯色背景
   Color? _backgroundColor;
 
+  // 全局网格背景（DsSketchFill 下标；null = 未启用）
+  int? _gridIndex;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +62,7 @@ class _ThemeBackgroundSettingsScreenState
           _backgroundFit = _controller.backgroundFit;
           _backgroundBlur = _controller.backgroundBlur;
           _backgroundColor = _controller.backgroundColor;
+          _gridIndex = _controller.backgroundGridIndex;
           _isLoading = false;
         });
       }
@@ -132,6 +136,77 @@ class _ThemeBackgroundSettingsScreenState
       _backgroundColor = color;
     });
     _saveBackgroundColor(color);
+  }
+
+  /// 保存网格背景设置（null 表示清除，恢复默认背景）
+  Future<void> _applyGrid(int? index) async {
+    setState(() {
+      _gridIndex = index;
+    });
+    try {
+      await _controller.saveBackgroundGrid(index);
+      if (mounted) {
+        toastService.showToast(index != null ? '主题设置已保存' : '已恢复默认背景');
+      }
+    } catch (e) {
+      if (mounted) {
+        toastService.showToast('保存失败：$e');
+      }
+    }
+  }
+
+  /// 显示网格背景选择对话框（复用笔记的手绘填充风格选择组件）
+  void _showGridDialog() {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final theme = DSThemeBridge.resolve(context);
+                return JellyBox(
+                  radius: theme.radii.xxl,
+                  padding: EdgeInsets.all(theme.spacing.xl),
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'screens_gridBackgroundSettings'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(color: theme.text),
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+
+                        // 网格风格选择（含「无」选项，点击即应用并关闭）
+                        DsSketchFillPickerRow(
+                          selected: _gridIndex,
+                          allowNone: true,
+                          labelKey: 'screens_gridBackgroundStyle',
+                          onChanged: (index) {
+                            _applyGrid(index);
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        SizedBox(height: theme.spacing.lg),
+
+                        DSButton(
+                          label: 'screens_cancel'.tr,
+                          variant: DSButtonVariant.ghost,
+                          expand: true,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+    );
   }
 
   /// 填充方式选项
@@ -803,6 +878,20 @@ class _ThemeBackgroundSettingsScreenState
                               ? 'screens_solidBackgroundSet'.tr
                               : 'screens_solidBackgroundNotSet'.tr,
                       onTap: _showSolidColorDialog,
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 网格背景设置卡片
+                    SettingsTile(
+                      icon: Icons.grid_on,
+                      iconColor: DsAccentColors.amber,
+                      title: 'screens_gridBackground'.tr,
+                      subtitle:
+                          _gridIndex != null
+                              ? 'screens_gridBackgroundSet'.tr
+                              : 'screens_gridBackgroundNotSet'.tr,
+                      onTap: _showGridDialog,
                     ),
 
                     SizedBox(height: theme.spacing.lg),

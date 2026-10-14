@@ -15,7 +15,6 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/widgets/route_viewer_dialog.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
@@ -431,27 +430,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               SettingsTile(
-                icon: Icons.record_voice_over,
-                iconColor: DsAccentColors.slate,
-                title: '后台播报测试',
-                subtitle: '测试 TTS 后台定时播报功能',
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.backgroundAnnouncementTest,
-                  );
-                },
-              ),
-              SettingsTile(
-                icon: Icons.account_tree,
-                iconColor: DsAccentColors.slate,
-                title: '数据选择器测试',
-                subtitle: '测试插件数据选择器系统',
-                onTap: () {
-                  Navigator.pushNamed(context, '/data_selector_test');
-                },
-              ),
-              SettingsTile(
                 icon: Icons.route,
                 iconColor: DsAccentColors.slate,
                 title: '路由查看器',
@@ -461,29 +439,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 },
               ),
               SettingsTile(
-                icon: Icons.swipe,
-                iconColor: DsAccentColors.slate,
-                title: 'SwipeAction 测试',
-                subtitle: '测试滑动操作组件',
-                onTap: () {
-                  Navigator.pushNamed(context, '/swipe_action_test');
-                },
-              ),
-              SettingsTile(
                 icon: Icons.widgets,
                 iconColor: DsAccentColors.slate,
                 title: 'screens_jsonDynamicWidgetTest'.tr,
                 subtitle: 'screens_testAndPreviewDynamicUI'.tr,
                 onTap: () {
                   Navigator.pushNamed(context, '/json_dynamic_test');
-                },
-              ),
-              SettingsTile(
-                icon: Icons.notifications,
-                iconColor: DsAccentColors.slate,
-                title: 'screens_notificationTest'.tr,
-                onTap: () {
-                  Navigator.pushNamed(context, '/notification_test');
                 },
               ),
               SettingsTile(

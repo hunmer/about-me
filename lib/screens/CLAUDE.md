@@ -134,25 +134,7 @@
 
 ---
 
-### 7. test_screens (测试页面)
-
-**职责**: 各种功能的测试页面
-
-**主要文件**:
-- `swipe_action_test_screen.dart` - 滑动操作测试
-
----
-
-### 8. data_selector_test (数据选择器测试)
-
-**职责**: 数据选择器组件测试
-
-**主要文件**:
-- `data_selector_test_screen.dart` - 测试界面
-
----
-
-### 9. form_fields_test (表单字段测试)
+### 7. form_fields_test (表单字段测试)
 
 **职责**: 表单字段组件测试
 
@@ -161,11 +143,10 @@
 
 ---
 
-### 10. 其他测试页面
+### 8. 其他测试页面
 
 | 页面 | 文件 | 说明 |
 |-----|------|------|
-| 通知测试 | `notification_test/notification_test_page.dart` | 通知功能测试 |
 | 意图测试 | `intent_test_screen/intent_test_screen.dart` | 意图处理测试 |
 | JSON 动态测试 | `json_dynamic_test/json_dynamic_test_screen.dart` | JSON 解析测试 |
 | Toast 测试 | `toast_test/toast_test_screen.dart` | Toast 提示测试 |
@@ -194,10 +175,7 @@
 
 | 路径 | 屏幕 |
 |-----|------|
-| `/notification_test` | NotificationTestPage |
 | `/json_dynamic_test` | JsonDynamicTestScreen |
-| `/data_selector_test` | DataSelectorTestScreen |
-| `/swipe_action_test` | SwipeActionTestScreen |
 | `/form_fields_test` | FormFieldsTestScreen |
 
 ### 组件展示路由

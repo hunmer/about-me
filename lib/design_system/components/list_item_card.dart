@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
@@ -49,6 +50,8 @@ class DSListItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
     final hasWatermark = leading != null || icon != null;
     final radius = theme.radii.xl;
     final baseColor = iconColor ?? theme.primary;
@@ -67,6 +70,7 @@ class DSListItemCard extends StatelessWidget {
                 fillColor: cardColor,
                 stroke: baseColor,
                 radius: radius,
+                progress: progress,
               ),
             ),
           ),

@@ -37,12 +37,18 @@ class AppBackgroundController extends ChangeNotifier {
   Color? get backgroundColor =>
       _backgroundColorValue == null ? null : Color(_backgroundColorValue!);
 
+  /// 网格背景风格（DsSketchFill 下标，null 表示未启用）
+  int? _backgroundGridIndex;
+  int? get backgroundGridIndex => _backgroundGridIndex;
+
   /// 是否设置了背景图
   bool get hasBackground => _backgroundPath != null;
 
-  /// 是否设置了自定义背景（背景图或纯色）
+  /// 是否设置了自定义背景（背景图、纯色或网格）
   bool get hasCustomBackground =>
-      _backgroundPath != null || _backgroundColorValue != null;
+      _backgroundPath != null ||
+      _backgroundColorValue != null ||
+      _backgroundGridIndex != null;
 
   /// 初始化：从配置加载背景设置
   Future<void> initialize() async {
@@ -55,6 +61,7 @@ class AppBackgroundController extends ChangeNotifier {
         _backgroundFit = _boxFitFromString(config['backgroundFit'] as String?);
         _backgroundBlur = (config['backgroundBlur'] as num?)?.toDouble() ?? 0.0;
         _backgroundColorValue = (config['backgroundColor'] as num?)?.toInt();
+        _backgroundGridIndex = (config['backgroundGrid'] as num?)?.toInt();
       }
     } catch (e) {
       debugPrint('加载全局主题背景配置失败: $e');
@@ -98,12 +105,36 @@ class AppBackgroundController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 保存网格背景设置（index 为 DsSketchFill 下标，null 表示清除）
+  Future<void> saveBackgroundGrid(int? index) async {
+    // 越界容错：枚举增减后旧配置仍能安全回落为未启用
+    _backgroundGridIndex =
+        (index != null &&
+            index >= 0 &&
+            index < _gridStyleCount)
+        ? index
+        : null;
+
+    try {
+      await _writeConfig();
+    } catch (e) {
+      debugPrint('保存全局主题背景配置失败: $e');
+      rethrow;
+    }
+
+    notifyListeners();
+  }
+
+  /// DsSketchFill 枚举值数量（避免本文件依赖 design_system）
+  static const int _gridStyleCount = 6;
+
   Future<void> _writeConfig() async {
     await globalConfigManager.savePluginConfig(_configKey, {
       'backgroundImagePath': _backgroundPath,
       'backgroundFit': _boxFitToString(_backgroundFit),
       'backgroundBlur': _backgroundBlur,
       'backgroundColor': _backgroundColorValue,
+      'backgroundGrid': _backgroundGridIndex,
     });
   }
 

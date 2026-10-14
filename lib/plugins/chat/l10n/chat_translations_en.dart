@@ -58,6 +58,11 @@ class ChatTranslationsEn {
     'chat_messageOptions': 'Message Options',
     'chat_addEmoji': 'Add Emoji',
     'chat_settings': 'Settings',
+    'chat_share': 'Share',
+    'chat_reply': 'Reply',
+    'chat_favorite': 'Favorite',
+    'chat_unfavorite': 'Unfavorite',
+    'chat_recentSymbols': 'Recently used',
     'chat_editMessage': 'Edit Message',
     'chat_deleteMessage': 'Delete Message',
     'chat_deleteMessageConfirmation':

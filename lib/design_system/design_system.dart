@@ -49,6 +49,7 @@ export 'components/rating.dart';
 export 'components/scribble_marks.dart';
 export 'components/segmented_control.dart';
 export 'components/select.dart';
+export 'components/sketch_fill_picker.dart';
 export 'components/skeleton.dart';
 export 'components/slider.dart';
 export 'components/stepper.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Colors, Theme;
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -405,16 +406,22 @@ class _MessageBubbleState extends State<MessageBubble> {
     Color backgroundColor,
     Color textColor,
   ) {
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     return Container(
       padding: _isImageMessage()
           ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      decoration: BoxDecoration(
-        color: _isImageMessage() ? const Color(0x00000000) : backgroundColor,
-        borderRadius: BorderRadius.circular(_isImageMessage() ? 12.0 : 24.0),
-        // 图片气泡透明无阴影，其余按参考风格带柔和投影
-        boxShadow: _isImageMessage() ? null : theme.shadows.soft,
-      ),
+      // 图片气泡透明无装饰，其余实底 + 手绘墨线描边（design.md §9）
+      decoration: _isImageMessage()
+          ? null
+          : dsSketchDecoration(
+              theme: theme,
+              fillColor: backgroundColor,
+              radius: BorderRadius.circular(24.0),
+              seed: _currentMessage.id.hashCode & 0x7fffffff,
+              progress: drawProgress,
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -459,10 +466,11 @@ class _MessageBubbleState extends State<MessageBubble> {
       child: Container(
         width: 24,
         height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: theme.surfaceAlt,
-          boxShadow: theme.shadows.soft,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surfaceAlt,
+          circle: true,
+          strokeWidth: 1.4,
         ),
         child: Center(
           // 展开时光标旋转180°指向按钮行的相反方向
@@ -485,13 +493,13 @@ class _MessageBubbleState extends State<MessageBubble> {
     return Container(
       width: 24,
       height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: widget.isSelected ? theme.primary : theme.stroke,
-          width: 2,
-        ),
-        color: widget.isSelected ? theme.primary : const Color(0x00000000),
+      // 未选中仅墨圈，选中实底 + 勾
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: widget.isSelected ? theme.primary : null,
+        stroke: widget.isSelected ? theme.primary : theme.stroke,
+        circle: true,
+        strokeWidth: 1.6,
       ),
       child: widget.isSelected
           ? Center(

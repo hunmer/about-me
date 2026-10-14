@@ -1,11 +1,8 @@
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart';
-import 'package:aboutme/screens/notification_test/notification_test_page.dart';
 import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
-import 'package:aboutme/screens/data_selector_test/data_selector_test_screen.dart';
 import 'package:aboutme/screens/toast_test/toast_test_screen.dart';
-import 'package:aboutme/screens/test_screens/swipe_action_test_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/live_activities_test_screen.dart';
 import 'package:aboutme/screens/log_screen/log_screen.dart';
 
@@ -28,18 +25,6 @@ class TestRoutes implements RouteRegistry {
           description: 'JSON 动态测试（别名）',
         ),
 
-        // 通知测试
-        RouteDefinition(
-          path: '/notification_test',
-          handler: (settings) => RouteHelpers.createRoute(const NotificationTestPage()),
-          description: '通知测试',
-        ),
-        RouteDefinition(
-          path: 'notification_test',
-          handler: (settings) => RouteHelpers.createRoute(const NotificationTestPage()),
-          description: '通知测试（别名）',
-        ),
-
         // 悬浮小组件测试
         RouteDefinition(
           path: '/floating_ball',
@@ -52,18 +37,6 @@ class TestRoutes implements RouteRegistry {
           description: '悬浮小组件设置（别名）',
         ),
 
-        // 数据选择器测试
-        RouteDefinition(
-          path: '/data_selector_test',
-          handler: (settings) => RouteHelpers.createRoute(const DataSelectorTestScreen()),
-          description: '数据选择器测试',
-        ),
-        RouteDefinition(
-          path: 'data_selector_test',
-          handler: (settings) => RouteHelpers.createRoute(const DataSelectorTestScreen()),
-          description: '数据选择器测试（别名）',
-        ),
-
         // Toast 测试
         RouteDefinition(
           path: '/toast_test',
@@ -74,18 +47,6 @@ class TestRoutes implements RouteRegistry {
           path: 'toast_test',
           handler: (settings) => RouteHelpers.createRoute(const ToastTestScreen()),
           description: 'Toast 测试（别名）',
-        ),
-
-        // 滑动操作测试
-        RouteDefinition(
-          path: '/swipe_action_test',
-          handler: (settings) => RouteHelpers.createRoute(const SwipeActionTestScreen()),
-          description: '滑动操作测试',
-        ),
-        RouteDefinition(
-          path: 'swipe_action_test',
-          handler: (settings) => RouteHelpers.createRoute(const SwipeActionTestScreen()),
-          description: '滑动操作测试（别名）',
         ),
 
         // Live Activities 测试

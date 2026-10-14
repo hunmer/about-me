@@ -66,8 +66,13 @@ final Map<String, String> screensTranslationsEn = {
   'screens_solidBackgroundSet': 'Solid color set',
   'screens_solidBackgroundNotSet': 'Not set (follows light/dark default)',
   'screens_solidBackgroundColorSettings': 'Solid Color Background Settings',
+  'screens_gridBackground': 'Grid Background',
+  'screens_gridBackgroundSet': 'Grid background set',
+  'screens_gridBackgroundNotSet': 'Not set (follows light/dark default)',
+  'screens_gridBackgroundSettings': 'Grid Background Settings',
+  'screens_gridBackgroundStyle': 'Background Style',
   'screens_restoreDefaultBackground': 'Restore Default Background',
-  'screens_themeBackgroundDescription': 'The background image and solid color apply to all screens. When both are set, the image sits on top with the color filling uncovered areas; otherwise the system default is used. A background set separately on the home screen still takes priority.',
+  'screens_themeBackgroundDescription': 'The background image and solid color apply to all screens. When both are set, the image sits on top with the color filling uncovered areas; otherwise the system default is used. The grid background sits above the base color and below the image. A background set separately on the home screen still takes priority.',
 
   // theme style picker (theme_background_settings_screen)
   'screens_themeStyle': 'Theme Style',

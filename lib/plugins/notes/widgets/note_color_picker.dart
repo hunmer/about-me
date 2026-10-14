@@ -105,27 +105,10 @@ class NoteColorPickerRow extends StatelessWidget {
               ),
               if (onStyleChanged != null) ...[
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DsIcon(DsIconKind.grid, size: 16, color: theme.textSub),
-                    const SizedBox(width: 8),
-                    Text(
-                      'notes_bgStyle'.tr,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: [
-                    for (var i = 0; i < DsSketchFill.values.length; i++)
-                      _buildStyleSwatch(theme, DsSketchFill.values[i], i),
-                  ],
+                DsSketchFillPickerRow(
+                  selected: selectedStyle,
+                  // 本行不显示「无」选项，回调值恒非空
+                  onChanged: (index) => onStyleChanged!(index!),
                 ),
               ],
               if (onIconChanged != null) ...[
@@ -183,27 +166,6 @@ class NoteColorPickerRow extends StatelessWidget {
             size: 18,
             color: isSelected ? theme.onPrimary : theme.textSub,
           ),
-        ),
-      ),
-    );
-  }
-
-  /// 背景风格预览块：用主题淡彩演示该填充效果，选中描边加粗
-  Widget _buildStyleSwatch(AppThemeData theme, DsSketchFill style, int index) {
-    final isSelected = index == (selectedStyle ?? 0);
-    return GestureDetector(
-      onTap: () => onStyleChanged!(index),
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: dsSketchDecoration(
-          theme: theme,
-          // 实底给淡彩演示；其余传 null 让排线/点画走主题淡彩（传纸色会看不见）
-          fillColor: style == DsSketchFill.solid ? theme.hatch : null,
-          fillStyle: style,
-          radius: BorderRadius.circular(10),
-          strokeWidth: isSelected ? 2.6 : 1.6,
-          seed: 100 + index,
         ),
       ),
     );
