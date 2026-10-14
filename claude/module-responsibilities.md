@@ -58,7 +58,7 @@
 |------|------|
 | `packages/aboutme_server` | **现行同步服务器（Dart 薄壳）**：REST 19 插件 API、文件存储 ETag 条件写、WS `file_updated` 广播、认证（注册/登录/Token/API Key/FCM）、MCP `/mcp`（68 工具）、管理界面托管；默认端口 8874 |
 | `packages/aboutme_data_sdk` | 纯数据 SDK（客户端与服务器共用）：存储接口/HTTP 远端存储/本地文件存储/JWT+PBKDF2 认证/12 个插件处理器/AboutmeDataService 路由 |
-| `packages/server-nodejs` | **[已废弃 2026-10-11]** 旧 Node.js 同步服务器（Express + TS + Vue3 面板 + MCP 75 工具），仅历史参考 |
+| `packages/server-nodejs` | **[已彻底删除 2026-10-14]** 旧 Node.js 同步服务器（Express + TS + Vue3 面板 + MCP 75 工具），2026-10-11 被 aboutme_server 取代后目录移除 |
 | `packages/agentlib` | 本地 Dart 包：OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient + agent_slots 资源槽位模型），被 openai 与 agent_chat 插件使用（[文档](../packages/agentlib/CLAUDE.md)） |
 | `packages/dartantic_ai` | 上游 dartantic_ai 3.4.2 vendor 镜像（3 处本地定制：Anthropic baseUrl 等），agent_chat 原生工具调用消费（[文档](../packages/dartantic_ai/CLAUDE.md)） |
 | `packages/super_cupertino_navigation_bar` | 本地 Dart 包：iOS 风格大标题导航栏 UI 库（+sketchFont） |

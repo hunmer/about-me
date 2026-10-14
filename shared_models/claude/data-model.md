@@ -8,7 +8,7 @@
 |----|-----------|----------|
 | Repository | `repositories/<plugin>/<plugin>_repository.dart` ×20 | 抽象接口：分页列表、按 ID 取、创建、更新、删除等（与 JS API 命名约定对齐） |
 | UseCase | `usecases/<plugin>/<plugin>_usecase.dart` ×20 | 业务用例封装，屏蔽数据来源 |
-| 同步协议 | `sync/sync_request.dart`、`sync/sync_response.dart` | 客户端 ↔ server-nodejs 的同步载荷 |
+| 同步协议 | `sync/sync_request.dart`、`sync/sync_response.dart` | 客户端 ↔ aboutme_server（现行 Dart 服务器）的同步载荷 |
 | 认证 | `auth/auth_models.dart` | 登录/令牌等认证 DTO |
 | 总导出 | `shared_models.dart` | 统一 export 全部公开模型 |
 

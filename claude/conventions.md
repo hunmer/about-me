@@ -15,7 +15,7 @@ flutter build apk --release / flutter build ios --release
 # 数据核心在 packages/aboutme_data_sdk：改动 SDK 后需重新构建并在 aboutme_server 侧更新依赖
 procm-command start server   # 启动/重启服务器（命令定义见 procm-commands.json，默认端口 8874）
 dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑测试
-# 旧 server-nodejs 的 npm run dev/build/test 已废弃（2026-10-11），仅历史参考
+# server-nodejs 已于 2026-10-14 彻底删除（目录不存在），其 npm 命令不再可用
 
 # 构建发布（多平台打包 + GitHub Release）
 ./scripts/build.sh       # 配置见 scripts/release_config.json
@@ -37,7 +37,7 @@ dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑
 
 ## 重要兼容性提醒
 
-- **现行同步服务器是 `packages/aboutme_server`（Dart，默认端口 **8874**）**：数据核心在 `packages/aboutme_data_sdk`。旧文档中的 `server/` 目录、`cd server && dart run bin/server.dart`、`packages/server-nodejs`（2026-10-11 废弃）的 npm 指令一律视为过时。
+- **现行同步服务器是 `packages/aboutme_server`（Dart，默认端口 **8874**）**：数据核心在 `packages/aboutme_data_sdk`。旧文档中的 `server/` 目录、`cd server && dart run bin/server.dart`、`packages/server-nodejs`（2026-10-14 已彻底删除）的 npm 指令一律视为过时。
 - **同步为明文**：端到端加密（AES-256-GCM / X-Encryption-Key）已随数据 SDK 化移除（2026-10-12 删除 encryption_service）。
 - `flutter_config.yaml` 设置 `tree-shake-icons: false`，因为项目使用动态 `IconData`；不要在构建中开启图标树摇。
 - Web 平台差异：`StyledToast` 等库用条件导入（`if (dart.library.io)`）提供存根实现，改动平台相关代码时注意。
@@ -47,4 +47,4 @@ dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑
 ## 环境变量
 
 - 现行服务器配置集中在 `packages/aboutme_server/lib/src/config.dart`（端口 8874 等，详见该文件与包 README）。
-- 旧 server-nodejs 的 `PORT` / `DATA_DIR` / `JWT_SECRET` / `ADMIN_USERNAME` 等环境变量已随包废弃，仅历史参考。
+- 旧 server-nodejs 的 `PORT` / `DATA_DIR` / `JWT_SECRET` / `ADMIN_USERNAME` 等环境变量已随包删除。

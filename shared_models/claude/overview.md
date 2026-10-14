@@ -26,7 +26,7 @@ graph TD
     U --> R["repositories/<x> 接口（本包）"]
     R -.实现.-> CR["客户端 ClientXxxRepository"]
     CR --> SC["Service + Controller"]
-    Sync["sync_request / sync_response（本包）"] --- Server["server-nodejs syncRoutes"]
+    Sync["sync_request / sync_response（本包）"] --- Server["aboutme_server（REST / WS）"]
 ```
 
 ## 依赖

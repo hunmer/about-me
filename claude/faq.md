@@ -3,7 +3,7 @@
 > 所属：仓库根目录 · [返回索引](../CLAUDE.md)
 
 **Q：同步服务器在哪里？旧文档说 `cd server && dart run bin/server.dart` / `npm run dev`？**
-A：都过时了。现行服务器是 **`packages/aboutme_server`**（Dart，薄壳，默认端口 **8874**，数据核心在 `packages/aboutme_data_sdk`）。启动：`procm-command start server`（见 `procm-commands.json`）。`server/` 目录与 `packages/server-nodejs`（Node 版，2026-10-11 废弃）均为历史。
+A：都过时了。现行服务器是 **`packages/aboutme_server`**（Dart，薄壳，默认端口 **8874**，数据核心在 `packages/aboutme_data_sdk`）。启动：`procm-command start server`（见 `procm-commands.json`）。`server/` 目录与 `packages/server-nodejs`（Node 版，2026-10-11 被取代、**2026-10-14 已彻底删除**）均为历史。
 
 **Q：`api_forwarding_server` / `mcp-aboutme-server` / WebDAV 同步去哪了？**
 A：均已删除。MCP 能力现在内置于 `packages/aboutme_server` 的 `POST /mcp`；WebDAV 同步被自建服务器 HTTP 存储后端（`http_storage.dart`，现为 aboutme_data_sdk 一部分）取代。旧文档提及这些内容的章节一律视为过时。
@@ -42,4 +42,4 @@ A：MCP 内置于 `packages/aboutme_server`（`/mcp`，Streamable HTTP），认�
 A：历史工作底稿，根目录下已清理；`handoff/` 为 Agent 会话交接底稿（数据 SDK 化等最新交接也在其中）。
 
 **Q：改服务端后管理面板没更新？**
-A：现行服务器 aboutme_server 托管管理界面（随服务器构建）；旧 server-nodejs 的 `admin-vue/`（Vue3）已随包废弃，仅在历史参考时才需要 `npm run build:admin`。
+A：现行面板是 `packages/aboutme_server/admin-vue/`（Vue3，源码随 aboutme_server），`procm-command start server-admin-build` 或包内 `npm run build` 产出到 `admin/` 由服务器托管；旧 server-nodejs 已彻底删除，勿再找它的构建流程。

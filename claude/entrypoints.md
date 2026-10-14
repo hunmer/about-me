@@ -30,9 +30,9 @@
 | aboutme_server | `packages/aboutme_server/bin/server.dart`（编译产物入口 `bin/aboutme-server`） | `procm-command start server`（默认端口 8874）；数据核心在 aboutme_data_sdk，服务器是薄壳 |
 | MCP 端点 | `packages/aboutme_server/lib/src/mcp/mcp_endpoint.dart`（Streamable HTTP，挂载于主服务器 `/mcp`，68 工具） | 随 aboutme_server 启动 |
 
-## 已废弃入口
+## 已删除入口
 
-- `packages/server-nodejs/src/index.ts`（npm 包 `@hunmer/aboutme-server`）：2026-10-11 起被 aboutme_server 取代，仅历史参考，勿再启动。
+- `packages/server-nodejs/src/index.ts`（npm 包 `@hunmer/aboutme-server`）：2026-10-11 被 aboutme_server 取代，**2026-10-14 目录已彻底删除**，勿再引用其入口与 npm 命令。
 
 ## 构建与 CI
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart' show RoughBoxDecoration;
 
 import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -24,6 +25,13 @@ class AppBackground extends StatefulWidget {
 
 class _AppBackgroundState extends State<AppBackground> {
   final AppBackgroundController _controller = AppBackgroundController();
+
+  // 网格层装饰缓存：decoration 实例保持稳定可避免每次 rebuild 都重新
+  // 生成全屏 rough 几何（数百条手绘线的同步计算，明显卡顿）
+  RoughBoxDecoration? _gridDeco;
+  int? _gridDecoIndex;
+  int _gridDecoInkLevel = -1;
+  Color? _gridDecoHatch;
 
   @override
   void initState() {
@@ -73,19 +81,13 @@ class _AppBackgroundState extends State<AppBackground> {
                 ? Color.alphaBlend(color, scaffoldBg)
                 : scaffoldBg,
           ),
-        // 网格背景层：手绘填充纹理铺满全屏（主题淡彩，跟随色板/深浅色）
+        // 网格背景层：手绘填充纹理铺满全屏（主题淡彩，跟随色板/深浅色）。
+        // RepaintBoundary 独立合成层：内容滚动/动画的重绘不会连带重画
+        // 全屏手绘纹理，纹理仅在风格或主题变化时重绘一次
         if (gridIndex != null)
-          DecoratedBox(
-            decoration: dsSketchDecoration(
-              theme: dsTheme,
-              fillStyle: DsSketchFill.values[gridIndex],
-              // 实底给主题淡彩；其余传 null 让排线/点画走主题淡彩
-              fillColor: gridIndex == DsSketchFill.solid.index
-                  ? dsTheme.hatch
-                  : null,
-              // 整屏纹理不要边框描边
-              stroke: DsColors.transparent,
-              seed: 7,
+          RepaintBoundary(
+            child: DecoratedBox(
+              decoration: _gridDecoFor(dsTheme, gridIndex),
             ),
           ),
         if (path != null)
@@ -103,5 +105,31 @@ class _AppBackgroundState extends State<AppBackground> {
         widget.child,
       ],
     );
+  }
+
+  /// 取网格层装饰（按风格/墨线档位/淡彩色缓存）
+  RoughBoxDecoration _gridDecoFor(AppThemeData theme, int gridIndex) {
+    if (_gridDeco != null &&
+        _gridDecoIndex == gridIndex &&
+        _gridDecoInkLevel == DsInkStyle.index &&
+        _gridDecoHatch == theme.hatch) {
+      return _gridDeco!;
+    }
+
+    _gridDecoIndex = gridIndex;
+    _gridDecoInkLevel = DsInkStyle.index;
+    _gridDecoHatch = theme.hatch;
+    _gridDeco = dsSketchDecoration(
+      theme: theme,
+      fillStyle: DsSketchFill.values[gridIndex],
+      // 实底给主题淡彩；其余传 null 让排线/点画走主题淡彩
+      fillColor: gridIndex == DsSketchFill.solid.index ? theme.hatch : null,
+      // 整屏纹理不要边框描边
+      stroke: DsColors.transparent,
+      // 全屏纹理用比小控件更大的间距：线条更少更透气，绘制也更省
+      hachureGap: 18,
+      seed: 7,
+    );
+    return _gridDeco!;
   }
 }

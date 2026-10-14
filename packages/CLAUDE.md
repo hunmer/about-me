@@ -15,7 +15,7 @@
 
 | 文件 | 用途 | 何时阅读 |
 |------|------|----------|
-| [子包总览](claude/overview.md) | 10 个子包的定位与关系 | 了解 packages 全貌 |
+| [子包总览](claude/overview.md) | 13 个子包的定位与关系 | 了解 packages 全貌 |
 | [模块职责](claude/module-responsibilities.md) | 各子包职责明细（含 6 个原生插件） | 选择要改的子包 |
 | [依赖与配置](claude/dependencies-and-config.md) | path 依赖接线、各包清单要点 | 动依赖 / 加新包 |
 
@@ -39,7 +39,7 @@
 
 ## 扫描状态
 
-- 更新时间：2026-10-14（/init-project 第六轮：子包数 10→14，补入 aboutme_data_sdk/aboutme_server/radial_disc_bottom_bar/material_emoji_picker；dartantic_ai 建独立文档集）
-- 已扫描：14 个子包清单与接线；aboutme_data_sdk 与 aboutme_server 的目录结构（按 handoff/2026-10-11 与两包 README 核实）；dartantic_ai 全量（见其 claude/）；agentlib、aboutme_widgets、server-nodejs 前几轮已建档。
+- 更新时间：2026-10-14（/init-project 第六轮：补入 aboutme_data_sdk/aboutme_server/radial_disc_bottom_bar/material_emoji_picker；dartantic_ai 建独立文档集；**server-nodejs 于同日彻底删除，子包数 13**）
+- 已扫描：13 个子包清单与接线；aboutme_data_sdk 与 aboutme_server 的目录结构（按 handoff/2026-10-11 与两包 README 核实）；dartantic_ai 全量（见其 claude/）；agentlib、aboutme_widgets 前几轮已建档。
 - 未深扫：aboutme_data_sdk/aboutme_server 源码细节（暂以各自 README 为准，建议下轮建档）；radial_disc_bottom_bar 与 material_emoji_picker 源码；5 个原生插件的 android/ios 平台代码。
 - 注意：`radial_disc_bottom_bar/build/` 编译产物被误提交进 git；`skills/moe-ui-skill` 是无 .gitmodules 的 gitlink（根目录层面）。

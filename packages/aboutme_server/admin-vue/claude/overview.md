@@ -1,6 +1,6 @@
 # 架构总览
 
-> 所属：packages/server-nodejs/admin-vue · [返回索引](../CLAUDE.md)
+> 所属：packages/aboutme_server/admin-vue · [返回索引](../CLAUDE.md)
 
 ## 页面结构
 

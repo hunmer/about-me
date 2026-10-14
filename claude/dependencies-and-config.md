@@ -5,7 +5,7 @@
 ## SDK 与运行时
 
 - Dart `^3.10.0` / Flutter（`pubspec.yaml`，版本 `0.0.1`）
-- 同步服务器为 Dart（`packages/aboutme_server`，无 Node 运行时要求）；`server-nodejs` 已废弃（Node >= 18，仅历史参考）
+- 同步服务器为 Dart（`packages/aboutme_server`，无 Node 运行时要求）；`server-nodejs` 已于 2026-10-14 彻底删除
 
 ## Flutter 关键依赖（按用途分组）
 
@@ -41,7 +41,7 @@
 - **aboutme_data_sdk / aboutme_server**（Dart，现行）：数据 SDK 仅依赖 `http`/`crypto` 等纯 Dart 库；服务器依赖 `shelf` 系路由 + `mcp_dart`（MCP 端点）+ firebase-admin 推送（详见各自 pubspec）。
 - **dartantic_ai**（vendor）：核心 `dartantic_interface ^4.0.1` + 各厂商 SDK（openai_dart/anthropic_sdk_dart 等）。
 - **agentlib**（Dart）：仅依赖 `http` ^1.3.0；dev 依赖 `test`。
-- **server-nodejs**（已废弃）：express/ws/jsonwebtoken/firebase-admin/winston 等与 admin-vue（Vue ^3.5 + naive-ui + pinia）。
+- **server-nodejs**（已于 2026-10-14 彻底删除）：曾用 express/ws/jsonwebtoken/firebase-admin/winston 等；管理面板已平移为 `aboutme_server/admin-vue/`。
 
 ## 配置文件清单
 
@@ -54,7 +54,6 @@
 | `vercel.json` | Web 产物静态部署（`build/web`） |
 | `.metadata` / `devtools_options.yaml` | Flutter 工具元数据 |
 | `packages/aboutme_server/lib/src/config.dart` | 现行服务器配置（端口/数据目录等） |
-| `packages/server-nodejs/src/config/serverConfig.ts` | [已废弃] 旧服务器环境变量定义 |
 | `scripts/release_config.json` | 构建发布配置（`release_config.example.json` 为模板） |
 | `procm-commands.json` | procm-mcp 进程管理命令（start server 等） |
 

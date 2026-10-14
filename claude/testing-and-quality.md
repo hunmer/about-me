@@ -11,7 +11,7 @@
 | aboutme_server | ✅ 4 个文件（README 称 29 测试） | 部分 | remote / fcm / plugin_mcp / server_integration；`dart test` |
 | dartantic_ai（vendor） | ✅ 67+1 个（上游全量 + 本地 baseUrl 测试） | 部分 | `dart test` 可离线跑本地定制测试 |
 | agentlib | ✅ `test/agentlib_client_test.dart` | ❌ 无 | MockClient 验证鉴权头与流式解析 |
-| server-nodejs（已废弃） | jest + supertest | — | 保留但不再是质量门槛 |
+| server-nodejs（已删除） | — | — | 2026-10-14 目录彻底删除，jest/supertest 随之移除 |
 
 ## 质量工具
 

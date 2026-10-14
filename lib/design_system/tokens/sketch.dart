@@ -150,7 +150,9 @@ RoughBoxDecoration dsSketchDecoration({
         DsSketchFill.dots => DotFiller(
           FillerConfig.build(
             drawConfig: theme.wired.drawConfig,
-            hachureGap: 6,
+            // 点画间距跟随调用方（小控件默认更密，全屏背景传大间距，
+            // 避免整屏生成数万个点导致卡顿）
+            hachureGap: hachureGap,
             fillWeight: 2.4,
           ),
         ),

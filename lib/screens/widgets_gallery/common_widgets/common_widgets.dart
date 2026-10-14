@@ -85,6 +85,7 @@ import 'widgets/contact_card.dart';
 import 'widgets/recent_contact_card.dart';
 import 'package:aboutme/widgets/common/habit_card.dart';
 import 'package:aboutme/widgets/common/memorial_day_card.dart';
+import 'widgets/health_score_ring_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -171,6 +172,7 @@ enum CommonWidgetId {
   contactCard,
   habitCard,
   memorialDayCard,
+  healthScoreRingCard,
 }
 
 /// 公共小组件元数据
@@ -845,6 +847,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size()],
     ),
+    CommonWidgetId.healthScoreRingCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.healthScoreRingCard,
+      name: '健康分数环形统计卡片',
+      description: '分段圆环统计图（每段带图标，中心显示总分数）+ 统计项目列表（图标、进度条、分数）',
+      icon: Icons.monitor_heart,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size(), Wide2Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1074,6 +1084,8 @@ class CommonWidgetBuilder {
         return HabitCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.memorialDayCard:
         return MemorialDayCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.healthScoreRingCard:
+        return HealthScoreRingCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

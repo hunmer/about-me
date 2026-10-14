@@ -361,6 +361,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.monitor_heart,
+        title: '健康分数环形统计卡片',
+        subtitle: 'HealthScoreRingCard - 分段圆环统计图与统计项目列表',
+        route: '/widgets_gallery/health_score_ring_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',

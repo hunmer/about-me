@@ -32,14 +32,13 @@
 | `lib/services/` `lib/models/` `lib/utils/` `lib/dialogs/` `lib/constants/` | 各 1-9 文件 | 少量顶层服务/模型/工具 |
 | `lib/l10n/` | — | 国际化（`unified_translations.dart`，中/英） |
 
-## packages/（14 个子包）
+## packages/（13 个子包）
 
 | 子包 | 文件数（约） | 类型 |
 |------|------|------|
-| `aboutme_server/` | 23 源文件 | **Dart 同步服务器（现行）**：REST/WS/MCP/FCM/管理托管 |
+| `aboutme_server/` | 23 源文件 | **Dart 同步服务器（现行）**：REST/WS/MCP/FCM/管理托管（含 admin-vue 前端源码） |
 | `aboutme_data_sdk/` | 45 源文件 | **纯数据 SDK（现行数据核心）**：存储/认证/12 插件处理器 |
 | `dartantic_ai/` | 128 Dart | dartantic_ai 3.4.2 vendor 镜像（[文档](../packages/dartantic_ai/CLAUDE.md)） |
-| `server-nodejs/` | 780（含 admin-vue） | **[已废弃]** 旧 Node 同步服务器 |
 | `aboutme_widgets/` | 265 | Flutter 原生插件（桌面小组件） |
 | `aboutme_intent/` | 121 | Flutter 原生插件（Android Intent） |
 | `aboutme_nfc/` | 113 | Flutter 原生插件（NFC） |
@@ -51,7 +50,7 @@
 | `floating_ball_plugin/` | 33 | Flutter 原生插件（悬浮球） |
 | `agentlib/` | 5 Dart 文件 | Dart 包（OpenAI 兼容 HTTP/SSE 传输门面，[文档](../packages/agentlib/CLAUDE.md)） |
 
-> MCP 端点内置于 aboutme_server（`lib/src/mcp/`，68 工具，与 REST 共用 data_sdk 处理器）。已删除：`api_forwarding_server/`、`mcp-aboutme-server/`。
+> MCP 端点内置于 aboutme_server（`lib/src/mcp/`，68 工具，与 REST 共用 data_sdk 处理器）。已删除：`api_forwarding_server/`、`mcp-aboutme-server/`、`server-nodejs/`（2026-10-14）。
 
 ## 其他目录
 

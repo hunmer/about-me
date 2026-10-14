@@ -1,8 +1,8 @@
 # 对外接口
 
-> 所属：packages/server-nodejs/admin-vue · [返回索引](../CLAUDE.md)
+> 所属：packages/aboutme_server/admin-vue · [返回索引](../CLAUDE.md)
 
-本面板是**纯消费方**：以下为 `src/api/index.ts` 调用的宿主服务器端点（前缀 `/api/v1`），同时这份清单可作为 server-nodejs REST API 的权威对照。
+本面板是**纯消费方**：以下为 `src/api/index.ts` 调用的宿主服务器端点（前缀 `/api/v1`），同时这份清单可作为 aboutme_server REST API 的权威对照。
 
 ## 认证与账户 `/api/v1/auth/*`
 

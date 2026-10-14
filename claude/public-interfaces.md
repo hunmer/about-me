@@ -22,13 +22,13 @@
 - 插件数据：`plugin_routes.dart`——**19 个插件域** REST API，处理器全部来自 `packages/aboutme_data_sdk`。
 - 管理员：`system_routes.dart`。
 - 实时通道：`ws_hub.dart`——文件变更以 `file_updated` 广播给同用户其他设备。
-- 旧 server-nodejs 的 `storageWebSocketService` / `pluginSystemRoutes`（服务端插件系统）已随包废弃。
+- 旧 server-nodejs 的 `storageWebSocketService` / `pluginSystemRoutes`（服务端插件系统）已随包彻底删除（2026-10-14）。
 
 ## MCP 工具（aboutme_server 内置端点 `POST /mcp`，Streamable HTTP）
 
 - 端点实现 `packages/aboutme_server/lib/src/mcp/mcp_endpoint.dart`，工具定义 `tools.dart`，共 **68 个工具**。
 - 与 REST 插件 API **共用同一套 aboutme_data_sdk 处理器**（进程内直调，无重复实现）。
-- 认证走 API Key（`mk_live_` 前缀）；旧 server-nodejs 的 75 工具版已废弃。
+- 认证走 API Key（`mk_live_` 前缀）；旧 server-nodejs 的 75 工具版已随包彻底删除。
 
 ## Web 小程序清单（`online/`）
 
