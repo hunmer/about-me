@@ -83,6 +83,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_c
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -550,6 +551,11 @@ class WidgetGalleryRoutes implements RouteRegistry {
           description: '健康分数环形统计卡片',
         ),
         RouteDefinition(
+          path: '/widgets_gallery/petal_radial_chart_card',
+          handler: (settings) => RouteHelpers.createRoute(const PetalRadialChartCardExample(), settings: settings),
+          description: '花瓣径向统计卡片',
+        ),
+        RouteDefinition(
           path: '/widgets_gallery/inbox_message_card',
           handler: (settings) => RouteHelpers.createRoute(const InboxMessageCardExample(), settings: settings),
           description: '收件箱消息卡片',
@@ -884,6 +890,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '健康分数环形统计卡片',
     subtitle: 'HealthScoreRingCard',
     route: '/widgets_gallery/health_score_ring_card',
+  ),
+  WidgetPreviewItem(
+    category: '图表类',
+    icon: Icons.filter_vintage,
+    title: '花瓣径向统计卡片',
+    subtitle: 'PetalRadialChartCard',
+    route: '/widgets_gallery/petal_radial_chart_card',
   ),
   WidgetPreviewItem(
     category: '图表类',

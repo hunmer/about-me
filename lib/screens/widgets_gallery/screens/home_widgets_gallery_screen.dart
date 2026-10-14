@@ -368,6 +368,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.filter_vintage,
+        title: '花瓣径向统计卡片',
+        subtitle: 'PetalRadialChartCard - 圆角扇形花瓣径向统计图',
+        route: '/widgets_gallery/petal_radial_chart_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',
