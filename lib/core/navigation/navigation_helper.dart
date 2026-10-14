@@ -75,6 +75,22 @@ class NavigationHelper {
     }
   }
 
+  /// 推送带 Hero 飞行动画的页面
+  ///
+  /// 零时长路由会让 Hero 瞬移（等同失效），此方法改用带转场时长的
+  /// Hero 路由（见 [RouteHelpers.createHeroRoute]），适用于列表 →
+  /// 详情有共享元素过渡的场景
+  static Future<T?> pushHero<T extends Object?>(
+    BuildContext context,
+    Widget page, {
+    String? routeName,
+  }) {
+    final settings = routeName != null ? RouteSettings(name: routeName) : null;
+    return Navigator.of(context).push<T>(
+      RouteHelpers.createHeroRoute<T>(page, settings: settings),
+    );
+  }
+
   /// 推送到新页面（带命名路由）
   ///
   /// [context] BuildContext

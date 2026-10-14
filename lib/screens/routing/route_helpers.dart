@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+import 'package:aboutme/core/widgets/app_background.dart';
+
 /// 路由辅助工具类
 class RouteHelpers {
   /// 创建路由
@@ -38,6 +40,41 @@ class RouteHelpers {
   /// 创建无动画路由（便捷方法）
   static Route createRouteWithoutAnimation(Widget page, {RouteSettings? settings}) {
     return createRoute(page, settings: settings, useAnimation: false);
+  }
+
+  /// 创建 Hero 飞行动画路由
+  ///
+  /// Hero 飞行时长取决于路由 [TransitionRoute.transitionDuration]，
+  /// 零时长路由的 Hero 会瞬移（等同失效）。本路由保留转场时长供
+  /// Hero 飞行，同时规避透明背景页面的叠影问题：
+  /// - 进入：页面无视觉转场（瞬时全屏），且垫一层 AppBackground
+  ///   （全局背景生效时为不透明背景，无全局背景时透传），转场期间
+  ///   下层旧页面保持绘制也不会透出；
+  /// - 返回：路由整体淡出，透出下层列表页承接 Hero 落点。
+  static Route<T> createHeroRoute<T extends Object?>(
+    Widget page, {
+    RouteSettings? settings,
+    Duration duration = const Duration(milliseconds: 300),
+  }) {
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          AppBackground(child: page),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            final opacity =
+                animation.status == AnimationStatus.reverse
+                ? animation.value
+                : 1.0;
+            return Opacity(opacity: opacity, child: child);
+          },
+        );
+      },
+      transitionDuration: duration,
+      reverseTransitionDuration: duration,
+    );
   }
 
   /// 创建错误页面路由（无动画）

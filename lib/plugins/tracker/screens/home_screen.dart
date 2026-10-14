@@ -38,28 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Consumer<TrackerController>(
                   builder: (context, controller, child) {
                     final groups = ['全部', ...controller.getAllGroups()];
-                    return ListView.builder(
-                      padding: EdgeInsets.zero,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: groups.length,
-                      itemBuilder: (context, index) {
-                        final group = groups[index];
-                        final isSelected = _currentGroup == group;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Center(
-                            child: DSChip(
-                              label: group,
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() => _currentGroup = group);
-                                }
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                    return Center(
+                      child: DSChipBar(
+                        labels: groups,
+                        selected: groups.indexOf(_currentGroup).clamp(
+                          0,
+                          groups.length - 1,
+                        ),
+                        onChanged: (index) =>
+                            setState(() => _currentGroup = groups[index]),
+                      ),
                     );
                   },
                 ),

@@ -84,6 +84,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_exam
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -554,6 +555,11 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/petal_radial_chart_card',
           handler: (settings) => RouteHelpers.createRoute(const PetalRadialChartCardExample(), settings: settings),
           description: '花瓣径向统计卡片',
+        ),
+        RouteDefinition(
+          path: '/widgets_gallery/stacked_folder_card',
+          handler: (settings) => RouteHelpers.createRoute(const StackedFolderCardExample(), settings: settings),
+          description: '堆叠文件夹卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/inbox_message_card',
@@ -1031,6 +1037,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '圆角提醒事项列表卡片',
     subtitle: 'RoundedRemindersList',
     route: '/widgets_gallery/rounded_reminders_list',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.folder_copy,
+    title: '堆叠文件夹卡片',
+    subtitle: 'StackedFolderCard',
+    route: '/widgets_gallery/stacked_folder_card',
   ),
   // 财务类
   WidgetPreviewItem(

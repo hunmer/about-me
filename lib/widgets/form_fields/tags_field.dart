@@ -162,28 +162,20 @@ class _TagsFieldState extends State<TagsField> {
             SizedBox(height: theme.spacing.md),
             SizedBox(
               height: 28,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: availableLetters.length + 1, // +1 为"全部"按钮
-                separatorBuilder: (context, index) => const SizedBox(width: 6),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    // 全部按钮
-                    return _buildFilterButton(
-                      '全部',
-                      _filterLetter == null,
-                      () => _filterByLetter(null),
+              child: Center(
+                child: Builder(
+                  builder: (context) {
+                    final letters = availableLetters.toList()..sort();
+                    return DSChipBar(
+                      spacing: 6,
+                      labels: ['全部', ...letters],
+                      selected: (letters.indexOf(_filterLetter ?? '') + 1)
+                          .clamp(0, letters.length),
+                      onChanged: (index) =>
+                          _filterByLetter(index == 0 ? null : letters[index - 1]),
                     );
-                  }
-                  // A-Z 按钮按字母排序
-                  final letters = availableLetters.toList()..sort();
-                  final letter = letters[index - 1];
-                  return _buildFilterButton(
-                    letter,
-                    _filterLetter == letter,
-                    () => _filterByLetter(letter),
-                  );
-                },
+                  },
+                ),
               ),
             ),
           ],
@@ -300,17 +292,4 @@ class _TagsFieldState extends State<TagsField> {
     );
   }
 
-  /// 构建字母过滤器按钮
-  Widget _buildFilterButton(String label, bool isSelected, VoidCallback onTap) {
-    return SizedBox(
-      height: 28,
-      child: Center(
-        child: DSChip(
-          label: label,
-          selected: isSelected,
-          onSelected: (_) => onTap(),
-        ),
-      ),
-    );
-  }
 }

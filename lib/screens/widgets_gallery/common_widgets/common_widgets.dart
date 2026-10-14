@@ -87,6 +87,7 @@ import 'package:aboutme/widgets/common/habit_card.dart';
 import 'package:aboutme/widgets/common/memorial_day_card.dart';
 import 'widgets/health_score_ring_card.dart';
 import 'widgets/petal_radial_chart_card.dart';
+import 'widgets/stacked_folder_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -175,6 +176,7 @@ enum CommonWidgetId {
   memorialDayCard,
   healthScoreRingCard,
   petalRadialChartCard,
+  stackedFolderCard,
 }
 
 /// 公共小组件元数据
@@ -865,6 +867,14 @@ class CommonWidgetsRegistry {
       defaultSize: LargeSize(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.stackedFolderCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.stackedFolderCard,
+      name: '堆叠文件夹卡片',
+      description: '层叠内容（照片/便签/文档）+ 底部口袋卡片，点击或悬停扇出展开',
+      icon: Icons.folder_copy,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1098,6 +1108,8 @@ class CommonWidgetBuilder {
         return HealthScoreRingCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.petalRadialChartCard:
         return PetalRadialChartCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.stackedFolderCard:
+        return StackedFolderCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

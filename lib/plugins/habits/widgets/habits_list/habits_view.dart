@@ -385,26 +385,20 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
     return Container(
       height: 50,
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: groups.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final group = groups[index];
-          final isSelected = group == _selectedGroup;
-          return DSThemeBridge(
-            child: DSChip(
-              label: group,
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  _selectGroup(group);
-                }
-              },
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DSThemeBridge(
+            child: DSChipBar(
+              labels: groups,
+              selected: groups.indexOf(_selectedGroup).clamp(
+                0,
+                groups.length - 1,
+              ),
+              onChanged: (index) => _selectGroup(groups[index]),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

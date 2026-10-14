@@ -520,6 +520,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'RoundedRemindersList - 圆角卡片风格的提醒事项列表',
         route: '/widgets_gallery/rounded_reminders_list',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.folder_copy,
+        title: '堆叠文件夹卡片',
+        subtitle: 'StackedFolderCard - 照片/便签/文档层叠扇出与口袋卡片',
+        route: '/widgets_gallery/stacked_folder_card',
+      ),
     ];
   }
 

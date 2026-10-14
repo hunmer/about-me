@@ -446,7 +446,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
                       item: item,
                       seed: column * 31 + index + 1,
                       rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
-                      onTap: () => NavigationHelper.push(
+                      onTap: () => NavigationHelper.pushHero(
                         context,
                         MediaDetailScreen(itemId: item.id),
                       ),
@@ -492,7 +492,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
                       child: MediaItemListTile(
                         item: item,
                         seed: index + 1,
-                        onTap: () => NavigationHelper.push(
+                        onTap: () => NavigationHelper.pushHero(
                           context,
                           MediaDetailScreen(itemId: item.id),
                         ),
