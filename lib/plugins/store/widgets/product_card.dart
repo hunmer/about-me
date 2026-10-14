@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
@@ -124,6 +125,8 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     final soldOut = product.stock <= 0;
     final statusColor = _ended
         ? theme.danger
@@ -148,6 +151,7 @@ class ProductCard extends StatelessWidget {
     return DsSketchPanel(
       theme: theme,
       radius: BorderRadius.circular(20),
+      progress: drawProgress,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

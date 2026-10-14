@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -116,9 +117,12 @@ class _TagsScreenState extends State<TagsScreen> {
       ),
       itemCount: _filteredTags.length,
       itemBuilder: (context, index) {
-        return TagCard(
-          tag: _filteredTags[index],
-          onTap: () => _openTagMessages(_filteredTags[index]),
+        // 挂载即播墨线描画入场（design.md §10）
+        return WiredDraw(
+          child: TagCard(
+            tag: _filteredTags[index],
+            onTap: () => _openTagMessages(_filteredTags[index]),
+          ),
         );
       },
     );

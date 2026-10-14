@@ -42,12 +42,19 @@
       "group": "aboutme",
       "desc": "Compile the Dart storage server into a standalone executable (bin/aboutme-server)"
     },
-    "server-nodejs-deprecated": {
+    "server-admin-build": {
+      "script": "npm",
+      "args": ["run", "build"],
+      "cwd": "packages/aboutme_server/admin-vue",
+      "group": "aboutme",
+      "desc": "Build the Vue admin UI into packages/aboutme_server/admin (served at /admin/ by the Dart server, hot pick-up on next request)"
+    },
+    "server-admin-dev": {
       "script": "npm",
       "args": ["run", "dev"],
-      "cwd": "packages/server-nodejs",
+      "cwd": "packages/aboutme_server/admin-vue",
       "group": "aboutme",
-      "desc": "[DEPRECATED] Legacy Node.js storage server (JS plugin system + Vue admin dev), superseded by packages/aboutme_server"
+      "desc": "Vite dev server for the Vue admin UI (port 3000, proxies /api to the Dart server on 8874)"
     }
   }
 }

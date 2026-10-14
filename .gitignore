@@ -83,11 +83,5 @@ packages/aboutme-mock/node_modules/*
 ios/build/ios/XCBuildData/*
 .DS_Store
 *-cwd
-packages/server-nodejs/node_modules/
-packages/server-nodejs/data/
-packages/server-nodejs/dist/
-packages/server-nodejs/admin/
-
-# Service account credentials
-packages/server-nodejs/service-account.json
+packages/aboutme_server/admin/
 ios/build/*

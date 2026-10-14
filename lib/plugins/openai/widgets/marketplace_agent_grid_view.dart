@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/services/agent_marketplace_service.dart';
 import 'marketplace_agent_card.dart';
@@ -33,11 +34,14 @@ class MarketplaceAgentGridView extends StatelessWidget {
         final agent = marketplaceAgents[index];
         final status = marketplaceService.getAgentStatus(agent, localAgents);
 
-        return MarketplaceAgentCard(
-          agent: agent,
-          isInstalled: status['installed'] ?? false,
-          hasUpdate: status['updateAvailable'] ?? false,
-          onAgentChanged: onAgentChanged,
+        // 挂载即播墨线描画入场（design.md §10）
+        return WiredDraw(
+          child: MarketplaceAgentCard(
+            agent: agent,
+            isInstalled: status['installed'] ?? false,
+            hasUpdate: status['updateAvailable'] ?? false,
+            onAgentChanged: onAgentChanged,
+          ),
         );
       },
     );

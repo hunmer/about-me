@@ -233,6 +233,8 @@ class _MessageListState extends State<MessageList> {
                       onEdit: () => widget.onMessageEdit(item),
                       onDelete: () => widget.onMessageDelete(item),
                       onCopy: () => widget.onMessageCopy(item),
+                      onShare: () =>
+                          MessageOptionsHandler.shareMessage(context, item),
                       onSetFixedSymbol: (symbol) =>
                           widget.onSetFixedSymbol(item, symbol),
                       onLongPress: null, // 移除重复的长按处理

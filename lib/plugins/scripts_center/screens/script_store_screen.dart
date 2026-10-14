@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_store_manager.dart';
@@ -197,7 +198,10 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                       ),
                       itemCount: filteredScripts.length,
                       itemBuilder: (context, index) {
-                        return _buildScriptCard(filteredScripts[index]);
+                        // 挂载即播墨线描画入场（design.md §10）
+                        return WiredDraw(
+                          child: _buildScriptCard(filteredScripts[index]),
+                        );
                       },
                     ),
         ),

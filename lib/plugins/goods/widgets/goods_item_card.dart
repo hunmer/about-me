@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -258,6 +259,8 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
 
     // 瀑布流错落（兜底）：未探测到图片宽高比时按物品ID确定性变化（150-220）
     final imageHeight = 150.0 + (widget.item.id.hashCode.abs() % 8) * 10.0;
@@ -271,6 +274,7 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
     return DsSketchPanel(
       theme: theme,
       radius: BorderRadius.circular(20),
+      progress: drawProgress,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

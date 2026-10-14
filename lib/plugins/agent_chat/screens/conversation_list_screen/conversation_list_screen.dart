@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -423,7 +424,8 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         itemCount: conversations.length,
         itemBuilder: (context, index) {
           final conversation = conversations[index];
-          return _buildConversationCard(conversation);
+          // 挂载即播墨线描画入场（design.md §10）
+          return WiredDraw(child: _buildConversationCard(conversation));
         },
       ),
     );

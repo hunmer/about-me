@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:flutter/material.dart';
@@ -442,19 +443,22 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                         final cardWidth =
                             (constraints.maxWidth - 16) / 2; // 2列布局，减去一个spacing
 
-                        return SizedBox(
-                          width: cardWidth,
-                          child: GoodsItemCard(
-                            item: item,
-                            warehouseId: _warehouse.id,
-                            onTap:
-                                () => NavigationHelper.push(
-                                  context,
-                                  GoodsItemDetailScreen(
-                                    itemId: item.id,
-                                    warehouseId: _warehouse.id,
+                        // 挂载即播墨线描画入场（design.md §10）
+                        return WiredDraw(
+                          child: SizedBox(
+                            width: cardWidth,
+                            child: GoodsItemCard(
+                              item: item,
+                              warehouseId: _warehouse.id,
+                              onTap:
+                                  () => NavigationHelper.push(
+                                    context,
+                                    GoodsItemDetailScreen(
+                                      itemId: item.id,
+                                      warehouseId: _warehouse.id,
+                                    ),
                                   ),
-                                ),
+                            ),
                           ),
                         );
                       }),
@@ -466,17 +470,20 @@ class _WarehouseDetailScreenState extends State<WarehouseDetailScreen> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
-                  return GoodsItemListTile(
-                    item: item,
-                    warehouseId: _warehouse.id,
-                    onTap:
-                        () => NavigationHelper.push(
-                          context,
-                          GoodsItemDetailScreen(
-                            itemId: item.id,
-                            warehouseId: _warehouse.id,
+                  // 挂载即播墨线描画入场（design.md §10）
+                  return WiredDraw(
+                    child: GoodsItemListTile(
+                      item: item,
+                      warehouseId: _warehouse.id,
+                      onTap:
+                          () => NavigationHelper.push(
+                            context,
+                            GoodsItemDetailScreen(
+                              itemId: item.id,
+                              warehouseId: _warehouse.id,
+                            ),
                           ),
-                        ),
+                    ),
                   );
                 },
               ),

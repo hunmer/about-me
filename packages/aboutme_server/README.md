@@ -25,7 +25,7 @@ MCP(AI 工具)      ──JSON-RPC──►        ▲
 | `/api/v1/plugins/{id}/*` | 19 插件业务 API（仅需 X-API-Key） |
 | `POST /mcp` | MCP（68 AI 工具，与 REST/客户端同一套处理器） |
 | `/api/v1/system/*` | 管理员：插件注册表/商店配置（JS 插件执行返回 501） |
-| `/admin/` | 管理界面静态托管 |
+| `/admin/` | 管理界面静态托管（Vue 管理面板，源码在本包 `admin-vue/`） |
 
 ## 运行
 
@@ -35,6 +35,16 @@ dart compile exe bin/server.dart -o bin/aboutme-server      # 单文件可执行
 ```
 
 环境变量同前（`PORT`/`DATA_DIR`/`JWT_SECRET`/`ADMIN_*` 等，见 `lib/src/config.dart`）。
+
+## 管理界面（admin-vue）
+
+```bash
+cd admin-vue
+npm install && npm run build    # 构建产物输出到 ../admin，由服务器托管于 /admin/
+npm run dev                     # 开发模式（/api 代理到 localhost:8874）
+```
+
+服务器按 `ADMIN_DIR` 环境变量 → `DATA_DIR/admin` → 本包 `admin/` 的顺序解析托管目录。
 
 ## 测试
 

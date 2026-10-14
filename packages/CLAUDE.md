@@ -1,13 +1,15 @@
 # packages/ 子包集合
 
-`packages/` 汇集 Aboutme 的 10 个子包，分三类：**1 个 Node.js/TypeScript 服务**（同步服务器 server-nodejs，内置 MCP 端点与管理面板）、**3 个本地 Dart 库**（agentlib AI 传输门面、dartantic_ai 定制 SDK、super_cupertino_navigation_bar 导航 UI）与 **6 个 Flutter 原生插件**（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。Dart 子包经根 `pubspec.yaml` 的 path 依赖被客户端直接引用；Node 服务独立部署。
+`packages/` 汇集 Aboutme 的 13 个子包，分四类：**同步服务器链路**（`aboutme_data_sdk` 纯数据 SDK + `aboutme_server` Dart 薄壳服务器，含 `admin-vue` 管理前端源码；旧 Node 服务器 `server-nodejs` 已于 2026-10-14 彻底删除）、**4 个本地 Dart 库**（agentlib AI 传输门面、dartantic_ai vendor 镜像、super_cupertino_navigation_bar 导航 UI、radial_disc_bottom_bar 弧形底部导航）、**1 个 vendor UI 库**（material_emoji_picker 表情选择器）与 **6 个 Flutter 原生插件**（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。Dart 子包经根 `pubspec.yaml` 的 path 依赖被客户端直接引用。
 
 ## 约定的规则
 
 - 修改 Dart 子包公开 API 后需在客户端同步更新调用处（path 依赖，无版本缓冲）。
-- server-nodejs 独立 `npm install` / `npm run build`（内含 admin-vue 面板构建）。
+- **同步服务器用 `aboutme_server`（Dart，默认端口 8874）**：改 `aboutme_data_sdk` 后需重 build 并在 aboutme_server 下重新 install；数据业务逻辑在 aboutme_data_sdk，服务器只做路由/认证/广播/托管（薄壳）。
+- `dartantic_ai` 是上游 3.4.2 vendor 镜像，只允许 [CUSTOMIZATION.md](dartantic_ai/CUSTOMIZATION.md) 列出的 3 处定制。
+- 管理前端源码在 `aboutme_server/admin-vue`（Vue 3 + Vite），`npm run build` 产物输出到 `aboutme_server/admin/` 由服务器托管于 `/admin/`。
 - 原生插件的平台代码（android/ ios/）改动需同时在客户端宿主工程验证。
-- 部署端口约定：server-nodejs **8874**（历史包 api_forwarding_server 8654 / mcp-aboutme-server 已删除，勿再引用）。
+- 历史包 api_forwarding_server（8654）/ mcp-aboutme-server 已删除，勿再引用。
 
 ## 文件索引
 
@@ -21,11 +23,13 @@
 
 | 模块 | 类型 | 职责摘要 | 文档 |
 |------|------|----------|------|
-| `server-nodejs/` | Node 服务 | 同步服务器：REST/WS、认证、E2E 加密、19 插件 API、服务端插件系统、Vue3 管理面板 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
-| `server-nodejs/src/mcp/` | server-nodejs 内置 | MCP 端点（/mcp，Streamable HTTP）：向 AI 暴露 12 插件域 75 工具 | [server-nodejs/CLAUDE.md](server-nodejs/CLAUDE.md) |
+| `aboutme_data_sdk/` | Dart 库（数据核心） | 纯数据 SDK：存储接口/HTTP 远端存储/认证（JWT+PBKDF2）/12 插件处理器/AboutmeDataService 本地-远程路由；客户端与服务器共用 | [README.md](aboutme_data_sdk/README.md) |
+| `aboutme_server/` | Dart 服务 | 同步服务器（薄壳）：REST 19 插件 API、文件存储 ETag 条件写、WS file_updated 广播、FCM、MCP /mcp（68 工具）、管理界面托管（admin-vue 前端源码在本包）；默认端口 8874 | [README.md](aboutme_server/README.md) |
 | `agentlib/` | Dart 库 | OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient，openai 与 agent_chat 消费） | [agentlib/CLAUDE.md](agentlib/CLAUDE.md) |
-| `dartantic_ai/` | Dart 库（上游镜像） | 本地 vendored 的 agentic AI SDK；仅为 AnthropicProvider 增加自定义 baseUrl | [dartantic_ai/CUSTOMIZATION.md](dartantic_ai/CUSTOMIZATION.md) |
-| `super_cupertino_navigation_bar/` | Dart 库 | iOS 风格大标题导航栏 UI 库 | 无独立文档（`docs/SUPER_CUPERTINO_*`） |
+| `dartantic_ai/` | Dart 库（vendor 镜像） | 上游 dartantic_ai 3.4.2 整包 vendor；仅 3 处本地定制（Anthropic baseUrl 等），agent_chat 原生工具调用消费 | [dartantic_ai/CLAUDE.md](dartantic_ai/CLAUDE.md) |
+| `super_cupertino_navigation_bar/` | Dart 库 | iOS 风格大标题导航栏 UI 库（vendor @2.1.2 + 搜索框定制 + sketchFont） | 无独立文档（`docs/SUPER_CUPERTINO_*`） |
+| `radial_disc_bottom_bar/` | Dart 库 | 弧形圆盘浮动底部导航栏（双层同心圆弧 + 滑动药丸，含 golden 测试） | 无独立文档 |
+| `material_emoji_picker/` | Dart 库（vendor 镜像） | 表情选择器（vendor @1.2.0，assets/emoji.json） | 无独立文档 |
 | `floating_ball_plugin/` | 原生插件 | 系统级悬浮球 | 无独立文档（见 [模块职责](claude/module-responsibilities.md)） |
 | `aboutme_foreground_service/` | 原生插件 | 前台服务（封装 flutter_foreground_task） | 无独立文档 |
 | `aboutme_notifications/` | 原生插件 | 通知管理（封装 awesome_notifications） | 无独立文档 |
@@ -35,7 +39,7 @@
 
 ## 扫描状态
 
-- 更新时间：2026-10-06（新增 dartantic_ai 3.4.2 上游镜像及定制同步文档）
-- 已扫描：10 个现存子包的 pubspec/package.json、server-nodejs 与内置 mcp 的源码结构、`aboutme_widgets` Dart API 与 Provider 全景、`server-nodejs/admin-vue` 源码与端点清单、agentlib 全量源码与 20 个消费点、dartantic_ai 定制点与 endpoint 测试。
-- 未深扫：其余 5 个原生插件（intent/nfc/foreground_service/notifications/floating_ball）的 android/ios 平台代码；server-nodejs 各 handler 实现细节与 plugins 运行时目录；super_cupertino_navigation_bar 源码。
-- 下一步建议：为 `aboutme_intent`（121 文件）与 `aboutme_nfc`（113 文件）补充独立文档。
+- 更新时间：2026-10-14（/init-project 第六轮：子包数 10→14，补入 aboutme_data_sdk/aboutme_server/radial_disc_bottom_bar/material_emoji_picker；dartantic_ai 建独立文档集）
+- 已扫描：14 个子包清单与接线；aboutme_data_sdk 与 aboutme_server 的目录结构（按 handoff/2026-10-11 与两包 README 核实）；dartantic_ai 全量（见其 claude/）；agentlib、aboutme_widgets、server-nodejs 前几轮已建档。
+- 未深扫：aboutme_data_sdk/aboutme_server 源码细节（暂以各自 README 为准，建议下轮建档）；radial_disc_bottom_bar 与 material_emoji_picker 源码；5 个原生插件的 android/ios 平台代码。
+- 注意：`radial_disc_bottom_bar/build/` 编译产物被误提交进 git；`skills/moe-ui-skill` 是无 .gitmodules 的 gitlink（根目录层面）。

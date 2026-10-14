@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:skribble/skribble.dart';
 
@@ -74,25 +76,34 @@ class DSListItemCard extends StatelessWidget {
               ),
             ),
           ),
-          // 右上角图标水印：放大贴角，处于内容层之下，溢出被裁剪；
-          // 底色已浅，水印用底色低透明度保持可见
+          // 右上角图标水印：放大贴角，处于内容层之下；
+          // 底色已浅，水印用底色低透明度保持可见。
+          // 边长随卡片高度收缩，不超出卡片高度
           if (hasWatermark)
             Positioned(
               right: 0,
               top: 0,
-              child: SizedBox(
-                width: _watermarkSize,
-                height: _watermarkSize,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Opacity(
-                    opacity: 0.15,
-                    child: IconTheme.merge(
-                      data: IconThemeData(color: baseColor),
-                      child: leading ?? DsIcon(icon!, color: baseColor),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = math.min(
+                    _watermarkSize,
+                    constraints.maxHeight,
+                  );
+                  return SizedBox(
+                    width: size,
+                    height: size,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: Opacity(
+                        opacity: 0.15,
+                        child: IconTheme.merge(
+                          data: IconThemeData(color: baseColor),
+                          child: leading ?? DsIcon(icon!, color: baseColor),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           Padding(

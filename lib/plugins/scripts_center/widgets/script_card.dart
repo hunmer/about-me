@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
@@ -28,6 +29,8 @@ class ScriptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     final enabled = script.enabled;
     final seed = script.id.hashCode & 0x7fffffff;
     // 启用：主色墨线；禁用：次级墨色
@@ -54,6 +57,7 @@ class ScriptCard extends StatelessWidget {
                   strokeWidth: 1.2,
                   radius: radius,
                   seed: seed + 13,
+                  progress: drawProgress,
                 ),
               ),
             ),
@@ -66,6 +70,7 @@ class ScriptCard extends StatelessWidget {
                 radius: radius,
                 strokeWidth: 1.8,
                 seed: seed,
+                progress: drawProgress,
               ),
               child: ClipRRect(
                 borderRadius: radius,
@@ -199,6 +204,7 @@ class _TypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    final drawProgress = WiredDrawTransition.progressOf(context);
     final color = script.isModule ? theme.primary : theme.warning;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -209,6 +215,7 @@ class _TypeBadge extends StatelessWidget {
         strokeWidth: 1.2,
         radius: BorderRadius.circular(4),
         seed: seed,
+        progress: drawProgress,
       ),
       child: Text(
         script.type.toUpperCase(),
@@ -228,6 +235,7 @@ class _RunButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    final drawProgress = WiredDrawTransition.progressOf(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -241,6 +249,7 @@ class _RunButton extends StatelessWidget {
           radius: BorderRadius.circular(10),
           strokeWidth: 1.4,
           seed: seed,
+          progress: drawProgress,
         ),
         child: DsIcon(DsIconKind.play, size: 18, color: theme.success),
       ),

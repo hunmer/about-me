@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/plugins/openai/models/tool_app.dart';
 import 'tool_app_card.dart';
 import 'package:aboutme/plugins/openai/controllers/tool_app_controller.dart';
@@ -29,17 +30,20 @@ class ToolAppGridView extends StatelessWidget {
       itemCount: apps.length,
       itemBuilder: (context, index) {
         final app = apps[index];
-        return ToolAppCard(
-          app: app,
-          onTap: () {
-            if (controller != null) {
-              controller!.handleAppClick(context, app.id);
-            } else {
-              // 如果没有提供控制器，创建一个临时的来处理点击
-              final tempController = ToolAppController();
-              tempController.handleAppClick(context, app.id);
-            }
-          },
+        // 挂载即播墨线描画入场（design.md §10）
+        return WiredDraw(
+          child: ToolAppCard(
+            app: app,
+            onTap: () {
+              if (controller != null) {
+                controller!.handleAppClick(context, app.id);
+              } else {
+                // 如果没有提供控制器，创建一个临时的来处理点击
+                final tempController = ToolAppController();
+                tempController.handleAppClick(context, app.id);
+              }
+            },
+          ),
         );
       },
     );

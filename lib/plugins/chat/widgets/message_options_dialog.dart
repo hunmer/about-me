@@ -45,7 +45,7 @@ class MessageOptionsDialog extends StatelessWidget {
     Color(0xFFEEEEEE), // 默认灰色
   ];
 
-  /// 显示消息选项对话框的静态方法
+  /// 显示消息选项的底部抽屉
   static Future<void> show({
     required BuildContext context,
     required Message message,
@@ -59,9 +59,9 @@ class MessageOptionsDialog extends StatelessWidget {
     bool useRecentSymbols = true,
     bool initiallyShowFixedSymbolDialog = false,
   }) {
-    return showDSDialog(
+    return showDSBottomSheet(
       context: context,
-      theme: DSThemeBridge.resolve(context),
+      title: 'chat_messageOptions'.tr,
       builder:
           (context) => MessageOptionsDialog(
             message: message,
@@ -88,185 +88,121 @@ class MessageOptionsDialog extends StatelessWidget {
       });
     }
 
-    return DSThemeBridge(
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return JellyBox(
-            radius: theme.radii.xxl,
-            padding: EdgeInsets.all(theme.spacing.xl),
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Column(
+    final theme = DSThemeBridge.resolve(context);
+    final isFavorite =
+        (message.metadata?['isFavorite'] as bool?) == true;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 气泡颜色选项（横向滚动）
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'chat_messageOptions'.tr,
-                  textAlign: TextAlign.center,
-                  style: DsTypography.title.copyWith(color: theme.text),
-                ),
-
-                // 设置气泡颜色选项
-                Padding(
-                  padding: EdgeInsets.only(top: theme.spacing.lg),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 重置按钮
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              onSetBubbleColor(message, null);
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.surface,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: theme.stroke,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Center(
-                                child: DsIcon(
-                                  DsIconKind.refresh,
-                                  size: 20,
-                                  color: theme.textSub,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // 颜色选项
-                        ..._bubbleColors.map(
-                          (color) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4.0,
-                            ),
-                            child: GestureDetector(
-                              onTap: () {
-                                onSetBubbleColor(message, color);
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: theme.stroke,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 分隔线
-                Container(
-                  height: 1,
-                  margin: EdgeInsets.symmetric(vertical: theme.spacing.md),
-                  color: theme.stroke.withValues(alpha: 0.5),
-                ),
-
-                // 功能按钮区域 - 使用Wrap实现自动换行，每行最多5个
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12.0, // 水平间距
-                  runSpacing: 12.0, // 垂直间距
-                  children: [
-                    // 设置固定标记
-                    _buildIconButton(
-                      context,
-                      DsIconKind.pin,
-                      theme.primary,
-                      () {
-                        Navigator.pop(context);
-                        _showFixedSymbolDialog(context);
-                      },
-                    ),
-                    // 编辑
-                    _buildIconButton(
-                      context,
-                      DsIconKind.edit,
-                      theme.success,
-                      () {
-                        Navigator.pop(context);
-                        onMessageEdit(message);
-                      },
-                    ),
-                    // 复制
-                    _buildIconButton(
-                      context,
-                      DsIconKind.copy,
-                      theme.warning,
-                      () {
-                        Navigator.pop(context);
-                        onMessageCopy(message);
-                      },
-                    ),
-                    // 删除
-                    _buildIconButton(
-                      context,
-                      DsIconKind.trash,
-                      theme.danger,
-                      () {
-                        Navigator.pop(context);
-                        onMessageDelete(message);
-                      },
-                    ),
-                    // 分享
-                    _buildIconButton(
-                      context,
-                      DsIconKind.share,
-                      theme.secondary,
-                      () {
-                        Navigator.pop(context);
-                        MessageOptionsHandler.shareMessage(context, message);
-                      },
-                    ),
-                    // 回复
-                    if (onReply != null)
-                      _buildIconButton(
-                        context,
-                        DsIconKind.reply,
-                        theme.primary,
-                        () {
-                          Navigator.pop(context);
-                          onReply!(message);
-                        },
-                      ),
-                    // 收藏
-                    if (onToggleFavorite != null)
-                      _buildIconButton(
-                        context,
-                        // 根据消息是否已收藏显示实心/空心星星
-                        DsIconKind.star,
-                        theme.warning,
-                        isFilled:
-                            (message.metadata?['isFavorite'] as bool?) == true,
-                        () {
-                          Navigator.pop(context);
-                          onToggleFavorite!(message);
-                        },
-                      ),
-                  ],
-                ),
+                // 重置按钮
+                _buildColorDot(context, null),
+                ..._bubbleColors.map((color) => _buildColorDot(context, color)),
               ],
             ),
-          );
+          ),
+        ),
+        SizedBox(height: theme.spacing.md),
+
+        // 操作行
+        DSSheetAction(
+          icon: DsIconKind.pin,
+          label: 'chat_pin'.tr,
+          onTap: () {
+            Navigator.pop(context);
+            _showFixedSymbolDialog(context);
+          },
+        ),
+        DSSheetAction(
+          icon: DsIconKind.edit,
+          label: 'chat_edit'.tr,
+          onTap: () {
+            Navigator.pop(context);
+            onMessageEdit(message);
+          },
+        ),
+        DSSheetAction(
+          icon: DsIconKind.copy,
+          label: 'chat_copy'.tr,
+          onTap: () {
+            Navigator.pop(context);
+            onMessageCopy(message);
+          },
+        ),
+        DSSheetAction(
+          icon: DsIconKind.share,
+          label: 'chat_share'.tr,
+          onTap: () {
+            Navigator.pop(context);
+            MessageOptionsHandler.shareMessage(context, message);
+          },
+        ),
+        if (onReply != null)
+          DSSheetAction(
+            icon: DsIconKind.reply,
+            label: 'chat_reply'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              onReply!(message);
+            },
+          ),
+        if (onToggleFavorite != null)
+          DSSheetAction(
+            icon: DsIconKind.star,
+            // 根据消息是否已收藏切换文案
+            label: (isFavorite ? 'chat_unfavorite' : 'chat_favorite').tr,
+            onTap: () {
+              Navigator.pop(context);
+              onToggleFavorite!(message);
+            },
+          ),
+        // 危险操作放最后
+        DSSheetAction(
+          icon: DsIconKind.trash,
+          label: 'chat_delete'.tr,
+          destructive: true,
+          onTap: () {
+            Navigator.pop(context);
+            onMessageDelete(message);
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 气泡颜色圆点（null 为重置默认色），手绘墨线描边
+  Widget _buildColorDot(BuildContext context, Color? color) {
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: GestureDetector(
+        onTap: () {
+          onSetBubbleColor(message, color);
+          Navigator.pop(context);
         },
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: color ?? theme.surface,
+            circle: true,
+            seed: color?.value ?? 0,
+          ),
+          // Container 默认不居中子级，图标必须显式居中，否则贴左上角
+          alignment: Alignment.center,
+          child: color == null
+              ? DsIcon(DsIconKind.refresh, size: 20, color: theme.textSub)
+              : null,
+        ),
       ),
     );
   }
@@ -300,115 +236,88 @@ class MessageOptionsDialog extends StatelessWidget {
     final TextEditingController symbolController = TextEditingController();
     final List<String> recentSymbols = await _getRecentSymbols();
 
-    showDSDialog(
+    showDSBottomSheet(
       context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'chat_addEmoji'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.title.copyWith(color: theme.text),
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      DSInput(
-                        controller: symbolController,
-                        label: 'chat_tag'.tr,
-                        hint: 'chat_tagHint'.tr,
-                        maxLength: 1, // 限制只能输入一个字符
-                      ),
-                      if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
-                        SizedBox(height: theme.spacing.md),
-                        Text(
-                          '最近使用',
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
-                        ),
-                        SizedBox(height: theme.spacing.sm),
-                        Wrap(
-                          spacing: theme.spacing.sm,
-                          runSpacing: theme.spacing.sm,
-                          children:
-                              recentSymbols
-                                  .map(
-                                    (symbol) => DSChip(
-                                      label: symbol,
-                                      onSelected:
-                                          (_) => symbolController.text = symbol,
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                      ],
-                      SizedBox(height: theme.spacing.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_cancel'.tr,
-                              variant: DSButtonVariant.outline,
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: DSButton(
-                              label: 'chat_settings'.tr,
-                              onPressed: () async {
-                                final symbol =
-                                    symbolController.text.isEmpty
-                                        ? null
-                                        : symbolController.text;
-                                if (symbol != null) {
-                                  await _addRecentSymbol(symbol);
-                                }
-                                onSetFixedSymbol(message, symbol);
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
+      title: 'chat_addEmoji'.tr,
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+              child: DSInput(
+                controller: symbolController,
+                label: 'chat_tag'.tr,
+                hint: 'chat_tagHint'.tr,
+                maxLength: 1, // 限制只能输入一个字符
+              ),
             ),
-          ),
-    );
-  }
-
-  // 构建图标按钮
-  Widget _buildIconButton(
-    BuildContext context,
-    DsIconKind icon,
-    Color color,
-    VoidCallback onPressed, {
-    bool isFilled = false,
-  }) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: DsIcon(icon, color: color, size: 24, fill: isFilled),
-      ),
+            if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
+              SizedBox(height: theme.spacing.md),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: Text(
+                  'chat_recentSymbols'.tr,
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub,
+                  ),
+                ),
+              ),
+              SizedBox(height: theme.spacing.sm),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: Wrap(
+                  spacing: theme.spacing.sm,
+                  runSpacing: theme.spacing.sm,
+                  children: recentSymbols
+                      .map(
+                        (symbol) => DSChip(
+                          label: symbol,
+                          onSelected:
+                              (_) => symbolController.text = symbol,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+            SizedBox(height: theme.spacing.lg),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DSButton(
+                      label: 'app_cancel'.tr,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  SizedBox(width: theme.spacing.md),
+                  Expanded(
+                    child: DSButton(
+                      label: 'app_confirm'.tr,
+                      onPressed: () async {
+                        final symbol = symbolController.text.isEmpty
+                            ? null
+                            : symbolController.text;
+                        if (symbol != null) {
+                          await _addRecentSymbol(symbol);
+                        }
+                        onSetFixedSymbol(message, symbol);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: theme.spacing.md),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 
@@ -28,6 +29,8 @@ class MediaItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     return Pressable(
       onPressed: onTap,
       onLongPress: onLongPress,
@@ -43,6 +46,7 @@ class MediaItemCard extends StatelessWidget {
                 theme: theme,
                 radius: DsRadii.md,
                 seed: seed,
+                progress: drawProgress,
               ),
               child: ClipRRect(
                 borderRadius: DsRadii.md,
@@ -122,6 +126,8 @@ class MediaReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     final dateText =
         '${review.timestamp.year}-${review.timestamp.month.toString().padLeft(2, '0')}-${review.timestamp.day.toString().padLeft(2, '0')} '
         '${review.timestamp.hour.toString().padLeft(2, '0')}:${review.timestamp.minute.toString().padLeft(2, '0')}';
@@ -138,6 +144,7 @@ class MediaReviewCard extends StatelessWidget {
             radius: DsRadii.lg,
             seed: seed,
             padding: const EdgeInsets.all(14),
+            progress: drawProgress,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

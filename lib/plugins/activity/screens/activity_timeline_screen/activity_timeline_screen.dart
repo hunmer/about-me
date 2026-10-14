@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event.dart';
@@ -359,105 +360,108 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
         final title = result['title'];
         final subtitle = result['subtitle'];
 
+        // 挂载即播墨线描画入场（design.md §10）
         // DSCard 内部取 AppTheme，需包桥
-        return DSThemeBridge(
-          child: Builder(
-            builder: (ctx) {
-              final dsTheme = DSThemeBridge.resolve(ctx);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                // 保留点击进入编辑的入口
-                child: DSCard(
-                  padding: const EdgeInsets.all(12),
-                  onTap: () {
-                    _activityController.editActivity(context, activity);
-                  },
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: _getActivityColor(activity),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            _getResultIcon(type),
-                            size: 20,
-                            color: dsTheme.surface,
+        return WiredDraw(
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (ctx) {
+                final dsTheme = DSThemeBridge.resolve(ctx);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  // 保留点击进入编辑的入口
+                  child: DSCard(
+                    padding: const EdgeInsets.all(12),
+                    onTap: () {
+                      _activityController.editActivity(context, activity);
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _getActivityColor(activity),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: DsIcon(
+                              _getResultIcon(type),
+                              size: 20,
+                              color: dsTheme.surface,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: DsTypography.body.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: dsTheme.text,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: DsTypography.body.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: dsTheme.text,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              subtitle,
-                              style: DsTypography.caption.copyWith(
-                                color: dsTheme.textSub,
+                              const SizedBox(height: 2),
+                              Text(
+                                subtitle,
+                                style: DsTypography.caption.copyWith(
+                                  color: dsTheme.textSub,
+                                ),
                               ),
-                            ),
-                            if (result['tag'] != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
+                              if (result['tag'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: dsTheme.surfaceAlt,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      result['tag'],
+                                      style: DsTypography.caption.copyWith(
+                                        fontSize: 12,
+                                        color: dsTheme.textSub,
+                                      ),
+                                    ),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: dsTheme.surfaceAlt,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
+                                ),
+                              if (result['description'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
                                   child: Text(
-                                    result['tag'],
+                                    result['description'],
                                     style: DsTypography.caption.copyWith(
                                       fontSize: 12,
                                       color: dsTheme.textSub,
                                     ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
-                            if (result['description'] != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  result['description'],
-                                  style: DsTypography.caption.copyWith(
-                                    fontSize: 12,
-                                    color: dsTheme.textSub,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${activity.startTime.hour.toString().padLeft(2, '0')}:${activity.startTime.minute.toString().padLeft(2, '0')}',
-                        style: DsTypography.caption.copyWith(
-                          color: dsTheme.textSub,
-                          fontSize: 12,
+                        const SizedBox(width: 8),
+                        Text(
+                          '${activity.startTime.hour.toString().padLeft(2, '0')}:${activity.startTime.minute.toString().padLeft(2, '0')}',
+                          style: DsTypography.caption.copyWith(
+                            color: dsTheme.textSub,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },
@@ -518,7 +522,9 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
         title: '标签',
         type: FilterType.tagsMultiple,
         builder: (context, value, onChanged) {
-          final selected = value is List ? List<String>.from(value) : <String>[];
+          final selected = value is List
+              ? List<String>.from(value)
+              : <String>[];
           return DSThemeBridge(
             child: Wrap(
               spacing: 8,
@@ -586,64 +592,55 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (
-                    Widget child,
-                    Animation<double> animation,
-                  ) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                  child:
-                      _viewModeController.isGridMode
-                          ? ActivityGridView(
-                            key: ValueKey(
-                              'grid_${_selectedDate.millisecondsSinceEpoch}',
-                            ),
-                            activities: _filteredActivities,
-                            selectedDate: _selectedDate,
-                            onActivityTap:
-                                (activity) => _activityController.editActivity(
-                                  context,
-                                  activity,
-                                ),
-                            onUnrecordedTimeTap: (start, end) {
-                              ActivityController.showAddActivityScreen(
-                                context,
-                                start: start,
-                                end: end,
-                              );
-                            },
-                            onSelectionChanged: (start, end) {
-                              if (start != null && end != null) {
-                                final minutes = end.difference(start).inMinutes;
-                                final hours = minutes ~/ 60;
-                                final mins = minutes % 60;
-                                final durationText =
-                                    hours > 0 ? '$hours小时$mins分钟' : '$mins分钟';
-                                Toast.show(
-                                  '${DateFormat('H:mm').format(start)} - ${DateFormat('H:mm').format(end)} ($durationText)',
-                                  gravity: ToastGravity.BOTTOM,
-                                );
-                              }
-                            },
-                          )
-                          : ActivityTimelineScheduleView(
-                            key: ValueKey(
-                              'timeline_${_selectedDate.millisecondsSinceEpoch}',
-                            ),
-                            activities: _filteredActivities,
-                            onDeleteActivity:
-                                _activityController.deleteActivity,
-                            onActivityTap:
-                                (activity) => _activityController.editActivity(
-                                  context,
-                                  activity,
-                                ),
-                            onUnrecordedTimeTap: (start, end) {
-                              ActivityController.showAddActivityScreen(context);
-                            },
-                            getTagIcons: _tagController.getTagIcons,
-                            getTagColors: _tagController.getTagColors,
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                  child: _viewModeController.isGridMode
+                      ? ActivityGridView(
+                          key: ValueKey(
+                            'grid_${_selectedDate.millisecondsSinceEpoch}',
                           ),
+                          activities: _filteredActivities,
+                          selectedDate: _selectedDate,
+                          onActivityTap: (activity) => _activityController
+                              .editActivity(context, activity),
+                          onUnrecordedTimeTap: (start, end) {
+                            ActivityController.showAddActivityScreen(
+                              context,
+                              start: start,
+                              end: end,
+                            );
+                          },
+                          onSelectionChanged: (start, end) {
+                            if (start != null && end != null) {
+                              final minutes = end.difference(start).inMinutes;
+                              final hours = minutes ~/ 60;
+                              final mins = minutes % 60;
+                              final durationText = hours > 0
+                                  ? '$hours小时$mins分钟'
+                                  : '$mins分钟';
+                              Toast.show(
+                                '${DateFormat('H:mm').format(start)} - ${DateFormat('H:mm').format(end)} ($durationText)',
+                                gravity: ToastGravity.BOTTOM,
+                              );
+                            }
+                          },
+                        )
+                      : ActivityTimelineScheduleView(
+                          key: ValueKey(
+                            'timeline_${_selectedDate.millisecondsSinceEpoch}',
+                          ),
+                          activities: _filteredActivities,
+                          onDeleteActivity: _activityController.deleteActivity,
+                          onActivityTap: (activity) => _activityController
+                              .editActivity(context, activity),
+                          onUnrecordedTimeTap: (start, end) {
+                            ActivityController.showAddActivityScreen(context);
+                          },
+                          getTagIcons: _tagController.getTagIcons,
+                          getTagColors: _tagController.getTagColors,
+                        ),
                 ),
               ),
             ],
@@ -664,15 +661,15 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
               builder: (context) {
                 final theme = DSThemeBridge.resolve(context);
                 return DSIconButton(
-                  icon:
-                      _viewModeController.isGridMode
-                          ? DsIconKind.list
-                          : DsIconKind.grid,
+                  icon: _viewModeController.isGridMode
+                      ? DsIconKind.list
+                      : DsIconKind.grid,
                   size: 36,
                   color: theme.surfaceAlt,
                   iconColor: theme.textSub,
-                  tooltip:
-                      _viewModeController.isGridMode ? '切换到时间轴视图' : '切换到网格视图',
+                  tooltip: _viewModeController.isGridMode
+                      ? '切换到时间轴视图'
+                      : '切换到网格视图',
                   onPressed: _viewModeController.toggleViewMode,
                 );
               },
@@ -689,8 +686,8 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                   icon: DsIconKind.plus,
                   size: 40,
                   tooltip: '添加活动',
-                  onPressed:
-                      () => ActivityController.showAddActivityScreen(context),
+                  onPressed: () =>
+                      ActivityController.showAddActivityScreen(context),
                 );
               },
             ),

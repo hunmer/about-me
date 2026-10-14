@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:skribble/skribble.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -96,18 +97,15 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
       59,
     );
 
-    final filteredRecords =
-        records
-            .where(
-              (record) =>
-                  record.date.isAfter(
-                    monthStart.subtract(const Duration(seconds: 1)),
-                  ) &&
-                  record.date.isBefore(
-                    monthEnd.add(const Duration(seconds: 1)),
-                  ),
-            )
-            .toList();
+    final filteredRecords = records
+        .where(
+          (record) =>
+              record.date.isAfter(
+                monthStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              record.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
+        )
+        .toList();
 
     debugPrint('过滤后的记录数: ${filteredRecords.length}');
 
@@ -214,8 +212,9 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: isSelected ? theme.primary.withValues(alpha: 0.2) : null,
-                border:
-                    isToday ? Border.all(color: theme.primary, width: 2) : null,
+                border: isToday
+                    ? Border.all(color: theme.primary, width: 2)
+                    : null,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Stack(
@@ -309,96 +308,90 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder: (ctx) {
-                final theme = DSThemeBridge.resolve(ctx);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (_) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            DsIcon(DsIconKind.check, color: theme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              '打卡记录详情',
-                              style: DsTypography.title.copyWith(
-                                color: theme.text,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        _buildDetailRow(
-                          ctx,
-                          '日期',
-                          DateFormat('yyyy年MM月dd日 HH:mm').format(record.date),
-                        ),
-                        _buildDetailRow(
-                          ctx,
-                          '时长',
-                          _formatDuration(record.duration),
-                        ),
-                        if (record.notes != null &&
-                            record.notes!.isNotEmpty) ...[
-                          SizedBox(height: theme.spacing.sm),
-                          Text(
-                            '备注',
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.surfaceAlt,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              record.notes!,
-                              style: DsTypography.body.copyWith(
-                                color: theme.text,
-                              ),
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: theme.spacing.xl),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: '关闭',
-                                variant: DSButtonVariant.outline,
-                                onPressed: () => Navigator.pop(ctx),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: DSButton(
-                                label: '编辑',
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  _showEditDialog(record);
-                                },
-                              ),
-                            ),
-                          ],
+                        DsIcon(DsIconKind.check, color: theme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          '打卡记录详情',
+                          style: DsTypography.title.copyWith(color: theme.text),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                    SizedBox(height: theme.spacing.md),
+                    _buildDetailRow(
+                      ctx,
+                      '日期',
+                      DateFormat('yyyy年MM月dd日 HH:mm').format(record.date),
+                    ),
+                    _buildDetailRow(
+                      ctx,
+                      '时长',
+                      _formatDuration(record.duration),
+                    ),
+                    if (record.notes != null && record.notes!.isNotEmpty) ...[
+                      SizedBox(height: theme.spacing.sm),
+                      Text(
+                        '备注',
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.surfaceAlt,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          record.notes!,
+                          style: DsTypography.body.copyWith(color: theme.text),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: theme.spacing.xl),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DSButton(
+                            label: '关闭',
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DSButton(
+                            label: '编辑',
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showEditDialog(record);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -413,77 +406,76 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
       context: context,
       theme: DSThemeBridge.resolve(context),
       barrierDismissible: false,
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder: (ctx) {
-                final theme = DSThemeBridge.resolve(ctx);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (_) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '编辑打卡记录',
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSInput(
+                      controller: durationController,
+                      label: '时长（分钟）',
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: notesController,
+                      label: '备注',
+                      maxLines: 3,
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
                       children: [
-                        Text(
-                          '编辑打卡记录',
-                          style: DsTypography.title.copyWith(color: theme.text),
+                        Expanded(
+                          child: DSButton(
+                            label: '取消',
+                            variant: DSButtonVariant.outline,
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
                         ),
-                        SizedBox(height: theme.spacing.lg),
-                        DSInput(
-                          controller: durationController,
-                          label: '时长（分钟）',
-                          keyboardType: TextInputType.number,
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(
-                          controller: notesController,
-                          label: '备注',
-                          maxLines: 3,
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: '取消',
-                                variant: DSButtonVariant.outline,
-                                onPressed: () => Navigator.pop(ctx),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: DSButton(
-                                label: '保存',
-                                onPressed: () async {
-                                  final newMinutes = int.tryParse(
-                                    durationController.text,
-                                  );
-                                  if (newMinutes == null || newMinutes <= 0) {
-                                    Toast.error('请输入有效的时长');
-                                    return;
-                                  }
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DSButton(
+                            label: '保存',
+                            onPressed: () async {
+                              final newMinutes = int.tryParse(
+                                durationController.text,
+                              );
+                              if (newMinutes == null || newMinutes <= 0) {
+                                Toast.error('请输入有效的时长');
+                                return;
+                              }
 
-                                  Navigator.pop(ctx);
-                                  await _updateRecord(
-                                    record.id,
-                                    Duration(minutes: newMinutes),
-                                    notesController.text.trim(),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
+                              Navigator.pop(ctx);
+                              await _updateRecord(
+                                record.id,
+                                Duration(minutes: newMinutes),
+                                notesController.text.trim(),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -746,91 +738,95 @@ class _HabitMonthlyListScreenState extends State<HabitMonthlyListScreen> {
                 itemCount: _selectedDayRecords.length,
                 itemBuilder: (context, index) {
                   final record = _selectedDayRecords[index];
-                  return SwipeActionWrapper(
+                  // 挂载即播墨线描画入场（design.md §10）；key 上移
+                  return WiredDraw(
                     key: ValueKey(record.id),
-                    leadingActions: [
-                      SwipeActionOption(
-                        label: '编辑',
-                        icon: Icons.edit,
-                        backgroundColor: theme.primary,
-                        onTap: () => _showEditDialog(record),
-                      ),
-                    ],
-                    trailingActions: [
-                      SwipeActionOption(
-                        label: '删除',
-                        icon: Icons.delete,
-                        backgroundColor: theme.danger,
-                        onTap: () => _deleteRecord(record.id),
-                        isDestructive: true,
-                      ),
-                    ],
-                    child: DSThemeBridge(
-                      child: Builder(
-                        builder: (ctx) {
-                          final dsTheme = DSThemeBridge.resolve(ctx);
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            child: DSCard(
-                              padding: const EdgeInsets.all(12),
-                              onTap: () => _showRecordDetail(record),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: dsTheme.primary.withValues(
-                                        alpha: 0.2,
+                    child: SwipeActionWrapper(
+                      leadingActions: [
+                        SwipeActionOption(
+                          label: '编辑',
+                          icon: Icons.edit,
+                          backgroundColor: theme.primary,
+                          onTap: () => _showEditDialog(record),
+                        ),
+                      ],
+                      trailingActions: [
+                        SwipeActionOption(
+                          label: '删除',
+                          icon: Icons.delete,
+                          backgroundColor: theme.danger,
+                          onTap: () => _deleteRecord(record.id),
+                          isDestructive: true,
+                        ),
+                      ],
+                      child: DSThemeBridge(
+                        child: Builder(
+                          builder: (ctx) {
+                            final dsTheme = DSThemeBridge.resolve(ctx);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              child: DSCard(
+                                padding: const EdgeInsets.all(12),
+                                onTap: () => _showRecordDetail(record),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: dsTheme.primary.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        shape: BoxShape.circle,
                                       ),
-                                      shape: BoxShape.circle,
+                                      child: DsIcon(
+                                        DsIconKind.check,
+                                        color: dsTheme.primary,
+                                      ),
                                     ),
-                                    child: DsIcon(
-                                      DsIconKind.check,
-                                      color: dsTheme.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _formatDuration(record.duration),
-                                          style: DsTypography.body.copyWith(
-                                            color: dsTheme.text,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          DateFormat(
-                                            'HH:mm',
-                                          ).format(record.date),
-                                          style: DsTypography.caption.copyWith(
-                                            color: dsTheme.textSub,
-                                          ),
-                                        ),
-                                        if (record.notes != null &&
-                                            record.notes!.isNotEmpty)
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
                                           Text(
-                                            record.notes!,
+                                            _formatDuration(record.duration),
+                                            style: DsTypography.body.copyWith(
+                                              color: dsTheme.text,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            DateFormat(
+                                              'HH:mm',
+                                            ).format(record.date),
                                             style: DsTypography.caption
                                                 .copyWith(
                                                   color: dsTheme.textSub,
                                                 ),
                                           ),
-                                      ],
+                                          if (record.notes != null &&
+                                              record.notes!.isNotEmpty)
+                                            Text(
+                                              record.notes!,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: dsTheme.textSub,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   );

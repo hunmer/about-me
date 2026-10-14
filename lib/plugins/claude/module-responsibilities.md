@@ -1,7 +1,7 @@
-# 插件职责速查（26 个）
+# 插件职责速查（28 个）
 
 > 所属：`lib/plugins/` · [返回索引](../CLAUDE.md)
-> 括号内为 Dart 文件数（2026-09-14 统计）。主文件均为 `<id>/<id>_plugin.dart`。
+> 括号内为 Dart 文件数（2026-09-14 统计；media_log/achievement 为 2026-10-14 统计）。主文件均为 `<id>/<id>_plugin.dart`。
 
 ## AI 类
 
@@ -26,6 +26,7 @@
 | **day**（30） | 纪念日/倒计时 | memorial_day 模型、日期区间 |
 | **calendar**（29） | 日历/日程 | syncfusion_flutter_calendar 月视图、事件 CRUD |
 | **calendar_album**（42） | 日历相册 | 按日期/标签照片墙；图片处理走 webview 的 LocalHttpServer |
+| **media_log**（14） | 媒体记录（阅读+观影） | 瀑布流封面网格、16 款封面样式、14 个 JS API 名；数据走 AboutmeDataService；[独立文档](../media_log/CLAUDE.md) |
 | **reminder**（10） | 本地定时提醒 | 按天/周/月本地通知；无路由无小组件无 JS API；杀进程后 `_checkMissedReminders` 补触发 |
 
 ## 物品与账务类
@@ -47,4 +48,5 @@
 | **tts**（25） | TTS 语音朗读 | 系统 TTS / 自定义 HTTP / MiniMax 三通道；消费方 activity、agent_chat |
 | **nfc**（23） | NFC 标签读写 | 底层 `packages/aboutme_nfc` 原生子包；card_handlers 跨插件触发 |
 | **webview**（41） | 内嵌浏览器 | 多标签、网址卡片、LocalHttpServer（全应用 HTTP 底座，8899 端口） |
-| **scripts_center**（31） | 脚本中心 | JS 脚本编辑/商店/执行，经 JSBridgeManager 调插件 API |
+| **scripts_center**（31） | 脚本中心 | JS 脚本编辑/商店/执行，经 JSBridgeManager 调插件 API；2026-10 新增脚本执行日志子系统 |
+| **achievement**（15） | 成就系统 | 74 条定义、事件驱动（消费 41 个信号）、解锁结算与弹窗、桌面小组件；无 JS API 无路由；[独立文档](../achievement/CLAUDE.md) |

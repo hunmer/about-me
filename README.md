@@ -111,12 +111,9 @@ Aboutme/
 │   ├── plugins/            # 功能插件（25+）
 │   ├── screens/            # 应用界面
 │   └── widgets/            # 通用组件
-├── server/                 # Dart 同步服务器
-│   ├── admin/              # Web 管理面板
-│   └── lib/                # 服务器代码
 ├── packages/               # 子包（原生插件、服务端）
-│   ├── server-nodejs/      # Node.js 服务端（含 MCP 端点 /mcp）
-│   └── ...                 # 原生插件等
+│   ├── aboutme_server/     # Dart 同步服务器（REST + WS + MCP 端点 /mcp + admin-vue 管理面板）
+│   └── ...                 # 数据 SDK、原生插件等
 ├── shared_models/          # 共享数据模型
 └── docs/                   # 文档
 ```
@@ -140,31 +137,28 @@ Aboutme/
 ### 同步服务器
 
 ```bash
-cd server
+cd packages/aboutme_server
 dart pub get
 dart run bin/server.dart
-# 访问 http://localhost:8080/admin/
+# 访问 http://localhost:8874/admin/（管理面板源码在 admin-vue/，npm run build 构建到 ../admin）
 ```
 
 ### MCP 端点 (AI 集成)
 
-MCP 服务已内置于 Node.js 服务端（`packages/server-nodejs`），启动服务器后即可使用：
+MCP 服务内置于 Dart 同步服务器（`packages/aboutme_server`），启动服务器后即可使用：
 
 ```bash
-cd packages/server-nodejs
-npm install
-npm run build
-npm start
+procm-command start server
+# 或: cd packages/aboutme_server && dart run bin/server.dart
 
 # MCP 端点: http://localhost:8874/mcp (Streamable HTTP, 需认证)
-# 请求头: X-API-Key + X-Encryption-Key
+# 请求头: X-API-Key
 ```
 
 ## 📖 更多文档
 
 - [完整文档](https://hunmer.github.io/aboutme_docs/)
-- [服务器文档](server/CLAUDE.md)
-- [Node.js 服务器与 MCP 文档](packages/server-nodejs/README.md)
+- [Dart 服务器与 MCP 文档](packages/aboutme_server/README.md)
 - [核心功能文档](lib/core/CLAUDE.md)
 
 ## 📄 许可证

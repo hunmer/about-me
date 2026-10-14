@@ -6,7 +6,7 @@
 
 1. `lib/main.dart` → `core/app_initializer.dart` 的 `initializeApp()`
 2. 后台阶段 `_initializeBackgroundServices()` → **`_registerPlugins()`**：
-   - `BuiltinPlugins.createAll()` 按 `_builders` 列表顺序实例化 26 个插件
+   - `BuiltinPlugins.createAll()` 按 `_builders` 列表顺序实例化 28 个插件
    - `globalConfigManager.isPluginEnabled(plugin.id)` 过滤用户禁用的插件
    - `Future.wait` 并发 `PluginManager.registerPlugin(plugin)`（单个失败仅 debugPrint，不中断其他插件）
    - 完成后 `setPluginsReady`（AppStartupState 三阶段：coreReady / pluginsReady / fullyReady）

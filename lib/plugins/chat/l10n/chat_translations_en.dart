@@ -218,5 +218,7 @@ class ChatTranslationsEn {
   'chat_stickerManager': 'Sticker Manager',
   'chat_deleteSticker': 'Delete Sticker',
   'chat_confirmDeleteSticker': 'Delete this sticker?',
+  'chat_back': 'Back',
+  'chat_read': 'Read',
 };
 }

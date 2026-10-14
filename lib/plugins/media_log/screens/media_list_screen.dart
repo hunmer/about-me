@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -437,17 +438,20 @@ class _MediaListScreenState extends State<MediaListScreen> {
                 final item = items[index];
                 // 双列错落：偶数项左列轻微左倾、奇数项右列下移右倾（迁移自 demo）
                 final column = index % 2;
-                return Padding(
-                  padding: EdgeInsets.only(top: column == 1 ? 18 : 0),
-                  child: MediaItemCard(
-                    item: item,
-                    seed: column * 31 + index + 1,
-                    rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
-                    onTap: () => NavigationHelper.push(
-                      context,
-                      MediaDetailScreen(itemId: item.id),
+                // 挂载即播墨线描画入场（design.md §10）
+                return WiredDraw(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: column == 1 ? 18 : 0),
+                    child: MediaItemCard(
+                      item: item,
+                      seed: column * 31 + index + 1,
+                      rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
+                      onTap: () => NavigationHelper.push(
+                        context,
+                        MediaDetailScreen(itemId: item.id),
+                      ),
+                      onLongPress: () => _showItemActions(item),
                     ),
-                    onLongPress: () => _showItemActions(item),
                   ),
                 );
               },
@@ -464,31 +468,34 @@ class _MediaListScreenState extends State<MediaListScreen> {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: index < items.length - 1 ? 12 : 0,
-                  ),
-                  child: SwipeActionWrapper(
-                    key: ValueKey(item.id),
-                    deleteConfirmContent: 'media_deleteConfirmMessage'.tr,
-                    leadingActions: [
-                      SwipeActionPresets.edit(
-                        label: 'media_edit'.tr,
-                        onTap: () => _openItemForm(initial: item),
-                      ),
-                    ],
-                    trailingActions: [
-                      SwipeActionPresets.delete(
-                        label: 'media_delete'.tr,
-                        onTap: () => _confirmDelete(item),
-                      ),
-                    ],
-                    child: MediaItemListTile(
-                      item: item,
-                      seed: index + 1,
-                      onTap: () => NavigationHelper.push(
-                        context,
-                        MediaDetailScreen(itemId: item.id),
+                // 挂载即播墨线描画入场（design.md §10）
+                return WiredDraw(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index < items.length - 1 ? 12 : 0,
+                    ),
+                    child: SwipeActionWrapper(
+                      key: ValueKey(item.id),
+                      deleteConfirmContent: 'media_deleteConfirmMessage'.tr,
+                      leadingActions: [
+                        SwipeActionPresets.edit(
+                          label: 'media_edit'.tr,
+                          onTap: () => _openItemForm(initial: item),
+                        ),
+                      ],
+                      trailingActions: [
+                        SwipeActionPresets.delete(
+                          label: 'media_delete'.tr,
+                          onTap: () => _confirmDelete(item),
+                        ),
+                      ],
+                      child: MediaItemListTile(
+                        item: item,
+                        seed: index + 1,
+                        onTap: () => NavigationHelper.push(
+                          context,
+                          MediaDetailScreen(itemId: item.id),
+                        ),
                       ),
                     ),
                   ),

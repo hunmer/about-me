@@ -2,6 +2,7 @@
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
@@ -36,9 +37,12 @@ class _ArchivedProductsPageState extends State<ArchivedProductsPage> {
                 itemCount: widget.controller.archivedProducts.length,
                 itemBuilder: (context, index) {
                   final product = widget.controller.archivedProducts[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildArchivedProductCard(product),
+                  // 挂载即播墨线描画入场（design.md §10）
+                  return WiredDraw(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildArchivedProductCard(product),
+                    ),
                   );
                 },
               ),

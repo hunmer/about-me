@@ -1,6 +1,7 @@
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -782,18 +783,21 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                           final item = allItems[index]['item'] as GoodsItem;
                           final warehouse =
                               allItems[index]['warehouse'] as Warehouse;
-                          return GoodsItemCard(
-                            item: item,
-                            warehouseTitle: warehouse.title,
-                            warehouseId: warehouse.id,
-                            onTap:
-                                () => NavigationHelper.push(
-                                  context,
-                                  GoodsItemDetailScreen(
-                                    itemId: item.id,
-                                    warehouseId: warehouse.id,
+                          // 挂载即播墨线描画入场（design.md §10）
+                          return WiredDraw(
+                            child: GoodsItemCard(
+                              item: item,
+                              warehouseTitle: warehouse.title,
+                              warehouseId: warehouse.id,
+                              onTap:
+                                  () => NavigationHelper.push(
+                                    context,
+                                    GoodsItemDetailScreen(
+                                      itemId: item.id,
+                                      warehouseId: warehouse.id,
+                                    ),
                                   ),
-                                ),
+                            ),
                           );
                         },
                       );
@@ -808,18 +812,21 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                       final item = allItems[index]['item'] as GoodsItem;
                       final warehouse =
                           allItems[index]['warehouse'] as Warehouse;
-                      return GoodsItemListTile(
-                        item: item,
-                        warehouseTitle: warehouse.title,
-                        warehouseId: warehouse.id,
-                        onTap:
-                            () => NavigationHelper.push(
-                              context,
-                              GoodsItemDetailScreen(
-                                itemId: item.id,
-                                warehouseId: warehouse.id,
+                      // 挂载即播墨线描画入场（design.md §10）
+                      return WiredDraw(
+                        child: GoodsItemListTile(
+                          item: item,
+                          warehouseTitle: warehouse.title,
+                          warehouseId: warehouse.id,
+                          onTap:
+                              () => NavigationHelper.push(
+                                context,
+                                GoodsItemDetailScreen(
+                                  itemId: item.id,
+                                  warehouseId: warehouse.id,
+                                ),
                               ),
-                            ),
+                        ),
                       );
                     },
                   ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -36,6 +37,8 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final drawProgress = WiredDrawTransition.progressOf(context);
     // Material 壳为 Hero 动画源(经 openContainerWithHero),保留结构
     return Material(
       key: _cardKey,
@@ -71,14 +74,14 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
                   Expanded(
                     child: Stack(
                       children: [
-                        Positioned.fill(child: _buildCover()),
+                        Positioned.fill(child: _buildCover(drawProgress)),
                         Positioned(
                           left: 8,
                           right: 8,
                           bottom: 8,
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: _buildNameBadge(theme),
+                            child: _buildNameBadge(theme, drawProgress),
                           ),
                         ),
                       ],
@@ -120,13 +123,14 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   }
 
   /// 左下角名称 badge：skribble 手绘纸底 + 墨线描边
-  Widget _buildNameBadge(AppThemeData theme) {
+  Widget _buildNameBadge(AppThemeData theme, Animation<double>? drawProgress) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: dsSketchDecoration(
         theme: theme,
         fillColor: theme.surface,
         radius: BorderRadius.circular(8),
+        progress: drawProgress,
       ),
       child: Text(
         agent.name,
@@ -194,7 +198,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
   }
 
   /// 构建竖版封面（avatarUrl 支持 assets / 网络 / 本地文件）
-  Widget _buildCover() {
+  Widget _buildCover(Animation<double>? drawProgress) {
     final avatarUrl = agent.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       Widget errorBuilder(
@@ -211,6 +215,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             fit: BoxFit.cover,
             errorBuilder: errorBuilder,
           ),
+          drawProgress,
         );
       }
       if (avatarUrl.startsWith('http')) {
@@ -222,6 +227,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
             fit: BoxFit.cover,
             errorBuilder: errorBuilder,
           ),
+          drawProgress,
         );
       }
       return FutureBuilder<String>(
@@ -237,6 +243,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
                 fit: BoxFit.cover,
                 errorBuilder: errorBuilder,
               ),
+              drawProgress,
             );
           }
           return _buildCoverFallback();
@@ -247,7 +254,7 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
     return _buildCoverFallback();
   }
 
-  Widget _clipCover(Widget child) {
+  Widget _clipCover(Widget child, Animation<double>? drawProgress) {
     final theme = DSThemeBridge.resolve(context);
     final radius = const BorderRadius.vertical(top: Radius.circular(11));
     return Stack(
@@ -257,7 +264,11 @@ class _MarketplaceAgentCardState extends State<MarketplaceAgentCard> {
         // 图片墨线描边覆盖层（无填充，只画手绘边框）
         IgnorePointer(
           child: Container(
-            decoration: dsSketchDecoration(theme: theme, radius: radius),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: radius,
+              progress: drawProgress,
+            ),
           ),
         ),
       ],

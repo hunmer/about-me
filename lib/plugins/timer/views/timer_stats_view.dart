@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:aboutme/core/services/timer/storage/timer_storage.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -20,11 +21,7 @@ class TimerStatsView extends StatefulWidget {
   /// 刷新令牌：变化时重新加载历史记录（宿主切到统计 tab 时递增）
   final int refreshToken;
 
-  const TimerStatsView({
-    super.key,
-    required this.tasks,
-    this.refreshToken = 0,
-  });
+  const TimerStatsView({super.key, required this.tasks, this.refreshToken = 0});
 
   @override
   State<TimerStatsView> createState() => _TimerStatsViewState();
@@ -96,9 +93,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
 
   /// 最近 7 天（含今天）
   List<DateTime> get _last7Days => List.generate(
-        7,
-        (i) => _dayOf(DateTime.now()).subtract(Duration(days: 6 - i)),
-      );
+    7,
+    (i) => _dayOf(DateTime.now()).subtract(Duration(days: 6 - i)),
+  );
 
   /// 从任务的计时器项里查类型，用于类型徽章配色。
   /// 历史记录的 timerId 是启动方传入的 id——可能是 item.id 也可能是
@@ -131,8 +128,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
 
   Color _typeColor(Map<String, dynamic> record) {
     final type = _typeOf(record['timerId'] as String? ?? '');
-    return _typeColors[type] ??
-        Color(record['color'] as int? ?? 0xFF635D5A);
+    return _typeColors[type] ?? Color(record['color'] as int? ?? 0xFF635D5A);
   }
 
   @override
@@ -148,15 +144,18 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       largeTitle: '专注统计',
       enableSearchBar: false,
       largeTitleActions: [_buildWeekPill(theme)],
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
-        children: [
-          _buildHeroCard(theme),
-          const SizedBox(height: 16),
-          _buildBarChartCard(theme),
-          const SizedBox(height: 24),
-          _buildTimelineSection(theme),
-        ],
+      // Tab 切换挂载时墨线描画入场（design.md §10）
+      body: WiredDraw(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
+          children: [
+            _buildHeroCard(theme),
+            const SizedBox(height: 16),
+            _buildBarChartCard(theme),
+            const SizedBox(height: 24),
+            _buildTimelineSection(theme),
+          ],
+        ),
       ),
     );
   }
@@ -174,9 +173,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.5,
-        ),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -211,7 +208,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   Widget _buildHeroCard(ThemeData theme) {
     final now = DateTime.now();
     final today = _durationOf(_dayOf(now));
-    final yesterday = _durationOf(_dayOf(now.subtract(const Duration(days: 1))));
+    final yesterday = _durationOf(
+      _dayOf(now.subtract(const Duration(days: 1))),
+    );
     final diffMin = today.inMinutes - yesterday.inMinutes;
     final todayCount = _recordsOf(_dayOf(now)).length;
 
@@ -357,16 +356,16 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   }
 
   Widget _unit(String u, ThemeData theme) => Padding(
-        padding: const EdgeInsets.only(left: 2),
-        child: Text(
-          u,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 2),
+    child: Text(
+      u,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
 
   // ===== 每日专注分布柱状图 =====
 
@@ -383,11 +382,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.bar_chart,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(Icons.bar_chart, size: 20, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -460,8 +455,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
 
   String _tooltipDayLabel(DateTime day) {
     final isToday = day == _dayOf(DateTime.now());
-    final weekday = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][
-        day.weekday - 1];
+    final weekday = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][day.weekday - 1];
     return isToday ? '$weekday (今日)' : weekday;
   }
 
@@ -469,8 +463,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     final duration = _durationOf(day);
     if (duration.inMinutes == 0) return '未开始专注记录';
     final count = _recordsOf(day).length;
-    final label =
-        '${duration.inHours}小时 ${duration.inMinutes.remainder(60)}分钟';
+    final label = '${duration.inHours}小时 ${duration.inMinutes.remainder(60)}分钟';
     return '$label · $count 次专注';
   }
 
@@ -484,8 +477,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
         .map((d) => d.inMinutes)
         .fold<int>(0, (a, b) => a > b ? a : b);
     // 高度比例相对本周最长的一天；全周无记录时给最小可见高度
-    final ratio =
-        maxMinutes == 0 ? 0.06 : (minutes / maxMinutes).clamp(0.06, 1.0);
+    final ratio = maxMinutes == 0
+        ? 0.06
+        : (minutes / maxMinutes).clamp(0.06, 1.0);
 
     final accent = theme.colorScheme.primary;
     final muted = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35);
@@ -503,9 +497,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-              color: isToday
-                  ? accent
-                  : theme.colorScheme.onSurfaceVariant,
+              color: isToday ? accent : theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 6),
@@ -515,17 +507,19 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 const trackPadding = 2.5;
-                final trackHeight =
-                    constraints.maxHeight - trackPadding * 2;
-                final fillHeight =
-                    (trackHeight * ratio).clamp(6.0, trackHeight);
+                final trackHeight = constraints.maxHeight - trackPadding * 2;
+                final fillHeight = (trackHeight * ratio).clamp(
+                  6.0,
+                  trackHeight,
+                );
                 return Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     color: isToday
                         ? accent.withValues(alpha: 0.25)
-                        : theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.4),
+                        : theme.colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.4,
+                          ),
                   ),
                   padding: const EdgeInsets.all(trackPadding),
                   child: Align(
@@ -553,9 +547,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-              color: isToday
-                  ? accent
-                  : theme.colorScheme.onSurfaceVariant,
+              color: isToday ? accent : theme.colorScheme.onSurfaceVariant,
             ),
           ),
           // 选中天底部小圆点指示
@@ -640,7 +632,11 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     );
   }
 
-  Widget _buildTimelineItem(ThemeData theme, Map<String, dynamic> record, bool showLine) {
+  Widget _buildTimelineItem(
+    ThemeData theme,
+    Map<String, dynamic> record,
+    bool showLine,
+  ) {
     final color = _typeColor(record);
     final duration = Duration(milliseconds: record['duration'] as int? ?? 0);
     final start = DateTime.tryParse(record['timestamp'] as String? ?? '');
@@ -658,8 +654,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     }
 
     final minutes = duration.inMinutes;
-    final durationLabel =
-        minutes >= 60 ? '+${duration.inHours}h' : '+${minutes}m';
+    final durationLabel = minutes >= 60
+        ? '+${duration.inHours}h'
+        : '+${minutes}m';
 
     return IntrinsicHeight(
       child: Row(

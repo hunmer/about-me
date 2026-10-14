@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:provider/provider.dart';
@@ -412,11 +413,14 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               itemCount: scripts.length,
               itemBuilder: (context, index) {
                 final script = scripts[index];
-                return ScriptCard(
-                  script: script,
-                  onTap: () => _showScriptDialog(script: script),
-                  onLongPress: () => _showActionSheet(script),
-                  onRun: () => _runScript(script),
+                // 挂载即播墨线描画入场（design.md §10）
+                return WiredDraw(
+                  child: ScriptCard(
+                    script: script,
+                    onTap: () => _showScriptDialog(script: script),
+                    onLongPress: () => _showActionSheet(script),
+                    onRun: () => _runScript(script),
+                  ),
                 );
               },
             ),

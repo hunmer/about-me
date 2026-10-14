@@ -35,7 +35,7 @@
 
 ## 注册与运行
 
-- 内置清单：`lib/core/builtin_plugins.dart` 的 `BuiltinPlugins._builders` 静态列表，共 **26 个**（顺序即注册顺序）：Chat、OpenAI、AgentChat、Diary、Activity、Checkin、Contact、Habits、Database、Timer、Todo、Day、Tracker、Store、Nodes、Notes、Goods、Bill、Calendar、CalendarAlbum、ScriptsCenter、TTS、Nfc、WebView、Reminder、Live2D。
+- 内置清单：`lib/core/builtin_plugins.dart` 的 `BuiltinPlugins._builders` 静态列表，共 **28 个**（顺序即注册顺序）：Chat、OpenAI、AgentChat、Diary、Activity、Checkin、Contact、Habits、Database、Timer、Todo、Day、Tracker、Store、Nodes、Notes、Goods、Bill、Calendar、CalendarAlbum、ScriptsCenter、TTS、Nfc、WebView、Reminder、Live2D、MediaLog、Achievement（后两个 2026-10 新增）。
 - 实际装配：`core/app_initializer.dart` 的 `_registerPlugins()`——`globalConfigManager.isPluginEnabled(plugin.id)` 过滤禁用插件 → `Future.wait` 并发 `registerPlugin`（单个失败仅 debugPrint 不中断）。
 - `PluginManager.registerPlugin()`（`core/plugin_manager.dart`，231 行，单例）：注入 StorageManager → `plugin.initialize()` → `plugin.registerToApp()` → 广播 `plugin_loaded` 事件。
 - 插件统一经 `openPlugin()` 以 `/plugin/${plugin.id}` 路由名打开主视图。

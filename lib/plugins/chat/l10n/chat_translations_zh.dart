@@ -213,5 +213,7 @@ class ChatTranslationsZh {
   'chat_stickerManager': '贴纸管理',
   'chat_deleteSticker': '删除贴纸',
   'chat_confirmDeleteSticker': '删除这个贴纸？',
+  'chat_back': '返回',
+  'chat_read': '已读',
 };
 }

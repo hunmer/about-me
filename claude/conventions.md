@@ -11,16 +11,11 @@ flutter run              # 运行
 flutter analyze          # 静态检查（无独立 lint 命令）
 flutter build apk --release / flutter build ios --release
 
-# 同步服务器（packages/server-nodejs）
-npm install
-npm run dev              # ts-node-dev 热重载
-npm run build            # 含 admin-vue 构建 + tsc + 拷贝 plugins/admin
-npm test                 # jest --runInBand
-npm run lint             # eslint src/**/*.ts
-
-# MCP 端点（packages/server-nodejs/src/mcp/，挂载于主服务器 /mcp，Streamable HTTP）
-npm run build && npm start
-npm run inspector        # MCP Inspector 调试
+# 同步服务器（packages/aboutme_server，Dart）
+# 数据核心在 packages/aboutme_data_sdk：改动 SDK 后需重新构建并在 aboutme_server 侧更新依赖
+procm-command start server   # 启动/重启服务器（命令定义见 procm-commands.json，默认端口 8874）
+dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑测试
+# 旧 server-nodejs 的 npm run dev/build/test 已废弃（2026-10-11），仅历史参考
 
 # 构建发布（多平台打包 + GitHub Release）
 ./scripts/build.sh       # 配置见 scripts/release_config.json
@@ -42,7 +37,8 @@ npm run inspector        # MCP Inspector 调试
 
 ## 重要兼容性提醒
 
-- **旧文档中的 `server/` 目录已不存在**：Dart 版同步服务器已移除，现行服务器是 `packages/server-nodejs`（默认端口 **8874**，不是旧文档写的 8080）。遇到 `cd server && dart run bin/server.dart` 一类指令一律视为过时。
+- **现行同步服务器是 `packages/aboutme_server`（Dart，默认端口 **8874**）**：数据核心在 `packages/aboutme_data_sdk`。旧文档中的 `server/` 目录、`cd server && dart run bin/server.dart`、`packages/server-nodejs`（2026-10-11 废弃）的 npm 指令一律视为过时。
+- **同步为明文**：端到端加密（AES-256-GCM / X-Encryption-Key）已随数据 SDK 化移除（2026-10-12 删除 encryption_service）。
 - `flutter_config.yaml` 设置 `tree-shake-icons: false`，因为项目使用动态 `IconData`；不要在构建中开启图标树摇。
 - Web 平台差异：`StyledToast` 等库用条件导入（`if (dart.library.io)`）提供存根实现，改动平台相关代码时注意。
 - `build/`、`dist/`、`.dart_tool/`、各平台构建产物均为生成物，不要手工编辑或提交。
@@ -50,11 +46,5 @@ npm run inspector        # MCP Inspector 调试
 
 ## 环境变量
 
-| 服务 | 变量 | 说明 |
-|------|------|------|
-| server-nodejs | `PORT` | 默认 8874 |
-| server-nodejs | `DATA_DIR` | 数据目录，默认 `./data` |
-| server-nodejs | `JWT_SECRET` / `TOKEN_EXPIRY_DAYS` | JWT 配置（未设置时使用开发默认值并告警） |
-| server-nodejs | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 管理面板账号，默认 admin/admin123 |
-| server-nodejs | `ALLOW_REGISTER` / `ENABLE_CORS` / `CORS_ORIGINS` / `MAX_REQUEST_SIZE` | 注册与 CORS 开关 |
-| server-nodejs (MCP) | 无额外变量 | MCP 端点随主服务器启动，认证走请求头 `X-API-Key` / `X-Encryption-Key`，工具进程内直调插件处理器 |
+- 现行服务器配置集中在 `packages/aboutme_server/lib/src/config.dart`（端口 8874 等，详见该文件与包 README）。
+- 旧 server-nodejs 的 `PORT` / `DATA_DIR` / `JWT_SECRET` / `ADMIN_USERNAME` 等环境变量已随包废弃，仅历史参考。

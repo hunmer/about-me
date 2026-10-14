@@ -132,7 +132,7 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
         ],
       ),
       enableLargeTitle: true,
-      previousPageTitle: '返回',
+      previousPageTitle: 'chat_back'.tr,
     );
   }
 

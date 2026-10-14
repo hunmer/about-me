@@ -323,7 +323,7 @@ Future<void> registerToApp(PluginManager pm, ConfigManager cm) async {
 
 - IndexedDB 通常有 50MB+ 的配额
 - 超出配额时会抛出异常
-- 建议大文件使用外部存储（WebDAV 同步）
+- 建议大文件使用外部存储（自建服务器 HTTP 存储后端）
 
 ---
 

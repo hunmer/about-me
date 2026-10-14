@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
 import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
 import 'package:flutter/material.dart';
@@ -111,28 +112,31 @@ class _ProductListState extends State<ProductList> {
             itemBuilder: (context, index) {
               final product = products[index];
               // 点击卡片=兑换确认，长按菜单=兑换/编辑（卡片内部处理）
-              return ProductCard(
+              // 挂载即播墨线描画入场（design.md §10）；key 上移保持条目状态
+              return WiredDraw(
                 key: ValueKey(product.id),
-                product: product,
-                onExchange: () async {
-                  if (await widget.controller.exchangeProduct(product)) {
-                    if (mounted) setState(() {});
-                    Toast.success('store_redeemSuccess'.tr);
-                  } else {
-                    Toast.error('store_redeemFailed'.tr);
-                  }
-                },
-                onLongPress: () {
-                  NavigationHelper.push(
-                    context,
-                    AddProductPage(
-                      controller: widget.controller,
-                      product: product,
-                    ),
-                  ).then((_) {
-                    if (mounted) setState(() {});
-                  });
-                },
+                child: ProductCard(
+                  product: product,
+                  onExchange: () async {
+                    if (await widget.controller.exchangeProduct(product)) {
+                      if (mounted) setState(() {});
+                      Toast.success('store_redeemSuccess'.tr);
+                    } else {
+                      Toast.error('store_redeemFailed'.tr);
+                    }
+                  },
+                  onLongPress: () {
+                    NavigationHelper.push(
+                      context,
+                      AddProductPage(
+                        controller: widget.controller,
+                        product: product,
+                      ),
+                    ).then((_) {
+                      if (mounted) setState(() {});
+                    });
+                  },
+                ),
               );
             },
           );

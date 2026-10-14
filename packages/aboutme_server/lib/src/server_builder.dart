@@ -141,13 +141,12 @@ Future<Handler> buildServer(ServerConfig config) async {
 }
 
 /// 管理界面目录解析：ADMIN_DIR 环境变量 → DATA_DIR/admin →
-/// 当前目录/admin → ../server-nodejs/admin（复用 nodejs 服务器构建产物）。
+/// 当前目录/admin（admin-vue 构建产物，npm run build 于 admin-vue/）。
 String? _resolveAdminDir(ServerConfig config) {
   final candidates = [
     config.adminDirOverride,
     p.join(config.dataDir, 'admin'),
     p.join(Directory.current.path, 'admin'),
-    p.join(Directory.current.path, '..', 'server-nodejs', 'admin'),
   ];
   for (final candidate in candidates) {
     if (candidate != null &&

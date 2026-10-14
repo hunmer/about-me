@@ -76,10 +76,20 @@ class PersistentNavigationBar extends StatelessWidget {
       );
     }
 
+    Widget? trailing = components.trailing;
+    if (trailing != null) {
+      // NavigationToolbar 不给 trailing 留水平边距，这里统一补右侧
+      // 16px（iOS 规范值），仅作用于 trailing，不影响 middle 居中
+      trailing = Padding(
+        padding: const EdgeInsetsDirectional.only(end: 16),
+        child: trailing,
+      );
+    }
+
     Widget paddedToolbar = NavigationToolbar(
       leading: leading,
       middle: middle,
-      trailing: components.trailing,
+      trailing: trailing,
       middleSpacing: 6.0,
     );
 

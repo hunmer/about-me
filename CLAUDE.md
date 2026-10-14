@@ -1,14 +1,15 @@
 # Aboutme
 
-Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 26 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠等），数据本地优先存储，经自建服务器同步（明文）（默认首页为果冻小屋 `/jelly_home`）。2026-10 起新增 AI 伙伴拟人化能力：**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息）与 **moments 朋友圈**（AI 动态流/资产图/自主生图），均在 openai 插件内。
+Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / iOS / Web / Windows / macOS / Linux），采用插件化架构内置 28 个功能插件（聊天、日记、账单、习惯、AI 对话、Live2D 桌宠、**媒体记录**、**成就系统**等），数据本地优先存储，经自建服务器同步（明文）（启动链：首启 onboarding → startup 闸门 → 默认首页果冻小屋 `/jelly_home`）。2026-10 起新增 AI 伙伴拟人化能力：**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息）与 **moments 朋友圈**（AI 动态流/资产图/自主生图），均在 openai 插件内；同期设计系统整体切换为**手绘纸墨风**（skribble 引擎 + TegakiZatsu 手写字体）。
 
-本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 Dart 同步服务器（`packages/aboutme_server`，基于纯数据 SDK `packages/aboutme_data_sdk`，已取代 nodejs 服务器）、多个 Dart 子包（agentlib AI 传输库、dartantic_ai 定制 SDK、super_cupertino_navigation_bar、原生插件等）、共享模型包（`shared_models/`）与专题文档（`docs/`）。技术栈：Flutter/Dart ^3.10 + GetX + flutter_js。
+本仓库是 monorepo：除 Flutter 客户端（`lib/`）外，还包含 Dart 同步服务器链路（`packages/aboutme_server` 薄壳 + `packages/aboutme_data_sdk` 纯数据 SDK，已取代 nodejs 服务器）、多个 Dart 子包（agentlib AI 传输库、dartantic_ai 定制 SDK、super_cupertino_navigation_bar、radial_disc_bottom_bar、原生插件等）、共享模型包（`shared_models/`）与专题文档（`docs/`）。技术栈：Flutter/Dart ^3.10 + GetX + flutter_js。
 
 ## 约定的规则
 
-- 同步服务器在 `packages/aboutme_server`（Dart，默认端口 **8874**，`procm-command start server` 启动；数据核心在 `packages/aboutme_data_sdk`，客户端 `lib/core/storage/` 也是该 SDK 的转发）。旧 nodejs 服务器 `packages/server-nodejs` 已废弃（2026-10-11），仅历史参考。
+- 同步服务器在 `packages/aboutme_server`（Dart，默认端口 **8874**，`procm-command start server` 启动；数据核心在 `packages/aboutme_data_sdk`，客户端 `lib/core/storage/` 也是该 SDK 的转发）。Vue 管理界面源码在 `packages/aboutme_server/admin-vue`，`procm-command start server-admin-build` 构建到同包 `admin/` 由服务器托管于 `/admin/`。旧 nodejs 服务器已于 2026-10-14 彻底移除。
 - 新插件必须注册到 `lib/core/builtin_plugins.dart`；JS API 命名 `get{Entity}s` / `create{Entity}` / `update{Entity}` / `delete{Entity}`；推荐 UseCase 分层（接口放 `shared_models/`）。
-- Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛，`test/` 现有 8 个测试（活人感/design_system/http_storage/live2d/agent_chat），改动相关逻辑后跑 `flutter test`。
+- 新代码的数据访问统一走 `lib/core/data/aboutme_data_service.dart`（本地/远程自动路由），不要再各自直连 StorageManager。
+- Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛，`test/` 现有 17 个测试（活人感/design_system/jelly_live2d/http_storage/media_log/native 工具调用等），改动相关逻辑后跑 `flutter test`。
 - ⚠️ `lib/plugins/openai/aliveness/services/aliveness_store.dart` 与 `test/aliveness_e2e_test.dart` 存在硬编码 API Key，开源/分发前必须移除。
 - `tree-shake-icons: false` 是硬性要求（动态 IconData）；Web 平台部分库走条件导入存根。
 - `build/`、`dist/`、`.dart_tool/`、`Aboutme.ipa` 为生成物，不要编辑；Agent 不主动执行 git 操作。
@@ -34,22 +35,24 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 
 | 模块 | 职责摘要 | 文档 |
 |------|----------|------|
-| `lib/` | Flutter 应用代码（core / plugins×26 / screens / widgets，1868 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
-| `lib/plugins/` | 插件层聚合索引：插件体系架构 + 26 插件职责/路由/约定 | [lib/plugins/CLAUDE.md](lib/plugins/CLAUDE.md) |
-| `lib/plugins/chat` | 频道式聊天/消息记录（109 文件，含 @AI 事件桥） | [lib/plugins/chat/CLAUDE.md](lib/plugins/chat/CLAUDE.md) |
-| `lib/plugins/agent_chat` | 一对一 AI 对话：三阶段工具调用/Agent 链/语音通话 | [lib/plugins/agent_chat/CLAUDE.md](lib/plugins/agent_chat/CLAUDE.md) |
-| `lib/plugins/openai` | AI 中枢（104 文件）：服务商/Agent/预设 + **aliveness 活人感** + **moments 朋友圈** | [lib/plugins/openai/CLAUDE.md](lib/plugins/openai/CLAUDE.md) |
+| `lib/` | Flutter 应用代码（core / plugins×28 / screens / widgets / design_system，约 1880 个 Dart 文件） | [lib/CLAUDE.md](lib/CLAUDE.md) |
+| `lib/plugins/` | 插件层聚合索引：插件体系架构 + 28 插件职责/路由/约定 | [lib/plugins/CLAUDE.md](lib/plugins/CLAUDE.md) |
+| `lib/plugins/chat` | 频道式聊天/消息记录（含 @AI 事件桥、贴图系统、AI 追问线程） | [lib/plugins/chat/CLAUDE.md](lib/plugins/chat/CLAUDE.md) |
+| `lib/plugins/agent_chat` | 一对一 AI 对话：三阶段工具调用/Agent 链/语音通话 + dartantic 原生 function-calling | [lib/plugins/agent_chat/CLAUDE.md](lib/plugins/agent_chat/CLAUDE.md) |
+| `lib/plugins/openai` | AI 中枢（104 文件）：服务商/Agent/预设 + **aliveness 活人感** + **moments 朋友圈** + soul_forge 内置人格师 | [lib/plugins/openai/CLAUDE.md](lib/plugins/openai/CLAUDE.md) |
 | `lib/plugins/live2d` | Live2D 桌宠：存档管理 + TTS 播报（渲染在 jelly_home） | [lib/plugins/live2d/CLAUDE.md](lib/plugins/live2d/CLAUDE.md) |
-| `lib/screens/jelly_home` | 果冻小屋主页（**应用默认启动页**，四页签 + Live2D 渲染核心） | [lib/screens/jelly_home/CLAUDE.md](lib/screens/jelly_home/CLAUDE.md) |
-| `packages/` | 10 个子包聚合索引（1 个 Node 服务 + 3 个 Dart 库 + 6 个原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
+| `lib/plugins/media_log` | 媒体记录：阅读 + 观影记录（瀑布流封面网格，2026-10 新增） | [lib/plugins/media_log/CLAUDE.md](lib/plugins/media_log/CLAUDE.md) |
+| `lib/plugins/achievement` | 成就系统：定义/统计/解锁弹窗/桌面小组件（2026-10 新增） | [lib/plugins/achievement/CLAUDE.md](lib/plugins/achievement/CLAUDE.md) |
+| `lib/screens/jelly_home` | 果冻小屋主页（**应用默认主页**，四页签 + Live2D 渲染核心 + 状态面板） | [lib/screens/jelly_home/CLAUDE.md](lib/screens/jelly_home/CLAUDE.md) |
+| `packages/` | 13 个子包聚合索引（数据 SDK + Dart 服务器 + 4 Dart 库 + 1 vendor 库 + 6 原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
 | `packages/aboutme_data_sdk` | 纯数据 SDK：存储接口/HTTP 远端存储/服务端文件存储/认证/插件数据（客户端与服务器共用） | [packages/aboutme_data_sdk/README.md](packages/aboutme_data_sdk/README.md) |
-| `packages/aboutme_server` | 同步服务器（Dart，REST + WS 实时同步 + 插件 API + MCP /mcp + FCM + 管理界面托管） | [packages/aboutme_server/README.md](packages/aboutme_server/README.md) |
-| `packages/server-nodejs` | [已废弃] 旧 Node.js 同步服务器，被 aboutme_server 取代 | [packages/server-nodejs/README.md](packages/server-nodejs/README.md) |
+| `packages/aboutme_server` | 同步服务器（Dart，REST + WS 实时同步 + 插件 API + MCP /mcp + FCM + 管理界面托管，含 admin-vue 前端源码） | [packages/aboutme_server/README.md](packages/aboutme_server/README.md) |
 | `packages/agentlib` | OpenAI 兼容 HTTP/SSE 传输门面（openai/agent_chat 消费） | [packages/agentlib/CLAUDE.md](packages/agentlib/CLAUDE.md) |
+| `packages/dartantic_ai` | 上游 dartantic_ai 3.4.2 vendor 镜像（3 处定制），agent_chat 原生工具调用消费 | [packages/dartantic_ai/CLAUDE.md](packages/dartantic_ai/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
 | `scripts/` | 多平台构建与发布脚本 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
 | `online/` | WebView 小程序仓库（4 应用）、在线脚本与 Agent 配置 | [online/CLAUDE.md](online/CLAUDE.md) |
-| `docs/` | 67 篇专题文档（小组件/快捷方式/计时器/原生插件实现等） | 未扫描（主题分类见 [文件地图](claude/file-map.md)） |
+| `docs/` | 70 篇专题文档（小组件/快捷方式/计时器/成就系统/原生插件实现等） | 未扫描（主题分类见 [文件地图](claude/file-map.md)） |
 
 ```mermaid
 graph TD
@@ -58,7 +61,7 @@ graph TD
     Root --> Shared["shared_models/"]
     Root --> Docs["docs/ · online/ · scripts/ · handoff/"]
     Pkg --> Srv["aboutme_server 同步服务器（含 /mcp）"]
-    Pkg --> Dart["agentlib · super_cupertino"]
+    Pkg --> Dart["agentlib · dartantic_ai · super_cupertino · radial_disc"]
     Pkg --> Native["6 个原生插件"]
     Lib --> Core["core 核心层"]
     Lib --> Plugins["plugins ×26"]
@@ -67,8 +70,8 @@ graph TD
 
 ## 扫描状态
 
-- 更新时间：2026-10-05（第五轮：补扫上轮全部遗留——live2d/jelly_home/form_fields/agentlib 深扫建档；openai 重写并记录 10 月新增的 aliveness/moments 子系统；server-nodejs 9-15 WS 与自预热变更核实；git 9-14 以来 22 个提交的文件级 diff 复核）
-- 已扫描：前四轮全部范围 + 本轮 openai 全量（104 文件含两个新子系统逐个）、live2d 全部 9 文件、jelly_home 全部 17 文件、form_fields 50 文件清单与消费方、agentlib 全量、server-nodejs 变更 diff、test/ 清单（8 个）。
-- 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制。
-- 未深扫（下次增量优先）：`docs/` 67 篇正文、22 个旧版插件 CLAUDE.md 向新格式迁移、jelly_live2d.dart 渲染内部（1180 行）、openai 市场(soul_forge)/controllers 细节、5 个原生插件的平台代码。
+- 更新时间：2026-10-14（第六轮：dartantic_ai 首次建档；新增插件 media_log/achievement 建档，26→28；packages 索引 10→14 子包；复核 10-05 以来 176 个提交的模块级 diff——设计系统切手绘纸墨风(skribble)、启动链加 onboarding/startup 闸门、encryption_service 删除改明文、测试 8→17；修正 10-06/10-08/10-12 四次未记录更新的滞后）
+- 已扫描：packages/dartantic_ai 全量（vendor 提交、定制 3 处、消费方、测试）、media_log 与 achievement 全部源文件、lib 高变动模块 diff（openai/agent_chat/chat/notes/jelly_home/widgets/core/design_system）、aboutme_data_sdk 与 aboutme_server 目录结构、builtin_plugins 28 插件逐一核对、test/ 清单（17 个）、根目录新目录定性（plan/outputs/skills/tools/design.md）。
+- 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制、docs/ 正文。
+- 未深扫（下次增量优先）：aboutme_data_sdk 与 aboutme_server 源码细节（现以 README 为准）、docs/ 70 篇正文、lib/design_system 无独立文档（skribble 重设计后建议建档）、calendar_album entry_detail 删除后的能力归属、js_bridge/storage 系列 M 文件内部语义、22 个旧版插件 CLAUDE.md 向新格式迁移。
 - 详细覆盖度量与续跑建议见 [索引变更记录](claude/changelog.md)。

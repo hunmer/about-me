@@ -71,7 +71,7 @@
 - `controllers/settings_screen_controller.dart` - 设置控制器
 - `controllers/base_settings_controller.dart` - 控制器基类
 - `controllers/export_controller.dart` / `import_controller.dart` - 导出/导入控制器
-- `controllers/full_backup_controller.dart` - 全量备份控制器（远程备份走 server-nodejs HTTP 存储后端，WebDAV 控制器已删除）
+- `controllers/full_backup_controller.dart` - 全量备份控制器（远程备份走 aboutme_server HTTP 存储后端；WebDAV 控制器与加密服务已删除）
 - `controllers/live_activities_controller.dart` - Live Activities 控制器
 - `controllers/auto_update_controller.dart` - 自动更新控制器
 - `controllers/rebuild_controller.dart` - 重建控制器
