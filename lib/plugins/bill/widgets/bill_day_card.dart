@@ -42,57 +42,60 @@ class BillDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: bills.length,
-            summary: _summaryText(),
-            onAdd: onAddBill == null ? null : () => onAddBill!(date),
-          ),
-          Expanded(
-            child:
-                bills.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DsIcon(
-                            DsIconKind.piggy,
-                            size: 32,
-                            color: theme.disabled.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'bill_dayCardEmpty'.tr,
-                            style: TextStyle(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: bills.length,
+              summary: _summaryText(),
+              onAdd: onAddBill == null ? null : () => onAddBill!(date),
+            ),
+            Expanded(
+              child:
+                  bills.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            DsIcon(
+                              DsIconKind.piggy,
+                              size: 32,
                               color: theme.disabled.withValues(alpha: 0.4),
-                              fontSize: 12,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'bill_dayCardEmpty'.tr,
+                              style: TextStyle(
+                                color: theme.disabled.withValues(alpha: 0.4),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: bills.length,
+                        itemBuilder: (context, index) {
+                          return _buildBillItem(context, bills[index]);
+                        },
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: bills.length,
-                      itemBuilder: (context, index) {
-                        return _buildBillItem(context, bills[index]);
-                      },
-                    ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -47,56 +47,60 @@ class RecordDayCard extends StatelessWidget {
     final visible =
         records.where((record) => goalById.containsKey(record.goalId)).toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.sm,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: visible.length,
-            onAdd: onAddRecord,
-          ),
-          Expanded(
-            child:
-                visible.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // DS 无旗帜图标，用图钉顶替
-                          DsIcon(
-                            DsIconKind.pin,
-                            size: 32,
-                            color: theme.disabled,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'tracker_dayCardEmpty'.tr,
-                            style: DsTypography.caption.copyWith(
+    // 手绘墨线卡片容器(design.md §9),裁剪改外包 ClipRRect(参考 date_view_grid._buildCard)
+    return ClipRRect(
+      borderRadius: theme.radii.sm,
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: theme.radii.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: visible.length,
+              onAdd: onAddRecord,
+            ),
+            Expanded(
+              child:
+                  visible.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // DS 无旗帜图标，用图钉顶替
+                            DsIcon(
+                              DsIconKind.pin,
+                              size: 32,
                               color: theme.disabled,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'tracker_dayCardEmpty'.tr,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.disabled,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: visible.length,
+                        itemBuilder: (context, index) {
+                          return _buildRecordItem(context, visible[index]);
+                        },
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: visible.length,
-                      itemBuilder: (context, index) {
-                        return _buildRecordItem(context, visible[index]);
-                      },
-                    ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

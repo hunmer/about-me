@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/chat/models/tag.dart';
 import 'package:aboutme/plugins/chat/screens/tags/tag_messages_screen.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/stacked_folder_card.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
@@ -132,9 +133,17 @@ class _TagsScreenState extends State<TagsScreen> {
     ];
   }
 
-  /// 构建标签卡片列表（堆叠文件夹卡片，中尺寸）
-  Widget _buildTagsList() {
-    return ListView.builder(
+  /// 构建标签卡片网格（堆叠文件夹卡片，一行两列）
+  Widget _buildTagsGrid() {
+    return GridView.builder(
+      // 格子纵横比与卡片内部设计稿(320x410)一致，inline 卡片撑满格子，
+      // FittedBox 完全贴合，内容展示最大化
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 320 / 410,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
       padding: EdgeInsets.fromLTRB(
         16, 8, 16, 8 + MediaQuery.paddingOf(context).bottom,
       ),
@@ -146,10 +155,12 @@ class _TagsScreenState extends State<TagsScreen> {
             .toList();
         final fallbackLines = <String>['#${tag.name}'];
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+        return HandDrawnStickyItem(
+          tiltKey: tag.name,
+          showTape: false,
           child: StackedFolderCardWidget(
             key: ValueKey(tag.name),
+            inline: true,
             title: '#${tag.name}',
             subtitle: 'chat_messageCount'.trParams({
               'count': tag.messageCount.toString(),
@@ -231,7 +242,7 @@ class _TagsScreenState extends State<TagsScreen> {
                 ? const Center(child: DSLoadingDots())
                 : _filteredTags.isEmpty
                 ? _buildEmptyState()
-                : _buildTagsList(),
+                : _buildTagsGrid(),
       ),
     );
   }

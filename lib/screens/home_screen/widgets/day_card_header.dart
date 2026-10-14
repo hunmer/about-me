@@ -45,13 +45,16 @@ class DayCardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final titleColor = theme.isDark ? color.withOpacity(0.8) : color;
+    final titleColor = theme.isDark ? color.withValues(alpha: 0.8) : color;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      // 卡片内部分区色带 + 底部单边分隔线:纯指示色块,保留 BoxDecoration
+      // (外层卡片容器已由日卡统一 dsSketchDecoration 描边,头部再画
+      // 四边墨线会形成嵌套双框,且单边 Border 无法用 dsSketchDecoration 表达)
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        border: Border(bottom: BorderSide(color: color.withOpacity(0.3))),
+        color: color.withValues(alpha: 0.1),
+        border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.3))),
       ),
       child: Row(
         children: [
@@ -94,9 +97,11 @@ class DayCardHeader extends StatelessWidget {
                       horizontal: 6,
                       vertical: 2,
                     ),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
+                    // 计数徽章:小控件档手绘化(design.md §9.1)
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: color.withValues(alpha: 0.2),
+                      radius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '$count',

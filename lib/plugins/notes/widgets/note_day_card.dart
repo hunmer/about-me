@@ -38,25 +38,27 @@ class NoteDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: notes.length,
-            onAdd: onAddNote,
-          ),
-          Expanded(
-            child:
-                notes.isEmpty
-                    ? Center(
+    // 手绘墨线卡片容器(design.md §9),裁剪改外包 ClipRRect(参考 date_view_grid._buildCard)
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: notes.length,
+              onAdd: onAddNote,
+            ),
+            Expanded(
+              child: notes.isEmpty
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -75,7 +77,7 @@ class NoteDayCard extends StatelessWidget {
                         ],
                       ),
                     )
-                    : ListView.builder(
+                  : ListView.builder(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
@@ -85,8 +87,9 @@ class NoteDayCard extends StatelessWidget {
                         return _buildNoteItem(context, notes[index]);
                       },
                     ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

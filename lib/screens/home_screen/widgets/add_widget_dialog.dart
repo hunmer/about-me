@@ -10,6 +10,7 @@ import 'package:aboutme/screens/home_screen/models/home_widget_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/screens/home_screen/widgets/common_widget_selector_page.dart';
 
 /// 添加小组件对话框 - 使用 SuperCupertinoNavigationWrapper 重构版本
@@ -357,8 +358,8 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
     Toast.success('已添加 ${widget.name} 到$location');
   }
 
-  /// 构建组件网格视图
-  Widget _buildWidgetGrid(List<HomeWidget> widgets) {
+  /// 构建组件列表视图 - 手绘便签风格，高度随内容自适应
+  Widget _buildWidgetList(List<HomeWidget> widgets) {
     if (widgets.isEmpty) {
       return Center(
         child: DSThemeBridge(
@@ -381,25 +382,16 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
       );
     }
 
-    // 根据屏幕宽度动态调整列数和宽高比
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth < 400 ? 1 : 2;
-    final childAspectRatio = screenWidth < 400 ? 1.2 : 0.85;
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: childAspectRatio,
-      ),
+    return HandDrawnListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: widgets.length,
+      tiltKeyOf: (index) => widgets[index].id,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) => _buildWidgetPreviewCard(widgets[index]),
     );
   }
 
-  /// 构建小组件预览卡片
+  /// 构建小组件预览卡片（高度随内容自适应）
   Widget _buildWidgetPreviewCard(HomeWidget widget) {
     return DSThemeBridge(
       child: Builder(
@@ -415,125 +407,106 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                 color: pressed ? theme.surfaceAlt : theme.surface,
                 child: ClipRRect(
                   borderRadius: theme.radii.lg,
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 图标和标题
-                          Container(
-                            padding: EdgeInsets.all(theme.spacing.lg),
+                  child: Padding(
+                    padding: EdgeInsets.all(theme.spacing.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 图标
+                        Container(
+                          padding: EdgeInsets.all(theme.spacing.md),
+                          decoration: BoxDecoration(
                             color: widget.color?.withValues(alpha: 0.1),
-                            child: Column(
-                              children: [
-                                // 注册表图标为持久化 IconData，保留 Material Icon
-                                Icon(
-                                  widget.icon,
-                                  size: 48,
-                                  color: widget.color,
+                            borderRadius: theme.radii.md,
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            size: 36,
+                            color: widget.color,
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.md),
+                        // 名称 + 描述 + 标签，高度由内容决定
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.name,
+                                style: DsTypography.heading.copyWith(
+                                  color: theme.text,
                                 ),
-                                SizedBox(height: theme.spacing.sm),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (widget.description != null) ...[
+                                SizedBox(height: theme.spacing.xs),
                                 Text(
-                                  widget.name,
-                                  style: DsTypography.heading.copyWith(
-                                    color: theme.text,
+                                  widget.description!,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
                                   ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
+                                  maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
-                            ),
-                          ),
-
-                          // 描述文本
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.all(theme.spacing.md),
-                              child:
-                                  widget.description != null
-                                      ? Text(
-                                        widget.description!,
-                                        style: DsTypography.caption.copyWith(
-                                          color: theme.textSub,
-                                        ),
-                                        maxLines: 4,
-                                        overflow: TextOverflow.ellipsis,
-                                      )
-                                      : const SizedBox.shrink(),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // 尺寸标签 - 右上角
-                      Positioned(
-                        top: theme.spacing.xs,
-                        right: theme.spacing.xs,
-                        child:
-                            widget.effectiveSupportedSizes.length > 2
-                                ? _buildBadge(
-                                  theme,
-                                  '${widget.effectiveSupportedSizes.length}个可用大小',
-                                )
-                                : Wrap(
-                                  spacing: 4,
-                                  runSpacing: 4,
-                                  children:
-                                      widget.effectiveSupportedSizes
-                                          .map(
-                                            (size) => _buildBadge(
-                                              theme,
-                                              '${size.width}×${size.height}',
-                                            ),
-                                          )
-                                          .toList(),
-                                ),
-                      ),
-
-                      // 公共小组件适配标签 - 左上角
-                      if (widget.supportsCommonWidgets)
-                        Positioned(
-                          top: theme.spacing.xs,
-                          left: theme.spacing.xs,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.success,
-                              borderRadius: theme.radii.pill,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DsIcon(
-                                  DsIconKind.grid,
-                                  size: 10,
-                                  color: theme.onSuccess,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '适配公共组件',
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.onSuccess,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                              SizedBox(height: theme.spacing.sm),
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
+                                children: [
+                                  if (widget.supportsCommonWidgets)
+                                    _buildCommonWidgetBadge(theme),
+                                  ...widget.effectiveSupportedSizes.map(
+                                    (size) => _buildBadge(
+                                      theme,
+                                      '${size.width}×${size.height}',
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  /// 公共小组件适配标签
+  Widget _buildCommonWidgetBadge(AppThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.success,
+        borderRadius: theme.radii.pill,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DsIcon(
+            DsIconKind.grid,
+            size: 10,
+            color: theme.onSuccess,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '适配公共组件',
+            style: DsTypography.caption.copyWith(
+              color: theme.onSuccess,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -588,7 +561,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
           enableLargeTitle: true,
 
           // 主体内容 - 使用相同的过滤后的组件列表
-          body: _buildWidgetGrid(filteredWidgets),
+          body: _buildWidgetList(filteredWidgets),
 
           // 搜索配置
           enableSearchBar: true,
@@ -599,7 +572,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
             });
           },
           // 搜索结果页面 - 使用相同的过滤逻辑
-          searchBody: _buildWidgetGrid(filteredWidgets),
+          searchBody: _buildWidgetList(filteredWidgets),
 
           // 多条件过滤配置
           enableMultiFilter: true,

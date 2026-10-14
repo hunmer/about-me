@@ -35,55 +35,58 @@ class CheckinDayCard extends StatelessWidget {
     final theme = DSThemeBridge.resolve(context);
     final checkedCount = items.where(_isChecked).length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: items.isEmpty ? null : checkedCount,
-            summary: items.isEmpty ? null : '$checkedCount/${items.length}',
-          ),
-          Expanded(
-            child:
-                items.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DsIcon(
-                            DsIconKind.check,
-                            size: 32,
-                            color: theme.textSub.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'checkin_dayCardEmpty'.tr,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: items.isEmpty ? null : checkedCount,
+              summary: items.isEmpty ? null : '$checkedCount/${items.length}',
+            ),
+            Expanded(
+              child:
+                  items.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            DsIcon(
+                              DsIconKind.check,
+                              size: 32,
+                              color: theme.textSub.withValues(alpha: 0.4),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'checkin_dayCardEmpty'.tr,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          return _buildItemRow(context, items[index]);
+                        },
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        return _buildItemRow(context, items[index]);
-                      },
-                    ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,9 +130,10 @@ class CheckinDayCard extends StatelessWidget {
             if (checked)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: item.color.withValues(alpha: 0.2),
+                  radius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

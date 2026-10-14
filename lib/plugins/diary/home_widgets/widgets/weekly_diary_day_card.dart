@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../data.dart';
 import '../utils.dart';
 
@@ -13,18 +15,19 @@ Widget buildDayCard(
   DateTime date,
   WeekDiaryCardData cardData,
 ) {
+  final dsTheme = DSThemeBridge.resolve(context);
+
   return Expanded(
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      decoration: BoxDecoration(
-        color:
+      decoration: dsSketchDecoration(
+        theme: dsTheme,
+        fillColor:
             cardData.isToday
-                ? Colors.indigo.withValues(alpha: 0.1)
-                : Colors.grey.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(8),
-        border:
-            cardData.isToday ? Border.all(color: Colors.indigo, width: 1.5) : null,
+                ? dsTheme.primary.withValues(alpha: 0.1)
+                : dsTheme.surfaceAlt,
+        radius: BorderRadius.circular(8),
       ),
       child: InkWell(
         onTap: () => openDiaryEditor(context, date),
@@ -38,7 +41,7 @@ Widget buildDayCard(
               Text(
                 cardData.weekday,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: cardData.isToday ? Colors.indigo : Colors.grey,
+                  color: cardData.isToday ? dsTheme.primary : dsTheme.textSub,
                   fontWeight:
                       cardData.isToday ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -48,7 +51,7 @@ Widget buildDayCard(
                 cardData.dayNumber,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: cardData.isToday ? Colors.indigo : Colors.black87,
+                  color: cardData.isToday ? dsTheme.primary : dsTheme.text,
                 ),
               ),
               const SizedBox(height: 4),
@@ -65,7 +68,7 @@ Widget buildDayCard(
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontSize: 10,
-                  color: cardData.hasEntry ? Colors.black87 : Colors.grey[400],
+                  color: cardData.hasEntry ? dsTheme.text : dsTheme.disabled,
                 ),
               ),
             ],

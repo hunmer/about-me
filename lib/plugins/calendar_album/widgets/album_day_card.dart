@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
@@ -37,60 +39,63 @@ class AlbumDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final dsTheme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: entries.length,
-            onAdd: onAddEntry == null ? null : () => onAddEntry!(date),
-          ),
-          Expanded(
-            child:
-                entries.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.photo_library_outlined,
-                            size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'calendar_album_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: dsTheme,
+          fillColor: dsTheme.surface,
+          radius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: entries.length,
+              onAdd: onAddEntry == null ? null : () => onAddEntry!(date),
+            ),
+            Expanded(
+              child:
+                  entries.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            DsIcon(
+                              DsIconKind.image,
+                              size: 32,
+                              color: dsTheme.disabled.withValues(alpha: 0.4),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'calendar_album_dayCardEmpty'.tr,
+                              style: TextStyle(
+                                color: dsTheme.disabled.withValues(
+                                  alpha: 0.4,
+                                ),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          return _buildEntryItem(context, entries[index]);
+                        },
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
-                        return _buildEntryItem(context, entries[index]);
-                      },
-                    ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -98,6 +103,7 @@ class AlbumDayCard extends StatelessWidget {
   /// 单条目行：标题 + 缩略图行
   Widget _buildEntryItem(BuildContext context, CalendarEntry entry) {
     final theme = Theme.of(context);
+    final dsTheme = DSThemeBridge.resolve(context);
     final images = _imagesFor(entry);
 
     return InkWell(
@@ -142,14 +148,15 @@ class AlbumDayCard extends StatelessWidget {
                         width: 52,
                         height: 52,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
+                        decoration: dsSketchDecoration(
+                          theme: dsTheme,
+                          fillColor: dsTheme.surfaceAlt,
+                          radius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '+${images.length - 3}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: dsTheme.textSub,
                           ),
                         ),
                       ),
@@ -195,15 +202,12 @@ class AlbumDayCard extends StatelessWidget {
   }
 
   Widget _placeholder(BuildContext context) {
+    final dsTheme = DSThemeBridge.resolve(context);
     return Container(
       width: 52,
       height: 52,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Icon(
-        Icons.image_outlined,
-        size: 18,
-        color: Theme.of(context).disabledColor,
-      ),
+      color: dsTheme.surfaceAlt,
+      child: DsIcon(DsIconKind.image, size: 18, color: dsTheme.disabled),
     );
   }
 }

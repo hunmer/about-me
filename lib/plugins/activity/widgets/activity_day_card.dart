@@ -38,55 +38,58 @@ class ActivityDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: color,
-            date: date,
-            count: records.length,
-            onAdd: onAddActivity == null ? null : () => onAddActivity!(date),
-          ),
-          Expanded(
-            child:
-                records.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DsIcon(
-                            DsIconKind.clock,
-                            size: 32,
-                            color: theme.disabled.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'activity_dayCardEmpty'.tr,
-                            style: DsTypography.caption.copyWith(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayCardHeader(
+              color: color,
+              date: date,
+              count: records.length,
+              onAdd: onAddActivity == null ? null : () => onAddActivity!(date),
+            ),
+            Expanded(
+              child:
+                  records.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            DsIcon(
+                              DsIconKind.clock,
+                              size: 32,
                               color: theme.disabled.withValues(alpha: 0.4),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'activity_dayCardEmpty'.tr,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.disabled.withValues(alpha: 0.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: records.length,
+                        itemBuilder: (context, index) {
+                          return _buildRecordItem(context, records[index]);
+                        },
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: records.length,
-                      itemBuilder: (context, index) {
-                        return _buildRecordItem(context, records[index]);
-                      },
-                    ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -151,9 +154,10 @@ class ActivityDayCard extends StatelessWidget {
                               horizontal: 5,
                               vertical: 1,
                             ),
-                            decoration: BoxDecoration(
-                              color: theme.surfaceAlt,
-                              borderRadius: BorderRadius.circular(8),
+                            decoration: dsSketchDecoration(
+                              theme: theme,
+                              fillColor: theme.surfaceAlt,
+                              radius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               tag,

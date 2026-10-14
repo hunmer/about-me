@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/common/memorial_day_card.dart' as common;
@@ -64,6 +66,8 @@ class _MemorialDayCardWithMenu extends StatelessWidget {
 
   /// 显示底部操作菜单
   void _showBottomSheetMenu(BuildContext context) {
+    // 菜单图标取色走 DS 主题(design.md §6/§9),resolve 永不抛错
+    final theme = DSThemeBridge.resolve(context);
     SmoothBottomSheet.showWithTitle(
       context: context,
       title: memorialDay.title,
@@ -72,7 +76,7 @@ class _MemorialDayCardWithMenu extends StatelessWidget {
         children: [
           // 编辑按钮
           ListTile(
-            leading: const Icon(Icons.edit, color: Colors.blue),
+            leading: DsIcon(DsIconKind.edit, color: theme.primary),
             title: Text('day_editMemorialDay'.tr),
             onTap: () {
               Navigator.pop(context);
@@ -81,7 +85,7 @@ class _MemorialDayCardWithMenu extends StatelessWidget {
           ),
           // 删除按钮
           ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
+            leading: DsIcon(DsIconKind.trash, color: theme.danger),
             title: Text('day_deleteMemorialDay'.tr),
             onTap: () {
               Navigator.pop(context);
