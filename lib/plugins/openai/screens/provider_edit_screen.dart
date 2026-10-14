@@ -368,7 +368,6 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold/AppBar 属结构性组件,刻意保留 Material
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
@@ -391,290 +390,318 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
               }
             },
             child: Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  widget.provider == null
-                      ? 'openai_addProvider'.tr
-                      : 'openai_editProvider'.tr,
-                ),
-                actions: [
-                  // DS 按钮自带 DSThemeBridge 提供 AppTheme
-                  DSThemeBridge(
-                    child: Builder(
-                      builder: (context) {
-                        final theme = DSThemeBridge.resolve(context);
-                        return DSIconButton(
-                          icon: DsIconKind.check,
-                          size: 40,
-                          color: theme.surfaceAlt,
-                          iconColor: theme.textSub,
-                          onPressed: _saveProvider,
-                          tooltip: 'openai_saveTooltip'.tr,
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              body: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  DSSegmentedControl(
-                    options: [
-                      'openai_modeRegular'.tr,
-                      'openai_modeAdvanced'.tr,
-                    ],
-                    selected: _isAdvanced ? 1 : 0,
-                    onChanged: _onModeChanged,
-                  ),
-                  const SizedBox(height: 8),
-                  if (!_isAdvanced)
-                    Text(
-                      'openai_regularModeDesc'.tr,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
+              backgroundColor: dsScaffoldBackground(theme),
+              body: SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    // design.md §2.1：表单页用轻量手绘顶栏（DSLightHeader）
+                    DSLightHeader(
+                      title: widget.provider == null
+                          ? 'openai_addProvider'.tr
+                          : 'openai_editProvider'.tr,
+                      trailing: DSIconButton(
+                        icon: DsIconKind.check,
+                        size: 38,
+                        color: theme.surface,
+                        iconColor: theme.text,
+                        onPressed: _saveProvider,
+                        tooltip: 'openai_saveTooltip'.tr,
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  if (_isAdvanced) ...[
-                    DSInput(
-                      controller: _labelController,
-                      label: 'openai_serviceProvider'.tr,
-                      hint: 'openai_pleaseSelectProvider'.tr,
-                      errorText: _labelError,
-                      onChanged: (_) {
-                        if (_labelError != null) {
-                          setState(() => _labelError = null);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DSInput(
-                      controller: _baseUrlController,
-                      label: 'openai_baseUrl'.tr,
-                      hint: 'openai_enterBaseUrl'.tr,
-                      errorText: _baseUrlError,
-                      onChanged: (_) {
-                        if (_baseUrlError != null) {
-                          setState(() => _baseUrlError = null);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DSInput(
-                            controller: _defaultModelController,
-                            label: '默认模型',
-                            hint: '选择此服务商的默认模型',
-                          ),
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          16,
+                          16,
+                          16 + MediaQuery.paddingOf(context).bottom,
                         ),
-                        SizedBox(width: theme.spacing.sm),
-                        DSIconButton(
-                          icon: DsIconKind.search,
-                          size: 40,
-                          color: theme.surfaceAlt,
-                          iconColor: theme.textSub,
-                          onPressed: _selectDefaultModel,
-                          tooltip: 'openai_searchModel'.tr,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DSSelect<String>(
-                      value: _apiFormat,
-                      hint: '选择 API 格式',
-                      items: ApiFormat.values
-                          .map(
-                            (format) => DSSelectItem(
-                              label: format.label,
-                              value: format.value,
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _apiFormat = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Headers',
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                        _HeaderQuickSelect(
-                          onSelected: (headerKey) {
-                            _headerKeyController.text = headerKey;
-                            // 自动聚焦到 value 输入框
-                            FocusScope.of(context).requestFocus(FocusNode());
-                            // 延迟聚焦，确保文本已填充
-                            Future.delayed(
-                              const Duration(milliseconds: 100),
-                              () {
-                                // 这里可以添加聚焦逻辑
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // 描边对齐 DSInput/DSSelect（textSub 淡墨线 + 1.6 线宽）
-                    JellyBox(
-                      radius: theme.radii.xl,
-                      padding: const EdgeInsets.all(16),
-                      strokeColor: theme.textSub.withValues(alpha: 0.45),
-                      borderWidth: 1.6,
-                      child: Column(
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: DSInput(
-                                  controller: _headerKeyController,
-                                  label: 'openai_headerKey'.tr,
-                                  hint: 'openai_enterHeaders'.tr,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: DSInput(
-                                  controller: _headerValueController,
-                                  label: 'openai_headerValue'.tr,
-                                  hint: 'openai_enterHeaders'.tr,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              DSIconButton(
-                                icon: DsIconKind.plus,
-                                size: 40,
-                                color: theme.surfaceAlt,
-                                iconColor: theme.textSub,
-                                onPressed: _addHeader,
-                                tooltip: 'openai_addHeader'.tr,
-                              ),
+                          DSSegmentedControl(
+                            options: [
+                              'openai_modeRegular'.tr,
+                              'openai_modeAdvanced'.tr,
                             ],
+                            selected: _isAdvanced ? 1 : 0,
+                            onChanged: _onModeChanged,
                           ),
+                          const SizedBox(height: 8),
+                          if (!_isAdvanced)
+                            Text(
+                              'openai_regularModeDesc'.tr,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
                           const SizedBox(height: 16),
-                          _headers.isEmpty
-                              ? Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: Text(
-                                      'openai_noHeaders'.tr,
-                                      style: DsTypography.caption.copyWith(
-                                        color: theme.textSub,
-                                      ),
-                                    ),
+                          if (_isAdvanced) ...[
+                            DSInput(
+                              controller: _labelController,
+                              label: 'openai_serviceProvider'.tr,
+                              hint: 'openai_pleaseSelectProvider'.tr,
+                              errorText: _labelError,
+                              onChanged: (_) {
+                                if (_labelError != null) {
+                                  setState(() => _labelError = null);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DSInput(
+                              controller: _baseUrlController,
+                              label: 'openai_baseUrl'.tr,
+                              hint: 'openai_enterBaseUrl'.tr,
+                              errorText: _baseUrlError,
+                              onChanged: (_) {
+                                if (_baseUrlError != null) {
+                                  setState(() => _baseUrlError = null);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DSInput(
+                                    controller: _defaultModelController,
+                                    label: '默认模型',
+                                    hint: '选择此服务商的默认模型',
                                   ),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _headers.length,
-                                  itemBuilder: (context, index) {
-                                    final key = _headers.keys.elementAt(index);
-                                    final value = _headers[key]!;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  key,
-                                                  style: DsTypography.body
-                                                      .copyWith(
-                                                        color: theme.text,
-                                                      ),
-                                                ),
-                                                Text(
-                                                  value,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: DsTypography.caption
-                                                      .copyWith(
-                                                        color: theme.textSub,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          DSIconButton(
-                                            icon: DsIconKind.edit,
-                                            size: 36,
-                                            color: theme.surfaceAlt,
-                                            iconColor: theme.textSub,
-                                            onPressed: () => _editHeader(key),
-                                            tooltip: 'openai_editHeader'.tr,
-                                          ),
-                                          DSIconButton(
-                                            icon: DsIconKind.trash,
-                                            size: 36,
-                                            color: theme.danger,
-                                            iconColor: theme.onDanger,
-                                            onPressed: () => _removeHeader(key),
-                                            tooltip: 'openai_deleteHeader'.tr,
-                                          ),
-                                        ],
-                                      ),
+                                ),
+                                SizedBox(width: theme.spacing.sm),
+                                DSIconButton(
+                                  icon: DsIconKind.search,
+                                  size: 40,
+                                  color: theme.surfaceAlt,
+                                  iconColor: theme.textSub,
+                                  onPressed: _selectDefaultModel,
+                                  tooltip: 'openai_searchModel'.tr,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            DSSelect<String>(
+                              value: _apiFormat,
+                              hint: '选择 API 格式',
+                              items: ApiFormat.values
+                                  .map(
+                                    (format) => DSSelectItem(
+                                      label: format.label,
+                                      value: format.value,
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _apiFormat = value;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Headers',
+                                  style: DsTypography.title.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                                _HeaderQuickSelect(
+                                  onSelected: (headerKey) {
+                                    _headerKeyController.text = headerKey;
+                                    // 自动聚焦到 value 输入框
+                                    FocusScope.of(
+                                      context,
+                                    ).requestFocus(FocusNode());
+                                    // 延迟聚焦，确保文本已填充
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        // 这里可以添加聚焦逻辑
+                                      },
                                     );
                                   },
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // 描边对齐 DSInput/DSSelect（textSub 淡墨线 + 1.6 线宽）
+                            JellyBox(
+                              radius: theme.radii.xl,
+                              padding: const EdgeInsets.all(16),
+                              strokeColor: theme.textSub.withValues(
+                                alpha: 0.45,
+                              ),
+                              borderWidth: 1.6,
+                              child: Column(
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: DSInput(
+                                          controller: _headerKeyController,
+                                          label: 'openai_headerKey'.tr,
+                                          hint: 'openai_enterHeaders'.tr,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: DSInput(
+                                          controller: _headerValueController,
+                                          label: 'openai_headerValue'.tr,
+                                          hint: 'openai_enterHeaders'.tr,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      DSIconButton(
+                                        icon: DsIconKind.plus,
+                                        size: 40,
+                                        color: theme.surfaceAlt,
+                                        iconColor: theme.textSub,
+                                        onPressed: _addHeader,
+                                        tooltip: 'openai_addHeader'.tr,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _headers.isEmpty
+                                      ? Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: Text(
+                                              'openai_noHeaders'.tr,
+                                              style: DsTypography.caption
+                                                  .copyWith(
+                                                    color: theme.textSub,
+                                                  ),
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: _headers.length,
+                                          itemBuilder: (context, index) {
+                                            final key = _headers.keys.elementAt(
+                                              index,
+                                            );
+                                            final value = _headers[key]!;
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 4,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          key,
+                                                          style: DsTypography
+                                                              .body
+                                                              .copyWith(
+                                                                color:
+                                                                    theme.text,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          value,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: DsTypography
+                                                              .caption
+                                                              .copyWith(
+                                                                color: theme
+                                                                    .textSub,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  DSIconButton(
+                                                    icon: DsIconKind.edit,
+                                                    size: 36,
+                                                    color: theme.surfaceAlt,
+                                                    iconColor: theme.textSub,
+                                                    onPressed: () =>
+                                                        _editHeader(key),
+                                                    tooltip:
+                                                        'openai_editHeader'.tr,
+                                                  ),
+                                                  DSIconButton(
+                                                    icon: DsIconKind.trash,
+                                                    size: 36,
+                                                    color: theme.danger,
+                                                    iconColor: theme.onDanger,
+                                                    onPressed: () =>
+                                                        _removeHeader(key),
+                                                    tooltip:
+                                                        'openai_deleteHeader'
+                                                            .tr,
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            DSSelect<String>(
+                              value: _selectedPresetId,
+                              hint: 'openai_pleaseSelectProvider'.tr,
+                              items: _presets
+                                  .map(
+                                    (preset) => DSSelectItem(
+                                      label: preset.label,
+                                      value: preset.id,
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: _onPresetChanged,
+                            ),
+                            if (_presetError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  _presetError!,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.danger,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+                            DSInput(
+                              controller: _apiKeyController,
+                              label: 'openai_apiKey'.tr,
+                              hint: 'openai_apiKeyHint'.tr,
+                              errorText: _apiKeyError,
+                              onChanged: (_) {
+                                if (_apiKeyError != null) {
+                                  setState(() => _apiKeyError = null);
+                                }
+                              },
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                  ] else ...[
-                    DSSelect<String>(
-                      value: _selectedPresetId,
-                      hint: 'openai_pleaseSelectProvider'.tr,
-                      items: _presets
-                          .map(
-                            (preset) => DSSelectItem(
-                              label: preset.label,
-                              value: preset.id,
-                            ),
-                          )
-                          .toList(),
-                      onChanged: _onPresetChanged,
-                    ),
-                    if (_presetError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          _presetError!,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.danger,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    DSInput(
-                      controller: _apiKeyController,
-                      label: 'openai_apiKey'.tr,
-                      hint: 'openai_apiKeyHint'.tr,
-                      errorText: _apiKeyError,
-                      onChanged: (_) {
-                        if (_apiKeyError != null) {
-                          setState(() => _apiKeyError = null);
-                        }
-                      },
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
           );

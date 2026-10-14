@@ -58,7 +58,7 @@ class PersonaIntroDialogExample extends StatelessWidget {
       context: context,
       width: 300,
       image: const AssetImage('assets/images/default_avatar.jpg'),
-      badgeText: '🔥 限时活动 🔥',
+      badgeText: '限时活动',
       title: '「早八战神」人设',
       subtitle: '闹钟一响全宿舍最强战力，带你体验清晨的压迫感~',
       buttonText: '立即使用',

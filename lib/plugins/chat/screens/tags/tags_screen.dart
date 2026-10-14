@@ -135,48 +135,65 @@ class _TagsScreenState extends State<TagsScreen> {
 
   /// 构建标签卡片网格（堆叠文件夹卡片，一行两列）
   Widget _buildTagsGrid() {
-    return GridView.builder(
-      // 格子纵横比与卡片内部设计稿(320x410)一致，inline 卡片撑满格子，
-      // FittedBox 完全贴合，内容展示最大化
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 320 / 410,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      padding: EdgeInsets.fromLTRB(
-        16, 8, 16, 8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      itemCount: _filteredTags.length,
-      itemBuilder: (context, index) {
-        final tag = _filteredTags[index];
-        final previews = (_tagPreviews[tag.name] ?? const <Message>[])
-            .take(2)
-            .toList();
-        final fallbackLines = <String>['#${tag.name}'];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const hPadding = 16.0;
+        const spacing = 12.0;
+        final cellWidth = (constraints.maxWidth - hPadding * 2 - spacing) / 2;
+        // 卡片内部设计(320x410)的层叠便签会向上溢出约 32px（Clip.none 不裁剪），
+        // 加上随机倾斜/偏移余量，由格子内顶部 padding 吸收并缩小卡片
+        final bleedTop = 32 * cellWidth / 320 + 10;
 
-        return HandDrawnStickyItem(
-          tiltKey: tag.name,
-          showTape: false,
-          child: StackedFolderCardWidget(
-            key: ValueKey(tag.name),
-            inline: true,
-            title: '#${tag.name}',
-            subtitle: 'chat_messageCount'.trParams({
-              'count': tag.messageCount.toString(),
-            }),
-            variant: StackedFolderVariant.notes,
-            size: const MediumSize(),
-            // 正面便签：最新一条消息；背面便签：第二条消息
-            noteFrontLines: previews.isNotEmpty
-                ? _noteLines(previews.first)
-                : fallbackLines,
-            noteBackLines: previews.length > 1
-                ? _noteLines(previews.last)
-                : fallbackLines,
-            onCardTap: () => _openTagMessages(tag),
-            onOpen: () => _openTagMessages(tag),
+        return GridView.builder(
+          // 格子纵横比与卡片内部设计稿(320x410)一致，inline 卡片撑满格子，
+          // FittedBox 完全贴合；格子内 padding 再缩小实际卡片尺寸
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 320 / 410,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
           ),
+          padding: EdgeInsets.fromLTRB(
+            hPadding,
+            8,
+            hPadding,
+            8 + MediaQuery.paddingOf(context).bottom,
+          ),
+          itemCount: _filteredTags.length,
+          itemBuilder: (context, index) {
+            final tag = _filteredTags[index];
+            final previews = (_tagPreviews[tag.name] ?? const <Message>[])
+                .take(2)
+                .toList();
+            final fallbackLines = <String>['#${tag.name}'];
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(12, bleedTop, 12, 12),
+              child: HandDrawnStickyItem(
+                tiltKey: tag.name,
+                showTape: false,
+                child: StackedFolderCardWidget(
+                  key: ValueKey(tag.name),
+                  inline: true,
+                  title: '#${tag.name}',
+                  subtitle: 'chat_messageCount'.trParams({
+                    'count': tag.messageCount.toString(),
+                  }),
+                  variant: StackedFolderVariant.notes,
+                  size: const MediumSize(),
+                  // 正面便签：最新一条消息；背面便签：第二条消息
+                  noteFrontLines: previews.isNotEmpty
+                      ? _noteLines(previews.first)
+                      : fallbackLines,
+                  noteBackLines: previews.length > 1
+                      ? _noteLines(previews.last)
+                      : fallbackLines,
+                  onCardTap: () => _openTagMessages(tag),
+                  onOpen: () => _openTagMessages(tag),
+                ),
+              ),
+            );
+          },
         );
       },
     );

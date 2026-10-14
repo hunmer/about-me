@@ -138,6 +138,13 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
   /// 箭头按钮悬停
   bool _btnHover = false;
 
+  /// 正面便签实测高度（初值取原固定高度，首帧后由 _MeasureSize 更新），
+  /// notes 变体据此联动口袋卡片位置
+  double _frontNoteHeight = 255;
+
+  /// 口袋卡片与正面便签底边的插入深度（小于便签底部 padding，不遮文字）
+  static const double _pocketOverlap = 24;
+
   /// 是否扇出展开
   bool get _fanned => _active || _hover;
 
@@ -482,12 +489,14 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
             '2. Call Mom at 6 PM',
             '3. Review design layout',
           ];
+    // 便签顶边锚定、高度随文字行数自适应（不留白）；
+    // 口袋卡片跟随正面便签底边（见 _pocket），保持插入深度 _pocketOverlap，
+    // 该深度小于便签底部 padding，不会遮挡文字
     return [
       _layer(
         width: 274,
-        height: 200,
         left: 34,
-        bottom: 242,
+        top: -32,
         angle: 4.8 * _deg,
         fanOffset: const Offset(6, -20),
         fanAngle: 7 * _deg,
@@ -503,21 +512,24 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
       ),
       _layer(
         width: 320,
-        height: 255,
         left: 0,
-        bottom: 112,
+        top: 43,
         angle: 0,
         fanOffset: const Offset(0, -12),
         fanAngle: 0,
         index: 1,
-        child: _noteCard(
-          frontLines,
-          isDark,
-          radius: 36,
-          padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
-          fontSize: 17.2,
-          lineHeight: 1.62,
-          tinted: true,
+        child: _MeasureSize(
+          onChange:
+              (size) => setState(() => _frontNoteHeight = size.height),
+          child: _noteCard(
+            frontLines,
+            isDark,
+            radius: 36,
+            padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
+            fontSize: 17.2,
+            lineHeight: 1.62,
+            tinted: true,
+          ),
         ),
       ),
     ];
@@ -553,6 +565,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final line in lines)
@@ -803,11 +816,18 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     ];
   }
 
-  /// 底部口袋卡片：标题 + 副标题 + 圆形箭头按钮
+  /// 底部口袋卡片：标题 + 副标题 + 圆形箭头按钮。
+  /// notes 变体时跟随正面便签底边（top 锚定，保持 _pocketOverlap 插入深度），
+  /// 其余变体固定贴底
   Widget _pocket(bool isDark) {
+    final double? pocketTop =
+        widget.variant == StackedFolderVariant.notes
+        ? 43 + _frontNoteHeight - _pocketOverlap
+        : null;
     return Positioned(
       left: 0,
-      bottom: 0,
+      top: pocketTop,
+      bottom: pocketTop != null ? null : 0,
       width: 320,
       height: 172,
       child: Container(
@@ -903,13 +923,16 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     );
   }
 
-  /// 层叠内容通用包装：入场依次浮现 + 扇出时平移并改变角度
+  /// 层叠内容通用包装：入场依次浮现 + 扇出时平移并改变角度。
+  /// [height] 为 null 时高度由内容自适应；[top]/[bottom] 提供锚定边，
+  /// 顶边锚定时高度向下生长，底边锚定时向上生长
   Widget _layer({
     required double width,
-    required double height,
+    double? height,
     double? left,
     double? right,
-    required double bottom,
+    double? top,
+    double? bottom,
     required double angle,
     required Offset fanOffset,
     required double fanAngle,
@@ -919,7 +942,8 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     return Positioned(
       left: left,
       right: right,
-      bottom: bottom,
+      top: top,
+      bottom: top != null ? null : bottom,
       width: width,
       height: height,
       child: _entrance(
@@ -958,5 +982,32 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
       },
       child: child,
     );
+  }
+}
+
+/// 帧末测量子树尺寸，仅在尺寸变化时回调（用于便签高度联动口袋位置）
+class _MeasureSize extends StatefulWidget {
+  final Widget child;
+  final ValueChanged<Size> onChange;
+
+  const _MeasureSize({required this.child, required this.onChange});
+
+  @override
+  State<_MeasureSize> createState() => _MeasureSizeState();
+}
+
+class _MeasureSizeState extends State<_MeasureSize> {
+  Size? _last;
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = context.findRenderObject();
+      if (box is RenderBox && box.hasSize && box.size != _last) {
+        _last = box.size;
+        widget.onChange(box.size);
+      }
+    });
+    return widget.child;
   }
 }
